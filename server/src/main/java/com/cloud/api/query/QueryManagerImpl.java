@@ -2932,10 +2932,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
                 }
-            } else { // domain + all ancestors
-                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
-
         }
 
         if (volumeId != null && storagePoolId != null) {
@@ -3267,7 +3264,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (currentVmOffering != null) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(currentVmOffering.getDiskOfferingId());
             List<String> storageTags = com.cloud.utils.StringUtils.csvTagsToList(diskOffering.getTags());
-            if (!storageTags.isEmpty()) {
+            if (!storageTags.isEmpty() && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.value()) {
                 SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : storageTags) {
                     sb.and(tag, sb.entity().getTags(), Op.FIND_IN_SET);
@@ -3969,6 +3966,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             throw new CloudRuntimeException("Invalid/null detail-options response object passed");
         }
 
+        options.put(ApiConstants.BootType.UEFI.toString(), Arrays.asList(ApiConstants.BootMode.LEGACY.toString(),
+            ApiConstants.BootMode.SECURE.toString()));
         options.put(VmDetailConstants.KEYBOARD, Arrays.asList("uk", "us", "jp", "fr"));
         options.put(VmDetailConstants.CPU_CORE_PER_SOCKET, Collections.emptyList());
         options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());

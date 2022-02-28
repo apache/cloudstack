@@ -27,22 +27,12 @@
         :form="form"
         @submit="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.templatefileupload')">
-          <a-upload-dragger
-            :multiple="false"
-            :fileList="fileList"
-            :remove="handleRemove"
-            :beforeUpload="beforeUpload"
-            v-decorator="['file', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}`}]
-            }]">
-            <p class="ant-upload-drag-icon">
-              <a-icon type="cloud-upload" />
-            </p>
-            <p class="ant-upload-text" v-if="fileList.length === 0">
-              {{ $t('label.volume.volumefileupload.description') }}
-            </p>
-          </a-upload-dragger>
+        <a-form-item :label="$t('label.url')">
+          <a-input
+            v-decorator="['url', {
+              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
+            }]"
+            :placeholder="apiParams.url.description"/>
         </a-form-item>
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -69,8 +59,7 @@
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            @change="onZoneChange" >
+            }" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
               <span>
                 <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -81,29 +70,13 @@
           </a-select>
         </a-form-item>
         <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
-          <a-select
-            v-decorator="['diskofferingid', {}]"
-            :loading="offeringLoading"
-            :placeholder="apiParams.diskofferingid.description"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option v-for="opt in offerings" :key="opt.id">
-              {{ opt.name || opt.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
           <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
           <a-select
             v-decorator="['format', {
               initialValue: formats[0],
               rules: [
                 {
-                  required: false,
+                  required: true,
                   message: `${this.$t('message.error.select')}`
                 }
               ]
@@ -115,6 +88,27 @@
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+          <a-select
+            v-decorator="['diskofferingid', {
+              initialValue: selectedDiskOfferingId,
+              rules: [{ required: false, message: $t('message.error.select') }]}]"
+            :loading="loading"
+            @change="id => onChangeDiskOffering(id)"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option
+              v-for="(offering, index) in offerings"
+              :value="offering.id"
+              :key="index">
+              {{ offering.displaytext || offering.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -169,26 +163,24 @@
 
 <script>
 import { api } from '@/api'
-import { axios } from '../../utils/request'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'UploadLocalVolume',
+  name: 'UploadVolume',
   components: {
     ResourceIcon,
     TooltipLabel
   },
   data () {
     return {
-      fileList: [],
       zones: [],
       domainList: [],
       accountList: [],
-      offerings: [],
-      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
+      offerings: [],
       zoneSelected: '',
+      selectedDiskOfferingId: null,
       domainId: null,
       account: null,
       uploadParams: null,
@@ -199,73 +191,35 @@ export default {
   },
   beforeCreate () {
     this.form = this.$form.createForm(this)
-    this.apiParams = this.$getApiParams('getUploadParamsForVolume')
+    this.apiParams = this.$getApiParams('uploadVolume')
   },
   created () {
     this.fetchData()
   },
   methods: {
-    listZones () {
+    fetchData () {
+      this.loading = true
       api('listZones', { showicon: true }).then(json => {
-        if (json && json.listzonesresponse && json.listzonesresponse.zone) {
-          this.zones = json.listzonesresponse.zone
-          if (this.zones.length > 0) {
-            this.onZoneChange(this.zones[0].id)
-          }
-        }
+        this.zones = json.listzonesresponse.zone || []
+        this.selectedZoneId = this.zones[0].id || ''
+        this.fetchDiskOfferings(this.selectedZoneId)
+      }).finally(() => {
+        this.loading = false
       })
-    },
-    onZoneChange (zoneId) {
-      this.zoneSelected = this.zones[0].id
-      this.fetchDiskOfferings(zoneId)
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
     },
     fetchDiskOfferings (zoneId) {
-      this.offeringLoading = true
-      this.offerings = [{ id: -1, name: '' }]
-      this.form.setFieldsValue({
-        diskofferingid: undefined
-      })
+      this.loading = true
       api('listDiskOfferings', {
         zoneid: zoneId,
         listall: true
       }).then(json => {
-        for (var offering of json.listdiskofferingsresponse.diskoffering) {
-          if (offering.iscustomized) {
-            this.offerings.push(offering)
-          }
-        }
+        this.offerings = json.listdiskofferingsresponse.diskoffering || []
       }).finally(() => {
-        this.offeringLoading = false
+        this.loading = false
       })
-    },
-    handleRemove (file) {
-      const index = this.fileList.indexOf(file)
-      const newFileList = this.fileList.slice()
-      newFileList.splice(index, 1)
-      this.fileList = newFileList
-    },
-    beforeUpload (file) {
-      this.fileList = [...this.fileList, file]
-      return false
-    },
-    handleDomainChange (domain) {
-      this.domainId = domain
-      if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
-      }
-    },
-    handleAccountChange (acc) {
-      if (acc) {
-        this.account = acc.name
-      } else {
-        this.account = acc
-      }
-    },
-    fetchData () {
-      this.listZones()
-      if ('listDomains' in this.$store.getters.apis) {
-        this.fetchDomains()
-      }
     },
     fetchDomains () {
       this.domainLoading = true
@@ -296,6 +250,24 @@ export default {
         this.$notifyError(error)
       })
     },
+    onChangeDiskOffering (id) {
+      const offering = this.offerings.filter(x => x.id === id)
+      this.customDiskOffering = offering[0]?.iscustomized || false
+      this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
+    },
+    handleDomainChange (domain) {
+      this.domainId = domain
+      if ('listAccounts' in this.$store.getters.apis) {
+        this.fetchAccounts()
+      }
+    },
+    handleAccountChange (acc) {
+      if (acc) {
+        this.account = acc.name
+      } else {
+        this.account = acc
+      }
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -303,68 +275,26 @@ export default {
         if (err) {
           return
         }
-        const params = {}
+        const params = {
+        }
         for (const key in values) {
           const input = values[key]
           if (input === undefined) {
-            continue
-          }
-          if (key === 'file') {
             continue
           }
           params[key] = input
         }
         params.domainId = this.domainId
         this.loading = true
-        api('getUploadParamsForVolume', params).then(json => {
-          this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
-          const { fileList } = this
-          if (this.fileList.length > 1) {
-            this.$notification.error({
-              message: this.$t('message.upload.volume.failed'),
-              description: this.$t('message.upload.file.limit'),
-              duration: 0
-            })
-          }
-          const formData = new FormData()
-          fileList.forEach(file => {
-            formData.append('files[]', file)
+        api('uploadVolume', params).then(json => {
+          this.$notification.success({
+            message: this.$t('message.success.upload'),
+            description: this.$t('message.success.upload.volume.description')
           })
-          this.uploadPercentage = 0
-          axios.post(this.uploadParams.postURL,
-            formData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                'X-signature': this.uploadParams.signature,
-                'X-expires': this.uploadParams.expires,
-                'X-metadata': this.uploadParams.metadata
-              },
-              onUploadProgress: (progressEvent) => {
-                this.uploadPercentage = Number(parseFloat(100 * progressEvent.loaded / progressEvent.total).toFixed(1))
-              },
-              timeout: 86400000
-            }).then((json) => {
-            this.$notification.success({
-              message: this.$t('message.success.upload'),
-              description: this.$t('message.success.upload.volume.description')
-            })
-            this.closeAction()
-          }).catch(e => {
-            this.$notification.error({
-              message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
-              duration: 0
-            })
-          }).finally(() => {
-            this.loading = false
-          })
-        }).catch(e => {
-          this.$notification.error({
-            message: this.$t('message.upload.failed'),
-            description: `${this.$t('message.upload.volume.failed')} -  ${e?.response?.data?.postuploadvolumeresponse?.errortext || e}`,
-            duration: 0
-          })
+          this.closeAction()
+          this.$emit('refresh-data')
+        }).catch(error => {
+          this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })
@@ -378,11 +308,11 @@ export default {
 </script>
 
 <style scoped lang="less">
-  .form-layout {
-    width: 80vw;
+.form-layout {
+  width: 80vw;
 
-    @media (min-width: 700px) {
-      width: 550px;
-    }
+  @media (min-width: 700px) {
+    width: 550px;
   }
+}
 </style>

@@ -42,7 +42,8 @@ const getters = {
   darkMode: state => state.user.darkMode,
   themeSetting: state => state.user.themeSetting,
   defaultListViewPageSize: state => state.user.defaultListViewPageSize,
-  countNotify: state => state.user.countNotify
+  countNotify: state => state.user.countNotify,
+  customColumns: state => state.user.customColumns
 }
 
 export default getters

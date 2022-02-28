@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -242,42 +243,17 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
     @Override
     public void create() {
-        if (getSourceCidrList() != null) {
-            String guestCidr = _networkService.getNetwork(getNetworkId()).getCidr();
+        validateCidrs();
 
-            for (String cidr : getSourceCidrList()) {
-                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
-                }
-                if (cidr.equals(NetUtils.ALL_IP4_CIDRS)) {
-                    continue;
-                }
-                if (!NetUtils.isNetworkAWithinNetworkB(cidr, guestCidr)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, cidr + " is not within the guest cidr " + guestCidr);
-                }
-            }
-        }
-
-        //Destination CIDR formatting check. Since it's optional param, no need to set a default as in the case of source.
-        if(destCidrList != null){
-            for(String cidr : destCidrList){
-                if(!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Destination cidrs formatting error" + cidr);
-                }
-            }
-        }
-
-        if (getProtocol().equalsIgnoreCase(NetUtils.ALL_PROTO)) {
+        if (NetUtils.ALL_PROTO.equalsIgnoreCase(getProtocol())) {
             if (getSourcePortStart() != null && getSourcePortEnd() != null) {
-                throw new InvalidParameterValueException("Do not pass ports to protocol ALL, protocol ALL do not require ports. Unable to create " +
-                    "firewall rule for the network id=" + networkId);
+                throw new InvalidParameterValueException(String.format("Unable to create firewall rule for the network id=[%d] due to: ports must not be informed to protocol ALL, as it does not require them.", networkId));
             }
         }
 
         if (getVpcId() != null) {
-                throw new  InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
-                        " as firewall egress rule can be created only for non vpc networks.");
-            }
+            throw new  InvalidParameterValueException(String.format("Unable to create firewall rule for the network id=[%d] as firewall egress rule can be created only for non VPC networks.", networkId));
+        }
 
         try {
             FirewallRule result = _firewallService.createEgressFirewallRule(this);
@@ -286,9 +262,44 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                 setEntityUuid(result.getUuid());
             }
         } catch (NetworkRuleConflictException ex) {
-            s_logger.info("Network rule conflict: " + ex.getMessage());
-            s_logger.trace("Network Rule Conflict: ", ex);
+            String message = "Network rule conflict: ";
+            if (!s_logger.isTraceEnabled()) {
+                s_logger.info(message + ex.getMessage());
+            } else {
+                s_logger.trace(message, ex);
+            }
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+        }
+    }
+
+    protected void validateCidrs() {
+        if (getSourceCidrList() != null) {
+            String guestCidr = _networkService.getNetwork(getNetworkId()).getCidr();
+
+            for (String cidr : getSourceCidrList()) {
+                cidr = StringUtils.trim(cidr);
+                isValidIpCidr(cidr, "Source");
+                if (cidr.equals(NetUtils.ALL_IP4_CIDRS)) {
+                    continue;
+                }
+                if (!NetUtils.isNetworkAWithinNetworkB(cidr, guestCidr)) {
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR,String.format("[%s] is not within the guest CIDR [%s]. ", cidr, guestCidr));
+                }
+            }
+        }
+
+        //Destination CIDR formatting check. Since it's optional param, no need to set a default as in the case of source.
+        if(destCidrList != null){
+            for(String cidr : destCidrList){
+                cidr = StringUtils.trim(cidr);
+                isValidIpCidr(cidr, "Destination");
+            }
+        }
+    }
+
+    private void isValidIpCidr(String cidr, String sourceOrDestination) {
+        if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,String.format("%s CIDRs formatting error [%s].", sourceOrDestination, cidr));
         }
     }
 

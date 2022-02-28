@@ -156,7 +156,7 @@
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
-                          v-show="showRootDiskSizeChanger"
+                          v-if="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
                           :isCustomized="true"
@@ -563,8 +563,8 @@
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
-                          @change="fetchBootModes"
+                          v-decorator="['boottype', { initialValue: defaultBootType ? defaultBootType : options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
+                          @change="onBootTypeChange"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -575,7 +575,7 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          v-decorator="['bootmode', { initialValue: defaultBootMode ? defaultBootMode : options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -846,6 +846,8 @@ export default {
       },
       instanceConfig: {},
       template: {},
+      defaultBootType: '',
+      defaultBootMode: '',
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -1532,6 +1534,9 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
+          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
+          this.fetchBootModes(this.defaultBootType)
+          this.defaultBootMode = this.template?.details?.UEFI
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1718,11 +1723,12 @@ export default {
           deployVmData.templateid = values.isoid
         }
 
-        if (values.rootdisksize && values.rootdisksize > 0) {
+        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
-        } else if (this.rootDiskSizeFixed > 0) {
+        } else if (this.rootDiskSizeFixed > 0 && !this.template.deployasis) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
+
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
@@ -2326,7 +2332,8 @@ export default {
     },
     onBootTypeChange (value) {
       this.fetchBootModes(value)
-      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
+      this.defaultBootMode = this.options.bootModes?.[0]?.id || undefined
+      this.updateFieldValue('bootmode', this.defaultBootMode)
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection

@@ -331,12 +331,6 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
-        // Unsupported pool types
-        if (poolType != null && poolType.equalsIgnoreCase(StoragePoolType.PowerFlex.toString())) {
-            return false;
-        }
-
         String host = volumeToDisconnect.get(DiskTO.STORAGE_HOST);
         String port = volumeToDisconnect.get(DiskTO.STORAGE_PORT);
         String path = volumeToDisconnect.get(DiskTO.IQN);

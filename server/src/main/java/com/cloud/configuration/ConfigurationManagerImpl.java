@@ -810,13 +810,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
-        final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
-        final Long domainId = cmd.getDomainId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
         String catergory = null;
+
+        final Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isDomainAdmin(caller.getId())) {
+            if (accountId == null && domainId == null) {
+                domainId = caller.getDomainId();
+            }
+        } else if (_accountMgr.isNormalUser(caller.getId())) {
+            if (accountId == null) {
+                accountId = caller.getAccountId();
+            }
+        }
 
         // FIX ME - All configuration parameters are not moved from config.java to configKey
         if (config == null) {
@@ -848,11 +859,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             paramCountCheck++;
         }
         if (accountId != null) {
+            Account account = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, null, false, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
+            _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
             scope = ConfigKey.Scope.Domain.toString();
             id = domainId;
             paramCountCheck++;

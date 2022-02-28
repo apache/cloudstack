@@ -98,12 +98,8 @@ export default {
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,
-          args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
-          mapping: {
-            format: {
-              options: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/storage/UploadVolume.vue')
         },
         {
           api: 'attachVolume',

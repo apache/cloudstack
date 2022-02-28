@@ -48,7 +48,7 @@
               class="usage-dashboard-chart-card"
               :bordered="false"
               :loading="loading"
-              :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
+              :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
               <router-link :to="{ path: stat.path }">
                 <div
                   class="usage-dashboard-chart-card-inner">
@@ -166,42 +166,48 @@ export default {
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop', bgcolor: '#dfe9cc', path: '/vm?state=running&filter=running' })
+        var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop', bgcolor: tileColor, path: '/vm?state=running&filter=running' })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff', bgcolor: '#edcbce', path: '/vm?state=stopped&filter=stopped' })
+        var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff', bgcolor: tileColor, path: '/vm?state=stopped&filter=stopped' })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvirtualmachinesresponse) {
           count = json.listvirtualmachinesresponse.count
         }
-        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number', path: '/vm' })
+        var tileColor = this.$config.theme['@dashboard-tile-totalvms-bg'] || '#ffffff'
+        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number', bgcolor: tileColor, path: '/vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
         if (json && json.listvolumesresponse) {
           count = json.listvolumesresponse.count
         }
-        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database', path: '/volume' })
+        var tileColor = this.$config.theme['@dashboard-tile-totalvolumes-bg'] || '#ffffff'
+        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database', bgcolor: tileColor, path: '/volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
         if (json && json.listnetworksresponse) {
           count = json.listnetworksresponse.count
         }
-        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment', path: '/guestnetwork' })
+        var tileColor = this.$config.theme['@dashboard-tile-totalnetworks-bg'] || '#ffffff'
+        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment', bgcolor: tileColor, path: '/guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0
         if (json && json.listpublicipaddressesresponse) {
           count = json.listpublicipaddressesresponse.count
         }
-        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment', path: '/publicip' })
+        var tileColor = this.$config.theme['@dashboard-tile-totalips-bg'] || '#ffffff'
+        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment', bgcolor: tileColor, path: '/publicip' })
       })
       this.listEvents()
     },
