@@ -1612,7 +1612,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Boolean restartRequired = cmd.isRestartRequired();
-        boolean listAll = cmd.listAll();
         boolean isRecursive = cmd.isRecursive();
         Boolean specifyIpRanges = cmd.isSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
