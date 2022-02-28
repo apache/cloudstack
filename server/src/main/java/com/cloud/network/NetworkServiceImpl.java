@@ -1692,10 +1692,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             path = _domainDao.findById(caller.getDomainId()).getPath();
         }
 
-        if (listAll && domainId == null) {
-            isRecursive = true;
-        }
-
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
 

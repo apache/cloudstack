@@ -2322,8 +2322,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (domainId == null) {
                     domainId = caller.getDomainId();
                 }
-                // mark recursive
-                isRecursive = true;
             } else if (!callerIsAdmin || domainId == null) {
                 accountId = caller.getAccountId();
             }
