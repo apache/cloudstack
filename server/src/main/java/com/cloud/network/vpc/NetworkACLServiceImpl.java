@@ -177,7 +177,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             // and list ACLs belonging to the permitted VPCs
             final List<Long> permittedAccounts = new ArrayList<Long>();
             Long domainId = cmd.getDomainId();
-            Boolean isRecursive = cmd.isRecursiveWithNull();
+            boolean isRecursive = cmd.isRecursive();
             final String accountName = cmd.getAccountName();
             final Long projectId = cmd.getProjectId();
             final boolean listAll = cmd.listAll();
@@ -737,7 +737,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             // List permitted VPCs and filter aclItems
             final List<Long> permittedAccounts = new ArrayList<Long>();
             Long domainId = cmd.getDomainId();
-            Boolean isRecursive = cmd.isRecursiveWithNull();
+            boolean isRecursive = cmd.isRecursive();
             final String accountName = cmd.getAccountName();
             final Long projectId = cmd.getProjectId();
             final boolean listAll = cmd.listAll();

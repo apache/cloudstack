@@ -2778,7 +2778,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
-        Boolean recursive = domainIdRecursiveListProject.second();
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
@@ -2851,14 +2850,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         permittedAccounts.add(caller.getId());
                     } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                         domainIdRecursiveListProject.first(caller.getDomainId());
-                        recursive = recursive == null ? true : recursive;
-                        domainIdRecursiveListProject.second(recursive);
+                        domainIdRecursiveListProject.second(true);
                     }
                 } else if (domainId == null) {
                     if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                         domainIdRecursiveListProject.first(caller.getDomainId());
-                        recursive = recursive == null ? true : recursive;
-                        domainIdRecursiveListProject.second(recursive);
+                        domainIdRecursiveListProject.second(true);
                     }
                 }
             } else if (domainId != null) {
@@ -2868,8 +2865,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
         }
-        recursive = recursive == null ? false : recursive;
-        domainIdRecursiveListProject.second(recursive);
+
     }
 
     @Override

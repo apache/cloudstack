@@ -2096,7 +2096,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String vlan = cmd.getVlan();
         final Long vpcId = cmd.getVpcId();
         final Long id = cmd.getId();
-        Boolean isRecursive = cmd.isRecursiveWithNull();
+        Boolean isRecursive = cmd.isRecursive();
         final Boolean listAll = cmd.listAll();
         Long domainId = cmd.getDomainId();
         final String accountName = cmd.getAccountName();
@@ -2346,7 +2346,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long gatewayId = cmd.getGatewayId();
         final Long vpcId = cmd.getVpcId();
         Long domainId = cmd.getDomainId();
-        Boolean isRecursive = cmd.isRecursiveWithNull();
+        Boolean isRecursive = cmd.isRecursive();
         final Boolean listAll = cmd.listAll();
         final String accountName = cmd.getAccountName();
         final Account caller = CallContext.current().getCallingAccount();
