@@ -548,7 +548,7 @@ describe('Views > AutogenView.vue', () => {
         await router.push({ name: 'testRouter9' })
         await flushPromises()
 
-        expect(wrapper.vm.columns.length).toEqual(1)
+        expect(wrapper.vm.columns.length).toEqual(2)
         expect(wrapper.vm.columns[0].title).toEqual('name-en')
         expect(wrapper.vm.columns[0].dataIndex).toEqual('name')
         expect(wrapper.vm.columns[0].slots).toEqual({ customRender: 'name' })

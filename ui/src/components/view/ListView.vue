@@ -27,6 +27,16 @@
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
+    <template #filterDropdown>
+      <div style="padding: 8px" class="filter-dropdown">
+        <a-menu>
+          <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
+            <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
+            {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+          </a-menu-item>
+        </a-menu>
+      </div>
+    </template>
     <template #footer>
       <span v-if="hasSelected">
         {{ `Selected ${selectedRowKeys.length} items` }}
@@ -431,6 +441,14 @@ export default {
       type: Array,
       required: true
     },
+    columnKeys: {
+      type: Array,
+      default: () => []
+    },
+    selectedColumns: {
+      type: Array,
+      default: () => []
+    },
     items: {
       type: Array,
       required: true
@@ -768,6 +786,15 @@ export default {
         return 'Unsecure'
       }
       return host.state
+    },
+    getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name)[0]
+      }
+      return name
+    },
+    updateSelectedColumns (name) {
+      this.$emit('update-selected-columns', name)
     }
   }
 }
@@ -784,6 +811,14 @@ export default {
 
 :deep(.ant-table-tbody)>tr>td, :deep(.ant-table-thead)>tr>th {
   overflow-wrap: anywhere;
+}
+
+.filter-dropdown .ant-menu-vertical {
+  border: none;
+}
+
+.filter-dropdown .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: transparent;
 }
 </style>
 

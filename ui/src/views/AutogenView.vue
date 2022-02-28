@@ -79,21 +79,6 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
-                <span style="margin-left: 8px">
-                  <a-dropdown :trigger="['click']" v-if="!dataView && !$store.getters.metrics" :visible="customColumnsDropdownVisible" @visibleChange="(visible) => customColumnsDropdownVisible = visible">
-                    <a-button>
-                      {{ $t('label.columns') }} <down-outlined />
-                    </a-button>
-                    <template #overlay>
-                      <a-menu>
-                        <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
-                          <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-                          {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
-                        </a-menu-item>
-                      </a-menu>
-                    </template>
-                  </a-dropdown>
-                </span>
               </template>
             </breadcrumb>
           </a-col>
@@ -412,7 +397,10 @@
         :columns="columns"
         :items="items"
         :actions="actions"
+        :columnKeys="columnKeys"
+        :selectedColumns="selectedColumns"
         ref="listview"
+        @update-selected-columns="updateSelectedColumns"
         @selection-change="onRowSelectionChange"
         @refresh="this.fetchData"
         @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
@@ -1475,7 +1463,13 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-
+      this.columns.push({
+        dataIndex: 'dropdownFilter',
+        slots: {
+          filterDropdown: 'filterDropdown',
+          filterIcon: 'filterIcon'
+        }
+      })
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }
