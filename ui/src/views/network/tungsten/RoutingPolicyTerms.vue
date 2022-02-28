@@ -23,7 +23,7 @@
           mode="tags"
           :token-separators="[',']"
           v-decorator="['tungstenroutingpolicyfromtermcommunities', {
-            initialValue: formModel.tungstenroutingpolicyfromtermcommunities,
+            initialValue: formModel.tungstenroutingpolicyfromtermcommunities || [],
             rules: [{ type: 'array' }]
           }]"
           @change="(value) => changeFieldValue('tungstenroutingpolicyfromtermcommunities', value)">
@@ -35,7 +35,7 @@
           v-decorator="[
             'tungstenroutingpolicymatchall',
             {
-              initialValue: formModel.tungstenroutingpolicymatchall,
+              initialValue: formModel.tungstenroutingpolicymatchall || false,
               valuePropName: 'checked',
             },
           ]"
@@ -47,7 +47,7 @@
           mode="tags"
           :token-separators="[',']"
           v-decorator="['tungstenroutingpolicyprotocol', {
-            initialValue: formModel.tungstenroutingpolicyprotocol,
+            initialValue: formModel.tungstenroutingpolicyprotocol || [],
             rules: [{ type: 'array' }]
           }]"
           @change="(value) => changeFieldValue('tungstenroutingpolicyprotocol', value)">
@@ -120,8 +120,11 @@
 </template>
 
 <script>
+import TooltipButton from '@/components/widgets/TooltipButton'
+
 export default {
   name: 'RoutingPolicyTerms',
+  components: { TooltipButton },
   props: {
     formModel: {
       type: Object,
@@ -167,6 +170,9 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
+  created () {
+    this.prefixList = this.formModel?.prefixList || []
+  },
   methods: {
     addNewPrefix () {
       const index = this.prefixList.length
@@ -176,10 +182,12 @@ export default {
         termtype: 'addcommunity',
         termvalue: ''
       })
+      this.formModel.prefixList = this.prefixList
       this.emitEvents()
     },
     deletePrefix (index) {
       this.prefixList.splice(index, 1)
+      this.formModel.prefixList = this.prefixList
       this.emitEvents()
     },
     changeFieldValue (field, value) {
@@ -188,10 +196,11 @@ export default {
     },
     onCellChange (key, name, value) {
       this.prefixList[key][name] = value
+      this.formModel.prefixList = this.prefixList
       this.emitEvents()
     },
     emitEvents () {
-      this.$emit('onChangeFields', this.formModel, this.prefixList)
+      this.$emit('onChangeFields', this.formModel)
     }
   }
 }

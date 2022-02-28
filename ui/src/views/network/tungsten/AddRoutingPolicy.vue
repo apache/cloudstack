@@ -78,12 +78,11 @@
 
 <script>
 import { api } from '@/api'
-import TooltipButton from '@/components/widgets/TooltipButton'
 import RoutingPolicyTerms from '@/views/network/tungsten/RoutingPolicyTerms'
 
 export default {
   name: 'AddRoutingPolicy',
-  components: { TooltipButton, RoutingPolicyTerms },
+  components: { RoutingPolicyTerms },
   props: {
     resource: {
       type: Object,
@@ -151,9 +150,9 @@ export default {
     changeFieldValue (field, value) {
       this.formModel[field] = value
     },
-    onChangeFields (formModel, prefixList) {
+    onChangeFields (formModel) {
       this.formModel = { ...this.formModel, ...formModel }
-      this.prefixList = prefixList
+      this.prefixList = this.formModel?.prefixList || []
     },
     checkPolicyTermValues () {
       let valid = true
@@ -182,11 +181,11 @@ export default {
         const routingPolicyTermParams = {}
         routingPolicyTermParams.zoneid = this.resource.zoneid
         routingPolicyTermParams.tungstenroutingpolicyuuid = routingPolicy.uuid
-        routingPolicyTermParams.tungstenroutingpolicyfromtermcommunities = this.formModel.tungstenroutingpolicyfromtermcommunities.join(',')
-        routingPolicyTermParams.tungstenroutingpolicymatchall = this.formModel.tungstenroutingpolicymatchall
-        routingPolicyTermParams.tungstenroutingpolicyprotocol = this.formModel.tungstenroutingpolicyprotocol.join(',')
-        routingPolicyTermParams.tungstenroutingpolicyfromtermprefixlist = this.prefixList.map(item => [item.prefix, item.prefixtype].join('&')).join(',')
-        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.prefixList.map(item => [item.termtype, item.termvalue].join('&')).join(',')
+        routingPolicyTermParams.tungstenroutingpolicyfromtermcommunities = this.formModel?.tungstenroutingpolicyfromtermcommunities?.join(',') || ''
+        routingPolicyTermParams.tungstenroutingpolicymatchall = this.formModel?.tungstenroutingpolicymatchall || false
+        routingPolicyTermParams.tungstenroutingpolicyprotocol = this.formModel?.tungstenroutingpolicyprotocol?.join(',') || ''
+        routingPolicyTermParams.tungstenroutingpolicyfromtermprefixlist = this.prefixList?.map(item => [item.prefix, item.prefixtype].join('&')).join(',') || ''
+        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.prefixList.map(item => [item.termtype, item.termvalue].join('&')).join(',') || ''
         const jobId = await this.addTungstenFabricRoutingPolicyTerm(routingPolicyTermParams)
         await this.$pollJob({
           jobId,

@@ -18,7 +18,7 @@
 <template>
   <div>
     <a-button
-      :disabled="!('addTungstenFabricRouteTableToNetwork' in $store.getters.apis)"
+      :disabled="!('createTungstenFabricRoutingPolicy' in $store.getters.apis)"
       type="dashed"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
