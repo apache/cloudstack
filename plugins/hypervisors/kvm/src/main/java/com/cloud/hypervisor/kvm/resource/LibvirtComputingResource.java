@@ -3023,7 +3023,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean cleanupDisk(final DiskDef disk) {
         final String path = disk.getDiskPath();
 
-        if (path == null) {
+        if (org.apache.commons.lang.StringUtils.isBlank(path)) {
             s_logger.debug("Unable to clean up disk with null path (perhaps empty cdrom drive):" + disk);
             return false;
         }

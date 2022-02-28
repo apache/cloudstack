@@ -1650,7 +1650,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool != null && storagePool.isManaged()) {
-                Map<String, String> info = new HashMap<>(3);
+                Map<String, String> info = new HashMap<>();
 
                 info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
                 info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
