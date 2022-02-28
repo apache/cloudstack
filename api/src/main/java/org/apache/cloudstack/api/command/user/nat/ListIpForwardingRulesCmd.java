@@ -89,7 +89,7 @@ public class ListIpForwardingRulesCmd extends BaseListProjectAndAccountResources
     public void execute() {
         Pair<List<? extends FirewallRule>, Integer> result =
             _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId(),
-                this.getProjectId(), this.isRecursive(), this.listAll());
+                this.getProjectId(), this.isRecursiveWithNull(), this.listAll());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
         for (FirewallRule rule : result.first()) {

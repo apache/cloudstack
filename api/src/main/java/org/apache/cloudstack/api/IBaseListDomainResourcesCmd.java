@@ -22,5 +22,7 @@ public interface IBaseListDomainResourcesCmd extends IBaseListCmd {
 
     boolean isRecursive();
 
+    Boolean isRecursiveWithNull();
+
     Long getDomainId();
 }

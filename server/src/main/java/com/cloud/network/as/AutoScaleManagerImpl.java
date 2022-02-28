@@ -628,7 +628,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         SearchBuilder<VO> searchBuilder;
         SearchCriteria<VO> searchCriteria;
         Long domainId;
-        boolean isRecursive;
+        Boolean isRecursive;
         List<Long> permittedAccounts = new ArrayList<Long>();
         ListProjectResourcesCriteria listProjectResourcesCriteria;
         Filter searchFilter;
@@ -639,7 +639,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             this.searchBuilder = dao.createSearchBuilder();
             domainId = cmd.getDomainId();
             String accountName = cmd.getAccountName();
-            isRecursive = cmd.isRecursive();
+            isRecursive = cmd.isRecursiveWithNull();
             boolean listAll = cmd.listAll();
             long startIndex = cmd.getStartIndex();
             long pageSizeVal = cmd.getPageSizeVal();

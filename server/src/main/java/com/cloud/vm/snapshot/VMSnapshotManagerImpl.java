@@ -228,7 +228,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
-                cmd.getDomainId(), cmd.isRecursive(), null);
+                cmd.getDomainId(), cmd.isRecursiveWithNull(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll,
                 false);
         Long domainId = domainIdRecursiveListProject.first();

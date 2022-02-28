@@ -625,7 +625,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     public Pair<List<? extends Site2SiteCustomerGateway>, Integer> searchForCustomerGateways(ListVpnCustomerGatewaysCmd cmd) {
         Long id = cmd.getId();
         Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = cmd.isRecursiveWithNull();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
         long startIndex = cmd.getStartIndex();
@@ -671,7 +671,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Boolean display = cmd.getDisplay();
 
         Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = cmd.isRecursiveWithNull();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
         long startIndex = cmd.getStartIndex();
@@ -721,7 +721,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         Boolean display = cmd.getDisplay();
 
         Long domainId = cmd.getDomainId();
-        boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = cmd.isRecursiveWithNull();
         String accountName = cmd.getAccountName();
         boolean listAll = cmd.listAll();
         long startIndex = cmd.getStartIndex();

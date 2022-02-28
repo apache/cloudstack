@@ -1613,7 +1613,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Boolean restartRequired = cmd.isRestartRequired();
         boolean listAll = cmd.listAll();
-        boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = cmd.isRecursiveWithNull();
         Boolean specifyIpRanges = cmd.isSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
         Boolean canUseForDeploy = cmd.canUseForDeploy();
@@ -1693,7 +1693,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (listAll && domainId == null) {
-            isRecursive = true;
+            isRecursive = isRecursive == null ? true : isRecursive;
+        } else {
+            isRecursive = isRecursive == null ? false : isRecursive;
         }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);

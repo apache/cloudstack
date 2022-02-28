@@ -45,6 +45,11 @@ public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements 
     }
 
     @Override
+    public Boolean isRecursiveWithNull() {
+        return recursive;
+    }
+
+    @Override
     public Long getDomainId() {
         return domainId;
     }
