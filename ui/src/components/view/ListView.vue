@@ -773,7 +773,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 :deep(.ant-table-thead) {
   background-color: #f9f9f9;
 }

@@ -113,9 +113,9 @@
       <a-alert class="setting-action-alert" :message="$t('label.theme.alert')" type="warning" show-icon />
       <a-button
         class="setting-action-btn"
-        @click="saveSetting">
-        <template #icon><copy-outlined /></template>
-        {{ $t('label.save.setting') }}
+        @click="downloadSetting">
+        <template #icon><download-outlined /></template>
+        {{ $t('label.download.setting') }}
       </a-button>
       <a-button
         class="setting-action-btn"
@@ -143,7 +143,7 @@ export default {
   },
   data () {
     return {
-      layoutMode: 'light',
+      layoutMode: this.$store.getters.themeSetting['@layout-mode'] || this.$config.theme['@layout-mode'] || 'light',
       colorPick: this.$store.getters.themeSetting['@primary-color'] || this.$config.theme['@primary-color'],
       navBgColorPick: this.$store.getters.themeSetting['@navigation-background-color'] || this.$config.theme['@navigation-background-color'],
       navTextColorPick: this.$store.getters.themeSetting['@navigation-text-color'] || this.$config.theme['@navigation-text-color'],
@@ -229,14 +229,12 @@ export default {
   methods: {
     fetchData () {
       this.originalSetting = Object.assign({}, this.$config.theme)
-      this.layoutMode = 'light'
-      if (this.$store.getters.darkMode) {
-        this.layoutMode = 'dark'
-      }
+      this.layoutMode = this.$config.theme['@layout-mode'] || 'light'
       this.uiSettings = this.$config.theme
     },
     switchLayoutMode () {
       this.$store.dispatch('SetDarkMode', (this.layoutMode === 'dark'))
+      this.updateSetting('@layout-mode', this.layoutMode)
     },
     switchColor (e) {
       this.colorPick = e.target.value
@@ -252,13 +250,9 @@ export default {
     onClose () {
       this.parentToggleSetting(false)
     },
-    saveSetting () {
-      const loading = this.$message.loading(this.$t('label.save.setting'), 0)
+    downloadSetting () {
       this.$store.dispatch('SetThemeSetting', this.uiSettings)
-      setTimeout(() => {
-        loading()
-        this.$message.success(this.$t('label.success'))
-      }, 1000)
+      this.downloadObjectAsJson(this.uiSettings)
     },
     resetSetting () {
       this.layoutMode = 'light'
@@ -275,71 +269,14 @@ export default {
       window.less.modifyVars(this.$config.theme)
       this.$message.success(this.$t('label.success'))
     },
-    formatConfig (obj, dep) {
-      dep = dep || 1
-      const LN = '\n'
-      const TAB = '  '
-      let indent = ''
-      for (let i = 0; i < dep; i++) {
-        indent += TAB
-      }
-      let isArray = false
-      let arrayLastIsObj = false
-      let str = ''
-      let prefix = '{'
-      let subfix = '}'
-
-      if (Array.isArray(obj)) {
-        isArray = true
-        prefix = '['
-        subfix = ']'
-        str = obj.map((item, index) => {
-          let format = ''
-          if (typeof item === 'function') {
-            //
-          } else if (typeof item === 'object') {
-            arrayLastIsObj = true
-            format = `${LN}${indent}${this.formatConfig(item, dep + 1)},`
-          } else if ((typeof item === 'number' && !isNaN(item)) || typeof item === 'boolean') {
-            format = `${item},`
-          } else if (typeof item === 'string') {
-            format = `'${item}',`
-          }
-          if (index === obj.length - 1) {
-            format = format.substring(0, format.length - 1)
-          } else {
-            arrayLastIsObj = false
-          }
-          return format
-        }).join('')
-      } else if (typeof obj !== 'function' && typeof obj === 'object') {
-        str = Object.keys(obj).map((key, index, keys) => {
-          const val = obj[key]
-          let format = ''
-          if (typeof val === 'function') {
-            //
-          } else if (typeof val === 'object') {
-            format = `${LN}${indent}${key}: ${this.formatConfig(val, dep + 1)},`
-          } else if ((typeof val === 'number' && !isNaN(val)) || typeof val === 'boolean') {
-            format = `${LN}${indent}${key}: ${val},`
-          } else if (typeof val === 'string') {
-            format = `${LN}${indent}${key}: '${val}',`
-          }
-          if (index === keys.length - 1) {
-            format = format.substring(0, format.length - 1)
-          }
-          return format
-        }).join('')
-      }
-      const len = TAB.length
-      if (indent.length >= len) {
-        indent = indent.substring(0, indent.length - len)
-      }
-      if (!isArray || arrayLastIsObj) {
-        subfix = LN + indent + subfix
-      }
-
-      return `${prefix}${str}${subfix}`
+    downloadObjectAsJson (exportObj) {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportObj, null, 2))
+      const downloadAnchorNode = document.createElement('a')
+      downloadAnchorNode.setAttribute('href', dataStr)
+      downloadAnchorNode.setAttribute('download', 'theme.json')
+      document.body.appendChild(downloadAnchorNode)
+      downloadAnchorNode.click()
+      downloadAnchorNode.remove()
     }
   }
 }

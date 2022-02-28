@@ -39,7 +39,7 @@
           <a-popover
             placement="bottomRight"
             trigger="click"
-            v-model="visibleFilter">
+            v-model:visible="visibleFilter">
             <template #content v-if="visibleFilter">
               <a-form
                 style="min-width: 170px"
@@ -186,6 +186,11 @@ export default {
     this.rules = reactive({})
   },
   watch: {
+    visibleFilter (newValue, oldValue) {
+      if (newValue) {
+        this.initFormFieldData()
+      }
+    },
     '$route' (to, from) {
       this.searchQuery = ''
       if (to && to.query && 'q' in to.query) {
