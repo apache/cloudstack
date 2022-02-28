@@ -191,7 +191,9 @@ export default {
     this.collapsed = !this.sidebarOpened
   },
   mounted () {
-    if (this.$store.getters.darkMode) {
+    const layoutMode = this.$config.theme['@layout-mode'] || 'light'
+    this.$store.dispatch('SetDarkMode', (layoutMode === 'dark'))
+    if (layoutMode === 'dark') {
       document.body.classList.add('dark-mode')
     }
     const userAgent = navigator.userAgent

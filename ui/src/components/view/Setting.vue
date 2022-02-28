@@ -143,12 +143,12 @@ export default {
   },
   data () {
     return {
-      layoutMode: this.$store.getters.themeSetting['@layout-mode'] || this.$config.theme['@layout-mode'] || 'light',
-      colorPick: this.$store.getters.themeSetting['@primary-color'] || this.$config.theme['@primary-color'],
-      navBgColorPick: this.$store.getters.themeSetting['@navigation-background-color'] || this.$config.theme['@navigation-background-color'],
-      navTextColorPick: this.$store.getters.themeSetting['@navigation-text-color'] || this.$config.theme['@navigation-text-color'],
-      projectNavBgColorPick: this.$store.getters.themeSetting['@project-nav-background-color'] || this.$config.theme['@project-nav-background-color'],
-      projectNavTextColorPick: this.$store.getters.themeSetting['@project-nav-text-color'] || this.$config.theme['@project-nav-text-color'],
+      layoutMode: this.$config.theme['@layout-mode'] || 'light',
+      colorPick: this.$config.theme['@primary-color'],
+      navBgColorPick: this.$config.theme['@navigation-background-color'],
+      navTextColorPick: this.$config.theme['@navigation-text-color'],
+      projectNavBgColorPick: this.$config.theme['@project-nav-background-color'],
+      projectNavTextColorPick: this.$config.theme['@project-nav-text-color'],
       uiSettings: {},
       originalSetting: {}
     }
@@ -251,7 +251,6 @@ export default {
       this.parentToggleSetting(false)
     },
     downloadSetting () {
-      this.$store.dispatch('SetThemeSetting', this.uiSettings)
       this.downloadObjectAsJson(this.uiSettings)
     },
     resetSetting () {
@@ -262,7 +261,6 @@ export default {
       this.projectNavBgColorPick = this.originalSetting['@project-nav-background-color']
       this.projectNavTextColorPick = this.originalSetting['@project-nav-text-color']
 
-      this.$store.dispatch('SetThemeSetting', {})
       this.switchLayoutMode()
 
       this.$config.theme = this.originalSetting

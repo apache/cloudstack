@@ -36,7 +36,6 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  THEME_SETTING,
   CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
@@ -57,7 +56,6 @@ const user = {
     usebrowsertimezone: false,
     domainStore: {},
     darkMode: false,
-    themeSetting: {},
     defaultListViewPageSize: 20,
     countNotify: 0
   },
@@ -119,10 +117,6 @@ const user = {
       state.darkMode = darkMode
       vueProps.$localStorage.set(DARK_MODE, darkMode)
     },
-    SET_THEME_SETTING (state, setting) {
-      state.themeSetting = setting
-      vueProps.$localStorage.set(THEME_SETTING, setting)
-    },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
     },
@@ -159,8 +153,6 @@ const user = {
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
           const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
           commit('SET_DARK_MODE', darkMode)
-          const themeSetting = vueProps.$localStorage.get(THEME_SETTING, {})
-          commit('SET_THEME_SETTING', themeSetting)
           const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
@@ -193,12 +185,10 @@ const user = {
         const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
         const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
         const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
-        const themeSetting = vueProps.$localStorage.get(THEME_SETTING, {})
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
-        commit('SET_THEME_SETTING', themeSetting)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
@@ -384,9 +374,6 @@ const user = {
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
-    },
-    SetThemeSetting ({ commit }, setting) {
-      commit('SET_THEME_SETTING', setting)
     }
   }
 }
