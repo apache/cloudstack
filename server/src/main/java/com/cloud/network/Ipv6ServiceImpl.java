@@ -275,7 +275,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         final String guestType = selectedVlan.getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0l,
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
                 ipv6Addr.toString(), false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
         return new Pair<>(ipv6Addr.toString(), selectedVlan);
