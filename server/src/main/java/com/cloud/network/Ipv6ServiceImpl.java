@@ -271,7 +271,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
         IPv6Address ipv6Addr = NetUtils.EUI64Address(iPv6Network, nicMacAddress);
         String event = EventTypes.EVENT_NET_IP6_ASSIGN;
-        String description = "Assigned public IPv6 address: " + ipv6Addr.toString() + " for network ID: " + network.getId();
+        String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Addr,  network.getUuid());
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         final String guestType = selectedVlan.getVlanType().toString();
@@ -306,7 +306,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public void releasePublicIpv6ForNic(Network network, String nicIpv6Address) {
         String event = EventTypes.EVENT_NET_IP6_RELEASE;
-        String description = "Releasing public IPv6 address: " + nicIpv6Address + " from network ID: " + network.getId();
+        String description = String.format("Releasing public IPv6 address: %s from network ID: %s", nicIpv6Address,  network.getUuid());
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
