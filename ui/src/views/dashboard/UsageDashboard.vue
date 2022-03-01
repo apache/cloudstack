@@ -17,8 +17,8 @@
 
 <template>
   <a-row class="usage-dashboard" :gutter="12">
-    <a-col :xl="16">
-      <a-row :gutter="24">
+    <a-col :xl="16" style="padding-left: 0; padding-right: 0;">
+      <a-row>
         <a-card style="width: 100%">
           <a-tabs
             v-if="showProject"
@@ -40,30 +40,31 @@
               </a-tab-pane>
             </template>
           </a-tabs>
-          <a-col
-            v-else
-            class="usage-dashboard-chart-tile"
-            :xs="12"
-            :md="8"
-            v-for="stat in stats"
-            :key="stat.type">
-            <a-card
-              class="usage-dashboard-chart-card"
-              :bordered="false"
-              :loading="loading"
-              :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
-              <router-link :to="{ path: stat.path }">
-                <div
-                  class="usage-dashboard-chart-card-inner">
-                  <h3>{{ stat.name }}</h3>
-                  <h2>
-                    <render-icon :icon="stat.icon" />
-                    {{ stat.count == undefined ? 0 : stat.count }}
-                  </h2>
-                </div>
-              </router-link>
-            </a-card>
-          </a-col>
+          <a-row :gutter="24" v-else>
+            <a-col
+              class="usage-dashboard-chart-tile"
+              :xs="12"
+              :md="8"
+              v-for="stat in stats"
+              :key="stat.type">
+              <a-card
+                class="usage-dashboard-chart-card"
+                :bordered="false"
+                :loading="loading"
+                :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
+                <router-link :to="{ path: stat.path }">
+                  <div
+                    class="usage-dashboard-chart-card-inner">
+                    <h3>{{ stat.name }}</h3>
+                    <h2>
+                      <render-icon :icon="stat.icon" />
+                      {{ stat.count == undefined ? 0 : stat.count }}
+                    </h2>
+                  </div>
+                </router-link>
+              </a-card>
+            </a-col>
+          </a-row>
         </a-card>
       </a-row>
     </a-col>

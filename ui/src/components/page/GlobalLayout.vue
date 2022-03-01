@@ -65,7 +65,7 @@
         </a-drawer>
       </template>
 
-      <drawer :visible="showSetting" placement="right" v-if="isDevelopmentMode || allowSettingTheme">
+      <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
         <template #handler>
           <a-button type="primary" size="large">
             <close-outlined v-if="showSetting" />
@@ -119,6 +119,7 @@ import GlobalFooter from '@/components/page/GlobalFooter'
 import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
+import { isAdmin } from '@/role'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
 
@@ -144,6 +145,9 @@ export default {
     ...mapState({
       mainMenu: state => state.permission.addRouters
     }),
+    isAdmin () {
+      return isAdmin()
+    },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
     },
