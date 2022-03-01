@@ -3557,7 +3557,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
                 }
 
-                // Perform account permission check
                 _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
 
                 networkList.add(network);
