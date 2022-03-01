@@ -3533,6 +3533,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
                 }
 
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
             isSecurityGroupEnabledNetworkUsed = true;
@@ -3556,9 +3558,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 // Perform account permission check
-                if (network.getAclType() == ACLType.Account) {
-                    _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
-                }
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
         }
