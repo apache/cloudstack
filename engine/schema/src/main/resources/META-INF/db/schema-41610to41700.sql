@@ -221,7 +221,16 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`id`;
 
 
-ALTER TABLE volumes ADD COLUMN external_uuid varchar(40) DEFAULT null;
+DELIMITER //
+CREATE PROCEDURE create_external_uuid_in_volumes()
+  BEGIN
+    SELECT count(*) INTO @count FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = 'volumes' AND table_schema='cloud' AND column_name = 'external_uuid';
+    IF @count < 1 THEN ALTER TABLE cloud.volumes ADD COLUMN external_uuid VARCHAR(40) DEFAULT null;
+    END IF;
+  END //
+DELIMITER ;
+CALL create_external_uuid_in_volumes;
+DROP PROCEDURE create_external_uuid_in_volumes;
 
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
