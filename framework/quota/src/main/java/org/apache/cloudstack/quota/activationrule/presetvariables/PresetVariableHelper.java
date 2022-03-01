@@ -262,6 +262,7 @@ public class PresetVariableHelper {
         loadPresetVariableValueForTemplateAndIso(usageRecord, value);
         loadPresetVariableValueForSnapshot(usageRecord, value);
         loadPresetVariableValueForNetworkOffering(usageRecord, value);
+        loadPresetVariableValueForVmSnapshot(usageRecord, value);
 
         return value;
     }
