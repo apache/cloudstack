@@ -1240,6 +1240,7 @@
 "label.keyboard": "Keyboard language",
 "label.keyboardtype": "Keyboard type",
 "label.keypair": "SSH Key Pair",
+"label.keypairs": "SSH Key Pair(s)",
 "label.kubeconfig.cluster": "Kubernetes Cluster Config",
 "label.kubernetes": "Kubernetes",
 "label.kubernetes.access.details": "The kubernetes nodes can be accessed via ssh using: <br> <code><b> ssh -i [ssh_key] -p [port_number] cloud@[public_ip_address] </b></code> <br><br> where, <br> <code><b>ssh_key:</b></code> points to the ssh private key file corresponding to the key that was associated while creating the Kubernetes cluster. If no ssh key was provided during Kubernetes cluster creation, use the ssh private key of the management server. <br> <code><b>port_number:</b></code> can be obtained from the Port Forwarding Tab (Public Port column)",

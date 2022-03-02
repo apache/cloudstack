@@ -1072,7 +1072,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyPairName != null) {
-            sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
+            sb.and("keyPairName", sb.entity().getKeypairNames(), SearchCriteria.Op.FIND_IN_SET);
         }
 
         if (!isRootAdmin) {
