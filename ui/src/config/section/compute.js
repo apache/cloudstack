@@ -346,7 +346,7 @@ export default {
           dataView: true,
           show: (record) => { return ['Stopped'].includes(record.state) },
           popup: true,
-          component: () => import('@/views/compute/ResetSshKeyPair')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ResetSshKeyPair')))
         },
         {
           api: 'assignVirtualMachine',
