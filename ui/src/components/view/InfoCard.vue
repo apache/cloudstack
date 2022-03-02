@@ -361,11 +361,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.keypair">
-          <div class="resource-detail-item__label">{{ $t('label.keypair') }}</div>
+        <div class="resource-detail-item" v-if="resource.keypairs">
+          <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="key" />
-            <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
+            <li v-for="keypair in keypairs" :key="keypair">
+              <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
+            </li>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
@@ -812,6 +814,15 @@ export default {
       }
 
       return null
+    },
+    keypairs () {
+      if (!this.resource.keypairs) {
+        return null
+      }
+      if (typeof this.resource.keypairs === 'string' || this.resource.keypairs instanceof String) {
+        return this.resource.keypairs.split(',')
+      }
+      return [this.resource.keypairs.toString()]
     },
     templateIcon () {
       return this.resource.templateid

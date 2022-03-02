@@ -1072,7 +1072,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (keyPairName != null) {
-            sb.and("keyPairName", sb.entity().getKeypairName(), SearchCriteria.Op.EQ);
+            sb.and("keyPairName", sb.entity().getKeypairNames(), SearchCriteria.Op.FIND_IN_SET);
         }
 
         if (!isRootAdmin) {
@@ -2932,10 +2932,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
                 }
-            } else { // domain + all ancestors
-                sc.addAnd("systemUse", SearchCriteria.Op.EQ, false); // non-root users should not see system offering at all
             }
-
         }
 
         if (volumeId != null && storagePoolId != null) {

@@ -51,7 +51,7 @@
                 :key="index"
                 :label="field.name==='keyword' ?
                   ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
-                  (field.name==='entitytype' ? $t('label.annotation.entity.type') : $t('label.' + field.name))">
+                  (field.name==='entitytype' ? $t('label.entity.type') : $t('label.' + field.name))">
                 <a-select
                   allowClear
                   v-if="field.type==='list'"
