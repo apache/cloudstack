@@ -74,6 +74,11 @@
           }"
           :dataSource="groups.opts" />
       </a-form-item>
+      <a-form-item :label="$t('label.userdata')">
+        <a-textarea
+          v-decorator="['userdata']">
+        </a-textarea>
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
@@ -145,7 +150,6 @@ export default {
     },
     fetchTemplateData () {
       const params = {}
-      console.log('templateid ' + this.resource.templateid)
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
@@ -198,6 +202,14 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
+    sanitizeReverse (value) {
+      const reversedValue = value
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+
+      return reversedValue
+    },
     handleSubmit (e) {
       e.preventDefault()
       this.form.validateFieldsAndScroll((err, values) => {
@@ -215,6 +227,9 @@ export default {
           params.haenable = values.haenable
         }
         params.group = values.group
+        if (values.userdata && values.userdata.length > 0) {
+          params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        }
         this.loading = true
 
         api('updateVirtualMachine', params).then(json => {
