@@ -130,10 +130,10 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent.zoneType?.value || null
     },
     hypervisor () {
-      return this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      return this.prefillContent.hypervisor?.value || null
     },
     localstorageenabled () {
       return this.prefillContent?.localstorageenabled?.value || false
@@ -143,7 +143,7 @@ export default {
     },
     steps () {
       const steps = []
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -570,7 +570,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.access_key',
+          title: 'label.s3.access.key',
           key: 'secondaryStorageAccessKey',
           required: true,
           placeHolder: 'message.error.access.key',
@@ -579,7 +579,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.secret_key',
+          title: 'label.s3.secret.key',
           key: 'secondaryStorageSecretKey',
           required: true,
           placeHolder: 'message.error.secret.key',
@@ -605,7 +605,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.use_https',
+          title: 'label.s3.use.https',
           key: 'secondaryStorageHttps',
           required: false,
           switch: true,
@@ -615,7 +615,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.connection_timeoutt',
+          title: 'label.s3.connection.timeout',
           key: 'secondaryStorageConnectionTimeout',
           required: false,
           display: {
@@ -623,7 +623,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.max_error_retry',
+          title: 'label.s3.max.error.retry',
           key: 'secondaryStorageMaxError',
           required: false,
           display: {
@@ -631,7 +631,7 @@ export default {
           }
         },
         {
-          title: 'label.s3.socket_timeout',
+          title: 'label.s3.socket.timeout',
           key: 'secondaryStorageSocketTimeout',
           required: false,
           display: {
@@ -653,7 +653,8 @@ export default {
           required: true,
           placeHolder: 'message.error.s3nfs.server',
           display: {
-            secondaryStorageProvider: ['S3']
+            secondaryStorageProvider: ['S3'],
+            secondaryStorageNFSStaging: true
           }
         },
         {
@@ -662,7 +663,8 @@ export default {
           required: true,
           placeHolder: 'message.error.s3nfs.path',
           display: {
-            secondaryStorageProvider: ['S3']
+            secondaryStorageProvider: ['S3'],
+            secondaryStorageNFSStaging: true
           }
         },
         {
@@ -677,7 +679,8 @@ export default {
         {
           title: 'label.account',
           key: 'secondaryStorageAccount',
-          required: false,
+          required: true,
+          placeHolder: 'message.error.swift.account',
           display: {
             secondaryStorageProvider: ['Swift']
           }
@@ -685,7 +688,8 @@ export default {
         {
           title: 'label.username',
           key: 'secondaryStorageUsername',
-          required: false,
+          required: true,
+          placeHolder: 'message.error.swift.username',
           display: {
             secondaryStorageProvider: ['Swift']
           }
@@ -693,6 +697,15 @@ export default {
         {
           title: 'label.key',
           key: 'secondaryStorageKey',
+          required: true,
+          placeHolder: 'message.error.swift.key',
+          display: {
+            secondaryStorageProvider: ['Swift']
+          }
+        },
+        {
+          title: 'label.storagepolicy',
+          key: 'secondaryStoragePolicy',
           required: false,
           display: {
             secondaryStorageProvider: ['Swift']
@@ -713,7 +726,7 @@ export default {
     }
   },
   created () {
-    this.currentStep = this.prefillContent.resourceStep ? this.prefillContent.resourceStep : 0
+    this.currentStep = this.prefillContent.resourceStep?.resourceStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)
     }
@@ -791,7 +804,7 @@ export default {
       }
     },
     fetchScope () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       const scope = []
       if (['KVM', 'VMware', 'Hyperv'].includes(hypervisor)) {
         scope.push({
@@ -812,7 +825,7 @@ export default {
       this.$forceUpdate()
     },
     fetchProtocol () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       const protocols = []
       if (hypervisor === 'KVM') {
         protocols.push({
@@ -903,7 +916,7 @@ export default {
       this.$forceUpdate()
     },
     async fetchConfigurationSwitch () {
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor?.value || null
       this.$emit('fieldsChanged', { dvSwitchEnabled: { value: false } })
       this.$emit('fieldsChanged', { vSwitchEnabled: { value: false } })
       if (hypervisor && hypervisor === 'VMware') {

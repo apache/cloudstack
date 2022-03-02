@@ -84,7 +84,8 @@ export default {
   },
   data () {
     return {
-      image: ''
+      image: '',
+      countNotify: 0
     }
   },
   created () {
@@ -92,6 +93,12 @@ export default {
     eventBus.$on('refresh-header', () => {
       this.getIcon()
     })
+    this.$store.watch(
+      (state, getters) => getters.countNotify,
+      (newValue, oldValue) => {
+        this.countNotify = newValue
+      }
+    )
   },
   watch: {
     image () {
@@ -137,6 +144,10 @@ export default {
           description: err.message
         })
       })
+    },
+    clearAllNotify () {
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+      this.$notification.destroy()
     }
   }
 }

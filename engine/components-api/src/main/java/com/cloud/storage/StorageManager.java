@@ -143,6 +143,9 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
             "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<Boolean>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
+            "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
+
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
@@ -228,9 +231,9 @@ public interface StorageManager extends StorageService {
 
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
-    boolean storagePoolHasEnoughIops(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
     /**
      * This comment is relevant to managed storage only.
@@ -254,13 +257,13 @@ public interface StorageManager extends StorageService {
      *
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volume, StoragePool pool, Long clusterId);
 
     boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
 
     boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
-    boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
+    boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 

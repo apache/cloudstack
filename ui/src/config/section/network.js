@@ -38,7 +38,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'zonename', 'account', 'domain']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -99,7 +99,7 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: ['cleanup'],
+          args: (record) => record.vpcid == null ? ['cleanup'] : [], // if it is a tier in a VPC and so it has a vpc do not allow "cleanup
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,

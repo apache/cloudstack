@@ -21,7 +21,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.StringUtils;
 import com.google.common.base.Preconditions;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -32,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AnnotationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = ListAnnotationsCmd.APINAME, description = "Lists annotations.", responseObject = AnnotationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.11", authorized = {RoleType.Admin})
@@ -84,7 +84,7 @@ public class ListAnnotationsCmd extends BaseListCmd {
             NetworkRuleConflictException {
         // preconditions to check:
         // if entity type is null entity uuid can not have a value
-        Preconditions.checkArgument(StringUtils.isNotBlank(entityType) ? ! StringUtils.isNotBlank(uuid) : true,
+        Preconditions.checkArgument(StringUtils.isNotBlank(entityType) ? StringUtils.isBlank(uuid) : true,
                 "I can search for an anotation on an entity or for a specific annotation, not both");
         // if uuid has a value entity type and entity uuid can not have a value
         Preconditions.checkArgument(StringUtils.isNotBlank(uuid) ? entityType == null && entityUuid == null : true,

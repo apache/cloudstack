@@ -17,28 +17,6 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Level;
-
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -84,7 +62,6 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -97,8 +74,29 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class KubernetesClusterResourceModifierActionWorker extends KubernetesClusterActionWorker {
 
@@ -154,7 +152,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (!Strings.isNullOrEmpty(sshKeyPair)) {
+        if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
@@ -164,54 +162,52 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        /* genarate /.docker/config.json file on the nodes only if Kubernetes cluster is created to
+
+        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
+
+        return k8sNodeConfig;
+    }
+
+    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
+        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
          * use docker private registry */
-        String dockerUserName = null;
-        String dockerPassword = null;
-        String dockerRegistryUrl = null;
-        String dockerRegistryEmail = null;
+        String registryUsername = null;
+        String registryPassword = null;
+        String registryUrl = null;
+
         List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
         for (KubernetesClusterDetailsVO detail : details) {
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
-                dockerUserName = detail.getValue();
+                registryUsername = detail.getValue();
             }
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
-                dockerPassword = detail.getValue();
+                registryPassword = detail.getValue();
             }
             if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
-                dockerRegistryUrl = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_EMAIL)) {
-                dockerRegistryEmail = detail.getValue();
+                registryUrl = detail.getValue();
             }
         }
-        if (!Strings.isNullOrEmpty(dockerUserName) && !Strings.isNullOrEmpty(dockerPassword)) {
-            // do write file for  /.docker/config.json through the code instead of k8s-node.yml as we can no make a section
-            // optional or conditionally applied
-            String dockerConfigString = "write_files:\n" +
-                    "  - path: /.docker/config.json\n" +
-                    "    owner: core:core\n" +
-                    "    permissions: '0644'\n" +
-                    "    content: |\n" +
-                    "      {\n" +
-                    "        \"auths\": {\n" +
-                    "          {{docker.url}}: {\n" +
-                    "            \"auth\": {{docker.secret}},\n" +
-                    "            \"email\": {{docker.email}}\n" +
-                    "          }\n" +
-                    "         }\n" +
-                    "      }";
-            k8sNodeConfig = k8sNodeConfig.replace("write_files:", dockerConfigString);
-            final String dockerUrlKey = "{{docker.url}}";
-            final String dockerAuthKey = "{{docker.secret}}";
-            final String dockerEmailKey = "{{docker.email}}";
-            final String usernamePasswordKey = dockerUserName + ":" + dockerPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(StringUtils.getPreferredCharset()));
-            k8sNodeConfig = k8sNodeConfig.replace(dockerUrlKey, "\"" + dockerRegistryUrl + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerAuthKey, "\"" + base64Auth + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerEmailKey, "\"" + dockerRegistryEmail + "\"");
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
+            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
+            String runCmd = "- bash -x /opt/bin/setup-containerd";
+
+            String registryEp = registryUrl.split("://")[1];
+            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
+            final String registryUrlKey = "{{registry.url}}";
+            final String registryUrlEpKey = "{{registry.url.endpoint}}";
+            final String registryAuthKey = "{{registry.token}}";
+            final String registryUname = "{{registry.username}}";
+            final String registryPsswd = "{{registry.password}}";
+
+            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
+            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
+            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
+            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
+            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
+            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
         }
-        return k8sNodeConfig;
+        return k8sConfig;
     }
 
     private Pair<ApiConstants.BootType, ApiConstants.BootMode> getClusterBootTypeAndMode() {
@@ -235,6 +231,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         long rootDiskSize = kubernetesCluster.getNodeRootDiskSize();
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
+        }
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
         }
         // ToDo: check if template is deploy-as-is on VMware
         Pair<ApiConstants.BootType, ApiConstants.BootMode> bootTypeAndMode = getClusterBootTypeAndMode();
@@ -262,7 +261,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     continue;
                 }
                 hostDao.loadHostTags(h);
-                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                if (StringUtils.isNotEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
                     continue;
                 }
                 int reserved = hp.second();
@@ -402,11 +401,15 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
+        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        List<String> keypairs = new ArrayList<String>();
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, getClusterVmCustomParameters(), null, null, null, null, true, UserVmManager.CKS_NODE);
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                null, addrs, null, null, null, getClusterVmCustomParameters(), null, null, null, null, true, UserVmManager.CKS_NODE, null);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
@@ -641,7 +644,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             if (enable) {
                 String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
                     kubernetesCluster.getUuid(), maxSize, minSize);
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 60000);
 
                 // Maybe the file isn't present. Try and copy it
@@ -656,7 +659,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     }
 
                     // If at first you don't succeed ...
-                    result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                         pkFile, null, command, 10000, 10000, 60000);
                     if (!result.first()) {
                         throw new CloudRuntimeException(result.second());
@@ -664,7 +667,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 }
                 updateKubernetesClusterEntry(true, minSize, maxSize);
             } else {
-                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
                         10000, 10000, 60000);
                 if (!result.first()) {
@@ -679,6 +682,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             return false;
         } finally {
             // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            updateLoginUserDetails(null);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         }
     }

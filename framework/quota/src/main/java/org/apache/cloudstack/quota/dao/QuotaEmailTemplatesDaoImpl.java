@@ -29,7 +29,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @Component
 public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplatesVO, Long> implements QuotaEmailTemplatesDao {
@@ -51,7 +51,7 @@ public class QuotaEmailTemplatesDaoImpl extends GenericDaoBase<QuotaEmailTemplat
             @Override
             public List<QuotaEmailTemplatesVO> doInTransaction(final TransactionStatus status) {
                 SearchCriteria<QuotaEmailTemplatesVO> sc = QuotaEmailTemplateSearch.create();
-                if (!Strings.isNullOrEmpty(templateName)) {
+                if (StringUtils.isNotEmpty(templateName)) {
                     sc.setParameters("template_name", templateName);
                 }
                 return listBy(sc);

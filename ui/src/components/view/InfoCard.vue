@@ -361,11 +361,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.keypair">
-          <div class="resource-detail-item__label">{{ $t('label.keypair') }}</div>
+        <div class="resource-detail-item" v-if="resource.keypairs">
+          <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">
             <a-icon type="key" />
-            <router-link :to="{ path: '/ssh/' + resource.keypair }">{{ resource.keypair }}</router-link>
+            <li v-for="keypair in keypairs" :key="keypair">
+              <router-link :to="{ path: '/ssh/' + keypair }" style="margin-right: 5px">{{ keypair }}</router-link>
+            </li>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
@@ -605,7 +607,7 @@
         <div v-for="item in $route.meta.related" :key="item.path">
           <router-link
             v-if="$router.resolve('/' + item.name).route.name !== '404'"
-            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : resource.id) }">
+            :to="{ path: '/' + item.name + '?' + item.param + '=' + (item.value ? resource[item.value] : item.param === 'account' ? resource.name + '&domainid=' + resource.domainid : item.param === 'keypair' ? resource.name : resource.id) }">
             <a-button style="margin-right: 10px" :icon="$router.resolve('/' + item.name).route.meta.icon" >
               {{ $t('label.view') + ' ' + $t(item.title) }}
             </a-button>
@@ -651,7 +653,7 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="!isStatic && resourceType && 'listTags' in $store.getters.apis">
+      <div class="account-center-tags" v-if="!isStatic && resourceType && tagsSupportingResourceTypes.includes(this.resourceType) && 'listTags' in $store.getters.apis">
         <a-divider/>
         <a-spin :spinning="loadingTags">
           <div class="title">{{ $t('label.tags') }}</div>
@@ -772,10 +774,12 @@ export default {
       this.showKeys = false
       this.setData()
 
-      if ('tags' in this.resource) {
-        this.tags = this.resource.tags
-      } else if (this.resourceType) {
-        this.getTags()
+      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
+        if ('tags' in this.resource) {
+          this.tags = this.resource.tags
+        } else if (this.resourceType) {
+          this.getTags()
+        }
       }
       if ('apikey' in this.resource) {
         this.getUserKeys()
@@ -794,6 +798,12 @@ export default {
     await this.getIcons()
   },
   computed: {
+    tagsSupportingResourceTypes () {
+      return ['UserVm', 'Template', 'ISO', 'Volume', 'Snapshot', 'Backup', 'Network',
+        'LoadBalancer', 'PortForwardingRule', 'FirewallRule', 'SecurityGroup', 'SecurityGroupRule',
+        'PublicIpAddress', 'Project', 'Account', 'Vpc', 'NetworkACL', 'StaticRoute', 'VMSnapshot',
+        'RemoteAccessVpn', 'User', 'SnapshotPolicy', 'VpcOffering']
+    },
     name () {
       return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
@@ -804,6 +814,15 @@ export default {
       }
 
       return null
+    },
+    keypairs () {
+      if (!this.resource.keypairs) {
+        return null
+      }
+      if (typeof this.resource.keypairs === 'string' || this.resource.keypairs instanceof String) {
+        return this.resource.keypairs.split(',')
+      }
+      return [this.resource.keypairs.toString()]
     },
     templateIcon () {
       return this.resource.templateid

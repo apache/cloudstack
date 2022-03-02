@@ -63,6 +63,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
 
         cls.testClient = super(TestRouterDHCPHosts, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls._cleanup = []
 
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -86,12 +87,14 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.logger.debug("Creating Service Offering on zone %s" % (cls.zone.id))
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.services["isolated_network_offering"]["egress_policy"] = "true"
 
@@ -99,6 +102,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         cls.network_offering = NetworkOffering.create(cls.api_client,
                                                        cls.services["isolated_network_offering"],
                                                        conservemode=True)
+        cls._cleanup.append(cls.network_offering)
 
         cls.network_offering.update(cls.api_client, state='Enabled')
 
@@ -109,6 +113,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
                                       domainid=cls.account.domainid,
                                       networkofferingid=cls.network_offering.id,
                                       zoneid=cls.zone.id)
+        cls._cleanup.append(cls.network)
 
         cls.logger.debug("Creating VM1 for Account %s using offering %s with IP 10.1.1.50" % (cls.account.name, cls.service_offering.id))
         cls.vm_1 = VirtualMachine.create(cls.api_client,
@@ -119,6 +124,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)],
                                          ipaddress="10.1.1.50")
+        cls._cleanup.append(cls.vm_1)
 
         cls.logger.debug("Creating VM2 for Account %s using offering %s with IP 10.1.1.51" % (cls.account.name, cls.service_offering.id))
         cls.vm_2 = VirtualMachine.create(cls.api_client,
@@ -129,6 +135,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)],
                                          ipaddress="10.1.1.51")
+        cls._cleanup.append(cls.vm_2)
 
         cls.services["natrule1"] = {
             "privateport": 22,
@@ -150,23 +157,11 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             "forward": "FORWARD"
         }
 
-        cls._cleanup = [
-            cls.vm_2,
-            cls.network,
-            cls.network_offering,
-            cls.service_offering,
-            cls.account
-        ]
-
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterDHCPHosts, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -175,11 +170,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterDHCPHosts, self).tearDown()
 
     def test_ssh_command(self, vm, nat_rule, rule_label):
         result = 'failed'
@@ -294,7 +285,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         public_ip = public_ips[0]
 
         self.logger.debug("Creating Firewall rule for VM ID: %s" % self.vm_1.id)
-        FireWallRule.create(
+        fwr1 = FireWallRule.create(
             self.apiclient,
             ipaddressid=public_ip.id,
             protocol=self.services["natrule1"]["protocol"],
@@ -302,6 +293,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             startport=self.services["natrule1"]["publicport"],
             endport=self.services["natrule1"]["publicport"]
         )
+        self.cleanup.append(fwr1)
 
         self.logger.debug("Creating NAT rule for VM ID: %s" % self.vm_1.id)
         # Create NAT rule
@@ -311,9 +303,10 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             self.services["natrule1"],
             public_ip.id
         )
+        self.cleanup.append(nat_rule1)
 
         self.logger.debug("Creating Firewall rule for VM ID: %s" % self.vm_2.id)
-        FireWallRule.create(
+        fwr2 = FireWallRule.create(
             self.apiclient,
             ipaddressid=public_ip.id,
             protocol=self.services["natrule2"]["protocol"],
@@ -321,6 +314,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             startport=self.services["natrule2"]["publicport"],
             endport=self.services["natrule2"]["publicport"]
         )
+        self.cleanup.append(fwr2)
 
         self.logger.debug("Creating NAT rule for VM ID: %s" % self.vm_2.id)
         # Create NAT rule
@@ -330,6 +324,7 @@ class TestRouterDHCPHosts(cloudstackTestCase):
             self.services["natrule2"],
             public_ip.id
         )
+        self.cleanup.append(nat_rule2)
 
         nat_rules = list_nat_rules(
             self.apiclient,
@@ -369,8 +364,11 @@ class TestRouterDHCPHosts(cloudstackTestCase):
         self.test_dhcphosts(self.vm_1, router)
         self.test_dhcphosts(self.vm_2, router)
 
+        #TODO vm1 should not be appended/created at class level
         self.logger.debug("Deleting and Expunging VM %s with ip %s" % (self.vm_1.id, self.vm_1.nic[0].ipaddress))
         self.vm_1.delete(self.apiclient)
+        self._cleanup.remove(self.vm_1)
+        self.cleanup.remove(nat_rule1)
 
         self.logger.debug("Creating new VM using the same IP as the one which was deleted => IP 10.1.1.50")
         self.vm_1 = VirtualMachine.create(self.apiclient,
@@ -381,7 +379,6 @@ class TestRouterDHCPHosts(cloudstackTestCase):
                                          serviceofferingid=self.service_offering.id,
                                          networkids=[str(self.network.id)],
                                          ipaddress="10.1.1.50")
-
         self.cleanup.append(self.vm_1)
 
         self.logger.debug("Testing DHCP hosts for VMs %s and %s" % (self.vm_1.id, self.vm_2.id))
@@ -403,6 +400,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
 
         cls.testClient = super(TestRouterDHCPOpts, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls._cleanup = []
 
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
@@ -426,12 +424,14 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.logger.debug("Creating Service Offering on zone %s" % (cls.zone.id))
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.services["isolated_network_offering"]["egress_policy"] = "true"
 
@@ -439,6 +439,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
         cls.network_offering = NetworkOffering.create(cls.api_client,
                                                        cls.services["isolated_network_offering"],
                                                        conservemode=True)
+        cls._cleanup.append(cls.network_offering)
 
         cls.network_offering.update(cls.api_client, state='Enabled')
 
@@ -452,6 +453,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
                                       domainid=cls.account.domainid,
                                       networkofferingid=cls.network_offering.id,
                                       zoneid=cls.zone.id)
+        cls._cleanup.append(cls.network1)
         cls.services["network"]["name"] = "Test Network 2"
         cls.services["network"]["gateway"] = "10.1.2.1"
         cls.services["network"]["netmask"] = "255.255.255.0"
@@ -461,6 +463,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
                                       domainid=cls.account.domainid,
                                       networkofferingid=cls.network_offering.id,
                                       zoneid=cls.zone.id)
+        cls._cleanup.append(cls.network2)
         cls.logger.debug("Creating VM1 for Account %s using offering %s with IP 10.1.1.50" % (cls.account.name, cls.service_offering.id))
         cls.vm_1 = VirtualMachine.create(cls.api_client,
                                          cls.services["virtual_machine"],
@@ -469,6 +472,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
                                          domainid=cls.domain.id,
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network1.id),str(cls.network2.id)])
+        cls._cleanup.append(cls.vm_1)
 
         cls.logger.debug("Creating VM2 for Account %s using offering %s with IP 10.1.1.51" % (cls.account.name, cls.service_offering.id))
         cls.vm_2 = VirtualMachine.create(cls.api_client,
@@ -478,6 +482,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
                                          domainid=cls.domain.id,
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network2.id),str(cls.network1.id)])
+        cls._cleanup.append(cls.vm_2)
 
         cls.services["natrule1"] = {
             "privateport": 22,
@@ -499,25 +504,11 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             "forward": "FORWARD"
         }
 
-        cls._cleanup = [
-            cls.vm_1,
-            cls.vm_2,
-            cls.network1,
-            cls.network2,
-            cls.network_offering,
-            cls.service_offering,
-            cls.account
-        ]
-
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestRouterDHCPOpts, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -526,30 +517,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
-
-    def test_ssh_command(self, vm, nat_rule, rule_label):
-        result = 'failed'
-        try:
-            ssh_command = "ping -c 3 8.8.8.8"
-            self.logger.debug("SSH into VM with IP: %s" % nat_rule.ipaddress)
-
-            ssh = vm.get_ssh_client(ipaddress=nat_rule.ipaddress, port=self.services[rule_label]["publicport"], retries=5)
-            result = str(ssh.execute(ssh_command))
-
-            self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
-        except:
-            self.fail("Failed to SSH into VM - %s" % (nat_rule.ipaddress))
-
-        self.assertEqual(
-                         result.count(" 0% packet loss"),
-                         1,
-                         "Ping to outside world from VM should be successful"
-                         )
+        super(TestRouterDHCPOpts, self).tearDown()
 
     def test_dhcphopts(self, ipaddress, router):
         hosts = list_hosts(
@@ -684,7 +652,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
         network2_public_ip = public_ips[0]
 
         self.logger.debug("Creating Firewall rule for VM ID: %s" % self.vm_1.id)
-        FireWallRule.create(
+        fwr1 = FireWallRule.create(
             self.apiclient,
             ipaddressid=network1_public_ip.id,
             protocol=self.services["natrule1"]["protocol"],
@@ -692,6 +660,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             startport=self.services["natrule1"]["publicport"],
             endport=self.services["natrule1"]["publicport"]
         )
+        self.cleanup.append(fwr1)
 
         self.logger.debug("Creating NAT rule for VM ID: %s" % self.vm_1.id)
         # Create NAT rule
@@ -701,9 +670,10 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             self.services["natrule1"],
             network1_public_ip.id
         )
+        self.cleanup.append(nat_rule1)
 
         self.logger.debug("Creating Firewall rule for VM ID: %s" % self.vm_2.id)
-        FireWallRule.create(
+        fwr2 = FireWallRule.create(
             self.apiclient,
             ipaddressid=network2_public_ip.id,
             protocol=self.services["natrule2"]["protocol"],
@@ -711,6 +681,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             startport=self.services["natrule2"]["publicport"],
             endport=self.services["natrule2"]["publicport"]
         )
+        self.cleanup.append(fwr2)
 
         self.logger.debug("Creating NAT rule for VM ID: %s" % self.vm_2.id)
         # Create NAT rule
@@ -720,6 +691,7 @@ class TestRouterDHCPOpts(cloudstackTestCase):
             self.services["natrule2"],
             network2_public_ip.id
         )
+        self.cleanup.append(nat_rule2)
 
         nat_rules = list_nat_rules(
             self.apiclient,

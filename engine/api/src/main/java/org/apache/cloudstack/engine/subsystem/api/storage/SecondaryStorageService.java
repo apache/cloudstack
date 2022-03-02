@@ -39,5 +39,6 @@ public interface SecondaryStorageService {
         }
 
     }
-    AsyncCallFuture<DataObjectResult> migrateData(DataObject srcDataObject, DataStore srcDatastore, DataStore destDatastore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain);
+    AsyncCallFuture<DataObjectResult> migrateData(DataObject srcDataObject, DataStore srcDatastore, DataStore destDatastore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain,
+                                                  Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain);
 }

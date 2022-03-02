@@ -71,6 +71,7 @@ public class CSExceptionErrorCode {
             ExceptionErrorCodeMap.put("com.cloud.exception.RequestLimitException", 4545);
             ExceptionErrorCodeMap.put("com.cloud.exception.StorageConflictException", 4550);
             ExceptionErrorCodeMap.put("com.cloud.exception.UnavailableCommandException", 4555);
+            ExceptionErrorCodeMap.put("com.cloud.exception.OperationTimedoutException", 4560);
 
             // Have a special error code for ServerApiException when it is
             // thrown in a standalone manner when failing to detect any of the above

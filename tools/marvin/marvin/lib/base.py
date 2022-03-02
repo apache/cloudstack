@@ -2305,6 +2305,12 @@ class ServiceOffering:
         if "dynamicscalingenabled" in services:
             cmd.dynamicscalingenabled = services["dynamicscalingenabled"]
 
+        if "diskofferingstrictness" in services:
+            cmd.diskofferingstrictness = services["diskofferingstrictness"]
+
+        if "diskofferingid" in services:
+            cmd.diskofferingid = services["diskofferingid"]
+
         # Service Offering private to that domain
         if domainid:
             cmd.domainid = domainid
@@ -4273,6 +4279,26 @@ class Configurations:
         return (apiclient.listCapabilities(cmd))
 
 
+    @classmethod
+    def reset(cls, apiclient, name, zoneid=None, clusterid=None, storageid=None, domainid=None, accountid=None):
+        """Resets the specified configuration to original value"""
+
+        cmd = resetConfiguration.resetConfigurationCmd()
+        cmd.name = name
+
+        if zoneid:
+            cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid = storageid
+        if domainid:
+            cmd.domainid = domainid
+        if accountid:
+            cmd.accountid = accountid
+
+        apiclient.resetConfiguration(cmd)
+
 class NetScaler:
     """Manage external netscaler device"""
 
@@ -5075,6 +5101,11 @@ class VmSnapshot:
     def deleteVMSnapshot(cls, apiclient, vmsnapshotid):
         cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
         cmd.vmsnapshotid = vmsnapshotid
+        return apiclient.deleteVMSnapshot(cmd)
+
+    def delete(self, apiclient):
+        cmd = deleteVMSnapshot.deleteVMSnapshotCmd()
+        cmd.vmsnapshotid = self.id
         return apiclient.deleteVMSnapshot(cmd)
 
 

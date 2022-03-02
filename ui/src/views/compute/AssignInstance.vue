@@ -187,7 +187,7 @@ export default {
         showicon: true,
         details: 'min'
       }).then(response => {
-        this.domains = response.listdomainsresponse.domain
+        this.domains = response.listdomainsresponse.domain || []
         this.selectedDomain = this.domains[0].id
         this.fetchAccounts()
         this.fetchProjects()
@@ -206,7 +206,7 @@ export default {
         state: 'Enabled',
         isrecursive: false
       }).then(response => {
-        this.accounts = response.listaccountsresponse.account
+        this.accounts = response.listaccountsresponse.account || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -223,7 +223,7 @@ export default {
         details: 'min',
         isrecursive: false
       }).then(response => {
-        this.projects = response.listprojectsresponse.project
+        this.projects = response.listprojectsresponse.project || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -232,16 +232,20 @@ export default {
     },
     fetchNetworks () {
       this.loading = true
-      api('listNetworks', {
-        response: 'json',
+      var params = {
         domainId: this.selectedDomain,
         listAll: true,
         isrecursive: false,
-        showicon: true,
-        account: this.selectedAccount,
-        projectid: this.selectedProject
-      }).then(response => {
-        this.networks = response.listnetworksresponse.network
+        showicon: true
+      }
+      if (this.selectedProject != null) {
+        params.projectid = this.selectedProject
+      } else {
+        params.account = this.selectedAccount
+        params.ignoreproject = true
+      }
+      api('listNetworks', params).then(response => {
+        this.networks = response.listnetworksresponse.network || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -250,15 +254,19 @@ export default {
     },
     changeDomain () {
       this.selectedAccount = null
+      this.selectedProject = null
+      this.selectedNetwork = null
       this.fetchAccounts()
       this.fetchProjects()
     },
     changeAccount () {
       this.selectedProject = null
+      this.selectedNetwork = null
       this.fetchNetworks()
     },
     changeProject () {
       this.selectedAccount = null
+      this.selectedNetwork = null
       this.fetchNetworks()
     },
     closeAction () {

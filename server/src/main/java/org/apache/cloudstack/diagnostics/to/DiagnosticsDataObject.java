@@ -60,6 +60,11 @@ public class DiagnosticsDataObject implements DataObject {
     }
 
     @Override
+    public long getPhysicalSize() {
+        return 0;
+    }
+
+    @Override
     public DataObjectType getType() {
         return dataTO.getObjectType();
     }

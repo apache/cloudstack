@@ -28,7 +28,8 @@ import {
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
   USE_BROWSER_TIMEZONE,
-  SERVER_MANAGER
+  SERVER_MANAGER,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const app = {
@@ -46,6 +47,7 @@ const app = {
     inverted: true,
     multiTab: true,
     metrics: false,
+    listAllProjects: false,
     server: ''
   },
   mutations: {
@@ -99,6 +101,9 @@ const app = {
     SET_METRICS: (state, bool) => {
       state.metrics = bool
     },
+    SET_LIST_ALL_PROJECTS: (state, bool) => {
+      state.listAllProjects = bool
+    },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
       Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
@@ -106,6 +111,10 @@ const app = {
     SET_SERVER: (state, server) => {
       Vue.ls.set(SERVER_MANAGER, server)
       state.server = server
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      Vue.ls.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
   actions: {
@@ -151,11 +160,17 @@ const app = {
     SetMetrics ({ commit }, bool) {
       commit('SET_METRICS', bool)
     },
+    SetListAllProjects ({ commit }, bool) {
+      commit('SET_LIST_ALL_PROJECTS', bool)
+    },
     SetUseBrowserTimezone ({ commit }, bool) {
       commit('SET_USE_BROWSER_TIMEZONE', bool)
     },
     SetServer ({ commit }, server) {
       commit('SET_SERVER', server)
+    },
+    SetCustomColumns ({ commit }, bool) {
+      commit('SET_CUSTOM_COLUMNS', bool)
     }
   }
 }
