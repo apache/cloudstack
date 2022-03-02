@@ -441,6 +441,7 @@ public class PresetVariableHelperTest {
         Mockito.doNothing().when(presetVariableHelperSpy).loadPresetVariableValueForTemplateAndIso(Mockito.any(UsageVO.class), Mockito.any(Value.class));
         Mockito.doNothing().when(presetVariableHelperSpy).loadPresetVariableValueForSnapshot(Mockito.any(UsageVO.class), Mockito.any(Value.class));
         Mockito.doNothing().when(presetVariableHelperSpy).loadPresetVariableValueForNetworkOffering(Mockito.any(UsageVO.class), Mockito.any(Value.class));
+        Mockito.doNothing().when(presetVariableHelperSpy).loadPresetVariableValueForVmSnapshot(Mockito.any(UsageVO.class), Mockito.any(Value.class));
 
         Value result = presetVariableHelperSpy.getPresetVariableValue(usageVoMock);
 
