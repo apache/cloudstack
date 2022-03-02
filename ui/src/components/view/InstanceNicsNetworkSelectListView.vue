@@ -28,7 +28,7 @@
       <template #displaytext="{record}">
         <span>{{ record.elementName + ' - ' + record.name }}
           <a-tooltip :title="record.nicDescription" placement="top">
-            <a-icon type="info-circle" class="table-tooltip-icon" />
+            <info-circle-outlined class="table-tooltip-icon" />
           </a-tooltip>
         </span>
       </template>

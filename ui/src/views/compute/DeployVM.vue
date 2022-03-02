@@ -440,7 +440,7 @@
                       :items="options.sshKeyPairs"
                       :row-count="rowCount.sshKeyPairs"
                       :zoneId="zoneId"
-                      :value="sshKeyPair ? sshKeyPair.name : ''"
+                      :value="sshKeyPairs"
                       :loading="loading.sshKeyPairs"
                       :preFillContent="dataPreFill"
                       @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
@@ -744,7 +744,7 @@ export default {
         templateid: null,
         templatename: null,
         keyboard: null,
-        keypair: null,
+        keypairs: [],
         group: null,
         affinitygroupids: [],
         affinitygroup: [],
@@ -808,6 +808,7 @@ export default {
       networks: [],
       networksAdd: [],
       zone: {},
+      sshKeyPairs: [],
       sshKeyPair: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -1144,7 +1145,18 @@ export default {
         if (this.rootDiskSelected?.id) {
           instanceConfig.overridediskofferingid = this.rootDiskSelected.id
         }
-        console.log('overrided value ' + instanceConfig.overridediskofferingid)
+        if (instanceConfig.overridediskofferingid) {
+          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
+        } else {
+          this.overrideDiskOffering = null
+        }
+
+        if (!iso && this.diskSelected) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+        }
+        if (this.rootDiskSelected?.id) {
+          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
+        }
         if (instanceConfig.overridediskofferingid) {
           this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
         } else {
@@ -1153,7 +1165,6 @@ export default {
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-        this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
@@ -1243,6 +1254,10 @@ export default {
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
+        }
+
+        if (this.sshKeyPairs && this.sshKeyPairs.length > 0) {
+          this.vm.keypairs = this.sshKeyPairs
         }
       }
     }
@@ -1617,12 +1632,9 @@ export default {
     updateNetworkConfig (networks) {
       this.networkConfig = networks
     },
-    updateSshKeyPairs (name) {
-      if (name === this.$t('label.noselect')) {
-        this.form.keypair = undefined
-        return
-      }
-      this.form.keypair = name
+    updateSshKeyPairs (names) {
+      this.form.keypairs = names
+      this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
@@ -1805,7 +1817,8 @@ export default {
           deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
-        deployVmData.keypair = values.keypair
+        deployVmData.keypairs = this.sshKeyPairs.join(',')
+
         if (values.name) {
           deployVmData.name = values.name
           deployVmData.displayname = values.name

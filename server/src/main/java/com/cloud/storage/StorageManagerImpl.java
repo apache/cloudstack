@@ -3339,7 +3339,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
-                PreferredStoragePool
+                PreferredStoragePool,
+                SecStorageVMAutoScaleDown
         };
     }
 
