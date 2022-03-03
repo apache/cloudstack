@@ -1784,7 +1784,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                 "networks list validation failed, list is %s" %
                 networks)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 
