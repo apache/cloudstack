@@ -21,9 +21,11 @@ package com.cloud.server;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.InfluxDB;
@@ -34,6 +36,8 @@ import org.influxdb.dto.Point;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -44,6 +48,9 @@ import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.UserVmDao;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
@@ -51,6 +58,8 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 @PowerMockRunnerDelegate(DataProviderRunner.class)
 @PrepareForTest({InfluxDBFactory.class, BatchPoints.class})
 public class StatsCollectorTest {
+
+    @InjectMocks
     private StatsCollector statsCollector = Mockito.spy(new StatsCollector());
 
     private static final int GRAPHITE_DEFAULT_PORT = 2003;
@@ -59,6 +68,18 @@ public class StatsCollectorTest {
     private static final String URL = String.format("http://%s:%s/", HOST_ADDRESS, INFLUXDB_DEFAULT_PORT);
 
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
+
+    @Mock
+    ConcurrentHashMap<Long, VmStats> vmStatsMock;
+
+    @Mock
+    VmStats singleVmStatsMock;
+
+    @Mock
+    UserVmDao userVmDaoMock;
+
+    @Mock
+    UserVmVO userVmVOMock;
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -217,5 +238,49 @@ public class StatsCollectorTest {
 
         boolean result = statsCollector.areAllDiskStatsZero(vmDiskStatsEntry);
         Assert.assertEquals(expected, result);
+    }
+
+    @Test
+    public void removeVirtualMachineStatsTestRemoveOneVmStats() {
+        Mockito.doReturn(new Object()).when(vmStatsMock).remove(Mockito.anyLong());
+
+        statsCollector.removeVirtualMachineStats(1l);
+
+        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void cleanUpVirtualMachineStatsTestDoNothing() {
+        Mockito.doReturn(new ArrayList<>()).when(userVmDaoMock).listAllRunning();
+        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(new HashMap<>()).keySet())
+        .when(vmStatsMock).keySet();
+
+        statsCollector.cleanUpVirtualMachineStats();
+
+        Mockito.verify(statsCollector, Mockito.never()).removeVirtualMachineStats(Mockito.anyLong());
+    }
+
+    @Test
+    public void cleanUpVirtualMachineStatsTestRemoveOneVmStats() {
+        Mockito.doReturn(new ArrayList<>()).when(userVmDaoMock).listAllRunning();
+        Mockito.doReturn(1l).when(userVmVOMock).getId();
+        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(Map.of(1l, singleVmStatsMock)).keySet())
+        .when(vmStatsMock).keySet();
+
+        statsCollector.cleanUpVirtualMachineStats();
+
+        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
+    }
+
+    @Test
+    public void cleanUpVirtualMachineStatsTestRemoveOnlyOneVmStats() {
+        Mockito.doReturn(1l).when(userVmVOMock).getId();
+        Mockito.doReturn(Arrays.asList(userVmVOMock)).when(userVmDaoMock).listAllRunning();
+        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(Map.of(1l, singleVmStatsMock, 2l, singleVmStatsMock)).keySet())
+        .when(vmStatsMock).keySet();
+
+        statsCollector.cleanUpVirtualMachineStats();
+
+        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
     }
 }

@@ -100,21 +100,10 @@ export default {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
               (record.domainid === store.userInfo.domainid && record.account === store.userInfo.account) ||
               (record.domainid === store.userInfo.domainid && record.projectid && store.project && store.project.id && record.projectid === store.project.id)) &&
-              record.templatetype !== 'SYSTEM' &&
               record.isready
           },
-          args: (record, store) => {
-            var fields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-            if (['Admin'].includes(store.userInfo.roletype)) {
-              fields.push('templatetype')
-            }
-            return fields
-          },
-          mapping: {
-            templatetype: {
-              options: ['BUILTIN', 'USER', 'SYSTEM', 'ROUTING']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/image/UpdateTemplate.vue')
         },
         {
           api: 'updateTemplatePermissions',
@@ -193,6 +182,9 @@ export default {
         var fields = ['name', 'ostypename']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
+        }
+        if (['Admin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('order')
         }
         return fields
       },
@@ -318,7 +310,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

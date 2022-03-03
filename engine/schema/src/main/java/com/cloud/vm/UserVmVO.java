@@ -48,6 +48,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "update_parameters", updatable = true)
     protected boolean updateParameters = true;
 
+    @Column(name = "user_vm_type", updatable = true)
+    private String userVmType;
+
     transient String password;
 
     @Override
@@ -70,8 +73,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
 
     public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled,
-                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, String name, Long diskOfferingId) {
-        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse, diskOfferingId);
+                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, String name) {
+        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse);
         this.userData = userData;
         this.displayName = displayName;
         this.details = new HashMap<String, String>();
@@ -124,6 +127,14 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public boolean isUpdateParameters() {
         return updateParameters;
+    }
+
+    public String getUserVmType() {
+        return userVmType;
+    }
+
+    public void setUserVmType(String userVmType) {
+        this.userVmType = userVmType;
     }
 
     @Override

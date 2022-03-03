@@ -35,6 +35,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
+    private final String CpuOverprovisioningFactor = "cpu.overprovisioning.factor";
+    private final String MemoryOverprovisioningFactor = "mem.overprovisioning.factor";
+    private final String CpuOverCommitRatio = "cpuOvercommitRatio";
+    private final String MemoryOverCommitRatio = "memoryOvercommitRatio";
+
     protected ClusterDetailsDaoImpl() {
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
@@ -50,12 +55,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     public ClusterDetailsVO findDetail(long clusterId, String name) {
         SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
         // This is temporary fix to support list/update configuration api for cpu and memory overprovisioning ratios
-        if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
-            name = "cpuOvercommitRatio";
-        }
-        if (name.equalsIgnoreCase("mem.overprovisioning.factor")) {
-            name = "memoryOvercommitRatio";
-        }
+        name = getCpuMemoryOvercommitRatio(name);
         sc.setParameters("clusterId", clusterId);
         sc.setParameters("name", name);
 
@@ -103,11 +103,13 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         expunge(sc);
 
         for (Map.Entry<String, String> detail : details.entrySet()) {
+            String name = detail.getKey();
+            name = getCpuMemoryOvercommitRatio(name);
             String value = detail.getValue();
             if ("password".equals(detail.getKey())) {
                 value = DBEncryptionUtil.encrypt(value);
             }
-            ClusterDetailsVO vo = new ClusterDetailsVO(clusterId, detail.getKey(), value);
+            ClusterDetailsVO vo = new ClusterDetailsVO(clusterId, name, value);
             persist(vo);
         }
         txn.commit();
@@ -115,6 +117,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     @Override
     public void persist(long clusterId, String name, String value) {
+        name = getCpuMemoryOvercommitRatio(name);
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
@@ -146,5 +149,16 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         if (tokens != null && tokens.length > 3)
             dcName = tokens[3];
         return dcName;
+    }
+
+    private String getCpuMemoryOvercommitRatio(String name) {
+        if (name.equalsIgnoreCase(CpuOverprovisioningFactor)) {
+            name = CpuOverCommitRatio;
+        }
+        if (name.equalsIgnoreCase(MemoryOverprovisioningFactor)) {
+            name = MemoryOverCommitRatio;
+        }
+
+        return name;
     }
 }

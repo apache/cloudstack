@@ -34,7 +34,7 @@ import com.cloud.user.SSHKeyPair;
 @APICommand(name = "deleteSSHKeyPair", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {SSHKeyPair.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSSHKeyPairCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSSHKeyPairCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DeleteSSHKeyPairCmd.class.getName());
     private static final String s_name = "deletesshkeypairresponse";
 
     /////////////////////////////////////////////////////

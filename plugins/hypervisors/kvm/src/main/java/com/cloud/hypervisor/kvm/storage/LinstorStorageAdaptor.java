@@ -258,7 +258,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             final String rscName = getLinstorRscName(volumePath);
 
             ResourceMakeAvailable rma = new ResourceMakeAvailable();
-            rma.setDiskful(true);
             ApiCallRcList answers = api.resourceMakeAvailableOnNode(rscName, localNodeName, rma);
             checkLinstorAnswersThrow(answers);
 
@@ -289,8 +288,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect)
     {
-        s_logger.debug("Linstor: disconnectPhysicalDisk map");
-        return true;
+        return false;
     }
 
     private Optional<ResourceWithVolumes> getResourceByPath(final List<ResourceWithVolumes> resources, String path) {
@@ -310,10 +308,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath)
     {
-        s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
         // get first storage pool from the map, as we don't know any better:
         if (!MapStorageUuidToStoragePool.isEmpty())
         {
+            s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
             String firstKey = MapStorageUuidToStoragePool.keySet().stream().findFirst().get();
             final KVMStoragePool pool = MapStorageUuidToStoragePool.get(firstKey);
 

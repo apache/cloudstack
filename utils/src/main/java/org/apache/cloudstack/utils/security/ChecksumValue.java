@@ -18,7 +18,7 @@ package org.apache.cloudstack.utils.security;
 
 import java.util.Objects;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class ChecksumValue {
     String checksum;

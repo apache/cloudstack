@@ -1225,6 +1225,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" disable_rp_filter=true");
         }
 
+        String msPublicKey = configurationDao.getValue("ssh.publickey");
+        buf.append(" authorized_key=").append(VirtualMachineGuru.getEncodedMsPublicKey(msPublicKey));
+
         boolean externalDhcp = false;
         String externalDhcpStr = configurationDao.getValue("direct.attach.network.externalIpAllocator.enabled");
         if (externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
@@ -1251,8 +1254,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = configurationDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
+                if (NetUtils.isValidCidrList(mgmt_cidr)) {
+                    s_logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
+                } else {
+                    s_logger.error("Invalid management cidr list: " + mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             }
@@ -1326,7 +1332,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if(profile.getHypervisorType() == HypervisorType.Hyperv) {
             controlNic = managementNic;
         }
-
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIPv4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 

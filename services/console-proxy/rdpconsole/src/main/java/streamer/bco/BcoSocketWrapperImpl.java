@@ -17,12 +17,13 @@
 package streamer.bco;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.crypto.tls.Certificate;
-import org.bouncycastle.crypto.tls.DefaultTlsClient;
-import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsAuthentication;
-import org.bouncycastle.crypto.tls.TlsClientProtocol;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
+import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsServerCertificate;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import streamer.Direction;
 import streamer.Event;
 import streamer.SocketWrapperImpl;
@@ -60,18 +61,18 @@ public class BcoSocketWrapperImpl extends SocketWrapperImpl {
 
         try {
 
-            SecureRandom secureRandom = new SecureRandom();
-            bcoSslSocket = new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream(), secureRandom);
+            bcoSslSocket = new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream());
 
-            bcoSslSocket.connect(new DefaultTlsClient() {
+            bcoSslSocket.connect(new DefaultTlsClient(new BcTlsCrypto(new SecureRandom())) {
                 @Override
                 public TlsAuthentication getAuthentication() throws IOException {
                     return new ServerOnlyTlsAuthentication() {
                         @Override
-                        public void notifyServerCertificate(final Certificate certificate) throws IOException {
+                        public void notifyServerCertificate(final TlsServerCertificate certificate) throws IOException {
                             try {
                                 if (sslState != null) {
-                                    sslState.serverCertificateSubjectPublicKeyInfo = certificate.getCertificateAt(0).getSubjectPublicKeyInfo().getEncoded();
+                                    sslState.serverCertificateSubjectPublicKeyInfo =
+                                            certificate.getCertificate().getCertificateAt(0).getEncoded();
                                 }
                             } catch (IOException e) {
                                 throw new RuntimeException("Cannot get server public key.", e);

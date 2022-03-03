@@ -160,6 +160,19 @@ public class ConfigKey<T> {
         }
     }
 
+    public T valueInDomain(Long domainId) {
+        if (domainId == null) {
+            return value();
+        }
+
+        String value = s_depot != null ? s_depot.getDomainScope(this).getConfigValue(domainId, this) : null;
+        if (value == null) {
+            return value();
+        } else {
+            return valueOf(value);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     protected T valueOf(String value) {
         Number multiplier = 1;

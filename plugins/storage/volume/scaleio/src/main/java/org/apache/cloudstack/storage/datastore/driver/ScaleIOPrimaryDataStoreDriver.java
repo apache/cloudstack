@@ -55,6 +55,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -84,7 +85,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 
 public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreDriver.class);
@@ -629,7 +629,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private Answer copyTemplateToVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO template to volume
-        LOGGER.debug("Initiating copy from PowerFlex template volume on host " + destHost != null ? destHost.getId() : "");
+        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -648,7 +648,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     private Answer copyVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
-        LOGGER.debug("Initiating copy from PowerFlex volume on host " + destHost != null ? destHost.getId() : "");
+        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
@@ -768,7 +768,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             destPoolSystemId = destPoolSystemIdDetail.getValue();
         }
 
-        if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+        if (StringUtils.isAnyEmpty(srcPoolSystemId, destPoolSystemId)) {
             throw new CloudRuntimeException("Failed to validate PowerFlex pools compatibility for migration as storage instance details are not available");
         }
 
@@ -904,7 +904,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumePath) {
         Preconditions.checkArgument(storagePool != null, "storagePool cannot be null");
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(volumePath), "volumePath cannot be null");
+        Preconditions.checkArgument(StringUtils.isNotEmpty(volumePath), "volumePath cannot be null");
 
         try {
             final ScaleIOGatewayClient client = getScaleIOClient(storagePool.getId());

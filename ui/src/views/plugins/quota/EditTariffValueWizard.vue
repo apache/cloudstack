@@ -86,7 +86,7 @@ export default {
       pattern: 'YYYY-MM-DD'
     }
   },
-  inject: ['parentEditTariffAction', 'parentFetchData'],
+  inject: ['parentFetchData'],
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
@@ -97,12 +97,12 @@ export default {
   },
   methods: {
     onClose () {
-      this.parentEditTariffAction(false)
+      this.$emit('edit-tariff-action', false)
     },
     submitTariff (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         const params = {}

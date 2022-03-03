@@ -17,8 +17,6 @@
 
 package com.cloud.api.dispatch;
 
-import static org.apache.commons.lang.StringUtils.isNotBlank;
-
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -63,7 +61,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class ParamProcessWorker implements DispatchWorker {
 
@@ -94,7 +92,7 @@ public class ParamProcessWorker implements DispatchWorker {
     }
 
     private void validateNonEmptyString(final Object param, final String argName) {
-        if (param == null || Strings.isNullOrEmpty(param.toString())) {
+        if (param == null || StringUtils.isEmpty(param.toString())) {
             throw new InvalidParameterValueException(String.format("Empty or null value provided for API arg: %s", argName));
         }
     }
@@ -346,7 +344,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 // Assuming that the parameters have been checked for required before now,
                 // we ignore blank or null values and defer to the command to set a default
                 // value for optional parameters ...
-                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                if (paramObj != null && StringUtils.isNotBlank(paramObj.toString())) {
                     field.set(cmdObj, Float.valueOf(paramObj.toString()));
                 }
                 break;
@@ -354,7 +352,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 // Assuming that the parameters have been checked for required before now,
                 // we ignore blank or null values and defer to the command to set a default
                 // value for optional parameters ...
-                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                if (paramObj != null && StringUtils.isNotBlank(paramObj.toString())) {
                     field.set(cmdObj, Double.valueOf(paramObj.toString()));
                 }
                 break;
@@ -362,7 +360,7 @@ public class ParamProcessWorker implements DispatchWorker {
                 // Assuming that the parameters have been checked for required before now,
                 // we ignore blank or null values and defer to the command to set a default
                 // value for optional parameters ...
-                if (paramObj != null && isNotBlank(paramObj.toString())) {
+                if (paramObj != null && StringUtils.isNotBlank(paramObj.toString())) {
                     field.set(cmdObj, Integer.valueOf(paramObj.toString()));
                 }
                 break;

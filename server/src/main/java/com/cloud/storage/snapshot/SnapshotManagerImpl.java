@@ -134,6 +134,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -307,11 +308,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
+
         if (snapshotInfo == null) {
-            throw new CloudRuntimeException("snapshot:" + snapshotId + " not exist in data store");
+            throw new CloudRuntimeException(String.format("snapshot %s [%s] does not exists in data store", snapshot.getName(), snapshot.getUuid()));
         }
 
         SnapshotStrategy snapshotStrategy = _storageStrategyFactory.getSnapshotStrategy(snapshot, SnapshotOperation.REVERT);
@@ -586,7 +588,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck, _snapshotStoreDao, dataStoreMgr);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck);
 
         SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
 
@@ -671,8 +673,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
@@ -844,7 +846,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (volume.getTemplateId() != null) {
             VMTemplateVO template = _templateDao.findById(volume.getTemplateId());
-            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
+            Long instanceId = volume.getInstanceId();
+            UserVmVO userVmVO = null;
+            if (instanceId != null) {
+                userVmVO = _vmDao.findById(instanceId);
+            }
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()))) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }
@@ -1232,15 +1239,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-                DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+                DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {
-                    // The snapshot was not backed up to secondary.  Find the snap on primary
-                    snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Primary);
-                    if (snapshotStoreRef == null) {
-                        throw new CloudRuntimeException("Could not find snapshot");
-                    }
+                    throw new CloudRuntimeException(String.format("Could not find snapshot %s [%s] on [%s]", snapshot.getName(), snapshot.getUuid(), snapshot.getLocationType()));
                 }
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                         snapshotStoreRef.getPhysicalSize(), volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
@@ -1326,8 +1329,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
     }
 
-    private DataStoreRole getDataStoreRole(Snapshot snapshot, SnapshotDataStoreDao snapshotStoreDao, DataStoreManager dataStoreMgr) {
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
+    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
 
         if (snapshotStore == null) {
             return DataStoreRole.Image;
@@ -1340,7 +1343,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (mapCapabilities != null) {
             String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = new Boolean(value);
+            Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
 
             if (supportsStorageSystemSnapshots) {
                 return DataStoreRole.Primary;
@@ -1348,7 +1351,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
+        if (storagePoolVO.getPoolType() == StoragePoolType.RBD) {
             return DataStoreRole.Primary;
         }
 

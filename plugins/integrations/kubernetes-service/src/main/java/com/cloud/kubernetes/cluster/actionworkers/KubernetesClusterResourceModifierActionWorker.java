@@ -17,25 +17,6 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
-import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Level;
-
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -47,7 +28,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -56,6 +37,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterDetailsVO;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVO;
 import com.cloud.kubernetes.cluster.utils.KubernetesClusterUtil;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -74,24 +56,45 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+
+import javax.inject.Inject;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
@@ -124,6 +127,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     @Inject
     protected UserVmManager userVmManager;
     @Inject
+    protected LaunchPermissionDao launchPermissionDao;
+    @Inject
     protected VolumeApiService volumeService;
     @Inject
     protected VolumeDao volumeDao;
@@ -147,66 +152,63 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (!Strings.isNullOrEmpty(sshKeyPair)) {
+        if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
-                pubKey += "\n  - \"" + sshkp.getPublicKey() + "\"";
+                pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
         k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
         k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
         k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
-        /* genarate /.docker/config.json file on the nodes only if Kubernetes cluster is created to
-         * use docker private registry */
-        String dockerUserName = null;
-        String dockerPassword = null;
-        String dockerRegistryUrl = null;
-        String dockerRegistryEmail = null;
-        List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
-        for (KubernetesClusterDetailsVO detail : details) {
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
-                dockerUserName = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
-                dockerPassword = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
-                dockerRegistryUrl = detail.getValue();
-            }
-            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_EMAIL)) {
-                dockerRegistryEmail = detail.getValue();
-            }
-        }
-        if (!Strings.isNullOrEmpty(dockerUserName) && !Strings.isNullOrEmpty(dockerPassword)) {
-            // do write file for  /.docker/config.json through the code instead of k8s-node.yml as we can no make a section
-            // optional or conditionally applied
-            String dockerConfigString = "write-files:\n" +
-                    "  - path: /.docker/config.json\n" +
-                    "    owner: core:core\n" +
-                    "    permissions: '0644'\n" +
-                    "    content: |\n" +
-                    "      {\n" +
-                    "        \"auths\": {\n" +
-                    "          {{docker.url}}: {\n" +
-                    "            \"auth\": {{docker.secret}},\n" +
-                    "            \"email\": {{docker.email}}\n" +
-                    "          }\n" +
-                    "         }\n" +
-                    "      }";
-            k8sNodeConfig = k8sNodeConfig.replace("write-files:", dockerConfigString);
-            final String dockerUrlKey = "{{docker.url}}";
-            final String dockerAuthKey = "{{docker.secret}}";
-            final String dockerEmailKey = "{{docker.email}}";
-            final String usernamePasswordKey = dockerUserName + ":" + dockerPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(StringUtils.getPreferredCharset()));
-            k8sNodeConfig = k8sNodeConfig.replace(dockerUrlKey, "\"" + dockerRegistryUrl + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerAuthKey, "\"" + base64Auth + "\"");
-            k8sNodeConfig = k8sNodeConfig.replace(dockerEmailKey, "\"" + dockerRegistryEmail + "\"");
-        }
+
+        k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
+
         return k8sNodeConfig;
     }
 
+    protected String updateKubeConfigWithRegistryDetails(String k8sConfig) {
+        /* genarate /etc/containerd/config.toml file on the nodes only if Kubernetes cluster is created to
+         * use docker private registry */
+        String registryUsername = null;
+        String registryPassword = null;
+        String registryUrl = null;
+
+        List<KubernetesClusterDetailsVO> details = kubernetesClusterDetailsDao.listDetails(kubernetesCluster.getId());
+        for (KubernetesClusterDetailsVO detail : details) {
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_USER_NAME)) {
+                registryUsername = detail.getValue();
+            }
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_PASSWORD)) {
+                registryPassword = detail.getValue();
+            }
+            if (detail.getName().equals(ApiConstants.DOCKER_REGISTRY_URL)) {
+                registryUrl = detail.getValue();
+            }
+        }
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
+            // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
+            String runCmd = "- bash -x /opt/bin/setup-containerd";
+
+            String registryEp = registryUrl.split("://")[1];
+            k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
+            final String registryUrlKey = "{{registry.url}}";
+            final String registryUrlEpKey = "{{registry.url.endpoint}}";
+            final String registryAuthKey = "{{registry.token}}";
+            final String registryUname = "{{registry.username}}";
+            final String registryPsswd = "{{registry.password}}";
+
+            final String usernamePasswordKey = registryUsername + ":" + registryPassword;
+            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
+            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
+            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
+            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
+            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
+        }
+        return k8sConfig;
+    }
     protected DeployDestination plan(final long nodesCount, final DataCenter zone, final ServiceOffering offering) throws InsufficientServerCapacityException {
         final int cpu_requested = offering.getCpu() * offering.getSpeed();
         final long ram_requested = offering.getRamSize() * 1024L * 1024L;
@@ -225,7 +227,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     continue;
                 }
                 hostDao.loadHostTags(h);
-                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                if (StringUtils.isNotEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
                     continue;
                 }
                 int reserved = hp.second();
@@ -307,12 +309,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            userVmService.startVirtualMachine(startVm);
+            itMgr.advanceStart(vm.getUuid(), null, null);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }
-        } catch (IllegalAccessException | NoSuchFieldException | ExecutionException |
-                ResourceUnavailableException | ResourceAllocationException | InsufficientCapacityException ex) {
+        } catch (IllegalAccessException | NoSuchFieldException | OperationTimedoutException | ResourceUnavailableException | InsufficientCapacityException ex) {
             throw new ManagementServerException(String.format("Failed to start VM in the Kubernetes cluster : %s", kubernetesCluster.getName()), ex);
         }
 
@@ -326,8 +327,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             ResourceUnavailableException, InsufficientCapacityException {
         List<UserVm> nodes = new ArrayList<>();
         for (int i = offset + 1; i <= nodeCount; i++) {
-            UserVm vm = createKubernetesNode(publicIpAddress, i);
-            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId());
+            UserVm vm = createKubernetesNode(publicIpAddress);
+            addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false);
             if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                 resizeNodeVolume(vm);
             }
@@ -349,7 +350,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return provisionKubernetesClusterNodeVms(nodeCount, 0, publicIpAddress);
     }
 
-    protected UserVm createKubernetesNode(String joinIp, int nodeInstance) throws ManagementServerException,
+    protected UserVm createKubernetesNode(String joinIp) throws ManagementServerException,
             ResourceUnavailableException, InsufficientCapacityException {
         UserVm nodeVm = null;
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
@@ -363,18 +364,26 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (rootDiskSize > 0) {
             customParameterMap.put("rootdisksize", String.valueOf(rootDiskSize));
         }
-        String hostName = getKubernetesClusterNodeAvailableName(String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, nodeInstance));
+        if (Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType())) {
+            customParameterMap.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
+        String suffix = Long.toHexString(System.currentTimeMillis());
+        String hostName = String.format("%s-node-%s", kubernetesClusterNodeNamePrefix, suffix);
         String k8sNodeConfig = null;
         try {
             k8sNodeConfig = getKubernetesNodeConfig(joinIp, Hypervisor.HypervisorType.VMware.equals(clusterTemplate.getHypervisorType()));
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
+        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        List<String> keypairs = new ArrayList<String>();
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
         nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
                 hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, true);
+                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }
@@ -453,7 +462,6 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 final Ip vmIp = new Ip(vmNic.getIPv4Address());
                 final long vmIdFinal = vmId;
                 final int srcPortFinal = firewallRuleSourcePortStart + i;
-
                 PortForwardingRuleVO pfRule = Transaction.execute(new TransactionCallbackWithException<PortForwardingRuleVO, NetworkRuleConflictException>() {
                     @Override
                     public PortForwardingRuleVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
@@ -519,6 +527,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    protected void removePortForwardingRules(final IpAddress publicIp, final Network network, final Account account, int startPort, int endPort)
+        throws ResourceUnavailableException {
+        List<PortForwardingRuleVO> pfRules = portForwardingRulesDao.listByNetwork(network.getId());
+        for (PortForwardingRuleVO pfRule : pfRules) {
+            if (startPort <= pfRule.getSourcePortStart() && pfRule.getSourcePortStart() <= endPort) {
+                portForwardingRulesDao.remove(pfRule.getId());
+            }
+        }
+        rulesService.applyPortForwardingRules(publicIp.getId(), account);
+    }
+
     protected void removeLoadBalancingRule(final IpAddress publicIp, final Network network,
                                            final Account account, final int port) throws ResourceUnavailableException {
         List<LoadBalancerVO> rules = loadBalancerDao.listByIpAddress(publicIp.getId());
@@ -548,13 +567,97 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         return prefix;
     }
 
-    protected String getKubernetesClusterNodeAvailableName(final String hostName) {
-        String name = hostName;
-        int suffix = 1;
-        while (vmInstanceDao.findVMByHostName(name) != null) {
-            name = String.format("%s-%d", hostName, suffix);
-            suffix++;
+    protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory,
+        final Long size, final Long serviceOfferingId, final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) {
+        return Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
+                @Override
+                public KubernetesClusterVO doInTransaction(TransactionStatus status) {
+                KubernetesClusterVO updatedCluster = kubernetesClusterDao.createForUpdate(kubernetesCluster.getId());
+                if (cores != null) {
+                    updatedCluster.setCores(cores);
+                }
+                if (memory != null) {
+                    updatedCluster.setMemory(memory);
+                }
+                if (size != null) {
+                    updatedCluster.setNodeCount(size);
+                }
+                if (serviceOfferingId != null) {
+                    updatedCluster.setServiceOfferingId(serviceOfferingId);
+                }
+                if (autoscaleEnabled != null) {
+                    updatedCluster.setAutoscalingEnabled(autoscaleEnabled.booleanValue());
+                }
+                updatedCluster.setMinSize(minSize);
+                updatedCluster.setMaxSize(maxSize);
+                return kubernetesClusterDao.persist(updatedCluster);
+            }
+        });
+    }
+
+    private KubernetesClusterVO updateKubernetesClusterEntry(final Boolean autoscaleEnabled, final Long minSize, final Long maxSize) throws CloudRuntimeException {
+        KubernetesClusterVO kubernetesClusterVO = updateKubernetesClusterEntry(null, null, null, null, autoscaleEnabled, minSize, maxSize);
+        if (kubernetesClusterVO == null) {
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to update Kubernetes cluster",
+                    kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
         }
-        return name;
+        return kubernetesClusterVO;
+    }
+
+    protected boolean autoscaleCluster(boolean enable, Long minSize, Long maxSize) {
+        if (!kubernetesCluster.getState().equals(KubernetesCluster.State.Scaling)) {
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.AutoscaleRequested);
+        }
+
+        File pkFile = getManagementServerSshPublicKeyFile();
+        Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        publicIpAddress = publicIpSshPort.first();
+        sshPort = publicIpSshPort.second();
+
+        try {
+            if (enable) {
+                String command = String.format("sudo /opt/bin/autoscale-kube-cluster -i %s -e -M %d -m %d",
+                    kubernetesCluster.getUuid(), maxSize, minSize);
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, command, 10000, 10000, 60000);
+
+                // Maybe the file isn't present. Try and copy it
+                if (!result.first()) {
+                    logMessage(Level.INFO, "Autoscaling files missing. Adding them now", null);
+                    retrieveScriptFiles();
+                    copyScripts(publicIpAddress, sshPort);
+
+                    if (!createCloudStackSecret(keys)) {
+                        logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                    }
+
+                    // If at first you don't succeed ...
+                    result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                        pkFile, null, command, 10000, 10000, 60000);
+                    if (!result.first()) {
+                        throw new CloudRuntimeException(result.second());
+                    }
+                }
+                updateKubernetesClusterEntry(true, minSize, maxSize);
+            } else {
+                Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
+                    pkFile, null, String.format("sudo /opt/bin/autoscale-kube-cluster -d"),
+                        10000, 10000, 60000);
+                if (!result.first()) {
+                    throw new CloudRuntimeException(result.second());
+                }
+                updateKubernetesClusterEntry(false, null, null);
+            }
+            return true;
+        } catch (Exception e) {
+            String msg = String.format("Failed to autoscale Kubernetes cluster: %s : %s", kubernetesCluster.getName(), e.getMessage());
+            logAndThrow(Level.ERROR, msg);
+            return false;
+        } finally {
+            // Deploying the autoscaler might fail but it can be deployed manually too, so no need to go to an alert state
+            updateLoginUserDetails(null);
+            stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
+        }
     }
 }

@@ -51,6 +51,7 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 
@@ -72,7 +73,6 @@ import com.cloud.exception.AgentControlChannelException;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -85,7 +85,6 @@ import com.cloud.utils.nio.NioConnection;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.google.common.base.Strings;
 
 /**
  * @config
@@ -715,7 +714,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         final String csrFile = agentFile.getParent() + "/" + KeyStoreUtils.CSR_FILENAME;
 
         String storedPassword = _shell.getPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
-        if (Strings.isNullOrEmpty(storedPassword)) {
+        if (StringUtils.isEmpty(storedPassword)) {
             storedPassword = keyStorePassword;
             _shell.setPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY, storedPassword);
         }
@@ -782,9 +781,9 @@ public class Agent implements HandlerFactory, IAgentControl {
     }
 
     private void processManagementServerList(final List<String> msList, final String lbAlgorithm, final Long lbCheckInterval) {
-        if (CollectionUtils.isNotEmpty(msList) && !Strings.isNullOrEmpty(lbAlgorithm)) {
+        if (CollectionUtils.isNotEmpty(msList) && StringUtils.isNotEmpty(lbAlgorithm)) {
             try {
-                final String newMSHosts = String.format("%s%s%s", StringUtils.toCSVList(msList), IAgentShell.hostLbAlgorithmSeparator, lbAlgorithm);
+                final String newMSHosts = String.format("%s%s%s", com.cloud.utils.StringUtils.toCSVList(msList), IAgentShell.hostLbAlgorithmSeparator, lbAlgorithm);
                 _shell.setPersistentProperty(null, "host", newMSHosts);
                 _shell.setHosts(newMSHosts);
                 _shell.resetHostCounter();

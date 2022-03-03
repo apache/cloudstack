@@ -83,7 +83,8 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
     }
 
     @Override
-    public AsyncCallFuture<DataObjectResult> migrateData(DataObject srcDataObject, DataStore srcDatastore, DataStore destDatastore, Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain) {
+    public AsyncCallFuture<DataObjectResult> migrateData(DataObject srcDataObject, DataStore srcDatastore, DataStore destDatastore,
+                                                         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain, Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain) {
         AsyncCallFuture<DataObjectResult> future = new AsyncCallFuture<DataObjectResult>();
         DataObjectResult res = new DataObjectResult(srcDataObject);
         DataObject destDataObject = null;
@@ -114,7 +115,15 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                         break;
                     }
                 }
-            } else {
+            } else if (srcDataObject instanceof TemplateInfo && templateChain != null && templateChain.containsKey(srcDataObject)) {
+                for (TemplateInfo templateInfo : templateChain.get(srcDataObject).first()) {
+                    destDataObject = destDatastore.create(templateInfo);
+                    templateInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
+                    destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
+                    migrateJob(future, templateInfo, destDataObject, destDatastore);
+                }
+            }
+            else {
                 // Check if template in destination store, if yes, do not proceed
                 if (srcDataObject instanceof TemplateInfo) {
                     s_logger.debug("Checking if template present at destination");

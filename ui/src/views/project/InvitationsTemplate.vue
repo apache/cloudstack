@@ -213,7 +213,7 @@ export default {
       const title = this.$t('label.confirmacceptinvitation')
 
       this.$confirm({
-        title: title,
+        title,
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),
@@ -262,7 +262,7 @@ export default {
       const title = this.$t('label.confirmdeclineinvitation')
 
       this.$confirm({
-        title: title,
+        title,
         okText: this.$t('label.ok'),
         okType: 'danger',
         cancelText: this.$t('label.cancel'),
@@ -296,9 +296,9 @@ export default {
               hasJobId = true
               const jobId = json[obj][res]
               this.$pollJob({
-                title: title,
-                jobid: jobId,
-                description: description,
+                title,
+                jobId,
+                description,
                 showLoading: false
               })
             }

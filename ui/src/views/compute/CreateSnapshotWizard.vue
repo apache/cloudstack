@@ -112,7 +112,7 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) return
 
         const params = {}
@@ -135,8 +135,8 @@ export default {
             if (jobId) {
               this.$pollJob({
                 jobId,
-                title: title,
-                description: description,
+                title,
+                description,
                 successMethod: result => {
                   const volumeId = result.jobresult.snapshot.volumeid
                   const snapshotId = result.jobresult.snapshot.id

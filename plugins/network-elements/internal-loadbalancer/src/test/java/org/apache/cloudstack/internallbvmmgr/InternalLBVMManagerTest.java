@@ -58,7 +58,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -121,7 +120,7 @@ public class InternalLBVMManagerTest extends TestCase {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
         Mockito.when(_accountMgr.getAccount(1L)).thenReturn(new AccountVO());
         ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1,
-                1, 1, 1, false, "alena", Storage.ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
+                1, 1, 1, false, "alena", false, VirtualMachine.Type.InternalLoadBalancerVm, false);
         off = setId(off, 1);
         List<ServiceOfferingVO> list = new ArrayList<ServiceOfferingVO>();
         list.add(off);
@@ -341,7 +340,7 @@ public class InternalLBVMManagerTest extends TestCase {
         final ServiceOfferingVO voToReturn = vo;
         final Class<?> c = voToReturn.getClass();
         try {
-            final Field f = c.getSuperclass().getDeclaredField("id");
+            final Field f = c.getDeclaredField("id");
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (final NoSuchFieldException ex) {

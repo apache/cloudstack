@@ -258,6 +258,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -521,6 +522,7 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
     public static final String EVENT_VM_BACKUP_USAGE_METRIC = "BACKUP.USAGE.METRIC";
+    public static final String EVENT_VM_BACKUP_EDIT = "BACKUP.OFFERING.EDIT";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
@@ -767,6 +769,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_RESIZE, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
+        entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);

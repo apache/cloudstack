@@ -42,6 +42,9 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
         "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -58,8 +61,12 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, required = true, description = "name of the ssh key pair used to login to the virtual machine")
-    private String name;
+    @Deprecated
+    @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING ,description = "name of the ssh key pair used to login to the virtual machine")
+    String name;
+
+    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs to be used to login to the virtual machine")
+    List<String> names;
 
     //Owner information
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the ssh key. Must be used with domainId.")
@@ -78,8 +85,15 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd implements UserCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getName() {
-        return name;
+    public List<String> getNames() {
+        List<String> keypairnames = new ArrayList<String>();
+        if (names != null) {
+            keypairnames = names;
+        }
+        if (name != null && !name.isEmpty()) {
+            keypairnames.add(name);
+        }
+        return keypairnames;
     }
 
     public Long getId() {

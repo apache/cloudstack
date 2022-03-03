@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,14 +39,19 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
@@ -176,6 +183,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.jetbrains.annotations.NotNull;
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
@@ -279,9 +287,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserAuthenticator> _userAuthenticators;
     protected List<UserAuthenticator> _userPasswordEncoders;
+    protected List<PluggableService> services;
+    private List<APIChecker> apiAccessCheckers;
 
     @Inject
     private IpAddressManager _ipAddrMgr;
+    @Inject
+    private RoleService roleService;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
@@ -292,6 +304,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<SecurityChecker> _securityCheckers;
     private int _cleanupInterval;
+    private List<String> apiNameList;
+
+    protected AccountManagerImpl() {
+        super();
+    }
 
     public List<UserAuthenticator> getUserAuthenticators() {
         return _userAuthenticators;
@@ -315,6 +332,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     public void setSecurityCheckers(List<SecurityChecker> securityCheckers) {
         _securityCheckers = securityCheckers;
+    }
+
+    public List<PluggableService> getServices() {
+        return services;
+    }
+
+    public void setServices(List<PluggableService> services) {
+        this.services = services;
+    }
+
+    public List<APIChecker> getApiAccessCheckers() {
+        return apiAccessCheckers;
+    }
+
+    public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
+        this.apiAccessCheckers = apiAccessCheckers;
     }
 
     public List<QuerySelector> getQuerySelectors() {
@@ -358,9 +391,45 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean start() {
+        if (apiNameList == null) {
+            long startTime = System.nanoTime();
+            apiNameList = new ArrayList<String>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
+            for (PluggableService service : services) {
+                s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
+                cmdClasses.addAll(service.getCommands());
+            }
+            apiNameList = createApiNameList(cmdClasses);
+            long endTime = System.nanoTime();
+            s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
+        }
         _executor.scheduleAtFixedRate(new AccountCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
     }
+
+    protected List<String> createApiNameList(Set<Class<?>> cmdClasses) {
+        List<String> apiNameList = new ArrayList<String>();
+
+        for (Class<?> cmdClass : cmdClasses) {
+            APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
+            if (apiCmdAnnotation == null) {
+                apiCmdAnnotation = cmdClass.getSuperclass().getAnnotation(APICommand.class);
+            }
+            if (apiCmdAnnotation == null || !apiCmdAnnotation.includeInApiDoc() || apiCmdAnnotation.name().isEmpty()) {
+                continue;
+            }
+
+            String apiName = apiCmdAnnotation.name();
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("Found api: " + apiName);
+            }
+
+            apiNameList.add(apiName);
+        }
+
+        return apiNameList;
+    }
+
 
     @Override
     public boolean stop() {
@@ -1003,13 +1072,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvents({@ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
-        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
-    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName,
-            final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
-
-        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, roleId, domainId, networkDomain, details, accountUUID, userUUID,
-                User.Source.UNKNOWN);
+            @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
+    public UserAccount createUserAccount(CreateAccountCmd accountCmd) {
+        return createUserAccount(accountCmd.getUsername(), accountCmd.getPassword(), accountCmd.getFirstName(),
+                accountCmd.getLastName(), accountCmd.getEmail(), accountCmd.getTimeZone(), accountCmd.getAccountName(),
+                accountCmd.getAccountType(), accountCmd.getRoleId(), accountCmd.getDomainId(),
+                accountCmd.getNetworkDomain(), accountCmd.getDetails(), accountCmd.getAccountUUID(),
+                accountCmd.getUserUUID(), User.Source.UNKNOWN);
     }
+
 
     // ///////////////////////////////////////////////////
     // ////////////// API commands /////////////////////
@@ -1080,6 +1151,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 AccountVO account = createAccount(accountNameFinal, accountType, roleId, domainIdFinal, networkDomain, details, accountUUID);
                 long accountId = account.getId();
 
+                checkRoleEscalation(getCurrentCallingAccount(), account);
+
                 // create the first user for the account
                 UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, source);
 
@@ -1108,6 +1181,74 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check success
         return _userAccountDao.findById(userId);
+    }
+
+    /**
+     * if there is any permission under the requested role that is not permitted for the caller, refuse
+     */
+    private void checkRoleEscalation(Account caller, Account requested) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+                    caller.getAccountName(),
+                    caller.getUuid(),
+                    caller.getRoleId(),
+                    requested.getAccountName(),
+                    requested.getUuid(),
+                    requested.getRoleId()));
+        }
+        List<APIChecker> apiCheckers = getEnabledApiCheckers();
+        for (String command : apiNameList) {
+            try {
+                checkApiAccess(apiCheckers, requested, command);
+            } catch (PermissionDeniedException pde) {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                            command,
+                            pde.getAccount().getAccountName(),
+                            pde.getAccount().getUuid(),
+                            pde.getEntitiesInViolation()
+                            ));
+                }
+                continue;
+            }
+            // so requested can, now make sure caller can as well
+            try {
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("permission to \"%s\" is requested",
+                            command));
+                }
+                checkApiAccess(apiCheckers, caller, command);
+            } catch (PermissionDeniedException pde) {
+                String msg = String.format("User of Account %s/%s (%s) can not create an account with access to more privileges they have themself.",
+                        caller.getAccountName(),
+                        caller.getDomainId(),
+                        caller.getUuid());
+                s_logger.warn(msg);
+                throw new PermissionDeniedException(msg,pde);
+            }
+        }
+    }
+
+    private void checkApiAccess(List<APIChecker> apiCheckers, Account caller, String command) {
+        for (final APIChecker apiChecker : apiCheckers) {
+            apiChecker.checkAccess(caller, command);
+        }
+    }
+
+    @NotNull
+    private List<APIChecker> getEnabledApiCheckers() {
+        // we are really only interested in the dynamic access checker
+        List<APIChecker> usableApiCheckers = new ArrayList<>();
+        for (APIChecker apiChecker : apiAccessCheckers) {
+            if (apiChecker.isEnabled()) {
+                usableApiCheckers.add(apiChecker);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("using api checker \"%s\"",
+                            apiChecker.getName()));
+                }
+            }
+        }
+        return usableApiCheckers;
     }
 
     @Override
@@ -1759,6 +1900,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             acctForUpdate.setRoleId(roleId);
+            checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);
         }
 
         if (networkDomain != null) {

@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
+import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
@@ -137,4 +138,6 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @return returns operation success
      */
     boolean deleteBackup(final Long backupId);
+
+    BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 }

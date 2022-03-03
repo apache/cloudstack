@@ -16,7 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div
+    class="form-layout"
+    @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
       {{ $t('message.upload.file.processing') }}
@@ -144,17 +146,11 @@
         <a-form-item
           :label="$t('label.ispublic')"
           v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
-          <a-switch
-            v-decorator="['ispublic', {
-              initialValue: false
-            }]" />
+          <a-switch v-decorator="['ispublic', { initialValue: false }]" />
         </a-form-item>
 
-        <a-form-item :label="$t('label.isfeatured')">
-          <a-switch
-            v-decorator="['isfeatured', {
-              initialValue: false
-            }]" />
+        <a-form-item :label="$t('label.isfeatured')" v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <a-switch v-decorator="['isfeatured', { initialValue: false }]" />
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -313,7 +309,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }

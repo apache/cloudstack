@@ -205,7 +205,7 @@ public class AffinityApiUnitTest {
     @Test(expected = InvalidParameterValueException.class)
     public void updateAffinityGroupVMRunning() throws ResourceInUseException {
 
-        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test", 1L);
+        UserVmVO vm = new UserVmVO(10L, "test", "test", 101L, HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
         vm.setState(VirtualMachine.State.Running);
         when(_vmDao.findById(10L)).thenReturn(vm);
 

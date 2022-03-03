@@ -23,6 +23,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -611,6 +612,12 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 
     @Override
     public Domain getVlanDomain(long vlanId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<Configuration, String> resetConfiguration(ResetCfgCmd cmd) throws InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }

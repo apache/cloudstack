@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.StringUtils;
 import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,6 +52,8 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types.XenAPIException;
 
+import static com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.PLATFORM_CORES_PER_SOCKET_KEY;
+
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Host.class, Script.class, SR.class})
 public class CitrixResourceBaseTest {
@@ -71,6 +74,8 @@ public class CitrixResourceBaseTest {
     private Record hostRecordMock;
 
     private String hostUuidMock = "hostUuidMock";
+
+    private static final String platformString = "device-model:qemu-upstream-compat;vga:std;videoram:8;apic:true;viridian:false;timeoffset:0;pae:true;acpi:1;hpet:true;secureboot:false;nx:true";
 
     @Before
     public void beforeTest() throws XenAPIException, XmlRpcException {
@@ -368,5 +373,33 @@ public class CitrixResourceBaseTest {
         Mockito.verify(citrixResourceBase, Mockito.times(1)).createStartUpStorageCommand(connectionMock, srMock2);
 
         Assert.assertEquals(1, startUpCommandsForLocalStorage.size());
+    }
+
+    @Test
+    public void syncPlatformAndCoresPerSocketSettingsEmptyCoresPerSocket() {
+        String coresPerSocket = null;
+        Map<String, String> platform = Mockito.mock(Map.class);
+        citrixResourceBase.syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
+        Mockito.verify(platform, Mockito.never()).put(Mockito.any(), Mockito.any());
+        Mockito.verify(platform, Mockito.never()).remove(Mockito.any());
+    }
+
+    @Test
+    public void syncPlatformAndCoresPerSocketSettingsEmptyCoresPerSocketOnPlatform() {
+        String coresPerSocket = "2";
+        Map<String, String> platform = StringUtils.stringToMap(platformString);
+        citrixResourceBase.syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
+        Assert.assertTrue(platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY));
+        Assert.assertEquals(coresPerSocket, platform.get(PLATFORM_CORES_PER_SOCKET_KEY));
+    }
+
+    @Test
+    public void syncPlatformAndCoresPerSocketSettingsUpdateCoresPerSocketOnPlatform() {
+        String coresPerSocket = "2";
+        String platformStr = platformString + "," + PLATFORM_CORES_PER_SOCKET_KEY + ":3";
+        Map<String, String> platform = StringUtils.stringToMap(platformStr);
+        citrixResourceBase.syncPlatformAndCoresPerSocketSettings(coresPerSocket, platform);
+        Assert.assertTrue(platform.containsKey(PLATFORM_CORES_PER_SOCKET_KEY));
+        Assert.assertEquals(coresPerSocket, platform.get(PLATFORM_CORES_PER_SOCKET_KEY));
     }
 }

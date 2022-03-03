@@ -132,7 +132,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
 import java.util.concurrent.ExecutionException;
@@ -1869,6 +1869,7 @@ public class VolumeServiceImpl implements VolumeService {
 
         long sourceVolumeId = sourceVolume.getId();
         volDao.updateUuid(sourceVolumeId, destinationVolume.getId());
+        volDao.detachVolume(sourceVolumeId);
 
         s_logger.info(String.format("Cleaning up %s on storage [%s].", sourceVolumeVo.getVolumeDescription(), sourceVolumeVo.getPoolId()));
         destroyVolume(sourceVolumeId);
@@ -2063,6 +2064,7 @@ public class VolumeServiceImpl implements VolumeService {
                 srcVolume.processEvent(Event.OperationSuccessed);
                 destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
                 volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+                volDao.detachVolume(srcVolume.getId());
                 try {
                     destroyVolume(srcVolume.getId());
                     srcVolume = volFactory.getVolume(srcVolume.getId());
@@ -2111,7 +2113,7 @@ public class VolumeServiceImpl implements VolumeService {
                 destPoolSystemId = destPoolSystemIdDetail.getValue();
             }
 
-            if (Strings.isNullOrEmpty(srcPoolSystemId) || Strings.isNullOrEmpty(destPoolSystemId)) {
+            if (StringUtils.isAnyEmpty(srcPoolSystemId, destPoolSystemId)) {
                 s_logger.warn("PowerFlex src pool: " + srcDataStore.getId() + " or dest pool: " + destDataStore.getId() +
                         " storage instance details are not available");
                 return false;

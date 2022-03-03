@@ -67,7 +67,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -100,9 +100,9 @@ export default {
               hasJobId = true
               const jobId = json[obj][res]
               this.$pollJob({
-                title: title,
-                jobid: jobId,
-                description: description,
+                title,
+                jobId,
+                description,
                 showLoading: false
               })
             }

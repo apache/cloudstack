@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -35,7 +35,6 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 
 @APICommand(name = "updateServiceOffering", description = "Updates a service offering.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -64,7 +63,8 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -109,7 +109,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public List<Long> getDomainIds() {
         List<Long> validDomainIds = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(domainIds)) {
+        if (StringUtils.isNotEmpty(domainIds)) {
             if (domainIds.contains(",")) {
                 String[] domains = domainIds.split(",");
                 for (String domain : domains) {
@@ -139,7 +139,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public List<Long> getZoneIds() {
         List<Long> validZoneIds = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(zoneIds)) {
+        if (StringUtils.isNotEmpty(zoneIds)) {
             if (zoneIds.contains(",")) {
                 String[] zones = zoneIds.split(",");
                 for (String zone : zones) {

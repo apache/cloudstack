@@ -44,6 +44,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageServic
 import org.apache.cloudstack.engine.subsystem.api.storage.SecondaryStorageService.DataObjectResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -144,10 +145,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         migrationHelper.checkIfCompleteMigrationPossible(migrationPolicy, srcDataStoreId);
         DataStore srcDatastore = dataStoreManager.getDataStore(srcDataStoreId, DataStoreRole.Image);
         Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains = new HashMap<>();
-        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains);
+        Map<DataObject, Pair<List<TemplateInfo>, Long>> childTemplates = new HashMap<>();
+        files = migrationHelper.getSortedValidSourcesList(srcDatastore, snapshotChains, childTemplates);
 
         if (files.isEmpty()) {
-            return new MigrationResponse("No files in Image store "+srcDatastore.getId()+ " to migrate", migrationPolicy.toString(), true);
+            return new MigrationResponse(String.format("No files in Image store: %s to migrate", srcDatastore.getId()), migrationPolicy.toString(), true);
         }
         Map<Long, Pair<Long, Long>> storageCapacities = new Hashtable<>();
         for (Long storeId : destDatastores) {
@@ -155,7 +157,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
         storageCapacities.put(srcDataStoreId, new Pair<>(null, null));
         if (migrationPolicy == MigrationPolicy.COMPLETE) {
-            s_logger.debug("Setting source image store "+srcDatastore.getId()+ " to read-only");
+            s_logger.debug(String.format("Setting source image store: %s to read-only", srcDatastore.getId()));
             storageService.updateImageStoreStatus(srcDataStoreId, true);
         }
 
@@ -172,6 +174,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             return response;
         }
 
+        int skipped = 0;
         List<Future<AsyncCallFuture<DataObjectResult>>> futures = new ArrayList<>();
         while (true) {
             DataObject chosenFileForMigration = null;
@@ -184,7 +187,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             Long destDatastoreId = orderedDS.get(0);
 
             if (chosenFileForMigration == null || destDatastoreId == null || (destDatastoreId == srcDatastore.getId() && migrationPolicy == MigrationPolicy.BALANCE) ) {
-                Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy);
+                Pair<String, Boolean> result = migrateCompleted(destDatastoreId, srcDatastore, files, migrationPolicy, skipped);
                 message = result.first();
                 success = result.second();
                 break;
@@ -194,13 +197,14 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 destDatastoreId = orderedDS.get(1);
             }
 
-            if (chosenFileForMigration.getSize() > storageCapacities.get(destDatastoreId).first()) {
-                s_logger.debug("file: " + chosenFileForMigration.getId() + " too large to be migrated to " + destDatastoreId);
+            if (chosenFileForMigration.getPhysicalSize() > storageCapacities.get(destDatastoreId).first()) {
+                s_logger.debug(String.format("%s: %s too large to be migrated to %s",  chosenFileForMigration.getType().name() , chosenFileForMigration.getUuid(), destDatastoreId));
+                skipped += 1;
                 continue;
             }
 
-            if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, migrationPolicy)) {
-                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, srcDatastore, destDatastoreId, executor, futures);
+            if (shouldMigrate(chosenFileForMigration, srcDatastore.getId(), destDatastoreId, storageCapacities, snapshotChains, childTemplates, migrationPolicy)) {
+                storageCapacities = migrateAway(chosenFileForMigration, storageCapacities, snapshotChains, childTemplates, srcDatastore, destDatastoreId, executor, futures);
             } else {
                 if (migrationPolicy == MigrationPolicy.BALANCE) {
                     continue;
@@ -215,7 +219,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         return handleResponse(futures, migrationPolicy, message, success);
     }
 
-    protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy) {
+    protected Pair<String, Boolean> migrateCompleted(Long destDatastoreId, DataStore srcDatastore, List<DataObject> files, MigrationPolicy migrationPolicy, int skipped) {
         String message = "";
         boolean success = true;
         if (destDatastoreId == srcDatastore.getId() && !files.isEmpty()) {
@@ -233,14 +237,27 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
             }
         } else {
             message = "Migration completed";
+            if (migrationPolicy == MigrationPolicy.COMPLETE && skipped > 0) {
+                message += ". Not all data objects were migrated. Some were probably skipped due to lack of storage capacity.";
+                success = false;
+            }
         }
         return new Pair<String, Boolean>(message, success);
     }
 
-    protected Map<Long, Pair<Long, Long>> migrateAway(DataObject chosenFileForMigration, Map<Long, Pair<Long, Long>> storageCapacities,
-                               Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, DataStore srcDatastore, Long destDatastoreId, ThreadPoolExecutor executor,
-    List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
-        Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains);
+    protected Map<Long, Pair<Long, Long>> migrateAway(
+            DataObject chosenFileForMigration,
+            Map<Long, Pair<Long, Long>> storageCapacities,
+            Map<DataObject,
+            Pair<List<SnapshotInfo>, Long>> snapshotChains,
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChains,
+            DataStore srcDatastore,
+            Long destDatastoreId,
+            ThreadPoolExecutor executor,
+            List<Future<AsyncCallFuture<DataObjectResult>>> futures) {
+
+        Long fileSize = migrationHelper.getFileSize(chosenFileForMigration, snapshotChains, templateChains);
+
         storageCapacities = assumeMigrate(storageCapacities, srcDatastore.getId(), destDatastoreId, fileSize);
         long activeSsvms = migrationHelper.activeSSVMCount(srcDatastore);
         long totalJobs = activeSsvms * numConcurrentCopyTasksPerSSVM;
@@ -254,8 +271,11 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         if (chosenFileForMigration instanceof SnapshotInfo ) {
             task.setSnapshotChains(snapshotChains);
         }
+        if (chosenFileForMigration instanceof TemplateInfo) {
+            task.setTemplateChain(templateChains);
+        }
         futures.add((executor.submit(task)));
-        s_logger.debug("Migration of file  " + chosenFileForMigration.getId() + " is initiated");
+        s_logger.debug(String.format("Migration of %s: %s is initiated. ", chosenFileForMigration.getType().name(), chosenFileForMigration.getUuid()));
         return storageCapacities;
     }
 
@@ -374,13 +394,19 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
      * @param migrationPolicy determines whether a "Balance" or "Complete" migration operation is to be performed
      * @return
      */
-    private boolean shouldMigrate(DataObject chosenFile, Long srcDatastoreId, Long destDatastoreId, Map<Long, Pair<Long, Long>> storageCapacities,
-                                  Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains, MigrationPolicy migrationPolicy) {
+    private boolean shouldMigrate(
+            DataObject chosenFile,
+            Long srcDatastoreId,
+            Long destDatastoreId,
+            Map<Long, Pair<Long, Long>> storageCapacities,
+            Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChains,
+            Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChains,
+            MigrationPolicy migrationPolicy) {
 
         if (migrationPolicy == MigrationPolicy.BALANCE) {
             double meanStdDevCurrent = getStandardDeviation(storageCapacities);
 
-            Long fileSize = migrationHelper.getFileSize(chosenFile, snapshotChains);
+            Long fileSize = migrationHelper.getFileSize(chosenFile, snapshotChains, templateChains);
             Map<Long, Pair<Long, Long>> proposedCapacities = assumeMigrate(storageCapacities, srcDatastoreId, destDatastoreId, fileSize);
             double meanStdDevAfter = getStandardDeviation(proposedCapacities);
 
@@ -426,6 +452,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         private DataStore srcDataStore;
         private DataStore destDataStore;
         private Map<DataObject, Pair<List<SnapshotInfo>, Long>> snapshotChain;
+        private Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain;
         public MigrateDataTask(DataObject file, DataStore srcDataStore, DataStore destDataStore) {
             this.file = file;
             this.srcDataStore = srcDataStore;
@@ -439,13 +466,19 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         public Map<DataObject, Pair<List<SnapshotInfo>, Long>> getSnapshotChain() {
             return snapshotChain;
         }
+        public Map<DataObject, Pair<List<TemplateInfo>, Long>> getTemplateChain() {
+            return templateChain;
+        }
+        public void setTemplateChain(Map<DataObject, Pair<List<TemplateInfo>, Long>> templateChain) {
+            this.templateChain = templateChain;
+        }
         public DataObject getFile() {
             return file;
         }
 
         @Override
         public AsyncCallFuture<DataObjectResult> call() throws Exception {
-            return secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain);
+            return secStgSrv.migrateData(file, srcDataStore, destDataStore, snapshotChain, templateChain);
         }
     }
 }
