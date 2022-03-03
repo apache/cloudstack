@@ -233,8 +233,7 @@ public class ActionEventUtilsTest {
         CallContext.unregister();
     }
 
-    private void checkEventResourceAdUnregisterContext(Long resourceId, String resourceUuid, String resourceType) {
-        Assert.assertNotEquals(publishedEvents.size(), 0);
+    private void checkEventResourceAndUnregisterContext(Long resourceId, String resourceUuid, String resourceType) {
         Assert.assertEquals(publishedEvents.size(), 1);
         Event event = publishedEvents.get(0);
         JsonObject json = new JsonParser().parse(event.getDescription()).getAsJsonObject();
@@ -243,7 +242,6 @@ public class ActionEventUtilsTest {
         Assert.assertEquals(json.get("entity").getAsString(), resourceType);
         Assert.assertEquals(json.get("entityuuid").getAsString(), resourceUuid);
 
-        Assert.assertNotEquals(persistedEvents.size(), 0);
         Assert.assertEquals(persistedEvents.size(), 1);
         EventVO eventVO = persistedEvents.get(0);
         Assert.assertEquals(eventVO.getResourceType(), resourceType);
@@ -264,7 +262,7 @@ public class ActionEventUtilsTest {
         Mockito.when(entityMgr.findByIdIncludingRemoved(VirtualMachine.class, resourceId)).thenReturn(vm);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType);
 
-        checkEventResourceAdUnregisterContext(resourceId, resourceUuid, resourceType);
+        checkEventResourceAndUnregisterContext(resourceId, resourceUuid, resourceType);
     }
 
     @Test
@@ -280,6 +278,78 @@ public class ActionEventUtilsTest {
         CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_VM_START, "Test event", null, null);
 
-        checkEventResourceAdUnregisterContext(resourceId, resourceUuid, resourceType);
+        checkEventResourceAndUnregisterContext(resourceId, resourceUuid, resourceType);
+    }
+
+    @Test
+    public void testScheduledEvent() {
+        CallContext.register(user, account);
+
+        final Long resourceId = 1L;
+        final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
+        final String resourceUuid = UUID.randomUUID().toString();
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(resourceId);
+        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
+        CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
+        ActionEventUtils.onScheduledActionEvent(USER_ID, ACCOUNT_ID, EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType, true, 0L);
+
+
+        Assert.assertEquals(publishedEvents.size(), 1);
+        Event event = publishedEvents.get(0);
+        JsonObject json = new JsonParser().parse(event.getDescription()).getAsJsonObject();
+        Assert.assertTrue(json.has("status"));
+        Assert.assertEquals(json.get("status").getAsString(), com.cloud.event.Event.State.Scheduled.toString());
+        Assert.assertEquals(persistedEvents.size(), 1);
+        EventVO eventVO = persistedEvents.get(0);
+        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Scheduled);
+
+        CallContext.unregister();
+    }
+
+    @Test
+    public void testCreatedEvent() {
+        CallContext.register(user, account);
+
+        final Long resourceId = 1L;
+        final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
+        final String resourceUuid = UUID.randomUUID().toString();
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(resourceId);
+        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
+        CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
+        ActionEventUtils.onCreatedActionEvent(USER_ID, ACCOUNT_ID, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_START, true, "Test event", resourceId, resourceType);
+
+
+        Assert.assertEquals(publishedEvents.size(), 1);
+        Event event = publishedEvents.get(0);
+        JsonObject json = new JsonParser().parse(event.getDescription()).getAsJsonObject();
+        Assert.assertTrue(json.has("status"));
+        Assert.assertEquals(json.get("status").getAsString(), com.cloud.event.Event.State.Created.toString());
+        Assert.assertEquals(persistedEvents.size(), 1);
+        EventVO eventVO = persistedEvents.get(0);
+        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Created);
+
+        CallContext.unregister();
+    }
+
+    @Test
+    public void testNestedEvent() {
+        CallContext.register(user, account);
+
+        final Long resourceId = 1L;
+        final String resourceType = ApiCommandResourceType.VirtualMachine.toString();
+        final String resourceUuid = UUID.randomUUID().toString();
+        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+        Mockito.when(vm.getId()).thenReturn(resourceId);
+        Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
+        CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
+        ActionEventUtils.startNestedActionEvent(EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType);
+
+        Assert.assertEquals(persistedEvents.size(), 1);
+        EventVO eventVO = persistedEvents.get(0);
+        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Started);
+
+        CallContext.unregister();
     }
 }
