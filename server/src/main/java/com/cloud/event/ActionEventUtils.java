@@ -259,7 +259,7 @@ public class ActionEventUtils {
             if (param instanceof Long) {
                 entityId = (Long)param;
             } else if (entityUuid != null) {
-                Object obj = s_entityMgr.findByUuid(entityClass, entityUuid);
+                Object obj = s_entityMgr.findByUuidIncludingRemoved(entityClass, entityUuid);
                 if (obj instanceof InternalIdentity) {
                     entityId = ((InternalIdentity)obj).getId();
                 }

@@ -132,12 +132,24 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
         this.resourceId = resourceId;
     }
 
+    public String getResourceId() {
+        return resourceId;
+    }
+
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
     public void setResourceName(String resourceName) {
         this.resourceName = resourceName;
+    }
+
+    public String getResourceName() {
+        return resourceName;
     }
 
     public void setCreated(Date created) {
