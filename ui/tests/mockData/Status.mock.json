@@ -12,6 +12,7 @@
       "state.error": "Error",
       "message.publicip.state.allocated": "Allocated",
       "message.publicip.state.created": "Created",
+      "message.publicip.state.reserved": "Reserved",
       "message.vmsnapshot.state.active": "Active",
       "message.vm.state.active": "Active",
       "message.volume.state.active": "Active",

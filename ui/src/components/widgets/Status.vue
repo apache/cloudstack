@@ -152,6 +152,8 @@ export default {
       switch (state.toLowerCase()) {
         case 'scheduled':
           return 'blue'
+        case 'reserved':
+          return 'orange'
         default:
           return null
       }
