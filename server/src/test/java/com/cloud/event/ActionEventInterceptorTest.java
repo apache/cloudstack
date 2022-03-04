@@ -11,6 +11,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
@@ -251,6 +253,28 @@ public class ActionEventInterceptorTest {
         Assert.assertTrue(eventVO.getDescription().endsWith(eventDescription));
         Assert.assertEquals(eventVO.getLevel(), EventVO.LEVEL_ERROR);
         Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
+    }
+
+    @Test
+    public void testInterceptExceptionResource() throws NoSuchMethodException {
+        CallContext.register(user, account);
+        Long resourceId = 1L;
+        ApiCommandResourceType resourceType = ApiCommandResourceType.VirtualMachine;
+        CallContext.current().setEventResourceId(resourceId);
+        CallContext.current().setEventResourceType(resourceType);
+        TestActionEventManagerImpl tester = new TestActionEventManagerImpl();
+        Method m = tester.getClass().getMethod("testMethod");
+        actionEventInterceptor.interceptException(m, tester, null);
+
+        Assert.assertEquals(persistedEvents.size(), 1);
+        EventVO eventVO = persistedEvents.get(0);
+        Assert.assertEquals(eventVO.getType(), eventType);
+        Assert.assertTrue(eventVO.getDescription().endsWith(eventDescription));
+        Assert.assertEquals(eventVO.getLevel(), EventVO.LEVEL_ERROR);
+        Assert.assertEquals(eventVO.getState(), com.cloud.event.Event.State.Completed);
+        Assert.assertEquals(eventVO.getResourceId(), resourceId);
+        Assert.assertEquals(eventVO.getResourceType(), resourceType.toString());
+        CallContext.unregister();
     }
 
     @Test
