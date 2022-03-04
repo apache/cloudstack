@@ -448,9 +448,9 @@ public class VolumeServiceImpl implements VolumeService {
                     volDao.remove(vo.getId());
                 }
 
-                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+                List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 
-                if (snapStoreVo != null) {
+                for (SnapshotDataStoreVO snapStoreVo : snapStoreVOs) {
                     long storagePoolId = snapStoreVo.getDataStoreId();
                     StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
