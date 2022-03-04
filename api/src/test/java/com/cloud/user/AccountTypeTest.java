@@ -29,12 +29,15 @@ public class AccountTypeTest {
         Assert.assertEquals(3, Account.Type.RESOURCE_DOMAIN_ADMIN.ordinal());
         Assert.assertEquals(4, Account.Type.READ_ONLY_ADMIN.ordinal());
         Assert.assertEquals(5, Account.Type.PROJECT.ordinal());
+        Assert.assertEquals(6, Account.Type.UNKNOWN.ordinal());
     }
 
     @Test
     public void getFromValueTestIfAllValuesAreReturned(){
         for (Account.Type accountType: Account.Type.values()) {
-            Assert.assertEquals(Account.Type.getFromValue(accountType.ordinal()), accountType);
+            if( accountType != Account.Type.UNKNOWN) {
+                Assert.assertEquals(Account.Type.getFromValue(accountType.ordinal()), accountType);
+            }
         }
     }
 

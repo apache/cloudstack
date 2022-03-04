@@ -23,6 +23,7 @@ import com.google.common.base.Enums;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.Map;
 
 // Enum for default roles in CloudStack
 public enum RoleType {
@@ -30,14 +31,14 @@ public enum RoleType {
     ResourceAdmin(2L, Account.Type.RESOURCE_DOMAIN_ADMIN, 2),
     DomainAdmin(3L, Account.Type.DOMAIN_ADMIN, 4),
     User(4L, Account.Type.NORMAL, 8),
-    Unknown(-1L,  null, 0);
+    Unknown(-1L,  Account.Type.UNKNOWN, 0);
 
     private long id;
     private Account.Type accountType;
     private int mask;
 
     private static Logger logger = Logger.getLogger(RoleType.class.getName());
-    private static HashMap<Account.Type, RoleType> ACCOUNT_TYPE_MAP = new HashMap<>();
+    private static Map<Account.Type, RoleType> ACCOUNT_TYPE_MAP = new HashMap<>();
 
     static {
         for (RoleType t: RoleType.values()) {
