@@ -46,7 +46,9 @@ public class MemStatTest {
     @Test
     public void getMemInfoParseTest() {
         MemStat memStat = new MemStat();
-        memStat.refresh();
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
 
         Assert.assertEquals(memStat.getTotal(), 5970161664L);
         Assert.assertEquals(memStat.getAvailable(), 3164520448L);
