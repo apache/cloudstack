@@ -36,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
@@ -140,9 +139,8 @@ public class ApiServlet extends HttpServlet {
     private void ensureSingleQueryParameterValue(Map<String, String[]> params) {
         params.forEach((k, v) -> {
             if (v.length > 1) {
-                String message = String.format("Query parameter '%s' has multiple values", k);
-                s_logger.error(message);
-                throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, message);
+                String message = String.format("Query parameter '%s' has multiple values %s", k, Arrays.toString(v));
+                s_logger.warn(message);
             }
         });
 
