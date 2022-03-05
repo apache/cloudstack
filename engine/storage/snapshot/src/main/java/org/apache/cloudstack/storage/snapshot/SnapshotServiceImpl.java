@@ -219,7 +219,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             result = future.get();
             SnapshotVO snapVO = _snapshotDao.findById(snap.getId());
-            if (snapVO == null || snapVO.getsnapshotType() != Snapshot.Type.INTERNAL.ordinal()) {
+            if (snapVO == null || snapVO.getSnapshotType() != Snapshot.Type.INTERNAL.ordinal()) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
                         snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
             }
