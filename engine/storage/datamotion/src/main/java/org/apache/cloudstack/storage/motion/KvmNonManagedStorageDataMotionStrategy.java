@@ -35,7 +35,7 @@ import org.apache.cloudstack.storage.datastore.DataStoreManagerImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -214,7 +214,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 Answer copyCommandAnswer = sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
 
                 if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
-                    updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
+                    updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo.getTemplateId(), destTemplateInfo.getUuid(), destDataStore.getId(), destTemplate.getSize());
                 }
                 return;
             }
@@ -225,15 +225,14 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     /**
      *  Update the template reference on table "template_spool_ref" (VMTemplateStoragePoolVO).
      */
-    protected void updateTemplateReferenceIfSuccessfulCopy(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, TemplateInfo destTemplateInfo, DataStore destDataStore) {
-        VMTemplateStoragePoolVO srcVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(srcStoragePool.getId(), srcVolumeInfo.getTemplateId(), null);
-        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStore.getId(), srcVolumeInfo.getTemplateId(), null);
+    protected void updateTemplateReferenceIfSuccessfulCopy(long templateId, String destTemplateInfoUuid, long destDataStoreId, long templateSize) {
+        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStoreId, templateId, null);
         destVolumeTemplateStoragePoolVO.setDownloadPercent(100);
         destVolumeTemplateStoragePoolVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         destVolumeTemplateStoragePoolVO.setState(ObjectInDataStoreStateMachine.State.Ready);
-        destVolumeTemplateStoragePoolVO.setTemplateSize(srcVolumeTemplateStoragePoolVO.getTemplateSize());
-        destVolumeTemplateStoragePoolVO.setLocalDownloadPath(destTemplateInfo.getUuid());
-        destVolumeTemplateStoragePoolVO.setInstallPath(destTemplateInfo.getUuid());
+        destVolumeTemplateStoragePoolVO.setTemplateSize(templateSize);
+        destVolumeTemplateStoragePoolVO.setLocalDownloadPath(destTemplateInfoUuid);
+        destVolumeTemplateStoragePoolVO.setInstallPath(destTemplateInfoUuid);
         vmTemplatePoolDao.persist(destVolumeTemplateStoragePoolVO);
     }
 

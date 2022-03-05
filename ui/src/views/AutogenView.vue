@@ -39,6 +39,13 @@
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
                   @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                <a-switch
+                  v-if="!projectView && hasProjectId"
+                  style="margin-left: 8px"
+                  :checked-children="$t('label.projects')"
+                  :un-checked-children="$t('label.projects')"
+                  :checked="$store.getters.listAllProjects"
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
                 <a-tooltip placement="right">
                   <template slot="title">
                     {{ $t('label.filterby') }}
@@ -66,6 +73,19 @@
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
+                <a-dropdown style="margin-left: 8px" :trigger="['click']" v-if="!dataView && !$store.getters.metrics" v-model="customColumnsDropdownVisible">
+                  <a-button>
+                    {{ $t('label.columns') }} <a-icon type="down" style="color: rgba(0,0,0,.45)" />
+                  </a-button>
+                  <a-menu
+                    @click="() => { customColumnsDropdownVisible = true }"
+                    slot="overlay" >
+                    <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
+                      <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
+                      {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+                    </a-menu-item>
+                  </a-menu>
+                </a-dropdown>
               </span>
             </breadcrumb>
           </a-col>
@@ -96,7 +116,7 @@
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0)">
+      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || this.selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -124,10 +144,14 @@
             :resource="resource"
             :loading="loading"
             :action="{currentAction}"
+            :selectedRowKeys="selectedRowKeys"
+            :selectedItems="selectedItems"
+            :chosenColumns="chosenColumns"
             v-bind="{currentAction}"
             @refresh-data="fetchData"
             @poll-action="pollActionCompletion"
-            @close-action="closeAction"/>
+            @close-action="closeAction"
+            @cancel-bulk-action="handleCancel"/>
         </a-modal>
       </keep-alive>
       <a-modal
@@ -430,7 +454,7 @@
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
       :selectedItems="selectedItems"
-      :selectedColumns="selectedColumns"
+      :selectedColumns="bulkColumns"
       :message="modalInfo"
       @handle-cancel="handleCancel" />
   </div>
@@ -488,9 +512,13 @@ export default {
       apiName: '',
       loading: false,
       actionLoading: false,
+      columnKeys: [],
+      allColumns: [],
       columns: [],
+      bulkColumns: [],
       selectedColumns: [],
       chosenColumns: [],
+      customColumnsDropdownVisible: false,
       showGroupActionModal: false,
       selectedItems: [],
       items: [],
@@ -504,6 +532,7 @@ export default {
       showAction: false,
       dataView: false,
       projectView: false,
+      hasProjectId: false,
       selectedFilter: '',
       filters: [],
       searchFilters: [],
@@ -634,6 +663,9 @@ export default {
     },
     '$store.getters.metrics' (oldVal, newVal) {
       this.fetchData()
+    },
+    '$store.getters.listAllProjects' (oldVal, newVal) {
+      this.fetchData()
     }
   },
   computed: {
@@ -701,6 +733,7 @@ export default {
       this.actions = []
       this.columns = []
       this.columnKeys = []
+      this.selectedColumns = []
       const refreshed = ('irefresh' in params)
 
       params.listall = true
@@ -740,6 +773,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -809,7 +843,20 @@ export default {
           scopedSlots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
+        this.selectedColumns.push(key)
       }
+      this.allColumns = this.columns
+
+      if (!store.getters.metrics) {
+        if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+          this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+          this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
+        } else {
+          this.selectedColumns = this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] || this.selectedColumns
+          this.updateSelectedColumns()
+        }
+      }
+
       this.chosenColumns = this.columns.filter(column => {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
           this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
@@ -824,11 +871,19 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listSSHKeyPairs'].includes(this.apiName)) {
+          delete params.id
+          params.name = this.$route.params.id
+        }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
           params.hostname = this.$route.params.id
         }
+      }
+
+      if (this.$store.getters.listAllProjects && !this.projectView) {
+        params.projectid = '-1'
       }
 
       params.page = this.page
@@ -872,18 +927,6 @@ export default {
           })
         }
 
-        if (this.apiName === 'listAnnotations') {
-          this.columns.map(col => {
-            if (col.title === 'label.entityid') {
-              col.title = this.$t('label.annotation.entity')
-            } else if (col.title === 'label.entitytype') {
-              col.title = this.$t('label.annotation.entity.type')
-            } else if (col.title === 'label.adminsonly') {
-              col.title = this.$t('label.annotation.admins.only')
-            }
-          })
-        }
-
         for (let idx = 0; idx < this.items.length; idx++) {
           this.items[idx].key = idx
           for (const key in customRender) {
@@ -897,8 +940,10 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          this.resource = this.items[0]
-          this.$emit('change-resource', this.resource)
+          if (!this.showAction) {
+            this.resource = this.items[0]
+            this.$emit('change-resource', this.resource)
+          }
         } else {
           if (this.dataView) {
             this.$router.push({ path: '/exception/404' })
@@ -960,7 +1005,23 @@ export default {
       this.form = this.$form.createForm(this)
       this.formModel = {}
       if (action.component && action.api && !action.popup) {
-        this.$router.push({ name: action.api })
+        const query = {}
+        if (this.$route.path.startsWith('/vm')) {
+          switch (true) {
+            case ('templateid' in this.$route.query):
+              query.templateid = this.$route.query.templateid
+              break
+            case ('isoid' in this.$route.query):
+              query.isoid = this.$route.query.isoid
+              break
+            case ('networkid' in this.$route.query):
+              query.networkid = this.$route.query.networkid
+              break
+            default:
+              break
+          }
+        }
+        this.$router.push({ name: action.api, query })
         return
       }
       this.currentAction = action
@@ -1009,7 +1070,7 @@ export default {
 
       this.showAction = true
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
@@ -1176,7 +1237,7 @@ export default {
       eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
       this.showGroupActionModal = false
       this.selectedItems = []
-      this.selectedColumns = []
+      this.bulkColumns = []
       this.selectedRowKeys = []
       this.message = {}
     },
@@ -1185,9 +1246,9 @@ export default {
       this.promises = []
       if (!this.dataView && this.currentAction.groupAction && this.selectedRowKeys.length > 0) {
         if (this.selectedRowKeys.length > 0) {
-          this.selectedColumns = this.chosenColumns
+          this.bulkColumns = this.chosenColumns
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
-          this.selectedColumns.splice(0, 0, {
+          this.bulkColumns.splice(0, 0, {
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
             scopedSlots: { customRender: 'status' },
@@ -1201,7 +1262,7 @@ export default {
           this.modalInfo.title = this.currentAction.label
           this.modalInfo.docHelp = this.currentAction.docHelp
         }
-        this.form.validateFields((err, values) => {
+        this.form.validateFieldsAndScroll((err, values) => {
           if (!err) {
             this.actionLoading = true
             const itemsNameMap = {}
@@ -1295,7 +1356,7 @@ export default {
     },
     execSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -1398,6 +1459,30 @@ export default {
     },
     shouldNavigateBack (action) {
       return ((action.icon === 'delete' || ['archiveEvents', 'archiveAlerts', 'unmanageVirtualMachine'].includes(action.api)) && this.dataView)
+    },
+    getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name)[0]
+      }
+      return name
+    },
+    updateSelectedColumns (name) {
+      if (name) {
+        name = this.getColumnKey(name)
+        if (this.selectedColumns.includes(name)) {
+          this.selectedColumns = this.selectedColumns.filter(x => x !== name)
+        } else {
+          this.selectedColumns.push(name)
+        }
+      }
+
+      this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
+
+      if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
+        this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
+      }
+      this.$store.getters.customColumns[this.$store.getters.userInfo.id][this.$route.path] = this.selectedColumns
+      this.$store.dispatch('SetCustomColumns', this.$store.getters.customColumns)
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -1528,7 +1613,7 @@ export default {
         if (!confirmPasswordVal || confirmPasswordVal.length === 0) {
           callback()
         } else if (value && this.confirmDirty) {
-          form.validateFields(['confirmpassword'], { force: true })
+          form.validateFieldsAndScroll(['confirmpassword'], { force: true })
           callback()
         } else {
           callback()
@@ -1561,5 +1646,14 @@ export default {
 
 .ant-breadcrumb {
   vertical-align: text-bottom;
+}
+
+/deep/.ant-alert-message {
+  display: flex;
+  align-items: center;
+}
+
+.hide {
+  display: none !important;
 }
 </style>

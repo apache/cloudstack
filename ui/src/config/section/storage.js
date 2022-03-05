@@ -98,12 +98,8 @@ export default {
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
           listView: true,
-          args: ['url', 'name', 'zoneid', 'format', 'diskofferingid', 'checksum'],
-          mapping: {
-            format: {
-              options: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2']
-            }
-          }
+          popup: true,
+          component: () => import('@/views/storage/UploadVolume.vue')
         },
         {
           api: 'attachVolume',
@@ -196,6 +192,17 @@ export default {
           show: (record, store) => { return record.state === 'Ready' && ['Admin'].includes(store.userInfo.roletype) },
           popup: true,
           component: () => import('@/views/storage/MigrateVolume.vue')
+        },
+        {
+          api: 'changeOfferingForVolume',
+          icon: 'swap',
+          docHelp: 'adminguide/storage.html#id2',
+          label: 'label.change.offering.for.volume',
+          args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
+          dataView: true,
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
+          popup: true,
+          component: () => import('@/views/storage/ChangeOfferingForVolume.vue')
         },
         {
           api: 'extractVolume',

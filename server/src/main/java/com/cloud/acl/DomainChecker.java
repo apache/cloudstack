@@ -178,19 +178,20 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         } else {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
+                String errorMessage = String.format("%s does not have permission to operate with resource", caller);
                 if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
-                            throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                            throw new PermissionDeniedException(errorMessage);
                         }
                     } else if (!_projectMgr.canAccessProjectAccount(caller, account.getId())) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                     checkOperationPermitted(caller, entity);
                 } else {
                     if (caller.getId() != entity.getAccountId()) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                 }
             }

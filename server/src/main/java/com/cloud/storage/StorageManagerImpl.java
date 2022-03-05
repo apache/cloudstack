@@ -50,6 +50,7 @@ import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.StatsCollector;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.google.common.collect.Sets;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -117,6 +118,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -206,7 +208,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -613,7 +614,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
+        return com.cloud.utils.StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
     }
 
     @Override
@@ -725,7 +726,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
      * The name will follow the pattern: <hostname>-local-<firstBlockOfUuid>
      */
     protected String createLocalStoragePoolName(Host host, StoragePoolInfo storagePoolInformation) {
-        return String.format("%s-%s-%s", org.apache.commons.lang3.StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
+        return String.format("%s-%s-%s", StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
     @Override
@@ -775,9 +776,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC
-                    && hypervisorType != HypervisorType.Any) {
-                throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
+
+            Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
+                    HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
+            if (!supportedHypervisorTypes.contains(hypervisorType)) {
+                throw new InvalidParameterValueException("Zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         } else {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
@@ -889,7 +892,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         String name = cmd.getName();
-        if(org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if(StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Storage Pool name to: " + name);
             pool.setName(name);
             _storagePoolDao.update(pool.getId(), pool);
@@ -1889,7 +1892,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         dataStoreVO.setParent(datastoreClusterPool.getId());
 
         Map<String, String> details = new HashMap<>();
-        if(org.apache.commons.lang.StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
+        if(StringUtils.isNotEmpty(childDataStoreAnswer.getPoolType())) {
             details.put("pool_type", childDataStoreAnswer.getPoolType());
         }
         _storagePoolDao.persist(dataStoreVO, details, storageTags);
@@ -2136,6 +2139,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (hostIds.isEmpty()) {
             return null;
         }
+        Collections.shuffle(hostIds);
 
         for (Long hostId : hostIds) {
             Host host = _hostDao.findById(hostId);
@@ -2311,7 +2315,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughIops(List<Volume> requestedVolumes, StoragePool pool) {
+    public boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> requestedVolumes, StoragePool pool) {
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
@@ -2329,8 +2333,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         long requestedIops = 0;
 
-        for (Volume requestedVolume : requestedVolumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : requestedVolumes) {
+            Volume requestedVolume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             Long minIops = requestedVolume.getMinIops();
+            if (requestedVolume.getDiskOfferingId() != diskProfile.getDiskOfferingId()) {
+                minIops = diskProfile.getMinIops();
+            }
 
             if (minIops != null && minIops > 0) {
                 requestedIops += minIops;
@@ -2343,13 +2352,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool) {
-        return storagePoolHasEnoughSpace(volumes, pool, null);
+    public boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool) {
+        return storagePoolHasEnoughSpace(volumeDiskProfilePairs, pool, null);
     }
 
     @Override
-    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool, Long clusterId) {
-        if (volumes == null || volumes.isEmpty()) {
+    public boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilesList, StoragePool pool, Long clusterId) {
+        if (CollectionUtils.isEmpty(volumeDiskProfilesList)) {
             return false;
         }
 
@@ -2366,10 +2375,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
 
-        for (Volume volume : volumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumeDiskProfilesList) {
             // refreshing the volume from the DB to get latest hv_ss_reserve (hypervisor snapshot reserve) field
             // I could have just assigned this to "volume", but decided to make a new variable for it so that it
-            // might be clearer that this "volume" in "volumes" still might have an old value for hv_ss_reverse.
+            // might be clearer that this "volume" in "volumeDiskProfilesList" still might have an old value for hv_ss_reverse.
+            Volume volume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             VolumeVO volumeVO = _volumeDao.findById(volume.getId());
 
             if (volumeVO.getHypervisorSnapshotReserve() == null) {
@@ -2397,7 +2408,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             // A ready-state volume is already allocated in a pool, so the asking size is zero for it.
             // In case the volume is moving across pools or is not ready yet, the asking size has to be computed.
             if ((volumeVO.getState() != Volume.State.Ready) || (volumeVO.getPoolId() != pool.getId())) {
-                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, poolVO);
+                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, diskProfile, poolVO);
 
                 totalAskingSize += getAskingSizeForTemplateBasedOnClusterAndStoragePool(volumeVO.getTemplateId(), clusterId, poolVO);
             }
@@ -2426,14 +2437,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException {
+    public boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException {
         if (CollectionUtils.isEmpty(volumes)) {
             return false;
         }
         List<Pair<Volume, Answer>> answers = new ArrayList<Pair<Volume, Answer>>();
 
-        for (Volume volume : volumes) {
+        for (Pair<Volume, DiskProfile> volumeDiskProfilePair : volumes) {
             String storagePolicyId = null;
+            Volume volume = volumeDiskProfilePair.first();
+            DiskProfile diskProfile = volumeDiskProfilePair.second();
             if (volume.getVolumeType() == Type.ROOT) {
                 Long vmId = volume.getInstanceId();
                 if (vmId != null) {
@@ -2441,9 +2454,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     storagePolicyId = _serviceOfferingDetailsDao.getDetail(vm.getServiceOfferingId(), ApiConstants.STORAGE_POLICY);
                 }
             } else {
-                storagePolicyId = _diskOfferingDetailsDao.getDetail(volume.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
+                storagePolicyId = _diskOfferingDetailsDao.getDetail(diskProfile.getDiskOfferingId(), ApiConstants.STORAGE_POLICY);
             }
-            if (org.apache.commons.lang.StringUtils.isNotEmpty(storagePolicyId)) {
+            if (StringUtils.isNotEmpty(storagePolicyId)) {
                 VsphereStoragePolicyVO storagePolicyVO = _vsphereStoragePolicyDao.findById(Long.parseLong(storagePolicyId));
                 List<Long> hostIds = getUpHostsInPool(pool.getId());
                 Collections.shuffle(hostIds);
@@ -2555,7 +2568,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return 0;
     }
 
-    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, DiskProfile diskProfile, StoragePool pool) {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
 
@@ -2563,7 +2576,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
 
             VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
-
+            if (volume.getDiskOfferingId() != diskProfile.getDiskOfferingId()) {
+                return diskProfile.getSize();
+            }
             return primaryStoreDriver.getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, pool);
         }
 
@@ -2807,6 +2822,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
+                                    if (HypervisorType.Simulator == hypervisorType) {
+                                        continue;
+                                    }
                                     String templateName = getValidTemplateName(zoneId, hypervisorType);
                                     Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
                                             new Pair<>(hypervisorType, templateName);
@@ -3243,8 +3261,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
     @Override
     public Long getDiskBytesReadRate(final ServiceOffering offering, final DiskOffering diskOffering) {
-        if ((offering != null) && (offering.getBytesReadRate() != null) && (offering.getBytesReadRate() > 0)) {
-            return offering.getBytesReadRate();
+        if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
+            return diskOffering.getBytesReadRate();
         } else if ((diskOffering != null) && (diskOffering.getBytesReadRate() != null) && (diskOffering.getBytesReadRate() > 0)) {
             return diskOffering.getBytesReadRate();
         } else {
@@ -3259,9 +3277,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     // get bytesWriteRate from service_offering, disk_offering and vm.disk.throttling.bytes_write_rate
     @Override
     public Long getDiskBytesWriteRate(final ServiceOffering offering, final DiskOffering diskOffering) {
-        if ((offering != null) && (offering.getBytesWriteRate() != null) && (offering.getBytesWriteRate() > 0)) {
-            return offering.getBytesWriteRate();
-        } else if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
+        if ((diskOffering != null) && (diskOffering.getBytesWriteRate() != null) && (diskOffering.getBytesWriteRate() > 0)) {
             return diskOffering.getBytesWriteRate();
         } else {
             Long bytesWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesWriteRate.key()));
@@ -3275,9 +3291,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     // get iopsReadRate from service_offering, disk_offering and vm.disk.throttling.iops_read_rate
     @Override
     public Long getDiskIopsReadRate(final ServiceOffering offering, final DiskOffering diskOffering) {
-        if ((offering != null) && (offering.getIopsReadRate() != null) && (offering.getIopsReadRate() > 0)) {
-            return offering.getIopsReadRate();
-        } else if ((diskOffering != null) && (diskOffering.getIopsReadRate() != null) && (diskOffering.getIopsReadRate() > 0)) {
+        if ((diskOffering != null) && (diskOffering.getIopsReadRate() != null) && (diskOffering.getIopsReadRate() > 0)) {
             return diskOffering.getIopsReadRate();
         } else {
             Long iopsReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsReadRate.key()));
@@ -3291,9 +3305,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     // get iopsWriteRate from service_offering, disk_offering and vm.disk.throttling.iops_write_rate
     @Override
     public Long getDiskIopsWriteRate(final ServiceOffering offering, final DiskOffering diskOffering) {
-        if ((offering != null) && (offering.getIopsWriteRate() != null) && (offering.getIopsWriteRate() > 0)) {
-            return offering.getIopsWriteRate();
-        } else if ((diskOffering != null) && (diskOffering.getIopsWriteRate() != null) && (diskOffering.getIopsWriteRate() > 0)) {
+        if ((diskOffering != null) && (diskOffering.getIopsWriteRate() != null) && (diskOffering.getIopsWriteRate() > 0)) {
             return diskOffering.getIopsWriteRate();
         } else {
             Long iopsWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsWriteRate.key()));
@@ -3327,7 +3339,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
-                PreferredStoragePool
+                PreferredStoragePool,
+                SecStorageVMAutoScaleDown
         };
     }
 

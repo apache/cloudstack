@@ -561,9 +561,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (ids == null || ids.length == 0) {
             return new ArrayList<TemplateJoinVO>();
         }
+
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", QueryService.SortKeyAscending.value(), null, null);
+        searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", true);
+
         SearchCriteria<TemplateJoinVO> sc = tmpltIdsSearch.create();
         sc.setParameters("idsIN", ids);
-        return searchIncludingRemoved(sc, null, null, false);
+        return searchIncludingRemoved(sc, searchFilter, null, false);
     }
-
 }

@@ -103,7 +103,7 @@ export default {
         userid: account.userId,
         domainid: account.domainId
       }).then(response => {
-        store.dispatch('GetInfo').then(() => {
+        store.dispatch('GetInfo', true).then(() => {
           this.$message.success(`Switched to "${account.accountName} (${account.domainPath})"`)
           this.$router.go()
         })

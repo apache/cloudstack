@@ -105,6 +105,7 @@ export default {
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)
+        this.form.resetFields()
         this.formLoading = false
       } catch (e) {
         this.$notification.error({
@@ -119,7 +120,7 @@ export default {
 
       if (this.formLoading) return
 
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

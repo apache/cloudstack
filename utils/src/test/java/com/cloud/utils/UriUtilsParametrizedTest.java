@@ -19,6 +19,7 @@
 
 package com.cloud.utils;
 
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
@@ -30,10 +31,18 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.google.common.collect.ImmutableSet;
 
-@RunWith(Parameterized.class)
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Parameterized.class)
+@PowerMockIgnore({"javax.xml.*", "org.apache.xerces.*", "org.xml.*", "org.w3c.*"})
 public class UriUtilsParametrizedTest {
     @FunctionalInterface
     public interface ThrowingBlock<E extends Exception> {
@@ -140,12 +149,29 @@ public class UriUtilsParametrizedTest {
     }
 
     @Test
-    public void validateUrl() {
+    @PrepareForTest({UriUtils.class})
+
+    public void validateUrl() throws Exception {
+
+        InetAddress inetAddressMock = Mockito.mock(InetAddress.class);
+
+        PowerMockito.mockStatic(InetAddress.class);
+        PowerMockito.when(InetAddress.getByName(Mockito.anyString())).thenReturn(inetAddressMock);
+
         if (expectSuccess) {
             UriUtils.validateUrl(format, url);
         } else {
             assertThrows(() -> UriUtils.validateUrl(format, url), IllegalArgumentException.class);
         }
+
+        PowerMockito.verifyStatic(InetAddress.class);
+        InetAddress.getByName(Mockito.anyString());
+
+        Mockito.verify(inetAddressMock).isAnyLocalAddress();
+        Mockito.verify(inetAddressMock).isLinkLocalAddress();
+        Mockito.verify(inetAddressMock).isLoopbackAddress();
+        Mockito.verify(inetAddressMock).isMulticastAddress();
+
     }
 
     @Test

@@ -23,7 +23,7 @@
         @submit="handleSubmit"
         layout="vertical">
 
-        <a-form-item :label="$t('label.ispublic')" v-show="this.isAdmin()">
+        <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
         </a-form-item>
 
@@ -103,6 +103,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
@@ -169,7 +170,7 @@ export default {
       this.fetchZoneData()
     },
     isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdmin()
     },
     fetchOfferingData () {
       this.loading = true
@@ -228,7 +229,7 @@ export default {
           }
         }
       } else {
-        if (this.isAdmin()) {
+        if (isAdmin()) {
           this.offeringIsPublic = true
         }
       }
@@ -259,7 +260,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }

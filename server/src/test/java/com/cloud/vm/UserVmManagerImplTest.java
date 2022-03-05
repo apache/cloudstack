@@ -16,39 +16,28 @@
 // under the License.
 package com.cloud.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-
-import com.cloud.exception.InsufficientAddressCapacityException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.*;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.*;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.user.ResourceLimitService;
+import com.cloud.user.*;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.CloneVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
@@ -67,25 +56,14 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.UserVO;
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -99,9 +77,6 @@ public class UserVmManagerImplTest {
 
     @Mock
     private DiskOfferingDao diskOfferingDao;
-
-    @Mock
-    private ServiceOfferingVO serviceOfferingVO;
 
     @Mock
     private DataCenterDao _dcDao;
@@ -161,6 +136,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     ResourceLimitService resourceLimitMgr;
+
+    @Mock
+    VolumeApiService volumeApiService;
 
     private long vmId = 1l;
 
@@ -230,8 +208,9 @@ public class UserVmManagerImplTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, false, null,
                 false);
+        serviceOffering.setDiskOfferingId(1l);
         return serviceOffering;
     }
 
@@ -478,16 +457,14 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getId()).thenReturn(1l);
         Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offering.getId()).thenReturn(1l);
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);
-        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskfferingVo);
 
         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
 
-        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, offering);
+        Mockito.when(volumeApiService.validateVolumeSizeInBytes(Mockito.anyLong())).thenReturn(true);
+        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);
         Mockito.verify(userVmManagerImpl, Mockito.times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());

@@ -17,7 +17,6 @@
 
 import Cookies from 'js-cookie'
 import Vue from 'vue'
-import md5 from 'md5'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import router from '@/router'
@@ -35,7 +34,8 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  THEME_SETTING
+  THEME_SETTING,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const user = {
@@ -56,7 +56,8 @@ const user = {
     domainStore: {},
     darkMode: false,
     themeSetting: {},
-    defaultListViewPageSize: 20
+    defaultListViewPageSize: 20,
+    countNotify: 0
   },
 
   mutations: {
@@ -122,6 +123,13 @@ const user = {
     },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
+    },
+    SET_COUNT_NOTIFY (state, number) {
+      state.countNotify = number
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      Vue.ls.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
 
@@ -151,6 +159,8 @@ const user = {
           commit('SET_DARK_MODE', darkMode)
           const themeSetting = Vue.ls.get(THEME_SETTING, {})
           commit('SET_THEME_SETTING', themeSetting)
+          const cachedCustomColumns = Vue.ls.get(CUSTOM_COLUMNS, {})
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           commit('SET_APIS', {})
           commit('SET_NAME', '')
@@ -172,12 +182,13 @@ const user = {
       })
     },
 
-    GetInfo ({ commit }) {
+    GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
-        const cachedApis = Vue.ls.get(APIS, {})
+        const cachedApis = switchDomain ? {} : Vue.ls.get(APIS, {})
         const cachedZones = Vue.ls.get(ZONES, [])
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+        const cachedCustomColumns = Vue.ls.get(CUSTOM_COLUMNS, {})
         const domainStore = Vue.ls.get(DOMAIN_STORE, {})
         const darkMode = Vue.ls.get(DARK_MODE, false)
         const themeSetting = Vue.ls.get(THEME_SETTING, {})
@@ -192,17 +203,13 @@ const user = {
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
           api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            if ('email' in result) {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-            } else {
-              commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-            }
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -242,11 +249,6 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
-          if ('email' in result) {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5(result.email))
-          } else {
-            commit('SET_AVATAR', 'https://www.gravatar.com/avatar/' + md5('dev@cloudstack.apache.org'))
-          }
         }).catch(error => {
           reject(error)
         })

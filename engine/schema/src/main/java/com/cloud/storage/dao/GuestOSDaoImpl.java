@@ -17,9 +17,13 @@
 package com.cloud.storage.dao;
 
 
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.GuestOSVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -29,9 +33,11 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
 
     protected final SearchBuilder<GuestOSVO> Search;
 
-    protected GuestOSDaoImpl() {
+    public GuestOSDaoImpl() {
         Search = createSearchBuilder();
+        Search.and("category_id", Search.entity().getCategoryId(), SearchCriteria.Op.EQ);
         Search.and("display_name", Search.entity().getDisplayName(), SearchCriteria.Op.EQ);
+        Search.and("is_user_defined", Search.entity().getIsUserDefined(), SearchCriteria.Op.EQ);
         Search.done();
     }
 
@@ -42,4 +48,18 @@ public class GuestOSDaoImpl extends GenericDaoBase<GuestOSVO, Long> implements G
         return findOneBy(sc);
     }
 
+    @Override
+    public GuestOSVO findByCategoryIdAndDisplayNameOrderByCreatedDesc(long categoryId, String displayName) {
+        SearchCriteria<GuestOSVO> sc = Search.create();
+        sc.setParameters("category_id", categoryId);
+        sc.setParameters("display_name", displayName);
+        sc.setParameters("is_user_defined", false);
+
+        Filter orderByFilter = new Filter(GuestOSVO.class, "created", false, null, 1L);
+        List<GuestOSVO> guestOSes = listBy(sc, orderByFilter);
+        if (CollectionUtils.isNotEmpty(guestOSes)) {
+            return guestOSes.get(0);
+        }
+        return null;
+    }
 }

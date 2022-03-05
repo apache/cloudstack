@@ -691,7 +691,7 @@ class TestTemplates(cloudstackTestCase):
 
 
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
@@ -779,7 +779,7 @@ class TestTemplates(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 

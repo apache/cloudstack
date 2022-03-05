@@ -36,7 +36,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIAclChecker {
 
@@ -75,6 +75,10 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
+        return checkAccess(account, commandName);
+    }
+
+    public boolean checkAccess(Account account, String commandName) {
         final Role accountRole = roleService.findRole(account.getRoleId());
         if (accountRole == null || accountRole.getId() < 1L) {
             denyApiAccess(commandName);
@@ -106,8 +110,13 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
     }
 
+    @Override
+    public boolean isEnabled() {
+        return roleService.isEnabled();
+    }
+
     public void addApiToRoleBasedAnnotationsMap(final RoleType roleType, final String commandName) {
-        if (roleType == null || Strings.isNullOrEmpty(commandName)) {
+        if (roleType == null || StringUtils.isEmpty(commandName)) {
             return;
         }
         final Set<String> commands = annotationRoleBasedApisMap.get(roleType);

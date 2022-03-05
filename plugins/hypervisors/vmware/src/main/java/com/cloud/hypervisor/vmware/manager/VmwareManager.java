@@ -85,8 +85,6 @@ public interface VmwareManager {
 
     Pair<Integer, Integer> getAddiionalVncPortRange();
 
-    int getRouterExtraPublicNics();
-
     boolean beginExclusiveOperation(int timeOutSeconds);
 
     void endExclusiveOperation();

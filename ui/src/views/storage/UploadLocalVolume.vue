@@ -69,13 +69,30 @@
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            @change="onZoneChange" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
               <span>
                 <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <a-icon v-else type="global" style="margin-right: 5px"/>
                 {{ zone.name || zone.description }}
               </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
+          <a-select
+            v-decorator="['diskofferingid', {}]"
+            :loading="offeringLoading"
+            :placeholder="apiParams.diskofferingid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="opt in offerings" :key="opt.id">
+              {{ opt.name || opt.displaytext }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -108,6 +125,39 @@
             :placeholder="$t('label.volumechecksum.description')"
           />
         </a-form-item>
+        <a-form-item v-if="'listDomains' in $store.getters.apis">
+          <tooltip-label slot="label" :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
+          <a-select
+            v-decorator="['domainid', {}]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="domainLoading"
+            :placeholder="this.$t('label.domainid')"
+            @change="val => { this.handleDomainChange(this.domainList[val].id) }">
+            <a-select-option v-for="(opt, optIndex) in this.domainList" :key="optIndex">
+              {{ opt.path || opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item v-if="'listDomains' in $store.getters.apis">
+          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          <a-select
+            v-decorator="['account', {}]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="'Account'"
+            @change="val => { this.handleAccountChange(val) }">
+            <a-select-option v-for="(acc, index) in accountList" :value="acc.name" :key="index">
+              {{ acc.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
           <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
@@ -133,9 +183,16 @@ export default {
     return {
       fileList: [],
       zones: [],
+      domainList: [],
+      accountList: [],
+      offerings: [],
+      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
       zoneSelected: '',
+      domainId: null,
+      account: null,
       uploadParams: null,
+      domainLoading: false,
       loading: false,
       uploadPercentage: 0
     }
@@ -145,7 +202,7 @@ export default {
     this.apiParams = this.$getApiParams('getUploadParamsForVolume')
   },
   created () {
-    this.listZones()
+    this.fetchData()
   },
   methods: {
     listZones () {
@@ -153,9 +210,32 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].id
+            this.onZoneChange(this.zones[0].id)
           }
         }
+      })
+    },
+    onZoneChange (zoneId) {
+      this.zoneSelected = this.zones[0].id
+      this.fetchDiskOfferings(zoneId)
+    },
+    fetchDiskOfferings (zoneId) {
+      this.offeringLoading = true
+      this.offerings = [{ id: -1, name: '' }]
+      this.form.setFieldsValue({
+        diskofferingid: undefined
+      })
+      api('listDiskOfferings', {
+        zoneid: zoneId,
+        listall: true
+      }).then(json => {
+        for (var offering of json.listdiskofferingsresponse.diskoffering) {
+          if (offering.iscustomized) {
+            this.offerings.push(offering)
+          }
+        }
+      }).finally(() => {
+        this.offeringLoading = false
       })
     },
     handleRemove (file) {
@@ -168,10 +248,58 @@ export default {
       this.fileList = [...this.fileList, file]
       return false
     },
+    handleDomainChange (domain) {
+      this.domainId = domain
+      if ('listAccounts' in this.$store.getters.apis) {
+        this.fetchAccounts()
+      }
+    },
+    handleAccountChange (acc) {
+      if (acc) {
+        this.account = acc.name
+      } else {
+        this.account = acc
+      }
+    },
+    fetchData () {
+      this.listZones()
+      if ('listDomains' in this.$store.getters.apis) {
+        this.fetchDomains()
+      }
+    },
+    fetchDomains () {
+      this.domainLoading = true
+      api('listDomains', {
+        listAll: true,
+        details: 'min'
+      }).then(response => {
+        this.domainList = response.listdomainsresponse.domain
+
+        if (this.domainList[0]) {
+          this.handleDomainChange(null)
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.domainLoading = false
+      })
+    },
+    fetchAccounts () {
+      api('listAccounts', {
+        domainid: this.domainId
+      }).then(response => {
+        this.accountList = response.listaccountsresponse.account || []
+        if (this.accountList && this.accountList.length === 0) {
+          this.handleAccountChange(null)
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -186,9 +314,10 @@ export default {
           }
           params[key] = input
         }
+        params.domainId = this.domainId
         this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
-          this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
+          this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
           const { fileList } = this
           if (this.fileList.length > 1) {
             this.$notification.error({
@@ -224,12 +353,20 @@ export default {
           }).catch(e => {
             this.$notification.error({
               message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
+              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
               duration: 0
             })
           }).finally(() => {
             this.loading = false
           })
+        }).catch(e => {
+          this.$notification.error({
+            message: this.$t('message.upload.failed'),
+            description: `${this.$t('message.upload.volume.failed')} -  ${e?.response?.data?.postuploadvolumeresponse?.errortext || e}`,
+            duration: 0
+          })
+        }).finally(() => {
+          this.loading = false
         })
       })
     },

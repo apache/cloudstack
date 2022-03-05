@@ -98,7 +98,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -108,6 +108,7 @@ export default {
           userid: this.resource.id,
           entityid: values.samlEntity
         }).then(response => {
+          this.$emit('refresh-data')
           this.$notification.success({
             message: values.samlEnable ? this.$t('label.saml.enable') : this.$t('label.saml.disable'),
             description: values.samlEnable ? `${this.$t('message.success.enable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`

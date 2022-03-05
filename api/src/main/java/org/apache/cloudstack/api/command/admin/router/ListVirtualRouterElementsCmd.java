@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
@@ -43,7 +42,7 @@ import com.cloud.network.element.VirtualRouterElementService;
 @APICommand(name = "listVirtualRouterElements", description = "Lists all available virtual router elements.", responseObject = VirtualRouterProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVirtualRouterElementsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListNetworkOfferingsCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ListVirtualRouterElementsCmd.class.getName());
     private static final String s_name = "listvirtualrouterelementsresponse";
 
     // TODO, VirtualRouterElementServer is not singleton in system!

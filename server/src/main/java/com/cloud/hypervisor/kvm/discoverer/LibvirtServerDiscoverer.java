@@ -259,14 +259,25 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             sshConnection = new Connection(agentIp, 22);
 
             sshConnection.connect(null, 60000, 60000);
-            if (!sshConnection.authenticateWithPassword(username, password)) {
-                s_logger.debug("Failed to authenticate");
-                throw new DiscoveredWithErrorException("Authentication error");
+
+            final String privateKey = _configDao.getValue("ssh.privatekey");
+            if (!SSHCmdHelper.acquireAuthorizedConnectionWithPublicKey(sshConnection, username, privateKey)) {
+                s_logger.error("Failed to authenticate with ssh key");
+                if (org.apache.commons.lang3.StringUtils.isEmpty(password)) {
+                    throw new DiscoveredWithErrorException("Authentication error with ssh private key");
+                }
+                if (!sshConnection.authenticateWithPassword(username, password)) {
+                    s_logger.error("Failed to authenticate with password");
+                    throw new DiscoveredWithErrorException("Authentication error with host password");
+                }
             }
 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
-                s_logger.debug("It's not a KVM enabled machine");
-                return null;
+                String errorMsg = "This machine does not have KVM enabled.";
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errorMsg);
+                }
+                throw new DiscoveredWithErrorException(errorMsg);
             }
 
             if (SSHCmdHelper.sshExecuteCmd(sshConnection, "rpm -qa | grep -i ovmf", 3)) {
@@ -327,9 +338,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 setupAgentCommand = "sudo cloudstack-setup-agent ";
             }
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, setupAgentCommand + parameters)) {
-                s_logger.info("cloudstack agent setup command failed: "
-                        + setupAgentCommand + parameters);
-                return null;
+                String errorMsg = String.format("CloudStack Agent setup through command [%s] with parameters [%s] failed.",
+                        setupAgentCommand, parameters);
+                s_logger.info(errorMsg);
+                throw new DiscoveredWithErrorException(errorMsg);
             }
 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
@@ -365,12 +377,14 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
             s_logger.warn(msg);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(msg, e);
+            }
+            throw new DiscoveredWithErrorException(msg, e);
         } finally {
             if (sshConnection != null)
                 sshConnection.close();
         }
-
-        return null;
     }
 
     private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {

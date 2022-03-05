@@ -24,7 +24,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.annotation.AnnotationService.EntityType;
 import org.apache.cloudstack.annotation.AnnotationVO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -93,8 +93,7 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
         if (StringUtils.isNotBlank(userUuid)) {
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
-        if (StringUtils.isNotBlank(callingUserUuid) && StringUtils.isNotBlank(annotationFilter) &&
-            annotationFilter.equalsIgnoreCase("self")) {
+        if (StringUtils.isNoneBlank(callingUserUuid, annotationFilter) && annotationFilter.equalsIgnoreCase("self")) {
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, callingUserUuid);
         }
         if (!isCallerAdmin) {
