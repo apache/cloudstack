@@ -2042,6 +2042,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Long maxIopsInNewDiskOffering = null;
                 boolean autoMigrate = false;
                 boolean shrinkOk = false;
+                Long rootDiskSize = null;
                 if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
                 }
@@ -2054,7 +2055,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (customParameters.containsKey(ApiConstants.SHRINK_OK)) {
                     shrinkOk = Boolean.parseBoolean(customParameters.get(ApiConstants.SHRINK_OK));
                 }
+                if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
+                    rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
+                }
                 ChangeOfferingForVolumeCmd changeOfferingForVolumeCmd = new ChangeOfferingForVolumeCmd(rootVolumeOfVm.getId(), newDiskOffering.getId(), minIopsInNewDiskOffering, maxIopsInNewDiskOffering, autoMigrate, shrinkOk);
+                if (rootDiskSize != null) {
+                    changeOfferingForVolumeCmd.setSize(rootDiskSize);
+                }
                 Volume result = _volumeService.changeDiskOfferingForVolume(changeOfferingForVolumeCmd);
                 if (result == null) {
                     throw new CloudRuntimeException("Failed to change disk offering of the root volume");
