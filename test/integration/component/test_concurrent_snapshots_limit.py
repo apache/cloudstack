@@ -95,7 +95,7 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
                 volumeid
             )
         except Exception as e:
-            self.debug("Exception occured: %s" % e)
+            self.debug("Exception occurred: %s" % e)
             self.exceptionOccured = True
 
     def tearDown(self):

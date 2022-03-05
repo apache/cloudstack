@@ -229,7 +229,7 @@ export default {
   methods: {
     handleAddRange (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (!err) {
           this.ipRanges.push({
             key: this.ipRanges.length.toString(),

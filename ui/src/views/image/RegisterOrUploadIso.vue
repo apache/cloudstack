@@ -16,7 +16,9 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div
+    class="form-layout"
+    @keyup.ctrl.enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
       <a-icon type="loading" />
       {{ $t('message.upload.file.processing') }}
@@ -307,7 +309,12 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      const options = {
+        scroll: {
+          offsetTop: 10
+        }
+      }
+      this.form.validateFieldsAndScroll(options, (err, values) => {
         if (err) {
           return
         }

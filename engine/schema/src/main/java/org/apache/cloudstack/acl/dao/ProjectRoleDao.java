@@ -25,5 +25,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ProjectRoleDao extends GenericDao<ProjectRoleVO, Long> {
     List<ProjectRoleVO> findByName(String name, Long projectId);
-    List<ProjectRoleVO> findAllRoles(Long projectId);
+    List<ProjectRoleVO> findAllRoles(Long projectId, String keyword);
 }

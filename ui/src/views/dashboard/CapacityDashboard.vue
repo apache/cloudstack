@@ -184,9 +184,9 @@ export default {
     },
     getStrokeColour (value) {
       if (value >= 80) {
-        return 'red'
+        return this.$config.theme['@graph-exception-color'] || 'red'
       }
-      return 'primary'
+      return this.$config.theme['@graph-normal-color'] || 'primary'
     },
     displayData (dataType, value) {
       switch (dataType) {

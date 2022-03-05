@@ -20,6 +20,9 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -30,6 +33,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "usage_volume")
 public class UsageVolumeVO implements InternalIdentity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
     @Column(name = "zone_id")
     private long zoneId;
 
@@ -39,8 +47,8 @@ public class UsageVolumeVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name = "id")
-    private long id;
+    @Column(name = "volume_id")
+    private long volumeId;
 
     @Column(name = "disk_offering_id")
     private Long diskOfferingId;
@@ -63,7 +71,7 @@ public class UsageVolumeVO implements InternalIdentity {
     }
 
     public UsageVolumeVO(long id, long zoneId, long accountId, long domainId, Long diskOfferingId, Long templateId, long size, Date created, Date deleted) {
-        this.id = id;
+        this.volumeId = id;
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -113,5 +121,9 @@ public class UsageVolumeVO implements InternalIdentity {
 
     public void setDeleted(Date deleted) {
         this.deleted = deleted;
+    }
+
+    public long getVolumeId() {
+        return volumeId;
     }
 }

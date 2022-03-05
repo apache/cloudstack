@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'domain',
   title: 'label.domains',
@@ -47,13 +49,13 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
+      show: (record, route, user) => { return ['Admin'].includes(user.roletype) || (['DomainAdmin'].includes(user.roletype) && record.id !== user.domainid) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     },
     {
       name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
-      show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+      show: () => { return 'listConfigurations' in store.getters.apis }
     }, {
       name: 'comments',
       component: () => import('@/components/view/AnnotationsTab.vue')

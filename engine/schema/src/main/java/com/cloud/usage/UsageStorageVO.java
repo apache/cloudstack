@@ -20,6 +20,9 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -30,6 +33,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "usage_storage")
 public class UsageStorageVO implements InternalIdentity {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
     @Column(name = "zone_id")
     private long zoneId;
 
@@ -39,8 +47,8 @@ public class UsageStorageVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name = "id")
-    private long id;
+    @Column(name = "entity_id")
+    private long entityId;
 
     @Column(name = "storage_type")
     private int storageType;
@@ -69,7 +77,7 @@ public class UsageStorageVO implements InternalIdentity {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.id = id;
+        this.entityId = id;
         this.storageType = storageType;
         this.sourceId = sourceId;
         this.size = size;
@@ -81,7 +89,7 @@ public class UsageStorageVO implements InternalIdentity {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
-        this.id = id;
+        this.entityId = id;
         this.storageType = storageType;
         this.sourceId = sourceId;
         this.size = size;
@@ -133,5 +141,9 @@ public class UsageStorageVO implements InternalIdentity {
 
     public void setDeleted(Date deleted) {
         this.deleted = deleted;
+    }
+
+    public long getEntityId() {
+        return entityId;
     }
 }

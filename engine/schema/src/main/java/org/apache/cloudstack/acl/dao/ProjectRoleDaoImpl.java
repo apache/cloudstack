@@ -17,14 +17,13 @@
 
 package org.apache.cloudstack.acl.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.acl.ProjectRoleVO;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.google.common.base.Strings;
+import org.apache.cloudstack.acl.ProjectRoleVO;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  implements ProjectRoleDao{
     private final SearchBuilder<ProjectRoleVO>  ProjectRoleSearch;
@@ -33,28 +32,35 @@ public class ProjectRoleDaoImpl extends GenericDaoBase<ProjectRoleVO, Long>  imp
         super();
 
         ProjectRoleSearch = createSearchBuilder();
-        ProjectRoleSearch.and("name", ProjectRoleSearch.entity().getName(), SearchCriteria.Op.LIKE);
+        ProjectRoleSearch.and("name", ProjectRoleSearch.entity().getName(), SearchCriteria.Op.EQ);
         ProjectRoleSearch.and("project_id", ProjectRoleSearch.entity().getProjectId(), SearchCriteria.Op.EQ);
+        ProjectRoleSearch.and("keyword", ProjectRoleSearch.entity().getName(), SearchCriteria.Op.LIKE);
         ProjectRoleSearch.done();
 
     }
     @Override
     public List<ProjectRoleVO> findByName(String name, Long projectId) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
-        if (!Strings.isNullOrEmpty(name)) {
-            sc.setParameters("name", "%" + name + "%");
+        if (StringUtils.isNotEmpty(name)) {
+            sc.setParameters("name", name);
         }
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
         }
+
         return listBy(sc);
     }
 
     @Override
-    public List<ProjectRoleVO> findAllRoles(Long projectId) {
+    public List<ProjectRoleVO> findAllRoles(Long projectId, String keyword) {
         SearchCriteria<ProjectRoleVO> sc = ProjectRoleSearch.create();
         if (projectId != null) {
             sc.setParameters("project_id", projectId);
+        }
+        if (StringUtils.isNotEmpty(keyword)) {
+            SearchCriteria<ProjectRoleVO> ssc = createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
         return listBy(sc);
     }

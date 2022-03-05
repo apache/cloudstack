@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
@@ -35,8 +36,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
-
 import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
@@ -44,8 +43,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.DomainVlanMapVO;
-import com.cloud.dc.dao.DomainVlanMapDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -74,6 +71,7 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.direct.download.RevokeTemplateDirectDownloadCertificateCmd;
@@ -509,6 +507,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
@@ -605,6 +604,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -614,6 +614,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -663,9 +664,9 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.org.Cluster;
@@ -1147,7 +1148,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<ClusterVO> sb = _clusterDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
@@ -1160,7 +1161,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         if (podId != null) {
@@ -1482,6 +1483,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId) {
+
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, null, null, null, false);
+        List<? extends StoragePool> allPools = allPoolsAndSuitablePoolsPair.first();
+        List<? extends StoragePool> suitablePools = allPoolsAndSuitablePoolsPair.second();
+        List<StoragePool> avoidPools = new ArrayList<>();
+
+        final VolumeVO volume = _volumeDao.findById(volumeId);
+        StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
+        if (srcVolumePool.getParent() != 0L) {
+            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
+            avoidPools.add(datastoreCluster);
+        }
+        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
+        return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1495,6 +1514,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with" + " specified id.");
             ex.addProxyObject(volumeId.toString(), "volumeId");
             throw ex;
+        }
+
+        Long diskOfferingId = volume.getDiskOfferingId();
+        if (newDiskOfferingId != null) {
+            diskOfferingId = newDiskOfferingId;
         }
 
         // Volume must be attached to an instance for live migration.
@@ -1550,24 +1574,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Host vmHost = hostClusterPair.first();
         List<Cluster> clusters = hostClusterPair.second();
         allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
-        allPools.remove(srcVolumePool);
+        ExcludeList avoid = new ExcludeList();
+        if (!keepSourceStoragePool) {
+            allPools.remove(srcVolumePool);
+            avoid.addPool(srcVolumePool.getId());
+        }
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, vmHost, srcVolumePool,
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, diskOfferingId, newSize, newMinIops, newMaxIops, vm, vmHost, avoid,
                     CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
-            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, allPools);
+            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, diskOfferingId, allPools);
         }
-        List<StoragePool> avoidPools = new ArrayList<>();
-        if (srcVolumePool.getParent() != 0L) {
-            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
-            avoidPools.add(datastoreCluster);
-        }
-        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
-        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
+        removeDataStoreClusterParents((List<StoragePool>) allPools);
+        removeDataStoreClusterParents((List<StoragePool>) suitablePools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
-    private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
+    private void removeDataStoreClusterParents(List<StoragePool> storagePools) {
+        Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
+        List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
+        if (!childDatastores.isEmpty()) {
+            Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
+            for (Long parentStoragePoolId : parentStoragePoolIds) {
+                StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
+                storagePools.remove(parentPool);
+            }
+        }
+    }
+
+        private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
         Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
         List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
         storagePools.removeAll(avoidPools);
@@ -1637,10 +1672,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, Host vmHost, StoragePool srcVolumePool, Cluster srcCluster, HypervisorType hypervisorType) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
-        ExcludeList avoid = new ExcludeList();
-        avoid.addPool(srcVolumePool.getId());
         Long clusterId = null;
         Long podId = null;
         if (srcCluster != null) {
@@ -1652,8 +1685,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
 
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        if (!Objects.equals(volume.getDiskOfferingId(), diskOfferingId)) {
+            diskProfile.setSize(newSize);
+            diskProfile.setMinIops(newMinIops);
+            diskProfile.setMaxIops(newMaxIops);
+        }
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, true);
@@ -1671,12 +1709,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return suitablePools;
     }
 
-    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, List<? extends StoragePool> allPools) {
+    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, Long diskOfferingId, List<? extends StoragePool> allPools) {
         List<StoragePool> suitablePools = new ArrayList<>();
         if (CollectionUtils.isEmpty(allPools)) {
             return  suitablePools;
         }
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         List<String> tags = new ArrayList<>();
         String[] tagsArray = diskOffering.getTagsArray();
         if (tagsArray != null && tagsArray.length > 0) {
@@ -1702,7 +1740,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idsNotIn", sb.entity().getId(), SearchCriteria.Op.NOTIN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1747,7 +1785,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
         if (type != null) {
             sc.setParameters("type", "%" + type);
@@ -1794,7 +1832,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
 
@@ -1812,7 +1850,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (podName != null) {
-            sc.setParameters("name", "%" + podName + "%");
+            sc.setParameters("name", podName);
         }
 
         if (zoneId != null) {
@@ -1976,12 +2014,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
-        final Long accountId = cmd.getAccountId();
-        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
+
+        final Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isDomainAdmin(caller.getId())) {
+            if (accountId == null && domainId == null) {
+                domainId = caller.getDomainId();
+            }
+        } else if (_accountMgr.isNormalUser(caller.getId())) {
+            if (accountId == null) {
+                accountId = caller.getAccountId();
+            }
+        }
 
         if (zoneId != null) {
             scope = ConfigKey.Scope.Zone.toString();
@@ -1994,11 +2043,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             paramCountCheck++;
         }
         if (accountId != null) {
+            Account account = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, null, false, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
+            _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
             scope = ConfigKey.Scope.Domain.toString();
             id = domainId;
             paramCountCheck++;
@@ -2595,7 +2647,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOsHandle.isUserDefined()) {
+        if (!guestOsHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
@@ -2637,7 +2689,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOs.isUserDefined()) {
+        if (!guestOs.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to remove system defined guest OS");
         }
 
@@ -3010,6 +3062,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListHypervisorCapabilitiesCmd.class);
         cmdList.add(UpdateCfgCmd.class);
         cmdList.add(UpdateHypervisorCapabilitiesCmd.class);
+        cmdList.add(ResetCfgCmd.class);
         cmdList.add(CreateDomainCmd.class);
         cmdList.add(DeleteDomainCmd.class);
         cmdList.add(ListDomainChildrenCmd.class);
@@ -3313,6 +3366,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UploadVolumeCmd.class);
         cmdList.add(DestroyVolumeCmd.class);
         cmdList.add(RecoverVolumeCmd.class);
+        cmdList.add(ChangeOfferingForVolumeCmd.class);
         cmdList.add(CreateStaticRouteCmd.class);
         cmdList.add(CreateVPCCmd.class);
         cmdList.add(DeleteStaticRouteCmd.class);
@@ -4152,6 +4206,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
+        final Long id = cmd.getId();
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
         final String keyword = cmd.getKeyword();
@@ -4170,6 +4225,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchCriteria<SSHKeyPairVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
@@ -4459,7 +4518,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    public HypervisorCapabilities updateHypervisorCapabilities(final Long id, final Long maxGuestsLimit, final Boolean securityGroupEnabled) {
+    public HypervisorCapabilities updateHypervisorCapabilities(UpdateHypervisorCapabilitiesCmd cmd) {
+        final Long id = cmd.getId();
+        final Boolean securityGroupEnabled = cmd.getSecurityGroupEnabled();
+        final Long maxGuestsLimit = cmd.getMaxGuestsLimit();
+        final Integer maxDataVolumesLimit = cmd.getMaxDataVolumesLimit();
+        final Boolean storageMotionSupported = cmd.getStorageMotionSupported();
+        final Integer maxHostsPerClusterLimit = cmd.getMaxHostsPerClusterLimit();
+        final Boolean vmSnapshotEnabled = cmd.getVmSnapshotEnabled();
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
 
         if (hpvCapabilities == null) {
@@ -4468,19 +4534,37 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        final boolean updateNeeded = maxGuestsLimit != null || securityGroupEnabled != null;
+        final boolean updateNeeded = securityGroupEnabled != null || maxGuestsLimit != null ||
+                maxDataVolumesLimit != null || storageMotionSupported != null || maxHostsPerClusterLimit != null ||
+                vmSnapshotEnabled != null;
         if (!updateNeeded) {
             return hpvCapabilities;
         }
 
         hpvCapabilities = _hypervisorCapabilitiesDao.createForUpdate(id);
 
+        if (securityGroupEnabled != null) {
+            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        }
+
         if (maxGuestsLimit != null) {
             hpvCapabilities.setMaxGuestsLimit(maxGuestsLimit);
         }
 
-        if (securityGroupEnabled != null) {
-            hpvCapabilities.setSecurityGroupEnabled(securityGroupEnabled);
+        if (maxDataVolumesLimit != null) {
+            hpvCapabilities.setMaxDataVolumesLimit(maxDataVolumesLimit);
+        }
+
+        if (storageMotionSupported != null) {
+            hpvCapabilities.setStorageMotionSupported(storageMotionSupported);
+        }
+
+        if (maxHostsPerClusterLimit != null) {
+            hpvCapabilities.setMaxHostsPerCluster(maxHostsPerClusterLimit);
+        }
+
+        if (vmSnapshotEnabled != null) {
+            hpvCapabilities.setVmSnapshotEnabled(vmSnapshotEnabled);
         }
 
         if (_hypervisorCapabilitiesDao.update(id, hpvCapabilities)) {

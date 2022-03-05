@@ -68,12 +68,11 @@ import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -115,10 +114,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.NETWORK_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = NetworkResponse.class, description = "list of network ids used by virtual machine. Can't be specified with ipToNetworkList parameter")
     private List<Long> networkIds;
 
-    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware, as we honour what is defined in the template.", since = "4.14.0.0")
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false, description = "Guest VM Boot option either custom[UEFI] or default boot [BIOS]. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
     private String bootType;
 
-    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware, as we honour what is defined in the template.", since = "4.14.0.0")
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false, description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI, otherwise Legacy only for BIOS. Not applicable with VMware if the template is marked as deploy-as-is, as we honour what is defined in the template.", since = "4.14.0.0")
     private String bootMode;
 
     @Parameter(name = ApiConstants.BOOT_INTO_SETUP, type = CommandType.BOOLEAN, required = false, description = "Boot into hardware setup or not (ignored if startVm = false, only valid for vmware)", since = "4.15.0.0")
@@ -154,8 +153,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             length = 1048576)
     private String userData;
 
+    @Deprecated
     @Parameter(name = ApiConstants.SSH_KEYPAIR, type = CommandType.STRING, description = "name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
+
+    @Parameter(name = ApiConstants.SSH_KEYPAIRS, type = CommandType.LIST, collectionType = CommandType.STRING, since="4.17", description = "names of the ssh key pairs used to login to the virtual machine")
+    private List<String> sshKeyPairNames;
 
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
@@ -240,6 +243,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "true if virtual machine needs to be dynamically scalable")
     protected Boolean dynamicScalingEnabled;
 
+    @Parameter(name = ApiConstants.OVERRIDE_DISK_OFFERING_ID, type = CommandType.UUID, since = "4.17", entityType = DiskOfferingResponse.class, description = "the ID of the disk offering for the virtual machine to be used for root volume instead of the disk offering mapped in service offering." +
+            "In case of virtual machine deploying from ISO, then the diskofferingid specified for root volume is ignored and uses this override disk offering id")
+    private Long overrideDiskOfferingId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -297,7 +304,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
             }
         }
-        if (ApiConstants.BootType.UEFI.equals(getBootType())) {
+        if (getBootType() != null) {
             customparameterMap.put(getBootType().toString(), getBootMode().toString());
         }
 
@@ -360,7 +367,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 if (s_logger.isTraceEnabled()) {
                     s_logger.trace(String.format("nic, '%s', goes on net, '%s'", nic, networkUuid));
                 }
-                if (nic == null || Strings.isNullOrEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
+                if (nic == null || StringUtils.isEmpty(networkUuid) || _entityMgr.findByUuid(Network.class, networkUuid) == null) {
                     throw new InvalidParameterValueException(String.format("Network ID: %s for NIC ID: %s is invalid", networkUuid, nic));
                 }
                 map.put(nic, _entityMgr.findByUuid(Network.class, networkUuid).getId());
@@ -441,8 +448,15 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return name;
     }
 
-    public String getSSHKeyPairName() {
-        return sshKeyPairName;
+    public List<String> getSSHKeyPairNames() {
+        List<String> sshKeyPairs = new ArrayList<String>();
+        if(sshKeyPairNames != null) {
+            sshKeyPairs = sshKeyPairNames;
+        }
+        if(sshKeyPairName != null && !sshKeyPairName.isEmpty()) {
+            sshKeyPairs.add(sshKeyPairName);
+        }
+        return sshKeyPairs;
     }
 
     public Long getHostId() {
@@ -636,6 +650,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public boolean isDynamicScalingEnabled() {
         return dynamicScalingEnabled == null ? true : dynamicScalingEnabled;
+    }
+
+    public Long getOverrideDiskOfferingId() {
+        return overrideDiskOfferingId;
     }
 
     /////////////////////////////////////////////////////

@@ -42,7 +42,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -229,6 +229,15 @@ public class VolumeObject implements VolumeInfo {
     protected DiskOfferingVO getDiskOfferingVO() {
         Long diskOfferingId = getDiskOfferingId();
         return diskOfferingId == null ? null : diskOfferingDao.findById(diskOfferingId);
+    }
+
+    @Override
+    public long getPhysicalSize() {
+        VolumeDataStoreVO volumeDataStoreVO = volumeStoreDao.findByVolume(volumeVO.getId());
+        if (volumeDataStoreVO != null) {
+            return volumeDataStoreVO.getPhysicalSize();
+        }
+        return volumeVO.getSize();
     }
 
     @Override

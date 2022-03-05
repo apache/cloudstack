@@ -280,9 +280,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
 
-    @SerializedName(ApiConstants.SSH_KEYPAIR)
-    @Param(description = "ssh key-pair")
-    private String keyPairName;
+    @SerializedName(ApiConstants.SSH_KEYPAIRS)
+    @Param(description = "ssh key-pairs")
+    private String keyPairNames;
 
     @SerializedName("affinitygroup")
     @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
@@ -588,8 +588,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return instanceName;
     }
 
-    public String getKeyPairName() {
-        return keyPairName;
+    public String getKeyPairNames() {
+        return keyPairNames;
     }
 
     public Set<AffinityGroupResponse> getAffinityGroupList() {
@@ -848,8 +848,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.tags = tags;
     }
 
-    public void setKeyPairName(String keyPairName) {
-        this.keyPairName = keyPairName;
+    public void setKeyPairNames(String keyPairNames) {
+        this.keyPairNames = keyPairNames;
     }
 
     public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {

@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-card>
+  <a-card v-if="isCustomized">
     <a-col>
       <a-row>
         <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
@@ -106,6 +106,10 @@ export default {
     isConstrained: {
       type: Boolean,
       default: true
+    },
+    cpuSpeed: {
+      type: Number,
+      default: 0
     },
     minCpu: {
       type: Number,
@@ -198,6 +202,7 @@ export default {
     fillValue () {
       this.cpuNumberInputValue = this.minCpu
       this.memoryInputValue = this.minMemory
+      this.cpuSpeedInputValue = this.cpuSpeed
 
       if (!this.preFillContent) {
         this.updateComputeCpuNumber(this.cpuNumberInputValue)

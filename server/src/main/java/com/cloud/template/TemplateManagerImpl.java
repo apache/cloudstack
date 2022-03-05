@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -2365,7 +2366,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             return template;
         }
 
-        template = _tmpltDao.createForUpdate(id);
+        template = _tmpltDao.findById(id);
 
         if (name != null) {
             template.setName(name);
@@ -2445,6 +2446,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template.setTemplateType(templateType);
         }
 
+        validateDetails(template, details);
+
         if (cleanupDetails) {
             template.setDetails(null);
             _tmpltDetailsDao.removeDetails(id);
@@ -2457,6 +2460,31 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltDao.update(id, template);
 
         return _tmpltDao.findById(id);
+    }
+
+    void validateDetails(VMTemplateVO template, Map<String, String> details) {
+        if (MapUtils.isEmpty(details)) {
+            return;
+        }
+        String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
+        if (bootMode == null) {
+            return;
+        }
+        if (template.isDeployAsIs()) {
+            String msg = String.format("Deploy-as-is template %s [%s] can not have the UEFI setting. Settings are read directly from the template",
+                template.getName(), template.getUuid());
+            throw new InvalidParameterValueException(msg);
+        }
+        try {
+            String mode = bootMode.trim().toUpperCase();
+            ApiConstants.BootMode.valueOf(mode);
+            details.put(ApiConstants.BootType.UEFI.toString(), mode);
+            return;
+        } catch (IllegalArgumentException e) {
+            String msg = String.format("Invalid %s: %s specified. Valid values are: %s",
+                ApiConstants.BOOT_MODE, bootMode, Arrays.toString(ApiConstants.BootMode.values()));
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);        }
     }
 
     void verifyTemplateId(Long id) {

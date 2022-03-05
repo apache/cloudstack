@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.storage.datastore.api;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class StoragePoolStatistics {
     String maxCapacityInKb; // total capacity
@@ -26,7 +26,7 @@ public class StoragePoolStatistics {
     String netUnusedCapacityInKb; // capacity available for volume creation (volume space to write)
 
     public Long getMaxCapacityInKb() {
-        if (Strings.isNullOrEmpty(maxCapacityInKb)) {
+        if (StringUtils.isEmpty(maxCapacityInKb)) {
             return Long.valueOf(0);
         }
         return Long.valueOf(maxCapacityInKb);
@@ -37,7 +37,7 @@ public class StoragePoolStatistics {
     }
 
     public Long getSpareCapacityInKb() {
-        if (Strings.isNullOrEmpty(spareCapacityInKb)) {
+        if (StringUtils.isEmpty(spareCapacityInKb)) {
             return Long.valueOf(0);
         }
         return Long.valueOf(spareCapacityInKb);
@@ -48,7 +48,7 @@ public class StoragePoolStatistics {
     }
 
     public Long getNetCapacityInUseInKb() {
-        if (Strings.isNullOrEmpty(netCapacityInUseInKb)) {
+        if (StringUtils.isEmpty(netCapacityInUseInKb)) {
             return Long.valueOf(0);
         }
         return Long.valueOf(netCapacityInUseInKb);
@@ -59,7 +59,7 @@ public class StoragePoolStatistics {
     }
 
     public Long getNetUnusedCapacityInKb() {
-        if (Strings.isNullOrEmpty(netUnusedCapacityInKb)) {
+        if (StringUtils.isEmpty(netUnusedCapacityInKb)) {
             return Long.valueOf(0);
         }
         return Long.valueOf(netUnusedCapacityInKb);
