@@ -1409,9 +1409,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
         }
 
-        // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
-
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
             throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterId() + " but " + network + " is in zone:" + network.getDataCenterId());
@@ -3533,6 +3530,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
                 }
 
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
             isSecurityGroupEnabledNetworkUsed = true;
@@ -3555,10 +3554,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
                 }
 
-                // Perform account permission check
-                if (network.getAclType() == ACLType.Account) {
-                    _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
-                }
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
         }
