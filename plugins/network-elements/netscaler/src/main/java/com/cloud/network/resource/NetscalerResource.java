@@ -3522,7 +3522,7 @@ public class NetscalerResource implements ServerResource {
         try {
             apiCallResult = nsconfig.save(_netscalerService);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Error occured while saving configuration changes to Netscaler device due to " + apiCallResult.message);
+                throw new ExecutionException("Error occurred while saving configuration changes to Netscaler device due to " + apiCallResult.message);
             }
         } catch (final nitro_exception e) {
             throw new ExecutionException("Failed to save configuration changes to Netscaler device due to " + e.getMessage());

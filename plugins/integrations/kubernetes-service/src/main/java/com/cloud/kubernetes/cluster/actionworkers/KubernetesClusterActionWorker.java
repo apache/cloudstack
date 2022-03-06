@@ -17,28 +17,6 @@
 
 package com.cloud.kubernetes.cluster.actionworkers;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -78,13 +56,40 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmService;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class KubernetesClusterActionWorker {
 
-    public static final String CLUSTER_NODE_VM_USER = "core";
+    public static final String CLUSTER_NODE_VM_USER = "cloud";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
 
@@ -118,6 +123,8 @@ public class KubernetesClusterActionWorker {
     protected TemplateApiService templateService;
     @Inject
     protected UserVmDao userVmDao;
+    @Inject
+    protected UserVmDetailsDao userVmDetailsDao;
     @Inject
     protected UserVmService userVmService;
     @Inject
@@ -172,6 +179,27 @@ public class KubernetesClusterActionWorker {
 
     protected String readResourceFile(String resource) throws IOException {
         return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
+    }
+
+    protected String getControlNodeLoginUser() {
+        List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
+        if (vmMapVOList.size() > 0) {
+            long vmId = vmMapVOList.get(0).getVmId();
+            UserVmVO userVM = userVmDao.findById(vmId);
+            if (userVM == null) {
+                throw new CloudRuntimeException("Failed to find login user, Unable to log in to node to fetch details");
+            }
+            Set<String> vm = new HashSet<>();
+            vm.add(userVM.getName());
+            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
+            if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
+                return vmDetail.getValue();
+            } else {
+                return CLUSTER_NODE_VM_USER;
+            }
+        } else {
+            return CLUSTER_NODE_VM_USER;
+        }
     }
 
     protected void logMessage(final Level logLevel, final String message, final Exception e) {
@@ -409,6 +437,20 @@ public class KubernetesClusterActionWorker {
         return vmList;
     }
 
+    protected void updateLoginUserDetails(List<Long> clusterVMs) {
+        if (clusterVMs == null) {
+            clusterVMs = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
+        }
+        if (!CollectionUtils.isEmpty(clusterVMs)) {
+            for (Long vmId : clusterVMs) {
+                UserVm controlNode = userVmDao.findById(vmId);
+                if (controlNode != null) {
+                    userVmDetailsDao.addDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER, CLUSTER_NODE_VM_USER, true);
+                }
+            }
+        }
+    }
+
     protected boolean stateTransitTo(long kubernetesClusterId, KubernetesCluster.Event e) {
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(kubernetesClusterId);
         try {
@@ -423,13 +465,14 @@ public class KubernetesClusterActionWorker {
     protected boolean createCloudStackSecret(String[] keys) {
         File pkFile = getManagementServerSshPublicKeyFile();
         Pair<String, Integer> publicIpSshPort = getKubernetesClusterServerIpSshPort(null);
+        List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
         publicIpAddress = publicIpSshPort.first();
         sshPort = publicIpSshPort.second();
 
         try {
             final String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
                 scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
-            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                 pkFile, null, command, 10000, 10000, 60000);
             return result.first();
         } catch (Exception e) {
@@ -468,10 +511,10 @@ public class KubernetesClusterActionWorker {
 
     protected void copyScriptFile(String nodeAddress, final int sshPort, File file, String desitnation) {
         try {
-            SshHelper.scpTo(nodeAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            SshHelper.scpTo(nodeAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", file.getAbsolutePath(), "0755");
             String cmdStr = String.format("sudo mv ~/%s %s/%s", file.getName(), scriptPath, desitnation);
-            SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER, sshKeyFile, null,
+            SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr, 10000, 10000, 10 * 60 * 1000);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
@@ -495,7 +538,7 @@ public class KubernetesClusterActionWorker {
             publicIpAddress = publicIpSshPort.first();
             sshPort = publicIpSshPort.second();
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
             pkFile, null, commands.toString(), 10000, 10000, 60000);
             return result.first();
         } catch (Exception e) {
@@ -520,7 +563,7 @@ public class KubernetesClusterActionWorker {
 
         try {
             String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
-            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+            Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                 pkFile, null, command, 10000, 10000, 60000);
 
             // Maybe the file isn't present. Try and copy it
@@ -535,7 +578,7 @@ public class KubernetesClusterActionWorker {
                 }
 
                 // If at first you don't succeed ...
-                result = SshHelper.sshExecute(publicIpAddress, sshPort, CLUSTER_NODE_VM_USER,
+                result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                     pkFile, null, command, 10000, 10000, 60000);
                 if (!result.first()) {
                     throw new CloudRuntimeException(result.second());

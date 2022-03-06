@@ -2144,6 +2144,7 @@
 "message.enabling.zone.dots": "Habilitando Zona....",
 "message.enter.seperated.list.multiple.cidrs": "Por favor entre a de CIDRs separadas por v\u00edrgula, se houver mais de uma",
 "message.enter.token": "Por favor entre o token que voc\u00ea recebeu no e-mail privado.",
+"message.error.fixed.offering.kvm": "Não é possível escalar VMs que utilizam o hipervisor KVM com oferta de computa\u00e7\u00e3o fixa.",
 "message.generate.keys": "Por favor confirme que voc\u00ea deseja gerar novas chaves para este usu\u00e1rio.",
 "message.gslb.delete.confirm": "Confirme que voc\u00ea deseja apagar este GSLB",
 "message.gslb.lb.remove.confirm": "Confirme que voc\u00ea deseja remover o balanceamento de carga deste GSLB",

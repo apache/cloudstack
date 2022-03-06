@@ -870,7 +870,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     )
             portableip.delete(self.apiclient)
         except Exception as e:
-            raise Exception("Exception occured: %s" % e)
+            raise Exception("Exception occurred: %s" % e)
         return
 
     @attr(tags=["advanced"], required_hardware="false")

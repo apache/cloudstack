@@ -20,7 +20,7 @@ export default {
   title: 'label.configuration',
   icon: 'setting',
   shortKey: ['shift', 'g'],
-  permission: ['listConfigurations'],
+  permission: ['listConfigurations', 'listInfrastructure'],
   children: [
     {
       name: 'globalsetting',

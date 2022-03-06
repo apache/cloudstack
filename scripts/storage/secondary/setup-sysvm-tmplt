@@ -45,6 +45,8 @@ if [[ ! $@ =~ ^\-.+ ]]; then
 fi
 
 OPTERR=0
+DISKSPACE=2120000  #free disk space required in kilobytes
+
 while getopts 'h:f:d:u::'# OPTION
 do
   case $OPTION in

@@ -156,7 +156,7 @@
                           <div v-if="template.deployasis">  {{ this.$t('message.deployasis') }} </div>
                         </span>
                         <disk-size-selection
-                          v-show="showRootDiskSizeChanger"
+                          v-if="showRootDiskSizeChanger"
                           input-decorator="rootdisksize"
                           :preFillContent="dataPreFill"
                           :isCustomized="true"
@@ -390,31 +390,10 @@
                 <template slot="description">
                   <div v-if="zoneSelected">
                     <div v-if="vm.templateid && templateNics && templateNics.length > 0">
-                      <a-form-item
-                        v-for="(nic, nicIndex) in templateNics"
-                        :key="nicIndex"
-                        :v-bind="nic.name" >
-                        <tooltip-label slot="label" :title="nic.elementName + ' - ' + nic.name" :tooltip="nic.networkDescription"/>
-                        <a-select
-                          showSearch
-                          optionFilterProp="children"
-                          v-decorator="[
-                            'networkMap.nic-' + nic.InstanceID.toString(),
-                            { initialValue: options.networks && options.networks.length > 0 ? options.networks[Math.min(nicIndex, options.networks.length - 1)].id : null }
-                          ]"
-                          :placeholder="nic.networkDescription"
-                          :filterOption="(input, option) => {
-                            return option.componentOptions.children[0].children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                          }"
-                        >
-                          <a-select-option v-for="opt in options.networks" :key="opt.id">
-                            <span v-if="opt.type!=='L2'">
-                              {{ opt.name || opt.description }} ({{ `${$t('label.cidr')}: ${opt.cidr}` }})
-                            </span>
-                            <span v-else>{{ opt.name || opt.description }}</span>
-                          </a-select-option>
-                        </a-select>
-                      </a-form-item>
+                      <instance-nics-network-select-list-view
+                        :nics="templateNics"
+                        :zoneid="selectedZone"
+                        @select="handleNicsNetworkSelection" />
                     </div>
                     <div v-show="!(vm.templateid && templateNics && templateNics.length > 0)" >
                       <network-selection
@@ -461,7 +440,7 @@
                       :items="options.sshKeyPairs"
                       :row-count="rowCount.sshKeyPairs"
                       :zoneId="zoneId"
-                      :value="sshKeyPair ? sshKeyPair.name : ''"
+                      :value="sshKeyPairs"
                       :loading="loading.sshKeyPairs"
                       :preFillContent="dataPreFill"
                       @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
@@ -584,8 +563,8 @@
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
                       <a-form-item :label="$t('label.boottype')">
                         <a-select
-                          v-decorator="['boottype', { initialValue: options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
-                          @change="fetchBootModes"
+                          v-decorator="['boottype', { initialValue: defaultBootType ? defaultBootType : options.bootTypes && options.bootTypes.length > 0 ? options.bootTypes[0].id : undefined }]"
+                          @change="onBootTypeChange"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -596,7 +575,7 @@
                       </a-form-item>
                       <a-form-item :label="$t('label.bootmode')">
                         <a-select
-                          v-decorator="['bootmode', { initialValue: options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
+                          v-decorator="['bootmode', { initialValue: defaultBootMode ? defaultBootMode : options.bootModes && options.bootModes.length > 0 ? options.bootModes[0].id : undefined }]"
                           showSearch
                           optionFilterProp="children"
                           :filterOption="filterOption" >
@@ -771,6 +750,7 @@ import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
 
 export default {
   name: 'Wizard',
@@ -788,7 +768,8 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     ResourceIcon,
-    TooltipLabel
+    TooltipLabel,
+    InstanceNicsNetworkSelectListView
   },
   props: {
     visible: {
@@ -816,7 +797,7 @@ export default {
         templateid: null,
         templatename: null,
         keyboard: null,
-        keypair: null,
+        keypairs: [],
         group: null,
         affinitygroupids: [],
         affinitygroup: [],
@@ -865,6 +846,8 @@ export default {
       },
       instanceConfig: {},
       template: {},
+      defaultBootType: '',
+      defaultBootMode: '',
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -878,6 +861,7 @@ export default {
       networks: [],
       networksAdd: [],
       zone: {},
+      sshKeyPairs: [],
       sshKeyPair: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -911,7 +895,8 @@ export default {
       minIops: 0,
       maxIops: 0,
       zones: [],
-      selectedZone: ''
+      selectedZone: '',
+      nicToNetworkSelection: []
     }
   },
   computed: {
@@ -1202,7 +1187,6 @@ export default {
       if (this.rootDiskSelected?.id) {
         instanceConfig.overridediskofferingid = this.rootDiskSelected.id
       }
-      console.log('overrided value ' + instanceConfig.overridediskofferingid)
       if (instanceConfig.overridediskofferingid) {
         this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
       } else {
@@ -1211,7 +1195,6 @@ export default {
       this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
       this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
       this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-      this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
       if (this.zone) {
         this.vm.zoneid = this.zone.id
@@ -1292,6 +1275,9 @@ export default {
       if (this.affinityGroups) {
         this.vm.affinitygroup = this.affinityGroups
       }
+      if (this.sshKeyPairs) {
+        this.vm.keypairs = this.sshKeyPairs
+      }
     }
   },
   serviceOffering (oldValue, newValue) {
@@ -1330,7 +1316,7 @@ export default {
     this.form.getFieldDecorator('affinitygroupids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('networkids', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('defaultnetworkid', { initialValue: undefined, preserve: true })
-    this.form.getFieldDecorator('keypair', { initialValue: undefined, preserve: true })
+    this.form.getFieldDecorator('keypairs', { initialValue: [], preserve: true })
     this.form.getFieldDecorator('cpunumber', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('cpuSpeed', { initialValue: undefined, preserve: true })
     this.form.getFieldDecorator('memory', { initialValue: undefined, preserve: true })
@@ -1550,6 +1536,9 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
+          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
+          this.fetchBootModes(this.defaultBootType)
+          this.defaultBootMode = this.template?.details?.UEFI
         }
       } else if (name === 'isoid') {
         this.templateConfigurations = []
@@ -1628,16 +1617,11 @@ export default {
     updateNetworkConfig (networks) {
       this.networkConfig = networks
     },
-    updateSshKeyPairs (name) {
-      if (name === this.$t('label.noselect')) {
-        this.form.setFieldsValue({
-          keypair: undefined
-        })
-        return
-      }
+    updateSshKeyPairs (names) {
       this.form.setFieldsValue({
-        keypair: name
+        keypairs: names
       })
+      this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
@@ -1736,11 +1720,12 @@ export default {
           deployVmData.templateid = values.isoid
         }
 
-        if (values.rootdisksize && values.rootdisksize > 0) {
+        if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
-        } else if (this.rootDiskSizeFixed > 0) {
+        } else if (this.rootDiskSizeFixed > 0 && !this.template.deployasis) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
         }
+
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
@@ -1796,13 +1781,11 @@ export default {
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
         if (this.zone.networktype !== 'Basic') {
-          if ('networkMap' in values) {
-            const keys = Object.keys(values.networkMap)
-            for (var j = 0; j < keys.length; ++j) {
-              if (values.networkMap[keys[j]] && values.networkMap[keys[j]].length > 0) {
-                deployVmData['nicnetworklist[' + j + '].nic'] = keys[j].replace('nic-', '')
-                deployVmData['nicnetworklist[' + j + '].network'] = values.networkMap[keys[j]]
-              }
+          if (this.nicToNetworkSelection && this.nicToNetworkSelection.length > 0) {
+            for (var j in this.nicToNetworkSelection) {
+              var nicNetwork = this.nicToNetworkSelection[j]
+              deployVmData['nicnetworklist[' + j + '].nic'] = nicNetwork.nic
+              deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
             const arrNetwork = []
@@ -1845,7 +1828,8 @@ export default {
           deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
         // step 7: select ssh key pair
-        deployVmData.keypair = values.keypair
+        deployVmData.keypairs = this.sshKeyPairs.join(',')
+
         if (values.name) {
           deployVmData.name = values.name
           deployVmData.displayname = values.name
@@ -2172,6 +2156,17 @@ export default {
         nics.sort(function (a, b) {
           return a.InstanceID - b.InstanceID
         })
+        if (this.options.networks && this.options.networks.length > 0) {
+          this.nicToNetworkSelection = []
+          for (var i = 0; i < nics.length; ++i) {
+            var nic = nics[i]
+            nic.id = nic.InstanceID
+            var network = this.options.networks[Math.min(i, this.options.networks.length - 1)]
+            nic.selectednetworkid = network.id
+            nic.selectednetworkname = network.name
+            this.nicToNetworkSelection.push({ nic: nic.id, network: network.id })
+          }
+        }
       }
       return nics
     },
@@ -2335,7 +2330,11 @@ export default {
     },
     onBootTypeChange (value) {
       this.fetchBootModes(value)
-      this.updateFieldValue('bootmode', this.options.bootModes?.[0]?.id || undefined)
+      this.defaultBootMode = this.options.bootModes?.[0]?.id || undefined
+      this.updateFieldValue('bootmode', this.defaultBootMode)
+    },
+    handleNicsNetworkSelection (nicToNetworkSelection) {
+      this.nicToNetworkSelection = nicToNetworkSelection
     }
   }
 }

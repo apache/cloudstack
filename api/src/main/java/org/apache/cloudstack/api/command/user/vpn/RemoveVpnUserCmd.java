@@ -120,9 +120,8 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
         }
 
         boolean appliedVpnUsers = false;
-
         try {
-            appliedVpnUsers = _ravService.applyVpnUsers(ownerId, userName);
+            appliedVpnUsers = _ravService.applyVpnUsers(ownerId, userName, true);
         } catch (ResourceUnavailableException ex) {
             String errorMessage = String.format("Failed to refresh VPN user=[%s] due to resource unavailable. VPN owner id=[%s].", userName, ownerId);
             s_logger.error(errorMessage, ex);

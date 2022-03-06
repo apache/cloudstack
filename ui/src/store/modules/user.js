@@ -35,7 +35,8 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  THEME_SETTING
+  THEME_SETTING,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const user = {
@@ -131,6 +132,10 @@ const user = {
     },
     SET_COUNT_NOTIFY (state, number) {
       state.countNotify = number
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      Vue.ls.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
 
@@ -163,6 +168,8 @@ const user = {
           commit('SET_DARK_MODE', darkMode)
           const themeSetting = Vue.ls.get(THEME_SETTING, {})
           commit('SET_THEME_SETTING', themeSetting)
+          const cachedCustomColumns = Vue.ls.get(CUSTOM_COLUMNS, {})
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           commit('SET_APIS', {})
           commit('SET_NAME', '')
@@ -190,6 +197,7 @@ const user = {
         const cachedZones = Vue.ls.get(ZONES, [])
         const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
         const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+        const cachedCustomColumns = Vue.ls.get(CUSTOM_COLUMNS, {})
         const domainStore = Vue.ls.get(DOMAIN_STORE, {})
         const darkMode = Vue.ls.get(DARK_MODE, false)
         const themeSetting = Vue.ls.get(THEME_SETTING, {})
@@ -204,6 +212,7 @@ const user = {
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
           api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {

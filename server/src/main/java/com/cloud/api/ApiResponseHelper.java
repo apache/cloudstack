@@ -2302,6 +2302,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
+            if (Network.GuestType.Isolated.equals(network.getGuestType())) {
+                response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
+            }
         }
 
         if (network.getAclType() != null) {
@@ -3446,7 +3449,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(guestOS.isUserDefined());
+        response.setIsUserDefined(guestOS.getIsUserDefined());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());

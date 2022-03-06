@@ -37,6 +37,7 @@ export const DOMAIN_STORE = 'DOMAIN_STORE'
 export const SHOW_KEYBOARD_SHORTKEYS = 'SHOW_KEYBOARD_SHORTKEYS'
 export const DARK_MODE = 'DARK_MODE'
 export const THEME_SETTING = 'THEME_SETTING'
+export const CUSTOM_COLUMNS = 'CUSTOM_COLUMNS'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',

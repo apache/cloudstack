@@ -56,6 +56,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
@@ -70,7 +71,6 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
@@ -878,7 +878,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             for (final Field field : clazz.getDeclaredFields()) {
                 sql.append(_table).append(".").append(DbUtil.getColumnName(field, overrides)).append(" = ? AND ");
             }
-            sql.delete(sql.length() - 4, sql.length());
+            removeAndClause(sql);
         }
 
         return sql.toString();
@@ -1262,10 +1262,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
+        boolean hasWhereClause = true;
         int fromIndex = str.lastIndexOf("WHERE");
         if (fromIndex == -1) {
             fromIndex = str.length();
-            str.append(" WHERE ");
+            hasWhereClause = false;
         } else {
             str.append(" AND ");
         }
@@ -1287,19 +1288,29 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             .append(" ");
             str.insert(fromIndex, onClause);
             String whereClause = join.getT().getWhereClause();
-            if ((whereClause != null) && !"".equals(whereClause)) {
+            if (StringUtils.isNotEmpty(whereClause)) {
+                if (!hasWhereClause) {
+                    str.append(" WHERE ");
+                    hasWhereClause = true;
+                }
                 str.append(" (").append(whereClause).append(") AND");
             }
             fromIndex += onClause.length();
         }
 
-        str.delete(str.length() - 4, str.length());
+        if (hasWhereClause) {
+            removeAndClause(str);
+        }
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             if (join.getT().getJoins() != null) {
                 addJoins(str, join.getT().getJoins());
             }
         }
+    }
+
+    private void removeAndClause(StringBuilder sql) {
+        sql.delete(sql.length() - 4, sql.length());
     }
 
     @Override
