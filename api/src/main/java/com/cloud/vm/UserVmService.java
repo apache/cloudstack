@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RetryDeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateDefaultNicForVMCmd;
@@ -526,4 +527,7 @@ public interface UserVmService {
      * @return true if the VM is successfully unmanaged, false if not.
      */
     boolean unmanageUserVM(Long vmId);
+
+    UserVm retryDeployVM(RetryDeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException,
+            ResourceAllocationException;
 }

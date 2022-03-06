@@ -89,6 +89,16 @@ export default {
           component: () => import('@/views/compute/EditVM.vue')
         },
         {
+          api: 'retryDeployVirtualMachine',
+          icon: 'redo',
+          label: 'label.action.retry.deploy.instance',
+          dataView: true,
+          listView: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          show: (record) => { return ['Error'].includes(record.state) }
+        },
+        {
           api: 'startVirtualMachine',
           icon: 'caret-right',
           label: 'label.action.start.instance',

@@ -75,6 +75,7 @@ import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.RetryDeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
@@ -7912,6 +7913,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return true;
+    }
+
+    @Override
+    public UserVm retryDeployVM(RetryDeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long vmId = cmd.getId();
+        Long podId = null;
+        Long clusterId = null;
+        Long hostId = null;
+        Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
+        Map<Long, DiskOffering> diskOfferingMap = null;
+        String deploymentPlannerToUse = null;
+        return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, deploymentPlannerToUse);
     }
 
     /*

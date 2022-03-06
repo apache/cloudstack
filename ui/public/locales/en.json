@@ -255,6 +255,7 @@
 "label.action.resource.limits": "Resource limits",
 "label.action.restore.instance": "Restore Instance",
 "label.action.restore.instance.processing": "Restoring Instance....",
+"label.action.retry.deploy.instance": "Retry Deploy Instance",
 "label.action.revert.snapshot": "Revert to Snapshot",
 "label.action.revert.snapshot.processing": "Reverting to Snapshot...",
 "label.action.router.health.checks": "Get health checks result",
