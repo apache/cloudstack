@@ -1183,6 +1183,9 @@ public class NetUtils {
     }
 
     public static boolean isValidCidrList(final String cidrList) {
+        if (StringUtils.isBlank(cidrList)) {
+            return false;
+        }
         for (final String guestCidr : cidrList.split(",")) {
             if (!isValidIp4Cidr(guestCidr)) {
                 return false;

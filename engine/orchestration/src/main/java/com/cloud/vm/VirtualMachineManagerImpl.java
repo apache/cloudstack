@@ -1650,7 +1650,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool != null && storagePool.isManaged()) {
-                Map<String, String> info = new HashMap<>(3);
+                Map<String, String> info = new HashMap<>();
 
                 info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
                 info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
@@ -3110,7 +3110,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         _agentMgr.send(srcHost.getId(), dettachCommand);
                         s_logger.debug("Deleted config drive ISO for  vm " + vm.getInstanceName() + " In host " + srcHost);
                     } catch (OperationTimedoutException e) {
-                        s_logger.error("TIme out occured while exeuting command AttachOrDettachConfigDrive " + e.getMessage(), e);
+                        s_logger.error("TIme out occurred while exeuting command AttachOrDettachConfigDrive " + e.getMessage(), e);
 
                     }
                 }

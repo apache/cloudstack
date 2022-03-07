@@ -622,7 +622,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 apiclient,
                 serviceOfferingId=serviceOffering_static_2.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -792,7 +792,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 apiclient,
                 serviceOfferingId=serviceOffering_static.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @data(ADMIN_ACCOUNT, USER_ACCOUNT)
@@ -877,7 +877,7 @@ class TestScaleVmDynamicServiceOffering(cloudstackTestCase):
                 customcpuspeed=512,
                 custommemory=256)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # Scale VM with dynamic service offering proving custom value
         # only for cpu number

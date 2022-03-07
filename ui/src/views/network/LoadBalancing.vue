@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <div v-ctrl-enter="handleOpenAddVMModal">
+    <div @keyup.ctrl.enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
@@ -346,105 +346,107 @@
       </div>
     </a-modal>
 
-    <a-modal
-      :title="$t('label.add.vms')"
-      :maskClosable="false"
-      :closable="true"
-      v-model="addVmModalVisible"
-      class="vm-modal"
-      width="60vw"
-      :footer="null"
-      v-ctrl-enter="handleAddNewRule"
-    >
-      <div>
-        <span
-          v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
-          <strong>{{ $t('label.select.tier') }} </strong>
-          <a-select
-            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
-            v-model="selectedTier"
-            @change="fetchVirtualMachines()"
-            :placeholder="$t('label.select.tier')"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="tier in tiers.data"
-              :loading="tiers.loading"
-              :key="tier.id">
-              {{ tier.displaytext }}
-            </a-select-option>
-          </a-select>
-        </span>
-        <a-input-search
-          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
-          class="input-search"
-          :placeholder="$t('label.search')"
-          v-model="searchQuery"
-          allowClear
-          @search="onSearch" />
-        <a-table
-          size="small"
-          class="list-view"
-          :loading="addVmModalLoading"
-          :columns="vmColumns"
-          :dataSource="vms"
-          :pagination="false"
-          :rowKey="record => record.id"
-          :scroll="{ y: 300 }">
-          <div slot="name" slot-scope="text, record, index">
-            <span>
-              {{ text }}
-            </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+    <div
+      @keyup.ctrl.enter="handleAddNewRule">
+      <a-modal
+        :title="$t('label.add.vms')"
+        :maskClosable="false"
+        :closable="true"
+        v-model="addVmModalVisible"
+        class="vm-modal"
+        width="60vw"
+        :footer="null"
+      >
+        <div>
+          <span
+            v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
+            <strong>{{ $t('label.select.tier') }} </strong>
             <a-select
-              style="display: block"
-              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
-              mode="multiple"
-              v-model="newRule.vmguestip[index]"
+              :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
+              v-model="selectedTier"
+              @change="fetchVirtualMachines()"
+              :placeholder="$t('label.select.tier')"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
                 return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+              <a-select-option
+                v-for="tier in tiers.data"
+                :loading="tiers.loading"
+                :key="tier.id">
+                {{ tier.displaytext }}
               </a-select-option>
             </a-select>
-          </div>
+          </span>
+          <a-input-search
+            :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+            class="input-search"
+            :placeholder="$t('label.search')"
+            v-model="searchQuery"
+            allowClear
+            @search="onSearch" />
+          <a-table
+            size="small"
+            class="list-view"
+            :loading="addVmModalLoading"
+            :columns="vmColumns"
+            :dataSource="vms"
+            :pagination="false"
+            :rowKey="record => record.id"
+            :scroll="{ y: 300 }">
+            <div slot="name" slot-scope="text, record, index">
+              <span>
+                {{ text }}
+              </span>
+              <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+              <a-select
+                style="display: block"
+                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
+                mode="multiple"
+                v-model="newRule.vmguestip[index]"
+                showSearch
+                optionFilterProp="children"
+                :filterOption="(input, option) => {
+                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
+                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+                </a-select-option>
+              </a-select>
+            </div>
 
-          <div slot="state" slot-scope="text">
-            <status :text="text ? text : ''" displayText></status>
-          </div>
+            <div slot="state" slot-scope="text">
+              <status :text="text ? text : ''" displayText></status>
+            </div>
 
-          <div slot="action" slot-scope="text, record, index" style="text-align: center">
-            <a-checkbox :value="record.id" @change="e => fetchNics(e, index)" />
-          </div>
-        </a-table>
-        <a-pagination
-          class="pagination"
-          size="small"
-          :current="vmPage"
-          :pageSize="vmPageSize"
-          :total="vmCount"
-          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-          :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangeVmPage"
-          @showSizeChange="handleChangeVmPageSize"
-          showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
-            <span>{{ props.value }} / {{ $t('label.page') }}</span>
-          </template>
-        </a-pagination>
-      </div>
+            <div slot="action" slot-scope="text, record, index" style="text-align: center">
+              <a-checkbox :value="record.id" @change="e => fetchNics(e, index)" />
+            </div>
+          </a-table>
+          <a-pagination
+            class="pagination"
+            size="small"
+            :current="vmPage"
+            :pageSize="vmPageSize"
+            :total="vmCount"
+            :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+            :pageSizeOptions="['10', '20', '40', '80', '100']"
+            @change="handleChangeVmPage"
+            @showSizeChange="handleChangeVmPageSize"
+            showSizeChanger>
+            <template slot="buildOptionText" slot-scope="props">
+              <span>{{ props.value }} / {{ $t('label.page') }}</span>
+            </template>
+          </a-pagination>
+        </div>
 
-      <div :span="24" class="action-button">
-        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :disabled="newRule.virtualmachineid === []" type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
-      </div>
-    </a-modal>
+        <div :span="24" class="action-button">
+          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+          <a-button :disabled="newRule.virtualmachineid === []" type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-modal>
+    </div>
 
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"

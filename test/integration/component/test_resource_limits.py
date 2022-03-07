@@ -844,7 +844,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         # Exception should be raised for second snapshot (account_1)
         with self.assertRaises(Exception):
             Template.create(
@@ -908,7 +908,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 
@@ -1362,7 +1362,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # Exception should be raised for second template
         with self.assertRaises(Exception):

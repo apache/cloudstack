@@ -74,9 +74,10 @@ public interface ProjectRoleService {
     /**
      *
      * @param projectId ID of the project whosr project roles are to be listed
+     * @param keyword
      * @return List of all available project roles
      */
-    List<ProjectRole> findProjectRoles(Long projectId);
+    List<ProjectRole> findProjectRoles(Long projectId, String keyword);
 
     /**
      * Creates a project role permission to be mapped to a project role.

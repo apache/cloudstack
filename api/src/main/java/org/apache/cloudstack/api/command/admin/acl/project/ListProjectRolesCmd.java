@@ -25,7 +25,7 @@ import org.apache.cloudstack.acl.ProjectRole;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -36,7 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 @APICommand(name = ListProjectRolesCmd.APINAME, description = "Lists Project roles in CloudStack", responseObject = ProjectRoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.15.0", authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListProjectRolesCmd extends BaseCmd {
+public class ListProjectRolesCmd extends BaseListCmd {
     public static final String APINAME = "listProjectRoles";
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class ListProjectRolesCmd extends BaseCmd {
         } else if (StringUtils.isNotBlank(getRoleName())) {
             projectRoles = projRoleService.findProjectRolesByName(getProjectId(), getRoleName());
         } else {
-            projectRoles = projRoleService.findProjectRoles(getProjectId());
+            projectRoles = projRoleService.findProjectRoles(getProjectId(), getKeyword());
         }
         final ListResponse<ProjectRoleResponse> response = new ListResponse<>();
         final List<ProjectRoleResponse> roleResponses = new ArrayList<>();
