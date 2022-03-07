@@ -3535,11 +3535,11 @@ class TestSharedNetworks(cloudstackTestCase):
         self.api_client.stopRouter(cmd)
 
         response = verifyRouterState(self.api_client, router.id, "stopped")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         self.debug("Starting the router with ID: %s" % router.id)
@@ -3549,11 +3549,11 @@ class TestSharedNetworks(cloudstackTestCase):
         self.api_client.startRouter(cmd)
 
         response = verifyRouterState(self.api_client, router.id, "running")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 

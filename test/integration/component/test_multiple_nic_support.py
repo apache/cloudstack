@@ -522,7 +522,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
 
             self.virtual_machine1.migrate(self.apiclient, host_id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # List the vm again
         virtual_machine = VirtualMachine.list(
@@ -618,7 +618,7 @@ class TestMulipleNicSupport(cloudstackTestCase):
         try:
             self.virtual_machine1.reboot(self.apiclient)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         self.verify_network_rules(self.virtual_machine1.id)
 
