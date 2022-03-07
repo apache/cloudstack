@@ -26,6 +26,11 @@ public class VmWorkStop extends VmWork {
         this.cleanup = cleanup;
     }
 
+    public VmWorkStop(VmWork vmWork, boolean cleanup) {
+        super(vmWork);
+        this.cleanup = cleanup;
+    }
+
     public boolean isCleanup() {
         return cleanup;
     }

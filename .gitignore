@@ -48,6 +48,7 @@ tools/cli/cloudmonkey/precache.py
 tools/marvin/marvin/cloudstackAPI/
 tools/marvin/build/
 tools/cli/build/
+tools/appliance/systemvmtemplate/packer_cache/
 *.jar
 *.war
 *.mar

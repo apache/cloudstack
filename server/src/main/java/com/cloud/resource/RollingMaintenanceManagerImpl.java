@@ -612,14 +612,14 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         if (CollectionUtils.isEmpty(vmsRunning)) {
             return new Pair<>(true, "OK");
         }
-        List<String> hostTags = hostTagsDao.gethostTags(host.getId());
+        List<String> hostTags = hostTagsDao.getHostTags(host.getId());
 
         int sucessfullyCheckedVmMigrations = 0;
         for (VMInstanceVO runningVM : vmsRunning) {
             boolean canMigrateVm = false;
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
             for (Host hostInCluster : hostsInCluster) {
-                if (!checkHostTags(hostTags, hostTagsDao.gethostTags(hostInCluster.getId()), serviceOffering.getHostTag())) {
+                if (!checkHostTags(hostTags, hostTagsDao.getHostTags(hostInCluster.getId()), serviceOffering.getHostTag())) {
                     s_logger.debug(String.format("Host tags mismatch between %s and %s Skipping it from the capacity check", host, hostInCluster));
                     continue;
                 }

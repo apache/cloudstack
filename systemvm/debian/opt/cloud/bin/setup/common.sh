@@ -322,7 +322,12 @@ setup_common() {
 
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-    ip route add $MGMTNET via $LOCAL_GW dev eth1
+    log_it "Received mgmt cidr : $MGMTNET"
+    cidrs=(${MGMTNET//,/ })
+    for cidr in ${cidrs[@]}
+    do
+      ip route add $cidr via $LOCAL_GW dev eth1
+    done
   fi
 
   ip route delete default

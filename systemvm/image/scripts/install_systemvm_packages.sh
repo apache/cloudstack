@@ -92,8 +92,8 @@ function install_packages() {
   apt-key fingerprint 0EBFCD88
   echo "deb [arch=amd64] https://download.docker.com/linux/debian bullseye stable" > /etc/apt/sources.list.d/docker.list
   apt-get update
-  ${apt_get} install docker-ce docker-ce-cli containerd.io
-  apt-get clean
+  ${apt_get} install containerd.io
+  apt_clean
 
   install_vhd_util
   # Install xenserver guest utilities as debian repos don't have it

@@ -68,7 +68,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.isAdminOrDomainAdmin()">
+          <a-form-item v-if="isAdminOrDomainAdmin()">
             <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
             <a-select
               v-decorator="['domainid', {}]"
@@ -180,6 +180,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -215,7 +216,7 @@ export default {
       networkOfferings: [],
       networkOfferingLoading: false,
       selectedNetworkOffering: {},
-      accountVisible: this.isAdminOrDomainAdmin(),
+      accountVisible: isAdminOrDomainAdmin(),
       isolatePvlanType: 'none'
     }
   },
@@ -242,11 +243,8 @@ export default {
       this.fetchDomainData()
       this.fetchZoneData()
     },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
     isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
+      return isAdminOrDomainAdmin()
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
@@ -309,7 +307,7 @@ export default {
     handleDomainChange (domain) {
       this.selectedDomain = domain
       this.accountVisible = domain.id !== '-1'
-      if (this.isAdminOrDomainAdmin()) {
+      if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
       }
     },
@@ -337,10 +335,10 @@ export default {
         guestiptype: 'L2',
         state: 'Enabled'
       }
-      if (this.isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
+      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
         params.domainid = this.selectedDomain.id
       }
-      if (!this.isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
+      if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
       }
       if (forVpc !== null) {

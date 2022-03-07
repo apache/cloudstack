@@ -88,6 +88,9 @@
           </a-timeline>
           <p>{{ $t('label.more.access.dashboard.ui') }}, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
         </a-card>
+        <a-card :title="$t('label.acess.kubernetes.nodes')">
+          <p v-html="$t('label.kubernetes.access.details')"></p>
+        </a-card>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.instances')" key="instances">
         <a-table
@@ -150,6 +153,7 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import FirewallRules from '@/views/network/FirewallRules'
@@ -230,7 +234,7 @@ export default {
         dataIndex: 'zonename'
       }
     ]
-    if (!this.isAdmin()) {
+    if (!isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
     this.handleFetchData()
@@ -279,12 +283,6 @@ export default {
         }).join('&')
       )
     },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
-    },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
@@ -304,7 +302,7 @@ export default {
     fetchComments () {
       this.clusterConfigLoading = true
       api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
-        if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
+        if (json.listannotationsresponse?.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
       }).catch(error => {

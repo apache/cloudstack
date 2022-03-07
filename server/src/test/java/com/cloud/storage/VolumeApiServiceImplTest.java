@@ -37,6 +37,8 @@ import java.util.concurrent.ExecutionException;
 
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -158,6 +160,8 @@ public class VolumeApiServiceImplTest {
     private VMTemplateDao templateDao;
     @Mock
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Mock
+    private ServiceOfferingDao serviceOfferingDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
@@ -213,7 +217,7 @@ public class VolumeApiServiceImplTest {
             VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeDaoMock.findById(1L)).thenReturn(volumeOfRunningVm);
 
-            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(1L)).thenReturn(runningVm);
@@ -223,13 +227,13 @@ public class VolumeApiServiceImplTest {
             volumeOfStoppedVm.setPoolId(1L);
             when(volumeDaoMock.findById(2L)).thenReturn(volumeOfStoppedVm);
 
-            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(2L)).thenReturn(stoppedVm);
 
             // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(userVmDaoMock.findById(3L)).thenReturn(hyperVVm);
@@ -285,7 +289,7 @@ public class VolumeApiServiceImplTest {
             when(volumeDaoMock.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
-            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(userVmDaoMock.findById(4L)).thenReturn(vmHavingRootVolume);
@@ -570,6 +574,27 @@ public class VolumeApiServiceImplTest {
     @Test
     public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
         Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        serviceOfferingVO.setDiskOfferingStrictness(false);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolumeWithDiskOfferingStrictnessTrue() {
+        Mockito.lenient().when(volumeVoMock.getVolumeType()).thenReturn(Type.ROOT);
+        Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        when(_vmInstanceDao.findById(anyLong())).thenReturn(vm);
+        when(vm.getServiceOfferingId()).thenReturn(1L);
+        ServiceOfferingVO serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+        when(serviceOfferingDao.findById(anyLong())).thenReturn(serviceOfferingVO);
+        when(serviceOfferingVO.getDiskOfferingStrictness()).thenReturn(true);
 
         volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVoMock, newDiskOfferingMock, storagePoolMock);
     }

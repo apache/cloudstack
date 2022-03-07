@@ -29,7 +29,7 @@ import java.util.Map.Entry;
 
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -113,6 +113,9 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     @Override
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         if (msg instanceof HttpRequest) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("HTTP request: %s", msg));
+            }
             HttpRequest request = this.request = (HttpRequest) msg;
             responseContent.setLength(0);
 

@@ -400,7 +400,7 @@ install -D tools/whisker/LICENSE ${RPM_BUILD_ROOT}%{_defaultdocdir}/%{name}-inte
 
 %preun management
 /usr/bin/systemctl stop cloudstack-management || true
-/usr/bin/systemctl off cloudstack-management || true
+/usr/bin/systemctl disable cloudstack-management || true
 
 %pre management
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
@@ -431,7 +431,7 @@ pip3 install %{_datadir}/%{name}-management/setup/wheel/six-1.15.0-py2.py3-none-
 
 pip3 install urllib3
 
-/usr/bin/systemctl on cloudstack-management > /dev/null 2>&1 || true
+/usr/bin/systemctl enable cloudstack-management > /dev/null 2>&1 || true
 
 grep -s -q "db.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.cloud.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties"
 grep -s -q "db.usage.driver=jdbc:mysql" "%{_sysconfdir}/%{name}/management/db.properties" || sed -i -e "\$adb.usage.driver=jdbc:mysql"  "%{_sysconfdir}/%{name}/management/db.properties"
@@ -457,6 +457,13 @@ fi
 chown -R cloud:cloud /var/log/cloudstack/management
 
 systemctl daemon-reload
+
+%posttrans management
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text management
+fi
 
 %preun agent
 /sbin/service cloudstack-agent stop || true
@@ -496,6 +503,13 @@ fi
 
 systemctl daemon-reload
 
+%posttrans agent
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text agent
+fi
+
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -U -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true
@@ -522,6 +536,13 @@ fi
 
 if [ ! -f "%{_sysconfdir}/%{name}/usage/key" ]; then
     ln -s %{_sysconfdir}/%{name}/management/key %{_sysconfdir}/%{name}/usage/key
+fi
+
+%posttrans usage
+# Print help message
+if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+    sed -i "s,^ACS_VERSION=.*,ACS_VERSION=%{_maventag},g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+    /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text usage
 fi
 
 %post marvin

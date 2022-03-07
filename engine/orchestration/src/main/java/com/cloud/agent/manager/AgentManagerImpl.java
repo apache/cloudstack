@@ -120,7 +120,7 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -342,10 +342,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-
-                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
+                    String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
+                            host.getUuid(), e.getLocalizedMessage());
+                    s_logger.error(errorMsg);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(errorMsg, e);
+                    }
                 }
                 if (answer != null) {
                     return answer;
@@ -391,7 +396,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
         String logcontextid = (String) MDC.get("logcontextid");
-        if (!Strings.isNullOrEmpty(logcontextid)) {
+        if (StringUtils.isNotEmpty(logcontextid)) {
             cmd.setContextParam("logid", logcontextid);
         }
     }
@@ -1086,7 +1091,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             String lbAlgorithm = null;
             if (startup != null && startup.length > 0) {
                 final String agentMSHosts = startup[0].getMsHostList();
-                if (!Strings.isNullOrEmpty(agentMSHosts)) {
+                if (StringUtils.isNotEmpty(agentMSHosts)) {
                     String[] msHosts = agentMSHosts.split("@");
                     if (msHosts.length > 1) {
                         lbAlgorithm = msHosts[1];
@@ -1381,7 +1386,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
-                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        final String message = String.format("Exception occurred when executing taks! Error '%s'", e.getMessage());
                         s_logger.error(message);
                         throw new TaskExecutionException(message, e);
                     }

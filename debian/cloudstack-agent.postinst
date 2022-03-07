@@ -53,6 +53,13 @@ case "$1" in
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
 
+        # Print help message
+        if [ -f "/usr/share/cloudstack-common/scripts/installer/cloudstack-help-text" ];then
+            acs_version=$(dpkg -l |grep cloudstack-agent |head -n1 |awk '{print $3}')
+            sed -i "s,^ACS_VERSION=.*,ACS_VERSION=$acs_version,g" /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text
+            /usr/share/cloudstack-common/scripts/installer/cloudstack-help-text agent
+        fi
+
         ;;
 esac
 

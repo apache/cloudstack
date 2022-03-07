@@ -75,6 +75,13 @@ public interface VolumeOrchestrationService {
         true
     );
 
+    ConfigKey<Long> MaxVolumeSize = new ConfigKey<Long>("Storage",
+            Long.class,
+            "storage.max.volume.size",
+            "2000",
+            "The maximum size for a volume (in GB).",
+            true);
+
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
@@ -136,6 +143,8 @@ public interface VolumeOrchestrationService {
     boolean validateVolumeSizeRange(long size);
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
+
+    List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo, String updatedDataStoreUUID);
 

@@ -27,6 +27,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -199,13 +200,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
         ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        HostVO host = hostDao.findById(vm.getHostId());
+        Long clusterId = findClusterOfVm(vm);
         boolean divideMemoryByOverprovisioning = true;
         boolean divideCpuByOverprovisioning = true;
 
-        if (host != null) {
-            divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
-            divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        if (clusterId != null) {
+            divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clusterId);
+            divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clusterId);
         }
 
         Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
@@ -278,6 +279,22 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setState(vm.getState());
 
         return to;
+    }
+
+    protected Long findClusterOfVm(VirtualMachine vm) {
+        HostVO host = hostDao.findById(vm.getHostId());
+        if (host != null) {
+            return host.getClusterId();
+        }
+
+        s_logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        host = hostDao.findById(vm.getLastHostId());
+        if (host != null) {
+            return host.getClusterId();
+        }
+
+        s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        return null;
     }
 
     @Override

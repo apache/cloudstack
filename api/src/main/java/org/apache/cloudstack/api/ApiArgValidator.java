@@ -18,6 +18,6 @@
 package org.apache.cloudstack.api;
 
 public enum ApiArgValidator {
-    NotNullOrEmpty, // does Strings.isNullOrEmpty check
+    NotNullOrEmpty, // does StringUtils.isEmpty check
     PositiveNumber, // does != null and > 0 check
 }

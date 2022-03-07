@@ -28,6 +28,7 @@
 @project-nav-text-color: rgba(255, 255, 255, 0.65);
 @navigation-text-color:  rgba(0, 0, 0, 0.65);
 @primary-color: #1890ff;
+@primary-color-light: tint(@primary-color, 90);
 @link-color: @primary-color;
 @link-hover-color: #40a9ff;
 @processing-color: @primary-color;
@@ -118,6 +119,19 @@ a {
 
 .ant-menu-item-selected > a, .ant-menu-item-selected > a:hover {
   color: @primary-color;
+}
+
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: @primary-color-light;
+}
+
+.ant-menu-item:active,
+.ant-menu-submenu-title:active {
+  background: @primary-color-light;
+}
+
+.list .item:hover {
+  background: @primary-color-light;
 }
 
 .ant-menu-vertical .ant-menu-item,
@@ -343,4 +357,18 @@ a {
   .input-group .color-picker {
     border-color: @primary-color;
   }
+}
+
+.button-clear-notification {
+  position: fixed;
+  right: 287px;
+  top: 35px;
+  z-index: 1001;
+}
+
+.ant-table-thead > tr.ant-table-row-hover > td,
+.ant-table-tbody > tr.ant-table-row-hover > td,
+.ant-table-thead > tr:hover > td,
+.ant-table-tbody > tr:hover > td {
+  background: @primary-color-light !important;
 }

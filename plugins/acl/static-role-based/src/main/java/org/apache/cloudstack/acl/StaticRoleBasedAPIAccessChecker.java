@@ -65,6 +65,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
         }
     }
 
+    @Override
+    public boolean isEnabled() {
+        return !isDisabled();
+    }
     public boolean isDisabled() {
         return roleService.isEnabled();
     }
@@ -80,6 +84,10 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIA
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
+        return checkAccess(account, commandName);
+    }
+
+    public boolean checkAccess(Account account, String commandName) {
         RoleType roleType = accountService.getRoleType(account);
         boolean isAllowed =
             commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(

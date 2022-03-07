@@ -22,7 +22,6 @@ package com.cloud.utils;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -52,43 +51,6 @@ public class StringUtils {
 
     protected static Charset getDefaultCharset() {
         return Charset.defaultCharset();
-    }
-
-    public static String join(final Iterable<? extends Object> iterable, final String delim) {
-        final StringBuilder sb = new StringBuilder();
-        if (iterable != null) {
-            final Iterator<? extends Object> iter = iterable.iterator();
-            if (iter.hasNext()) {
-                final Object next = iter.next();
-                sb.append(next.toString());
-            }
-            while (iter.hasNext()) {
-                final Object next = iter.next();
-                sb.append(delim + next.toString());
-            }
-        }
-        return sb.toString();
-    }
-
-    public static String join(final String delimiter, final Object... components) {
-        return org.apache.commons.lang.StringUtils.join(components, delimiter);
-    }
-    /**
-     * @deprecated
-     * Please use org.apache.commons.lang.StringUtils.isBlank() as a replacement
-     */
-    @Deprecated
-    public static boolean isBlank(String str) {
-        return org.apache.commons.lang.StringUtils.isBlank(str);
-    }
-
-    /**
-     * @deprecated
-     * Please use org.apache.commons.lang.StringUtils.isNotBlank() as a replacement
-     */
-    @Deprecated
-    public static boolean isNotBlank(final String str) {
-        return org.apache.commons.lang.StringUtils.isNotBlank(str);
     }
 
     public static String cleanupTags(String tags) {
@@ -311,6 +273,6 @@ public class StringUtils {
     }
 
     public static String toCSVList(final List<String> csvList) {
-        return join(csvList, ",");
+        return org.apache.commons.lang3.StringUtils.defaultString(org.apache.commons.lang3.StringUtils.join(csvList, ","));
     }
 }

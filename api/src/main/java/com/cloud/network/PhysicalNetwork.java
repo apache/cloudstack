@@ -18,9 +18,9 @@ package com.cloud.network;
 
 import com.cloud.exception.CloudException;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashSet;
 import java.util.List;

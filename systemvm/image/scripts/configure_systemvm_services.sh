@@ -50,11 +50,12 @@ function configure_cacerts() {
   CDIR=$(pwd)
   cd /tmp
   # Add LetsEncrypt ca-cert
-  wget https://letsencrypt.org/certs/isrgrootx1.der
   wget https://letsencrypt.org/certs/lets-encrypt-r3.der
-  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx1 -file isrgrootx1.der
+  wget https://letsencrypt.org/certs/isrgrootx1.der
+
   keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityr3 -file lets-encrypt-r3.der
-  rm -f isrgrootx1.der lets-encrypt-r3.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx1 -file isrgrootx1.der
+  rm -f lets-encrypt-r3.der isrgrootx1.der
   cd $CDIR
 }
 
@@ -130,10 +131,6 @@ function configure_services() {
 
   # Disable container services
   systemctl disable containerd
-  systemctl disable docker.service
-  systemctl stop docker.service
-  systemctl disable docker.socket
-  systemctl stop docker.socket
 
   # Disable cloud init by default
 cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
