@@ -249,6 +249,15 @@
         <span v-else>{{ text }}</span>
       </template>
     </span>
+    <span slot="resource" slot-scope="text, record" href="javascript:;">
+      <span v-if="record.resourcetype && record.resourceid && $getRouteFromResourceType(record.resourcetype)" >
+        <a-tooltip placement="top" :title="record.resourcetype + ': ' + (record.resourcename || record.resourceid)">
+          <a-icon style="font-size: 16px; margin-right: 5px" :type="$getIconFromResourceType(record.resourcetype)" />
+          <router-link :to="{ path: '/' + $getRouteFromResourceType(record.resourcetype) + '/' + record.resourceid }">{{ record.resourcename || record.resourceid }}</router-link>
+        </a-tooltip>
+      </span>
+      <span v-else>{{ text }}</span>
+    </span>
     <span slot="domain" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
