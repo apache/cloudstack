@@ -325,7 +325,7 @@ public class KVMStoragePoolManager {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get storage pool.");
+                s_logger.debug("[ignored] interrupted while trying to get storage pool.");
             }
             cnt++;
         }

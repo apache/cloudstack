@@ -961,7 +961,7 @@ public class NetscalerResource implements ServerResource {
                 try {
                     Thread.sleep(10000);
                 } catch (final InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for netscaler to be 'up'.");
+                    s_logger.debug("[ignored] interrupted while waiting for netscaler to be 'up'.");
                 }
                 final ns refreshNsObj = new ns();
                 refreshNsObj.set_id(newVpx.get_id());

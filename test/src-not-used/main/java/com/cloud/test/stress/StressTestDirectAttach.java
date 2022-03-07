@@ -1337,7 +1337,7 @@ public class StressTestDirectAttach {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while during async job result query.");
+                        s_logger.debug("[ignored] interrupted while during async job result query.");
                     }
                 } else {
                     break;

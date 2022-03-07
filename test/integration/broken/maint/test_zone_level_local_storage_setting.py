@@ -494,7 +494,7 @@ class TestSystemVmLocalStorage(cloudstackTestCase):
             name = 'secstorage.service.offering'
         else:
             raise Exception(
-                "type paramter is not correct it should be  system vm "
+                "type parameter is not correct it should be  system vm "
                 "type{console proxy,secsroragevm}")
 
         # 3-update global settings with system offering uuid

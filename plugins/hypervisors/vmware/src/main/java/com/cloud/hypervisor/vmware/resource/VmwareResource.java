@@ -1158,7 +1158,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 Thread.currentThread();
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get mac.");
+                s_logger.debug("[ignored] interrupted while trying to get mac.");
             }
         }
 
@@ -6496,7 +6496,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                        s_logger.debug("[ignored] interupted while waiting to retry connect after failure.", e);
+                        s_logger.debug("[ignored] interrupted while waiting to retry connect after failure.", e);
                     }
                 }
             }
@@ -6504,7 +6504,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] interupted while waiting to retry connect.");
+                s_logger.debug("[ignored] interrupted while waiting to retry connect.");
             }
         }
 

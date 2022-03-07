@@ -61,7 +61,7 @@ public class SystemVmLoadScanner<T> {
         try {
             _capacityScanScheduler.awaitTermination(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            s_logger.debug("[ignored] interupted while stopping systemvm load scanner.");
+            s_logger.debug("[ignored] interrupted while stopping systemvm load scanner.");
         }
 
         _capacityScanLock.releaseRef();
