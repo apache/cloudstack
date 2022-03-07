@@ -232,7 +232,7 @@ export default {
         }
         this.loading = true
 
-        api('updateVirtualMachine', params).then(json => {
+        api('updateVirtualMachine', {}, 'POST', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
             duration: 2
