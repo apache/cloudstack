@@ -50,6 +50,7 @@ import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.StatsCollector;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.google.common.collect.Sets;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -775,9 +776,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC
-                    && hypervisorType != HypervisorType.Any) {
-                throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
+
+            Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
+                    HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
+            if (!supportedHypervisorTypes.contains(hypervisorType)) {
+                throw new InvalidParameterValueException("Zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         } else {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
@@ -2819,6 +2822,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
+                                    if (HypervisorType.Simulator == hypervisorType) {
+                                        continue;
+                                    }
                                     String templateName = getValidTemplateName(zoneId, hypervisorType);
                                     Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
                                             new Pair<>(hypervisorType, templateName);
@@ -3333,7 +3339,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
-                PreferredStoragePool
+                PreferredStoragePool,
+                SecStorageVMAutoScaleDown
         };
     }
 

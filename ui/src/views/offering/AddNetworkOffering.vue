@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form-layout" v-ctrl-enter="handleSubmit">
+  <div class="form-layout" @keyup.ctrl.enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
         :form="form"
@@ -342,7 +342,7 @@
           <tooltip-label slot="label" :title="$t('label.egressdefaultpolicy')" :tooltip="apiParams.egressdefaultpolicy.description"/>
           <a-radio-group
             v-decorator="['egressdefaultpolicy', {
-              initialValue: 'allow'
+              initialValue: 'deny'
             }]"
             buttonStyle="solid">
             <a-radio-button value="allow">

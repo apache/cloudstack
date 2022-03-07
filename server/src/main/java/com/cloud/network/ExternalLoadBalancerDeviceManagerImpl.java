@@ -1290,7 +1290,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 return answer == null ? null : answer.getLoadBalancers();
             }
         } catch (Exception ex) {
-            s_logger.error("Exception Occured ", ex);
+            s_logger.error("Exception Occurred ", ex);
         }
         //null return is handled by clients
         return null;

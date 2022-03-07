@@ -39,7 +39,7 @@
               slot="avatar"
               icon="message" />
             <a-popconfirm
-              :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.annotation.admins.only')) + ' ?'"
+              :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.adminsonly')) + ' ?'"
               v-if="['Admin'].includes($store.getters.userInfo.roletype)"
               slot="actions"
               key="visibility"
@@ -52,7 +52,7 @@
                   color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
                 }]" />
               <span>
-                {{ item.adminsonly ? $t('label.annotation.admins.only') : $t('label.annotation.everyone') }}
+                {{ item.adminsonly ? $t('label.adminsonly') : $t('label.annotation.everyone') }}
               </span>
             </a-popconfirm>
           </a-comment>
@@ -100,7 +100,7 @@
             :value="annotation"
             :placeholder="$t('label.add.note')" />
           <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)" style="margin-top: 10px">
-            {{ $t('label.annotation.admins.only') }}
+            {{ $t('label.adminsonly') }}
           </a-checkbox>
           <a-button
             style="margin-top: 10px; float: right"

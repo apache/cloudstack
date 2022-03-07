@@ -49,6 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.systemvm.template.version>4.16.1.0</project.systemvm.template.version>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -123,7 +124,7 @@
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis.version>1.4</cs.axis.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.64</cs.bcprov.version>
+        <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cxf.version>3.2.14</cs.cxf.version>
@@ -145,7 +146,7 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.36.v20210114</cs.jetty.version>
+        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.9</cs.joda-time.version>
@@ -165,7 +166,7 @@
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
-        <cs.tomcat-embed-core.version>8.5.61</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>10.0.2</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
@@ -555,6 +556,11 @@
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk15on</artifactId>
+                <version>${cs.bcprov.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${cs.groovy.version}</version>
@@ -664,7 +670,7 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesimpl</artifactId>
-                <version>2.12.0</version>
+                <version>${cs.xercesImpl.version}</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>

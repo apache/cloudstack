@@ -123,7 +123,7 @@ public class Connection extends XmlRpcClient {
             LOGGER.info("Timeout: ", e);
             throw new XmlRpcException(e.getMessage());
         } catch (XmlRpcException e) {
-            LOGGER.info("XML RPC Exception occured: ", e);
+            LOGGER.info("XML RPC Exception occurred: ", e);
             throw e;
         } catch (RuntimeException e) {
             LOGGER.info("Runtime Exception: ", e);

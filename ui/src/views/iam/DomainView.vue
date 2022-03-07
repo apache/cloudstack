@@ -60,6 +60,7 @@
         :tabs="$route.meta.tabs" />
       <tree-view
         v-else
+        :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
         :treeStore="domainStore"
@@ -105,6 +106,7 @@ export default {
       resource: {},
       loading: false,
       selectedRowKeys: [],
+      treeViewKey: 0,
       treeData: [],
       treeSelected: {},
       showAction: false,
@@ -158,7 +160,8 @@ export default {
   provide () {
     return {
       parentCloseAction: this.closeAction,
-      parentFetchData: this.fetchData
+      parentFetchData: this.fetchData,
+      parentForceRerender: this.forceRerender
     }
   },
   methods: {
@@ -323,6 +326,9 @@ export default {
     },
     closeAction () {
       this.showAction = false
+    },
+    forceRerender () {
+      this.treeViewKey += 1
     }
   }
 }
