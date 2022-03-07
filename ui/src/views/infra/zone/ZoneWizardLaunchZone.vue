@@ -971,7 +971,7 @@ export default {
         }
       }
     },
-    async stepCreateTungstenPublicNetwork () {
+    async stepCreateTungstenFabricPublicNetwork () {
       this.setStepStatus(STATUS_FINISH)
       this.currentStep++
       this.addStep('message.create.tungsten.public.network', 'tungsten')
@@ -1009,7 +1009,7 @@ export default {
           if (!this.stepData.stepMove.includes('createTungstenFabricPublicNetwork')) {
             const publicParams = {}
             publicParams.zoneId = this.stepData.zoneReturned.id
-            await this.createTungstenPublicNetwork(publicParams)
+            await this.createTungstenFabricPublicNetwork(publicParams)
             this.stepData.stepMove.push('createTungstenFabricPublicNetwork')
           }
         }
@@ -2156,9 +2156,9 @@ export default {
         })
       })
     },
-    createTungstenPublicNetwork (args) {
+    createTungstenFabricPublicNetwork (args) {
       return new Promise((resolve, reject) => {
-        api('createTungstenPublicNetwork', args).then(json => {
+        api('createTungstenFabricPublicNetwork', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']

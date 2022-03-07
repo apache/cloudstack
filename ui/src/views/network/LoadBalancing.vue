@@ -103,6 +103,11 @@
           {{ returnStickinessLabel(record.id) }}
         </a-button>
       </template>
+      <template slot="healthmonitor" slot-scope="record">
+        <a-button @click="() => openHealthMonitorModal(record.id)">
+          {{ returnHealthMonitorLabel(record.id) }}
+        </a-button>
+      </template>
       <template slot="add" slot-scope="record">
         <a-button type="primary" icon="plus" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
           {{ $t('label.add') }}
@@ -448,6 +453,87 @@
       </a-modal>
     </div>
 
+    <a-modal
+      v-if="healthMonitorModal"
+      :title="$t('label.configure.sticky.policy')"
+      :visible="healthMonitorModal"
+      :footer="null"
+      :maskClosable="false"
+      :closable="true"
+      @cancel="closeMonitorModal"
+      v-ctrl-enter="handleConfigHealthMonitor">
+      <a-form :form="monitorForm" layout="vertical">
+        <a-form-item :label="$t('label.monitor.type')">
+          <a-select
+            autoFocus
+            v-decorator="['type', { initialValue: healthMonitorParams.type }]"
+            @change="(value) => { healthMonitorParams.type = value }"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option value="PING">PING</a-select-option>
+            <a-select-option value="TCP">TCP</a-select-option>
+            <a-select-option value="HTTP">HTTP</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.retry')">
+          <a-input
+            v-decorator="['retry', {
+              initialValue: healthMonitorParams.retry,
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]" />
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.timeout')">
+          <a-input
+            v-decorator="['timeout', {
+              initialValue: healthMonitorParams.timeout,
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]" />
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.interval')">
+          <a-input
+            v-decorator="['interval', {
+              initialValue: healthMonitorParams.interval,
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]" />
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.http.method')" v-if="healthMonitorParams.type === 'HTTP'">
+          <a-select
+            autoFocus
+            v-decorator="['httpmethodtype', { initialValue: healthMonitorParams.httpmethodtype }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option value="GET">GET</a-select-option>
+            <a-select-option value="HEAD">HEAD</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.expected.code')" v-if="healthMonitorParams.type === 'HTTP'">
+          <a-input
+            v-decorator="['expectedcode', {
+              initialValue: healthMonitorParams.expectedcode,
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]" />
+        </a-form-item>
+        <a-form-item :label="$t('label.monitor.url')" v-if="healthMonitorParams.type === 'HTTP'">
+          <a-input
+            v-decorator="['urlpath', {
+              initialValue: healthMonitorParams.urlpath,
+              rules: [{ required: true, message: $t('message.error.required.input') }]
+            }]" />
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button :loading="healthMonitorLoading" @click="closeMonitorModal">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="healthMonitorLoading" type="primary" @click="handleConfigHealthMonitor">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
+
     <bulk-action-view
       v-if="showConfirmationAction || showGroupActionModal"
       :showConfirmationAction="showConfirmationAction"
@@ -573,6 +659,10 @@ export default {
           scopedSlots: { customRender: 'stickiness' }
         },
         {
+          title: this.$t('label.action.health.monitor'),
+          scopedSlots: { customRender: 'healthmonitor' }
+        },
+        {
           title: this.$t('label.add.vms'),
           scopedSlots: { customRender: 'add' }
         },
@@ -619,7 +709,19 @@ export default {
       vmPage: 1,
       vmPageSize: 10,
       vmCount: 0,
-      searchQuery: null
+      searchQuery: null,
+      tungstenHealthMonitors: [],
+      healthMonitorModal: false,
+      healthMonitorParams: {
+        type: 'PING',
+        retry: undefined,
+        timeout: undefined,
+        interval: undefined,
+        httpmethodtype: undefined,
+        expectedcode: undefined,
+        urlpath: undefined
+      },
+      healthMonitorLoading: false
     }
   },
   computed: {
@@ -679,6 +781,7 @@ export default {
             this.fetchLBRuleInstances()
           }, 100)
           this.fetchLBStickinessPolicies()
+          this.fetchLBTungstenFabricHealthMonitor()
           return
         }
         this.loading = false
@@ -1343,6 +1446,103 @@ export default {
     onSearch (value) {
       this.searchQuery = value
       this.fetchVirtualMachines()
+    },
+    fetchLBTungstenFabricHealthMonitor () {
+      this.tungstenHealthMonitors = []
+      this.loading = true
+      this.lbRules.forEach(rule => {
+        api('listTungstenFabricLBHealthMonitor', {
+          listAll: true,
+          lbruleid: rule.id
+        }).then(response => {
+          const healthmonitor = response?.listtungstenfabriclbhealthmonitorresponse?.healthmonitor || []
+          if (healthmonitor.length > 0) {
+            healthmonitor[0].lbruleid = rule.id
+            this.tungstenHealthMonitors.push(...healthmonitor)
+          }
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    returnHealthMonitorLabel (id) {
+      const match = this.tungstenHealthMonitors.filter(item => item.lbruleid === id)
+      if (match.length > 0) {
+        return match[0].type
+      }
+      return this.$t('label.configure')
+    },
+    openHealthMonitorModal (id) {
+      const match = this.tungstenHealthMonitors.filter(item => item.lbruleid === id)
+      this.healthMonitorParams.lbruleid = id
+      if (match.length > 0) {
+        this.healthMonitorParams.type = match[0].type
+        this.healthMonitorParams.retry = match[0].retry
+        this.healthMonitorParams.timeout = match[0].timeout
+        this.healthMonitorParams.interval = match[0].interval
+        this.healthMonitorParams.httpmethodtype = match[0].httpmethod
+        this.healthMonitorParams.expectedcode = match[0].expectedcode
+        this.healthMonitorParams.urlpath = match[0].urlpath
+      }
+      this.monitorForm = this.$form.createForm(this)
+      this.healthMonitorModal = true
+    },
+    closeMonitorModal () {
+      this.healthMonitorModal = false
+      // this.healthMonitorParams = {}
+      this.monitorForm.resetFields()
+    },
+    handleConfigHealthMonitor () {
+      if (this.healthMonitorLoading) return
+
+      this.monitorForm.validateFieldsAndScroll((error, values) => {
+        if (error) {
+          return
+        }
+
+        this.healthMonitorParams.type = values.type
+        this.healthMonitorParams.retry = values.retry
+        this.healthMonitorParams.timeout = values.timeout
+        this.healthMonitorParams.interval = values.interval
+        if (values.type === 'HTTP') {
+          this.healthMonitorParams.httpmethodtype = values.httpmethodtype
+          this.healthMonitorParams.expectedcode = values.expectedcode
+          this.healthMonitorParams.urlpath = values.urlpath
+        }
+
+        this.healthMonitorLoading = true
+        api('updateTungstenFabricLBHealthMonitor', this.healthMonitorParams).then(json => {
+          const jobId = json?.updatetungstenfabriclbhealthmonitorresponse?.jobid
+          this.$pollJob({
+            jobId: jobId,
+            successMessage: this.$t('message.success.config.health.monitor'),
+            successMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            },
+            errorMessage: this.$t('message.config.health.monitor.failed'),
+            errorMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.parentToggleLoading()
+              this.fetchData()
+              this.closeMonitorModal()
+              this.healthMonitorLoading = false
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        })
+      })
     }
   }
 }

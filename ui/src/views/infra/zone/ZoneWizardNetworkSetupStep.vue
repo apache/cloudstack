@@ -209,11 +209,13 @@ export default {
         title: 'label.pod',
         formKey: 'pod'
       })
-      steps.push({
-        title: 'label.guest.traffic',
-        formKey: 'guestTraffic',
-        trafficType: 'guest'
-      })
+      if (!this.isTungstenZone) {
+        steps.push({
+          title: 'label.guest.traffic',
+          formKey: 'guestTraffic',
+          trafficType: 'guest'
+        })
+      }
       steps.push({
         title: 'label.storage.traffic',
         formKey: 'storageTraffic',
@@ -243,16 +245,16 @@ export default {
           required: true
         },
         {
-          title: 'label.tungsten.provider.port',
-          key: 'tungstenPort',
-          placeHolder: 'message.installwizard.tooltip.tungsten.provider.port',
-          required: true
-        },
-        {
           title: 'label.tungsten.provider.gateway',
           key: 'tungstenGateway',
           placeHolder: 'message.installwizard.tooltip.tungsten.provider.gateway',
           required: true
+        },
+        {
+          title: 'label.tungsten.provider.port',
+          key: 'tungstenPort',
+          placeHolder: 'message.installwizard.tooltip.tungsten.provider.port',
+          required: false
         },
         {
           title: 'label.tungsten.provider.vrouterport',

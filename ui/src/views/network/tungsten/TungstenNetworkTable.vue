@@ -50,6 +50,9 @@
       <template slot="firewallrule" slot-scope="text, record">
         <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
       </template>
+      <template slot="tungstenroutingpolicyterm" slot-scope="text, record">
+        <span v-if="record.tungstenroutingpolicyterm.length > 0">{{ record.tungstenroutingpolicyterm[0].name }}</span>
+      </template>
       <template slot="vm" slot-scope="text, record">
         <ul><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
       </template>

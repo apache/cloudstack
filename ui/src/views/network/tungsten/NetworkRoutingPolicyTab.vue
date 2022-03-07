@@ -18,12 +18,12 @@
 <template>
   <div>
     <a-button
-      :disabled="!('addTungstenFabricRouteTableToNetwork' in $store.getters.apis)"
+      :disabled="!('addTungstenFabricRoutingPolicyToNetwork' in $store.getters.apis)"
       type="dashed"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
-      {{ $t('label.add.tungsten.router.table') }}
+      {{ $t('label.add.tungsten.routing.policy') }}
     </a-button>
     <a-table
       size="small"
@@ -34,16 +34,16 @@
       :pagination="false">
       <template slot="action" slot-scope="text, record">
         <a-popconfirm
-          v-if="'removeTungstenFabricRouteTableFromNetwork' in $store.getters.apis"
+          v-if="'removeTungstenFabricRoutingPolicyFromNetwork' in $store.getters.apis"
           placement="topRight"
-          :title="$t('message.action.delete.tungsten.router.table')"
+          :title="$t('message.action.remove.routing.policy')"
           :ok-text="$t('label.yes')"
           :cancel-text="$t('label.no')"
           :loading="deleteLoading"
-          @confirm="deleteRouterTable(record)"
+          @confirm="deleteLogicalRouter(record)"
         >
           <tooltip-button
-            :tooltip="$t('label.action.delete.tungsten.router.table')"
+            :tooltip="$t('label.action.remove.tungsten.routing.policy')"
             type="danger"
             icon="delete" />
         </a-popconfirm>
@@ -70,16 +70,19 @@
     <a-modal
       v-if="showAction"
       :visible="showAction"
-      :title="$t('label.add.tungsten.router.table')"
+      :title="$t('label.add.tungsten.routing.policy')"
       :maskClosable="false"
       :footer="null"
       @cancel="showAction = false"
       v-ctrl-enter="handleSubmit">
       <a-form :form="form" layout="vertical">
-        <a-form-item :label="$t('label.tungsten.network.router.table')">
+        <a-alert type="warning">
+          <span slot="message" v-html="$t('message.confirm.add.routing.policy')" />
+        </a-alert>
+        <a-form-item :label="$t('label.network.routing.policy')">
           <a-select
             :loading="networks.loading"
-            v-decorator="['tungstenRouteTable', {
+            v-decorator="['tungstenRoutingPolicy', {
               initialValue: networkSelected,
               rules: [{ required: true, message: $t('message.error.select') }]
             }]">
@@ -89,8 +92,8 @@
       </a-form>
 
       <div :span="24" class="action-button">
-        <a-button @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="() => { showAction = false }">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-modal>
   </div>
@@ -102,7 +105,7 @@ import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'TungstenNetworkRouterTable',
+  name: 'NetworkRoutingPolicyTab',
   components: { TooltipButton },
   mixins: [mixinDevice],
   props: {
@@ -127,6 +130,7 @@ export default {
       },
       fetchLoading: false,
       deleteLoading: false,
+      submitLoading: false,
       showAction: false,
       networkSelected: undefined,
       columns: [{
@@ -169,15 +173,15 @@ export default {
       const params = {}
       params.zoneid = this.resource.zoneid
       params.tungstennetworkuuid = this.resource.id
-      params.isattachedtonetwork = true
+      params.isattachedtonetwork = false
       params.listAll = true
       params.page = this.page
       params.pagesize = this.pageSize
 
       this.fetchLoading = true
-      api('listTungstenFabricNetworkRouteTable', params).then(json => {
-        this.dataSource = json?.listtungstenfabricnetworkroutetableresponse?.routetable || []
-        this.itemCount = json?.listtungstenfabricnetworkroutetableresponse?.count || 0
+      api('listTungstenFabricRoutingPolicy', params).then(json => {
+        this.dataSource = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
+        this.itemCount = json?.listtungstenfabricroutingpolicyresponse?.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.fetchLoading = false })
@@ -191,14 +195,16 @@ export default {
       this.showAction = true
       this.networks.loading = true
       this.networks.opts = []
-      api('listTungstenFabricNetworkRouteTable', params).then(json => {
-        this.networks.opts = json?.listtungstenfabricnetworkroutetableresponse?.routetable || []
+      api('listTungstenFabricRoutingPolicy', params).then(json => {
+        this.networks.opts = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
         this.networkSelected = this.networks.opts[0]?.uuid || undefined
       }).finally(() => {
         this.networks.loading = false
       })
     },
     handleSubmit () {
+      if (this.submitLoading) return
+      this.submitLoading = true
       this.form.validateFields((error, values) => {
         if (error) {
           return
@@ -207,22 +213,21 @@ export default {
         const params = {}
         params.zoneid = this.resource.zoneid
         params.networkuuid = this.resource.id
-        params.tungstennetworkroutetableuuid = values.tungstenRouteTable
+        params.tungstenroutingpolicyuuid = values.tungstenRoutingPolicy
 
-        const routerTable = this.networks.opts.filter(network => network.uuid === values.tungstenRouteTable)
-        const routerTableName = routerTable[0]?.name || values.tungstenRouteTable
+        const network = this.networks.opts.filter(network => network.uuid === values.tungstenRoutingPolicy)
+        const resourceName = network[0]?.name || values.tungstenRoutingPolicy
 
-        api('addTungstenFabricRouteTableToNetwork', params).then(json => {
+        api('addTungstenFabricRoutingPolicyToNetwork', params).then(json => {
           this.$pollJob({
             jobId: json.addtungstenfabricroutetabletonetworkresponse.jobid,
-            title: this.$t('label.add.tungsten.router.table'),
-            description: routerTableName,
-            successMessage: `${this.$t('message.success.add.tungsten.router.table')} ${routerTableName}`,
+            title: this.$t('label.add.tungsten.routing.policy'),
+            description: resourceName,
+            successMessage: `${this.$t('message.success.add.tungsten.routing.policy')} ${resourceName}`,
             successMethod: () => {
               this.fetchData()
             },
-            errorMessage: this.$t('message.error.add.tungsten.router.table'),
-            loadingMessage: this.$t('message.loading.add.tungsten.router.table'),
+            errorMessage: this.$t('message.error.add.tungsten.routing.policy'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.fetchData()
@@ -235,27 +240,30 @@ export default {
           this.$notifyError(error)
         }).finally(() => {
           this.showAction = false
+          this.submitLoading = false
         })
       })
     },
-    deleteRouterTable (record) {
+    deleteLogicalRouter (record) {
       const params = {}
       params.zoneid = this.resource.zoneid
       params.networkuuid = this.resource.id
       params.tungstennetworkroutetableuuid = record.uuid
 
       this.deleteLoading = true
-      api('removeTungstenFabricRouteTableFromNetwork', params).then(json => {
+      api('removeTungstenFabricRoutingPolicyFromNetwork', params).then(json => {
         this.$pollJob({
-          jobId: json.removetungstenfabricroutetablefromnetworkresponse.jobid,
-          title: this.$t('label.action.delete.tungsten.router.table'),
+          jobId: json.removetungstenfabricroutingpolicyfromnetworkresponse.jobid,
+          title: this.$t('label.action.remove.tungsten.routing.policy'),
           description: record.name || record.uuid,
-          successMessage: `${this.$t('message.success.delete.tungsten.router.table')} ${record.name || record.uuid}`,
+          successMessage: `${this.$t('message.success.remove.tungsten.routing.policy')} ${record.name || record.uuid}`,
           successMethod: () => {
             this.fetchData()
           },
-          errorMessage: this.$t('message.error.delete.tungsten.router.table'),
-          loadingMessage: this.$t('message.loading.delete.tungsten.router.table'),
+          errorMessage: this.$t('message.error.remove.tungsten.routing.policy'),
+          errorMethod: () => {
+            this.fetchData()
+          },
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
             this.fetchData()

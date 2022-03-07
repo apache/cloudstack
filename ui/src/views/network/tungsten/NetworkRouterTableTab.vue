@@ -18,12 +18,12 @@
 <template>
   <div>
     <a-button
-      :disabled="!('createTungstenFabricRoutingPolicy' in $store.getters.apis)"
+      :disabled="!('addTungstenFabricRouteTableToNetwork' in $store.getters.apis)"
       type="dashed"
       icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
-      {{ $t('label.add.tungsten.routing.policy') }}
+      {{ $t('label.add.tungsten.router.table') }}
     </a-button>
     <a-table
       size="small"
@@ -70,19 +70,16 @@
     <a-modal
       v-if="showAction"
       :visible="showAction"
-      :title="$t('label.add.tungsten.routing.policy')"
+      :title="$t('label.add.tungsten.router.table')"
       :maskClosable="false"
       :footer="null"
       @cancel="showAction = false"
       v-ctrl-enter="handleSubmit">
       <a-form :form="form" layout="vertical">
-        <a-alert type="warning">
-          <span slot="message" v-html="$t('message.confirm.add.routing.policy')" />
-        </a-alert>
-        <a-form-item :label="$t('label.network.routing.policy')">
+        <a-form-item :label="$t('label.tungsten.network.router.table')">
           <a-select
             :loading="networks.loading"
-            v-decorator="['tungstenRoutingPolicy', {
+            v-decorator="['tungstenRouteTable', {
               initialValue: networkSelected,
               rules: [{ required: true, message: $t('message.error.select') }]
             }]">
@@ -105,7 +102,7 @@ import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'NetworkRoutingPolicy',
+  name: 'NetworkRouterTableTab',
   components: { TooltipButton },
   mixins: [mixinDevice],
   props: {
@@ -172,15 +169,15 @@ export default {
       const params = {}
       params.zoneid = this.resource.zoneid
       params.tungstennetworkuuid = this.resource.id
-      params.isattachedtonetwork = false
+      params.isattachedtonetwork = true
       params.listAll = true
       params.page = this.page
       params.pagesize = this.pageSize
 
       this.fetchLoading = true
-      api('listTungstenFabricRoutingPolicy', params).then(json => {
-        this.dataSource = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
-        this.itemCount = json?.listtungstenfabricroutingpolicyresponse?.count || 0
+      api('listTungstenFabricNetworkRouteTable', params).then(json => {
+        this.dataSource = json?.listtungstenfabricnetworkroutetableresponse?.routetable || []
+        this.itemCount = json?.listtungstenfabricnetworkroutetableresponse?.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.fetchLoading = false })
@@ -194,82 +191,82 @@ export default {
       this.showAction = true
       this.networks.loading = true
       this.networks.opts = []
-      api('listTungstenFabricRoutingPolicy', params).then(json => {
-        this.networks.opts = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
+      api('listTungstenFabricNetworkRouteTable', params).then(json => {
+        this.networks.opts = json?.listtungstenfabricnetworkroutetableresponse?.routetable || []
         this.networkSelected = this.networks.opts[0]?.uuid || undefined
       }).finally(() => {
         this.networks.loading = false
       })
     },
     handleSubmit () {
-    //   this.form.validateFields((error, values) => {
-    //     if (error) {
-    //       return
-    //     }
+      this.form.validateFields((error, values) => {
+        if (error) {
+          return
+        }
 
-      //     const params = {}
-      //     params.zoneid = this.resource.zoneid
-      //     params.networkuuid = this.resource.id
-      //     params.tungstennetworkroutetableuuid = values.tungstenRoutingPolicy
+        const params = {}
+        params.zoneid = this.resource.zoneid
+        params.networkuuid = this.resource.id
+        params.tungstennetworkroutetableuuid = values.tungstenRouteTable
 
-      //     const routerTable = this.networks.opts.filter(network => network.uuid === values.tungstenRoutingPolicy)
-      //     const routerTableName = routerTable[0]?.name || values.tungstenRoutingPolicy
+        const routerTable = this.networks.opts.filter(network => network.uuid === values.tungstenRouteTable)
+        const routerTableName = routerTable[0]?.name || values.tungstenRouteTable
 
-    //     api('addTungstenFabricRouteTableToNetwork', params).then(json => {
-    //       this.$pollJob({
-    //         jobId: json.addtungstenfabricroutetabletonetworkresponse.jobid,
-    //         title: this.$t('label.add.tungsten.router.table'),
-    //         description: routerTableName,
-    //         successMessage: `${this.$t('message.success.add.tungsten.router.table')} ${routerTableName}`,
-    //         successMethod: () => {
-    //           this.fetchData()
-    //         },
-    //         errorMessage: this.$t('message.error.add.tungsten.router.table'),
-    //         loadingMessage: this.$t('message.loading.add.tungsten.router.table'),
-    //         catchMessage: this.$t('error.fetching.async.job.result'),
-    //         catchMethod: () => {
-    //           this.fetchData()
-    //         },
-    //         action: {
-    //           isFetchData: false
-    //         }
-    //       })
-    //     }).catch(error => {
-    //       this.$notifyError(error)
-    //     }).finally(() => {
-    //       this.showAction = false
-    //     })
-    //   })
+        api('addTungstenFabricRouteTableToNetwork', params).then(json => {
+          this.$pollJob({
+            jobId: json.addtungstenfabricroutetabletonetworkresponse.jobid,
+            title: this.$t('label.add.tungsten.router.table'),
+            description: routerTableName,
+            successMessage: `${this.$t('message.success.add.tungsten.router.table')} ${routerTableName}`,
+            successMethod: () => {
+              this.fetchData()
+            },
+            errorMessage: this.$t('message.error.add.tungsten.router.table'),
+            loadingMessage: this.$t('message.loading.add.tungsten.router.table'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.fetchData()
+            },
+            action: {
+              isFetchData: false
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.showAction = false
+        })
+      })
     },
     deleteRouterTable (record) {
-    //   const params = {}
-    //   params.zoneid = this.resource.zoneid
-    //   params.networkuuid = this.resource.id
-    //   params.tungstennetworkroutetableuuid = record.uuid
+      const params = {}
+      params.zoneid = this.resource.zoneid
+      params.networkuuid = this.resource.id
+      params.tungstennetworkroutetableuuid = record.uuid
 
-    //   this.deleteLoading = true
-    //   api('removeTungstenFabricRouteTableFromNetwork', params).then(json => {
-    //     this.$pollJob({
-    //       jobId: json.removetungstenfabricroutetablefromnetworkresponse.jobid,
-    //       title: this.$t('label.action.delete.tungsten.router.table'),
-    //       description: record.name || record.uuid,
-    //       successMessage: `${this.$t('message.success.delete.tungsten.router.table')} ${record.name || record.uuid}`,
-    //       successMethod: () => {
-    //         this.fetchData()
-    //       },
-    //       errorMessage: this.$t('message.error.delete.tungsten.router.table'),
-    //       loadingMessage: this.$t('message.loading.delete.tungsten.router.table'),
-    //       catchMessage: this.$t('error.fetching.async.job.result'),
-    //       catchMethod: () => {
-    //         this.fetchData()
-    //       },
-    //       action: {
-    //         isFetchData: false
-    //       }
-    //     })
-    //   }).catch(error => {
-    //     this.$notifyError(error)
-    //   }).finally(() => { this.deleteLoading = false })
+      this.deleteLoading = true
+      api('removeTungstenFabricRouteTableFromNetwork', params).then(json => {
+        this.$pollJob({
+          jobId: json.removetungstenfabricroutetablefromnetworkresponse.jobid,
+          title: this.$t('label.action.delete.tungsten.router.table'),
+          description: record.name || record.uuid,
+          successMessage: `${this.$t('message.success.delete.tungsten.router.table')} ${record.name || record.uuid}`,
+          successMethod: () => {
+            this.fetchData()
+          },
+          errorMessage: this.$t('message.error.delete.tungsten.router.table'),
+          loadingMessage: this.$t('message.loading.delete.tungsten.router.table'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchData()
+          },
+          action: {
+            isFetchData: false
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => { this.deleteLoading = false })
     },
     onChangePage (page, pageSize) {
       this.page = page

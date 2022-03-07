@@ -73,10 +73,16 @@ export default {
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }, {
         name: 'tungsten.router.table',
-        component: () => import('@/views/network/tungsten/TungstenNetworkRouterTable.vue')
+        component: () => import('@/views/network/tungsten/NetworkRouterTableTab.vue'),
+        show: (record) => { return 'listTungstenFabricNetworkRouteTable' in store.getters.apis }
       }, {
         name: 'tungsten.routing.polices',
-        component: () => import('@/views/network/tungsten/NetworkRoutingPolicy.vue')
+        component: () => import('@/views/network/tungsten/NetworkRoutingPolicyTab.vue'),
+        show: (record) => { return 'listTungstenFabricRoutingPolicy' in store.getters.apis }
+      }, {
+        name: 'tungsten.logical.router',
+        component: () => import('@/views/network/tungsten/LogicalRouterTab.vue'),
+        show: (record) => { return 'listTungstenFabricLogicalRouter' in store.getters.apis }
       }, {
         name: 'comments',
         component: () => import('@/components/view/AnnotationsTab.vue')

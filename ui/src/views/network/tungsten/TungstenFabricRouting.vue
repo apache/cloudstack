@@ -177,7 +177,7 @@ export default {
           }]
         },
         {
-          name: 'logical.router',
+          name: 'tungsten.logical.router',
           api: 'listTungstenFabricLogicalRouter',
           actions: [
             {
