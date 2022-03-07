@@ -841,11 +841,11 @@ export default {
         },
         {
           name: 'firewall.policy',
-          component: () => import('@/views/network/tungsten/TungstenFabricFirewallPolicy.vue')
+          component: () => import('@/views/network/tungsten/FirewallPolicyTab.vue')
         },
         {
           name: 'tag',
-          component: () => import('@/views/network/tungsten/TungstenFabricFirewallTag.vue')
+          component: () => import('@/views/network/tungsten/FirewallTagTab.vue')
         }
       ],
       actions: [
@@ -877,6 +877,25 @@ export default {
         {
           name: 'routing.policy.terms',
           component: () => import('@/views/network/tungsten/RoutingPolicyTermsTab.vue')
+        }
+      ]
+    },
+    {
+      name: 'firewallrule',
+      title: 'label.routing.policy',
+      icon: tungsten,
+      hidden: true,
+      disabledListView: true,
+      permission: ['listTungstenFabricFirewallPolicy'],
+      details: ['uuid', 'name'],
+      tabs: [
+        {
+          name: 'details',
+          component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'firewallrule',
+          component: () => import('@/views/network/tungsten/FirewallRuleTab.vue')
         }
       ]
     }

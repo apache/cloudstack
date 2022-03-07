@@ -34,6 +34,9 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
+        <template slot="name" slot-scope="text, record">
+          <router-link :to="{ path: '/firewallrule/' + record.uuid, query: { zoneid: zoneId } }">{{ text }}</router-link>
+        </template>
         <template slot="firewallrule" slot-scope="text, record">
           <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
         </template>
@@ -52,22 +55,23 @@
           </a-popconfirm>
         </template>
       </a-table>
-      <a-divider/>
-      <a-pagination
-        class="row-element pagination"
-        size="small"
-        :current="page"
-        :pageSize="pageSize"
-        :total="totalCount"
-        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="['10', '20', '40', '80', '100']"
-        @change="changePage"
-        @showSizeChange="changePageSize"
-        showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
+      <div style="display: block; text-align: right; margin-top: 10px;">
+        <a-pagination
+          class="row-element pagination"
+          size="small"
+          :current="page"
+          :pageSize="pageSize"
+          :total="totalCount"
+          :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
+          :pageSizeOptions="['10', '20', '40', '80', '100']"
+          @change="changePage"
+          @showSizeChange="changePageSize"
+          showSizeChanger>
+          <template slot="buildOptionText" slot-scope="props">
+            <span>{{ props.value }} / {{ $t('label.page') }}</span>
+          </template>
+        </a-pagination>
+      </div>
     </a-spin>
 
     <a-modal
@@ -114,7 +118,7 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'TungstenFabricFirewallPolicy',
+  name: 'FirewallPolicyTab',
   components: {
     TooltipLabel,
     TooltipButton
@@ -138,7 +142,8 @@ export default {
       deleteLoading: false,
       columns: [{
         title: this.$t('label.name'),
-        dataIndex: 'name'
+        dataIndex: 'name',
+        scopedSlots: { customRender: 'name' }
       }, {
         title: this.$t('label.firewallrule'),
         dataIndex: 'firewallrule',

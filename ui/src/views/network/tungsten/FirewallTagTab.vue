@@ -111,7 +111,7 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
-  name: 'TungstenFabricFirewallTag',
+  name: 'FirewallTagTab',
   components: {
     TooltipLabel,
     TooltipButton

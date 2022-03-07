@@ -892,6 +892,9 @@ export default {
         if (this.$route.path.startsWith('/tungsteninterfaceroutertable/')) {
           params.tungsteninterfaceroutetableuuid = this.$route.params.id
         }
+        if (this.$route.path.startsWith('/firewallrule/')) {
+          params.firewallpolicyuuid = this.$route.params.id
+        }
       }
 
       if (this.$store.getters.listAllProjects && !this.projectView) {

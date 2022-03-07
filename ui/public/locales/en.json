@@ -3716,5 +3716,16 @@
 "message.remove.router.table.from.interface": "Please confirm that you want to remove Route Table from this nic",
 "message.success.remove.router.table.from.interface": "Successfully removed Route Table from interface",
 "message.remove.router.table.from.interface.failed": "Removing Router Table from interface failed",
-"message.success.add.router.table.to.instance": "Successfully added Router Table to instance"
+"message.success.add.router.table.to.instance": "Successfully added Router Table to instance",
+"label.add.firewallrule": "Add Firewall Rule",
+"label.servicegroupuuid": "Service Group",
+"label.srctaguuid": "Source Tag",
+"label.srcaddressgroupuuid": "Source Address Group",
+"label.srcnetworkuuid": "Network",
+"label.desttaguuid": "Destination Tag",
+"label.destaddressgroupuuid": "Destination Address Group",
+"label.destnetworkuuid": "Network",
+"label.tagtypeuuid": "Tag Type",
+"message.success.add.firewallrule": "Successfully added Firewall Rule",
+"message.add.firewallrule.failed": "Adding Firewall Rule failed"
 }
