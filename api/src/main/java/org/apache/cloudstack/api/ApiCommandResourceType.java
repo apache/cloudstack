@@ -25,7 +25,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.network.GuestVlan;
-import com.cloud.network.Networks;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.GuestOS;
@@ -51,7 +50,7 @@ public enum ApiCommandResourceType {
     PortableIpAddress(PortableIp.class),
     SecurityGroup(com.cloud.network.security.SecurityGroup.class),
     PhysicalNetwork(com.cloud.network.PhysicalNetwork.class),
-    TrafficType(Networks.TrafficType.class),
+    TrafficType(com.cloud.network.PhysicalNetworkTrafficType.class),
     PhysicalNetworkServiceProvider(com.cloud.network.PhysicalNetworkServiceProvider.class),
     FirewallRule(com.cloud.network.rules.FirewallRule.class),
     Account(com.cloud.user.Account.class),
