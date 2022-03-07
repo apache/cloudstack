@@ -134,6 +134,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -678,8 +679,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NIN);
+        sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
@@ -851,7 +852,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         if (volume.getTemplateId() != null) {
             VMTemplateVO template = _templateDao.findById(volume.getTemplateId());
-            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM) {
+            Long instanceId = volume.getInstanceId();
+            UserVmVO userVmVO = null;
+            if (instanceId != null) {
+                userVmVO = _vmDao.findById(instanceId);
+            }
+            if (template != null && template.getTemplateType() == Storage.TemplateType.SYSTEM && (userVmVO == null || !UserVmManager.CKS_NODE.equals(userVmVO.getUserVmType()))) {
                 throw new InvalidParameterValueException("VolumeId: " + volumeId + " is for System VM , Creating snapshot against System VM volumes is not supported");
             }
         }
@@ -1357,7 +1363,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
         if ((storagePoolVO.getPoolType() == StoragePoolType.RBD || storagePoolVO.getPoolType() == StoragePoolType.PowerFlex) && !BackupSnapshotAfterTakingSnapshot.value()) {
             return DataStoreRole.Primary;
-        } else if (snapshot.getsnapshotType() == Type.GROUP.ordinal()) {
+        } else if (snapshot.getSnapshotType() == Type.GROUP.ordinal()) {
             return DataStoreRole.Primary;
         }
 

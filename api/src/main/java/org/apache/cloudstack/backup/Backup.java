@@ -20,9 +20,9 @@ package org.apache.cloudstack.backup;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.storage.Volume;
-import com.cloud.utils.StringUtils;
 
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 

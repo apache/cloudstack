@@ -69,13 +69,30 @@
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            @change="onZoneChange" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
               <span>
                 <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <a-icon v-else type="global" style="margin-right: 5px"/>
                 {{ zone.name || zone.description }}
               </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description"/>
+          <a-select
+            v-decorator="['diskofferingid', {}]"
+            :loading="offeringLoading"
+            :placeholder="apiParams.diskofferingid.description"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="opt in offerings" :key="opt.id">
+              {{ opt.name || opt.displaytext }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -133,6 +150,8 @@ export default {
     return {
       fileList: [],
       zones: [],
+      offerings: [],
+      offeringLoading: false,
       formats: ['RAW', 'VHD', 'VHDX', 'OVA', 'QCOW2'],
       zoneSelected: '',
       uploadParams: null,
@@ -153,9 +172,32 @@ export default {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].id
+            this.onZoneChange(this.zones[0].id)
           }
         }
+      })
+    },
+    onZoneChange (zoneId) {
+      this.zoneSelected = this.zones[0].id
+      this.fetchDiskOfferings(zoneId)
+    },
+    fetchDiskOfferings (zoneId) {
+      this.offeringLoading = true
+      this.offerings = [{ id: -1, name: '' }]
+      this.form.setFieldsValue({
+        diskofferingid: undefined
+      })
+      api('listDiskOfferings', {
+        zoneid: zoneId,
+        listall: true
+      }).then(json => {
+        for (var offering of json.listdiskofferingsresponse.diskoffering) {
+          if (offering.iscustomized) {
+            this.offerings.push(offering)
+          }
+        }
+      }).finally(() => {
+        this.offeringLoading = false
       })
     },
     handleRemove (file) {
@@ -171,7 +213,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -188,7 +230,7 @@ export default {
         }
         this.loading = true
         api('getUploadParamsForVolume', params).then(json => {
-          this.uploadParams = (json.postuploadvolumeresponse && json.postuploadvolumeresponse.getuploadparams) ? json.postuploadvolumeresponse.getuploadparams : ''
+          this.uploadParams = json.postuploadvolumeresponse?.getuploadparams || ''
           const { fileList } = this
           if (this.fileList.length > 1) {
             this.$notification.error({
@@ -224,12 +266,20 @@ export default {
           }).catch(e => {
             this.$notification.error({
               message: this.$t('message.upload.failed'),
-              description: `${this.$t('message.upload.iso.failed.description')} -  ${e}`,
+              description: `${this.$t('message.upload.volume.failed')} -  ${e}`,
               duration: 0
             })
           }).finally(() => {
             this.loading = false
           })
+        }).catch(e => {
+          this.$notification.error({
+            message: this.$t('message.upload.failed'),
+            description: `${this.$t('message.upload.volume.failed')} -  ${e?.response?.data?.postuploadvolumeresponse?.errortext || e}`,
+            duration: 0
+          })
+        }).finally(() => {
+          this.loading = false
         })
       })
     },

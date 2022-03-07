@@ -50,7 +50,7 @@ export default {
     },
     {
       name: 'limits',
-      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) || record.isCurrentUserProjectAdmin },
+      show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
     }
   ],
@@ -70,6 +70,7 @@ export default {
       docHelp: 'adminguide/projects.html#accepting-a-membership-invitation',
       listView: true,
       popup: true,
+      show: (record, store) => { return store.features.projectinviterequired },
       component: () => import('@/views/project/InvitationTokenTemplate.vue')
     },
     {
@@ -84,6 +85,7 @@ export default {
       param: {
         state: 'Pending'
       },
+      show: (record, store) => { return store.features.projectinviterequired },
       component: () => import('@/views/project/InvitationsTemplate.vue')
     },
     {

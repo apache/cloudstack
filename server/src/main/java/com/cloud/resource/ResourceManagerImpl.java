@@ -59,6 +59,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -164,8 +165,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -200,7 +200,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 
 @Component
@@ -542,8 +541,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // save cluster details for later cluster/host cross-checking
         final Map<String, String> details = new HashMap<String, String>();
         details.put("url", url);
-        details.put("username", org.apache.commons.lang3.StringUtils.defaultString(username));
-        details.put("password", org.apache.commons.lang3.StringUtils.defaultString(password));
+        details.put("username", StringUtils.defaultString(username));
+        details.put("password", StringUtils.defaultString(password));
         details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
         details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
         _clusterDetailsDao.persist(cluster.getId(), details);
@@ -696,9 +695,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Can't specify cluster without specifying the pod");
         }
         List<String> skipList = Arrays.asList(HypervisorType.VMware.name().toLowerCase(Locale.ROOT), Type.SecondaryStorage.name().toLowerCase(Locale.ROOT));
-        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT)) &&
-                (Strings.isNullOrEmpty(username) || Strings.isNullOrEmpty(password))) {
-            throw new InvalidParameterValueException("Username and Password need to be provided.");
+        if (!skipList.contains(hypervisorType.toLowerCase(Locale.ROOT))) {
+            if (HypervisorType.KVM.toString().equalsIgnoreCase(hypervisorType)) {
+                if (StringUtils.isBlank(username)) {
+                    throw new InvalidParameterValueException("Username need to be provided.");
+                }
+            } else {
+                if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+                    throw new InvalidParameterValueException("Username and Password need to be provided.");
+                }
+            }
         }
 
         if (clusterId != null) {
@@ -1090,7 +1096,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Verify cluster information and update the cluster if needed
         boolean doUpdate = false;
 
-        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if (StringUtils.isNotBlank(name)) {
             if(cluster.getHypervisorType() == HypervisorType.VMware) {
                 throw new InvalidParameterValueException("Renaming VMware cluster is not supported as it could cause problems if the updated  cluster name is not mapped on VCenter.");
             }
@@ -1265,7 +1271,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // TO DO - Make it more granular and have better conversion into capacity type
         if(host.getType() == Type.Routing){
             final CapacityState capacityState =  nextState == ResourceState.Enabled ? CapacityState.Enabled : CapacityState.Disabled;
-            final short[] capacityTypes = {Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY};
+            final short[] capacityTypes = { Capacity.CAPACITY_TYPE_CPU, Capacity.CAPACITY_TYPE_MEMORY, Capacity.CAPACITY_TYPE_CPU_CORE };
             _capacityDao.updateCapacityState(null, null, null, host.getId(), capacityState.toString(), capacityTypes);
 
             final StoragePoolVO storagePool = _storageMgr.findLocalStorageOnHost(host.getId());
@@ -1495,14 +1501,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     protected boolean isMaintenanceLocalStrategyMigrate() {
-        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+        if(StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
         return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.Migration.toString().toLowerCase());
     }
 
     protected boolean isMaintenanceLocalStrategyForceStop() {
-        if(org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
+        if(StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value())) {
             return false;
         }
         return HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(WorkType.ForceStop.toString().toLowerCase());
@@ -1512,7 +1518,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Returns true if the host.maintenance.local.storage.strategy is the Default: "Error", blank, empty, or null.
      */
     protected boolean isMaintenanceLocalStrategyDefault() {
-        if (org.apache.commons.lang3.StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
+        if (StringUtils.isBlank(HOST_MAINTENANCE_LOCAL_STRATEGY.value().toString())
                 || HOST_MAINTENANCE_LOCAL_STRATEGY.value().toLowerCase().equals(State.Error.toString().toLowerCase())) {
             return true;
         }
@@ -1776,7 +1782,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             resourceStateTransitTo(host, resourceEvent, _nodeId);
         }
 
-        if (org.apache.commons.lang.StringUtils.isNotBlank(name)) {
+        if (StringUtils.isNotBlank(name)) {
             s_logger.debug("Updating Host name to: " + name);
             host.setName(name);
             _hostDao.update(host.getId(), host);
@@ -2154,7 +2160,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             final List<String> implicitHostTags = ssCmd.getHostTags();
             if (!implicitHostTags.isEmpty()) {
                 if (hostTags == null) {
-                    hostTags = _hostTagsDao.gethostTags(host.getId());
+                    hostTags = _hostTagsDao.getHostTags(host.getId());
                 }
                 if (hostTags != null) {
                     implicitHostTags.removeAll(hostTags);
@@ -2732,8 +2738,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
         if (sshToAgent) {
-            Pair<String, String> credentials = getHostCredentials(host);
-            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
+            Ternary<String, String, String> credentials = getHostCredentials(host);
+            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second(), credentials.third());
         } else {
             throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
                     "host agent is not connected");
@@ -2744,22 +2750,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Get host credentials
      * @throws CloudRuntimeException if username or password are not found
      */
-    protected Pair<String, String> getHostCredentials(HostVO host) {
+    protected Ternary<String, String, String> getHostCredentials(HostVO host) {
         _hostDao.loadDetails(host);
         final String password = host.getDetail("password");
         final String username = host.getDetail("username");
-        if (password == null || username == null) {
-            throw new CloudRuntimeException("SSH to agent is enabled, but username/password credentials are not found");
+        final String privateKey = _configDao.getValue("ssh.privatekey");
+        if ((password == null && privateKey == null) || username == null) {
+            throw new CloudRuntimeException("SSH to agent is enabled, but username and password or private key are not found");
         }
-        return new Pair<>(username, password);
+        return new Ternary<>(username, password, privateKey);
     }
 
     /**
      * True if agent is restarted via SSH. Assumes kvm.ssh.to.agent = true and host status is not Up
      */
-    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password) {
+    protected void connectAndRestartAgentOnHost(HostVO host, String username, String password, String privateKey) {
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
-                host.getPrivateIpAddress(), 22, username, password);
+                host.getPrivateIpAddress(), 22, username, password, privateKey);
         if (connection == null) {
             throw new CloudRuntimeException(String.format("SSH to agent is enabled, but failed to connect to %s via IP address [%s].", host, host.getPrivateIpAddress()));
         }
@@ -3165,11 +3172,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public String getHostTags(final long hostId) {
-        final List<String> hostTags = _hostTagsDao.gethostTags(hostId);
+        final List<String> hostTags = _hostTagsDao.getHostTags(hostId);
         if (hostTags == null) {
             return null;
         } else {
-            return StringUtils.listToCsvTags(hostTags);
+            return com.cloud.utils.StringUtils.listToCsvTags(hostTags);
         }
     }
 

@@ -25,6 +25,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.ip')">
             <a-input
+              :placeholder="apiParams.url.description"
               autoFocus
               v-decorator="['ip', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
@@ -36,6 +37,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.username')">
             <a-input
+              :placeholder="apiParams.username.description"
               v-decorator="['username', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -46,6 +48,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.password')">
             <a-input-password
+              :placeholder="apiParams.password.description"
               v-decorator="['password', {
                 rules: [{ required: true, message: $t('message.error.required.input') }]
               }]" />
@@ -56,6 +59,7 @@
         <a-col :md="24" :lg="24">
           <a-form-item :label="$t('label.networkdevicetype')">
             <a-select
+              :placeholder="apiParams.networkdevicetype.description"
               v-decorator="['networkdevicetype', {
                 rules: [{ required: true, message: $t('message.error.select') }]
               }]"
@@ -135,6 +139,7 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
@@ -153,6 +158,9 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
   },
+  created () {
+    this.apiParams = this.$getApiParams('addF5LoadBalancer')
+  },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {
       this.nsp = this.resource
@@ -166,7 +174,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields(async (err, values) => {
+      this.form.validateFieldsAndScroll(async (err, values) => {
         if (err) {
           return
         }

@@ -516,7 +516,7 @@ export default {
     },
     handleAddIpRange (e) {
       if (this.componentLoading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         this.componentLoading = true
@@ -546,8 +546,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.createvlaniprangeresponse
-              ? error.response.data.createvlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,
+            description: error.response.data.createvlaniprangeresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {
@@ -578,8 +577,7 @@ export default {
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
-            description: error.response.data.updatevlaniprangeresponse
-              ? error.response.data.updatevlaniprangeresponse.errortext : error.response.data.errorresponse.errortext,
+            description: error.response.data.updatevlaniprangeresponse?.errortext || error.response.data.errorresponse.errortext,
             duration: 0
           })
         }).finally(() => {

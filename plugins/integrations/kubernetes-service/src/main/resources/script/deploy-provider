@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-(kubectl get pods -A | grep cloud-controller-manager) && exit 0
+(/opt/bin/kubectl get pods -A | grep cloud-controller-manager) && exit 0
 
 if [ -e /opt/provider/provider.yaml ]; then
     /opt/bin/kubectl apply -f /opt/provider/provider.yaml

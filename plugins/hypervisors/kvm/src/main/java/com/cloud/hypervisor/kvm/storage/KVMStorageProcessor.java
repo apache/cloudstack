@@ -70,7 +70,7 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -1463,7 +1463,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             disksize = volume.getSize();
             PhysicalDiskFormat format;
-            if (volume.getFormat() == null) {
+            if (volume.getFormat() == null || StoragePoolType.RBD.equals(primaryStore.getPoolType())) {
                 format = primaryPool.getDefaultFormat();
             } else {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
@@ -1893,7 +1893,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             Long templateSize = null;
-            if (!org.apache.commons.lang.StringUtils.isBlank(cmd.getUrl())) {
+            if (StringUtils.isNotBlank(cmd.getUrl())) {
                 String url = cmd.getUrl();
                 templateSize = UriUtils.getRemoteSize(url);
             }
@@ -1988,14 +1988,20 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
-            storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            try {
+                storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
+            } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
+                String errMsg = String.format("Failed to copy volume: %s to dest storage: %s, due to %s", srcVol.getName(), destPrimaryStore.getName(), e.toString());
+                s_logger.debug(errMsg, e);
+                throw new CloudRuntimeException(errMsg);
+            } finally {
+                if (srcPrimaryStore.isManaged()) {
+                    storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
+                }
 
-            if (srcPrimaryStore.isManaged()) {
-                storagePoolMgr.disconnectPhysicalDisk(srcPrimaryStore.getPoolType(), srcPrimaryStore.getUuid(), srcVolumePath);
-            }
-
-            if (destPrimaryStore.isManaged()) {
-                storagePoolMgr.disconnectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath);
+                if (destPrimaryStore.isManaged()) {
+                    storagePoolMgr.disconnectPhysicalDisk(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid(), destVolumePath);
+                }
             }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();

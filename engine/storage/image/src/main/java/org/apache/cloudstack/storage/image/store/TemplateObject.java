@@ -54,7 +54,7 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @SuppressWarnings("serial")
 public class TemplateObject implements TemplateInfo {
@@ -139,6 +139,15 @@ public class TemplateObject implements TemplateInfo {
         }
         VMTemplateVO image = imageDao.findById(imageVO.getId());
         return image.getSize();
+    }
+
+    @Override
+    public long getPhysicalSize() {
+        TemplateDataStoreVO templateDataStoreVO = templateStoreDao.findByTemplate(imageVO.getId(), DataStoreRole.Image);
+        if (templateDataStoreVO != null) {
+            return templateDataStoreVO.getPhysicalSize();
+        }
+        return imageVO.getSize();
     }
 
     @Override
@@ -251,7 +260,7 @@ public class TemplateObject implements TemplateInfo {
      * In the case of managed storage, the install path may already be specified (by the storage plug-in), so do not overwrite it.
      */
     private void setInstallPathIfNeeded(TemplateObjectTO template, VMTemplateStoragePoolVO templatePoolRef) {
-        if (Strings.isNullOrEmpty(templatePoolRef.getInstallPath())) {
+        if (StringUtils.isEmpty(templatePoolRef.getInstallPath())) {
             templatePoolRef.setInstallPath(template.getPath());
         }
     }
@@ -260,7 +269,7 @@ public class TemplateObject implements TemplateInfo {
      * In the case of managed storage, the local download path may already be specified (by the storage plug-in), so do not overwrite it.
      */
     private void setDownloadPathIfNeeded(TemplateObjectTO template, VMTemplateStoragePoolVO templatePoolRef) {
-        if (Strings.isNullOrEmpty(templatePoolRef.getLocalDownloadPath())) {
+        if (StringUtils.isEmpty(templatePoolRef.getLocalDownloadPath())) {
             templatePoolRef.setLocalDownloadPath(template.getPath());
         }
     }

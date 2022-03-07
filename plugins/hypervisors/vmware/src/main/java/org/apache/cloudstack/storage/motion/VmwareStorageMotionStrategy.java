@@ -26,6 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -179,7 +181,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             if (hostId == null) {
                 throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in the cluster of storage pool: " + sourcePool.getName());
             }
-            hostGuidInTargetCluster = getHostGuidInTargetCluster(sourcePool.getClusterId(), targetPool, sourceScopeType);
+            hostGuidInTargetCluster = getHostGuidInTargetCluster(sourcePool.getClusterId(), targetPool, targetScopeType);
         } else if (ScopeType.CLUSTER.equals(targetScopeType)) {
             hostId = findSuitableHostIdForWorkerVmPlacement(targetPool.getClusterId());
             if (hostId == null) {
@@ -247,7 +249,10 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
                 , vm != null ? vm.getInstanceName() : null
                 , sourcePool
                 , targetPool
-                , hostIdForVmAndHostGuidInTargetCluster.second());
+                , hostIdForVmAndHostGuidInTargetCluster.second(), ((VolumeObjectTO) srcData.getTO()).getChainInfo());
+        if (sourcePool.getParent() != 0) {
+            cmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+        }
         Answer answer;
         if (hostId != null) {
             answer = agentMgr.easySend(hostId, cmd);

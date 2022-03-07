@@ -350,8 +350,6 @@
                       {{ $t('label.passwordenabled') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
                   <a-col :span="12">
                     <a-checkbox value="isdynamicallyscalable">
                       {{ $t('label.isdynamicallyscalable') }}
@@ -362,23 +360,17 @@
                       {{ $t('label.requireshvm') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
-                  <a-col :span="12">
+                  <a-col :span="12" v-if="isAdminRole">
                     <a-checkbox value="isfeatured">
                       {{ $t('label.isfeatured') }}
                     </a-checkbox>
                   </a-col>
-                  <a-col :span="12">
-                    <a-checkbox
-                      value="ispublic"
-                      v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+                  <a-col :span="12" v-if="isAdminRole || $store.getters.features.userpublictemplateenabled">
+                    <a-checkbox value="ispublic">
                       {{ $t('label.ispublic') }}
                     </a-checkbox>
                   </a-col>
-                </a-row>
-                <a-row>
-                  <a-col :span="12" v-if="$store.getters.userInfo.roletype === 'Admin'">
+                  <a-col :span="12" v-if="isAdminRole">
                     <a-checkbox value="isrouting">
                       {{ $t('label.isrouting') }}
                     </a-checkbox>
@@ -473,6 +465,9 @@ export default {
     this.fetchData()
   },
   computed: {
+    isAdminRole () {
+      return this.$store.getters.userInfo.roletype === 'Admin'
+    }
   },
   methods: {
     fetchData () {
@@ -834,7 +829,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err || this.zoneError !== '') {
           return
         }

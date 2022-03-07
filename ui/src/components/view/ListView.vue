@@ -100,7 +100,7 @@
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
         <span v-else>
-          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id && $route.path !== '/ssh'">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
         </span>
       </span>
@@ -268,6 +268,10 @@
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
+    <span slot="autoscalingenabled" slot-scope="text, record">
+      <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
+      {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
+    </span>
     <span slot="current" slot-scope="text, record">
       <status :text="record.current ? record.current.toString() : 'false'" />
     </span>
@@ -344,6 +348,12 @@
         v-if="editableValueKey === record.key"
         iconType="check-circle"
         iconTwoToneColor="#52c41a" />
+      <tooltip-button
+        :tooltip="$t('label.reset.config.value')"
+        @click="resetConfig(record)"
+        v-if="editableValueKey !== record.key"
+        icon="reload"
+        :disabled="!('updateConfiguration' in $store.getters.apis)" />
     </template>
     <template slot="tariffActions" slot-scope="text, record">
       <tooltip-button
@@ -396,7 +406,7 @@ export default {
       default: () => []
     }
   },
-  inject: ['parentFetchData', 'parentToggleLoading', 'parentEditTariffAction'],
+  inject: ['parentFetchData', 'parentToggleLoading'],
   data () {
     return {
       selectedRowKeys: [],
@@ -522,6 +532,23 @@ export default {
         this.$emit('refresh')
       })
     },
+    resetConfig (item) {
+      api('resetConfiguration', {
+        name: item.name
+      }).then(() => {
+        const message = `${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`
+        this.$message.success(message)
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
+      }).finally(() => {
+        this.$emit('refresh')
+      })
+    },
     editValue (record) {
       this.editableValueKey = record.key
       this.editableValue = record.value
@@ -615,7 +642,7 @@ export default {
       this.updateOrder(data)
     },
     editTariffValue (record) {
-      this.parentEditTariffAction(true, record)
+      this.$emit('edit-tariff-action', true, record)
     },
     ipV6Address (text, record) {
       if (!record || !record.nic || record.nic.length === 0) {

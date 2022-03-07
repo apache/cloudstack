@@ -150,7 +150,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
+      this.form.validateFieldsAndScroll((err, values) => {
         if (err) {
           return
         }
@@ -164,8 +164,8 @@ export default {
         api('updateTrafficType', params).then(response => {
           this.$pollJob({
             jobId: response.updatetraffictyperesponse.jobid,
-            title: title,
-            description: description,
+            title,
+            description,
             successMessage: `${this.$t('label.update.traffic.label')} ${this.traffictype} ${this.$t('label.success')}`,
             loadingMessage: `${title} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result')

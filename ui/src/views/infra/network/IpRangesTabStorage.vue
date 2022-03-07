@@ -235,7 +235,7 @@ export default {
     },
     returnPodName (id) {
       const match = this.pods.find(i => i.id === id)
-      return match ? match.name : null
+      return match?.name || null
     },
     handleOpenAddIpRangeModal () {
       this.addIpRangeModal = true
@@ -279,7 +279,7 @@ export default {
     },
     handleAddIpRange (e) {
       if (this.componentLoading) return
-      this.form.validateFields((error, values) => {
+      this.form.validateFieldsAndScroll((error, values) => {
         if (error) return
 
         this.componentLoading = true

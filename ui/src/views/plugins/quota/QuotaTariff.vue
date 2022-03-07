@@ -17,11 +17,14 @@
 
 <template>
   <div>
-    <autogen-view ref="autogenview" />
+    <autogen-view
+      ref="autogenview"
+      @edit-tariff-action="showTariffAction" />
     <edit-tariff-value-wizard
       v-if="tariffAction"
       :showAction="tariffAction"
-      :resource="tariffResource" />
+      :resource="tariffResource"
+      @edit-tariff-action="showTariffAction"/>
   </div>
 </template>
 
@@ -43,8 +46,7 @@ export default {
   },
   provide: function () {
     return {
-      parentFetchData: this.fetchData,
-      parentEditTariffAction: this.showTariffAction
+      parentFetchData: this.fetchData
     }
   },
   methods: {

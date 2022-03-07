@@ -42,7 +42,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -821,7 +821,7 @@ public class NetUtils {
     }
 
     static boolean areCidrsNotEmpty(String cidrA, String cidrB) {
-        return StringUtils.isNotEmpty(cidrA) && StringUtils.isNotEmpty(cidrB);
+        return StringUtils.isNoneEmpty(cidrA, cidrB);
     }
 
     public static Long[] cidrToLong(final String cidr) {

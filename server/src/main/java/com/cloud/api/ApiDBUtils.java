@@ -16,77 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import com.cloud.resource.icon.ResourceIconVO;
-import com.cloud.resource.icon.dao.ResourceIconDao;
-import com.cloud.server.ResourceIcon;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.ApiConstants.DomainDetails;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostTagResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupSchedule;
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -163,6 +92,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.event.Event;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -256,13 +186,16 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.server.ResourceManagerUtil;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -316,7 +249,6 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -340,6 +272,73 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -407,6 +406,7 @@ public class ApiDBUtils {
     static ResourceLimitService s_resourceLimitMgr;
     static ProjectService s_projectMgr;
     static ResourceManager s_resourceMgr;
+    static DomainDetailsDao s_domainDetailsDao;
     static AccountDetailsDao s_accountDetailsDao;
     static NetworkDomainDao s_networkDomainDao;
     static HighAvailabilityManager s_haMgr;
@@ -596,6 +596,8 @@ public class ApiDBUtils {
     @Inject
     private ResourceManager resourceMgr;
     @Inject
+    private DomainDetailsDao domainDetailsDao;
+    @Inject
     private AccountDetailsDao accountDetailsDao;
     @Inject
     private NetworkDomainDao networkDomainDao;
@@ -784,6 +786,7 @@ public class ApiDBUtils {
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
         s_resourceMgr = resourceMgr;
+        s_domainDetailsDao = domainDetailsDao;
         s_accountDetailsDao = accountDetailsDao;
         s_networkDomainDao = networkDomainDao;
         s_haMgr = haMgr;
@@ -1040,14 +1043,26 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findComputeOnlyDiskOfferingById(Long diskOfferingId) {
         DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
-        if (off.getType() == DiskOfferingVO.Type.Disk) {
+        if (off.isComputeOnly()) {
             return off;
         }
         return null;
     }
 
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (!off.isComputeOnly()) {
+            return off;
+        }
+        return null;
+    }
+
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+        return off;
+    }
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
     }
@@ -1434,6 +1449,11 @@ public class ApiDBUtils {
 
     public static long getProjectOwnwerId(long projectId) {
         return s_projectMgr.getProjectOwner(projectId).getId();
+    }
+
+    public static Map<String, String> getDomainDetails(long domainId) {
+        Map<String, String> details = s_domainDetailsDao.findDetails(domainId);
+        return details.isEmpty() ? null : details;
     }
 
     public static Map<String, String> getAccountDetails(long accountId) {

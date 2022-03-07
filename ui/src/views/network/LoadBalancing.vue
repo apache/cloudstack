@@ -207,7 +207,7 @@
 
     <a-modal
       :title="$t('label.configure.sticky.policy')"
-      v-model="stickinessModalVisible"
+      :visible="stickinessModalVisible"
       :footer="null"
       :afterClose="closeModal"
       :maskClosable="false"
@@ -288,7 +288,7 @@
 
         <div :span="24" class="action-button">
           <a-button @click="stickinessModalVisible = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" @submit="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmitStickinessForm">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -431,8 +431,8 @@
           :total="vmCount"
           :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
           :pageSizeOptions="['10', '20', '40', '80', '100']"
-          @change="handleChangePage"
-          @showSizeChange="handleChangePageSize"
+          @change="handleChangeVmPage"
+          @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
           <template slot="buildOptionText" slot-scope="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
@@ -765,7 +765,7 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
+      this.newTagsForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.tagsModalLoading = false
           return
@@ -890,6 +890,8 @@ export default {
         })
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.closeModal()
       })
     },
     handleDeleteStickinessPolicy () {
@@ -926,7 +928,7 @@ export default {
       if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
-      this.stickinessPolicyForm.validateFields((err, values) => {
+      this.stickinessPolicyForm.validateFieldsAndScroll((err, values) => {
         if (err) {
           this.stickinessModalLoading = false
           return
@@ -962,6 +964,7 @@ export default {
       })
     },
     handleStickinessMethodSelectChange (e) {
+      this.stickinessPolicyForm.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
@@ -1324,6 +1327,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleChangeVmPage (page, pageSize) {
+      this.vmPage = page
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
+    },
+    handleChangeVmPageSize (currentPage, pageSize) {
+      this.vmPage = currentPage
+      this.vmPageSize = pageSize
+      this.fetchVirtualMachines()
     },
     onSearch (value) {
       this.searchQuery = value

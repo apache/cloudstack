@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.16.0.0-SNAPSHOT</version>
+        <version>4.17.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -175,6 +175,10 @@
             <version>${ads.version}</version>
             <scope>test</scope>
             <exclusions>
+                <exclusion>
+                    <artifactId>log4j</artifactId>
+                    <groupId>log4j</groupId>
+                </exclusion>
                 <!--
                  shared-ldap-schema module needs to be excluded to avoid multiple schema resources on the classpath
                 -->
