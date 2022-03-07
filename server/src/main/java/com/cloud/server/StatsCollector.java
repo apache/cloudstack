@@ -673,14 +673,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     public VmStats getVmStats(long vmId, Boolean accumulate) {
         List<VmStatsVO> vmStatsVOList = vmStatsDao.findByVmIdOrderByTimestampDesc(vmId);
 
-        if (CollectionUtils.isNotEmpty(vmStatsVOList)) {
-            if (accumulate != null) {
-                return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, accumulate.booleanValue());
-            }
-            return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, BooleanUtils.toBoolean(vmStatsIncrementMetrics.value()));
+        if (CollectionUtils.isEmpty(vmStatsVOList)) {
+            return null;
         }
 
-        return null;
+        if (accumulate != null) {
+            return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, accumulate.booleanValue());
+        }
+        return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, BooleanUtils.toBoolean(vmStatsIncrementMetrics.value()));
     }
 
     /**

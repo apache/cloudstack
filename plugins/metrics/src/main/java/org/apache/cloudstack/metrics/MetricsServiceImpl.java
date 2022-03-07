@@ -248,9 +248,11 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     protected List<VmStatsVO> findVmStatsAccordingToDateParams(Long vmId, Date startDate, Date endDate){
         if (startDate != null && endDate != null) {
             return vmStatsDao.findByVmIdAndTimestampBetween(vmId, startDate, endDate);
-        } else if (startDate != null) {
+        }
+        if (startDate != null) {
             return vmStatsDao.findByVmIdAndTimestampGreaterThanEqual(vmId, startDate);
-        } else if (endDate != null) {
+        }
+        if (endDate != null) {
             return vmStatsDao.findByVmIdAndTimestampLessThanEqual(vmId, endDate);
         }
         return vmStatsDao.findByVmId(vmId);

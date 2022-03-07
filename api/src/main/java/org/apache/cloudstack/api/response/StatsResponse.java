@@ -135,7 +135,7 @@ public class StatsResponse extends BaseResponse {
     }
 
     /**
-     * Accumulate disk IOPS (Input/Output Operations Per Second)
+     * Accumulates disk IOPS (Input/Output Operations Per Second)
      * in {@code diskIopsTotal} attribute.
      * @param diskIo the IOPS value to increment in {@code diskIopsTotal}.
      */

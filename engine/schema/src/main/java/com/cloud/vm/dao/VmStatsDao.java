@@ -28,21 +28,21 @@ import com.cloud.vm.VmStatsVO;
 public interface VmStatsDao extends GenericDao<VmStatsVO, Long> {
 
     /**
-     * Find VM stats by VM ID.
+     * Finds VM stats by VM ID.
      * @param vmId the VM ID.
      * @return list of stats for the specified VM.
      */
     List<VmStatsVO> findByVmId(long vmId);
 
     /**
-     * Find VM stats by VM ID. The result is sorted by timestamp in descending order.
+     * Finds VM stats by VM ID. The result is sorted by timestamp in descending order.
      * @param vmId the VM ID.
      * @return ordered list of stats for the specified VM.
      */
     List<VmStatsVO> findByVmIdOrderByTimestampDesc(long vmId);
 
     /**
-     * Find stats by VM ID and timestamp >= a given time.
+     * Finds stats by VM ID and timestamp >= a given time.
      * @param vmId the specific VM.
      * @param time the specific time.
      * @return list of stats for the specified VM, with timestamp >= the specified time.
@@ -50,7 +50,7 @@ public interface VmStatsDao extends GenericDao<VmStatsVO, Long> {
     List<VmStatsVO> findByVmIdAndTimestampGreaterThanEqual(long vmId, Date time);
 
     /**
-     * Find stats by VM ID and timestamp <= a given time.
+     * Finds stats by VM ID and timestamp <= a given time.
      * @param vmId the specific VM.
      * @param time the specific time.
      * @return list of stats for the specified VM, with timestamp <= the specified time.
@@ -58,7 +58,7 @@ public interface VmStatsDao extends GenericDao<VmStatsVO, Long> {
     List<VmStatsVO> findByVmIdAndTimestampLessThanEqual(long vmId, Date time);
 
     /**
-     * Find stats by VM ID and timestamp between a given time range.
+     * Finds stats by VM ID and timestamp between a given time range.
      * @param vmId the specific VM.
      * @param startTime the start time.
      * @param endTime the start time.
