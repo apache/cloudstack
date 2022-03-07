@@ -265,6 +265,10 @@
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </span>
+    <a slot="rolename" slot-scope="text, record">
+      <router-link v-if="record.roleid" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </a>
     <a slot="readonly" slot-scope="text, record">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </a>
