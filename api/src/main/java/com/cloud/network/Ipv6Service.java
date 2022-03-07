@@ -54,7 +54,7 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     void releaseIpv6SubnetForNetwork(long networkId);
 
-    Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress);
+    Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String vlanId, String nicMacAddress);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network);
 

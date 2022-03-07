@@ -1166,7 +1166,7 @@ public class CommandSetupHelper {
         if (isIpv6Supported) {
             setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
             setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network, nic.getMacAddress());
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network, nic.getBroadcastUri().toString(), nic.getMacAddress());
             Vlan vlan = publicIpv6AddressVlanPair.second();
             setupCmd.setRouterIpv6(publicIpv6AddressVlanPair.first());
             final String routerIpv6Gateway = vlan.getIp6Gateway();

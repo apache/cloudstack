@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.AccountVlanMapVO;
@@ -258,6 +259,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 
         PhysicalNetworkVlanIp6Search = createSearchBuilder();
         PhysicalNetworkVlanIp6Search.and("physicalNetworkId", PhysicalNetworkVlanIp6Search.entity().getPhysicalNetworkId(), SearchCriteria.Op.EQ);
+        PhysicalNetworkVlanIp6Search.and("vlanId", PhysicalNetworkVlanIp6Search.entity().getVlanTag(), SearchCriteria.Op.EQ);
         PhysicalNetworkVlanIp6Search.and("ip6Gateway", PhysicalNetworkVlanIp6Search.entity().getIp6Gateway(), SearchCriteria.Op.NNULL);
         PhysicalNetworkVlanIp6Search.and("ip6Cidr", PhysicalNetworkVlanIp6Search.entity().getIp6Cidr(), SearchCriteria.Op.NNULL);
         PhysicalNetworkVlanIp6Search.done();
@@ -395,9 +397,12 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     }
 
     @Override
-    public List<VlanVO> listVlansWithIpV6RangeByPhysicalNetworkId(long physicalNetworkId) {
+    public List<VlanVO> listIpv6RangeByPhysicalNetworkIdAndVlanId(long physicalNetworkId, String vlanId) {
         SearchCriteria<VlanVO> sc = PhysicalNetworkVlanIp6Search.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
+        if(StringUtils.isNotEmpty(vlanId)) {
+            sc.setParameters("vlanId", vlanId);
+        }
         return listBy(sc);
     }
 

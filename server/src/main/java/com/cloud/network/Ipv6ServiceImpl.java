@@ -251,25 +251,25 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String nicMacAddress) {
-        final List<VlanVO> ranges = vlanDao.listVlansWithIpV6RangeByPhysicalNetworkId(network.getPhysicalNetworkId());
+    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String vlanId, String nicMacAddress) {
+        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
         if (CollectionUtils.isEmpty(ranges)) {
             s_logger.error(String.format("Unable to find IPv6 range for the zone ID: %d", network.getDataCenterId()));
             throw new CloudRuntimeException(String.format("Cannot find IPv6 address for network %s", network.getName()));
         }
         Collections.shuffle(ranges);
         VlanVO selectedVlan = ranges.get(0);
-        IPv6Network iPv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
-        if (iPv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
-            Iterator<IPv6Network> splits = iPv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+        IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
+        if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
+            Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
             if (splits.hasNext()) {
                 splits.next();
             }
             if (splits.hasNext()) {
-                iPv6Network = splits.next();
+                ipv6Network = splits.next();
             }
         }
-        IPv6Address ipv6Addr = NetUtils.EUI64Address(iPv6Network, nicMacAddress);
+        IPv6Address ipv6Addr = NetUtils.EUI64Address(ipv6Network, nicMacAddress);
         String event = EventTypes.EVENT_NET_IP6_ASSIGN;
         String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Addr,  network.getUuid());
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
@@ -285,7 +285,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
         boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
-            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetwork(network, nic.getMacAddress());
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetwork(network, nic.getBroadCastUri().toString(), nic.getMacAddress());
             final Vlan vlan = publicIpv6AddressVlanPair.second();
             final String routerIpv6 = publicIpv6AddressVlanPair.first();
             final String routerIpv6Gateway = vlan.getIp6Gateway();
