@@ -74,7 +74,8 @@
           }"
           :dataSource="groups.opts" />
       </a-form-item>
-      <a-form-item :label="$t('label.userdata')">
+      <a-form-item>
+        <tooltip-label slot="label" :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
         <a-textarea
           v-decorator="['userdata']">
         </a-textarea>
@@ -226,7 +227,9 @@ export default {
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
         }
-        params.group = values.group
+        if (values.group && values.group.length > 0) {
+          params.group = values.group
+        }
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
