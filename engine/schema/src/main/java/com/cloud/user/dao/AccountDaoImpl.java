@@ -140,14 +140,14 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 u.setUsername(rs.getString(2));
                 u.setAccountId(rs.getLong(3));
                 u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(4)));
-                u.setState(State.valueOf(rs.getString(5)));
+                u.setState(State.getValueOf(rs.getString(5)));
 
                 AccountVO a = new AccountVO(rs.getLong(6));
                 a.setAccountName(rs.getString(7));
                 a.setType(Account.Type.getFromValue(rs.getInt(8)));
                 a.setRoleId(rs.getLong(9));
                 a.setDomainId(rs.getLong(10));
-                a.setState(State.valueOf(rs.getString(11)));
+                a.setState(State.getValueOf(rs.getString(11)));
 
                 userAcctPair = new Pair<User, Account>(u, a);
             }

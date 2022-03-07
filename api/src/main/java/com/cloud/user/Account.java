@@ -40,6 +40,14 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
         public String toString(){
             return super.toString().toLowerCase();
         }
+
+        /**
+         * This method was created to maintain backwards compatibility to the DB schema. Unfortunately we can't override the valueOf method.
+         * */
+        public static State getValueOf(String name){
+            return State.valueOf(name.toUpperCase());
+        }
+
     }
 
     /**
