@@ -74,15 +74,15 @@ export default {
       }, {
         name: 'tungsten.router.table',
         component: () => import('@/views/network/tungsten/NetworkRouterTableTab.vue'),
-        show: (record) => { return 'listTungstenFabricNetworkRouteTable' in store.getters.apis }
+        show: (record) => { return 'listTungstenFabricNetworkRouteTable' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
       }, {
         name: 'tungsten.routing.polices',
         component: () => import('@/views/network/tungsten/NetworkRoutingPolicyTab.vue'),
-        show: (record) => { return 'listTungstenFabricRoutingPolicy' in store.getters.apis }
+        show: (record) => { return 'listTungstenFabricRoutingPolicy' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
       }, {
         name: 'tungsten.logical.router',
         component: () => import('@/views/network/tungsten/LogicalRouterTab.vue'),
-        show: (record) => { return 'listTungstenFabricLogicalRouter' in store.getters.apis }
+        show: (record) => { return 'listTungstenFabricLogicalRouter' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
       }, {
         name: 'comments',
         component: () => import('@/components/view/AnnotationsTab.vue')
@@ -726,8 +726,8 @@ export default {
       title: 'label.tungsten.network.router.table',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricNetworkRouteTable'],
+      columns: ['name'],
       details: ['uuid', 'name'],
       tabs: [
         {
@@ -754,8 +754,8 @@ export default {
       title: 'label.tungsten.interface.router.table',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricInterfaceRouteTable'],
+      columns: ['name'],
       details: ['uuid', 'name'],
       tabs: [
         {
@@ -782,8 +782,8 @@ export default {
       title: 'label.network.policy',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricPolicy'],
+      columns: ['name'],
       details: ['name'],
       tabs: [
         {
@@ -831,8 +831,8 @@ export default {
       title: 'label.application.policy.set',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricApplicationPolicySet'],
+      columns: ['name'],
       details: ['name'],
       tabs: [
         {
@@ -866,8 +866,8 @@ export default {
       title: 'label.routing.policy',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricRoutingPolicy'],
+      columns: ['name'],
       details: ['uuid', 'name'],
       tabs: [
         {
@@ -885,8 +885,8 @@ export default {
       title: 'label.routing.policy',
       icon: tungsten,
       hidden: true,
-      disabledListView: true,
       permission: ['listTungstenFabricFirewallPolicy'],
+      columns: ['name'],
       details: ['uuid', 'name'],
       tabs: [
         {

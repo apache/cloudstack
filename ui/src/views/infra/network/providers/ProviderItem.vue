@@ -141,10 +141,12 @@ export default {
         return
       }
 
+      console.log(123)
+
       const params = {}
       if (args.mapping) {
         Object.keys(args.mapping).map(key => {
-          params[key] = 'value' in args.mapping[key]?.value(this.resource) || null
+          params[key] = args.mapping[key]?.value(this.resource) || null
         })
       }
       params.page = this.page

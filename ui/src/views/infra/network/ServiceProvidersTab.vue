@@ -1110,6 +1110,22 @@ export default {
               columns: ['name', 'state', 'hostname', 'zonename']
             }
           ]
+        },
+        {
+          title: 'Tungsten',
+          details: ['name', 'state', 'id', 'physicalnetworkid', 'servicelist'],
+          lists: [
+            {
+              title: 'label.tungsten.fabric.provider',
+              api: 'listTungstenFabricProviders',
+              mapping: {
+                zoneid: {
+                  value: (record) => { return record.zoneid }
+                }
+              },
+              columns: ['name', 'tungstenproviderhostname', 'tungstenproviderport', 'tungstengateway', 'tungstenprovidervrouterport', 'tungstenproviderintrospectport']
+            }
+          ]
         }
       ]
     }

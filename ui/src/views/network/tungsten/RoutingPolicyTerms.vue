@@ -100,7 +100,16 @@
           </a-select>
         </template>
         <template slot="termvalue" slot-scope="text, record, index">
-          <a-input :value="text" @change="e => onCellChange(index, 'termvalue', e.target.value)" />
+          <a-input
+            v-if="prefixList[index].termtype !== 'action'"
+            :value="text"
+            @change="e => onCellChange(index, 'termvalue', e.target.value)" />
+          <a-select v-else value="default" @change="value => onCellChange(index, 'termvalue', value)">
+            <a-select-option value="default">default</a-select-option>
+            <a-select-option value="accept">accept</a-select-option>
+            <a-select-option value="reject">reject</a-select-option>
+            <a-select-option value="next">next</a-select-option>
+          </a-select>
         </template>
         <template slot="action" slot-scope="text, record, index">
           <tooltip-button

@@ -103,6 +103,10 @@
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
         </span>
+        <span v-else-if="isTungstenPath()">
+          <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
+          <router-link :to="{ path: $route.path, query: { zoneid: $route.query.zoneid } }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+        </span>
         <span v-else>
           <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id && $route.path !== '/ssh'">{{ text }}</router-link>
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
@@ -471,6 +475,10 @@ export default {
     }
   },
   methods: {
+    isTungstenPath () {
+      return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule'].includes(this.$route.path)
+    },
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
