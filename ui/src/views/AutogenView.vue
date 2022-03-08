@@ -921,7 +921,7 @@ export default {
           }
         }
         if (this.items.length > 0) {
-          if (!this.showAction) {
+          if (!this.showAction || this.dataView) {
             this.resource = this.items[0]
             this.$emit('change-resource', this.resource)
           }
