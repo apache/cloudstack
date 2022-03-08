@@ -76,7 +76,7 @@
       </a-row>
     </a-col>
 
-    <a-col :xl="6">
+    <a-col :xl="6" class="dashboard-event">
       <chart-card :loading="loading">
         <div style="text-align: center">
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
@@ -319,5 +319,11 @@ export default {
 .center {
   display: block;
   text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-event {
+    width: 100%;
+  }
 }
 </style>

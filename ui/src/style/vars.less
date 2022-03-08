@@ -47,6 +47,11 @@
 @box-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.15);
 @loading-color: @primary-color;
 
+.ant-layout.ant-layout-has-sider>.ant-layout,
+.ant-layout.ant-layout-has-sider>.ant-layout-content {
+  width: auto;
+}
+
 .ant-layout-sider-children .logo-image {
   width: @logo-width;
   height: @logo-height;
@@ -456,5 +461,10 @@ a {
 }
 
 .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
+}
+
+.ant-dropdown-menu-item:hover,
+.ant-dropdown-menu-submenu-title:hover {
   background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
 }

@@ -19,9 +19,10 @@
   <a-menu
       :mode="mode"
       :theme="theme"
-      v-model:openKeys="openKeys"
+      :openKeys="openKeys"
       v-model:selectedKeys="selectedKeys"
       @click="selectMenu"
+      @openChange="onOpenChange"
     >
     <template v-for="(item, index) in menuData" :key="index">
       <a-sub-menu v-if="item.children && !item.hideChildrenInMenu" :key="item.path">
@@ -118,6 +119,14 @@ export default {
   methods: {
     selectMenu (obj) {
       this.selectedKeys = [obj.key]
+    },
+    onOpenChange (openKeys) {
+      const latestOpenKey = openKeys.find(key => this.openKeys.indexOf(key) === -1)
+      if (this.rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
+        this.openKeys = openKeys
+      } else {
+        this.openKeys = latestOpenKey ? [latestOpenKey] : []
+      }
     },
     updateMenu () {
       const routes = this.$route.matched.concat()
