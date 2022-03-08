@@ -1583,25 +1583,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.warn("Failed to expunge volume: " + volumeId);
                 return null;
             }
-            markVolumeSnapshotsAsDestroyed(volume);
             removeVolume(volume.getId());
         }
 
         return volume;
-    }
-
-    private void markVolumeSnapshotsAsDestroyed(VolumeVO volume) {
-        if (!Storage.ImageFormat.QCOW2.equals(volume.getFormat())) {
-            return;
-        }
-        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
-        for (SnapshotVO snapshot: snapshots) {
-            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotDataStoreDao.findBySnapshotId(snapshot.getId());
-            if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
-                snapshot.setState(Snapshot.State.Destroyed);
-                _snapshotDao.update(snapshot.getId(), snapshot);
-            }
-        }
     }
 
     @Override
