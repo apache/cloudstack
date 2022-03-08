@@ -76,6 +76,8 @@ import java.util.Map;
 import java.util.function.Function;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
+import static com.cloud.storage.Volume.Event.OperationRetryFromError;
+
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
     protected VolumeVO volumeVO;
@@ -213,7 +215,7 @@ public class VolumeObject implements VolumeInfo {
     public boolean stateTransit(Volume.Event event) {
         boolean result = false;
         try {
-            volumeVO = volumeDao.findById(volumeVO.getId());
+            volumeVO = event != OperationRetryFromError ? volumeDao.findById(volumeVO.getId()) : volumeDao.findByIdIncludingRemoved(volumeVO.getId());
             if (volumeVO != null) {
                 result = _volStateMachine.transitTo(volumeVO, event, null, volumeDao);
                 volumeVO = volumeDao.findById(volumeVO.getId());

@@ -133,6 +133,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationFailed, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.RecoverRequested, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Destroy, Event.OperationRetryFromError, Allocated, null));
         }
     }
 
@@ -156,7 +157,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         ExpungingRequested,
         ResizeRequested,
         AttachRequested,
-        OperationTimeout;
+        OperationTimeout,
+        OperationRetryFromError;
     }
 
     /**

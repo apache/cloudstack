@@ -93,7 +93,7 @@ export default {
           icon: 'redo',
           label: 'label.action.retry.deploy.instance',
           dataView: true,
-          listView: true,
+          listView: false,
           groupAction: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Error'].includes(record.state) }

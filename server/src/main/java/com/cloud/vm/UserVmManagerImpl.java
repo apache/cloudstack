@@ -5146,7 +5146,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        if (vm.getState()== State.Running) {
+        if (vm.getState() == State.Running) {
             throw new InvalidParameterValueException("The virtual machine "+ vm.getUuid()+ " ("+ vm.getDisplayName()+ ") is already running");
         }
 
@@ -7916,14 +7916,41 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_START, eventDescription = "Retry Starting VM", async = true)
     public UserVm retryDeployVM(RetryDeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
-        long vmId = cmd.getId();
+        UserVmVO vmVO = _vmDao.findById(cmd.getId());
+        if (vmVO == null) {
+            throw new CloudRuntimeException("Cannot find a VM with ID: " + vmId);
+        }
+
+        if (vmVO.getState() != State.Error) {
+            throw new CloudRuntimeException("To retry a VM deployment, the VM must be on Error state");
+        }
+
+        long vmId = vmVO.getId();
         Long podId = null;
         Long clusterId = null;
         Long hostId = null;
         Map<VirtualMachineProfile.Param, Object> additionalParams =  new HashMap<>();
         Map<Long, DiskOffering> diskOfferingMap = null;
         String deploymentPlannerToUse = null;
+
+        List<VolumeVO> instanceVolumes = _volsDao.findByInstanceIdIncludingRemoved(vmId);
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                for (VolumeVO vol : instanceVolumes) {
+                    VolumeInfo volume = volFactory.getVolume(vol.getId());
+                    volume.stateTransit(Volume.Event.OperationRetryFromError);
+                }
+                List<NicVO> nics = _nicDao.listByVmIdIncludingRemoved(vmId);
+                for (NicVO nic : nics) {
+                    nic.setState(Nic.State.Allocated);
+                    _nicDao.update(nic.getId(), nic);
+                }
+            }
+        });
+
         return startVirtualMachine(vmId, podId, clusterId, hostId, diskOfferingMap, additionalParams, deploymentPlannerToUse);
     }
 

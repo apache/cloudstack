@@ -736,4 +736,11 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             throw new CloudRuntimeException(e);
         }
     }
+
+    @Override
+    public List<VolumeVO> findByInstanceIdIncludingRemoved(long instanceId) {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", instanceId);
+        return listIncludingRemovedBy(sc);
+    }
 }

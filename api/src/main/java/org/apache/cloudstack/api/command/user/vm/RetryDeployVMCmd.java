@@ -24,6 +24,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -55,7 +56,7 @@ public class RetryDeployVMCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_CREATE;
+        return EventTypes.EVENT_VM_START;
     }
 
     @Override
@@ -66,11 +67,11 @@ public class RetryDeployVMCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
             ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        UserVm result = null;
+        UserVm result;
         try {
             result = _userVmService.retryDeployVM(this);
         } catch (ResourceUnavailableException | InsufficientCapacityException | ResourceAllocationException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Error on VM retry operarion: " + e.getMessage());
         }
 
         if (result != null) {
