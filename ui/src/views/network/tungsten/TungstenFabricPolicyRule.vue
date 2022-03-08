@@ -32,14 +32,8 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template slot="srcnetwork" slot-scope="text, record">
-        <span>{{ record.srcipprefix + '/' + record.srcipprefixlen }}</span>
-      </template>
       <template slot="sourceport" slot-scope="text, record">
         <span>{{ record.srcstartport + ':' + record.srcendport }}</span>
-      </template>
-      <template slot="destnetwork" slot-scope="text, record">
-        <span>{{ record.destipprefix + '/' + record.destipprefixlen }}</span>
       </template>
       <template slot="destport" slot-scope="text, record">
         <span>{{ record.deststartport + ':' + record.destendport }}</span>
