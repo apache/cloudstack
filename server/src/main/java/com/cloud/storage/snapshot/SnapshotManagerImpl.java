@@ -256,7 +256,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while retry cmd.");
+                s_logger.debug("[ignored] interrupted while retry cmd.");
             }
 
             s_logger.debug("Retrying...");

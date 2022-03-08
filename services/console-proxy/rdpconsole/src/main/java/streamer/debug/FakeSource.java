@@ -69,7 +69,7 @@ public class FakeSource extends BaseElement {
         try {
             Thread.sleep(delay);
         } catch (InterruptedException e) {
-            s_logger.info("[ignored] interupted while creating latency", e);
+            s_logger.info("[ignored] interrupted while creating latency", e);
         }
     }
 
