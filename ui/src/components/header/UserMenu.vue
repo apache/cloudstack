@@ -29,7 +29,10 @@
         <span v-if="image">
           <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
         </span>
-        <a-avatar v-else class="user-menu-avatar avatar" size="small" :src="avatar()"/>
+        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+          {{ userInitials }}
+        </a-avatar>
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" icon="user" :style="{ backgroundColor: '#1890ff', color: 'white' }" />
         <span>{{ nickname() }}</span>
       </span>
       <a-menu slot="overlay" class="user-menu-wrapper">
@@ -85,10 +88,13 @@ export default {
   data () {
     return {
       image: '',
+      userInitials: '',
       countNotify: 0
     }
   },
   created () {
+    this.userInitials = (this.$store.getters.userInfo.firstname.toUpperCase().charAt(0) || '') +
+      (this.$store.getters.userInfo.lastname.toUpperCase().charAt(0) || '')
     this.getIcon()
     eventBus.$on('refresh-header', () => {
       this.getIcon()
