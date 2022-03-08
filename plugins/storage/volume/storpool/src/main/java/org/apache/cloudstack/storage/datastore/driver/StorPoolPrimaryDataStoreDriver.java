@@ -162,13 +162,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public boolean grantAccess(DataObject data, Host host, DataStore dataStore) {
-        log.debug("grantAccess");
         return false;
     }
 
     @Override
     public void revokeAccess(DataObject data, Host host, DataStore dataStore) {
-        log.debug("revokeAccess");
     }
 
     private void updateStoragePool(final long poolId, final long deltaUsedBytes) {
@@ -930,12 +928,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public boolean vmInfoNeeded() {
+    public boolean isVmInfoNeeded() {
         return true;
     }
 
     @Override
-    public void provideVMInfo(long vmId, long volumeId) {
+    public void provideVmInfo(long vmId, long volumeId) {
         VolumeVO volume = volumeDao.findById(volumeId);
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {
@@ -954,12 +952,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     @Override
-    public boolean vmTagsNeeded(String tagKey) {
+    public boolean isVmTagsNeeded(String tagKey) {
         return tagKey != null && tagKey.equals(StorPoolUtil.SP_VC_POLICY);
     }
 
     @Override
-    public void provideVMTags(long vmId, long volumeId, String tagValue) {
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
         VolumeVO volume = volumeDao.findById(volumeId);
         StoragePoolVO poolVO = primaryStoreDao.findById(volume.getPoolId());
         if (poolVO != null) {

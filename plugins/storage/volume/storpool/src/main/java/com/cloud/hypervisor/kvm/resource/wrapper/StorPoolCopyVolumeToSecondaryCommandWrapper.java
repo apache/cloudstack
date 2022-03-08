@@ -29,7 +29,6 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-//import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.StorPoolCopyVolumeToSecondaryCommand;
@@ -54,8 +53,8 @@ public final class StorPoolCopyVolumeToSecondaryCommandWrapper extends CommandWr
         KVMStoragePool secondaryPool = null;
 
         try {
-            final VolumeObjectTO src = cmd.getSrcTO();
-            final VolumeObjectTO dst = cmd.getDstTO();
+            final VolumeObjectTO src = cmd.getSourceTO();
+            final VolumeObjectTO dst = cmd.getDestinationTO();
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             final String destVolumePath = dst.getPath();
 

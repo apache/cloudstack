@@ -64,11 +64,11 @@ public class StorPoolBackupTemplateFromSnapshotCommandWrapper extends CommandWra
     public CopyCmdAnswer execute(final StorPoolBackupTemplateFromSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
         String srcPath = null;
         KVMStoragePool secondaryPool = null;
-        String objectType = cmd.getSrcTO().getObjectType().toString().toLowerCase();
+        String objectType = cmd.getSourceTO().getObjectType().toString().toLowerCase();
 
         try {
-            final DataTO src = cmd.getSrcTO();
-            final TemplateObjectTO dst = cmd.getDstTO();
+            final DataTO src = cmd.getSourceTO();
+            final TemplateObjectTO dst = cmd.getDestinationTO();
             String name = null;
             String volumeFormatExtension = null;
 
@@ -143,7 +143,7 @@ public class StorPoolBackupTemplateFromSnapshotCommandWrapper extends CommandWra
             final String error = "failed to backup snapshot: " + e.getMessage();
             SP_LOG(error);
             s_logger.debug(error);
-            return new CopyCmdAnswer(error);
+            return new CopyCmdAnswer(cmd, e);
         } finally {
             if (srcPath != null) {
                 StorPoolStorageAdaptor.attachOrDetachVolume("detach", objectType, srcPath);

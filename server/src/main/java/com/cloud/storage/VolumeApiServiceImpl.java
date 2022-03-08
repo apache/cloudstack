@@ -3901,8 +3901,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
             PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
-            if (storageDriver.vmInfoNeeded()) {
-                storageDriver.provideVMInfo(vmId, volumeId);
+            if (storageDriver.isVmInfoNeeded()) {
+                storageDriver.provideVmInfo(vmId, volumeId);
             }
         }
     }

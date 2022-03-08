@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ManagerBase;
@@ -107,76 +108,77 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         @DB
         protected void runInContext() {
             List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
-            if (spPools != null && spPools.size() > 0) {
-                Map<String, String> volumes = new HashMap<>();
-                for (StoragePoolVO storagePoolVO : spPools) {
+            if (CollectionUtils.isEmpty(spPools)) {
+                return;
+            }
+            Map<String, String> volumes = new HashMap<>();
+            for (StoragePoolVO storagePoolVO : spPools) {
+                try {
+                    JsonArray arr = StorPoolUtil.volumesList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                    volumes.putAll(getStorPoolNamesAndCsTag(arr));
+                } catch (Exception e) {
+                    log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()), e);
+                }
+            }
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+
                     try {
-                        JsonArray arr = StorPoolUtil.volumesList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
-                        volumes.putAll(getStorPoolNamesAndCsTag(arr));
-                    } catch (Exception e) {
-                        log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                        PreparedStatement pstmt = txn.prepareAutoCloseStatement(
+                                "CREATE TEMPORARY TABLE `cloud`.`volumes1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
+                        pstmt.executeUpdate();
+
+                        pstmt = txn.prepareAutoCloseStatement(
+                                "CREATE TEMPORARY TABLE `cloud`.`volumes_on_host1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
+                        pstmt.executeUpdate();
+
+                    } catch (SQLException e) {
+                        log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
+                                e.getLocalizedMessage()));
+                    } catch (Throwable e) {
+                        log.info(String.format("[ignored] caught an error during delete vm work job: %s",
+                                e.getLocalizedMessage()));
+                    }
+
+                    try {
+                        PreparedStatement pstmt = txn.prepareStatement("INSERT INTO `cloud`.`volumes1` (name, tag) VALUES (?, ?)");
+                        PreparedStatement volumesOnHostpstmt = txn.prepareStatement("INSERT INTO `cloud`.`volumes_on_host1` (name, tag) VALUES (?, ?)");
+                        for (Map.Entry<String, String> volume : volumes.entrySet()) {
+                            if (volume.getValue().equals("volume")) {
+                                addRecordToDb(volume.getKey(), pstmt, volume.getValue(), true);
+                            } else if (volume.getValue().equals("check-volume-is-on-host")) {
+                                addRecordToDb(volume.getKey(), volumesOnHostpstmt, volume.getValue(), true);
+                            }
+                        }
+                        pstmt.executeBatch();
+                        volumesOnHostpstmt.executeBatch();
+                        String sql = "SELECT f.* FROM `cloud`.`volumes1` f LEFT JOIN `cloud`.`volumes` v ON f.name=v.path where v.path is NULL OR NOT state=?";
+                        findMissingRecordsInCS(txn, sql, "volume");
+
+                        String sqlVolumeOnHost = "SELECT f.* FROM `cloud`.`volumes_on_host1` f LEFT JOIN `cloud`.`storage_pool_details` v ON f.name=v.value where v.value is NULL";
+                        findMissingRecordsInCS(txn, sqlVolumeOnHost, "volumes_on_host");
+                    } catch (SQLException e) {
+                        log.info(String.format("[ignored] SQL failed due to: %s ",
+                                e.getLocalizedMessage()));
+                    } catch (Throwable e) {
+                        log.info(String.format("[ignored] caught an error: %s",
+                                e.getLocalizedMessage()));
+                    } finally {
+                        try {
+                            PreparedStatement pstmt = txn.prepareStatement("DROP TABLE `cloud`.`volumes1`");
+                            pstmt.executeUpdate();
+                            pstmt = txn.prepareStatement("DROP TABLE `cloud`.`volumes_on_host1`");
+                            pstmt.executeUpdate();
+                        } catch (SQLException e) {
+                            txn.close();
+                            log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
+                        }
+                        txn.close();
                     }
                 }
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-
-                        try {
-                            PreparedStatement pstmt = txn.prepareAutoCloseStatement(
-                                    "CREATE TEMPORARY TABLE `cloud`.`volumes1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
-                            pstmt.executeUpdate();
-
-                            pstmt = txn.prepareAutoCloseStatement(
-                                    "CREATE TEMPORARY TABLE `cloud`.`volumes_on_host1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
-                            pstmt.executeUpdate();
-
-                        } catch (SQLException e) {
-                            log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
-                                    e.getLocalizedMessage()));
-                        } catch (Throwable e) {
-                            log.info(String.format("[ignored] caught an error during delete vm work job: %s",
-                                    e.getLocalizedMessage()));
-                        }
-
-                        try {
-                            PreparedStatement pstmt = txn.prepareStatement("INSERT INTO `cloud`.`volumes1` (name, tag) VALUES (?, ?)");
-                            PreparedStatement volumesOnHostpstmt = txn.prepareStatement("INSERT INTO `cloud`.`volumes_on_host1` (name, tag) VALUES (?, ?)");
-                            for (Map.Entry<String, String> volume : volumes.entrySet()) {
-                                if (volume.getValue().equals("volume")) {
-                                    addRecordToDb(volume.getKey(), pstmt, volume.getValue(), true);
-                                } else if (volume.getValue().equals("check-volume-is-on-host")) {
-                                    addRecordToDb(volume.getKey(), volumesOnHostpstmt, volume.getValue(), true);
-                                }
-                            }
-                            pstmt.executeBatch();
-                            volumesOnHostpstmt.executeBatch();
-                            String sql = "SELECT f.* FROM `cloud`.`volumes1` f LEFT JOIN `cloud`.`volumes` v ON f.name=v.path where v.path is NULL OR NOT state=?";
-                            findMissingRecordsInCS(txn, sql, "volume");
-
-                            String sqlVolumeOnHost = "SELECT f.* FROM `cloud`.`volumes_on_host1` f LEFT JOIN `cloud`.`storage_pool_details` v ON f.name=v.value where v.value is NULL";
-                            findMissingRecordsInCS(txn, sqlVolumeOnHost, "volumes_on_host");
-                        } catch (SQLException e) {
-                            log.info(String.format("[ignored] SQL failed due to: %s ",
-                                    e.getLocalizedMessage()));
-                        } catch (Throwable e) {
-                            log.info(String.format("[ignored] caught an error: %s",
-                                    e.getLocalizedMessage()));
-                        } finally {
-                            try {
-                                PreparedStatement pstmt = txn.prepareStatement("DROP TABLE `cloud`.`volumes1`");
-                                pstmt.executeUpdate();
-                                pstmt = txn.prepareStatement("DROP TABLE `cloud`.`volumes_on_host1`");
-                                pstmt.executeUpdate();
-                            } catch (SQLException e) {
-                                txn.close();
-                                log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
-                            }
-                            txn.close();
-                        }
-                    }
-                });
-            }
+            });
         }
     }
 
@@ -187,95 +189,96 @@ public class StorPoolAbandonObjectsCollector extends ManagerBase implements Conf
         protected void runInContext() {
             List<StoragePoolVO> spPools = storagePoolDao.findPoolsByProvider(StorPoolUtil.SP_PROVIDER_NAME);
             Map<String, String> snapshots = new HashMap<String, String>();
-            if (spPools != null && spPools.size() > 0) {
-                for (StoragePoolVO storagePoolVO : spPools) {
+            if (CollectionUtils.isEmpty(spPools)) {
+                return;
+            }
+            for (StoragePoolVO storagePoolVO : spPools) {
+                try {
+                    JsonArray arr = StorPoolUtil.snapshotsList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
+                    snapshots.putAll(getStorPoolNamesAndCsTag(arr));
+                } catch (Exception e) {
+                    log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                }
+            }
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+
+                    try{
+                        PreparedStatement pstmt = txn.prepareAutoCloseStatement(
+                                "CREATE TEMPORARY TABLE `cloud`.`snapshots1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
+                        pstmt.executeUpdate();
+
+                        pstmt = txn.prepareAutoCloseStatement(
+                                "CREATE TEMPORARY TABLE `cloud`.`vm_snapshots1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
+                        pstmt.executeUpdate();
+
+                        pstmt = txn.prepareAutoCloseStatement(
+                                "CREATE TEMPORARY TABLE `cloud`.`vm_templates1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
+                        pstmt.executeUpdate();
+                    } catch (SQLException e) {
+                        log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
+                                e.getLocalizedMessage()));
+                    } catch (Throwable e) {
+                        log.info(String.format("[ignored] caught an error during delete vm work job: %s",
+                                e.getLocalizedMessage()));
+                    }
+
                     try {
-                        JsonArray arr = StorPoolUtil.snapshotsList(StorPoolUtil.getSpConnection(storagePoolVO.getUuid(), storagePoolVO.getId(), storagePoolDetailsDao, storagePoolDao));
-                        snapshots.putAll(getStorPoolNamesAndCsTag(arr));
-                    } catch (Exception e) {
-                        log.debug(String.format("Could not collect abandon objects due to %s", e.getMessage()));
+                        PreparedStatement snapshotsPstmt = txn.prepareStatement("INSERT INTO `cloud`.`snapshots1` (name, tag) VALUES (?, ?)");
+                        PreparedStatement groupSnapshotsPstmt = txn.prepareStatement("INSERT INTO `cloud`.`vm_snapshots1` (name, tag) VALUES (?, ?)");
+                        PreparedStatement templatePstmt = txn.prepareStatement("INSERT INTO `cloud`.`vm_templates1` (name, tag) VALUES (?, ?)");
+                        for (Map.Entry<String, String> snapshot : snapshots.entrySet()) {
+                            if (!snapshot.getValue().equals("group") && !snapshot.getValue().equals("template")) {
+                                addRecordToDb(snapshot.getKey(), snapshotsPstmt, snapshot.getValue(), true);
+                            } else if (snapshot.getValue().equals("group")) {
+                                addRecordToDb(snapshot.getKey(), groupSnapshotsPstmt, snapshot.getValue(), true);
+                            } else if (snapshot.getValue().equals("template")) {
+                                addRecordToDb(snapshot.getKey(), templatePstmt, snapshot.getValue(), true);
+                            }
+                        }
+                        snapshotsPstmt.executeBatch();
+                        groupSnapshotsPstmt.executeBatch();
+                        templatePstmt.executeBatch();
+
+                        String sqlSnapshots = "SELECT f.* FROM `cloud`.`snapshots1` f LEFT JOIN `cloud`.`snapshot_details` v ON f.name=v.value where v.value is NULL";
+                        findMissingRecordsInCS(txn, sqlSnapshots, "snapshot");
+
+                        String sqlVmSnapshots = "SELECT f.* FROM `cloud`.`vm_snapshots1` f LEFT JOIN `cloud`.`vm_snapshot_details` v ON f.name=v.value where v.value is NULL";
+                        findMissingRecordsInCS(txn, sqlVmSnapshots, "snapshot");
+
+                        String sqlTemplates = "SELECT temp.*"
+                                + " FROM `cloud`.`vm_templates1` temp"
+                                + " LEFT JOIN `cloud`.`template_store_ref` store"
+                                + " ON temp.name=store.local_path"
+                                + " LEFT JOIN `cloud`.`template_spool_ref` spool"
+                                + " ON temp.name=spool.local_path"
+                                + " where store.local_path is NULL"
+                                + " and spool.local_path is NULL";
+                        findMissingRecordsInCS(txn, sqlTemplates, "snapshot");
+                    } catch (SQLException e) {
+                        log.info(String.format("[ignored] SQL failed due to: %s ",
+                                e.getLocalizedMessage()));
+                    } catch (Throwable e) {
+                        log.info(String.format("[ignored] caught an error: %s",
+                                e.getLocalizedMessage()));
+                    } finally {
+                        try {
+                            PreparedStatement pstmt = txn.prepareStatement("DROP TABLE `cloud`.`snapshots1`");
+                            pstmt.executeUpdate();
+                            pstmt = txn.prepareStatement("DROP TABLE `cloud`.`vm_snapshots1`");
+                            pstmt.executeUpdate();
+                            pstmt = txn.prepareStatement("DROP TABLE `cloud`.`vm_templates1`");
+                            pstmt.executeUpdate();
+                        } catch (SQLException e) {
+                            txn.close();
+                            log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
+                        }
+                        txn.close();
                     }
                 }
-                Transaction.execute(new TransactionCallbackNoReturn() {
-                    @Override
-                    public void doInTransactionWithoutResult(TransactionStatus status) {
-                        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
-
-                        try{
-                            PreparedStatement pstmt = txn.prepareAutoCloseStatement(
-                                    "CREATE TEMPORARY TABLE `cloud`.`snapshots1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
-                            pstmt.executeUpdate();
-
-                            pstmt = txn.prepareAutoCloseStatement(
-                                    "CREATE TEMPORARY TABLE `cloud`.`vm_snapshots1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
-                            pstmt.executeUpdate();
-
-                            pstmt = txn.prepareAutoCloseStatement(
-                                    "CREATE TEMPORARY TABLE `cloud`.`vm_templates1`(`id` bigint unsigned NOT NULL auto_increment, `name` varchar(255) NOT NULL,`tag` varchar(255) NOT NULL, PRIMARY KEY (`id`))");
-                            pstmt.executeUpdate();
-                        } catch (SQLException e) {
-                            log.info(String.format("[ignored] SQL failed to delete vm work job: %s ",
-                                    e.getLocalizedMessage()));
-                        } catch (Throwable e) {
-                            log.info(String.format("[ignored] caught an error during delete vm work job: %s",
-                                    e.getLocalizedMessage()));
-                        }
-
-                        try {
-                            PreparedStatement snapshotsPstmt = txn.prepareStatement("INSERT INTO `cloud`.`snapshots1` (name, tag) VALUES (?, ?)");
-                            PreparedStatement groupSnapshotsPstmt = txn.prepareStatement("INSERT INTO `cloud`.`vm_snapshots1` (name, tag) VALUES (?, ?)");
-                            PreparedStatement templatePstmt = txn.prepareStatement("INSERT INTO `cloud`.`vm_templates1` (name, tag) VALUES (?, ?)");
-                            for (Map.Entry<String, String> snapshot : snapshots.entrySet()) {
-                                if (!snapshot.getValue().equals("group") && !snapshot.getValue().equals("template")) {
-                                    addRecordToDb(snapshot.getKey(), snapshotsPstmt, snapshot.getValue(), true);
-                                } else if (snapshot.getValue().equals("group")) {
-                                    addRecordToDb(snapshot.getKey(), groupSnapshotsPstmt, snapshot.getValue(), true);
-                                } else if (snapshot.getValue().equals("template")) {
-                                    addRecordToDb(snapshot.getKey(), templatePstmt, snapshot.getValue(), true);
-                                }
-                            }
-                            snapshotsPstmt.executeBatch();
-                            groupSnapshotsPstmt.executeBatch();
-                            templatePstmt.executeBatch();
-
-                            String sqlSnapshots = "SELECT f.* FROM `cloud`.`snapshots1` f LEFT JOIN `cloud`.`snapshot_details` v ON f.name=v.value where v.value is NULL";
-                            findMissingRecordsInCS(txn, sqlSnapshots, "snapshot");
-
-                            String sqlVmSnapshots = "SELECT f.* FROM `cloud`.`vm_snapshots1` f LEFT JOIN `cloud`.`vm_snapshot_details` v ON f.name=v.value where v.value is NULL";
-                            findMissingRecordsInCS(txn, sqlVmSnapshots, "snapshot");
-
-                            String sqlTemplates = "SELECT temp.*"
-                                    + " FROM `cloud`.`vm_templates1` temp"
-                                    + " LEFT JOIN `cloud`.`template_store_ref` store"
-                                    + " ON temp.name=store.local_path"
-                                    + " LEFT JOIN `cloud`.`template_spool_ref` spool"
-                                    + " ON temp.name=spool.local_path"
-                                    + " where store.local_path is NULL"
-                                    + " and spool.local_path is NULL";
-                            findMissingRecordsInCS(txn, sqlTemplates, "snapshot");
-                        } catch (SQLException e) {
-                            log.info(String.format("[ignored] SQL failed due to: %s ",
-                                    e.getLocalizedMessage()));
-                        } catch (Throwable e) {
-                            log.info(String.format("[ignored] caught an error: %s",
-                                    e.getLocalizedMessage()));
-                        } finally {
-                            try {
-                                PreparedStatement pstmt = txn.prepareStatement("DROP TABLE `cloud`.`snapshots1`");
-                                pstmt.executeUpdate();
-                                pstmt = txn.prepareStatement("DROP TABLE `cloud`.`vm_snapshots1`");
-                                pstmt.executeUpdate();
-                                pstmt = txn.prepareStatement("DROP TABLE `cloud`.`vm_templates1`");
-                                pstmt.executeUpdate();
-                            } catch (SQLException e) {
-                                txn.close();
-                                log.info(String.format("createTemporaryVolumeTable %s", e.getMessage()));
-                            }
-                            txn.close();
-                        }
-                    }
-                });
-            }
+            });
         }
     }
 

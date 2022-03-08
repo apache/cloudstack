@@ -19,13 +19,13 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
 	<bean id="storpoolPrimaryDataStoreProvider"
-		class="org.apache.cloudstack.storage.datastore.provider.StorpoolPrimaryDataStoreProvider" />
+		class="org.apache.cloudstack.storage.datastore.provider.StorPoolPrimaryDataStoreProvider" />
 
 	<bean id="storpoolSnapshotStrategy"
-		class="org.apache.cloudstack.storage.snapshot.StorpoolSnapshotStrategy" />
+		class="org.apache.cloudstack.storage.snapshot.StorPoolSnapshotStrategy" />
 
 	<bean id="storpoolVMSnapshotStrategy"
-		class="org.apache.cloudstack.storage.snapshot.StorpoolVMSnapshotStrategy" />
+		class="org.apache.cloudstack.storage.snapshot.StorPoolVMSnapshotStrategy" />
 
 	<bean id="storpoolConfigManager"
 		class="org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager" />

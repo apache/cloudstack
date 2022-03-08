@@ -24,24 +24,24 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import com.cloud.agent.api.to.DataTO;
 
 public class StorPoolCopyCommand<S extends DataTO, D extends DataTO> extends StorageSubSystemCommand {
-    private S srcTO;
-    private D dstTO;
+    private S sourceTO;
+    private D destinationTO;
     private boolean executeInSequence = false;
 
-    public StorPoolCopyCommand(final DataTO srcTO, final DataTO dstTO, final int timeout, final boolean executeInSequence) {
+    public StorPoolCopyCommand(final DataTO sourceTO, final DataTO destinationTO, final int timeout, final boolean executeInSequence) {
         super();
-        this.srcTO = (S)srcTO;
-        this.dstTO = (D)dstTO;
+        this.sourceTO = (S)sourceTO;
+        this.destinationTO = (D)destinationTO;
         setWait(timeout);
         this.executeInSequence = executeInSequence;
     }
 
-    public S getSrcTO() {
-        return srcTO;
+    public S getSourceTO() {
+        return sourceTO;
     }
 
-    public D getDstTO() {
-        return dstTO;
+    public D getDestinationTO() {
+        return destinationTO;
     }
 
     public int getWaitInMillSeconds() {

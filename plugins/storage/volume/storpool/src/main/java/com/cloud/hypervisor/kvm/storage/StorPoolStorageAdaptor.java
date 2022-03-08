@@ -92,27 +92,27 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private static long getDeviceSize(final String devPath) {
         SP_LOG("StorpooolStorageAdaptor.getDeviceSize: path=%s", devPath);
 
-        if (getVolumeNameFromPath(devPath, true) != null) {
-            File file = new File(devPath);
-            if (!file.exists()) {
-                return 0;
-            }
-            Script sc = new Script("blockdev", 0, log);
-            sc.add("--getsize64", devPath);
-
-            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-
-            String res = sc.execute(parser);
-            if (res != null) {
-                SP_LOG("Unable to retrieve device size for %s. Res: %s", devPath, res);
-
-                log.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
-                return 0;
-            }
-
-            return Long.parseLong(parser.getLine());
+        if (getVolumeNameFromPath(devPath, true) == null) {
+            return 0;
         }
-        return 0;
+        File file = new File(devPath);
+        if (!file.exists()) {
+            return 0;
+        }
+        Script sc = new Script("blockdev", 0, log);
+        sc.add("--getsize64", devPath);
+
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+
+        String res = sc.execute(parser);
+        if (res != null) {
+            SP_LOG("Unable to retrieve device size for %s. Res: %s", devPath, res);
+
+            log.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
+            return 0;
+        }
+
+        return Long.parseLong(parser.getLine());
     }
 
     private static boolean waitForDeviceSymlink(String devPath) {
@@ -136,8 +136,8 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static String getVolumeNameFromPath(final String volumeUuid, boolean tildeNeeded) {
         if (volumeUuid.startsWith("/dev/storpool/")) {
             return volumeUuid.split("/")[3];
-        }else if(volumeUuid.startsWith("/dev/storpool-byid/")) {
-            return  tildeNeeded ? "~" + volumeUuid.split("/")[3] : volumeUuid.split("/")[3];
+        } else if (volumeUuid.startsWith("/dev/storpool-byid/")) {
+            return tildeNeeded ? "~" + volumeUuid.split("/")[3] : volumeUuid.split("/")[3];
         }
 
         return null;
@@ -161,7 +161,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             sc.add(command);
             sc.add(type, name);
             sc.add("here");
-            if( command.equals("attach")) {
+            if (command.equals("attach")) {
                 sc.add("onRemoteAttached");
                 sc.add("export");
             }
@@ -169,20 +169,19 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 
             String res = sc.execute(parser);
-            if (res != null) {
-                err = String.format("Unable to %s volume %s. Error: %s", command, name, res);
+            if (res == null) {
+                err = null;
+                break;
+            }
+            err = String.format("Unable to %s volume %s. Error: %s", command, name, res);
 
-                if (command.equals("detach")) {
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (Exception ex) {
-                        // don't do anything
-                    }
-                } else {
-                    break;
+            if (command.equals("detach")) {
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (Exception ex) {
+                    // don't do anything
                 }
             } else {
-                err = null;
                 break;
             }
         }
@@ -219,14 +218,14 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         String res = sc.execute(parser);
-        if (res != null) {
-            String err = String.format("Unable to resize volume %s. Error: %s", name, res);
-            SP_LOG(err);
-            log.warn(err);
-            throw new CloudRuntimeException(err);
+        if (res == null) {
+            return true;
         }
 
-        return true;
+        String err = String.format("Unable to resize volume %s. Error: %s", name, res);
+        SP_LOG(err);
+        log.warn(err);
+        throw new CloudRuntimeException(err);
     }
 
     @Override

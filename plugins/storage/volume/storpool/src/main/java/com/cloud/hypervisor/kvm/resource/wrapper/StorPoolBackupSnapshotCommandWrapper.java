@@ -52,8 +52,8 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
         KVMStoragePool secondaryPool = null;
 
         try {
-            final SnapshotObjectTO src = cmd.getSrcTO();
-            final SnapshotObjectTO dst = cmd.getDstTO();
+            final SnapshotObjectTO src = cmd.getSourceTO();
+            final SnapshotObjectTO dst = cmd.getDestinationTO();
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
             SP_LOG("StorpoolBackupSnapshotCommandWrapper.execute: src=" + src.getPath() + "dst=" + dst.getPath());
@@ -88,10 +88,10 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
 
             return new CopyCmdAnswer(snapshot);
         } catch (final Exception e) {
-            final String error = "failed to backup snapshot: " + e.getMessage();
+            final String error = String.format("Failed to backup snapshot with id [%s] with a pool %s, due to %s", cmd.getSourceTO().getId(), cmd.getSourceTO().getDataStore().getUuid(), e.getMessage());
             SP_LOG(error);
             s_logger.debug(error);
-            return new CopyCmdAnswer(error);
+            return new CopyCmdAnswer(cmd, e);
         } finally {
             if (srcPath != null) {
                 StorPoolStorageAdaptor.attachOrDetachVolume("detach", "snapshot", srcPath);

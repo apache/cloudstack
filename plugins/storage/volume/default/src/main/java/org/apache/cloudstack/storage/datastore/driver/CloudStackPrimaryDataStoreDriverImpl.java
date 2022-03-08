@@ -493,20 +493,20 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     @Override
-    public boolean vmInfoNeeded() {
+    public boolean isVmInfoNeeded() {
         return false;
     }
 
     @Override
-    public void provideVMInfo(long vmId, long volumeId) {
+    public void provideVmInfo(long vmId, long volumeId) {
     }
 
     @Override
-    public boolean vmTagsNeeded(String tagKey) {
+    public boolean isVmTagsNeeded(String tagKey) {
         return false;
     }
 
     @Override
-    public void provideVMTags(long vmId, long volumeId, String tagValue) {
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
     }
 }

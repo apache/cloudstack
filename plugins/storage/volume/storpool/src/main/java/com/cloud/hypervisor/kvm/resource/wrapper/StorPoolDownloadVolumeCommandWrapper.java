@@ -56,8 +56,8 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
         KVMStoragePool secondaryPool = null;
 
         try {
-            final VolumeObjectTO src = cmd.getSrcTO();
-            final VolumeObjectTO dst = cmd.getDstTO();
+            final VolumeObjectTO src = cmd.getSourceTO();
+            final VolumeObjectTO dst = cmd.getDestinationTO();
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             SP_LOG("StorpoolDownloadVolumeCommandWrapper.execute: src=" + src.getPath() + " srcName=" + src.getName() + " dst=" + dst.getPath());
 
@@ -144,7 +144,7 @@ public final class StorPoolDownloadVolumeCommandWrapper extends CommandWrapper<S
             final String error = "Failed to copy volume to primary: " + e.getMessage();
             SP_LOG(error);
             s_logger.debug(error);
-            return new CopyCmdAnswer(error);
+            return new CopyCmdAnswer(cmd, e);
         } finally {
             if (dstPath != null) {
                 StorPoolStorageAdaptor.attachOrDetachVolume("detach", "volume", dstPath);

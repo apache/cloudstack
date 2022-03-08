@@ -49,10 +49,11 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
     public Answer execute(final StorPoolModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         String clusterId = getSpClusterId();
         if (clusterId == null) {
+            log.debug(String.format("Could not get StorPool cluster id for a command $s", command.getClass()));
             return new Answer(command, false, "spNotFound");
         }
         try {
-            String volume = attachOrDetachVolume("attach", "volume", command.getVolume());
+            String volume = attachOrDetachVolume("attach", "volume", command.getVolumeName());
             if (volume != null) {
                 return new Answer(command, false, volume);
             } else {
@@ -61,6 +62,7 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                         storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
                                 .getUserInfo(), command.getPool().getType());
                 if (storagepool == null) {
+                    log.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
                     return new Answer(command, false, " Failed to create storage pool");
                 }
 
@@ -70,7 +72,8 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
                 return answer;
             }
         } catch (Exception e) {
-            return new Answer(command, false, e.getMessage());
+            log.debug(String.format("Could not modify storage due to %s", e.getMessage()));
+            return new Answer(command, e);
         }
     }
 

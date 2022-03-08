@@ -28,6 +28,7 @@ import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.StorPoolDownloadTemplateCommand;
@@ -51,8 +52,8 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
     public CopyCmdAnswer execute(final StorPoolDownloadTemplateCommand cmd, final LibvirtComputingResource libvirtComputingResource) {
         String dstPath = null;
         KVMStoragePool secondaryPool = null;
-        DataTO src = cmd.getSrcTO();
-        DataTO dst = cmd.getDstTO();
+        DataTO src = cmd.getSourceTO();
+        DataTO dst = cmd.getDestinationTO();
 
         try {
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
@@ -79,7 +80,7 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
             if (tmpltname == null) {
                 secondaryPool.refresh();
                 final List<KVMPhysicalDisk> disks = secondaryPool.listPhysicalDisks();
-                if (disks == null || disks.isEmpty()) {
+                if (CollectionUtils.isEmpty(disks)) {
                     SP_LOG("Failed to get volumes from pool: " + secondaryPool.getUuid());
                     return new CopyCmdAnswer("Failed to get volumes from pool: " + secondaryPool.getUuid());
                 }
@@ -115,7 +116,7 @@ public final class StorPoolDownloadTemplateCommandWrapper extends CommandWrapper
         } catch (final Exception e) {
             final String error = "Failed to copy template to primary: " + e.getMessage();
             s_logger.debug(error);
-            return new CopyCmdAnswer(error);
+            return new CopyCmdAnswer(cmd, e);
         } finally {
             if (dstPath != null) {
                 StorPoolStorageAdaptor.attachOrDetachVolume("detach", cmd.getObjectType(), dstPath);

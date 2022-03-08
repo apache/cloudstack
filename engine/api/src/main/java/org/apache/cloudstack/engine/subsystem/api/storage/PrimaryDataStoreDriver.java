@@ -105,26 +105,22 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     boolean canHostAccessStoragePool(Host host, StoragePool pool);
 
     /**
-     * intended for storage pools
-     * returns true if additional VM info is needed
+     * Returns true if additional VM info is needed (intended for storage pools).
      */
-    boolean vmInfoNeeded();
+    boolean isVmInfoNeeded();
 
     /**
-     * intended for storage pools
-     * provide additional info for a VM
+     * Provides additional info for a VM (intended for storage pools).
      */
-    void provideVMInfo(long vmId, long volumeId);
+    void provideVmInfo(long vmId, long volumeId);
 
     /**
-     * intended for storage pools
-     * returns true if the storage have to know about the VM's tags
+     * Returns true if the storage have to know about the VM's tags (intended for storage pools).
      */
-    boolean vmTagsNeeded(String tagKey);
+    boolean isVmTagsNeeded(String tagKey);
 
     /**
-     * intended for storage pools
-     * provide added tags of a VM
+     * Provide VM's tags to storage (intended for storage pools).
      */
-    void provideVMTags(long vmId, long volumeId, String tagValue);
+    void provideVmTags(long vmId, long volumeId, String tagValue);
 }

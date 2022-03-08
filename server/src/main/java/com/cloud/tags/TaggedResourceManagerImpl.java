@@ -313,14 +313,12 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         List<VolumeVO> volumeVos = volumeDao.findByInstance(vmId);
         for (VolumeVO volume : volumeVos) {
             DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
-            PrimaryDataStoreDriver dataStoreDriver = dataStore != null
-                    && (dataStore.getDriver() instanceof PrimaryDataStoreDriver)
-                    ? (PrimaryDataStoreDriver) dataStore.getDriver() : null;
-            if (dataStoreDriver == null) {
+            if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
                 continue;
             }
-            if (dataStoreDriver.vmTagsNeeded(key)) {
-                dataStoreDriver.provideVMTags(vmId, volume.getId(), value);
+            PrimaryDataStoreDriver dataStoreDriver = (PrimaryDataStoreDriver) dataStore.getDriver();
+            if (dataStoreDriver.isVmTagsNeeded(key)) {
+                dataStoreDriver.provideVmTags(vmId, volume.getId(), value);
             }
         }
     }
