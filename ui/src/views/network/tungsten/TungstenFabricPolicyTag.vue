@@ -180,7 +180,6 @@ export default {
   beforeCreate () {
     this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('applyTungstenFabricTag')
-    console.log(this.apiParams)
   },
   created () {
     this.fetchData()
