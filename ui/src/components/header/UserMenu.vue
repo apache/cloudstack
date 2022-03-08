@@ -93,7 +93,8 @@ export default {
     }
   },
   created () {
-    this.userInitials = (this.$store.getters.userInfo.firstname.charAt(0) || '') + (this.$store.getters.userInfo.lastname.charAt(0) || '')
+    this.userInitials = (this.$store.getters.userInfo.firstname.toUpperCase().charAt(0) || '') +
+      (this.$store.getters.userInfo.lastname.toUpperCase().charAt(0) || '')
     this.getIcon()
     eventBus.$on('refresh-header', () => {
       this.getIcon()
