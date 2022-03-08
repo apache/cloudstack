@@ -109,9 +109,9 @@ export default {
     fillValue () {
       this.inputValue = this.minDiskSize
       if (this.inputDecorator === 'rootdisksize') {
-        this.inputValue = this.preFillContent.rootdisksize ? this.preFillContent.rootdisksize : this.minDiskSize
+        this.inputValue = this.preFillContent?.rootdisksize ? this.preFillContent.rootdisksize : this.minDiskSize
       } else if (this.inputDecorator === 'size') {
-        this.inputValue = this.preFillContent.size ? this.preFillContent.size : this.minDiskSize
+        this.inputValue = this.preFillContent?.size ? this.preFillContent.size : this.minDiskSize
       }
       this.$emit('update-disk-size', this.inputDecorator, this.inputValue)
     },

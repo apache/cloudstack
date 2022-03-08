@@ -84,6 +84,13 @@
           }"
           :options="groups.opts" />
       </a-form-item>
+      <a-form-item>
+        <template #label>
+          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+        </template>
+        <a-textarea v-model:value="form.userdata">
+        </a-textarea>
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -219,6 +226,14 @@ export default {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
+    sanitizeReverse (value) {
+      const reversedValue = value
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+
+      return reversedValue
+    },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -233,10 +248,15 @@ export default {
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
         }
-        params.group = values.group
+        if (values.group && values.group.length > 0) {
+          params.group = values.group
+        }
+        if (values.userdata && values.userdata.length > 0) {
+          params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        }
         this.loading = true
 
-        api('updateVirtualMachine', params).then(json => {
+        api('updateVirtualMachine', {}, 'POST', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
             duration: 2
