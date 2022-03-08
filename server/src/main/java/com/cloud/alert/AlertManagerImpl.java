@@ -319,7 +319,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 // Calculate new Public IP capacity for Virtual Network
                 if (datacenter.getNetworkType() == NetworkType.Advanced) {
                     createOrUpdateIpCapacity(dcId, null, Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
-                    createOrUpdateIpv6Capacity(dcId, Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, datacenter.getAllocationState());
+                    createOrUpdateIpv6Capacity(dcId, datacenter.getAllocationState());
                 }
 
                 // Calculate new Public IP capacity for Direct Attached Network
@@ -422,20 +422,16 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
-    public void createOrUpdateIpv6Capacity(Long dcId, short capacityType, AllocationState capacityState) {
+    public void createOrUpdateIpv6Capacity(Long dcId, AllocationState capacityState) {
+        final short capacityType = Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
-        int total = 0;
-        int allocated = 0;
         List<CapacityVO>  capacities = _capacityDao.search(capacitySC, null);
-        if (capacityType == Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET) {
-            Pair<Integer, Integer> usedTotal =  ipv6Service.getUsedTotalIpv6SubnetForZone(dcId);
-            total = usedTotal.second();
-            allocated = usedTotal.first();
-        }
-
+        Pair<Integer, Integer> usedTotal =  ipv6Service.getUsedTotalIpv6SubnetForZone(dcId);
+        int total = usedTotal.second();
+        int allocated = usedTotal.first();
         CapacityState state = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
         if (capacities.size() == 0) {
             CapacityVO capacityVO = new CapacityVO(null, dcId, null, null, allocated, total, capacityType);

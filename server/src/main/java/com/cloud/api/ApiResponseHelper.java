@@ -26,7 +26,6 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -369,8 +368,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -809,20 +806,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 String[] range = ip6Range.split("-");
                 vlanResponse.setStartIpv6(range[0]);
                 vlanResponse.setEndIpv6(range[1]);
-
-                IPv6Address first = IPv6Address.fromString(range[0]);
-                IPv6Address last = IPv6Address.fromString(range[1]);
-                IPv6AddressRange ipv6Range = IPv6AddressRange.fromFirstAndLast(first, last);
-                Iterator<IPv6Address> ips = ipv6Range.iterator();
-                int idx = 0;
-                while (ips.hasNext() && idx < 10) {
-                    IPv6Address ip = ips.next();
-                    s_logger.debug(String.format("IPv6Address::%d -- %s", idx, ip.toString()));
-                    if (idx % 2 == 0) {
-                        s_logger.debug(String.format("IPv6Address-added::%s -- %s", ip, ip.add(1)));
-                    }
-                    idx++;
-                }
             }
 
             if (vlan.getNetworkId() != null) {

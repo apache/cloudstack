@@ -44,6 +44,12 @@ public interface Ipv6Service extends PluggableService, Configurable {
             "Indicates whether creation of IPv6 network offering is enabled or not.",
             true);
 
+    static final ConfigKey<Integer> Ipv6PrefixSubnetCleanupInterval = new ConfigKey<Integer>("Advanced", Integer.class,
+            "network.ipv6.prefix.subnet.cleanup.interval",
+            "1800",
+            "Determines how long (in seconds) to wait before deallocating prefix subnets which are in Allocating state. The default value = 1800 seconds.",
+            true);
+
     Pair<Integer, Integer> getUsedTotalIpv6SubnetForPrefix(DataCenterGuestIpv6Prefix prefix);
 
     Pair<Integer, Integer> getUsedTotalIpv6SubnetForZone(long zoneId);

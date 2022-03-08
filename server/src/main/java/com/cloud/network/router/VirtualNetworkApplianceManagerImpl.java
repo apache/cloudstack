@@ -2589,7 +2589,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             sourceCidr.add(network.getCidr());
             destCidr.add(NetUtils.ALL_IP4_CIDRS);
 
-            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
+            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, NetUtils.ALL_PROTO, networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
                     destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
@@ -2608,7 +2608,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final List<String> destCidr = new ArrayList<String>();
         sourceCidr.add(network.getIp6Cidr());
         destCidr.add(NetUtils.ALL_IP6_CIDRS);
-        final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Ipv6Firewall, sourceCidr,
+        final FirewallRule rule = new FirewallRuleVO(null, null, null, null, NetUtils.ALL_PROTO, networkId, network.getAccountId(), network.getDomainId(), Purpose.Ipv6Firewall, sourceCidr,
                 destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
         rules.add(rule);
     }

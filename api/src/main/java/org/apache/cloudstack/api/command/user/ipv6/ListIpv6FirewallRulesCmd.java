@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.ipv6;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +31,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.log4j.Logger;
 
-import com.cloud.network.Ipv6Service;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
@@ -44,8 +41,6 @@ public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd impleme
 
     public static final String APINAME = "listIpv6FirewallRules";
 
-    @Inject
-    Ipv6Service ipv6Service;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -58,12 +53,6 @@ public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd impleme
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "list ipv6 firewall rules by traffic type - ingress or egress")
     private String trafficType;
-
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "list ipv6 firewall rules by protocol")
-    private String protocol;
-
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "list ipv6 firewall rules by action: allow or deny")
-    private String action;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", authorized = {RoleType.Admin})
     private Boolean display;
@@ -93,14 +82,6 @@ public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd impleme
     @Override
     public Long getIpAddressId() {
         return null;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public String getAction() {
-        return action;
     }
 
     @Override

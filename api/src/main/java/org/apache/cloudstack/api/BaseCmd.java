@@ -29,11 +29,6 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import com.cloud.server.ManagementService;
-import com.cloud.server.ResourceIconManager;
-import com.cloud.server.ResourceManagerUtil;
-import com.cloud.server.ResourceMetaDataService;
-import com.cloud.server.TaggedResourceService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -55,6 +50,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkUsageService;
@@ -72,6 +68,11 @@ import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
+import com.cloud.server.ManagementService;
+import com.cloud.server.ResourceIconManager;
+import com.cloud.server.ResourceManagerUtil;
+import com.cloud.server.ResourceMetaDataService;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VolumeApiService;
@@ -207,6 +208,8 @@ public abstract class BaseCmd {
     public AnnotationService annotationService;
     @Inject
     public ResourceIconManager resourceIconManager;
+    @Inject
+    public Ipv6Service ipv6Service;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

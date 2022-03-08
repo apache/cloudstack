@@ -30,6 +30,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
@@ -143,6 +146,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateGuestNetworkIpv6PrefixCmd.class);
+        cmdList.add(ListGuestNetworkIpv6PrefixesCmd.class);
+        cmdList.add(DeleteGuestNetworkIpv6PrefixCmd.class);
         cmdList.add(CreateIpv6FirewallRuleCmd.class);
         cmdList.add(ListIpv6FirewallRulesCmd.class);
         cmdList.add(UpdateIpv6FirewallRuleCmd.class);
@@ -158,7 +164,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                Ipv6NetworkOfferingCreationEnabled
+                Ipv6NetworkOfferingCreationEnabled,
+                Ipv6PrefixSubnetCleanupInterval
         };
     }
 
@@ -501,7 +508,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                         s_logger.info(String.format("Running state scanned on Ipv6GuestPrefixSubnetNetworkMap : %s", subnet.getSubnet()));
                     }
                     try {
-                        if ((new Date()).getTime() - subnet.getUpdated().getTime() < 30*60*1000) {
+                        if ((new Date()).getTime() - subnet.getUpdated().getTime() < Ipv6PrefixSubnetCleanupInterval.value()*1000) {
                             continue;
                         }
                         releaseIpv6Subnet(subnet.getId());

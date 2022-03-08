@@ -38,7 +38,7 @@
         {{ record.gateway || record.ip6gateway }}
       </template>
       <template slot="cidr" slot-scope="record">
-        {{ record.netmask || record.ip6cidr }}
+        {{ record.cidr || record.ip6cidr }}
       </template>
       <template slot="startip" slot-scope="record">
         {{ record.startip || record.startipv6 }}

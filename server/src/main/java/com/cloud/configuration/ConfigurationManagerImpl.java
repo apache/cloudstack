@@ -4117,11 +4117,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 endIPv6 = startIPv6;
             }
 
-            if (startIPv6 == null && endIPv6 == null) {
-                IPv6Network iPv6Network = IPv6Network.fromString(ip6Cidr);
-                if (iPv6Network.getNetmask().asPrefixLength() > Ipv6Service.IPV6_SLAAC_CIDR_NETMASK) {
-                    throw new InvalidParameterValueException(String.format("For IPv6 range, prefix must be /%d or less", Ipv6Service.IPV6_SLAAC_CIDR_NETMASK));
-                }
+            IPv6Network iPv6Network = IPv6Network.fromString(ip6Cidr);
+            if (iPv6Network.getNetmask().asPrefixLength() > Ipv6Service.IPV6_SLAAC_CIDR_NETMASK) {
+                throw new InvalidParameterValueException(String.format("For IPv6 range, prefix must be /%d or less", Ipv6Service.IPV6_SLAAC_CIDR_NETMASK));
             }
         }
 
@@ -4166,9 +4164,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 zoneId = network.getDataCenterId();
                 physicalNetworkId = network.getPhysicalNetworkId();
             }
-        }/* else if (ipv6) {
-            throw new InvalidParameterValueException("Only support IPv6 on extending existed network");
-        }*/
+        }
 
         // Verify that zone exists
         final DataCenterVO zone = _zoneDao.findById(zoneId);
@@ -4176,11 +4172,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
-//        if (ipv6) {
-//            if (network.getGuestType() != GuestType.Shared || zone.isSecurityGroupEnabled()) {
-//                throw new InvalidParameterValueException("Only support IPv6 on extending existed share network without SG");
-//            }
-//        }
         // verify that physical network exists
         PhysicalNetworkVO pNtwk = null;
         if (physicalNetworkId != null) {

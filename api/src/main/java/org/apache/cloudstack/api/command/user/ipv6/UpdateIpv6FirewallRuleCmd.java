@@ -18,8 +18,6 @@ package org.apache.cloudstack.api.command.user.ipv6;
 
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Ipv6Service;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
@@ -41,9 +38,6 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIpv6FirewallRuleCmd.class.getName());
 
     public static final String APINAME = "updateIpv6FirewallRule";
-
-    @Inject
-    Ipv6Service ipv6Service;
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -136,6 +130,10 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public long getEntityOwnerId() {
+        FirewallRule rule = _firewallService.getFirewallRule(id);
+        if (rule != null) {
+            return rule.getAccountId();
+        }
         Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }

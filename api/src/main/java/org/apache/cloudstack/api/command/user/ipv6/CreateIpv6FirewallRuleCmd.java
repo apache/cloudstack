@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.ipv6;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Ipv6Service;
+import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
@@ -50,8 +48,6 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     public static final String APINAME = "createIpv6FirewallRule";
 
-    @Inject
-    Ipv6Service ipv6Service;
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
@@ -174,8 +170,12 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account caller = CallContext.current().getCallingAccount();
-        return caller.getAccountId();
+        Network network = _networkService.getNetwork(networkId);
+        if (network != null) {
+            return network.getAccountId();
+        }
+        Account owner = CallContext.current().getCallingAccount();
+        return owner.getAccountId();
     }
 
     @Override

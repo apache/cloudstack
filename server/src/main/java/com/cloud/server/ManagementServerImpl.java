@@ -119,14 +119,12 @@ import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRule
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
@@ -134,7 +132,6 @@ import org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProvi
 import org.apache.cloudstack.api.command.admin.network.DeletePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
-import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkIsolationMethodsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkServiceProvidersCmd;
@@ -3532,9 +3529,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AcquirePodIpCmdByAdmin.class);
         cmdList.add(ReleasePodIpCmdByAdmin.class);
         cmdList.add(CreateManagementNetworkIpRangeCmd.class);
-        cmdList.add(CreateGuestNetworkIpv6PrefixCmd.class);
-        cmdList.add(ListGuestNetworkIpv6PrefixesCmd.class);
-        cmdList.add(DeleteGuestNetworkIpv6PrefixCmd.class);
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);

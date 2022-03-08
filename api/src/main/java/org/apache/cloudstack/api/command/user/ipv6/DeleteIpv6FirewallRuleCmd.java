@@ -16,10 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ipv6;
 
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,10 +25,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Ipv6Service;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
 @APICommand(name = DeleteIpv6FirewallRuleCmd.APINAME, description = "Deletes a IPv6 firewall rule", responseObject = SuccessResponse.class,
@@ -41,8 +38,6 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteIpv6FirewallRuleCmd.class.getName());
     public static final String APINAME = "deleteIpv6FirewallRule";
 
-    @Inject
-    Ipv6Service ipv6Service;
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -78,6 +73,10 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
+        FirewallRule rule = _firewallService.getFirewallRule(id);
+        if (rule != null) {
+            return rule.getAccountId();
+        }
         Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
     }
