@@ -136,10 +136,11 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
-    private void ensureSingleQueryParameterValue(Map<String, String[]> params) {
+    private void checkSingleQueryParameterValue(Map<String, String[]> params) {
         params.forEach((k, v) -> {
             if (v.length > 1) {
-                String message = String.format("Query parameter '%s' has multiple values %s", k, Arrays.toString(v));
+                String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
+                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
                 s_logger.warn(message);
             }
         });
@@ -167,7 +168,7 @@ public class ApiServlet extends HttpServlet {
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
         Map<String, String[]> reqParams = req.getParameterMap();
-        ensureSingleQueryParameterValue(reqParams);
+        checkSingleQueryParameterValue(reqParams);
         params.putAll(reqParams);
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
