@@ -33,7 +33,7 @@
           {{ userInitials }}
         </a-avatar>
         <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
-          <template #icon><user-outlined />
+          <template #icon><user-outlined /></template>
         </a-avatar>
         <span>{{ nickname() }}</span>
       </span>
