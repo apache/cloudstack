@@ -297,6 +297,7 @@
     </template>
     <template #domainpath="{ text, record }">
       <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid + '?tab=details' }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
     </template>
     <template #zone="{ text, record }">
       <a href="javascript:;">
