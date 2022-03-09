@@ -102,7 +102,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
                     try {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
-                        s_logger.debug("[ignored] interupted while inserting security group rule log.");
+                        s_logger.debug("[ignored] interrupted while inserting security group rule log.");
                     }
                 } else
                     s_logger.warn("Caught another deadlock exception while retrying inserting security group rule log, giving up");

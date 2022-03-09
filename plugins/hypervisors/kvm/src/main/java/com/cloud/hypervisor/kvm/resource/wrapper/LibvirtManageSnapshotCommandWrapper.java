@@ -121,7 +121,7 @@ public final class LibvirtManageSnapshotCommandWrapper extends CommandWrapper<Ma
                         r.confSet("key", primaryPool.getAuthSecret());
                         r.confSet("client_mount_timeout", "30");
                         r.connect();
-                        s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                        s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                         final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                         final Rbd rbd = new Rbd(io);

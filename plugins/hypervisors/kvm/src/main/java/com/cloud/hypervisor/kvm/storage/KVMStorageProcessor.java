@@ -1604,7 +1604,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         r.confSet(CEPH_AUTH_KEY, primaryPool.getAuthSecret());
         r.confSet(CEPH_CLIENT_MOUNT_TIMEOUT, CEPH_DEFAULT_MOUNT_TIMEOUT);
         r.connect();
-        s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
+        s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet(CEPH_MON_HOST));
         return r;
     }
 

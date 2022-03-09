@@ -1542,7 +1542,7 @@ class TestUserLogin(cloudstackTestCase):
             parentdomainid=self.domain.id
         )
         self.cleanup.append(domain)
-        self.debug("Domain: %s is created succesfully." % domain.name)
+        self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
         domains = Domain.list(self.apiclient, id=domain.id, listall=True)
@@ -1818,7 +1818,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             parentdomainid=self.domain.id
         )
         self.cleanup.append(self.child_domain)
-        self.debug("Domain is created succesfully.")
+        self.debug("Domain is created successfully.")
         self.debug(
             "Checking if the created domain is listed in list domains API")
         domains = Domain.list(self.apiclient, id=self.child_domain.id, listall=True)

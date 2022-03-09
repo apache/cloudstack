@@ -122,7 +122,7 @@
         <cs.aspectjrt.version>1.9.6</cs.aspectjrt.version>
         <cs.aws.sdk.version>1.11.940</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
-        <cs.axis.version>1.4</cs.axis.version>
+        <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
         <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
@@ -456,14 +456,14 @@
                 <version>${cs.ehcache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis-jaxrpc</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2-jaxws</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>

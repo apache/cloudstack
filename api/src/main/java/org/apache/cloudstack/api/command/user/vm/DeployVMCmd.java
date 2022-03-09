@@ -607,7 +607,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
         if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
-            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+            throw new InvalidParameterValueException("diskofferingid parameter can't be specified along with datadisktemplatetodiskofferinglist parameter");
         }
         if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
             return new HashMap<Long, DiskOffering>();
