@@ -173,6 +173,7 @@ export default {
       this.filteredItems = []
       this.tableChanged = false
       this.$emit('handle-cancel')
+      this.parentFetchData()
     },
     returnAlgorithmName (name) {
       switch (name) {
