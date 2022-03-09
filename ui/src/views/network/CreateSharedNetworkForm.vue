@@ -665,7 +665,6 @@ export default {
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
-        this.handleNetworkOfferingChange(this.networkOfferings[0])
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -674,6 +673,7 @@ export default {
           this.form.setFieldsValue({
             networkofferingid: 0
           })
+          this.handleNetworkOfferingChange(this.networkOfferings[0])
         } else {
           this.form.setFieldsValue({
             networkofferingid: null
