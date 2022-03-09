@@ -32,7 +32,9 @@
         <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
           {{ userInitials }}
         </a-avatar>
-        <a-avatar v-else class="user-menu-avatar avatar" size="small" icon="user" :style="{ backgroundColor: '#1890ff', color: 'white' }" />
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+          <template #icon><user-outlined />
+        </a-avatar>
         <span>{{ nickname() }}</span>
       </span>
       <template #overlay>
