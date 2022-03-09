@@ -5165,10 +5165,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<Long> accountIds = new ArrayList<Long>();
         for (String accountName : accountNames) {
             Account permittedAccount = _accountDao.findActiveAccount(accountName, domainId);
-            if (permittedAccount != null) {
-                if (permittedAccount.getId() == caller.getId()) {
-                    continue;
-                }
+            if (permittedAccount == null) {
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName);
+            }
+            if (permittedAccount.getId() != caller.getId()) {
                 accountIds.add(permittedAccount.getId());
             }
         }
