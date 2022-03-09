@@ -681,7 +681,7 @@ public class VmwareContext {
                 try {
                     Thread.sleep(CONNECT_RETRY_INTERVAL);
                 } catch (InterruptedException ex) {
-                    s_logger.debug("[ignored] interupted while connecting.");
+                    s_logger.debug("[ignored] interrupted while connecting.");
                 }
             }
         }

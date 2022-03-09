@@ -263,7 +263,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 s_logger.warn("Failed to lock account " + accountId + ", account not found.");
             }
         } catch (Exception e) {
-            s_logger.error("Exception occured while locking account by Quota Alert Manager", e);
+            s_logger.error("Exception occurred while locking account by Quota Alert Manager", e);
             throw e;
         } finally {
             TransactionLegacy.open(opendb).close();

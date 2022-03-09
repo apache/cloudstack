@@ -183,7 +183,7 @@ def createNetworkRules(
                 network.id,
                 vmguestip=vmguestip)
     except Exception as e:
-        self.debug("Exception occured while creating network rules: %s" % e)
+        self.debug("Exception occurred while creating network rules: %s" % e)
         return FAIL
     return PASS
 

@@ -1528,7 +1528,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                     _ipAddrMgr.handleSystemIpRelease(ip);
                     throw new CloudRuntimeException("Failed to enable static nat on system ip for the vm " + vm);
                 } else {
-                    s_logger.warn("Succesfully enabled static nat on system ip " + ip + " for the vm " + vm);
+                    s_logger.warn("Successfully enabled static nat on system ip " + ip + " for the vm " + vm);
                 }
             }
         }
