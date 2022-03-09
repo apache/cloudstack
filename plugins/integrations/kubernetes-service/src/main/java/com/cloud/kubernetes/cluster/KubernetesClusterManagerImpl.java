@@ -784,6 +784,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 String randomPassword = new BigInteger(130, random).toString(32);
                 details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.PASSWORD, randomPassword, false));
                 details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, "networkCleanup", String.valueOf(networkCleanup), true));
+
+                addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.BOOT_MODE, cmd.getBootMode(), true);
+                addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.BOOT_TYPE, cmd.getBootType(), true);
                 kubernetesClusterDetailsDao.saveDetails(details);
             }
         });

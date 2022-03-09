@@ -180,6 +180,30 @@
             }]"
             :placeholder="apiParams.size.description"/>
         </a-form-item>
+        <a-form-item :label="$t('label.boottype')">
+          <a-select
+            v-decorator="['boottype', { initialValue: defaultBootType ? defaultBootType : bootTypes && bootTypes.length > 0 ? bootTypes[0].id : undefined }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0 }" >
+            <a-select-option v-for="bootType in bootTypes" :key="bootType.id">
+              {{ bootType.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.bootmode')">
+          <a-select
+            v-decorator="['bootmode', { initialValue: defaultBootMode ? defaultBootMode : bootModes && bootModes.length > 0 ? bootModes[0].id : undefined }]"
+            showSearch
+            optionFilterProp="children"
+            :filterOption="(input, option) => {
+              return option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0 }" >
+            <a-select-option v-for="bootMode in bootModes" :key="bootMode.id">
+              {{ bootMode.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
         <a-form-item>
           <tooltip-label slot="label" :title="$t('label.keypair')" :tooltip="apiParams.keypair.description"/>
           <a-select
@@ -265,7 +289,17 @@ export default {
       keyPairLoading: false,
       haEnabled: false,
       usePrivateRegistry: false,
-      loading: false
+      loading: false,
+      defaultBootType: 'BIOS',
+      defaultBootMode: 'LEGACY',
+      bootTypes: [
+        { id: 'BIOS', description: 'BIOS' },
+        { id: 'UEFI', description: 'UEFI' }
+      ],
+      bootModes: [
+        { id: 'LEGACY', description: 'LEGACY' },
+        { id: 'SECURE', description: 'SECURE' }
+      ]
     }
   },
   beforeCreate () {
@@ -456,6 +490,12 @@ export default {
         }
         if (this.isValidValueForKey(values, 'keypair') && this.arrayHasItems(this.keyPairs) && this.keyPairs[values.keypair].id != null) {
           params.keypair = this.keyPairs[values.keypair].id
+        }
+        if (this.isValidValueForKey(values, 'boottype')) {
+          params.boottype = values.boottype
+        }
+        if (this.isValidValueForKey(values, 'bootmode')) {
+          params.bootmode = values.bootmode
         }
         if (this.usePrivateRegistry) {
           params.dockerregistryusername = values.dockerregistryusername

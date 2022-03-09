@@ -72,8 +72,10 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.Nic;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -213,12 +215,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     private Pair<ApiConstants.BootType, ApiConstants.BootMode> getClusterBootTypeAndMode() {
         ApiConstants.BootType bootType = ApiConstants.BootType.BIOS;
         ApiConstants.BootMode bootMode = ApiConstants.BootMode.LEGACY;
-        ClusterDetailsVO clusterDetail = clusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_TYPE);
+        KubernetesClusterDetailsVO clusterDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_TYPE);
         if (clusterDetail != null && clusterDetail.getValue() != null && ApiConstants.BootType.UEFI.toString().equals(clusterDetail.getValue())) {
             bootType = ApiConstants.BootType.UEFI;
         }
         if (ApiConstants.BootType.UEFI.equals(bootType)) {
-            clusterDetail = clusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_MODE);
+            clusterDetail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.BOOT_MODE);
             if (clusterDetail != null && clusterDetail.getValue() != null && ApiConstants.BootMode.SECURE.toString().equals(clusterDetail.getValue())) {
                 bootMode = ApiConstants.BootMode.SECURE;
             }
@@ -343,7 +345,13 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             Field f = startVm.getClass().getDeclaredField("id");
             f.setAccessible(true);
             f.set(startVm, vm.getId());
-            itMgr.advanceStart(vm.getUuid(), null, null);
+            UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString());
+            Map<VirtualMachineProfile.Param, Object> additionalParams = new HashMap<>();
+            if (uefiDetail != null) {
+                UserVmManager.addVmUefiBootOptionsToParams(additionalParams, uefiDetail.getName(), uefiDetail.getValue());
+            }
+
+            itMgr.advanceStart(vm.getUuid(), additionalParams, null);
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("Started VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
             }

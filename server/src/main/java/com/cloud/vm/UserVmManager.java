@@ -40,12 +40,14 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import org.apache.log4j.Logger;
 
 /**
  *
  *
  */
 public interface UserVmManager extends UserVmService {
+    static final Logger s_logger = Logger.getLogger(UserVmManager.class);
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
     ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
@@ -133,5 +135,19 @@ public interface UserVmManager extends UserVmService {
     HashMap<Long, List<VmNetworkStatsEntry>> getVmNetworkStatistics(long hostId, String hostName, List<Long> vmIds);
 
     boolean checkIfDynamicScalingCanBeEnabled(VirtualMachine vm, ServiceOffering offering, VirtualMachineTemplate template, Long zoneId);
+
+    static  void addVmUefiBootOptionsToParams(Map<VirtualMachineProfile.Param, Object> params, String bootType, String bootMode) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Adding boot options (%s, %s, %s) into the param map for VM start as UEFI detail(%s=%s) found for the VM",
+                    VirtualMachineProfile.Param.UefiFlag.getName(),
+                    VirtualMachineProfile.Param.BootType.getName(),
+                    VirtualMachineProfile.Param.BootMode.getName(),
+                    bootType,
+                    bootMode));
+        }
+        params.put(VirtualMachineProfile.Param.UefiFlag, "Yes");
+        params.put(VirtualMachineProfile.Param.BootType, bootType);
+        params.put(VirtualMachineProfile.Param.BootMode, bootMode);
+    }
 
 }

@@ -142,6 +142,17 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
             description = "root disk size in GB for each node")
     private Long nodeRootDiskSize;
 
+    @Parameter(name = ApiConstants.BOOT_TYPE, type = CommandType.STRING, required = false,
+            description = "CKS node VM Boot option either custom[UEFI] or default boot [BIOS]. " +
+                    "Not applicable with VMware, as we honour what is defined in the template.",
+            since = "4.17.0.0")
+    private String bootType;
+
+    @Parameter(name = ApiConstants.BOOT_MODE, type = CommandType.STRING, required = false,
+            description = "Boot Mode [Legacy] or [Secure] Applicable when Boot Type Selected is UEFI," +
+                    "otherwise Legacy only for BIOS. Not applicable with VMware, as we honour what is defined in the template.",
+            since = "4.17.0.0")
+    private String bootMode;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -229,6 +240,14 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
         } else {
             return DEFAULT_NODE_ROOT_DISK_SIZE;
         }
+    }
+
+    public String getBootType() {
+        return bootType;
+    }
+
+    public String getBootMode() {
+        return bootMode;
     }
 
     /////////////////////////////////////////////////////

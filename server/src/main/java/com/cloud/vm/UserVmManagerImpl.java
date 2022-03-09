@@ -3101,7 +3101,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getId(), ApiConstants.BootType.UEFI.toString());
         if (uefiDetail != null) {
-            addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
+            UserVmManager.addVmUefiBootOptionsToParams(additonalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
 
         return startVirtualMachine(cmd.getId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(), additonalParams, cmd.getDeploymentPlanner()).first();
@@ -3758,7 +3758,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                         Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap,
                                         Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String type, Long overrideDiskOfferingId) throws InsufficientCapacityException, ResourceUnavailableException,
     ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
-
         _accountMgr.checkAccess(caller, null, true, owner);
 
         if (owner.getState() == Account.State.disabled) {
@@ -4733,7 +4732,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         UserVmDetailVO uefiDetail = userVmDetailsDao.findDetail(cmd.getEntityId(), ApiConstants.BootType.UEFI.toString());
         if (uefiDetail != null) {
-            addVmUefiBootOptionsToParams(additionalParams, uefiDetail.getName(), uefiDetail.getValue());
+            UserVmManager.addVmUefiBootOptionsToParams(additionalParams, uefiDetail.getName(), uefiDetail.getValue());
         }
         if (cmd.getBootIntoSetup() != null) {
             additionalParams.put(VirtualMachineProfile.Param.BootIntoSetup, cmd.getBootIntoSetup());
