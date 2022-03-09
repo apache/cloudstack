@@ -652,3 +652,5 @@ INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
         INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
         WHERE ssh_keypairs.account_id = vm_instance.account_id;
 
+-- PR #6080 Change column `value` size from 255 to 4096 characters, matching the API "updateConfiguration" "value" size
+ALTER TABLE `cloud`.`account_details` MODIFY `value` VARCHAR(4096);
