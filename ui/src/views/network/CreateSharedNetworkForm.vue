@@ -217,7 +217,7 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
-            <a-alert type="warning" v-if="this.networkOfferings === null || this.networkOfferings.length === 0">
+            <a-alert type="warning" v-if="!this.arrayHasItems(this.networkOfferings)">
               <span slot="message" v-html="$t('message.shared.network.offering.warning')" />
             </a-alert>
           </a-form-item>
