@@ -149,7 +149,7 @@ public class KubernetesVersionServiceTest {
         AddKubernetesSupportedVersionCmd cmd = Mockito.mock(AddKubernetesSupportedVersionCmd.class);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(cmd.getSemanticVersion()).thenReturn("1.1.1");
@@ -161,7 +161,7 @@ public class KubernetesVersionServiceTest {
         AddKubernetesSupportedVersionCmd cmd = Mockito.mock(AddKubernetesSupportedVersionCmd.class);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU-1);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         when(cmd.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         CallContext.register(user, account);
@@ -173,7 +173,7 @@ public class KubernetesVersionServiceTest {
         AddKubernetesSupportedVersionCmd cmd = Mockito.mock(AddKubernetesSupportedVersionCmd.class);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE-10);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         when(cmd.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         CallContext.register(user, account);
@@ -185,7 +185,7 @@ public class KubernetesVersionServiceTest {
         AddKubernetesSupportedVersionCmd cmd = Mockito.mock(AddKubernetesSupportedVersionCmd.class);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         when(cmd.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
         CallContext.register(user, account);
@@ -196,7 +196,7 @@ public class KubernetesVersionServiceTest {
     @Test
     public void addKubernetesSupportedVersionIsoUrlTest() throws ResourceAllocationException, NoSuchFieldException {
         AddKubernetesSupportedVersionCmd cmd = Mockito.mock(AddKubernetesSupportedVersionCmd.class);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(cmd.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
@@ -204,7 +204,7 @@ public class KubernetesVersionServiceTest {
         when(cmd.getChecksum()).thenReturn(null);
         when(cmd.getMinimumCpu()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_CPU);
         when(cmd.getMinimumRamSize()).thenReturn(KubernetesClusterService.MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE);
-        Account systemAccount =  new AccountVO("system", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        Account systemAccount =  new AccountVO("system", 1L, "", Account.Type.ADMIN, "uuid");
         when(accountManager.getSystemAccount()).thenReturn(systemAccount);
         PowerMockito.mockStatic(ComponentContext.class);
         when(ComponentContext.inject(Mockito.any(RegisterIsoCmd.class))).thenReturn(new RegisterIsoCmd());
@@ -218,7 +218,7 @@ public class KubernetesVersionServiceTest {
     @Test(expected = CloudRuntimeException.class)
     public void deleteKubernetesSupportedVersionExistingClustersTest() {
         DeleteKubernetesSupportedVersionCmd cmd = Mockito.mock(DeleteKubernetesSupportedVersionCmd.class);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(KubernetesSupportedVersionVO.class));
@@ -231,7 +231,7 @@ public class KubernetesVersionServiceTest {
     @Test
     public void deleteKubernetesSupportedVersionTest() {
         DeleteKubernetesSupportedVersionCmd cmd = Mockito.mock(DeleteKubernetesSupportedVersionCmd.class);
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(KubernetesSupportedVersionVO.class));
@@ -249,7 +249,7 @@ public class KubernetesVersionServiceTest {
     public void updateKubernetesSupportedVersionTest() {
         UpdateKubernetesSupportedVersionCmd cmd = Mockito.mock(UpdateKubernetesSupportedVersionCmd.class);
         when(cmd.getState()).thenReturn(KubernetesSupportedVersion.State.Disabled.toString());
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(KubernetesSupportedVersionVO.class));

@@ -304,7 +304,7 @@ public class CertServiceImpl implements CertService {
 
         final SslCertResponse response = new SslCertResponse();
         final Account account = _accountDao.findByIdIncludingRemoved(cert.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             // find the project
             final Project project = _projectMgr.findByProjectAccountIdIncludingRemoved(account.getId());
             if (project != null)

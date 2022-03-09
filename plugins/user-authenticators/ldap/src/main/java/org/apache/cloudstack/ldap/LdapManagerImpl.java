@@ -378,12 +378,12 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         return linkDomainToLdap(cmd.getDomainId(),cmd.getType(), ldapDomain,cmd.getAccountType());
     }
 
-    private LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType) {
+    private LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, Account.Type accountType) {
         Validate.notNull(type, "type cannot be null. It should either be GROUP or OU");
         Validate.notNull(domainId, "domainId cannot be null.");
         Validate.notEmpty(name, "GROUP or OU name cannot be empty");
         //Account type should be 0 or 2. check the constants in com.cloud.user.Account
-        Validate.isTrue(accountType==0 || accountType==2, "accountype should be either 0(normal user) or 2(domain admin)");
+        Validate.isTrue(accountType== Account.Type.NORMAL || accountType== Account.Type.DOMAIN_ADMIN, "accountype should be either 0(normal user) or 2(domain admin)");
         LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
         LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType, 0));
         DomainVO domain = domainDao.findById(vo.getDomainId());
@@ -393,7 +393,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
         } else {
             domainUuid = domain.getUuid();
         }
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType());
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal());
         return response;
     }
 
@@ -443,7 +443,7 @@ public class LdapManagerImpl extends ComponentLifecycleBase implements LdapManag
             domainUuid = domain.getUuid();
         }
 
-        LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType(), account.getUuid(), cmd.getAccountName());
+        LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType().ordinal(), account.getUuid(), cmd.getAccountName());
         return response;
     }
 

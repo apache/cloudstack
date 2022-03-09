@@ -27,6 +27,7 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -467,7 +468,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     @Override
     public boolean isLockable(AccountVO account) {
-        return (account.getType() == AccountVO.ACCOUNT_TYPE_NORMAL || account.getType() == AccountVO.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        return (account.getType() == Account.Type.NORMAL || account.getType() == Account.Type.DOMAIN_ADMIN);
     }
 
 }

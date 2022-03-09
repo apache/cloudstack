@@ -1864,9 +1864,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (skipProjectNetworks) {
-            sc.setJoinParameters("accountSearch", "typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
         } else {
-            sc.setJoinParameters("accountSearch", "typeEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeEQ", Account.Type.PROJECT);
         }
 
         if (restartRequired != null) {
@@ -4659,7 +4659,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkId = cmd.getNetworkId();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4675,7 +4675,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String keyword = cmd.getKeyword();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4704,7 +4704,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, true, ipVO);
-        } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        } else if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException("Only Root admin can update non-allocated ip addresses");
         }
 

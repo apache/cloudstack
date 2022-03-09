@@ -529,7 +529,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setKubernetesVersionName(version.getName());
         }
         Account account = ApiDBUtils.findAccountById(kubernetesCluster.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());

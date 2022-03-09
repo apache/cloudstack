@@ -926,7 +926,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
 
             final Account backupAccount = accountService.getAccount(vm.getAccountId());
-            if (backupAccount == null || backupAccount.getState() == Account.State.disabled) {
+            if (backupAccount == null || backupAccount.getState() == Account.State.DISABLED) {
                 LOG.debug(String.format("Skip backup for VM [uuid: %s, name: %s] since its account has been removed or disabled.", vm.getUuid(), vm.getInstanceName()));
                 continue;
             }

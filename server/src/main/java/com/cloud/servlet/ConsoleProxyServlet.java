@@ -635,7 +635,7 @@ public class ConsoleProxyServlet extends HttpServlet {
                                 accountObj.getId() + " and caller is a normal user");
                     }
                 } else if (_accountMgr.isDomainAdmin(accountObj.getId())
-                        || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+                        || accountObj.getType() == Account.Type.READ_ONLY_ADMIN) {
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
@@ -674,8 +674,8 @@ public class ConsoleProxyServlet extends HttpServlet {
             account = _accountMgr.getAccount(user.getAccountId());
         }
 
-        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) ||
-            !account.getState().equals(Account.State.enabled)) {
+        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.ENABLED) || (account == null) ||
+            !account.getState().equals(Account.State.ENABLED)) {
             s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
             return false;
         }
@@ -741,7 +741,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             user = userAcctPair.first();
             Account account = userAcctPair.second();
 
-            if (!user.getState().equals(Account.State.enabled) || !account.getState().equals(Account.State.enabled)) {
+            if (!user.getState().equals(Account.State.ENABLED) || !account.getState().equals(Account.State.ENABLED)) {
                 s_logger.debug("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
                     "; accountState: " + account.getState());
                 return false;
