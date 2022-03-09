@@ -24,7 +24,7 @@
       </div>
       <p>
         <strong>{{ $t('label.domainid') }}</strong><br/>
-        <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
+        <router-link :to="{ path: '/domain/' + dedicatedDomainId + '?tab=details' }">{{ dedicatedDomainId }}</router-link>
       </p>
       <p v-if="dedicatedAccountId">
         <strong>{{ $t('label.account') }}</strong><br/>

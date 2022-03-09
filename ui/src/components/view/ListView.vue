@@ -75,7 +75,7 @@
         <span v-if="record.icon && record.icon.base64image">
           <resource-icon :image="record.icon.base64image" size="1x"/>
         </span>
-        <os-logo v-else :osId="record.ostypeid" :osName="record.ostypename" size="lg" />
+        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="lg" />
       </span>
       <span style="min-width: 120px" >
         <QuickView
@@ -292,12 +292,11 @@
       </template>
     </template>
     <template #domain="{ text, record }">
-      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid + '?tab=details' }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #domainpath="{ text, record }">
-      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid + '?tab=details' }">{{ text }}</router-link>
     </template>
     <template #zone="{ text, record }">
       <a href="javascript:;">
