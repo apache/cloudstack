@@ -237,35 +237,41 @@ public class ActionEventUtils {
         }
     }
 
-    private static Ternary<Long, String, String> getResourceDetailsUsingEventTypeAndContext(ApiCommandResourceType resourceType, String eventType) {
+    private static Ternary<Long, String, String> getResourceDetailsUsingEntityClassAndContext(Class<?> entityClass, ApiCommandResourceType resourceType) {
         CallContext context = CallContext.current();
-        Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
-        Long entityId = null;
-        String entityType = null;
+        if (resourceType == null) {
+            resourceType = ApiCommandResourceType.valueFromAssociatedClass(entityClass);
+        }
+        String entityType = resourceType == null ? entityClass.getSimpleName() : resourceType.toString();
         String entityUuid = null;
-        if (entityClass != null){
-            if (resourceType == null) {
-                resourceType = ApiCommandResourceType.valueFromAssociatedClass(entityClass);
+        Long entityId = null;
+        Object param = context.getContextParameter(entityClass);
+        if(param != null){
+            try {
+                entityUuid = getEntityUuid(entityClass, param);
+            } catch (Exception e){
+                s_logger.debug("Caught exception while finding entityUUID, moving on");
             }
-            entityType = resourceType == null ? entityClass.getSimpleName() : resourceType.toString();
-            Object param = context.getContextParameter(entityClass);
-            if(param != null){
-                try {
-                    entityUuid = getEntityUuid(entityClass, param);
-                } catch (Exception e){
-                    s_logger.debug("Caught exception while finding entityUUID, moving on");
-                }
-            }
-            if (param instanceof Long) {
-                entityId = (Long)param;
-            } else if (entityUuid != null) {
-                Object obj = s_entityMgr.findByUuidIncludingRemoved(entityClass, entityUuid);
-                if (obj instanceof InternalIdentity) {
-                    entityId = ((InternalIdentity)obj).getId();
-                }
+        }
+        if (param instanceof Long) {
+            entityId = (Long)param;
+        } else if (entityUuid != null) {
+            Object obj = s_entityMgr.findByUuidIncludingRemoved(entityClass, entityUuid);
+            if (obj instanceof InternalIdentity) {
+                entityId = ((InternalIdentity)obj).getId();
             }
         }
         return new Ternary<>(entityId, entityUuid, entityType);
+    }
+
+    private static Ternary<Long, String, String> getResourceDetailsUsingEventTypeAndContext(ApiCommandResourceType resourceType, String eventType) {
+        Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
+        if (entityClass != null && s_entityMgr.validEntityType(entityClass)) {
+            return getResourceDetailsUsingEntityClassAndContext(entityClass, resourceType);
+        } else if (resourceType != null && resourceType.getAssociatedClass() != null && s_entityMgr.validEntityType(resourceType.getAssociatedClass())) {
+            return getResourceDetailsUsingEntityClassAndContext(resourceType.getAssociatedClass(), resourceType);
+        }
+        return new Ternary<Long, String, String>(null, null, null);
     }
 
     private static String getEntityUuid(Class<?> entityType, Object entityId){
@@ -274,6 +280,9 @@ public class ActionEventUtils {
 
         if (entityId instanceof Long){
             // Its internal db id - use findById
+            if (!s_entityMgr.validEntityType(entityType)) {
+                return null;
+            }
             final Object objVO = s_entityMgr.findByIdIncludingRemoved(entityType, (Long)entityId);
             if (objVO != null) {
                 return ((Identity) objVO).getUuid();
@@ -282,6 +291,9 @@ public class ActionEventUtils {
             try{
                 // In case its an async job the internal db id would be a string because of json deserialization
                 Long internalId = Long.valueOf((String) entityId);
+                if (!s_entityMgr.validEntityType(entityType)) {
+                    return null;
+                }
                 final Object objVO = s_entityMgr.findByIdIncludingRemoved(entityType, internalId);
                 if (objVO != null) {
                     return ((Identity) objVO).getUuid();

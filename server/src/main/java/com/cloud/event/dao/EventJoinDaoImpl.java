@@ -98,7 +98,7 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setResourceType(event.getResourceType());
         ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(event.getResourceType());
         Class<?> clazz = resourceType != null ? resourceType.getAssociatedClass() : null;
-        if (ObjectUtils.allNotNull(resourceId, clazz)) {
+        if (ObjectUtils.allNotNull(resourceId, clazz) && entityMgr.validEntityType(clazz)) {
             final Object objVO = entityMgr.findByIdIncludingRemoved(clazz, resourceId);
             if (objVO instanceof Identity) {
                 responseEvent.setResourceId(((Identity)objVO).getUuid());
