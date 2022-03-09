@@ -217,6 +217,9 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
+            <a-alert type="warning" v-if="this.networkOfferings === null || this.networkOfferings.length === 0">
+              <span slot="message" v-html="$t('message.shared.network.offering.warning')" />
+            </a-alert>
           </a-form-item>
           <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
             <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
