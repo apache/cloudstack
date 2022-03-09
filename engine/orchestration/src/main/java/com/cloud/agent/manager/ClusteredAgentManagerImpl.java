@@ -716,11 +716,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
             } catch (final ClassNotFoundException e) {
-                final String message = String.format("ClassNotFoundException occured when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("ClassNotFoundException occurred when executing taks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } catch (final UnsupportedVersionException e) {
-                final String message = String.format("UnsupportedVersionException occured when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("UnsupportedVersionException occurred when executing taks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } finally {

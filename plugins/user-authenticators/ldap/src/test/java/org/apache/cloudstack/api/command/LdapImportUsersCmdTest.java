@@ -60,7 +60,7 @@ public class LdapImportUsersCmdTest implements LdapConfigurationChanger {
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         ldapImportUsersCmd = spy(new LdapImportUsersCmd(ldapManager, domainService, accountService));
         ldapImportUsersCmd.roleService = roleService;
-        setHiddenField(ldapImportUsersCmd, "accountType", Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        setHiddenField(ldapImportUsersCmd, "accountType", Account.Type.DOMAIN_ADMIN.ordinal());
     }
 
     @Test

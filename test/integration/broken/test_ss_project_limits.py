@@ -214,7 +214,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
             self.cleanup.insert(0, self.projectMember)
             self.project.addAccount(self.apiclient, account=self.projectMember.name)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         self.services["iso"]["zoneid"] = self.zone.id
         try:

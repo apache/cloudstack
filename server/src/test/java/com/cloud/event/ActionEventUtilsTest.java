@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -192,7 +193,7 @@ public class ActionEventUtilsTest {
 
     @Test
     public void testPopulateFirstClassEntities() {
-        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        AccountVO account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);

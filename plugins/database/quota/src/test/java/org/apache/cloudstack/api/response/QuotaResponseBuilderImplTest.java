@@ -152,7 +152,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
         Mockito.when(quotaService.computeAdjustedTime(Mockito.any(Date.class))).thenReturn(new Date());
 
         AccountVO account = new AccountVO();
-        account.setState(Account.State.locked);
+        account.setState(Account.State.LOCKED);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(account);
 
         QuotaCreditsResponse resp = quotaResponseBuilder.addQuotaCredits(accountId, domainId, amount, updatedBy, true);

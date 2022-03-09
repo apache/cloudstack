@@ -19,24 +19,26 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
+        <a-form-item name="volumeid" ref="volumeid">
+          <template #label>
+            <tooltip-label :title="$t('label.volumeid')" :tooltip="apiParams.volumeid.description"/>
+          </template>
           <a-select
             allowClear
-            v-decorator="['volumeid', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
+            v-model:value="form.volumeid"
             @change="onChangeVolume"
             :placeholder="apiParams.volumeid.description"
-            autoFocus
+            v-focus="true"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option
               v-for="volume in listVolumes"
               :key="volume.id">
@@ -44,19 +46,25 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
-            v-decorator="['name']"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item v-if="isQuiesceVm">
-          <tooltip-label slot="label" :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
-          <a-switch v-decorator="['quiescevm', { initialValue: false }]"/>
+        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
+          <template #label>
+            <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
+          </template>
+          <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
-        <a-form-item v-if="!supportsStorageSnapshot">
-          <tooltip-label slot="label" :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
-          <a-switch v-decorator="['asyncbackup', { initialValue: false }]"/>
+        <a-form-item name="asyncbackup" ref="asyncbackup">
+          <template #label>
+            <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
+          </template>
+          <a-switch v-model:checked="form.asyncbackup"/>
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -68,6 +76,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -91,13 +100,20 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createSnapshot')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        volumeid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.loading = true
 
@@ -112,9 +128,8 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
-
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.volumeid = values.volumeid
         params.name = values.name
@@ -156,6 +171,8 @@ export default {
             this.loading = false
             this.closeAction()
           })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onChangeVolume (volumeId) {

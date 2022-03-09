@@ -28,20 +28,22 @@
       @focus="fetchData"
       showSearch>
 
-      <a-tooltip placement="bottom" slot="suffixIcon">
-        <template slot="title">
-          <span>{{ $t('label.projects') }}</span>
-        </template>
-        <span style="font-size: 20px; color: #999; margin-top: -5px">
-          <a-icon v-if="!loading" type="project" />
-          <a-icon v-else type="loading" />
-        </span>
-      </a-tooltip>
+      <template #suffixIcon>
+        <a-tooltip placement="bottom">
+          <template #title>
+            <span>{{ $t('label.projects') }}</span>
+          </template>
+          <span class="custom-suffix-icon">
+            <ProjectOutlined v-if="!loading" />
+            <LoadingOutlined v-else />
+          </span>
+        </a-tooltip>
+      </template>
 
       <a-select-option v-for="(project, index) in projects" :key="index" :label="project.displaytext || project.name">
         <span>
           <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-          <a-icon v-else style="margin-right: 5px" type="project" />
+          <project-outlined v-else style="margin-right: 5px" />
           {{ project.displaytext || project.name }}
         </span>
       </a-select-option>
@@ -108,7 +110,7 @@ export default {
       }
     },
     filterProject (input, option) {
-      return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
   }
 }
@@ -126,5 +128,13 @@ export default {
     padding-top: 5px;
     padding-right: 5px;
   }
+}
+
+.custom-suffix-icon {
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  right: 1px;
+  margin-top: -3px;
 }
 </style>

@@ -17,20 +17,21 @@
 
 <template>
   <a-modal
-    v-model="dedicatedDomainModal"
-    v-ctrl-enter="handleDedicateForm"
+    :visible="dedicatedDomainModal"
     :title="label"
     :closable="true"
     :maskClosable="false"
     :footer="null"
     @cancel="closeModal">
-    <DedicateDomain
-      @domainChange="id => domainId = id"
-      @accountChange="id => dedicatedAccount = id"
-      :error="domainError" />
-    <div :span="24" class="action-button">
-      <a-button @click="closeModal">{{ this.$t('label.cancel') }}</a-button>
-      <a-button type="primary" ref="submit" @click="handleDedicateForm">{{ this.$t('label.ok') }}</a-button>
+    <div v-ctrl-enter="handleDedicateForm">
+      <DedicateDomain
+        @domainChange="id => domainId = id"
+        @accountChange="id => dedicatedAccount = id"
+        :error="domainError" />
+      <div :span="24" class="action-button">
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="handleDedicateForm">{{ $t('label.ok') }}</a-button>
+      </div>
     </div>
   </a-modal>
 </template>

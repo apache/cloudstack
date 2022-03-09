@@ -454,7 +454,7 @@ def create_tunnel(bridge, remote_ip, gre_key, src_host, dst_host, network_uuid):
                       " with GRE key %s" %gre_key)
         return "SUCCESS:%s" % name
     except:
-        logging.debug("An unexpected error occured. Rolling back")
+        logging.debug("An unexpected error occurred. Rolling back")
         if tunnel_setup:
             logging.debug("Deleting GRE interface")
             # Destroy GRE port and interface

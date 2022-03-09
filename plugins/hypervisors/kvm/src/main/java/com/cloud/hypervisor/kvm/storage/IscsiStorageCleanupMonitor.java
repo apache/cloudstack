@@ -159,7 +159,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
             try {
                 Thread.sleep(CLEANUP_INTERVAL_SEC * 1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted between heartbeats.");
+                s_logger.debug("[ignored] interrupted between heartbeats.");
             }
 
             Thread monitorThread = new Thread(new Monitor());
@@ -167,7 +167,7 @@ public class IscsiStorageCleanupMonitor implements Runnable{
             try {
                 monitorThread.join();
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted joining monitor.");
+                s_logger.debug("[ignored] interrupted joining monitor.");
             }
         }
     }

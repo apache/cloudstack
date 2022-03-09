@@ -35,16 +35,16 @@
             <span>
               {{ vm.name }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading"  />
             <a-select
-              :autoFocus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
+              v-focus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
-              v-model="iLb.vmguestip[index]"
+              v-model:value="iLb.vmguestip[index]"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
@@ -58,7 +58,7 @@
           <span>{{ vm.account }}</span>
           <span>{{ vm.zonename }}</span>
           <a-checkbox
-            :autoFocus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
+            v-focus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
             :value="vm.id"
             @change="e => fetchNics(e, index)" />
         </div>
@@ -74,7 +74,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
