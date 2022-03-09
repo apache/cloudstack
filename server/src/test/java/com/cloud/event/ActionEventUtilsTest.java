@@ -259,6 +259,7 @@ public class ActionEventUtilsTest {
         final String resourceUuid = UUID.randomUUID().toString();
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getUuid()).thenReturn(resourceUuid);
+        Mockito.when(entityMgr.validEntityType(VirtualMachine.class)).thenReturn(true);
         Mockito.when(entityMgr.findByIdIncludingRemoved(VirtualMachine.class, resourceId)).thenReturn(vm);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_VM_START, "Test event", resourceId, resourceType);
 
@@ -274,6 +275,7 @@ public class ActionEventUtilsTest {
         final String resourceUuid = UUID.randomUUID().toString();
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getId()).thenReturn(resourceId);
+        Mockito.when(entityMgr.validEntityType(VirtualMachine.class)).thenReturn(true);
         Mockito.when(entityMgr.findByUuidIncludingRemoved(VirtualMachine.class, resourceUuid)).thenReturn(vm);
         CallContext.current().putContextParameter(VirtualMachine.class, resourceUuid);
         ActionEventUtils.onActionEvent(USER_ID, ACCOUNT_ID, account.getDomainId(), EventTypes.EVENT_VM_START, "Test event", null, null);

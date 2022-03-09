@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.account;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -206,5 +207,10 @@ public class CreateAccountCmd extends BaseCmd {
         if (getAccountType() == null && (getRoleId() == null || getRoleId() < 1L)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Neither account type and role ID are not provided");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

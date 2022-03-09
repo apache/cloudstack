@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -213,5 +214,15 @@ public class MigrateVMCmd extends BaseAsyncCmd {
             return getHostId();
         }
         return null;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return virtualMachineId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 }

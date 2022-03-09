@@ -574,6 +574,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().putContextParameter(Volume.class, volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it

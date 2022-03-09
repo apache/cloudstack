@@ -22,12 +22,10 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.network.Network;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -39,9 +37,11 @@ import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
@@ -155,6 +155,16 @@ public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
         }
 
         return dhcpOptionsMap;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getVmId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

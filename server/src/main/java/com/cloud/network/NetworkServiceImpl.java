@@ -3147,6 +3147,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
 
+                    CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
+
                     return pNetwork;
                 }
             });

@@ -386,6 +386,7 @@ export const resourceTypePlugin = {
         case 'NetworkOffering':
         case 'VpcOffering':
         case 'BackupOffering':
+        case 'Zone':
           return resourceType.toLowerCase()
       }
       return ''

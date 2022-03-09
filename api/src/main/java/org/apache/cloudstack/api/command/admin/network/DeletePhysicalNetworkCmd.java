@@ -94,6 +94,11 @@ public class DeletePhysicalNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.PhysicalNetwork;
     }

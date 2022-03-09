@@ -137,6 +137,11 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return ApiCommandResourceType.Volume;
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
     public static String getResultObjectName() {
         return "volume";
     }

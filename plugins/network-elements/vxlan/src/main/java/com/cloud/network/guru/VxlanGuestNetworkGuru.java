@@ -17,6 +17,7 @@
 package com.cloud.network.guru;
 
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -103,7 +104,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     protected void allocateVnetComplete(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId, String vnet) {
         //TODO(VXLAN): Add new event type for vxlan?
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
-            "Assigned Zone vNet: " + vnet + " Network Id: " + network.getId(), null, null, 0);
+            "Assigned Zone vNet: " + vnet + " Network Id: " + network.getId(), dcId, ApiCommandResourceType.Zone.toString(), 0);
     }
 
     @Override

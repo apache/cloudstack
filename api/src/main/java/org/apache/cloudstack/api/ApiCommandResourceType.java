@@ -24,9 +24,12 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.vpc.NetworkACL;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.template.VirtualMachineTemplate;
@@ -70,13 +73,16 @@ public enum ApiCommandResourceType {
     GuestOs(GuestOS.class),
     GuestOsMapping(GuestOSHypervisor.class),
     Network(com.cloud.network.Network.class),
+    NetworkAcl(NetworkACL.class),
+    NetworkAclItem(NetworkACLItem.class),
     Project(com.cloud.projects.Project.class),
     Domain(com.cloud.domain.Domain.class),
     DiskOffering(com.cloud.offering.DiskOffering.class),
     ServiceOffering(com.cloud.offering.ServiceOffering.class),
     NetworkOffering(com.cloud.offering.NetworkOffering.class),
     VpcOffering(com.cloud.network.vpc.VpcOffering.class),
-    BackupOffering(org.apache.cloudstack.backup.BackupOffering.class);
+    BackupOffering(org.apache.cloudstack.backup.BackupOffering.class),
+    Zone(DataCenter.class);
 
     private final Class<?> clazz;
 

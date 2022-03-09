@@ -87,7 +87,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Iso;
+        return ApiCommandResourceType.Template;
     }
 
     @Override
