@@ -309,6 +309,10 @@
       <router-link v-if="$router.resolve('/zone/' + record.zoneid).name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
+    <template #rolename="{ text, record }">
+      <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).name !== '404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </template>
     <template #readonly="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
