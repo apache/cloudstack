@@ -2382,10 +2382,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             Volume volume = volumeDiskProfilePair.first();
             DiskProfile diskProfile = volumeDiskProfilePair.second();
             VolumeVO volumeVO = _volumeDao.findById(volume.getId());
+            Long newDiskOfferingId = diskProfile.getNewDiskOfferingId();
 
-            if (volumeVO.getHypervisorSnapshotReserve() == null) {
+            if (volumeVO.getHypervisorSnapshotReserve() == null || volumeVO.getHypervisorSnapshotReserve() == 0) {
                 // update the volume's hv_ss_reserve (hypervisor snapshot reserve) from a disk offering (used for managed storage)
-                volService.updateHypervisorSnapshotReserveForVolume(getDiskOfferingVO(volumeVO), volumeVO.getId(), getHypervisorType(volumeVO));
+                volService.updateHypervisorSnapshotReserveForVolume(getDiskOfferingForSnapshotReserve(volumeVO, newDiskOfferingId),
+                        volumeVO.getId(), getHypervisorType(volumeVO));
 
                 // hv_ss_reserve field might have been updated; refresh from DB to make use of it in getDataObjectSizeIncludingHypervisorSnapshotReserve
                 volumeVO = _volumeDao.findById(volume.getId());
@@ -2585,8 +2587,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return volume.getSize();
     }
 
-    private DiskOfferingVO getDiskOfferingVO(Volume volume) {
-        Long diskOfferingId = volume.getDiskOfferingId();
+    private DiskOfferingVO getDiskOfferingForSnapshotReserve(Volume volume, Long newDiskOfferingId) {
+        Long diskOfferingId = newDiskOfferingId == null ? volume.getDiskOfferingId() : newDiskOfferingId;
 
         return _diskOfferingDao.findById(diskOfferingId);
     }

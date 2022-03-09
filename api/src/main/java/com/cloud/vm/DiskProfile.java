@@ -44,6 +44,7 @@ public class DiskProfile {
     private String cacheMode;
     private Long minIops;
     private Long maxIops;
+    private Long newDiskOfferingId;
 
     private HypervisorType hyperType;
 
@@ -247,4 +248,11 @@ public class DiskProfile {
         this.maxIops = maxIops;
     }
 
+    public Long getNewDiskOfferingId() {
+        return newDiskOfferingId;
+    }
+
+    public void setNewDiskOfferingId(Long newDiskOfferingId) {
+        this.newDiskOfferingId = newDiskOfferingId;
+    }
 }

@@ -2820,8 +2820,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " is not suitable to migrate volume " + vol.getName());
         }
 
+        DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         HypervisorType hypervisorType = _volsDao.getHypervisorType(volumeId);
         DiskProfile diskProfile = new DiskProfile(vol, diskOffering, hypervisorType);
+        diskProfile.setNewDiskOfferingId(newDiskOffering.getId());
         Pair<Volume, DiskProfile> volumeDiskProfilePair = new Pair<>(vol, diskProfile);
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(volumeDiskProfilePair), destPool)) {
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
@@ -2866,7 +2868,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        DiskOfferingVO newDiskOffering = retrieveAndValidateNewDiskOffering(cmd);
         validateConditionsToReplaceDiskOfferingOfVolume(vol, newDiskOffering, destPool);
 
         if (vm != null) {
