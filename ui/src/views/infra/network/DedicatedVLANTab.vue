@@ -20,9 +20,11 @@
     <a-button
       :disabled="!('dedicateGuestVlanRange' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%"
-      @click="handleOpenModal">{{ $t('label.dedicate.vlan.vni.range') }}</a-button>
+      @click="handleOpenModal">
+      <template #icon><plus-outlined /></template>
+      {{ $t('label.dedicate.vlan.vni.range') }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto; margin-top: 20px;"
@@ -31,7 +33,7 @@
       :dataSource="items"
       :pagination="false"
       :rowKey="record => record.id">
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <a-popconfirm
           :title="`${$t('label.delete')}?`"
           @confirm="handleDelete(record)"
@@ -39,7 +41,12 @@
           :cancelText="$t('label.no')"
           placement="top"
         >
-          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)" icon="delete" type="danger" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('releaseDedicatedGuestVlanRange' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -54,77 +61,69 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
-      v-model="modal"
+      :visible="modal"
       :title="$t('label.dedicate.vlan.vni.range')"
       :maskClosable="false"
       :footer="null"
-      @cancel="modal = false"
-      v-ctrl-enter="handleSubmit">
-      <a-spin :spinning="formLoading">
+      @cancel="modal = false">
+      <a-spin :spinning="formLoading" v-ctrl-enter="handleSubmit">
         <a-form
-          :form="form"
-          @submit="handleSubmit"
-          layout="vertical" >
-          <a-form-item :label="$t('label.vlanrange')">
-            <a-input
-              v-decorator="['range', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
-              autoFocus
-            ></a-input>
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          @finish="handleSubmit"
+          layout="vertical"
+         >
+          <a-form-item name="range" ref="range" :label="$t('label.vlanrange')">
+            <a-input v-model:value="form.range" v-focus="true" />
           </a-form-item>
 
-          <a-form-item :label="$t('label.scope')">
+          <a-form-item name="scope" ref="scope" :label="$t('label.scope')">
             <a-select
-              defaultValue="account"
-              v-model="selectedScope"
+              v-model:value="form.scope"
               @change="handleScopeChange"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
               <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.domain')">
+          <a-form-item name="domain" ref="domain" :label="$t('label.domain')">
             <a-select
               @change="handleDomainChange"
-              v-decorator="['domain', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
+              v-model:value="form.domain"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="domain in domains" :key="domain.id" :value="domain.id" :label="domain.path || domain.name || domain.description">
                 <span>
                   <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="block" style="margin-right: 5px" />
+                  <block-outlined v-else style="margin-right: 5px" />
                   {{ domain.path || domain.name || domain.description }}
                 </span>
               </a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.account')" v-if="selectedScope === 'account'">
+          <a-form-item name="account" ref="account" :label="$t('label.account')" v-if="form.scope === 'account'">
             <a-select
-              v-decorator="['account', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
+              v-model:value="form.account"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="account in accounts"
@@ -132,22 +131,20 @@
                 :value="account.name">
                 <span>
                   <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="team" style="margin-right: 5px" />
+                  <team-outlined v-else style="margin-right: 5px" />
                   {{ account.name }}
                 </span>
               </a-select-option>
             </a-select>
           </a-form-item>
 
-          <a-form-item :label="$t('label.project')" v-if="selectedScope === 'project'">
+          <a-form-item name="project" ref="project" :label="$t('label.project')" v-if="form.scope === 'project'">
             <a-select
-              v-decorator="['project', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
+              v-model:value="form.project"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="project in projects"
@@ -156,7 +153,7 @@
                 :label="project.name">
                 <span>
                   <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="project" style="margin-right: 5px" />
+                  <project-outlined v-else style="margin-right: 5px" />
                   {{ project.name }}
                 </span>
               </a-select-option>
@@ -170,11 +167,11 @@
         </a-form>
       </a-spin>
     </a-modal>
-
   </a-spin>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -205,7 +202,6 @@ export default {
       accounts: [],
       projects: [],
       modal: false,
-      selectedScope: 'account',
       totalCount: 0,
       page: 1,
       pageSize: 10,
@@ -224,13 +220,10 @@ export default {
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     this.fetchData()
@@ -243,8 +236,19 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        scope: 'account'
+      })
+      this.rules = reactive({
+        range: [{ required: true, message: this.$t('label.required') }],
+        domain: [{ required: true, message: this.$t('label.required') }],
+        account: [{ required: true, message: this.$t('label.required') }],
+        project: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
-      this.form.resetFields()
       this.formLoading = true
       api('listDedicatedGuestVlanRanges', {
         physicalnetworkid: this.resource.id,
@@ -272,14 +276,10 @@ export default {
       }).then(response => {
         this.domains = response.listdomainsresponse.domain || []
         if (this.domains.length > 0) {
-          this.form.setFieldsValue({
-            domain: this.domains[0].id
-          })
-          this.fetchAccounts(this.form.getFieldValue('domain'))
+          this.form.domain = this.domains[0].id
+          this.fetchAccounts(this.form.domain)
         } else {
-          this.form.setFieldsValue({
-            domain: null
-          })
+          this.form.domain = null
         }
         this.formLoading = false
       }).catch(error => {
@@ -298,13 +298,9 @@ export default {
         this.accounts = response.listaccountsresponse.account
           ? response.listaccountsresponse.account : []
         if (this.accounts.length > 0) {
-          this.form.setFieldsValue({
-            account: this.accounts[0].name
-          })
+          this.form.account = this.accounts[0].name
         } else {
-          this.form.setFieldsValue({
-            account: null
-          })
+          this.form.account = null
         }
         this.formLoading = false
       }).catch(error => {
@@ -322,13 +318,9 @@ export default {
         this.projects = response.listprojectsresponse.project
           ? response.listprojectsresponse.project : []
         if (this.projects.length > 0) {
-          this.form.setFieldsValue({
-            project: this.projects[0].id
-          })
+          this.form.project = this.projects[0].id
         } else {
-          this.form.setFieldsValue({
-            project: null
-          })
+          this.form.project = null
         }
         this.formLoading = false
       }).catch(error => {
@@ -371,12 +363,10 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.formLoading) return
-      this.form.validateFieldsAndScroll(errors => {
-        if (errors) return
-
+      this.formRef.value.validate().then(() => {
         this.formLoading = true
         this.parentStartLoading()
-        const fieldValues = this.form.getFieldsValue()
+        const fieldValues = toRaw(this.form)
 
         api('dedicateGuestVlanRange', {
           physicalnetworkid: this.resource.id,
@@ -392,15 +382,17 @@ export default {
           this.modal = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     fetchBasedOnScope (e) {
-      if (e === 'account') this.fetchAccounts(this.form.getFieldValue('domain'))
-      if (e === 'project') this.fetchProjects(this.form.getFieldValue('domain'))
+      if (e === 'account') this.fetchAccounts(this.form.domain)
+      if (e === 'project') this.fetchProjects(this.form.domain)
     },
     handleDomainChange () {
       setTimeout(() => {
-        this.fetchBasedOnScope(this.selectedScope)
+        this.fetchBasedOnScope(this.form.scope)
       }, 100)
     },
     handleScopeChange (e) {
@@ -409,6 +401,7 @@ export default {
     handleOpenModal () {
       this.modal = true
       this.formLoading = true
+      this.initForm()
       this.fetchDomains()
     },
     handleChangePage (page, pageSize) {

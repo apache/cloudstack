@@ -24,52 +24,55 @@
       :rowKey="record => record.id"
       :pagination="false"
       :loading="loading">
-      <div slot="icon" slot-scope="text, record">
+      <template #icon="{ record }">
         <label class="interval-icon">
           <span v-if="record.intervaltype===0">
-            <a-icon type="clock-circle" />
+            <clock-circle-outlined />
           </span>
           <span class="custom-icon icon-daily" v-else-if="record.intervaltype===1">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-weekly" v-else-if="record.intervaltype===2">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-monthly" v-else-if="record.intervaltype===3">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
         </label>
-      </div>
-      <div slot="time" slot-scope="text, record">
+      </template>
+      <template #time="{ record }">
         <label class="interval-content">
           <span v-if="record.intervaltype===0">{{ record.schedule + $t('label.min.past.hour') }}</span>
           <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
         </label>
-      </div>
-      <div slot="interval" slot-scope="text, record">
+      </template>
+      <template #interval="{ record }">
         <span v-if="record.intervaltype===2">
           {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
         </span>
         <span v-else-if="record.intervaltype===3">
           {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
         </span>
-      </div>
-      <div slot="timezone" slot-scope="text, record">
+      </template>
+      <template #timezone="{ record }">
         <label>{{ getTimeZone(record.timezone) }}</label>
-      </div>
-      <div slot="tags" slot-scope="text, record">
+      </template>
+      <template #tags="{ record }">
         <a-tag v-for="(tag, index) in record.tags" :key="index">{{ tag.key + '=' + tag.value }}</a-tag>
-      </div>
-      <div slot="action" class="account-button-action" slot-scope="text, record">
-        <tooltip-button
-          tooltipPlacement="top"
-          :tooltip="$t('label.delete')"
-          type="danger"
-          icon="close"
-          size="small"
-          :loading="actionLoading"
-          @click="handleClickDelete(record)" />
-      </div>
+      </template>
+      <template #action="{ record }">
+        <div class="account-button-action">
+          <tooltip-button
+            tooltipPlacement="top"
+            :tooltip="$t('label.delete')"
+            type="primary"
+            :danger="true"
+            icon="close-outlined"
+            size="small"
+            :loading="actionLoading"
+            @onClick="handleClickDelete(record)" />
+        </div>
+      </template>
     </a-table>
   </div>
 </template>
@@ -112,38 +115,38 @@ export default {
         title: '',
         dataIndex: 'icon',
         width: 30,
-        scopedSlots: { customRender: 'icon' }
+        slots: { customRender: 'icon' }
       },
       {
         title: this.$t('label.time'),
         dataIndex: 'schedule',
-        scopedSlots: { customRender: 'time' }
+        slots: { customRender: 'time' }
       },
       {
         title: '',
         dataIndex: 'interval',
-        scopedSlots: { customRender: 'interval' }
+        slots: { customRender: 'interval' }
       },
       {
         title: this.$t('label.timezone'),
         dataIndex: 'timezone',
-        scopedSlots: { customRender: 'timezone' }
+        slots: { customRender: 'timezone' }
       },
       {
         title: this.$t('label.keep'),
         dataIndex: 'maxsnaps',
-        scopedSlots: { customRender: 'keep' }
+        slots: { customRender: 'keep' }
       },
       {
         title: this.$t('label.tags'),
         dataIndex: 'tags',
-        scopedSlots: { customRender: 'tags' }
+        slots: { customRender: 'tags' }
       },
       {
         title: this.$t('label.action'),
         dataIndex: 'action',
         width: 50,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       }
     ]
   },
@@ -151,8 +154,11 @@ export default {
     this.dataSchedules = this.dataSource
   },
   watch: {
-    dataSource (newData, oldData) {
-      this.dataSchedules = newData
+    dataSource: {
+      deep: true,
+      handler (newData) {
+        this.dataSchedules = newData
+      }
     }
   },
   methods: {
@@ -217,7 +223,7 @@ export default {
     }
   }
 
-  /deep/.ant-btn > .anticon {
+  :deep(.ant-btn) > .anticon {
     line-height: 1.8;
   }
 </style>

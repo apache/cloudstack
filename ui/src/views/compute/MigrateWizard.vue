@@ -18,14 +18,16 @@
 <template>
   <div class="form" v-ctrl-enter="handleKeyboardSubmit">
     <a-alert type="warning">
-      <span slot="message" v-html="$t('message.migrate.instance.to.host')" />
+      <template #message>
+        <span v-html="$t('message.migrate.instance.to.host')" />
+      </template>
     </a-alert>
     <a-input-search
       class="top-spaced"
       :placeholder="$t('label.search')"
-      v-model="searchQuery"
+      v-model:value="searchQuery"
       @search="fetchData"
-      autoFocus />
+      v-focus="true" />
     <a-table
       class="top-spaced"
       size="small"
@@ -35,44 +37,40 @@
       :dataSource="hosts"
       :pagination="false"
       :rowKey="record => record.id">
-      <div slot="name" slot-scope="record">
+      <template #name="{ record }">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.instance.host.auto.assign')" placement="top">
-          <a-icon type="info-circle" class="table-tooltip-icon" />
+          <info-circle-outlined class="table-tooltip-icon" />
         </a-tooltip>
-      </div>
-      <div slot="suitability" slot-scope="record">
-        <a-icon
+      </template>
+      <template #suitability="{ record }">
+        <check-circle-two-tone
           class="host-item__suitability-icon"
-          type="check-circle"
-          theme="twoTone"
           twoToneColor="#52c41a"
           v-if="record.suitableformigration" />
-        <a-icon
+        <close-circle-two-tone
           class="host-item__suitability-icon"
-          type="close-circle"
-          theme="twoTone"
           twoToneColor="#f5222d"
           v-else />
-      </div>
-      <div slot="memused" slot-scope="record">
+      </template>
+      <template #memused="{ record }">
         <span v-if="record.memoryused">
           {{ $bytesToHumanReadableSize(record.memoryused) }}
         </span>
-      </div>
-      <div slot="memoryallocatedpercentage" slot-scope="record">
+      </template>
+      <template #memoryallocatedpercentage="{ record }">
         {{ record.memoryallocatedpercentage }}
-      </div>
-      <div slot="cluster" slot-scope="record">
+      </template>
+      <template #cluster="{ record }">
         {{ record.clustername }}
-      </div>
-      <div slot="pod" slot-scope="record">
+      </template>
+      <template #pod="{ record }">
         {{ record.podname }}
-      </div>
-      <div slot="requiresstoragemigration" slot-scope="record">
+      </template>
+      <template #requiresstoragemigration="{ record }">
         {{ record.requiresStorageMotion ? $t('label.yes') : $t('label.no') }}
-      </div>
-      <template slot="select" slot-scope="record">
+      </template>
+      <template #select="{record}">
         <a-radio
           class="host-item__radio"
           @click="handleSelectedHostChange(record)"
@@ -91,7 +89,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -99,9 +97,11 @@
     <a-form-item
       v-if="isUserVm"
       class="top-spaced">
-      <tooltip-label slot="label" :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
+      <template #label>
+        <tooltip-label :title="$t('label.migrate.with.storage')" :tooltip="$t('message.migrate.with.storage')"/>
+      </template>
       <a-switch
-        v-model="migrateWithStorage"
+        v-model:checked="migrateWithStorage"
         :disabled="!selectedHost || !selectedHost.id || selectedHost.id === -1" />
     </a-form-item>
     <instance-volumes-storage-pool-select-list-view
@@ -119,7 +119,6 @@
       <a-button type="primary" ref="submit" :disabled="!selectedHost.id" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -151,11 +150,11 @@ export default {
       columns: [
         {
           title: this.$t('label.hostid'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.suitability'),
-          scopedSlots: { customRender: 'suitability' }
+          slots: { customRender: 'suitability' }
         },
         {
           title: this.$t('label.cpuused'),
@@ -163,27 +162,27 @@ export default {
         },
         {
           title: this.$t('label.memoryallocated'),
-          scopedSlots: { customRender: 'memoryallocatedpercentage' }
+          slots: { customRender: 'memoryallocatedpercentage' }
         },
         {
           title: this.$t('label.memused'),
-          scopedSlots: { customRender: 'memused' }
+          slots: { customRender: 'memused' }
         },
         {
           title: this.$t('label.cluster'),
-          scopedSlots: { customRender: 'cluster' }
+          slots: { customRender: 'cluster' }
         },
         {
           title: this.$t('label.pod'),
-          scopedSlots: { customRender: 'pod' }
+          slots: { customRender: 'pod' }
         },
         {
           title: this.$t('label.storage.migration.required'),
-          scopedSlots: { customRender: 'requiresstoragemigration' }
+          slots: { customRender: 'requiresstoragemigration' }
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ],
       migrateWithStorage: false,

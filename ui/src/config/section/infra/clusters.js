@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'cluster',
   title: 'label.clusters',
-  icon: 'cluster',
+  icon: 'cluster-outlined',
   permission: ['listClustersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
@@ -41,37 +42,37 @@ export default {
   resourceType: 'Cluster',
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'resources',
-    component: () => import('@/views/infra/Resources.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/infra/Resources.vue')))
   }, {
     name: 'settings',
-    component: () => import('@/components/view/SettingsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
     name: 'comments',
-    component: () => import('@/components/view/AnnotationsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   actions: [
     {
       api: 'addCluster',
-      icon: 'plus',
+      icon: 'plus-outlined',
       label: 'label.add.cluster',
       docHelp: 'adminguide/installguide/configuration.html#adding-a-cluster',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/ClusterAdd.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterAdd.vue')))
     },
     {
       api: 'updateCluster',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
       args: ['clustername']
     },
     {
       api: 'updateCluster',
-      icon: 'play-circle',
+      icon: 'play-circle-outlined',
       label: 'label.action.enable.cluster',
       message: 'message.action.enable.cluster',
       docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
@@ -81,7 +82,7 @@ export default {
     },
     {
       api: 'updateCluster',
-      icon: 'pause-circle',
+      icon: 'pause-circle-outlined',
       label: 'label.action.disable.cluster',
       message: 'message.action.disable.cluster',
       docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
@@ -91,7 +92,7 @@ export default {
     },
     {
       api: 'updateCluster',
-      icon: 'plus-square',
+      icon: 'plus-square-outlined',
       label: 'label.action.manage.cluster',
       message: 'message.action.manage.cluster',
       dataView: true,
@@ -100,7 +101,7 @@ export default {
     },
     {
       api: 'updateCluster',
-      icon: 'minus-square',
+      icon: 'minus-square-outlined',
       label: 'label.action.unmanage.cluster',
       message: 'message.action.unmanage.cluster',
       dataView: true,
@@ -109,7 +110,7 @@ export default {
     },
     {
       api: 'enableOutOfBandManagementForCluster',
-      icon: 'plus-circle',
+      icon: 'plus-circle-outlined',
       label: 'label.outofbandmanagement.enable',
       message: 'label.outofbandmanagement.enable',
       dataView: true,
@@ -125,7 +126,7 @@ export default {
     },
     {
       api: 'disableOutOfBandManagementForCluster',
-      icon: 'minus-circle',
+      icon: 'minus-circle-outlined',
       label: 'label.outofbandmanagement.disable',
       message: 'label.outofbandmanagement.disable',
       dataView: true,
@@ -141,7 +142,7 @@ export default {
     },
     {
       api: 'enableHAForCluster',
-      icon: 'eye',
+      icon: 'eye-outlined',
       label: 'label.ha.enable',
       message: 'label.ha.enable',
       dataView: true,
@@ -157,7 +158,7 @@ export default {
     },
     {
       api: 'disableHAForCluster',
-      icon: 'eye-invisible',
+      icon: 'eye-invisible-outlined',
       label: 'label.ha.disable',
       message: 'label.ha.disable',
       dataView: true,
@@ -173,7 +174,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting',
+      icon: 'setting-outlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       dataView: true,
@@ -186,7 +187,7 @@ export default {
     },
     {
       api: 'deleteCluster',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.delete.cluster',
       message: 'message.action.delete.cluster',
       dataView: true

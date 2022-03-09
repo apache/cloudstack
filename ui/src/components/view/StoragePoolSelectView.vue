@@ -20,7 +20,7 @@
     <a-input-search
       class="top-spaced"
       :placeholder="$t('label.search')"
-      v-model="searchQuery"
+      v-model:value="searchQuery"
       style="margin-bottom: 10px;"
       @search="fetchStoragePools"
       autoFocus />
@@ -32,42 +32,38 @@
       :dataSource="storagePools"
       :pagination="false"
       :rowKey="record => record.id">
-      <span slot="suitabilityCustomTitle">
+      <template #suitabilityCustomTitle>
         {{ $t('label.suitability') }}
         <a-tooltip :title="$t('message.volume.state.primary.storage.suitability')" placement="top">
-          <a-icon type="info-circle" class="table-tooltip-icon" />
+          <info-circle-outlined class="table-tooltip-icon" />
         </a-tooltip>
-      </span>
-      <div slot="name" slot-scope="record">
+      </template>
+      <template #name="{ record }">
         {{ record.name }}
         <a-tooltip v-if="record.name === $t('label.auto.assign')" :title="$t('message.migrate.volume.pool.auto.assign')" placement="top">
-          <a-icon type="info-circle" class="table-tooltip-icon" />
+          <info-circle-outlined class="table-tooltip-icon" />
         </a-tooltip>
-      </div>
-      <div slot="suitability" slot-scope="record">
-        <a-icon
+      </template>
+      <template #suitability="{ record }">
+        <check-circle-two-tone
           class="host-item__suitability-icon"
-          type="check-circle"
-          theme="twoTone"
           twoToneColor="#52c41a"
           v-if="record.suitableformigration" />
-        <a-icon
+        <close-circle-two-tone
           class="host-item__suitability-icon"
-          type="close-circle"
-          theme="twoTone"
           twoToneColor="#f5222d"
           v-else />
-      </div>
-      <div slot="disksizetotal" slot-scope="record">
+      </template>
+      <template #disksizetotal="{ record }">
         <span v-if="record.disksizetotal">{{ $bytesToHumanReadableSize(record.disksizetotal) }}</span>
-      </div>
-      <div slot="disksizeused" slot-scope="record">
+      </template>
+      <template #disksizeused="{ record }">
         <span v-if="record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizeused) }}</span>
-      </div>
-      <div slot="disksizefree" slot-scope="record">
+      </template>
+      <template #disksizefree="{ record }">
         <span v-if="record.disksizetotal && record.disksizeused">{{ $bytesToHumanReadableSize(record.disksizetotal * 1 - record.disksizeused * 1) }}</span>
-      </div>
-      <template slot="select" slot-scope="record">
+      </template>
+      <template #select="{ record }">
         <a-tooltip placement="top" :title="record.state !== 'Up' ? $t('message.primary.storage.invalid.state') : ''">
           <a-radio
             :disabled="record.id !== -1 && record.state !== 'Up'"
@@ -88,7 +84,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -137,7 +133,7 @@ export default {
       columns: [
         {
           title: this.$t('label.storageid'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.clusterid'),
@@ -149,27 +145,26 @@ export default {
         },
         {
           title: this.$t('label.disksizetotal'),
-          scopedSlots: { customRender: 'disksizetotal' }
+          slots: { customRender: 'disksizetotal' }
         },
         {
           title: this.$t('label.disksizeused'),
-          scopedSlots: { customRender: 'disksizeused' }
+          slots: { customRender: 'disksizeused' }
         },
         {
           title: this.$t('label.disksizefree'),
-          scopedSlots: { customRender: 'disksizefree' }
+          slots: { customRender: 'disksizefree' }
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }
   },
   created () {
     if (this.suitabilityEnabled) {
-      this.columns.splice(1, 0, { slots: { title: 'suitabilityCustomTitle' }, scopedSlots: { customRender: 'suitability' } }
-      )
+      this.columns.splice(1, 0, { title: 'suitabilityCustomTitle', slots: 'suitability' })
     }
     this.preselectStoragePool()
     this.fetchStoragePools()

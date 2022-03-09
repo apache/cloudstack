@@ -21,32 +21,33 @@
       <a-button
         :disabled="!('associateIpAddress' in $store.getters.apis) || resource.type === 'Shared'"
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-bottom: 15px"
         @click="onShowAcquireIp">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.acquire.new.ip') }}
       </a-button>
       <a-button
         v-if="(('disassociateIpAddress' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-        type="danger"
-        icon="delete"
+        type="primary"
+        danger
         style="width: 100%; margin-bottom: 15px"
         @click="bulkActionConfirmation()">
+        <template #icon><delete-outlined /></template>
         {{ $t('label.action.bulk.release.public.ip.address') }}
       </a-button>
       <div v-if="$route.path.startsWith('/vpc')">
-        Select Tier:
+        {{ $t('label.select.tier') + ':' }}
         <a-select
-          autoFocus
+          v-focus="true"
           style="width: 40%; margin-left: 15px;margin-bottom: 15px"
           :loading="fetchLoading"
           defaultActiveFirstOption
-          :value="vpcTier"
+          v-model:value="vpcTier"
           @change="handleTierSelect"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option key="all" value="">
             {{ $t('label.view.all') }}
@@ -64,34 +65,35 @@
         :rowKey="item => item.id"
         :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
         :pagination="false" >
-        <template slot="ipaddress" slot-scope="text, record">
+        <template #ipaddress="{ text, record }">
           <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/publicip/' + record.id }" >{{ text }} </router-link>
           <div v-else>{{ text }}</div>
           <a-tag v-if="record.issourcenat === true">source-nat</a-tag>
         </template>
 
-        <template slot="state" slot-scope="text, record">
+        <template #state="{ record }">
           <status :text="record.state" displayText />
         </template>
 
-        <template slot="virtualmachineid" slot-scope="text, record">
-          <a-icon type="desktop" v-if="record.virtualmachineid" />
+        <template #virtualmachineid="{ record }">
+          <desktop-outlined v-if="record.virtualmachineid" />
           <router-link :to="{ path: '/vm/' + record.virtualmachineid }" > {{ record.virtualmachinename || record.virtualmachineid }} </router-link>
         </template>
 
-        <template slot="associatednetworkname" slot-scope="text, record">
+        <template #associatednetworkname="{ record }">
           <router-link v-if="record.forvirtualnetwork === true" :to="{ path: '/guestnetwork/' + record.associatednetworkid }" > {{ record.associatednetworkname || record.associatednetworkid }} </router-link>
           <div v-else>{{ record.networkname }}</div>
         </template>
 
-        <template slot="action" slot-scope="text, record">
+        <template #action="{ record }">
           <tooltip-button
             v-if="record.issourcenat !== true && record.forvirtualnetwork === true"
             :tooltip="$t('label.action.release.ip')"
-            type="danger"
-            icon="delete"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
             :disabled="!('disassociateIpAddress' in $store.getters.apis)"
-            @click="releaseIpAddress(record)" />
+            @onClick="releaseIpAddress(record)" />
         </template>
       </a-table>
       <a-divider/>
@@ -106,7 +108,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -118,30 +120,31 @@
       :closable="true"
       :footer="null"
       @cancel="onCloseModal"
-      v-ctrl-enter="acquireIpAddress"
       centered
       width="450px">
-      <a-spin :spinning="acquireLoading">
+      <a-spin :spinning="acquireLoading" v-ctrl-enter="acquireIpAddress">
         <a-alert :message="$t('message.action.acquire.ip')" type="warning" />
-        <a-form-item :label="$t('label.ipaddress')">
-          <a-select
-            autoFocus
-            style="width: 100%;"
-            v-model="acquireIp"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option
-              v-for="ip in listPublicIpAddress"
-              :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <div :span="24" class="action-button">
-          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
-        </div>
+        <a-form layout="vertical" style="margin-top: 10px">
+          <a-form-item :label="$t('label.ipaddress')">
+            <a-select
+              v-focus="true"
+              style="width: 100%;"
+              v-model:value="acquireIp"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option
+                v-for="ip in listPublicIpAddress"
+                :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button ref="submit" type="primary" @click="acquireIpAddress">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
       </a-spin>
     </a-modal>
     <bulk-action-view
@@ -211,26 +214,26 @@ export default {
         {
           title: this.$t('label.ipaddress'),
           dataIndex: 'ipaddress',
-          scopedSlots: { customRender: 'ipaddress' }
+          slots: { customRender: 'ipaddress' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.vm'),
           dataIndex: 'virtualmachineid',
-          scopedSlots: { customRender: 'virtualmachineid' }
+          slots: { customRender: 'virtualmachineid' }
         },
         {
           title: this.$t('label.network'),
           dataIndex: 'associatednetworkname',
-          scopedSlots: { customRender: 'associatednetworkname' }
+          slots: { customRender: 'associatednetworkname' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ],
       showAcquireIp: false,
@@ -243,11 +246,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   inject: ['parentFetchData'],
@@ -369,7 +375,7 @@ export default {
       })
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -381,7 +387,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -401,7 +407,7 @@ export default {
         id: ip.id
       }).then(response => {
         const jobId = response.disassociateipaddressresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.release.ip'),
           description: ip.id,
@@ -409,14 +415,14 @@ export default {
           successMessage: this.$t('message.success.release.ip'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: ip.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.release.ip.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, ip.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: ip.id, state: 'failed' })
             }
             this.fetchData()
           },

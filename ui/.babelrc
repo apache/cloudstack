@@ -1,4 +1,7 @@
 {
+  "plugins": [
+    ["import", { "libraryName": "ant-design-vue", "libraryDirectory": "lib"}, "ant-design-vue"]
+  ],
   "env": {
     "test": {
       "plugins": ["require-context-hook"]

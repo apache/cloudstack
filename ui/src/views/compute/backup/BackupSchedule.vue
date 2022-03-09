@@ -24,49 +24,50 @@
       :rowKey="record => record.virtualmachineid"
       :pagination="false"
       :loading="loading">
-      <div slot="icon" slot-scope="text, record">
+      <template #icon="{ text, record }" :name="text">
         <label class="interval-icon">
           <span v-if="record.intervaltype==='HOURLY'">
-            <a-icon type="clock-circle" />
+            <clock-circle-outlined />
           </span>
           <span class="custom-icon icon-daily" v-else-if="record.intervaltype==='DAILY'">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-weekly" v-else-if="record.intervaltype==='WEEKLY'">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
           <span class="custom-icon icon-monthly" v-else-if="record.intervaltype==='MONTHLY'">
-            <a-icon type="calendar" />
+            <calendar-outlined />
           </span>
         </label>
-      </div>
-      <div slot="time" slot-scope="text, record">
+      </template>
+      <template #time="{ text, record }" :name="text">
         <label class="interval-content">
           <span v-if="record.intervaltype==='HOURLY'">{{ record.schedule + ' ' + $t('label.min.past.hour') }}</span>
           <span v-else>{{ record.schedule.split(':')[1] + ':' + record.schedule.split(':')[0] }}</span>
         </label>
-      </div>
-      <div slot="interval" slot-scope="text, record">
+      </template>
+      <template #interval="{ text, record }" :name="text">
         <span v-if="record.intervaltype==='WEEKLY'">
           {{ `${$t('label.every')} ${$t(listDayOfWeek[record.schedule.split(':')[2] - 1])}` }}
         </span>
         <span v-else-if="record.intervaltype==='MONTHLY'">
           {{ `${$t('label.day')} ${record.schedule.split(':')[2]} ${$t('label.of.month')}` }}
         </span>
-      </div>
-      <div slot="timezone" slot-scope="text, record">
+      </template>
+      <template #timezone="{ text, record }" :name="text">
         <label>{{ getTimeZone(record.timezone) }}</label>
-      </div>
-      <div slot="action" class="account-button-action" slot-scope="text, record">
+      </template>
+      <template #action="{ text, record }" class="account-button-action" :name="text">
         <tooltip-button
           tooltipPlacement="top"
           :tooltip="$t('label.delete')"
-          type="danger"
-          icon="close"
+          type="primary"
+          :danger="true"
+          icon="close-outlined"
           size="small"
           :loading="actionLoading"
-          @click="handleClickDelete(record)"/>
-      </div>
+          @onClick="handleClickDelete(record)"/>
+      </template>
     </a-table>
   </div>
 </template>
@@ -109,28 +110,28 @@ export default {
           title: '',
           dataIndex: 'icon',
           width: 30,
-          scopedSlots: { customRender: 'icon' }
+          slots: { customRender: 'icon' }
         },
         {
           title: this.$t('label.time'),
           dataIndex: 'schedule',
-          scopedSlots: { customRender: 'time' }
+          slots: { customRender: 'time' }
         },
         {
           title: '',
           dataIndex: 'interval',
-          scopedSlots: { customRender: 'interval' }
+          slots: { customRender: 'interval' }
         },
         {
           title: this.$t('label.timezone'),
           dataIndex: 'timezone',
-          scopedSlots: { customRender: 'timezone' }
+          slots: { customRender: 'timezone' }
         },
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          width: 50,
-          scopedSlots: { customRender: 'action' }
+          width: 80,
+          slots: { customRender: 'action' }
         }
       ]
     }
@@ -143,10 +144,13 @@ export default {
   },
   inject: ['refreshSchedule'],
   watch: {
-    dataSource (newData, oldData) {
-      this.dataSchedules = []
-      if (newData && Object.keys(newData).length > 0) {
-        this.dataSchedules.push(newData)
+    dataSource: {
+      deep: true,
+      handler (newData) {
+        this.dataSchedules = []
+        if (newData && Object.keys(newData).length > 0) {
+          this.dataSchedules.push(newData)
+        }
       }
     }
   },
@@ -211,7 +215,7 @@ export default {
   }
 }
 
-/deep/.ant-btn > .anticon {
+:deep(.ant-btn) > .anticon {
   line-height: 1.8;
 }
 </style>

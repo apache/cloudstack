@@ -21,9 +21,9 @@
       v-if="showSearch"
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch"
-      autoFocus />
+      v-focus="true" />
 
     <a-table
       size="small"
@@ -35,17 +35,18 @@
       @change="handleTableChange"
       @handle-search-filter="handleTableChange" >
 
-      <template v-for="(column, index) in Object.keys(routerlinks({}))" :slot="column" slot-scope="text, item" >
-        <span :key="index">
-          <router-link :set="routerlink = routerlinks(item)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
-        </span>
+      <template
+        v-for="(column, index) in Object.keys(routerlinks({}))"
+        :key="index"
+        #[column]="{ text, record }" >
+        <router-link :set="routerlink = routerlinks(record)" :to="{ path: routerlink[column] }" >{{ text }}</router-link>
       </template>
 
-      <template slot="state" slot-scope="text">
+      <template #state="{text}">
         <status :text="text ? text : ''" />{{ text }}
       </template>
 
-      <template slot="status" slot-scope="text">
+      <template #status="{text}">
         <status :text="text ? text : ''" />{{ text }}
       </template>
 
@@ -62,7 +63,7 @@
         @change="handleTableChange"
         @showSizeChange="handlePageSizeChange"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -127,17 +128,23 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (newItem !== oldItem) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem !== oldItem) {
+          this.fetchData()
+        }
       }
     },
-    items (newItem, oldItem) {
-      if (newItem) {
-        this.dataSource = newItem
+    items: {
+      deep: true,
+      handler (newItem) {
+        if (newItem) {
+          this.dataSource = newItem
+        }
       }
     },
-    '$i18n.locale' (to, from) {
+    '$i18n.global.locale' (to, from) {
       if (to !== from) {
         this.fetchData()
       }
@@ -192,7 +199,7 @@ export default {
         columns.push({
           dataIndex: col,
           title: this.$t('label.' + col),
-          scopedSlots: { customRender: col }
+          slots: { customRender: col }
         })
       }
       return columns

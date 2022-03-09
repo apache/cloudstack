@@ -23,22 +23,36 @@
     :autoAdjustOverflow="true"
     :arrowPointAtCenter="true"
     overlayClassName="header-notice-popover">
-    <template slot="content">
+    <template #content>
       <a-spin :spinning="loading">
         <a-list style="min-width: 200px; max-width: 300px">
           <a-list-item>
             <a-list-item-meta :title="$t('label.notifications')">
-              <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
-              <a-button size="small" slot="description" @click="clearJobs">{{ $t('label.clear.list') }}</a-button>
+              <template #avatar>
+                <a-avatar :style="{ backgroundColor: '#6887d0', verticalAlign: 'middle' }">
+                  <template #icon><notification-outlined /></template>
+                </a-avatar>
+              </template>
+              <template #description><a-button size="small" @click="clearJobs">{{ $t('label.clear.list') }}</a-button></template>
             </a-list-item-meta>
           </a-list-item>
           <a-list-item v-for="(notice, index) in notices" :key="index">
-            <div slot="title"> {{ notice.path }} </div>
+            <template #title>{{ notice.path }} </template>
             <a-list-item-meta :title="notice.title">
-              <a-avatar :style="notificationAvatar[notice.status].style" :icon="notificationAvatar[notice.status].icon" slot="avatar"/>
-              <span slot="description" v-if="getResourceName(notice.description, 'name') && notice.path"><router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link></span>
-              <span slot="description" v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
-              <span slot="description" v-else> {{ notice.description }} </span>
+              <template #avatar>
+                <a-avatar :style="notificationAvatar[notice.status].style">
+                  <template #icon>
+                    <render-icon :icon="notificationAvatar[notice.status].icon" />
+                  </template>
+                </a-avatar>
+              </template>
+              <template #description>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path">
+                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
+                </span>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
+                <span v-else>{{ notice.description }}</span>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
@@ -46,7 +60,7 @@
     </template>
     <span @click="showNotifications" class="header-notice-opener">
       <a-badge :count="notices.length">
-        <a-icon class="header-notice-icon" type="bell" />
+        <bell-outlined class="header-notice-icon" />
       </a-badge>
     </span>
   </a-popover>
@@ -54,9 +68,11 @@
 
 <script>
 import store from '@/store'
+import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'HeaderNotice',
+  components: { RenderIcon },
   data () {
     return {
       loading: false,
@@ -64,9 +80,9 @@ export default {
       notices: [],
       poller: null,
       notificationAvatar: {
-        done: { icon: 'check-circle', style: 'backgroundColor:#87d068' },
-        progress: { icon: 'loading', style: 'backgroundColor:#ffbf00' },
-        failed: { icon: 'close-circle', style: 'backgroundColor:#f56a00' }
+        done: { icon: 'check-circle-outlined', style: { backgroundColor: '#87d068' } },
+        progress: { icon: 'loading-outlined', style: { backgroundColor: '#ffbf00' } },
+        failed: { icon: 'close-circle-outlined', style: { backgroundColor: '#f56a00' } }
       }
     }
   },

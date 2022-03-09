@@ -20,7 +20,7 @@
     <a-col>
       <a-row :md="24" :lg="layout === 'horizontal' ? 12 : 24">
         <a-checkbox
-          v-decorator="[checkBoxDecorator, {}]"
+          v-model:value="fields[checkBoxDecorator]"
           :checked="checked"
           @change="handleCheckChange">
           {{ checkBoxLabel }}
@@ -31,9 +31,7 @@
           :label="inputLabel"
           v-if="reversed !== checked">
           <a-input
-            v-decorator="[inputDecorator, {
-              initialValue: defaultInputValue
-            }]"
+            v-model:value="fields[inputDecorator]"
             @change="val => handleInputChangeTimed(val)" />
         </a-form-item>
       </a-row>
@@ -91,11 +89,14 @@ export default {
     return {
       checked: false,
       inputValue: '',
-      inputUpdateTimer: null
+      inputUpdateTimer: null,
+      fields: {}
     }
   },
   created () {
     this.checked = this.defaultCheckBoxValue
+    this.fields[this.checkBoxDecorator] = this.checked
+    this.fields[this.inputDecorator] = this.defaultInputValue
   },
   methods: {
     handleCheckChange (e) {

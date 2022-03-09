@@ -30,7 +30,7 @@
         <strong>{{ $t('label.account') }}</strong><br/>
         <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
       </p>
-      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="danger" @click="handleRelease">
+      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="primary" danger @click="handleRelease">
         {{ releaseButtonLabel }}
       </a-button>
     </div>
@@ -79,9 +79,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },
