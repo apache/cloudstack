@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
+import { vueProps } from '@/vue-app'
 import {
   SIDEBAR_TYPE,
   DEFAULT_THEME,
@@ -28,7 +28,9 @@ import {
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
   USE_BROWSER_TIMEZONE,
-  SERVER_MANAGER
+  SERVER_MANAGER,
+  VUE_VERSION,
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const app = {
@@ -47,54 +49,55 @@ const app = {
     multiTab: true,
     metrics: false,
     listAllProjects: false,
-    server: ''
+    server: '',
+    vueVersion: ''
   },
   mutations: {
     SET_SIDEBAR_TYPE: (state, type) => {
       state.sidebar = type
-      Vue.ls.set(SIDEBAR_TYPE, type)
+      vueProps.$localStorage.set(SIDEBAR_TYPE, type)
     },
-    CLOSE_SIDEBAR: (state) => {
-      Vue.ls.set(SIDEBAR_TYPE, true)
+    CLOSE_SIDEBAR: (state, ls) => {
+      vueProps.$localStorage.set(SIDEBAR_TYPE, true)
       state.sidebar = false
     },
     TOGGLE_DEVICE: (state, device) => {
       state.device = device
     },
     TOGGLE_THEME: (state, theme) => {
-      Vue.ls.set(DEFAULT_THEME, theme)
+      vueProps.$localStorage.set(DEFAULT_THEME, theme)
       state.theme = theme
     },
     TOGGLE_LAYOUT_MODE: (state, layout) => {
-      Vue.ls.set(DEFAULT_LAYOUT_MODE, layout)
+      vueProps.$localStorage.set(DEFAULT_LAYOUT_MODE, layout)
       state.layout = layout
     },
     TOGGLE_FIXED_HEADER: (state, fixed) => {
-      Vue.ls.set(DEFAULT_FIXED_HEADER, fixed)
+      vueProps.$localStorage.set(DEFAULT_FIXED_HEADER, fixed)
       state.fixedHeader = fixed
     },
     TOGGLE_FIXED_SIDERBAR: (state, fixed) => {
-      Vue.ls.set(DEFAULT_FIXED_SIDEMENU, fixed)
+      vueProps.$localStorage.set(DEFAULT_FIXED_SIDEMENU, fixed)
       state.fixSiderbar = fixed
     },
     TOGGLE_FIXED_HEADER_HIDDEN: (state, show) => {
-      Vue.ls.set(DEFAULT_FIXED_HEADER_HIDDEN, show)
+      vueProps.$localStorage.set(DEFAULT_FIXED_HEADER_HIDDEN, show)
       state.autoHideHeader = show
     },
     TOGGLE_CONTENT_WIDTH: (state, type) => {
-      Vue.ls.set(DEFAULT_CONTENT_WIDTH_TYPE, type)
+      vueProps.$localStorage.set(DEFAULT_CONTENT_WIDTH_TYPE, type)
       state.contentWidth = type
     },
     TOGGLE_COLOR: (state, color) => {
-      Vue.ls.set(DEFAULT_COLOR, color)
+      vueProps.$localStorage.set(DEFAULT_COLOR, color)
       state.color = color
     },
     TOGGLE_INVERTED: (state, flag) => {
-      Vue.ls.set(DEFAULT_COLOR_INVERTED, flag)
+      vueProps.$localStorage.set(DEFAULT_COLOR_INVERTED, flag)
       state.inverted = flag
     },
     TOGGLE_MULTI_TAB: (state, bool) => {
-      Vue.ls.set(DEFAULT_MULTI_TAB, bool)
+      vueProps.$localStorage.set(DEFAULT_MULTI_TAB, bool)
       state.multiTab = bool
     },
     SET_METRICS: (state, bool) => {
@@ -104,12 +107,20 @@ const app = {
       state.listAllProjects = bool
     },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
-      Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
+      vueProps.$localStorage.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
     },
     SET_SERVER: (state, server) => {
-      Vue.ls.set(SERVER_MANAGER, server)
+      vueProps.$localStorage.set(SERVER_MANAGER, server)
       state.server = server
+    },
+    SET_VUE_VERSION: (state, version) => {
+      vueProps.$localStorage.set(VUE_VERSION, version)
+      state.vueVersion = version
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
     }
   },
   actions: {
@@ -163,6 +174,9 @@ const app = {
     },
     SetServer ({ commit }, server) {
       commit('SET_SERVER', server)
+    },
+    SetCustomColumns ({ commit }, bool) {
+      commit('SET_CUSTOM_COLUMNS', bool)
     }
   }
 }

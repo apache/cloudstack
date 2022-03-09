@@ -2371,7 +2371,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                     try {
                         Thread.sleep(5000);
                     } catch (final InterruptedException ex) {
-                        s_logger.debug("[ignored] interupted while waiting to retry connecting to vm after exception: "+e.getLocalizedMessage());
+                        s_logger.debug("[ignored] interrupted while waiting to retry connecting to vm after exception: "+e.getLocalizedMessage());
                     }
                 }
             }
@@ -2379,7 +2379,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             try {
                 Thread.sleep(1000);
             } catch (final InterruptedException ex) {
-                s_logger.debug("[ignored] interupted while connecting to vm.");
+                s_logger.debug("[ignored] interrupted while connecting to vm.");
             }
         }
 

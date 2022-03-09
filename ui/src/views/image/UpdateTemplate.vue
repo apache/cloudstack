@@ -19,44 +19,41 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: `${$t('message.error.required.input')}` }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+        <a-form-item name="displaytext" ref="displaytext">
+          <template #label>
+            <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+          </template>
           <a-input
-            v-decorator="['displaytext', {
-              rules: [{ required: true, message: `${$t('message.error.required.input')}` }]
-            }]"
+            v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
-          <a-switch v-decorator="['passwordenabled', {}]" />
+        <a-form-item name="passwordenabled" ref="passwordenabled">
+          <template #label>
+            <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.passwordenabled" />
         </a-form-item>
 
         <a-row :gutter="12" v-if="['KVM', 'VMware'].includes(resource.hypervisor)">
           <a-col :md="24" :lg="resource.hypervisor === 'KVM' ? 24 : 12" v-if="resource.hypervisor === 'KVM' || (resource.hypervisor === 'VMware' && !resource.deployasis)">
-            <a-form-item :label="$t('label.rootdiskcontrollertype')">
+            <a-form-item name="rootDiskController" ref="rootDiskController" :label="$t('label.rootdiskcontrollertype')">
               <a-select
-                v-decorator="['rootDiskController', {
-                  rules: [
-                    {
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }
-                  ]
-                }]"
+                v-model:value="form.rootDiskController"
                 :loading="rootDisk.loading"
                 :placeholder="$t('label.rootdiskcontrollertype')">
                 <a-select-option v-for="opt in rootDisk.opts" :key="opt.id">
@@ -66,16 +63,9 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12" v-if="resource.hypervisor === 'VMware' && !resource.deployasis">
-            <a-form-item :label="$t('label.nicadaptertype')">
+            <a-form-item name="nicAdapter" ref="nicAdapter" :label="$t('label.nicadaptertype')">
               <a-select
-                v-decorator="['nicAdapter', {
-                  rules: [
-                    {
-                      required: false,
-                      message: `${this.$t('message.error.select')}`
-                    }
-                  ]
-                }]"
+                v-model:value="form.nicAdapter"
                 :placeholder="$t('label.nicadaptertype')">
                 <a-select-option v-for="opt in nicAdapterType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -86,9 +76,9 @@
         </a-row>
         <a-row :gutter="12" v-if="resource.hypervisor !== 'VMware' || (resource.hypervisor === 'VMware' && !resource.deployasis)">
           <a-col :md="24" :lg="24">
-            <a-form-item v-if="resource.hypervisor === 'VMware' && !resource.deployasis" :label="$t('label.keyboardtype')">
+            <a-form-item name="keyboard" ref="keyboard" v-if="resource.hypervisor === 'VMware' && !resource.deployasis" :label="$t('label.keyboardtype')">
               <a-select
-                v-decorator="['keyboard']"
+                v-model:value="form.keyboard"
                 :placeholder="$t('label.keyboard')">
                 <a-select-option v-for="opt in keyboardType.opts" :key="opt.id">
                   {{ opt.name || opt.description }}
@@ -97,21 +87,14 @@
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.ostypeid')">
+            <a-form-item name="ostypeid" ref="ostypeid" :label="$t('label.ostypeid')">
               <a-select
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                v-decorator="['ostypeid', {
-                  rules: [
-                    {
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }
-                  ]
-                }]"
+                v-model:value="form.ostypeid"
                 :loading="osTypes.loading"
                 :placeholder="apiParams.ostypeid.description">
                 <a-select-option v-for="opt in osTypes.opts" :key="opt.id">
@@ -121,25 +104,31 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
-          <a-switch v-decorator="['isdynamicallyscalable', {}]" />
+        <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
+          <template #label>
+            <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+          </template>
+          <a-switch v-model:checked="form.isdynamicallyscalable" />
         </a-form-item>
-        <a-form-item v-if="isAdmin">
-          <tooltip-label slot="label" :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+        <a-form-item name="templatetype" ref="templatetype" v-if="isAdmin">
+          <template #label>
+            <tooltip-label :title="$t('label.templatetype')" :tooltip="apiParams.templatetype.description"/>
+          </template>
           <span v-if="selectedTemplateType ==='SYSTEM'">
             <a-alert type="warning">
-              <span slot="message" v-html="$t('message.template.type.change.warning')" />
+              <template #message>
+                <span v-html="$t('message.template.type.change.warning')" />
+              </template>
             </a-alert>
             <br/>
           </span>
           <a-select
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            v-decorator="['templatetype']"
+            v-model:value="form.templatetype"
             :placeholder="apiParams.templatetype.description"
             @change="val => { selectedTemplateType = val }">
             <a-select-option v-for="opt in templatetypes" :key="opt">
@@ -149,8 +138,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -158,6 +147,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -184,44 +174,54 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateTemplate')
     this.isAdmin = ['Admin'].includes(this.$store.getters.userInfo.roletype)
   },
   created () {
-    this.$set(this.rootDisk, 'loading', false)
-    this.$set(this.rootDisk, 'opts', [])
-    this.$set(this.nicAdapterType, 'loading', false)
-    this.$set(this.nicAdapterType, 'opts', [])
-    this.$set(this.keyboardType, 'loading', false)
-    this.$set(this.keyboardType, 'opts', [])
-    this.$set(this.osTypes, 'loading', false)
-    this.$set(this.osTypes, 'opts', [])
-    const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
-    if (this.isAdmin) {
-      resourceFields.push('templatetype')
-    }
-    for (var field of resourceFields) {
-      var fieldValue = this.resource[field]
-      if (fieldValue) {
-        this.form.getFieldDecorator(field, { initialValue: fieldValue })
-      }
-    }
-    const resourceDetailsFields = []
-    if (this.resource.hypervisor === 'KVM') {
-      resourceDetailsFields.push('rootDiskController')
-    } else if (this.resource.hypervisor === 'VMware' && !this.resource.deployasis) {
-      resourceDetailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
-    }
-    for (var detailsField of resourceDetailsFields) {
-      var detailValue = this.resource?.details?.[detailsField] || null
-      if (detailValue) {
-        this.form.getFieldDecorator(detailsField, { initialValue: detailValue })
-      }
-    }
+    this.initForm()
+    this.rootDisk.loading = false
+    this.rootDisk.opts = []
+    this.nicAdapterType.loading = false
+    this.nicAdapterType.opts = []
+    this.keyboardType.loading = false
+    this.keyboardType.opts = []
+    this.osTypes.loading = false
+    this.osTypes.opts = []
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
+        rootDiskController: [{ required: true, message: this.$t('message.error.select') }],
+        ostypeid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
+      if (this.isAdmin) {
+        resourceFields.push('templatetype')
+      }
+      for (var field of resourceFields) {
+        var fieldValue = this.resource[field]
+        if (fieldValue) {
+          this.form[field] = fieldValue
+        }
+      }
+      const resourceDetailsFields = []
+      if (this.resource.hypervisor === 'KVM') {
+        resourceDetailsFields.push('rootDiskController')
+      } else if (this.resource.hypervisor === 'VMware' && !this.resource.deployasis) {
+        resourceDetailsFields.push(...['rootDiskController', 'nicAdapter', 'keyboard'])
+      }
+      for (var detailsField of resourceDetailsFields) {
+        var detailValue = this.resource?.details?.[detailsField] || null
+        if (detailValue) {
+          this.form[detailValue] = fieldValue
+        }
+      }
+    },
     fetchData () {
       this.fetchOsTypes()
       this.fetchRootDiskControllerTypes(this.resource.hypervisor)
@@ -238,7 +238,7 @@ export default {
       this.osTypes.loading = true
       api('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
-        this.$set(this.osTypes, 'opts', listOsTypes)
+        this.osTypes.opts = listOsTypes
       }).finally(() => {
         this.osTypes.loading = false
       })
@@ -303,7 +303,7 @@ export default {
         })
       }
 
-      this.$set(this.rootDisk, 'opts', controller)
+      this.rootDisk.opts = controller
     },
     fetchNicAdapterTypes () {
       const nicAdapterType = []
@@ -328,7 +328,7 @@ export default {
         description: 'Vmxnet3'
       })
 
-      this.$set(this.nicAdapterType, 'opts', nicAdapterType)
+      this.nicAdapterType.opts = nicAdapterType
     },
     fetchKeyboardTypes () {
       const keyboardType = []
@@ -345,15 +345,13 @@ export default {
         })
       })
 
-      this.$set(this.keyboardType, 'opts', keyboardType)
+      this.keyboardType.opts = keyboardType
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.resource.id
@@ -376,6 +374,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

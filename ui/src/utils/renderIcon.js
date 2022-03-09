@@ -15,44 +15,48 @@
 // specific language governing permissions and limitations
 // under the License.
 
-<template>
-  <div>
-    TODO: Implement agnostic resource settings table etc.
-
-    <list-view
-      :columns="columns"
-      :items="settings " />
-  </div>
-</template>
-
-<script>
-import ListView from '@/components/view/ListView'
+import { h, resolveComponent } from 'vue'
 
 export default {
-  name: 'ResourceSettingsTab',
-  components: {
-    ListView
-  },
+  name: 'RenderIcon',
   props: {
-    resource: {
-      type: Object,
-      required: true
+    icon: {
+      type: String,
+      default: ''
     },
-    loading: {
-      type: Boolean,
-      default: false
-    }
-  },
-  data () {
-    return {
-      columns: [],
-      settings: []
+    svgIcon: {
+      type: Object,
+      default: {}
+    },
+    props: {
+      type: Object,
+      default: {}
+    },
+    event: {
+      type: Object,
+      default: {}
     }
   },
   methods: {
+    renderIcon () {
+      return h(resolveComponent(this.icon), this.props, this.event)
+    },
+    renderSvgIcon () {
+      const props = Object.assign({}, this.props)
+      props.width = '1em'
+      props.height = '1em'
+      props.class = 'custom-icon'
+
+      return h('span', { role: 'img', class: 'anticon' }, [
+        h(this.svgIcon, { ...props }, this.event)
+      ])
+    }
+  },
+  render () {
+    if (this.icon) {
+      return this.renderIcon()
+    }
+
+    return this.renderSvgIcon()
   }
 }
-</script>
-
-<style scoped>
-</style>

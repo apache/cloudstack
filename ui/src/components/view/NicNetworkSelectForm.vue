@@ -21,7 +21,7 @@
       <a-input-search
         class="top-spaced"
         :placeholder="$t('label.search')"
-        v-model="searchQuery"
+        v-model:value="searchQuery"
         style="margin-bottom: 10px;"
         @search="fetchNetworks"
         autoFocus />
@@ -33,7 +33,7 @@
         :dataSource="networks"
         :pagination="false"
         :rowKey="record => record.id">
-        <template slot="select" slot-scope="record">
+        <template #select="{record}">
           <a-radio
             @click="updateSelection(record)"
             :checked="selectedNetwork != null && record.id === selectedNetwork.id">
@@ -51,7 +51,7 @@
         @change="handleChangePage"
         @showSizeChange="handleChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -114,7 +114,7 @@ export default {
         },
         {
           title: this.$t('label.select'),
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ]
     }

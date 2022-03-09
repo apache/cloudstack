@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { flushPromises } from '@vue/test-utils'
+
 import mockAxios from '../../mock/mockAxios'
 import AutogenView from '@/views/AutogenView'
 import user from '@/store/modules/user'
@@ -22,56 +24,135 @@ import common from '../../common'
 import mockData from '../../mockData/AutogenView.mock.json'
 
 jest.mock('axios', () => mockAxios)
+jest.mock('@/vue-app', () => ({
+  vueProps: {
+    $localStorage: {
+      set: jest.fn((key, value) => {}),
+      get: jest.fn((key) => {
+        switch (key) {
+          case 'HEADER_NOTICES':
+            return []
+          default:
+            return null
+        }
+      })
+    }
+  }
+}))
 user.state.apis = mockData.apis
 
-let router, store, i18n, mocks
+let router = null
+let store = null
+let i18n = null
+let mocks = null
+let wrapper = null
+let originalFunc = {}
+
+const spyConsole = {
+  log: null,
+  warn: null
+}
 
 const state = {
   user: {
     apis: mockData.apis,
     info: mockData.info,
-    headerNotices: mockData.headerNotices,
-    asyncJobIds: mockData.asyncJobIds,
-    defaultListViewPageSize: 20
+    defaultListViewPageSize: 20,
+    headerNotices: [],
+    customColumns: []
   }
 }
 
 const mutations = {
   SET_HEADER_NOTICES: (state, jobsJsonArray) => {
     state.user.headerNotices = jobsJsonArray
+  },
+  SET_CUSTOM_COLUMNS: (state, customColumns) => {
+    state.user.customColumns = customColumns
   }
 }
 
-store = common.createMockStore(state, {}, mutations)
-i18n = common.createMockI18n('en', mockData.messages)
-const spyConsole = {
-  log: null,
-  warn: null
+const actions = {
+  SetProject: jest.fn(({ commit }, project) => {}),
+  ToggleTheme: jest.fn(({ commit }, theme) => {}),
+  SetCustomColumns: jest.fn(({ commit }, columns) => {})
 }
+
+mockData.routes.push({
+  name: 'testRouter15',
+  path: '/test-router-15',
+  meta: {
+    title: 'label.title',
+    icon: 'play-circle-outlined',
+    permission: ['testApiNameCase1'],
+    columns: [
+      'id',
+      'name',
+      {
+        column1: (record) => {
+          return record.name
+        }
+      }
+    ]
+  },
+  component: {},
+  children: [{
+    name: 'testRouter15-1',
+    path: '/test-router-15/:id',
+    meta: {
+      title: 'label.title',
+      icon: 'play-circle-outlined'
+    },
+    component: {}
+  }]
+})
+
+router = common.createMockRouter(mockData.routes)
+store = common.createMockStore(state, actions, mutations)
+i18n = common.createMockI18n('en', mockData.messages)
+
 mocks = {
   $notifyError: jest.fn((error) => {
     return error
   }),
   $notification: {
     error: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-error',
+        duration: option.duration
+      }
     }),
     info: jest.fn((option) => {
       return {
         message: option.message,
-        description: 'test-description',
+        description: 'test-description-info',
         duration: option.duration
       }
     }),
     success: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-success',
+        duration: option.duration
+      }
     }),
     warning: jest.fn((option) => {
-      return option
+      return {
+        message: option.message,
+        description: 'test-description-warning',
+        duration: option.duration
+      }
     })
   },
   $message: {
     success: jest.fn((obj) => {
+      return obj
+    }),
+    error: jest.fn((obj) => {
+      return obj
+    }),
+    info: jest.fn((obj) => {
       return obj
     })
   }
@@ -93,18 +174,102 @@ const factory = (opts = {}) => {
   })
 }
 
-describe('Views > AutogenView.vue', () => {
-  let wrapper
+const { ResizeObserver, ls } = window
+router.push('/')
 
-  beforeEach(() => {
+describe('Views > AutogenView.vue', () => {
+  beforeEach(async () => {
     jest.clearAllMocks()
 
-    if (wrapper) wrapper.destroy()
-    if (router && router.currentRoute.name !== 'home') {
-      router.replace({ name: 'home' })
+    delete window.ResizeObserver
+    delete window.ls
+
+    if (!wrapper) {
+      await router.isReady()
+      wrapper = factory()
     }
+
+    window.ResizeObserver = jest.fn().mockImplementation(() => ({
+      observe: jest.fn(),
+      unobserve: jest.fn(),
+      disconnect: jest.fn()
+    }))
+
+    window.ls = {
+      get: jest.fn((key) => []),
+      set: jest.fn()
+    }
+
     state.user.info.roletype = 'Normal'
-    if (i18n.locale !== 'en') i18n.locale = 'en'
+    if (i18n.global.locale !== 'en') i18n.global.locale = 'en'
+  })
+
+  afterEach(() => {
+    window.ResizeObserver = ResizeObserver
+    window.ResizeObserver = ls
+
+    if (wrapper) {
+      wrapper.vm.currentAction = {}
+      wrapper.vm.resource = {}
+      wrapper.vm.searchParams = {}
+      wrapper.vm.actionData = {}
+      wrapper.vm.dataView = false
+      wrapper.vm.showAction = false
+      wrapper.vm.selectedRowKeys = []
+      wrapper.vm.selectedRowKeys = []
+      wrapper.vm.items = []
+      wrapper.vm.promises = []
+      wrapper.vm.form = {}
+      wrapper.vm.rules = {}
+    }
+
+    if (Object.keys(originalFunc).length > 0) {
+      Object.keys(originalFunc).forEach(key => {
+        switch (key) {
+          case 'fetchData':
+            wrapper.vm.fetchData = originalFunc[key]
+            break
+          case 'listUuidOpts':
+            wrapper.vm.listUuidOpts = originalFunc[key]
+            break
+          case 'fillEditFormFieldValues':
+            wrapper.vm.fillEditFormFieldValues = originalFunc[key]
+            break
+          case 'validateTwoPassword':
+            wrapper.vm.validateTwoPassword = originalFunc[key]
+            break
+          case 'handleResponse':
+            wrapper.vm.handleResponse = originalFunc[key]
+            break
+          case 'closeAction':
+            wrapper.vm.closeAction = originalFunc[key]
+            break
+          case 'getFirstIndexFocus':
+            wrapper.vm.getFirstIndexFocus = originalFunc[key]
+            break
+          case 'setRules':
+            wrapper.vm.setRules = originalFunc[key]
+            break
+          case 'RefValidateFields':
+            wrapper.vm.formRef.value.validateFields = originalFunc[key]
+            break
+          case 'switchProject':
+            wrapper.vm.switchProject = originalFunc[key]
+            break
+          case 'execSubmit':
+            wrapper.vm.execSubmit = originalFunc[key]
+            break
+          case 'shouldNavigateBack':
+            wrapper.vm.shouldNavigateBack = originalFunc[key]
+            break
+          case 'routerGo':
+            wrapper.vm.$router.go = originalFunc[key]
+            break
+        }
+      })
+
+      originalFunc = {}
+    }
     if (spyConsole.log) {
       spyConsole.log.mockClear()
       spyConsole.log.mockRestore()
@@ -116,458 +281,400 @@ describe('Views > AutogenView.vue', () => {
   })
 
   describe('Navigation Guard', () => {
-    it('check beforeRouteUpdate() is called', () => {
-      router = common.createMockRouter([{
-        name: 'testRouter1',
-        path: '/test-router-1',
-        meta: {
-          icon: 'test-router-1'
-        }
-      }])
-      wrapper = factory({ router: router })
-      router.push({ name: 'testRouter1' })
+    it('beforeRouteUpdate() should be called', async (done) => {
+      originalFunc.fetchData = wrapper.vm.fetchData
+      wrapper.vm.fetchData = jest.fn((args) => {})
 
-      const beforeRouteUpdate = wrapper.vm.$options.beforeRouteUpdate
       const nextFun = jest.fn()
+      const beforeRouteUpdate = wrapper.vm.$options.beforeRouteUpdate
 
-      beforeRouteUpdate[0].call(wrapper.vm, {}, {}, nextFun)
+      await router.push({ name: 'testRouter1' })
+      await beforeRouteUpdate.call(wrapper.vm, {}, {}, nextFun)
+      await flushPromises()
 
-      wrapper.vm.$nextTick(() => {
-        expect(wrapper.vm.currentPath).toEqual('/test-router-1')
-        expect(nextFun).toHaveBeenCalled()
-      })
+      expect(wrapper.vm.currentPath).toEqual('/test-router-1')
+      expect(nextFun).toHaveBeenCalled()
+      done()
     })
 
-    it('check beforeRouteLeave() is called', () => {
-      router = common.createMockRouter([{
-        name: 'testRouter1',
-        path: '/test-router-1',
-        meta: {
-          icon: 'test-router-1'
-        }
-      }])
-      wrapper = factory({ router: router })
-      router.push({ name: 'testRouter1' })
+    it('beforeRouteLeave() should be called', async (done) => {
+      originalFunc.fetchData = wrapper.vm.fetchData
+      wrapper.vm.fetchData = jest.fn((args) => {})
 
-      const beforeRouteLeave = wrapper.vm.$options.beforeRouteLeave
       const nextFun = jest.fn()
+      const beforeRouteLeave = wrapper.vm.$options.beforeRouteLeave
 
-      beforeRouteLeave[0].call(wrapper.vm, {}, {}, nextFun)
+      await router.push({ name: 'testRouter2' })
+      await beforeRouteLeave.call(wrapper.vm, {}, {}, nextFun)
+      await flushPromises()
 
-      wrapper.vm.$nextTick(() => {
-        expect(wrapper.vm.currentPath).toEqual('/test-router-1')
-        expect(nextFun).toHaveBeenCalled()
-      })
+      expect(wrapper.vm.currentPath).toEqual('/test-router-2')
+      expect(nextFun).toHaveBeenCalled()
+      done()
     })
   })
 
   describe('Watchers', () => {
     describe('$route', () => {
-      it('The wrapper data does not change when $router do not change', () => {
-        wrapper = factory()
+      it('The wrapper data does not change when $router do not change', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
-        wrapper.setData({
-          page: 2,
-          itemCount: 10
-        })
+        await wrapper.setData({ page: 2, itemCount: 10 })
+        await flushPromises()
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.page).toEqual(2)
-          expect(wrapper.vm.itemCount).toEqual(10)
-          expect(spy).not.toBeCalled()
-        })
+        expect(wrapper.vm.page).toEqual(2)
+        expect(wrapper.vm.itemCount).toEqual(10)
+        expect(fetchData).not.toBeCalled()
+        done()
       })
 
-      it('The wrapper data changes when $router changes', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter2',
-          path: '/test-router-2',
-          meta: {
-            icon: 'test-router-2'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('The wrapper data changes when $router changes', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
-        wrapper.setData({
-          page: 2,
-          itemCount: 10
-        })
+        await wrapper.setData({ page: 2, itemCount: 10 })
+        await router.push({ name: 'testRouter3' })
+        await flushPromises()
 
-        router.push({ name: 'testRouter2' })
+        expect(wrapper.vm.page).toEqual(1)
+        expect(wrapper.vm.itemCount).toEqual(0)
+        expect(fetchData).toBeCalled()
+        done()
+      })
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.page).toEqual(1)
-          expect(wrapper.vm.itemCount).toEqual(0)
-          expect(spy).toBeCalled()
-        })
+      it('switchProject() should be called when $route changes with projectid in query', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        originalFunc.switchProject = wrapper.vm.switchProject
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.switchProject = jest.fn((projectid) => {})
+
+        const switchProject = jest.spyOn(wrapper.vm, 'switchProject')
+
+        await router.push({ name: 'testRouter30', query: { projectid: 'test-project-id' } })
+        await flushPromises()
+
+        expect(switchProject).toHaveBeenCalledTimes(1)
+        expect(switchProject).toHaveBeenCalledWith('test-project-id')
+        done()
       })
     })
 
     describe('$i18n.locale', () => {
-      it('Test language and fetchData() when not changing locale', () => {
-        wrapper = factory()
+      it('Check language and fetchData() when not changing locale', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.$t('labelname')).toEqual('test-name-en')
-          expect(spy).not.toBeCalled()
-        })
+        expect(wrapper.vm.$t('labelname')).toEqual('test-name-en')
+        expect(fetchData).not.toBeCalled()
+        done()
       })
 
-      it('Test languages and fetchData() when changing locale', async () => {
-        wrapper = factory()
+      it('Check languages and fetchData() when changing locale', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        i18n.locale = 'de'
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.$t('labelname')).toEqual('test-name-de')
-          expect(spy).toBeCalled()
-        })
+        i18n.global.locale = 'de'
+        await flushPromises()
+
+        expect(wrapper.vm.$t('labelname')).toEqual('test-name-de')
+        expect(fetchData).toBeCalled()
+        done()
       })
     })
   })
 
   describe('Methods', () => {
+    describe('switchProject', () => {
+      it('API not called when switchProject() is called with not have projectId', async (done) => {
+        await wrapper.vm.switchProject()
+        await flushPromises()
+
+        expect(mockAxios).not.toBeCalled()
+        done()
+      })
+
+      it('API not called when switchProject() is called with projectId empty', async (done) => {
+        await wrapper.vm.switchProject('')
+        await flushPromises()
+
+        expect(mockAxios).not.toBeCalled()
+        done()
+      })
+
+      it('API not called when switchProject() is called with projectId length not equal 36', async (done) => {
+        await wrapper.vm.switchProject('test-project-id')
+        await flushPromises()
+
+        expect(mockAxios).not.toBeCalled()
+        done()
+      })
+
+      it('API will be called when switchProject() is called with projectId satisfying the condition', async (done) => {
+        mockAxios.mockResolvedValue({})
+
+        await router.push({ name: 'testRouter31' })
+        await wrapper.vm.switchProject('111111111111111111111111111111111111')
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'listProjects',
+            id: '111111111111111111111111111111111111',
+            listall: true,
+            details: 'min',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('check $router not changes when API response with result empty', async (done) => {
+        mockAxios.mockResolvedValue({ listprojectsresponse: {} })
+
+        await router.push({ name: 'testRouter32' })
+        await wrapper.vm.switchProject('111111111111111111111111111111111111')
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-32')
+        expect(router.currentRoute.value.query).toEqual({})
+        done()
+      })
+
+      it('check $router, $store event when API response with result not empty', async (done) => {
+        mockAxios.mockResolvedValue({ listprojectsresponse: { project: [{ id: 'project-id' }] } })
+
+        await router.push({ name: 'testRouter33' })
+        await wrapper.vm.switchProject('111111111111111111111111111111111111')
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-33')
+        expect(router.currentRoute.value.query).toEqual({})
+        done()
+      })
+    })
+
     describe('fetchData()', () => {
-      it('check routeName when fetchData() is called with $route.name is not empty', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/test-router-1',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('fetchData() should be return empty when $route.name equal `deployVirtualMachine`', async (done) => {
+        await router.push({ name: 'deployVirtualMachine' })
+        await wrapper.vm.fetchData()
 
-        router.push({ name: 'testRouter1' })
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.routeName).toEqual('testRouter1')
-          expect(wrapper.vm.items).toEqual([])
-        })
+        expect(wrapper.vm.items).toEqual([])
+        done()
       })
 
-      it('check routeName when fetchData() is called with $route.name is empty', () => {
-        router = common.createMockRouter([{
-          path: '/test-router-3',
-          meta: {
-            icon: 'test-router-3'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check routeName when fetchData() is called with $route.name is not empty', async (done) => {
+        await router.push({ name: 'testRouter4' })
+        await flushPromises()
 
-        router.replace('/test-router-3')
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.routeName).toEqual('home')
-        })
+        expect(wrapper.vm.routeName).toEqual('testRouter4')
+        expect(wrapper.vm.items).toEqual([])
+        done()
       })
 
-      it('check resource, dataView when fetchData() is called with $route.meta.params is not empty', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter4',
-          path: '/test-router-4/:id',
-          meta: {
-            icon: 'test-router-4'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check routeName when fetchData() is called with $route.name is empty', async (done) => {
+        await router.replace('/test-router-5')
+        await flushPromises()
 
-        router.push({ name: 'testRouter4', params: { id: 'test-id' } })
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.resource).toEqual({})
-          expect(wrapper.vm.dataView).toBeTruthy()
-        })
+        expect(wrapper.vm.routeName).toEqual('testRouter5')
+        done()
       })
 
-      it('check columnKeys, actions when fetchData() is called with $route.meta.actions, route.meta.columns is not empty', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter5',
-          path: '/test-router-5',
-          meta: {
-            icon: 'test-router-5',
-            permission: ['testApiNameCase1'],
-            columns: ['column1', 'column2', 'column3'],
-            actions: [
-              {
-                name: 'labelname',
-                icon: 'plus',
-                listView: true
-              }
-            ]
-          }
-        }])
-        wrapper = factory({ router: router })
-        const mockData = {
+      it('check resource, dataView when fetchData() is called with $route.meta.params is not empty', async (done) => {
+        await router.push({ name: 'testRouter6', params: { id: 'test-id' } })
+        await flushPromises()
+
+        expect(wrapper.vm.resource).toEqual({})
+        expect(wrapper.vm.dataView).toBeTruthy()
+        done()
+      })
+
+      it('check columnKeys, actions when fetchData() is called with $route.meta.actions, route.meta.columns is not empty', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 0,
             testapinamecase1: []
           }
-        }
-
-        mockAxios.mockImplementation(() => Promise.resolve(mockData))
-        router.push({ name: 'testRouter5' })
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.columnKeys.length).toEqual(3)
-          expect(wrapper.vm.actions.length).toEqual(1)
-          expect(wrapper.vm.columnKeys).toEqual(['column1', 'column2', 'column3'])
-          expect(wrapper.vm.actions).toEqual([{
-            name: 'labelname',
-            icon: 'plus',
-            listView: true
-          }])
         })
+        await router.push({ name: 'testRouter7' })
+        await flushPromises()
+
+        expect(wrapper.vm.columnKeys.length).toEqual(3)
+        expect(wrapper.vm.actions.length).toEqual(1)
+        expect(wrapper.vm.columnKeys).toEqual(['column1', 'column2', 'column3'])
+        expect(wrapper.vm.actions).toEqual([{
+          label: 'labelname',
+          api: 'testApiNameCase1',
+          icon: 'plus-outlined',
+          listView: true
+        }])
+        done()
       })
 
-      it('check columnKeys assign by store.getters.apis when fetchData() is called', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter6',
-          path: 'test-router-6',
-          meta: {
-            icon: 'test-router-6',
-            permission: ['testApiNameCase4']
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('check columnKeys assign by store.getters.apis when fetchData() is called', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase4response: {
             count: 0,
             testapinamecase4: []
           }
-        }
-
-        mockAxios.mockImplementation(() => Promise.resolve(mockData))
-        router.push({ name: 'testRouter6' })
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.columnKeys.length).toEqual(3)
-          expect(wrapper.vm.columnKeys).toEqual(['column1', 'column2', 'column3'])
         })
+        await router.push({ name: 'testRouter8' })
+        await flushPromises()
+
+        expect(wrapper.vm.columnKeys.length).toEqual(3)
+        expect(wrapper.vm.columnKeys).toEqual(['column1', 'column2', 'column3'])
+        done()
       })
 
-      it('check columnKeys assign by $route.meta.columns when fetchData() is called', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter7',
-          path: 'test-router-7',
-          meta: {
-            icon: 'test-router-7',
-            permission: ['testApiNameCase1'],
-            columns: [{ name: 'string' }]
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('check columnKeys assign by $route.meta.columns when fetchData() is called', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 0,
             testapinamecase1: []
           }
-        }
-
-        mockAxios.mockImplementation(() => Promise.resolve(mockData))
-        router.push({ name: 'testRouter7' })
-
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.columns.length).toEqual(1)
-          expect(wrapper.vm.columns[0].title).toEqual('name-en')
-          expect(wrapper.vm.columns[0].dataIndex).toEqual('name')
-          expect(wrapper.vm.columns[0].scopedSlots).toEqual({ customRender: 'name' })
-          expect(typeof wrapper.vm.columns[0].sorter).toBe('function')
         })
+        await router.push({ name: 'testRouter9' })
+        await flushPromises()
+
+        expect(wrapper.vm.columns.length).toEqual(2)
+        expect(wrapper.vm.columns[0].title).toEqual('name-en')
+        expect(wrapper.vm.columns[0].dataIndex).toEqual('name')
+        expect(wrapper.vm.columns[0].slots).toEqual({ customRender: 'name' })
+        expect(typeof wrapper.vm.columns[0].sorter).toBe('function')
+        done(0)
       })
 
-      it('check api is called with params assign by $route.query', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter8',
-          path: '/test-router-8',
-          meta: {
-            icon: 'test-router-8',
-            permission: ['testApiNameCase2']
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const postData = new URLSearchParams()
-        const mockData = {
+      it('API should be called with params assign by $route.query', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase2response: {
             count: 0,
             testapinamecase2: []
           }
-        }
-
-        mockAxios.mockImplementation(() => Promise.resolve(mockData))
-        router.push({ name: 'testRouter8', query: { key: 'test-value' } })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            data: postData,
-            method: 'GET',
-            params: {
-              command: 'testApiNameCase2',
-              listall: true,
-              key: 'test-value',
-              page: 1,
-              pagesize: 20,
-              response: 'json'
-            },
-            url: '/'
-          })
-
-          done()
         })
+        await router.push({ name: 'testRouter10', query: { key: 'test-value' } })
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          data: new URLSearchParams(),
+          method: 'GET',
+          params: {
+            command: 'testApiNameCase2',
+            listall: true,
+            key: 'test-value',
+            page: 1,
+            pagesize: 20,
+            response: 'json'
+          },
+          url: '/'
+        })
+
+        done()
       })
 
-      it('check api is called with params assign by $route.meta.params', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter9',
-          path: '/test-router-9',
-          meta: {
-            icon: 'test-router-9',
-            permission: ['testApiNameCase3'],
-            params: {
-              key: 'test-value'
-            }
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const postData = new URLSearchParams()
-        const mockData = {
+      it('API should be called with params assign by $route.meta.params', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase3response: {
             count: 0,
             testapinamecase3: []
           }
-        }
-
-        mockAxios.mockImplementation(() => Promise.resolve(mockData))
-        router.push({ name: 'testRouter9' })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            data: postData,
-            method: 'GET',
-            params: {
-              command: 'testApiNameCase3',
-              listall: true,
-              key: 'test-value',
-              page: 1,
-              pagesize: 20,
-              response: 'json'
-            },
-            url: '/'
-          })
-
-          done()
         })
+        await router.push({ name: 'testRouter11' })
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          data: new URLSearchParams(),
+          method: 'GET',
+          params: {
+            command: 'testApiNameCase3',
+            listall: true,
+            key: 'test-value',
+            page: 1,
+            pagesize: 20,
+            response: 'json'
+          },
+          url: '/'
+        })
+        done()
       })
 
-      // it('check api is called with params has item id, name when $route.path startWith /ssh/', (done) => {
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter17',
-      //     path: '/ssh/:id',
-      //     meta: {
-      //       icon: 'test-router-17',
-      //       permission: ['testApiNameCase1']
-      //     }
-      //   }])
-      //   wrapper = factory({ router: router })
-      //
-      //   const mockData = {
+      // it('API should be called with params has item id, name when $route.path startWith /ssh/', async (done) => {
+      //   await mockAxios.mockResolvedValue({
       //     testapinamecase1response: {
       //       count: 0,
-      //       testapinamecase1: []
+      //       testapinamecase1: [{
+      //         id: 'test-id-1',
+      //         name: 'test-name-1'
+      //       }]
       //     }
-      //   }
-      //
-      //   router.push({ name: 'testRouter17', params: { id: 'test-id' } })
-      //   mockAxios.mockResolvedValue(mockData)
-      //
-      //   wrapper.vm.$nextTick(() => {
-      //     expect(mockAxios).toHaveBeenCalledTimes(1)
-      //     expect(mockAxios).toHaveBeenCalledWith({
-      //       url: '/',
-      //       method: 'GET',
-      //       data: new URLSearchParams(),
-      //       params: {
-      //         command: 'testApiNameCase1',
-      //         listall: true,
-      //         id: 'test-id',
-      //         name: 'test-id',
-      //         page: 1,
-      //         pagesize: 20,
-      //         response: 'json'
-      //       }
-      //     })
-      //
-      //     done()
       //   })
+      //   await router.push({ name: 'testRouter12', params: { id: 'test-id' } })
+      //   await flushPromises()
+      //
+      //   expect(mockAxios).toHaveBeenCalled()
+      //   expect(mockAxios).toHaveBeenLastCalledWith({
+      //     url: '/',
+      //     method: 'GET',
+      //     data: new URLSearchParams(),
+      //     params: {
+      //       command: 'testApiNameCase1',
+      //       listall: true,
+      //       id: 'test-id',
+      //       name: 'test-id',
+      //       page: 1,
+      //       pagesize: 20,
+      //       response: 'json'
+      //     }
+      //   })
+      //   done()
       // })
 
-      it('check api is called with params has item id, hostname when $route.path startWith /ldapsetting/', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter18',
-          path: '/ldapsetting/:id',
-          meta: {
-            icon: 'test-router-18',
-            permission: ['testApiNameCase1']
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('API should be called with params has item id, hostname when $route.path startWith /ldapsetting/', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 0,
-            testapinamecase1: []
+            testapinamecase1: [{
+              id: 'test-id-1',
+              name: 'test-name-1'
+            }]
           }
-        }
-
-        router.push({ name: 'testRouter18', params: { id: 'test-id' } })
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              listall: true,
-              id: 'test-id',
-              hostname: 'test-id',
-              page: 1,
-              pagesize: 20,
-              response: 'json'
-            }
-          })
-
-          done()
         })
+        await router.push({ name: 'testRouter13', params: { id: 'test-id' } })
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            listall: true,
+            id: 'test-id',
+            hostname: 'test-id',
+            page: 1,
+            pagesize: 20,
+            response: 'json'
+          }
+        })
+        done()
       })
 
-      it('check items, resource when api is called with result is not empty', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter19',
-          path: '/templates',
-          meta: {
-            icon: 'test-router-19',
-            permission: ['listTemplates']
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('check items, resource when api is called with result is not empty', async (done) => {
+        await mockAxios.mockResolvedValue({
           listtemplatesresponse: {
             count: 2,
             templates: [{
@@ -580,73 +687,36 @@ describe('Views > AutogenView.vue', () => {
               name: 'template-test-2'
             }]
           }
-        }
+        })
+        await router.push({ name: 'testRouter14' })
+        await flushPromises()
 
-        router.push({ name: 'testRouter19' })
-        mockAxios.mockResolvedValue(mockData)
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenLastCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'listTemplates',
-              listall: true,
-              page: 1,
-              pagesize: 20,
-              response: 'json'
-            }
-          })
-
-          expect(wrapper.vm.items.length).toEqual(2)
-          expect(wrapper.vm.items).toEqual([
-            {
-              id: 'uuid1',
-              templateid: 'templateid-1',
-              name: 'template-test-1',
-              key: 0
-            },
-            {
-              id: 'uuid2',
-              templateid: 'templateid-2',
-              name: 'template-test-2',
-              key: 1
-            }
-          ])
-          expect(wrapper.vm.resource).toEqual({
+        expect(wrapper.vm.items.length).toEqual(2)
+        expect(wrapper.vm.items).toEqual([
+          {
             id: 'uuid1',
             templateid: 'templateid-1',
             name: 'template-test-1',
             key: 0
-          })
-
-          done()
+          },
+          {
+            id: 'uuid2',
+            templateid: 'templateid-2',
+            name: 'template-test-2',
+            key: 1
+          }
+        ])
+        expect(wrapper.vm.resource).toEqual({
+          id: 'uuid1',
+          templateid: 'templateid-1',
+          name: 'template-test-1',
+          key: 0
         })
+        done()
       })
 
-      it('check items, resource when api is called and $route.meta.columns has function', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter20',
-          path: '/test-router-20',
-          meta: {
-            icon: 'test-router-20',
-            permission: ['testApiNameCase1'],
-            columns: [
-              'id',
-              'name',
-              {
-                column1: (record) => {
-                  return record.name
-                }
-              }
-            ]
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('check items, resource when api is called and $route.meta.columns has function', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
@@ -654,80 +724,52 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        router.push({ name: 'testRouter20' })
-        mockAxios.mockResolvedValue(mockData)
-
-        setTimeout(() => {
-          expect(wrapper.vm.items).toEqual([{
-            id: 'test-id',
-            name: 'test-name-value',
-            key: 0,
-            column1: 'test-name-value'
-          }])
-          expect(wrapper.vm.resource).toEqual({
-            id: 'test-id',
-            name: 'test-name-value',
-            key: 0,
-            column1: 'test-name-value'
-          })
-
-          done()
         })
+        await router.push({ name: 'testRouter15' })
+        await flushPromises()
+
+        expect(wrapper.vm.items).toEqual([{
+          id: 'test-id',
+          name: 'test-name-value',
+          key: 0,
+          column1: 'test-name-value'
+        }])
+        expect(wrapper.vm.resource).toEqual({
+          id: 'test-id',
+          name: 'test-name-value',
+          key: 0,
+          column1: 'test-name-value'
+        })
+        done()
       })
 
-      // it('check items, resource when api is called and $route.path startWith /ssh', (done) => {
-      //   router = common.createMockRouter([{
-      //     name: 'testRouter21',
-      //     path: '/ssh',
-      //     meta: {
-      //       icon: 'test-router-21',
-      //       permission: ['testApiNameCase1']
-      //     }
-      //   }])
-      //   wrapper = factory({ router: router })
-      //
-      //   const mockData = {
+      // it('check items, resource when api is called and $route.path startWith /ssh', async (done) => {
+      //   await mockAxios.mockResolvedValue({
       //     testapinamecase1response: {
       //       count: 1,
       //       testapinamecase1: [{
       //         name: 'test-name-value'
       //       }]
       //     }
-      //   }
-      //
-      //   router.push({ name: 'testRouter21' })
-      //   mockAxios.mockResolvedValue(mockData)
-      //
-      //   setTimeout(() => {
-      //     expect(wrapper.vm.items).toEqual([{
-      //       id: 'test-name-value',
-      //       name: 'test-name-value',
-      //       key: 0
-      //     }])
-      //     expect(wrapper.vm.resource).toEqual({
-      //       id: 'test-name-value',
-      //       name: 'test-name-value',
-      //       key: 0
-      //     })
-      //
-      //     done()
       //   })
+      //   await router.push({ name: 'testRouter16' })
+      //   await flushPromises()
+      //
+      //   expect(wrapper.vm.items).toEqual([{
+      //     id: 'test-name-value',
+      //     name: 'test-name-value',
+      //     key: 0
+      //   }])
+      //   expect(wrapper.vm.resource).toEqual({
+      //     id: 'test-name-value',
+      //     name: 'test-name-value',
+      //     key: 0
+      //   })
+      //   done()
       // })
 
-      it('check items, resource when api is called and $route.path startWith /ldapsetting', (done) => {
-        router = common.createMockRouter([{
-          name: 'testRouter22',
-          path: '/ldapsetting',
-          meta: {
-            icon: 'test-router-22',
-            permission: ['testApiNameCase1']
-          }
-        }])
-        wrapper = factory({ router: router })
-
-        const mockData = {
+      it('check items, resource when api is called and $route.path startWith /ldapsetting', async (done) => {
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
@@ -735,351 +777,257 @@ describe('Views > AutogenView.vue', () => {
               hostname: 'test-hostname-value'
             }]
           }
-        }
-
-        router.push({ name: 'testRouter22' })
-        mockAxios.mockResolvedValue(mockData)
-
-        setTimeout(() => {
-          expect(wrapper.vm.items).toEqual([{
-            id: 'test-hostname-value',
-            name: 'test-name-value',
-            hostname: 'test-hostname-value',
-            key: 0
-          }])
-          expect(wrapper.vm.resource).toEqual({
-            id: 'test-hostname-value',
-            name: 'test-name-value',
-            hostname: 'test-hostname-value',
-            key: 0
-          })
-
-          done()
         })
+        await router.push({ name: 'testRouter17' })
+        await flushPromises()
+
+        expect(wrapper.vm.items).toEqual([{
+          id: 'test-hostname-value',
+          name: 'test-name-value',
+          hostname: 'test-hostname-value',
+          key: 0
+        }])
+        expect(wrapper.vm.resource).toEqual({
+          id: 'test-hostname-value',
+          name: 'test-name-value',
+          hostname: 'test-hostname-value',
+          key: 0
+        })
+        done()
       })
 
-      it('check $notifyError is called when api is called with throw error', (done) => {
+      it('check $notifyError is called when api is called with throw error', async (done) => {
         const errorMock = {
           response: {},
           message: 'Error: throw exception error'
         }
-        mockAxios.mockRejectedValue(errorMock)
-        router = common.createMockRouter([{
-          name: 'testRouter22',
-          path: '/test-router-22',
-          meta: {
-            icon: 'test-router-22',
-            permission: ['testApiNameCase1']
-          }
-        }])
 
-        wrapper = factory({ router: router })
-        router.push({ name: 'testRouter22' })
+        await mockAxios.mockRejectedValue(errorMock)
+        await router.push({ name: 'testRouter18' })
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
-          expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
-          done()
-        })
+        expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
+        expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
+        done()
       })
 
-      it('check $notifyError is called and router path = /exception/404 when api is called with throw error', (done) => {
+      it('check $notifyError is called and router path = /exception/403 when api is called with throw error', async (done) => {
+        const errorMock = {
+          response: {
+            status: 405
+          },
+          message: 'Error: Method Not Allowed'
+        }
+
+        await mockAxios.mockRejectedValue(errorMock)
+        await router.push({ name: 'testRouter19' })
+        await flushPromises()
+
+        expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
+        expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
+        expect(router.currentRoute.value.path).toEqual('/exception/403')
+        done()
+      })
+
+      it('check $notifyError is called and router path = /exception/404 when api is called with throw error', async (done) => {
         const errorMock = {
           response: {
             status: 430
           },
           message: 'Error: Request Header Fields Too Large'
         }
-        mockAxios.mockRejectedValue(errorMock)
-        router = common.createMockRouter([{
-          name: 'testRouter23',
-          path: '/test-router-23',
-          meta: {
-            icon: 'test-router-23',
-            permission: ['testApiNameCase1']
-          }
-        }])
 
-        wrapper = factory({ router: router })
-        router.push({ name: 'testRouter23' })
+        await mockAxios.mockRejectedValue(errorMock)
+        await router.push({ name: 'testRouter19' })
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
-          expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
-          expect(router.currentRoute.path).toEqual('/exception/404')
-
-          done()
-        })
+        expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
+        expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
+        expect(router.currentRoute.value.path).toEqual('/exception/404')
+        done()
       })
 
-      it('check $notifyError is called and router path = /exception/500 when api is called with throw error', (done) => {
+      it('check $notifyError is called and router path = /exception/500 when api is called with throw error', async (done) => {
         const errorMock = {
           response: {
             status: 530
           },
           message: 'Error: Site is frozen'
         }
-        mockAxios.mockRejectedValue(errorMock)
-        router = common.createMockRouter([{
-          name: 'testRouter23',
-          path: '/test-router-23',
-          meta: {
-            icon: 'test-router-23',
-            permission: ['testApiNameCase1']
-          }
-        }])
 
-        wrapper = factory({ router: router })
-        router.push({ name: 'testRouter23' })
+        await mockAxios.mockRejectedValue(errorMock)
+        await router.push({ name: 'testRouter19' })
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
-          expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
-          expect(router.currentRoute.path).toEqual('/exception/500')
-
-          done()
-        })
+        expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
+        expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
+        expect(router.currentRoute.value.path).toEqual('/exception/500')
+        done()
       })
     })
 
     describe('onSearch()', () => {
-      it('check fetchData() is called when onSearch() is called', async () => {
-        router = common.createMockRouter([{
-          name: 'testRouter24',
-          path: '/test-router-24',
-          meta: {
-            icon: 'test-router-24'
-          }
-        }])
-        wrapper = factory({ router: router })
-        router.push({ name: 'testRouter24', query: { page: 1 } })
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
+      it('check router when onSearch() is called with args empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch()
-        expect(spy).toHaveBeenCalled()
+        await router.push({ name: 'testRouter20', query: { page: 1, pagesize: 20 } })
+        await wrapper.vm.onSearch()
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-20')
+        expect(router.currentRoute.value.query).toEqual({ page: '1', pagesize: '20' })
+        done()
       })
 
-      it('check onSearch() is called with searchParams have item', async () => {
-        router = common.createMockRouter([{
-          name: 'testRouter24',
-          path: '/test-router-24',
-          meta: {
-            icon: 'test-router-24'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check router when onSearch() is called with args not empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'testRouter24' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch()
-        expect(router.currentRoute.query).toEqual({
-          page: '1',
-          pagesize: '20'
-        })
+        await router.push({ name: 'testRouter21', query: { page: 1, pagesize: 20 } })
+        await wrapper.vm.onSearch({ value: 'test-value' })
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-21')
+        expect(router.currentRoute.value.query).toEqual({ page: '1', pagesize: '20', value: 'test-value' })
+        done()
       })
 
-      it('check onSearch() is called with searchQuery not in opts', async () => {
-        router = common.createMockRouter([{
-          name: 'testRouter25',
-          path: '/test-router-25',
-          meta: {
-            icon: 'test-router-25'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check router when onSearch() is called with args have searchQuery', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'testRouter25' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          key1: 'key1-value'
-        })
-        expect(router.currentRoute.query).toEqual({
-          key1: 'key1-value',
+        await router.push({ name: 'testRouter22', query: { page: 1, pagesize: 20 } })
+        await wrapper.vm.onSearch({ searchQuery: 'test-value' })
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-22')
+        expect(router.currentRoute.value.query).toEqual({
           page: '1',
-          pagesize: '20'
+          pagesize: '20',
+          keyword: 'test-value',
+          q: 'test-value'
         })
+        done()
       })
 
-      it('check onSearch() is called with searchQuery in opts but this is empty', async () => {
-        router = common.createMockRouter([{
-          name: 'testRouter26',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          },
-          query: {}
-        }])
-        wrapper = factory({ router: router })
+      it('check router when onSearch() is called with args have searchQuery and route.name equal `role`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'testRouter26' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          searchQuery: null
-        })
-        expect(router.currentRoute.query).toEqual({
-          page: '1',
-          pagesize: '20'
-        })
+        await router.push({ name: 'role' })
+        await wrapper.vm.onSearch({ searchQuery: 'test-value' })
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/role')
+        expect(router.currentRoute.value.query).toEqual({ name: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        done()
       })
 
-      it('check onSearch() is called with searchQuery in opts', async () => {
-        router = common.createMockRouter([{
-          name: 'testRouter26',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          },
-          query: {}
-        }])
-        wrapper = factory({ router: router })
+      it('check router when onSearch() is called with args have searchQuery and route.name equal `quotaemailtemplate`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'testRouter26' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          searchQuery: 'test-query'
-        })
-        expect(router.currentRoute.query).toEqual({
-          keyword: 'test-query',
-          q: 'test-query',
-          page: '1',
-          pagesize: '20'
-        })
+        await router.push({ name: 'quotaemailtemplate' })
+        await wrapper.vm.onSearch({ searchQuery: 'test-value' })
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/quotaemailtemplate')
+        expect(router.currentRoute.value.query).toEqual({ templatetype: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        done()
       })
 
-      it('check onSearch() is called with searchQuery in opts and route.name equal `role`', async () => {
-        router = common.createMockRouter([{
-          name: 'role',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          },
-          query: {}
-        }])
-        wrapper = factory({ router: router })
+      it('check router when onSearch() is called with args have searchQuery and route.name equal `quotaemailtemplate`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'role' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          searchQuery: 'test-query'
-        })
-        expect(router.currentRoute.query).toEqual({
-          name: 'test-query',
-          q: 'test-query',
-          page: '1',
-          pagesize: '20'
-        })
+        await router.push({ name: 'globalsetting' })
+        await wrapper.vm.onSearch({ searchQuery: 'test-value' })
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/globalsetting')
+        expect(router.currentRoute.value.query).toEqual({ name: 'test-value', q: 'test-value', page: '1', pagesize: '20' })
+        done()
       })
 
-      it('check onSearch() is called with searchQuery in opts and route.name equal `templatetype`', async () => {
-        router = common.createMockRouter([{
-          name: 'quotaemailtemplate',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          },
-          query: {}
-        }])
-        wrapper = factory({ router: router })
+      it('fetchData() should be called when onSearch() is called', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'quotaemailtemplate' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          searchQuery: 'test-query'
-        })
-        expect(router.currentRoute.query).toEqual({
-          templatetype: 'test-query',
-          q: 'test-query',
-          page: '1',
-          pagesize: '20'
-        })
-      })
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+        await router.push({ name: 'testRouter23', query: { page: 1, pagesize: 20, value: 'test-value' } })
+        await wrapper.vm.onSearch({ page: '1', pagesize: '20', value: 'test-value' })
+        await flushPromises()
 
-      it('check onSearch() is called with searchQuery in opts and route.name equal `globalsetting`', async () => {
-        router = common.createMockRouter([{
-          name: 'globalsetting',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          },
-          query: {}
-        }])
-        wrapper = factory({ router: router })
-
-        router.push({ name: 'globalsetting' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.onSearch({
-          searchQuery: 'test-query'
-        })
-        expect(router.currentRoute.query).toEqual({
-          name: 'test-query',
-          q: 'test-query',
-          page: '1',
-          pagesize: '20'
-        })
+        expect(fetchData).toHaveBeenLastCalledWith({ page: '1', pagesize: '20', value: 'test-value' })
+        done()
       })
     })
 
     describe('closeAction()', () => {
-      it('check currentAction, showAction when closeAction() is called', () => {
-        const data = {
+      it('check currentAction, showAction when closeAction() is called', async (done) => {
+        await wrapper.setData({
           currentAction: {
-            loading: true
+            label: 'label.name',
+            loading: true,
+            paramFields: []
           },
           showAction: true
-        }
-        wrapper = factory({ data: data })
-
-        expect(wrapper.vm.currentAction).toEqual({ loading: true })
-        expect(wrapper.vm.showAction).toBeTruthy()
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.closeAction()
-
-          expect(wrapper.vm.currentAction).toEqual({})
-          expect(wrapper.vm.showAction).toBeFalsy()
         })
+        await wrapper.vm.closeAction()
+        await flushPromises()
+
+        expect(wrapper.vm.currentAction).toEqual({})
+        expect(wrapper.vm.showAction).toBeFalsy()
+        done()
       })
     })
 
     describe('execAction()', () => {
-      it('check showAction, actionData and router name when execAction() is called', () => {
-        router = common.createMockRouter([{
-          name: 'testRouter26',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          }
-        }])
-        const data = {
-          actionData: {
-            name: 'test-add-action'
-          }
-        }
-        wrapper = factory({ router: router, data: data })
+      it('check showAction, actionData and router name when execAction() is called', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
 
-        expect(router.currentRoute.name).toEqual('home')
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            label: 'labelname',
-            icon: 'plus',
-            component: () => jest.fn(),
-            api: 'testRouter26',
-            popup: false
-          })
-
-          expect(wrapper.vm.showAction).toBeFalsy()
-          expect(router.currentRoute.name).toEqual('testRouter26')
+        await wrapper.setData({ actionData: { name: 'test-add-action' } })
+        await wrapper.vm.execAction({
+          label: 'labelname',
+          icon: 'plus-outlined',
+          component: {},
+          api: 'testRouter24',
+          popup: false
         })
+        await flushPromises()
+
+        expect(wrapper.vm.showAction).toBeFalsy()
+        expect(router.currentRoute.value.name).toEqual('testRouter24')
+        done()
       })
 
-      it('check currentAction params and paramsField when execAction() is called', () => {
-        wrapper = factory()
-        wrapper.vm.$nextTick()
-        wrapper.vm.execAction({
-          api: 'testApiNameCase5'
+      it('check currentAction params and paramsField when execAction() is called', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
+
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
+
+        await wrapper.vm.execAction({
+          label: 'label.name',
+          api: 'testApiNameCase5',
+          paramFields: []
         })
+        await flushPromises()
+
         expect(wrapper.vm.currentAction.params).toEqual([
           { name: 'column1', type: 'string' },
           { name: 'column2', type: 'string' },
@@ -1089,14 +1037,26 @@ describe('Views > AutogenView.vue', () => {
         ])
         expect(wrapper.vm.currentAction.paramFields).toEqual([])
         expect(wrapper.vm.showAction).toBeTruthy()
+        done()
       })
 
-      it('check currentAction params and paramsField when execAction() is called with args is exists', () => {
-        wrapper = factory()
-        wrapper.vm.execAction({
-          api: 'testApiNameCase7',
+      it('check currentAction params and paramsField when execAction() is called with args is exists', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
+
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
+
+        await wrapper.vm.execAction({
+          api: 'testApiNameCase5',
           args: ['column1', 'column2', 'column3']
         })
+        await flushPromises()
+
         expect(wrapper.vm.currentAction.params).toEqual([
           { name: 'column1', type: 'string' },
           { name: 'column2', type: 'string' },
@@ -1110,18 +1070,29 @@ describe('Views > AutogenView.vue', () => {
           { name: 'column3', type: 'string' }
         ])
         expect(wrapper.vm.showAction).toBeTruthy()
+        done()
       })
 
-      it('check currentAction params and paramsField when execAction() is called with args is function', () => {
-        wrapper = factory()
-        wrapper.vm.$nextTick()
-        wrapper.vm.execAction({
-          api: 'testApiNameCase8',
+      it('check currentAction params and paramsField when execAction() is called with args is function', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
+
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
+
+        await wrapper.vm.execAction({
+          api: 'testApiNameCase5',
           resource: { id: 'test-id-value', name: 'test-name-value' },
           args: (record, store) => {
             return ['Admin'].includes(store.userInfo.roletype) ? ['column1', 'column2', 'column3'] : ['id', 'name']
           }
         })
+        await flushPromises()
+
         expect(wrapper.vm.currentAction.params).toEqual([
           { name: 'column1', type: 'string' },
           { name: 'column2', type: 'string' },
@@ -1134,111 +1105,130 @@ describe('Views > AutogenView.vue', () => {
           { name: 'name', type: 'string' }
         ])
         expect(wrapper.vm.showAction).toBeTruthy()
+        done()
       })
 
-      it('check currentAction paramsField and listUuidOpts() is called when execAction() is called', () => {
-        wrapper = factory()
-        const spy = jest.spyOn(wrapper.vm, 'listUuidOpts')
+      it('check currentAction paramsField and listUuidOpts() is called when execAction() is called', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase6',
-            args: ['id', 'tags', 'column1', 'column2', 'account'],
-            mapping: {
-              column2: () => {
-                return 'test-value'
-              }
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
+
+        const listUuidOpts = jest.spyOn(wrapper.vm, 'listUuidOpts')
+        await wrapper.vm.execAction({
+          api: 'testApiNameCase6',
+          args: ['id', 'tags', 'column1', 'column2', 'account'],
+          mapping: {
+            column2: () => {
+              return 'test-value'
             }
-          })
-
-          expect(wrapper.vm.currentAction.paramFields).toEqual([
-            { name: 'id', type: 'uuid' },
-            { name: 'tags', type: 'string' },
-            { name: 'column1', type: 'list' },
-            { name: 'column2', type: 'string' },
-            { name: 'account', type: 'string' }
-          ])
-          expect(wrapper.vm.showAction).toBeTruthy()
-          expect(spy).toHaveBeenCalled()
-          expect(spy).toHaveBeenCalledWith({ name: 'id', type: 'uuid' })
-          expect(spy).toHaveBeenCalledWith({ name: 'column1', type: 'list' })
-          expect(spy).toHaveBeenCalledWith({ name: 'column2', type: 'string' })
-          expect(spy).toHaveBeenCalledWith({ name: 'account', type: 'string' })
+          }
         })
+        await flushPromises()
+
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'id', type: 'uuid' },
+          { name: 'tags', type: 'string' },
+          { name: 'column1', type: 'list' },
+          { name: 'column2', type: 'string' },
+          { name: 'account', type: 'string' }
+        ])
+        expect(wrapper.vm.showAction).toBeTruthy()
+        expect(listUuidOpts).toHaveBeenCalledTimes(4)
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'id', type: 'uuid' })
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column1', type: 'list' })
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'column2', type: 'string' })
+        expect(listUuidOpts).toHaveBeenCalledWith({ name: 'account', type: 'string' })
+        done()
       })
 
-      it('check fillEditFormFieldValues() is called when execAction() is called', () => {
-        wrapper = factory()
-        const spy = jest.spyOn(wrapper.vm, 'fillEditFormFieldValues')
+      it('check fillEditFormFieldValues() is called when execAction() is called', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase6',
-            dataView: true,
-            icon: 'edit'
-          })
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
 
-          expect(spy).toHaveBeenCalled()
+        const fillEditFormFieldValues = jest.spyOn(wrapper.vm, 'fillEditFormFieldValues')
+
+        await wrapper.vm.execAction({
+          api: 'testApiNameCase6',
+          dataView: true,
+          icon: 'edit-outlined'
         })
+        await flushPromises()
+
+        expect(fillEditFormFieldValues).toHaveBeenCalled()
+        done()
       })
 
-      it('check currentAction paramFields when execAction() is called args has confirmpassword field', () => {
-        wrapper = factory()
+      it('check currentAction paramFields when execAction() is called args has confirmpassword field', async (done) => {
+        originalFunc.getFirstIndexFocus = wrapper.vm.getFirstIndexFocus
+        originalFunc.setRules = wrapper.vm.setRules
+        originalFunc.listUuidOpts = wrapper.vm.listUuidOpts
+        originalFunc.fillEditFormFieldValues = wrapper.vm.fillEditFormFieldValues
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.execAction({
-            api: 'testApiNameCase6',
-            args: ['confirmpassword'],
-            mapping: {}
-          })
+        wrapper.vm.getFirstIndexFocus = jest.fn()
+        wrapper.vm.setRules = jest.fn((param) => {})
+        wrapper.vm.listUuidOpts = jest.fn((param) => {})
+        wrapper.vm.fillEditFormFieldValues = jest.fn()
 
-          expect(wrapper.vm.currentAction.paramFields).toEqual([
-            { name: 'confirmpassword', type: 'password', required: true, description: 'confirmpassword-description-en' }
-          ])
+        await wrapper.vm.execAction({
+          api: 'testApiNameCase6',
+          args: ['confirmpassword'],
+          mapping: {}
         })
+        await flushPromises()
+
+        expect(wrapper.vm.currentAction.paramFields).toEqual([
+          { name: 'confirmpassword', type: 'password', required: true, description: 'confirmpassword-description-en' }
+        ])
+        done()
       })
     })
 
     describe('listUuidOpts()', () => {
-      it('check api not called when listUuidOpts() is called with currentAction.mapping.id is null', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              mapping: {
-                id: () => { return '' }
-              }
+      it('API not called when listUuidOpts() is called with currentAction.mapping.id is null', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            mapping: {
+              id: () => { return '' }
             }
           }
         })
+        await wrapper.vm.listUuidOpts({ name: 'id', type: 'uuid' })
+        await flushPromises()
 
-        wrapper.vm.listUuidOpts({ name: 'id', type: 'uuid' })
-
-        setTimeout(() => {
-          expect(mockAxios).not.toHaveBeenCalled()
-          done()
-        })
+        expect(mockAxios).not.toHaveBeenCalled()
+        done()
       })
 
-      it('check api not called when listUuidOpts() is called with currentAction.mapping is empty', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              mapping: {}
-            }
+      it('API not called when listUuidOpts() is called with currentAction.mapping is empty', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            mapping: {}
           }
         })
+        await wrapper.vm.listUuidOpts({ name: 'test-name', type: 'uuid' })
+        await flushPromises()
 
-        wrapper.vm.listUuidOpts({ name: 'test-name', type: 'uuid' })
-
-        setTimeout(() => {
-          expect(mockAxios).not.toHaveBeenCalled()
-          done()
-        })
+        expect(mockAxios).not.toHaveBeenCalled()
+        done()
       })
 
-      it('check api is called and param.opts when listUuidOpts() is called with currentAction.mapping[param.name].api', (done) => {
+      it('API should be called and param.opts when listUuidOpts() is called with currentAction.mapping[param.name].api', async (done) => {
         const param = { name: 'template', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 1,
             testapinamecase1: [{
@@ -1246,53 +1236,47 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory({
-          data: {
-            currentAction: {
-              mapping: {
-                template: {
-                  api: 'testApiNameCase1'
-                }
+        })
+        await wrapper.setData({
+          currentAction: {
+            mapping: {
+              template: {
+                api: 'testApiNameCase1'
               }
             }
           }
         })
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.listUuidOpts(param)
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              listall: true,
-              response: 'json',
-              showicon: true
-            }
-          })
-          expect(param).toEqual({
-            name: 'template',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            listall: true,
+            showicon: true,
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'template',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called when listUuidOpts() is called with store apis has api startWith param.name', (done) => {
+      it('API should be called when listUuidOpts() is called with store apis has api startWith param.name', async (done) => {
         const param = { name: 'testapiname', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           listtestapinamesresponse: {
             count: 1,
             testapiname: [{
@@ -1300,42 +1284,37 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory()
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.listUuidOpts(param)
-
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'listTestApiNames',
-              listall: true,
-              response: 'json'
-            }
-          })
-          expect(param).toEqual({
-            name: 'testapiname',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
         })
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'listTestApiNames',
+            listall: true,
+            response: 'json'
+          }
+        })
+        expect(param).toEqual({
+          name: 'testapiname',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called with params has item name and value assign by resource', (done) => {
+      it('API should be called with params has item name and value assign by resource', async (done) => {
         const param = { name: 'template', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           testapinamecase1response: {
             count: 0,
             testapinamecase1: [{
@@ -1343,65 +1322,57 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory({
-          data: {
-            currentAction: {
-              mapping: {
-                template: {
-                  api: 'testApiNameCase1',
-                  params: (record) => {
-                    return {
-                      name: record.name
-                    }
+        })
+        await wrapper.setData({
+          currentAction: {
+            mapping: {
+              template: {
+                api: 'testApiNameCase1',
+                params: (record) => {
+                  return {
+                    name: record.name
                   }
                 }
               }
             }
-          }
-        })
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.setData({
+          },
           resource: {
             id: 'test-id-value',
             name: 'test-name-value'
           }
         })
-        wrapper.vm.listUuidOpts(param)
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              listall: true,
-              name: 'test-name-value',
-              response: 'json',
-              showicon: true
-            }
-          })
-          expect(param).toEqual({
-            name: 'template',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            listall: true,
+            name: 'test-name-value',
+            showicon: true,
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'template',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called with params has item templatefilter when apiName is listTemplates', (done) => {
+      it('API should be called with params has item templatefilter when apiName is listTemplates', async (done) => {
         const param = { name: 'id', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           listtemplateresponse: {
             count: 1,
             templates: [{
@@ -1409,46 +1380,41 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory()
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.setData({
+        })
+        await wrapper.setData({
           apiName: 'listTemplates'
         })
-        wrapper.vm.listUuidOpts(param)
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'listTemplates',
-              listall: true,
-              templatefilter: 'executable',
-              response: 'json'
-            }
-          })
-          expect(param).toEqual({
-            name: 'id',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'listTemplates',
+            listall: true,
+            templatefilter: 'executable',
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'id',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called with params has item isofilter when apiName is listIsos', (done) => {
+      it('API should be called with params has item isofilter when apiName is listIsos', async (done) => {
         const param = { name: 'id', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           listisosresponse: {
             count: 1,
             iso: [{
@@ -1456,46 +1422,39 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory()
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.setData({
-          apiName: 'listIsos'
         })
-        wrapper.vm.listUuidOpts(param)
+        await wrapper.setData({ apiName: 'listIsos' })
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'listIsos',
-              listall: true,
-              isofilter: 'executable',
-              response: 'json'
-            }
-          })
-          expect(param).toEqual({
-            name: 'id',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'listIsos',
+            listall: true,
+            isofilter: 'executable',
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'id',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called with params has item type = routing when apiName is listHosts', (done) => {
+      it('API should be called with params has item type = routing when apiName is listHosts', async (done) => {
         const param = { name: 'id', type: 'uuid' }
-        const mockData = {
+
+        await mockAxios.mockResolvedValue({
           listhostresponse: {
             count: 1,
             hosts: [{
@@ -1503,1362 +1462,1703 @@ describe('Views > AutogenView.vue', () => {
               name: 'test-name-value'
             }]
           }
-        }
-
-        wrapper = factory()
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.setData({
-          apiName: 'listHosts'
         })
-        wrapper.vm.listUuidOpts(param)
+        await wrapper.setData({ apiName: 'listHosts' })
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'listHosts',
-              listall: true,
-              type: 'routing',
-              response: 'json'
-            }
-          })
-          expect(param).toEqual({
-            name: 'id',
-            type: 'uuid',
-            loading: false,
-            opts: [{
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }]
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'listHosts',
+            listall: true,
+            type: 'routing',
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'id',
+          type: 'uuid',
+          loading: false,
+          opts: [{
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }]
+        })
+        done()
       })
 
-      it('check api is called and param.opts is empty when api throw error', (done) => {
+      it('API should be called and param.opts is empty when api throw error', async (done) => {
         const param = { name: 'id', type: 'uuid', loading: true }
-        const errorMock = {
+        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
+
+        await mockAxios.mockRejectedValue({
           response: {},
           stack: 'Error: throw exception error'
-        }
-        mockAxios.mockRejectedValue(errorMock)
-        wrapper = factory()
-
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-        wrapper.setData({
-          apiName: 'testApiNameCase1'
         })
-        wrapper.vm.listUuidOpts(param)
+        await wrapper.setData({ apiName: 'testApiNameCase1' })
+        await wrapper.vm.listUuidOpts(param)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              listall: true,
-              response: 'json'
-            }
-          })
-          expect(param).toEqual({
-            name: 'id',
-            type: 'uuid',
-            loading: false,
-            opts: []
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            listall: true,
+            response: 'json'
+          }
         })
+        expect(param).toEqual({
+          name: 'id',
+          type: 'uuid',
+          loading: false,
+          opts: []
+        })
+
+        done()
       })
     })
 
     describe('pollActionCompletion()', () => {
-      it('check $notification when pollActionCompletion() is called with action is empty', (done) => {
-        const mockData = {
+      it('check $notification when pollActionCompletion() is called with action is empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+
+        await mockAxios.mockResolvedValue({
           queryasyncjobresultresponse: {
             jobstatus: 1,
             jobresult: {
               name: 'test-name-value'
             }
           }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory()
-
-        const jobId = 'test-job-id'
-        const action = {}
-
-        wrapper.vm.pollActionCompletion(jobId, action)
-
-        setTimeout(() => {
-          expect(mocks.$notification.info).not.toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'queryAsyncJobResult',
-              jobId: jobId,
-              response: 'json'
-            }
-          })
-
-          done()
         })
+        await wrapper.vm.pollActionCompletion('test-job-id', { label: 'label.name' })
+        await flushPromises()
+
+        expect(fetchData).toHaveBeenCalled()
+        expect(mocks.$notification.info).not.toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'queryAsyncJobResult',
+            jobId: 'test-job-id',
+            response: 'json'
+          }
+        })
+        done()
       })
 
-      it('check $notification when pollActionCompletion() is called with action is not empty', (done) => {
-        const mockData = {
+      it('check $notification when pollActionCompletion() is called with action is not empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+
+        await mockAxios.mockResolvedValue({
           queryasyncjobresultresponse: {
             jobstatus: 1,
             jobresult: {
               name: 'test-name-value'
             }
           }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory()
-        const jobId = 'test-job-id'
-        const action = {
+        })
+        await wrapper.vm.pollActionCompletion('test-job-id', {
           label: 'labelname',
           response: (jobResult) => {
             return jobResult.name
           }
-        }
-        wrapper.vm.pollActionCompletion(jobId, action)
-
-        setTimeout(() => {
-          expect(mocks.$notification.info).toHaveBeenCalled()
-          expect(mocks.$notification.info).toHaveLastReturnedWith({
-            message: 'test-name-en',
-            description: 'test-description',
-            duration: 0
-          })
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'queryAsyncJobResult',
-              jobId: jobId,
-              response: 'json'
-            }
-          })
-
-          done()
         })
+        await flushPromises()
+
+        expect(fetchData).toHaveBeenCalled()
+        expect(mocks.$notification.info).toHaveBeenCalled()
+        expect(mocks.$notification.info).toHaveLastReturnedWith({
+          message: 'test-name-en',
+          description: 'test-description-info',
+          duration: 0
+        })
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'queryAsyncJobResult',
+            jobId: 'test-job-id',
+            response: 'json'
+          }
+        })
+
+        done()
+      })
+
+      it('fetchData() should be called when $pollJob error response', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+
+        await mockAxios.mockResolvedValue({
+          queryasyncjobresultresponse: {
+            jobstatus: 2,
+            jobresult: {
+              errortext: 'test-error-message'
+            }
+          }
+        })
+        await wrapper.vm.pollActionCompletion('test-job-id', {
+          label: 'labelname',
+          response: (jobResult) => {
+            return jobResult.name
+          }
+        })
+        await flushPromises()
+
+        expect(fetchData).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'queryAsyncJobResult',
+            jobId: 'test-job-id',
+            response: 'json'
+          }
+        })
+        done()
       })
     })
 
     describe('fillEditFormFieldValues()', () => {
-      it('check form getFieldDecorator() is called and formModel when currentAction.paramFields has item type = list', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'domainids', type: 'list' }
-              ],
-              mapping: {
-                column1: () => { return 'test-column' }
-              }
-            },
-            resource: {
-              domainname: ['test-domain-value-1', 'test-domain-value-2']
-            }
-          }
-        })
+      it('form data should be empty when currentAction.paramFields empty', async (done) => {
+        await wrapper.setData({ currentAction: { paramFields: [] } })
+        await wrapper.vm.fillEditFormFieldValues()
+        await flushPromises()
 
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.fillEditFormFieldValues()
-
-        wrapper.vm.$nextTick(() => {
-          expect(spy).toHaveBeenCalled()
-          expect(spy).toBeCalledWith('domainids', {
-            initialValue: ['test-domain-value-1', 'test-domain-value-2']
-          })
-          expect(wrapper.vm.formModel).toEqual({ domainids: ['test-domain-value-1', 'test-domain-value-2'] })
-
-          done()
-        })
+        expect(wrapper.vm.form).toEqual({})
+        done()
       })
 
-      it('check form getFieldDecorator() is called and formModel when currentAction.paramFields has item name = account', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'account', type: 'string' }
-              ],
-              mapping: {
-                column1: () => { return 'test-column' }
-              }
-            },
-            resource: {
-              account: 'test-account-value'
-            }
+      it('form data should not empty when currentAction.paramFields has item type equal `list`', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            paramFields: [
+              { name: 'domainids', type: 'list' }
+            ]
+          },
+          resource: {
+            domainname: ['test-domain-value-1', 'test-domain-value-2']
           }
         })
+        await wrapper.vm.fillEditFormFieldValues()
+        await flushPromises()
 
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.fillEditFormFieldValues()
-
-        wrapper.vm.$nextTick(() => {
-          expect(spy).toHaveBeenCalled()
-          expect(spy).toBeCalledWith('account', {
-            initialValue: 'test-account-value'
-          })
-          expect(wrapper.vm.formModel).toEqual({ account: 'test-account-value' })
-
-          done()
-        })
+        expect(wrapper.vm.form).toEqual({ domainids: ['test-domain-value-1', 'test-domain-value-2'] })
+        done()
       })
 
-      it('check form getFieldDecorator() is called and formModel when currentAction.paramFields has item exists in currentAction. mapping', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'column1', type: 'string' }
-              ],
-              mapping: {
-                column1: () => { return 'test-column' }
-              }
-            },
-            resource: {
-              column1: 'test-column-value'
-            }
+      it('form data should not empty when currentAction.paramFields has item type equal `account`', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            paramFields: [
+              { name: 'account', type: 'string' }
+            ]
+          },
+          resource: {
+            account: 'test-account-value'
           }
         })
+        await wrapper.vm.fillEditFormFieldValues()
+        await flushPromises()
 
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.fillEditFormFieldValues()
-
-        wrapper.vm.$nextTick(() => {
-          expect(spy).toHaveBeenCalled()
-          expect(spy).toBeCalledWith('column1', {
-            initialValue: 'test-column-value'
-          })
-          expect(wrapper.vm.formModel).toEqual({ column1: 'test-column-value' })
-
-          done()
-        })
+        expect(wrapper.vm.form).toEqual({ account: 'test-account-value' })
+        done()
       })
 
-      it('check form getFieldDecorator() is called and formModel when currentAction.paramFields has item exists in resource', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'column1', type: 'string' }
-              ]
-            },
-            resource: {
-              column1: 'test-column-value'
-            }
+      it('form data should not empty when currentAction.paramFields has item type not in [`list`, `account`]', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            paramFields: [
+              { name: 'name', type: 'string' }
+            ]
+          },
+          resource: {
+            name: 'test-name-value'
           }
         })
+        await wrapper.vm.fillEditFormFieldValues()
+        await flushPromises()
 
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.fillEditFormFieldValues()
-
-          expect(spy).toHaveBeenCalled()
-          expect(spy).toBeCalledWith('column1', {
-            initialValue: 'test-column-value'
-          })
-          expect(wrapper.vm.formModel).toEqual({ column1: 'test-column-value' })
-
-          done()
-        })
+        expect(wrapper.vm.form).toEqual({ name: 'test-name-value' })
+        done()
       })
 
-      it('check form getFieldDecorator() is called and formModel when currentAction.paramFields have not item in resource', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'column1', type: 'string' }
-              ]
-            },
-            resource: {}
+      it('form data should be empty when currentAction.paramFields has item not exist in resource', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            paramFields: [
+              { name: 'templatename', type: 'string' }
+            ]
+          },
+          resource: {
+            name: 'test-name-value'
           }
         })
+        await wrapper.vm.fillEditFormFieldValues()
+        await flushPromises()
 
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.fillEditFormFieldValues()
-
-          expect(spy).not.toHaveBeenCalled()
-          expect(wrapper.vm.formModel).toEqual({})
-
-          done()
-        })
-      })
-
-      it('check form getFieldDecorator() is not called when field value is null', (done) => {
-        wrapper = factory({
-          data: {
-            currentAction: {
-              paramFields: [
-                { name: 'column1', type: 'string' }
-              ]
-            },
-            resource: {
-              column1: null
-            }
-          }
-        })
-
-        const spy = jest.spyOn(wrapper.vm.form, 'getFieldDecorator')
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.fillEditFormFieldValues()
-
-          expect(spy).not.toHaveBeenCalled()
-
-          done()
-        })
+        expect(wrapper.vm.form).toEqual({})
+        done()
       })
     })
 
     describe('changeFilter()', () => {
-      it('check `route.query` when changeFilter() is called with filter', async () => {
-        wrapper = factory()
+      it('check `route.query` when changeFilter() is called with empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        await wrapper.vm.$nextTick()
-        wrapper.vm.changeFilter('test')
+        await router.push({ name: 'testRouter25' })
+        await wrapper.vm.changeFilter()
+        await flushPromises()
 
-        expect(router.currentRoute.query).toEqual({
-          filter: 'test',
+        expect(router.currentRoute.value.path).toEqual('/test-router-25')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: undefined,
           page: '1',
           pagesize: '20'
         })
+        done()
       })
 
-      it('check `route.query` when changeFilter() is called with `$route.name` equal `template`', async () => {
-        router = common.createMockRouter([{
-          name: 'template',
-          path: '/test-router-1',
-          meta: {
-            icon: 'test'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check `route.query` when changeFilter() is called with $route has query', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'template' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.changeFilter('test')
+        await router.push({ name: 'testRouter25', query: { templatefilter: 'template', account: 'test-account' } })
+        await wrapper.vm.changeFilter('filter')
+        await flushPromises()
 
-        expect(router.currentRoute.query).toEqual({
-          templatefilter: 'test',
-          filter: 'test',
+        expect(router.currentRoute.value.path).toEqual('/test-router-25')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: 'filter',
           page: '1',
           pagesize: '20'
         })
+        done()
       })
 
-      it('check `route.query` when changeFilter() is called with `$route.name` equal `iso`', async () => {
-        router = common.createMockRouter([{
-          name: 'iso',
-          path: '/test-router-1',
-          meta: {
-            icon: 'test'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check `route.query` when changeFilter() is called with filter not empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'iso' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.changeFilter('test')
+        await router.push({ name: 'testRouter25' })
+        await wrapper.vm.changeFilter('filter')
+        await flushPromises()
 
-        expect(router.currentRoute.query).toEqual({
-          isofilter: 'test',
-          filter: 'test',
+        expect(router.currentRoute.value.path).toEqual('/test-router-25')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: 'filter',
           page: '1',
           pagesize: '20'
         })
+        done()
       })
 
-      it('check `route.query` when changeFilter() is called with `$route.name` equal `vm` and `filter` equal `self`', async () => {
-        router = common.createMockRouter([{
-          name: 'vm',
-          path: '/test-router-1',
-          meta: {
-            icon: 'test'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check `route.query` when changeFilter() is called with $route.name equal `template`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'vm' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.changeFilter('self')
+        await router.push({ name: 'template' })
+        await wrapper.vm.changeFilter('filter')
+        await flushPromises()
 
-        expect(router.currentRoute.query).toEqual({
+        expect(router.currentRoute.value.path).toEqual('/template')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: 'filter',
+          templatefilter: 'filter',
+          page: '1',
+          pagesize: '20'
+        })
+        done()
+      })
+
+      it('check `route.query` when changeFilter() is called with $route.name equal `iso`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        await router.push({ name: 'iso' })
+        await wrapper.vm.changeFilter('filter')
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/iso')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: 'filter',
+          isofilter: 'filter',
+          page: '1',
+          pagesize: '20'
+        })
+        done()
+      })
+
+      it('check `route.query` when changeFilter() is called with $route.name equal `guestnetwork`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        await router.push({ name: 'guestnetwork' })
+        await wrapper.vm.changeFilter('filter')
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/guestnetwork')
+        expect(router.currentRoute.value.query).toEqual({
+          filter: 'filter',
+          type: 'filter',
+          page: '1',
+          pagesize: '20'
+        })
+        done()
+      })
+
+      it('check `route.query` when changeFilter() is called with filter equal `self` and $route.name equal `vm`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        await router.push({ name: 'vm' })
+        await wrapper.vm.changeFilter('self')
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/vm')
+        expect(router.currentRoute.value.query).toEqual({
           account: 'test-account',
           domainid: 'test-domain-id',
           filter: 'self',
           page: '1',
           pagesize: '20'
         })
+        done()
       })
 
-      it('check `route.query` when changeFilter() is called with `$route.name` equal `vm` and `filter` equal `running`', async () => {
-        router = common.createMockRouter([{
-          name: 'vm',
-          path: '/test-router-1',
-          meta: {
-            icon: 'test'
-          }
-        }])
-        wrapper = factory({ router: router })
+      it('check `route.query` when changeFilter() is called with filter equal `running` and $route.name equal `vm`', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        router.push({ name: 'vm' })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.changeFilter('running')
+        await router.push({ name: 'vm' })
+        await wrapper.vm.changeFilter('running')
+        await flushPromises()
 
-        expect(router.currentRoute.query).toEqual({
+        expect(router.currentRoute.value.path).toEqual('/vm')
+        expect(router.currentRoute.value.query).toEqual({
           state: 'running',
           filter: 'running',
           page: '1',
           pagesize: '20'
         })
+        done()
       })
     })
 
     describe('changePage()', () => {
-      it('check page, pageSize when changePage() is called', () => {
-        wrapper = factory()
+      it('check $route query when changePage() is called with args not empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        wrapper.vm.$nextTick(() => {
-          expect(router.currentRoute.query).toEqual({})
-          wrapper.vm.changePage(1, 10)
-          expect(router.currentRoute.query).toEqual({
-            page: '1',
-            pagesize: '10'
-          })
-        })
+        await router.push({ name: 'testRouter26' })
+        await wrapper.vm.changePage(2, 10)
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-26')
+        expect(router.currentRoute.value.query).toEqual({ page: '2', pagesize: '10' })
+        done()
+      })
+
+      it('check $route query when changePage() is called with args empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        await router.push({ name: 'testRouter26', query: { page: 1, pagesize: 10 } })
+        await wrapper.vm.changePage()
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-26')
+        expect(router.currentRoute.value.query).toEqual({ page: undefined, pagesize: undefined })
+        done()
       })
     })
 
     describe('changePageSize()', () => {
-      it('check page, pageSize and fetchData() when changePageSize() is called', () => {
-        wrapper = factory()
+      it('check $route query when changePageSize() is called with args empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.changePageSize(2, 20)
-          expect(router.currentRoute.query).toEqual({
-            page: '2',
-            pagesize: '20'
-          })
-        })
+        await router.push({ name: 'testRouter27' })
+        await wrapper.vm.changePageSize()
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-27')
+        expect(router.currentRoute.value.query).toEqual({ page: undefined, pagesize: undefined })
+        done()
+      })
+
+      it('check $route query when changePageSize() is called with args not empty', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+
+        await router.push({ name: 'testRouter27' })
+        await wrapper.vm.changePageSize(2, 10)
+        await flushPromises()
+
+        expect(router.currentRoute.value.path).toEqual('/test-router-27')
+        expect(router.currentRoute.value.query).toEqual({ page: '2', pagesize: '10' })
+        done()
       })
     })
 
     describe('start()', () => {
       it('check loading, selectedRowKeys, fetchData() when start() is called', async (done) => {
-        wrapper = factory()
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn((args) => {})
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
 
-        const spy = jest.spyOn(wrapper.vm, 'fetchData')
-        await wrapper.vm.$nextTick()
+        await wrapper.setData({ selectedRowKeys: [{ id: 'test-id' }] })
         await wrapper.vm.start()
+        await flushPromises()
 
-        expect(spy).toBeCalled()
+        expect(fetchData).toHaveBeenCalledTimes(1)
 
         setTimeout(() => {
           expect(wrapper.vm.loading).toBeFalsy()
           expect(wrapper.vm.selectedRowKeys).toEqual([])
-
           done()
         }, 1000)
       })
     })
 
     describe('toggleLoading()', () => {
-      it('check loading when toggleLoading() is called', () => {
-        wrapper = factory({
-          data: {
-            loading: false
-          }
-        })
+      it('check loading when toggleLoading() is called', async (done) => {
+        await wrapper.setData({ loading: false })
+        await wrapper.vm.toggleLoading()
+        await flushPromises()
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.loading).toBeFalsy()
-
-          wrapper.vm.toggleLoading()
-
-          expect(wrapper.vm.loading).toBeTruthy()
-        })
+        expect(wrapper.vm.loading).toBeTruthy()
+        done()
       })
     })
 
     describe('startLoading()', () => {
-      it('check loading when startLoading() is called', () => {
-        wrapper = factory({
-          data: {
-            loading: false
-          }
-        })
+      it('check loading when startLoading() is called', async (done) => {
+        await wrapper.setData({ loading: false })
+        await wrapper.vm.startLoading()
+        await flushPromises()
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.loading).toBeFalsy()
-
-          wrapper.vm.startLoading()
-
-          expect(wrapper.vm.loading).toBeTruthy()
-        })
+        expect(wrapper.vm.loading).toBeTruthy()
+        done()
       })
     })
 
     describe('finishLoading()', () => {
-      it('check loading when finishLoading() is called', () => {
-        wrapper = factory({
-          data: {
-            loading: true
+      it('check loading when finishLoading() is called', async (done) => {
+        await wrapper.setData({ loading: true })
+        await wrapper.vm.finishLoading()
+        await flushPromises()
+
+        expect(wrapper.vm.loading).toBeFalsy()
+        done()
+      })
+    })
+
+    describe('handleConfirmBlur()', () => {
+      it('check confirmDirty value when handleConfirmBlur() is called with args empty', async (done) => {
+        await wrapper.setData({ confirmDirty: undefined })
+        await wrapper.vm.handleConfirmBlur()
+        await flushPromises()
+
+        expect(wrapper.vm.confirmDirty).toBeUndefined()
+        done()
+      })
+
+      it('check confirmDirty value when handleConfirmBlur() is called with args name not equal `confirmpassword`', async (done) => {
+        const event = document.createEvent('Event')
+
+        await wrapper.setData({ confirmDirty: undefined })
+        await wrapper.vm.handleConfirmBlur(event, 'test')
+        await flushPromises()
+
+        expect(wrapper.vm.confirmDirty).toBeUndefined()
+        done()
+      })
+
+      it('check confirmDirty value when handleConfirmBlur() is called with args name equal `confirmpassword`', async (done) => {
+        await wrapper.setData({ confirmDirty: false })
+        await wrapper.vm.handleConfirmBlur({ target: { value: true } }, 'confirmpassword')
+        await flushPromises()
+
+        expect(wrapper.vm.confirmDirty).toBeTruthy()
+        done()
+      })
+    })
+
+    describe('validateTwoPassword()', () => {
+      it('validate password result is empty when validateTwoPassword() calling with value empty', async (done) => {
+        wrapper.vm.form = {}
+
+        const result = await wrapper.vm.validateTwoPassword({}, null)
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+
+      it('validate field `confirmpassword` not valid when validateTwoPassword() is called with `password` not empty', async (done) => {
+        let result = null
+        wrapper.vm.form = { password: 'abc123' }
+
+        try {
+          result = await wrapper.vm.validateTwoPassword({ field: 'confirmpassword' }, '123abc')
+          await flushPromises()
+        } catch (e) {
+          result = e
+        }
+
+        expect(result).not.toBeUndefined()
+        expect(result).toEqual('message validate password')
+        done()
+      })
+
+      it('validate field `confirmpassword` valid and result empty when validateTwoPassword() is called with `password` not empty', async (done) => {
+        wrapper.vm.form = { password: 'abc123' }
+
+        const result = await wrapper.vm.validateTwoPassword({ field: 'confirmpassword' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+
+      it('validate field `password` valid when validateTwoPassword() is called with `confirmpassword` is empty', async (done) => {
+        wrapper.vm.form = { confirmpassword: '' }
+
+        const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+
+      it('validate field `password` valid when validateTwoPassword() is called with `confirmpassword` not empty', async (done) => {
+        wrapper.vm.form = { confirmpassword: 'abc123' }
+
+        const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+
+      it('validate field `confirmpassword` a when validateTwoPassword() is called with confirmDirty equal true', async (done) => {
+        wrapper.vm.form = { confirmpassword: '123abc' }
+        originalFunc.RefValidateFields = wrapper.vm.formRef.value.validateFields
+        wrapper.vm.formRef.value.validateFields = jest.fn((field) => {})
+
+        const formRefValidate = jest.spyOn(wrapper.vm.formRef.value, 'validateFields')
+        await wrapper.setData({ confirmDirty: true })
+        const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        expect(formRefValidate).toHaveBeenCalledTimes(1)
+        expect(formRefValidate).toHaveBeenLastCalledWith('confirmpassword')
+        done()
+      })
+
+      it('validate field `password` valid when validateTwoPassword() is called with confirmDirty equal false', async (done) => {
+        wrapper.vm.form = { confirmpassword: 'abc123' }
+
+        await wrapper.setData({ confirmDirty: false })
+        const result = await wrapper.vm.validateTwoPassword({ field: 'password' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+
+      it('validate result empty when validateTwoPassword() is called with rules.field not equals `password` or `confirmpassword`', async (done) => {
+        wrapper.vm.form = {}
+
+        const result = await wrapper.vm.validateTwoPassword({ field: 'name' }, 'abc123')
+        await flushPromises()
+
+        expect(result).toBeUndefined()
+        done()
+      })
+    })
+
+    describe('setRules()', () => {
+      it('check rules when setRules() is called with args empty', async (done) => {
+        await wrapper.vm.setRules()
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({})
+        done()
+      })
+
+      it('check rules when setRules() is called with args not empty', async (done) => {
+        await wrapper.vm.setRules({ name: 'field', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-input' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with args field.type equal `boolean`', async (done) => {
+        await wrapper.vm.setRules({ name: 'field', required: true, type: 'boolean' })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-input' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with currentAction.mapping not empty', async (done) => {
+        await wrapper.setData({
+          currentAction: {
+            mapping: {
+              field: {
+                options: []
+              }
+            }
           }
         })
+        await wrapper.vm.setRules({ name: 'field', required: true })
+        await flushPromises()
 
-        wrapper.vm.$nextTick(() => {
-          expect(wrapper.vm.loading).toBeTruthy()
+        expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-select' }] })
+        done()
+      })
 
-          wrapper.vm.finishLoading()
+      it('check rules when setRules() is called with field.name equal `keypair`', async (done) => {
+        await wrapper.vm.setRules({ name: 'keypair', required: true })
+        await flushPromises()
 
-          expect(wrapper.vm.loading).toBeFalsy()
+        expect(wrapper.vm.rules).toEqual({ keypair: [{ required: true, message: 'required-select' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `account`', async (done) => {
+        await wrapper.setData({ currentAction: { api: 'testApiNameCase1' } })
+        await wrapper.vm.setRules({ name: 'account', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ account: [{ required: true, message: 'required-select' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.type equal `uuid`', async (done) => {
+        await wrapper.vm.setRules({ name: 'field', required: true, type: 'uuid' })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ field: [{ required: true, message: 'required-select' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.type equal `list`', async (done) => {
+        await wrapper.vm.setRules({ name: 'field', required: true, type: 'list' })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ field: [{ type: 'array', required: true, message: 'required-select' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.type equal `long`', async (done) => {
+        await wrapper.vm.setRules({ name: 'field', required: true, type: 'long' })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({ field: [{ type: 'number', required: true, message: 'required-number' }] })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `password`', async (done) => {
+        originalFunc.validateTwoPassword = wrapper.vm.validateTwoPassword
+        wrapper.vm.validateTwoPassword = jest.fn()
+
+        await wrapper.vm.setRules({ name: 'password', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          password: [
+            { required: true, message: 'required-input' },
+            { validator: wrapper.vm.validateTwoPassword }
+          ]
         })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `currentpassword`', async (done) => {
+        originalFunc.validateTwoPassword = wrapper.vm.validateTwoPassword
+        wrapper.vm.validateTwoPassword = jest.fn()
+
+        await wrapper.vm.setRules({ name: 'currentpassword', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          currentpassword: [
+            { required: true, message: 'required-input' },
+            { validator: wrapper.vm.validateTwoPassword }
+          ]
+        })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `confirmpassword`', async (done) => {
+        originalFunc.validateTwoPassword = wrapper.vm.validateTwoPassword
+        wrapper.vm.validateTwoPassword = jest.fn()
+
+        await wrapper.vm.setRules({ name: 'confirmpassword', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          confirmpassword: [
+            { required: true, message: 'required-input' },
+            { validator: wrapper.vm.validateTwoPassword }
+          ]
+        })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `certificate`', async (done) => {
+        await wrapper.vm.setRules({ name: 'certificate', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          certificate: [
+            { required: true, message: 'required-input' }
+          ]
+        })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `privatekey`', async (done) => {
+        await wrapper.vm.setRules({ name: 'privatekey', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          privatekey: [
+            { required: true, message: 'required-input' }
+          ]
+        })
+        done()
+      })
+
+      it('check rules when setRules() is called with field.name equal `certchain`', async (done) => {
+        await wrapper.vm.setRules({ name: 'certchain', required: true })
+        await flushPromises()
+
+        expect(wrapper.vm.rules).toEqual({
+          certchain: [
+            { required: true, message: 'required-input' }
+          ]
+        })
+        done()
+      })
+    })
+
+    describe('handleSubmit', () => {
+      it('execSubmit() should be called when handleSubmit() is called in resource view', async (done) => {
+        originalFunc.execSubmit = wrapper.vm.execSubmit
+        wrapper.vm.execSubmit = jest.fn((event) => {})
+
+        const execSubmit = jest.spyOn(wrapper.vm, 'execSubmit')
+        const event = document.createEvent('Event')
+        await wrapper.setData({ dataView: true })
+        await wrapper.vm.handleSubmit(event)
+        await flushPromises()
+
+        expect(execSubmit).toHaveBeenCalledTimes(1)
+        expect(execSubmit).toHaveBeenCalledWith(event)
+        done()
+      })
+
+      it('formRef makes validation calls when handleSubmit() is called in list view', async (done) => {
+        originalFunc.callGroupApi = wrapper.vm.callGroupApi
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.callGroupApi = jest.fn((params, resourceName) => {
+          return new Promise(resolve => {
+            resolve()
+          })
+        })
+
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+        const callGroupApi = jest.spyOn(wrapper.vm, 'callGroupApi')
+        const event = document.createEvent('Event')
+
+        await wrapper.setData({
+          dataView: false,
+          currentAction: {
+            label: 'label.name',
+            groupAction: true,
+            groupMap: (selection) => {
+              return selection.map(x => { return { id: x } })
+            }
+          },
+          selectedRowKeys: ['test-id-value-1'],
+          items: [{
+            id: 'test-id-value-1',
+            name: 'test-name-value-1'
+          }]
+        })
+        await wrapper.vm.handleSubmit(event)
+        await flushPromises()
+
+        expect(wrapper.vm.promises).toHaveLength(1)
+        expect(callGroupApi).toHaveBeenCalledTimes(1)
+        expect(callGroupApi).toHaveBeenCalledWith({ id: 'test-id-value-1' }, 'test-name-value-1')
+        expect(fetchData).toHaveBeenCalledTimes(1)
+        expect(mocks.$message.info).toHaveBeenCalledTimes(1)
+        expect(mocks.$message.info).toHaveBeenCalledWith({
+          content: 'name-en',
+          key: 'label.name',
+          duration: 3
+        })
+        done()
       })
     })
 
     describe('execSubmit()', () => {
-      it('check error from validateFields', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'id', type: 'uuid' }
-              ],
-              paramFields: [
-                { name: 'id', type: 'uuid', description: '', required: true }
-              ],
-              mapping: {}
-            },
-            resource: {
-              id: 'test-id-value'
-            }
-          }
-        })
+      it('API should be called with params has item id equal resource.id', async (done) => {
+        mockAxios.mockResolvedValue({})
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
 
-        spyConsole.warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
-
-        wrapper.vm.$nextTick(() => {
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).not.toBeCalled()
-          done()
-        })
-      })
-
-      it('check api is called with params has item id equal resource.id', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'id', type: 'uuid' }
-              ],
-              paramFields: [
-              ],
-              mapping: {}
-            },
-            resource: {
-              id: 'test-id-value'
-            }
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              id: 'test-id-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key not exist in currentAction.params', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'id', type: 'uuid' }
-              ],
-              paramFields: [
-                { name: 'name', type: 'string', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {
-              id: 'test-id-value'
-            }
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              id: 'test-id-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key exist in currentAction.params, type is boolean and value is undefined', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'boolean' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'boolean', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: false,
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key exist in currentAction.params, type is boolean and value is null', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'boolean' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'boolean', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: null })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: false,
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key exist in currentAction.mapping', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'list' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'list', description: '', required: false }
-              ],
-              mapping: {
-                column1: {
-                  options: ['column-value1', 'column-value2']
-                }
-              }
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: 1 })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: 'column-value2',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key not exist in currentAction.mapping, type is list and currentAction.params[input] has id', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                {
-                  name: 'column1',
-                  type: 'list',
-                  opts: [
-                    { id: 'test-id-1', value: 'test-value-1' },
-                    { id: 'test-id-2', value: 'test-value-2' },
-                    { id: 'test-id-3', value: 'test-value-3' }
-                  ]
-                }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'list', description: '', required: false }
-              ],
-              mapping: {
-              }
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: [1, 2] })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: 'test-id-2,test-id-3',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key has name = account, currentAction.api = createAccount', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'createAccount',
-              loading: false,
-              label: 'labelname',
-              params: [
-                {
-                  name: 'account',
-                  type: 'string'
-                }
-              ],
-              paramFields: [
-                { name: 'account', type: 'string', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('account', { initialValue: 'test-account-value' })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'createAccount',
-              account: 'test-account-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key has name = keypair, currentAction.api = addAccountToProject', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'addAccountToProject',
-              loading: false,
-              label: 'labelname',
-              params: [
-                {
-                  name: 'keypair',
-                  type: 'string'
-                }
-              ],
-              paramFields: [
-                { name: 'keypair', type: 'string', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 'test-keypair-value' })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'addAccountToProject',
-              keypair: 'test-keypair-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key name = (account | keypair), currentAction.api != (addAccountToProject | createAccount)', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                {
-                  name: 'keypair',
-                  type: 'string',
-                  opts: [
-                    { id: 'test-id-1', name: 'test-name-1' },
-                    { id: 'test-id-2', name: 'test-name-2' }
-                  ]
-                }
-              ],
-              paramFields: [
-                { name: 'keypair', type: 'string', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('keypair', { initialValue: 1 })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              keypair: 'test-name-2',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when form has input key do not fall under special condition.', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                {
-                  name: 'column1',
-                  type: 'string'
-                }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ],
-              mapping: {}
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column-value' })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: 'test-column-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when currentAction has defaultArgs', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'string' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ],
-              mapping: {},
-              defaultArgs: {
-                column2: 'test-column2-value'
-              }
-            },
-            resource: {}
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: 'test-column1-value',
-              column2: 'test-column2-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check api is called when currentAction.mapping has value and value is function', (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'string' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ],
-              mapping: {
-                column2: {
-                  value: (record, params) => {
-                    return record.name
-                  }
-                }
-              }
-            },
-            resource: {
-              id: 'test-id-value',
-              name: 'test-name-value'
-            }
-          }
-        })
-
-        const mockData = {
-          testapinamecase1response: {
-            testapinamecase1: {}
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
-          const event = document.createEvent('Event')
-          wrapper.vm.execSubmit(event)
-
-          expect(mockAxios).toHaveBeenCalledTimes(1)
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'testApiNameCase1',
-              column1: 'test-column1-value',
-              column2: 'test-name-value',
-              response: 'json'
-            }
-          })
-
-          done()
-        })
-      })
-
-      it('check router name when api is called and currentAction.icon = delete and dataView is true', async (done) => {
-        const mockData = {
-          testapinamecase1response: {
-            jobid: 'test-job-id'
+        const event = document.createEvent('Event')
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            icon: 'plus-outlined',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
-          queryasyncjobresultresponse: {
-            jobstatus: 1,
-            jobresult: {
-              name: 'test-name-value'
-            }
-          }
-        }
-
-        mockAxios.mockResolvedValue(mockData)
-        router = common.createMockRouter([{
-          name: 'testRouter26',
-          path: '/test-router-26',
-          meta: {
-            icon: 'test-router-26'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          data: {
-            currentAction: {
-              api: 'testApiNameCase1',
-              icon: 'delete',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'string' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ]
-            },
-            resource: {}
+          resource: {
+            id: 'test-resource-id'
           }
         })
-        router.push({ name: 'testRouter26', query: { dataView: true } })
-        await wrapper.vm.$nextTick()
-        wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
-        const event = document.createEvent('Event')
         await wrapper.vm.execSubmit(event)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(router.currentRoute.name).toEqual('home')
-          done()
-        }, 1000)
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            id: 'test-resource-id',
+            response: 'json'
+          }
+        })
+        done()
       })
 
-      it('check pollActionCompletion() and action AddAsyncJob is called when api is called and response have jobId result', async (done) => {
-        store = common.createMockStore(state)
-        wrapper = factory({
-          store: store,
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'string' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ]
-            },
-            resource: {}
-          }
-        })
+      it('API should be called when form has input key not exist in currentAction.params', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
 
-        const spyPollAction = jest.spyOn(wrapper.vm, 'pollActionCompletion').mockImplementation(() => {})
-        const mockData = {
-          testapinamecase1response: {
-            jobid: 'test-job-id'
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
           },
-          queryasyncjobresultresponse: {
-            jobstatus: 1,
-            jobresult: {
-              name: 'test-name-value'
-            }
-          }
-        }
-
-        mockAxios.mockResolvedValue(mockData)
-
-        await wrapper.vm.$nextTick()
-        wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
-        const event = document.createEvent('Event')
-        wrapper.vm.execSubmit(event)
-
-        setTimeout(() => {
-          expect(spyPollAction).toHaveBeenCalled()
-
-          done()
-        })
-      })
-
-      it('check $message when api is called and response have not jobId result', async (done) => {
-        wrapper = factory({
-          data: {
-            showAction: true,
-            currentAction: {
-              api: 'testApiNameCase1',
-              loading: false,
-              label: 'labelname',
-              params: [
-                { name: 'column1', type: 'string' }
-              ],
-              paramFields: [
-                { name: 'column1', type: 'string', description: '', required: false }
-              ]
-            },
-            resource: {
-              name: 'test-name-value'
-            }
+          resource: {
+            id: 'test-resource-id'
           }
         })
-
-        const mockData = {
-          testapinamecase1response: {
-            count: 1,
-            testapinamecase1: [{
-              id: 'test-id-value'
-            }]
-          }
-        }
-
-        mockAxios.mockResolvedValue(mockData)
-
-        await wrapper.vm.$nextTick()
-        wrapper.vm.form.getFieldDecorator('column1', { initialValue: 'test-column1-value' })
-        const event = document.createEvent('Event')
-        wrapper.vm.execSubmit(event)
-
-        setTimeout(() => {
-          expect(mocks.$message.success).toHaveBeenCalled()
-          expect(mocks.$message.success).toHaveLastReturnedWith({
-            content: 'test-name-en - test-name-value',
-            key: 'labelnametest-name-value',
-            duration: 2
-          })
-
-          done()
-        })
-      })
-
-      it('check $notifyError is called when api is called with throw error', async (done) => {
-        wrapper = factory()
-
-        const errorMock = {
-          response: {},
-          message: 'Error: throw exception error'
-        }
-        mockAxios.mockRejectedValue(errorMock)
-        spyConsole.log = jest.spyOn(console, 'log').mockImplementation(() => {})
-
-        await wrapper.vm.$nextTick()
-        const event = document.createEvent('Event')
         await wrapper.vm.execSubmit(event)
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$notifyError).toHaveBeenCalledTimes(1)
-          expect(mocks.$notifyError).toHaveBeenCalledWith(errorMock)
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            id: 'test-resource-id',
+            response: 'json'
+          }
         })
+        done()
+      })
+
+      it('API should be called when form has input key exist in currentAction.params, type is boolean and value is undefined', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: undefined }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: false,
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key exist in currentAction.params, type is boolean and value is null', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: null }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: false,
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key exist in currentAction.params, type is boolean and value is empty', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: '' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'boolean' }],
+            paramFields: [{ name: 'column1', type: 'boolean' }]
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: false,
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has not input tag', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: '' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }]
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key exist in currentAction.mapping', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: 1 }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'list' }],
+            paramFields: [{ name: 'column1', type: 'list' }],
+            mapping: {
+              column1: {
+                options: ['column-value1', 'column-value2']
+              }
+            }
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: 'column-value2',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key not exist in currentAction.mapping, type is list and currentAction.params[input] has id', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: [1, 2] }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [
+              {
+                name: 'column1',
+                type: 'list',
+                opts: [
+                  { id: 'test-id-1', value: 'test-value-1' },
+                  { id: 'test-id-2', value: 'test-value-2' },
+                  { id: 'test-id-3', value: 'test-value-3' }
+                ]
+              }
+            ],
+            paramFields: [
+              {
+                name: 'column1',
+                type: 'list',
+                opts: [
+                  { id: 'test-id-1', value: 'test-value-1' },
+                  { id: 'test-id-2', value: 'test-value-2' },
+                  { id: 'test-id-3', value: 'test-value-3' }
+                ]
+              }
+            ],
+            mapping: {}
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: 'test-id-2,test-id-3',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key has name = account, currentAction.api = createAccount', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { account: 'test-account-value' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'createAccount',
+            label: 'label.name',
+            params: [{ name: 'account', type: 'string' }],
+            paramFields: [{ name: 'account', type: 'string' }],
+            mapping: {}
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'createAccount',
+            account: 'test-account-value',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key has name = keypair, currentAction.api = addAccountToProject', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { keypair: 'test-keypair-value' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'addAccountToProject',
+            label: 'label.name',
+            params: [{ name: 'keypair', type: 'string' }],
+            paramFields: [{ name: 'keypair', type: 'string' }],
+            mapping: {}
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'addAccountToProject',
+            keypair: 'test-keypair-value',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key name = (account | keypair), currentAction.api != (addAccountToProject | createAccount)', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { keypair: 1 }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [
+              {
+                name: 'keypair',
+                type: 'string',
+                opts: [
+                  { id: 'test-id-1', name: 'test-name-1' },
+                  { id: 'test-id-2', name: 'test-name-2' }
+                ]
+              }
+            ],
+            paramFields: [
+              {
+                name: 'keypair',
+                type: 'string',
+                opts: [
+                  { id: 'test-id-1', name: 'test-name-1' },
+                  { id: 'test-id-2', name: 'test-name-2' }
+                ]
+              }
+            ],
+            mapping: {}
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            keypair: 'test-name-2',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when form has input key do not fall under special condition.', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: 'test-column-value' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
+            mapping: {}
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: 'test-column-value',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when currentAction has defaultArgs', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: 'test-column1-value' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
+            mapping: {},
+            defaultArgs: {
+              column2: 'test-column2-value'
+            }
+          },
+          resource: {}
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: 'test-column1-value',
+            column2: 'test-column2-value',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called when currentAction.mapping has value and value is function', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.form = { column1: 'test-column1-value' }
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'column1', type: 'string' }],
+            paramFields: [{ name: 'column1', type: 'string' }],
+            mapping: {
+              column2: {
+                value: (record, params) => {
+                  return record.name
+                }
+              }
+            }
+          },
+          resource: {
+            id: 'test-id-value',
+            name: 'test-name-value'
+          }
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'testApiNameCase1',
+            column1: 'test-column1-value',
+            column2: 'test-name-value',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('API should be called with post method', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.fetchData = wrapper.vm.fetchData
+        originalFunc.closeAction = wrapper.vm.closeAction
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.fetchData = jest.fn()
+        wrapper.vm.closeAction = jest.fn()
+
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }],
+            post: true
+          },
+          resource: {
+            id: 'test-id-value'
+          }
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        const postData = new URLSearchParams()
+        postData.append('id', 'test-id-value')
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'POST',
+          data: postData,
+          params: {
+            command: 'testApiNameCase1',
+            response: 'json'
+          }
+        })
+        done()
+      })
+
+      it('handleResponse() & closeAction() should be called when API response success', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.closeAction = wrapper.vm.closeAction
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, params, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.fetchData = jest.fn()
+
+        const handleResponse = jest.spyOn(wrapper.vm, 'handleResponse')
+        const closeAction = jest.spyOn(wrapper.vm, 'closeAction')
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          },
+          resource: {
+            id: 'test-id-value'
+          }
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(handleResponse).toHaveBeenCalledTimes(1)
+        expect(handleResponse).toHaveBeenLastCalledWith(
+          {},
+          'test-id-value',
+          'test-id-value',
+          {
+            api: 'testApiNameCase1',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          }
+        )
+        expect(closeAction).toHaveBeenCalledTimes(1)
+        done()
+      })
+
+      it('$router should go back when API response success with shouldNavigateBack() return true', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.closeAction = wrapper.vm.closeAction
+        originalFunc.fetchData = wrapper.vm.fetchData
+        originalFunc.routerGo = wrapper.vm.$router.go
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return true })
+        wrapper.vm.$router.go = jest.fn((number) => {})
+        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.fetchData = jest.fn()
+
+        const routerGo = jest.spyOn(wrapper.vm.$router, 'go')
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            icon: 'delete-outlined',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          },
+          resource: {
+            id: 'test-id-value'
+          },
+          dataView: true
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(routerGo).toHaveBeenCalledTimes(1)
+        expect(routerGo).toHaveBeenLastCalledWith(-1)
+        done()
+      })
+
+      it('$router should go back when API response success with action.api equal `archiveEvents`', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.closeAction = wrapper.vm.closeAction
+        originalFunc.fetchData = wrapper.vm.fetchData
+        originalFunc.routerGo = wrapper.vm.$router.go
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return true })
+        wrapper.vm.$router.go = jest.fn((number) => {})
+        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.fetchData = jest.fn()
+
+        const routerGo = jest.spyOn(wrapper.vm.$router, 'go')
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'archiveEvents',
+            icon: 'plus-outlined',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          },
+          resource: {
+            id: 'test-id-value'
+          },
+          dataView: true
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(routerGo).toHaveBeenCalledTimes(1)
+        expect(routerGo).toHaveBeenLastCalledWith(-1)
+        done()
+      })
+
+      it('fetchData() should be called when API response success with jobId empty', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.closeAction = wrapper.vm.closeAction
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve() })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.fetchData = jest.fn()
+
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            icon: 'plus-outlined',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          },
+          resource: {
+            id: 'test-id-value'
+          },
+          dataView: true
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(fetchData).toHaveBeenCalled()
+        done()
+      })
+
+      it('fetchData() not called when API response success with jobId not empty', async (done) => {
+        originalFunc.handleResponse = wrapper.vm.handleResponse
+        originalFunc.shouldNavigateBack = wrapper.vm.shouldNavigateBack
+        originalFunc.closeAction = wrapper.vm.closeAction
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.handleResponse = jest.fn(async (json, resourceName, action) => { return Promise.resolve('test-job-id') })
+        wrapper.vm.shouldNavigateBack = jest.fn((args) => { return false })
+        wrapper.vm.closeAction = jest.fn()
+        wrapper.vm.fetchData = jest.fn()
+
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData')
+        const event = document.createEvent('Event')
+        await mockAxios.mockResolvedValue({})
+        await wrapper.setData({
+          showAction: true,
+          currentAction: {
+            api: 'testApiNameCase1',
+            icon: 'plus-outlined',
+            label: 'label.name',
+            params: [{ name: 'id', type: 'uuid' }],
+            paramFields: [{ name: 'id', type: 'uuid' }]
+          },
+          resource: {
+            id: 'test-id-value'
+          },
+          dataView: true
+        })
+        await wrapper.vm.execSubmit(event)
+        await flushPromises()
+
+        expect(fetchData).not.toHaveBeenCalled()
+        done()
       })
     })
   })

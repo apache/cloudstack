@@ -14,12 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'imagestore',
   title: 'label.secondary.storage',
-  icon: 'picture',
+  icon: 'picture-outlined',
   docHelp: 'adminguide/storage.html#secondary-storage',
   permission: ['listImageStores'],
   columns: () => {
@@ -42,35 +44,35 @@ export default {
   resourceType: 'SecondaryStorage',
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
-    component: () => import('@/components/view/SettingsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
     name: 'comments',
-    component: () => import('@/components/view/AnnotationsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   actions: [
     {
       api: 'addImageStore',
-      icon: 'plus',
+      icon: 'plus-outlined',
       docHelp: 'installguide/configuration.html#add-secondary-storage',
       label: 'label.add.secondary.storage',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/AddSecondaryStorage.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AddSecondaryStorage.vue')))
     },
     {
       api: 'migrateSecondaryStorageData',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.migrate.data.from.image.store',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/MigrateData.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/MigrateData.vue')))
     },
     {
       api: 'updateImageStore',
-      icon: 'stop',
+      icon: 'stop-outlined',
       label: 'label.action.image.store.read.only',
       message: 'message.action.secondary.storage.read.only',
       dataView: true,
@@ -79,7 +81,7 @@ export default {
     },
     {
       api: 'updateImageStore',
-      icon: 'check-circle',
+      icon: 'check-circle-outlined',
       label: 'label.action.image.store.read.write',
       message: 'message.action.secondary.storage.read.write',
       dataView: true,
@@ -88,7 +90,7 @@ export default {
     },
     {
       api: 'deleteImageStore',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.delete.secondary.storage',
       message: 'message.action.delete.secondary.storage',
       dataView: true,

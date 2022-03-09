@@ -18,20 +18,20 @@
 <template>
   <div class="form" v-ctrl-enter="submitData">
     <div v-if="loading" class="loading">
-      <a-icon type="loading"></a-icon>
+      <loading-outlined />
     </div>
 
     <div class="form__item">
       <p class="form__label">{{ $t('label.operation') }}</p>
       <a-select
-        v-model="selectedOperation"
+        v-model:value="selectedOperation"
         :defaultValue="$t('label.add')"
         @change="fetchData"
-        autoFocus
+        v-focus="true"
         showSearch
-        optionFilterProp="children"
+        optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
         <a-select-option :value="$t('label.add')">{{ $t('label.add') }}</a-select-option>
         <a-select-option :value="$t('label.remove')">{{ $t('label.remove') }}</a-select-option>
@@ -46,14 +46,14 @@
           {{ $t('label.sharewith') }}
         </p>
         <a-select
-          v-model="selectedShareWith"
+          v-model:value="selectedShareWith"
           :defaultValue="$t('label.account')"
           @change="fetchData"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -68,25 +68,25 @@
             <a-select
               mode="multiple"
               placeholder="Select Accounts"
-              :value="selectedAccounts"
+              v-model:value="selectedAccounts"
               @change="handleChange"
               style="width: 100%"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="account in accountsList" :key="account.name" :label="account.name">
                 <span>
                   <resource-icon v-if="account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="team" style="margin-right: 5px" />
+                  <team-outlined v-else style="margin-right: 5px" />
                   {{ account.name }}
                 </span>
               </a-select-option>
             </a-select>
           </div>
           <div v-else>
-            <a-input v-model="selectedAccountsList" :placeholder="$t('label.comma.separated.list.description')"></a-input>
+            <a-input v-model:value="selectedAccountsList" :placeholder="$t('label.comma.separated.list.description')"></a-input>
           </div>
         </div>
       </template>
@@ -99,18 +99,18 @@
           <a-select
             mode="multiple"
             :placeholder="$t('label.select.projects')"
-            :value="selectedProjects"
+            v-model:value="selectedProjects"
             @change="handleChange"
             style="width: 100%"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="project in projectsList" :key="project.name" :label="project.name">
               <span>
                 <resource-icon v-if="project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="project" style="margin-right: 5px" />
+                <project-outlined v-else style="margin-right: 5px" />
                 {{ project.name }}
               </span>
             </a-select-option>
@@ -261,7 +261,7 @@ export default {
       }
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     submitData () {
       if (this.loading) return

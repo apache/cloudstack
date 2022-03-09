@@ -18,22 +18,24 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" layout="vertical">
-        <a-form-item :label="$t('label.name')">
-          <a-input v-decorator="['name']" autoFocus />
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit"
+       >
+        <a-form-item name="name" ref="name" :label="$t('label.name')">
+          <a-input v-model:value="form.name" v-focus="true" />
         </a-form-item>
-        <a-form-item :label="$t('label.providername')">
+        <a-form-item name="" ref="" :label="$t('label.providername')">
           <a-select
-            v-decorator="[
-              'provider',
-              {
-                initialValue: 'NFS'
-              }]"
-            @change="val => { this.provider = val }"
+            v-model:value="form.provider"
+            @change="val => { form.provider = val }"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               :value="prov"
@@ -42,20 +44,14 @@
             >{{ prov }}</a-select-option>
           </a-select>
         </a-form-item>
-        <div v-if="!['Swift', 'S3'].includes(provider)">
-          <a-form-item :label="$t('label.zone')">
+        <div v-if="!['Swift', 'S3'].includes(form.provider)">
+          <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
-              v-decorator="[
-                'zone',
-                {
-                  initialValue: this.zoneSelected,
-                  rules: [{ required: true, message: `${$t('label.required')}`}]
-                }]"
-              @change="val => { zoneSelected = val }"
+              v-model:value="form.zone"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 :value="zone.id"
@@ -64,119 +60,55 @@
                 :label="zone.name">
                 <span>
                   <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
                 </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.server')">
-            <a-input
-              v-decorator="[
-                'server',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="server" ref="server" :label="$t('label.server')">
+            <a-input v-model:value="form.server" />
           </a-form-item>
-          <a-form-item :label="$t('label.path')">
-            <a-input
-              v-decorator="[
-                'path',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="path" ref="path" :label="$t('label.path')">
+            <a-input v-model:value="form.path" />
           </a-form-item>
         </div>
-        <div v-if="provider === 'SMB/CIFS'">
-          <a-form-item :label="$t('label.smbusername')">
-            <a-input
-              v-decorator="[
-                'smbUsername',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+        <div v-if="form.provider === 'SMB/CIFS'">
+          <a-form-item name="smbUsername" ref="smbUsername" :label="$t('label.smbusername')">
+            <a-input v-model:value="form.smbUsername" />
           </a-form-item>
-          <a-form-item :label="$t('label.smbpassword')">
-            <a-input-password
-              v-decorator="[
-                'smbPassword',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="smbPassword" ref="smbPassword" :label="$t('label.smbpassword')">
+            <a-input-password v-model:value="form.smbPassword" />
           </a-form-item>
-          <a-form-item :label="$t('label.smbdomain')">
-            <a-input
-              v-decorator="[
-                'smbDomain',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="smbDomain" ref="smbDomain" :label="$t('label.smbdomain')">
+            <a-input v-model:value="form.smbDomain" />
           </a-form-item>
         </div>
-        <div v-if="provider === 'Swift'">
-          <a-form-item :label="$t('label.url')">
-            <a-input
-              v-decorator="[
-                'url',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+        <div v-if="form.provider === 'Swift'">
+          <a-form-item name="url" ref="url" :label="$t('label.url')">
+            <a-input v-model:value="form.url" />
           </a-form-item>
-          <a-form-item :label="$t('label.account')">
-            <a-input
-              v-decorator="[
-                'account',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="account" ref="account" :label="$t('label.account')">
+            <a-input v-model:value="form.account" />
           </a-form-item>
-          <a-form-item :label="$t('label.username')">
-            <a-input
-              v-decorator="[
-                'username',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="username" ref="username" :label="$t('label.username')">
+            <a-input v-model:value="form.username" />
           </a-form-item>
-          <a-form-item :label="$t('label.key')">
-            <a-input
-              v-decorator="[
-                'key',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"
-            />
+          <a-form-item name="key" ref="key" :label="$t('label.key')">
+            <a-input v-model:value="form.key" />
           </a-form-item>
-          <a-form-item :label="$t('label.storagepolicy')">
-            <a-input
-              v-decorator="[
-                'storagepolicy'
-              ]"
-            />
+          <a-form-item name="storagepolicy" ref="storagepolicy" :label="$t('label.storagepolicy')">
+            <a-input v-model:value="form.storagepolicy" />
           </a-form-item>
         </div>
-        <div v-if="provider === 'S3'">
-          <a-form-item :label="$t('label.zone')">
+        <div v-if="form.provider === 'S3'">
+          <a-form-item name="zone" ref="zone" :label="$t('label.zone')">
             <a-select
-              v-decorator="[
-                'zone',
-                {
-                  initialValue: this.zoneSelected,
-                  rules: [{ required: true, message: `${$t('label.required')}`}]
-                }]"
-              @change="val => { zoneSelected = val }"
+              v-model:value="form.zone"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 :value="zone.id"
@@ -185,67 +117,46 @@
                 :label="zone.name">
                 <span>
                   <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
                 </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.access.key')">
-            <a-input
-              v-decorator="[
-                'secondaryStorageAccessKey',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"/>
+          <a-form-item name="secondaryStorageAccessKey" ref="secondaryStorageAccessKey" :label="$t('label.s3.access.key')">
+            <a-input v-model:value="form.secondaryStorageAccessKey" />
           </a-form-item>
-          <a-form-item :label="$t('label.s3.secret.key')">
-            <a-input
-              v-decorator="[
-                'secondaryStorageSecretKey',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"/>
+          <a-form-item name="secondaryStorageSecretKey" ref="secondaryStorageSecretKey" :label="$t('label.s3.secret.key')">
+            <a-input v-model:value="form.secondaryStorageSecretKey" />
           </a-form-item>
-          <a-form-item :label="$t('label.s3.bucket')">
-            <a-input
-              v-decorator="[
-                'secondaryStorageBucket',
-                {
-                  rules: [{ required: true, message: `${$t('label.required')}` }]
-                }]"/>
+          <a-form-item name="secondaryStorageBucket" ref="secondaryStorageBucket" :label="$t('label.s3.bucket')">
+            <a-input v-model:value="form.secondaryStorageBucket"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.endpoint')">
-            <a-input v-decorator="['secondaryStorageEndpoint']"/>
+          <a-form-item name="secondaryStorageEndpoint" ref="secondaryStorageEndpoint" :label="$t('label.s3.endpoint')">
+            <a-input v-model:value="form.secondaryStorageEndpoint"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.use.https')">
-            <a-switch v-decorator="['secondaryStorageHttps', { initialValue: true }]" :default-checked="true" />
+          <a-form-item name="secondaryStorageHttps" ref="secondaryStorageHttps" :label="$t('label.s3.use.https')">
+            <a-switch v-model:checked="form.secondaryStorageHttps" />
           </a-form-item>
-          <a-form-item :label="$t('label.s3.connection.timeout')">
-            <a-input v-decorator="['secondaryStorageConnectionTimeout']"/>
+          <a-form-item name="secondaryStorageConnectionTimeout" ref="secondaryStorageConnectionTimeout" :label="$t('label.s3.connection.timeout')">
+            <a-input v-model:value="form.secondaryStorageConnectionTimeout"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.max.error.retry')">
-            <a-input v-decorator="['secondaryStorageMaxError']"/>
+          <a-form-item name="secondaryStorageMaxError" ref="secondaryStorageMaxError" :label="$t('label.s3.max.error.retry')">
+            <a-input v-model:value="form.secondaryStorageMaxError"/>
           </a-form-item>
-          <a-form-item :label="$t('label.s3.socket.timeout')">
-            <a-input v-decorator="['secondaryStorageSocketTimeout']"/>
+          <a-form-item name="secondaryStorageSocketTimeout" ref="secondaryStorageSocketTimeout" :label="$t('label.s3.socket.timeout')">
+            <a-input v-model:value="form.secondaryStorageSocketTimeout"/>
           </a-form-item>
-          <a-form-item :label="$t('label.create.nfs.secondary.staging.storage')">
-            <a-switch v-decorator="['secondaryStorageNFSStaging']" @change="val => secondaryStorageNFSStaging = val" />
+          <a-form-item name="secondaryStorageNFSStaging" ref="secondaryStorageNFSStaging" :label="$t('label.create.nfs.secondary.staging.storage')">
+            <a-switch v-model:checked="form.secondaryStorageNFSStaging" @change="val => secondaryStorageNFSStaging = val" />
           </a-form-item>
         </div>
         <div v-if="secondaryStorageNFSStaging">
-          <a-form-item :label="$t('label.s3.nfs.server')">
-            <a-input
-              v-decorator="['secondaryStorageNFSServer', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"/>
+          <a-form-item name="secondaryStorageNFSServer" ref="secondaryStorageNFSServer" :label="$t('label.s3.nfs.server')">
+            <a-input v-model:value="form.secondaryStorageNFSServer" />
           </a-form-item>
-          <a-form-item :label="$t('label.s3.nfs.path')">
-            <a-input
-              v-decorator="['secondaryStorageNFSPath', {
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"/>
+          <a-form-item name="secondaryStorageNFSPath" ref="secondaryStorageNFSPath" :label="$t('label.s3.nfs.path')">
+            <a-input v-model:value="form.secondaryStorageNFSPath"/>
           </a-form-item>
         </div>
         <div :span="24" class="action-button">
@@ -257,6 +168,7 @@
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
@@ -275,32 +187,52 @@ export default {
   data () {
     return {
       providers: ['NFS', 'SMB/CIFS', 'S3', 'Swift'],
-      provider: '',
       zones: [],
-      zoneSelected: '',
       loading: false,
       secondaryStorageNFSStaging: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        provider: 'NFS',
+        secondaryStorageHttps: true
+      })
+      this.rules = reactive({
+        zone: [{ required: true, message: this.$t('label.required') }],
+        server: [{ required: true, message: this.$t('label.required') }],
+        path: [{ required: true, message: this.$t('label.required') }],
+        smbUsername: [{ required: true, message: this.$t('label.required') }],
+        smbPassword: [{ required: true, message: this.$t('label.required') }],
+        smbDomain: [{ required: true, message: this.$t('label.required') }],
+        url: [{ required: true, message: this.$t('label.required') }],
+        account: [{ required: true, message: this.$t('label.required') }],
+        username: [{ required: true, message: this.$t('label.required') }],
+        key: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageAccessKey: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageSecretKey: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageBucket: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageNFSServer: [{ required: true, message: this.$t('label.required') }],
+        secondaryStorageNFSPath: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.listZones()
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     listZones () {
       api('listZones', { showicon: true }).then(json => {
         if (json && json.listzonesresponse && json.listzonesresponse.zone) {
           this.zones = json.listzonesresponse.zone
           if (this.zones.length > 0) {
-            this.zoneSelected = this.zones[0].id || ''
+            this.form.zone = this.zones[0].id || ''
           }
         }
       })
@@ -331,10 +263,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll(async (err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(async () => {
+        const values = toRaw(this.form)
 
         var data = {
           name: values.name
@@ -375,7 +305,7 @@ export default {
             accesskey: values.secondaryStorageAccessKey,
             secretkey: values.secondaryStorageSecretKey,
             bucket: values.secondaryStorageBucket,
-            usehttps: values.secondaryStorageHttps ? values.secondaryStorageHttps : false
+            usehttps: values?.secondaryStorageHttps || false
           }
           Object.keys(s3Params).forEach((key, index) => {
             data['details[' + index.toString() + '].key'] = key
@@ -446,6 +376,8 @@ export default {
           this.$notifyError(error)
           this.loading = false
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     addImageStore (params) {

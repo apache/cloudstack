@@ -48,7 +48,9 @@ public class MemStat {
     public MemStat(long reservedMemory, long overCommitMemory) {
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
-        this.refresh();
+        if (System.getProperty("os.name").equals("Linux")) {
+            this.refresh();
+        }
     }
 
     public long getTotal() {

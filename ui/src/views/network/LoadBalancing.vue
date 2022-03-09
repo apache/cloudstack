@@ -17,21 +17,21 @@
 
 <template>
   <div>
-    <div v-ctrl-enter="handleOpenAddVMModal">
+    <div @keyup.ctrl.enter="handleOpenAddVMModal">
       <div class="form">
         <div class="form__item" ref="newRuleName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.name') }}</div>
-          <a-input autoFocus v-model="newRule.name"></a-input>
+          <a-input v-focus="true" v-model:value="newRule.name"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePublicPort">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.publicport') }}</div>
-          <a-input v-model="newRule.publicport"></a-input>
+          <a-input v-model:value="newRule.publicport"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item" ref="newRulePrivatePort">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.privateport') }}</div>
-          <a-input v-model="newRule.privateport"></a-input>
+          <a-input v-model:value="newRule.privateport"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
       </div>
@@ -39,11 +39,11 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.algorithm') }}</div>
           <a-select
-            v-model="newRule.algorithm"
+            v-model:value="newRule.algorithm"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
@@ -53,12 +53,12 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            v-model="newRule.protocol"
+            v-model:value="newRule.protocol"
             style="min-width: 100px"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
@@ -77,10 +77,11 @@
     <a-divider />
     <a-button
       v-if="(('deleteLoadBalancerRule' in $store.getters.apis) && this.selectedItems.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.load.balancer.rules') }}
     </a-button>
     <a-table
@@ -92,29 +93,29 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template slot="algorithm" slot-scope="record">
+      <template #algorithm="{ record }">
         {{ returnAlgorithmName(record.algorithm) }}
       </template>
-      <template slot="protocol" slot-scope="record">
+      <template #protocol="{record}">
         {{ getCapitalise(record.protocol) }}
       </template>
-      <template slot="stickiness" slot-scope="record">
+      <template #stickiness="{record}">
         <a-button @click="() => openStickinessModal(record.id)">
           {{ returnStickinessLabel(record.id) }}
         </a-button>
       </template>
-      <template slot="add" slot-scope="record">
-        <a-button type="primary" icon="plus" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+      <template #add="{record}">
+        <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
           {{ $t('label.add') }}
         </a-button>
       </template>
-      <template slot="expandedRowRender" slot-scope="record">
+      <template #expandedRowRender="{ record }">
         <div class="rule-instance-list">
           <div v-for="instance in record.ruleInstances" :key="instance.loadbalancerruleinstance.id">
             <div v-for="ip in instance.lbvmipaddresses" :key="ip" class="rule-instance-list__item">
               <div>
                 <status :text="instance.loadbalancerruleinstance.state" />
-                <a-icon type="desktop" />
+                <desktop-outlined />
                 <router-link :to="{ path: '/vm/' + instance.loadbalancerruleinstance.id }">
                   {{ instance.loadbalancerruleinstance.displayname }}
                 </router-link>
@@ -122,24 +123,30 @@
               <div>{{ ip }}</div>
               <tooltip-button
                 :tooltip="$t('label.action.delete.load.balancer')"
-                type="danger"
-                icon="delete"
-                @click="() => handleDeleteInstanceFromRule(instance, record, ip)" />
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                @onClick="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
           </div>
         </div>
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
           <a-popconfirm
             :title="$t('label.delete') + '?'"
             @confirm="handleDeleteRule(record)"
             :okText="$t('label.yes')"
             :cancelText="$t('label.no')"
           >
-            <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)" type="danger" icon="delete" />
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
           </a-popconfirm>
         </div>
       </template>
@@ -155,48 +162,55 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
+      v-if="tagsModalVisible"
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
       class="tags-modal"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <span v-show="tagsModalLoading" class="modal-loading">
-        <a-icon type="loading"></a-icon>
+        <loading-outlined />
       </span>
 
-      <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        class="add-tags"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag"
+       >
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.key') }}</p>
-          <a-form-item>
+          <a-form-item ref="key" name="key">
             <a-input
-              autoFocus
-              v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+              v-focus="true"
+              v-model:value="form.key" />
           </a-form-item>
         </div>
         <div class="add-tags__input">
           <p class="add-tags__label">{{ $t('label.value') }}</p>
-          <a-form-item>
-            <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+          <a-form-item ref="value" name="value">
+            <a-input v-model:value="form.value" />
           </a-form-item>
         </div>
         <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
       </a-form>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div v-show="!tagsModalLoading" class="tags-container">
         <div class="tags" v-for="(tag, index) in tags" :key="index">
-          <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+          <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
         </div>
@@ -213,23 +227,29 @@
       :maskClosable="false"
       :closable="true"
       :okButtonProps="{ props: {htmlType: 'submit'}}"
-      @cancel="stickinessModalVisible = false"
-      v-ctrl-enter="handleSubmitStickinessForm">
+      @cancel="stickinessModalVisible = false">
 
       <span v-show="stickinessModalLoading" class="modal-loading">
-        <a-icon type="loading"></a-icon>
+        <loading-outlined />
       </span>
 
-      <a-form :form="stickinessPolicyForm" @submit="handleSubmitStickinessForm" class="custom-ant-form">
-        <a-form-item :label="$t('label.stickiness.method')">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmitStickinessForm"
+        v-ctrl-enter="handleSubmitStickinessForm"
+        class="custom-ant-form"
+       >
+        <a-form-item name="methodname" ref="methodname" :label="$t('label.stickiness.method')">
           <a-select
-            autoFocus
-            v-decorator="['methodname']"
+            v-focus="true"
+            v-model:value="form.methodname"
             @change="handleStickinessMethodSelectChange"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="LbCookie">{{ $t('label.lb.cookie') }}</a-select-option>
             <a-select-option value="AppCookie">{{ $t('label.app.cookie') }}</a-select-option>
@@ -238,52 +258,58 @@
           </a-select>
         </a-form-item>
         <a-form-item
+          name="name"
+          ref="name"
           :label="$t('label.sticky.name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie' || stickinessPolicyMethod === 'SourceBased'">
-          <a-input v-decorator="['name', { rules: [{ required: true, message: $t('message.error.specify.sticky.name')}] }]" />
+          <a-input v-model:value="form.name" />
         </a-form-item>
         <a-form-item
+          name="cookieName"
+          ref="cookieName"
           :label="$t('label.sticky.cookie-name')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
-          <a-input v-decorator="['cookieName']" />
+          <a-input v-model:value="form.cookieName" />
         </a-form-item>
         <a-form-item
+          name="mode"
+          ref="mode"
           :label="$t('label.sticky.mode')"
           v-show="stickinessPolicyMethod === 'LbCookie' || stickinessPolicyMethod ===
             'AppCookie'">
-          <a-input v-decorator="['mode']" />
+          <a-input v-model:value="form.mode" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.nocache')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-decorator="['nocache']" v-model="stickinessNoCache"></a-checkbox>
+        <a-form-item name="nocache" ref="nocache" :label="$t('label.sticky.nocache')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="form.nocache"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.indirect')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-decorator="['indirect']" v-model="stickinessIndirect"></a-checkbox>
+        <a-form-item name="indirect" ref="indirect" :label="$t('label.sticky.indirect')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="form.indirect"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.postonly')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-checkbox v-decorator="['postonly']" v-model="stickinessPostOnly"></a-checkbox>
+        <a-form-item name="postonly" ref="postonly" :label="$t('label.sticky.postonly')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-checkbox v-model:checked="form.postonly"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.domain')" v-show="stickinessPolicyMethod === 'LbCookie'">
-          <a-input v-decorator="['domain']" />
+        <a-form-item name="domain" ref="domain" :label="$t('label.domain')" v-show="stickinessPolicyMethod === 'LbCookie'">
+          <a-input v-model:value="form.domain" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.length')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-input v-decorator="['length']" type="number" />
+        <a-form-item name="length" ref="length" :label="$t('label.sticky.length')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-input v-model:value="form.length" type="number" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.holdtime')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-input v-decorator="['holdtime']" type="number" />
+        <a-form-item name="holdtime" ref="holdtime" :label="$t('label.sticky.holdtime')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-input v-model:value="form.holdtime" type="number" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.request-learn')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-checkbox v-decorator="['requestLearn']" v-model="stickinessRequestLearn"></a-checkbox>
+        <a-form-item name="requestLearn" ref="requestLearn" :label="$t('label.sticky.request-learn')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-checkbox v-model:checked="form.requestLearn"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.prefix')" v-show="stickinessPolicyMethod === 'AppCookie'">
-          <a-checkbox v-decorator="['prefix']" v-model="stickinessPrefix"></a-checkbox>
+        <a-form-item name="prefix" ref="prefix" :label="$t('label.sticky.prefix')" v-show="stickinessPolicyMethod === 'AppCookie'">
+          <a-checkbox v-model:checked="form.prefix"></a-checkbox>
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.tablesize')" v-show="stickinessPolicyMethod === 'SourceBased'">
-          <a-input v-decorator="['tablesize']" />
+        <a-form-item name="tablesize" ref="tablesize" :label="$t('label.sticky.tablesize')" v-show="stickinessPolicyMethod === 'SourceBased'">
+          <a-input v-model:value="form.tablesize" />
         </a-form-item>
-        <a-form-item :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
-          <a-input v-decorator="['expire']" />
+        <a-form-item name="expire" ref="expire" :label="$t('label.sticky.expire')" v-show="stickinessPolicyMethod === 'SourceBased'">
+          <a-input v-model:value="form.expire" />
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -295,30 +321,29 @@
 
     <a-modal
       :title="$t('label.edit.rule')"
-      v-model="editRuleModalVisible"
+      :visible="editRuleModalVisible"
       :afterClose="closeModal"
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="editRuleModalVisible = false"
-      v-ctrl-enter="handleSubmitEditForm">
+      @cancel="editRuleModalVisible = false">
       <span v-show="editRuleModalLoading" class="modal-loading">
-        <a-icon type="loading"></a-icon>
+        <loading-outlined />
       </span>
 
-      <div class="edit-rule" v-if="selectedRule">
+      <div class="edit-rule" v-if="selectedRule" v-ctrl-enter="handleSubmitEditForm">
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.name') }}</p>
-          <a-input autoFocus v-model="editRuleDetails.name" />
+          <a-input v-focus="true" v-model:value="editRuleDetails.name" />
         </div>
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.algorithm') }}</p>
           <a-select
-            v-model="editRuleDetails.algorithm"
+            v-model:value="editRuleDetails.algorithm"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="roundrobin">{{ $t('label.lb.algorithm.roundrobin') }}</a-select-option>
             <a-select-option value="leastconn">{{ $t('label.lb.algorithm.leastconn') }}</a-select-option>
@@ -328,11 +353,11 @@
         <div class="edit-rule__item">
           <p class="edit-rule__label">{{ $t('label.protocol') }}</p>
           <a-select
-            v-model="editRuleDetails.protocol"
+            v-model:value="editRuleDetails.protocol"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp-proxy">{{ $t('label.tcp.proxy') }}</a-select-option>
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
@@ -350,25 +375,26 @@
       :title="$t('label.add.vms')"
       :maskClosable="false"
       :closable="true"
-      v-model="addVmModalVisible"
+      v-if="addVmModalVisible"
+      :visible="addVmModalVisible"
       class="vm-modal"
       width="60vw"
       :footer="null"
-      v-ctrl-enter="handleAddNewRule"
+      @cancel="closeModal"
     >
-      <div>
+      <div @keyup.ctrl.enter="handleAddNewRule">
         <span
           v-if="'vpcid' in resource && !('associatednetworkid' in resource)">
           <strong>{{ $t('label.select.tier') }} </strong>
           <a-select
-            :autoFocus="'vpcid' in resource && !('associatednetworkid' in resource)"
-            v-model="selectedTier"
+            v-focus="'vpcid' in resource && !('associatednetworkid' in resource)"
+            v-model:value="selectedTier"
             @change="fetchVirtualMachines()"
             :placeholder="$t('label.select.tier')"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="tier in tiers.data"
@@ -379,10 +405,10 @@
           </a-select>
         </span>
         <a-input-search
-          :autoFocus="!('vpcid' in resource && !('associatednetworkid' in resource))"
+          v-focus="!('vpcid' in resource && !('associatednetworkid' in resource))"
           class="input-search"
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           allowClear
           @search="onSearch" />
         <a-table
@@ -394,34 +420,34 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <div slot="name" slot-scope="text, record, index">
+          <template #name="{text, record, index}">
             <span>
               {{ text }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading" />
             <a-select
               style="display: block"
               v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
               mode="multiple"
-              v-model="newRule.vmguestip[index]"
+              v-model:value="newRule.vmguestip[index]"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>
-          </div>
+          </template>
 
-          <div slot="state" slot-scope="text">
+          <template #state="{text}">
             <status :text="text ? text : ''" displayText></status>
-          </div>
+          </template>
 
-          <div slot="action" slot-scope="text, record, index" style="text-align: center">
-            <a-checkbox :value="record.id" @change="e => fetchNics(e, index)" />
-          </div>
+          <template #action="{text, record, index}" style="text-align: center" :text="text">
+            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+          </template>
         </a-table>
         <a-pagination
           class="pagination"
@@ -434,15 +460,15 @@
           @change="handleChangeVmPage"
           @showSizeChange="handleChangeVmPageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
-      </div>
 
-      <div :span="24" class="action-button">
-        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :disabled="newRule.virtualmachineid === []" type="primary" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+          <a-button :disabled="newRule.virtualmachineid === []" type="primary" ref="submit" @click="handleAddNewRule">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
 
@@ -466,6 +492,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -500,7 +527,6 @@ export default {
       },
       loading: true,
       lbRules: [],
-      newTagsForm: this.$form.createForm(this),
       tagsModalVisible: false,
       tagsModalLoading: false,
       tags: [],
@@ -508,15 +534,9 @@ export default {
       selectedTier: null,
       stickinessModalVisible: false,
       stickinessPolicies: [],
-      stickinessPolicyForm: this.$form.createForm(this),
       stickinessModalLoading: false,
       selectedStickinessPolicy: null,
       stickinessPolicyMethod: 'LbCookie',
-      stickinessNoCache: null,
-      stickinessIndirect: null,
-      stickinessPostOnly: null,
-      stickinessRequestLearn: null,
-      stickinessPrefix: null,
       editRuleModalVisible: false,
       editRuleModalLoading: false,
       editRuleDetails: {
@@ -556,11 +576,11 @@ export default {
         },
         {
           title: this.$t('label.algorithm'),
-          scopedSlots: { customRender: 'algorithm' }
+          slots: { customRender: 'algorithm' }
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.state'),
@@ -568,15 +588,15 @@ export default {
         },
         {
           title: this.$t('label.action.configure.stickiness'),
-          scopedSlots: { customRender: 'stickiness' }
+          slots: { customRender: 'stickiness' }
         },
         {
           title: this.$t('label.add.vms'),
-          scopedSlots: { customRender: 'add' }
+          slots: { customRender: 'add' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ],
       tiers: {
@@ -587,13 +607,13 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' },
+          slots: { customRender: 'name' },
           width: 220
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.displayname'),
@@ -610,7 +630,7 @@ export default {
         {
           title: this.$t('label.select'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
+          slots: { customRender: 'action' },
           width: 80
         }
       ],
@@ -626,18 +646,26 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.resource = newItem
-      this.fetchData()
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.fetchListTiers()
       this.fetchLBRules()
@@ -653,7 +681,6 @@ export default {
       }).then(json => {
         this.tiers.data = json.listnetworksresponse.network || []
         this.selectedTier = this.tiers.data?.[0]?.id ? this.tiers.data[0].id : null
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.tiers.loading = false })
@@ -693,7 +720,7 @@ export default {
           lbvmips: true,
           id: rule.id
         }).then(response => {
-          this.$set(rule, 'ruleInstances', response.listloadbalancerruleinstancesresponse.lbrulevmidip)
+          rule.ruleInstances = response.listloadbalancerruleinstancesresponse.lbrulevmidip
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
@@ -743,11 +770,15 @@ export default {
       return val.toUpperCase()
     },
     openTagsModal (id) {
+      this.initForm()
+      this.rules = {
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      }
       this.tagsModalLoading = true
       this.tagsModalVisible = true
       this.tags = []
       this.selectedRule = id
-      this.newTagsForm.resetFields()
       api('listTags', {
         resourceId: id,
         resourceType: 'LoadBalancer',
@@ -765,11 +796,8 @@ export default {
       this.tagsModalLoading = true
 
       e.preventDefault()
-      this.newTagsForm.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          this.tagsModalLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -800,6 +828,8 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteTag (tag) {
@@ -835,6 +865,8 @@ export default {
       })
     },
     openStickinessModal (id) {
+      this.initForm()
+      this.rules = { name: [{ required: true, message: this.$t('message.error.specify.sticky.name') }] }
       this.stickinessModalVisible = true
       this.selectedRule = id
       const match = this.stickinessPolicies.find(policy => policy.lbruleid === id)
@@ -842,19 +874,19 @@ export default {
       if (match && match.stickinesspolicy.length > 0) {
         this.selectedStickinessPolicy = match.stickinesspolicy[0]
         this.stickinessPolicyMethod = this.selectedStickinessPolicy.methodname
-        this.$nextTick(() => {
-          this.stickinessPolicyForm.setFieldsValue({ methodname: this.selectedStickinessPolicy.methodname })
-          this.stickinessPolicyForm.setFieldsValue({ name: this.selectedStickinessPolicy.name })
-          this.stickinessPolicyForm.setFieldsValue({ cookieName: this.selectedStickinessPolicy.params['cookie-name'] })
-          this.stickinessPolicyForm.setFieldsValue({ mode: this.selectedStickinessPolicy.params.mode })
-          this.stickinessPolicyForm.setFieldsValue({ domain: this.selectedStickinessPolicy.params.domain })
-          this.stickinessPolicyForm.setFieldsValue({ length: this.selectedStickinessPolicy.params.length })
-          this.stickinessPolicyForm.setFieldsValue({ holdtime: this.selectedStickinessPolicy.params.holdtime })
-          this.stickinessNoCache = !!this.selectedStickinessPolicy.params.nocache
-          this.stickinessIndirect = !!this.selectedStickinessPolicy.params.indirect
-          this.stickinessPostOnly = !!this.selectedStickinessPolicy.params.postonly
-          this.stickinessRequestLearn = !!this.selectedStickinessPolicy.params['request-learn']
-          this.stickinessPrefix = !!this.selectedStickinessPolicy.params.prefix
+        nextTick().then(() => {
+          this.form.methodname = this.selectedStickinessPolicy.methodname
+          this.form.name = this.selectedStickinessPolicy.name
+          this.form.cookieName = this.selectedStickinessPolicy.params['cookie-name']
+          this.form.mode = this.selectedStickinessPolicy.params.mode
+          this.form.domain = this.selectedStickinessPolicy.params.domain
+          this.form.length = this.selectedStickinessPolicy.params.length
+          this.form.holdtime = this.selectedStickinessPolicy.params.holdtime
+          this.form.nocache = !!this.selectedStickinessPolicy.params.nocache
+          this.form.indirect = !!this.selectedStickinessPolicy.params.indirect
+          this.form.postonly = !!this.selectedStickinessPolicy.params.postonly
+          this.form.requestLearn = !!this.selectedStickinessPolicy.params['request-learn']
+          this.form.prefix = !!this.selectedStickinessPolicy.params.prefix
         })
       }
     },
@@ -928,21 +960,18 @@ export default {
       if (this.stickinessModalLoading) return
       this.stickinessModalLoading = true
       e.preventDefault()
-      this.stickinessPolicyForm.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          this.stickinessModalLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         if (values.methodname === 'none') {
           this.handleDeleteStickinessPolicy()
           return
         }
 
-        values.nocache = this.stickinessNoCache
-        values.indirect = this.stickinessIndirect
-        values.postonly = this.stickinessPostOnly
-        values.requestLearn = this.stickinessRequestLearn
-        values.prefix = this.stickinessPrefix
+        values.nocache = this.form.nocache
+        values.indirect = this.form.indirect
+        values.postonly = this.form.postonly
+        values.requestLearn = this.form.requestLearn
+        values.prefix = this.form.prefix
 
         let data = {}
         let count = 0
@@ -961,10 +990,12 @@ export default {
         })
 
         this.handleAddStickinessPolicy(data, values)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleStickinessMethodSelectChange (e) {
-      this.stickinessPolicyForm.resetFields()
+      if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
@@ -1059,7 +1090,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -1071,7 +1102,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -1091,7 +1122,7 @@ export default {
         id: rule.id
       }).then(response => {
         const jobId = response.deleteloadbalancerruleresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.delete.load.balancer'),
           description: rule.id,
@@ -1099,7 +1130,7 @@ export default {
           successMessage: this.$t('message.success.remove.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'success' })
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentToggleLoading()
@@ -1110,7 +1141,7 @@ export default {
           errorMessage: this.$t('message.remove.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resouce: rule.id, state: 'failed' })
             }
             if (this.selectedRowKeys.length === 0) {
               this.parentToggleLoading()
@@ -1130,7 +1161,6 @@ export default {
           bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
         })
       }).catch(error => {
-        console.log(error)
         this.$notifyError(error)
         this.loading = false
       })
@@ -1303,9 +1333,6 @@ export default {
       this.stickinessModalLoading = false
       this.selectedStickinessPolicy = null
       this.stickinessPolicyMethod = 'LbCookie'
-      this.stickinessNoCache = null
-      this.stickinessIndirect = null
-      this.stickinessPostOnly = null
       this.editRuleModalVisible = false
       this.editRuleModalLoading = false
       this.addVmModalLoading = false
@@ -1315,8 +1342,6 @@ export default {
       this.nics = []
       this.addVmModalVisible = false
       this.newRule.virtualmachineid = []
-      this.newTagsForm.resetFields()
-      this.stickinessPolicyForm.resetFields()
     },
     handleChangePage (page, pageSize) {
       this.page = page
