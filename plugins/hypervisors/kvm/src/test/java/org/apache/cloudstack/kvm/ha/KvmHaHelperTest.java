@@ -43,7 +43,7 @@ public class KvmHaHelperTest {
     @Spy
     @InjectMocks
     private KvmHaHelper kvmHaHelper;
-    @Mock
+    @Spy
     private KvmHaAgentClient kvmHaAgentClient;
     @Mock
     private HostVO host;

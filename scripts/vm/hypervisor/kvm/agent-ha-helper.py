@@ -27,6 +27,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from base64 import b64encode
 
 # Constants
+AGENT_HA_HELPER_LOG_MARKER = '[AGENT-HA-HELPER]'
 APPLICATION_JSON = 'application/json'
 BASIC_AUTH = "Basic "
 CONTENT_TYPE = 'Content-type'
@@ -34,17 +35,20 @@ ROOT_PATH = '/'
 CHECK_NEIGHBOUR_PATH = '/check-neighbour/'
 CLOUD_KEY_PATH = '/etc/cloudstack/agent/cloud.key'
 CLOUD_CERT_PATH = '/etc/cloudstack/agent/cloud.crt'
-LOG_PATH = '/var/log/cloudstack/agent/agent-ha-helper.log'
+LOG_PATH = '/var/log/cloudstack/agent/agent.log'
 HTTP_OK = 200
 HTTP_MULTIPLE_CHOICES = 300
 HTTP_UNAUTHORIZED = 401
 HTTP_NOT_FOUND = 404
 HTTP_PROTOCOL = 'http'
 HTTPS_PROTOCOL = 'https'
+UTF8 = 'utf-8'
 QEMU_SYSTEM = 'qemu:///system'
 STATUS = 'status'
 UP = 'Up'
 DOWN = 'Down'
+COUNT = 'count'
+VIRTUAL_MACHINES = 'virtualmachines'
 
 # Variables
 server_side = True
@@ -60,6 +64,13 @@ password = 'kvmHaHelperDefaultPassword'
     This web-server exposes a simple JSON API that returns a list of Virtual Machines running according to Libvirt.
     This helps on the CloudStack KVM HA as it van verify VMs status with HTTP-call to this simple webserver
         and determine if the host is actually down or if it is just the Java Agent which has crashed.
+    
+    Optional arguments:
+      -h, --help                Show this help message and exit
+      -i, --insecure            Allows to run the HTTP server without SSL
+      -p, --port PORT           Port to be used by the agent-ha-helper server
+      -u, --username USERNAME   Sets the user for server authentication
+      -k, --password PASSWORD   Keyword/password for server authentication
 """
 
 
@@ -74,7 +85,7 @@ class Libvirt():
     def __init__(self):
         self.conn = libvirt.openReadOnly(QEMU_SYSTEM)
         if not self.conn:
-            libvirt_error = 'Failed to open connection to libvirt'
+            libvirt_error = '{} Failed to open connection to libvirt'.format(AGENT_HA_HELPER_LOG_MARKER)
             logging.error(libvirt_error)
             raise Exception(libvirt_error)
 
@@ -121,7 +132,7 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
         if request_header == expected_header:
             self.do_normal_http_get()
         else:
-            logging.error('Failed to authenticate: wrong authentication method or credentials.')
+            logging.error('{} Failed to authenticate: wrong authentication method or credentials.'.format(AGENT_HA_HELPER_LOG_MARKER))
             self.send_response(HTTP_UNAUTHORIZED)
             self.send_header(CONTENT_TYPE, APPLICATION_JSON)
             self.end_headers()
@@ -134,7 +145,7 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
         else:
             self.send_response(HTTP_NOT_FOUND)
             self.end_headers()
-            return
+        return
 
     def do_libvirt_vms_list(self):
         """ List Running VMs """
@@ -143,13 +154,10 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
         running_vms = libvirt.running_vms()
 
         output = {
-            'count': len(running_vms),
-            'virtualmachines': running_vms
+            COUNT: len(running_vms),
+            VIRTUAL_MACHINES: running_vms
         }
 
-        self.send_response(HTTP_OK)
-        self.send_header(CONTENT_TYPE, APPLICATION_JSON)
-        self.end_headers()
         self.wfile.write(json.dumps(output).encode())
 
     def do_libvirt_neighbour_check(self):
@@ -163,33 +171,23 @@ class CloudStackAgentHAHelper(SimpleHTTPRequestHandler):
         """
         host_and_port = self.path.partition(CHECK_NEIGHBOUR_PATH)[2]
         request_url = '{}://{}/'.format(http_protocol, host_and_port)
-        logging.debug('Check if Host {} is reachable via HTTPs GET request to agent-ha-helper.'.format(request_url))
-        logging.debug('GET request: {}'.format(request_url))
+        logging.debug('{} Check if neighbour Host is reachable via HTTPs GET request [{}] to agent-ha-helper.'.format(AGENT_HA_HELPER_LOG_MARKER, request_url))
+        request_response = DOWN
         try:
-            response = requests.get(url=request_url)
+            if insecure:
+                response = requests.get(url=request_url)
+            else:
+                basic_auth_header = 'Basic {}'.format(key)
+                response = requests.get(url=request_url, headers={'Authorization': basic_auth_header}, verify=False)
+
             if HTTP_OK <= response.status_code < HTTP_MULTIPLE_CHOICES:
                 request_response = UP
-            else:
-                request_response = DOWN
-        except:
-            logging.error('GET Request {} failed.'.format(request_url))
-            output = {
-                STATUS : DOWN
-            }
-            logging.debug('Neighbour host status:  {}'.format(output))
-            self.send_response(HTTP_NOT_FOUND)
-            self.send_header(CONTENT_TYPE, APPLICATION_JSON)
-            self.end_headers()
-            self.wfile.write(json.dumps(output).encode())
-            return
+        except Exception as e:
+            logging.error('{} GET Request {} failed due to {}.'.format(AGENT_HA_HELPER_LOG_MARKER, request_url, e))
 
-        logging.debug('Neighbour host status: {}'.format(request_response))
         output = {
             STATUS : request_response,
         }
-        self.send_response(HTTP_OK)
-        self.send_header(CONTENT_TYPE, APPLICATION_JSON)
-        self.end_headers()
         self.wfile.write(json.dumps(output).encode())
 
 def run():
@@ -198,24 +196,25 @@ def run():
     httpd = HTTPServerV6((server_address_and_port), CloudStackAgentHAHelper)
 
     if insecure:
-        logging.warning('Creating HTTP Server on insecure mode (HTTP, no SSL) exposed at port {}.'.format(port))
+        logging.warning('{} Creating HTTP Server on insecure mode (HTTP, no SSL) exposed at port {}.'.format(AGENT_HA_HELPER_LOG_MARKER, port))
     elif not os.path.isfile(CLOUD_KEY_PATH) or not os.path.isfile(CLOUD_CERT_PATH):
-        error_message = 'Failed to run HTTPS server, cannot find certificate or key files: "{}" or "{}".'.format(
-            CLOUD_KEY_PATH, CLOUD_CERT_PATH)
+        error_message = '{} Failed to run HTTPS server, cannot find certificate or key files: "{}" or "{}".'.format(
+            AGENT_HA_HELPER_LOG_MARKER, CLOUD_KEY_PATH, CLOUD_CERT_PATH)
         logging.error(error_message)
         raise Exception(error_message)
     else:
-        logging.debug('Creating HTTPs Server at port {}.'.format(port))
+        logging.debug('{} Creating HTTPs Server at port {}.'.format(AGENT_HA_HELPER_LOG_MARKER, port))
         httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=CLOUD_KEY_PATH, certfile=CLOUD_CERT_PATH)
     httpd.serve_forever()
 
 def set_auth_key(username, password):
     """ Prepares Authentication key encoding the string '<username>:<password>' in base 64 """
     username_and_password = '{}:{}'.format(username, password)
-    return b64encode(bytes(username_and_password, 'utf-8')).decode('utf-8')
+    return b64encode(bytes(username_and_password, UTF8)).decode(UTF8)
 
 if __name__ == "__main__":
-    import argparse, sys
+    import argparse, sys, urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     logging.basicConfig(filename=LOG_PATH, format='%(asctime)s - %(message)s', level=logging.DEBUG)
     try:
@@ -234,8 +233,8 @@ if __name__ == "__main__":
             parser.print_help(sys.stderr)
             logging.warning(
                 'Note: no arguments have been passed. Running with default configuration '
-                '[bind:"::", port:{}, insecure:{}, username:{}, keyword:{}].'.format(port, insecure, username,
-                                                                                     password))
+                '[bind:"::", port:{}, insecure:{}, username:{}, keyword:{}].'.format(
+                    port, insecure, username, password))
         else:
             if args.insecure:
                 insecure = True
