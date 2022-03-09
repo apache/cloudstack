@@ -18,11 +18,11 @@
 <template>
   <span class="header-notice-opener">
     <a-select
+      v-if="showProjectMenu"
       class="project-select"
       :defaultValue="$t('label.default.view')"
       :loading="loading"
       :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : $t('label.default.view')"
-      :disabled="isDisabled()"
       :filterOption="filterProject"
       @change="changeProject"
       @focus="fetchData"
@@ -65,7 +65,8 @@ export default {
   data () {
     return {
       projects: [],
-      loading: false
+      loading: false,
+      showProjectMenu: true
     }
   },
   created () {
@@ -74,6 +75,7 @@ export default {
   methods: {
     fetchData () {
       if (this.isDisabled()) {
+        this.showProjectMenu = false
         return
       }
       var page = 1
