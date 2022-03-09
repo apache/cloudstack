@@ -100,7 +100,7 @@
         <span v-if="record.hasannotations">
           <span v-if="record.id">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><message-filled style="padding-left: 10px" size="small"/></router-link>
+            <router-link :to="{ path: $route.path + '/' + record.id, query: { tab: 'comments' } }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
           <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
         </span>
@@ -147,7 +147,7 @@
       </a>
     </template>
     <template #entityid="{ record }" href="javascript:;">
-      <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
+      <router-link :to="{ path: generateCommentsPath(record), query: { tab: 'comments' } }">{{ record.entityname }}</router-link>
     </template>
     <template #entitytype="{ record }" href="javascript:;">
       {{ generateHumanReadableEntityType(record) }}
@@ -292,11 +292,11 @@
       </template>
     </template>
     <template #domain="{ text, record }">
-      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid + '?tab=details' }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #domainpath="{ text, record }">
-      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid + '?tab=details' }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #zone="{ text, record }">
@@ -712,7 +712,7 @@ export default {
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
     generateCommentsPath (record) {
-      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid + '?tab=comments'
+      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid
     },
     generateHumanReadableEntityType (record) {
       switch (record.entitytype) {
