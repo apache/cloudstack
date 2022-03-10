@@ -309,7 +309,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     private static final String XENSTORE_DATA_IP = "vm-data/ip";
     private static final String XENSTORE_DATA_GATEWAY = "vm-data/gateway";
     private static final String XENSTORE_DATA_NETMASK = "vm-data/netmask";
-    private static final String XENSTORE_DATA_CS_INIT = "vm-data/cloudstack/init";
+    public static final String XENSTORE_DATA_CS_INIT = "vm-data/cloudstack/init";
 
     public CitrixResourceBase() {
     }
