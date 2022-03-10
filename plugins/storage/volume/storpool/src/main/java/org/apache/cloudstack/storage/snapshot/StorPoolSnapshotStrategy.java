@@ -132,15 +132,11 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             return StrategyPriority.CANT_HANDLE;
         }
 
-        VolumeVO volume = _volumeDao.findByIdIncludingRemoved(snapshot.getVolumeId());
-        StoragePoolVO storage = _primaryDataStoreDao.findById(volume.getPoolId());
         String name = StorPoolHelper.getSnapshotName(snapshot.getId(), snapshot.getUuid(), _snapshotStoreDao, _snapshotDetailsDao);
-        if (storage.getStorageProviderName().equals(StorPoolUtil.SP_PROVIDER_NAME)) {
-            if (name != null) {
-                StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: globalId=%s", name);
+        if (name != null) {
+            StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: globalId=%s", name);
 
-                return StrategyPriority.HIGHEST;
-            }
+            return StrategyPriority.HIGHEST;
         }
         SnapshotDetailsVO snapshotDetails = _snapshotDetailsDao.findDetail(snapshot.getId(), snapshot.getUuid());
         if (snapshotDetails != null) {
