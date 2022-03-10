@@ -122,6 +122,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.user.AccountManager;
@@ -194,6 +195,8 @@ public class VolumeServiceImpl implements VolumeService {
     private StorageManager _storageMgr;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private SnapshotApiService snapshotApiService;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -448,9 +451,9 @@ public class VolumeServiceImpl implements VolumeService {
                     volDao.remove(vo.getId());
                 }
 
-                SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
+                List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 
-                if (snapStoreVo != null) {
+                for (SnapshotDataStoreVO snapStoreVo : snapStoreVOs) {
                     long storagePoolId = snapStoreVo.getDataStoreId();
                     StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
 
@@ -468,6 +471,7 @@ public class VolumeServiceImpl implements VolumeService {
                         _snapshotStoreDao.remove(snapStoreVo.getId());
                     }
                 }
+                snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
             } else {
                 vo.processEvent(Event.OperationFailed);
                 apiResult.setResult(result.getResult());
