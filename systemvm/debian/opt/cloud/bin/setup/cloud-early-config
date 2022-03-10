@@ -41,7 +41,7 @@ validate_checksums() {
 }
 
 patch() {
-  local PATCH_MOUNT=/home/cloud
+  local PATCH_MOUNT=/tmp
   local PATCH_SCRIPTS=cloud-scripts.tgz
   local oldpatchfile=/usr/share/cloud/$PATCH_SCRIPTS
   local patchfile=$PATCH_MOUNT/$PATCH_SCRIPTS
@@ -71,7 +71,6 @@ patch() {
         if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
         then
           tar xzf $patchfile -C /
-          ls -lrt /opt/cloud/bin/keystore*
           echo ${newmd5} > ${md5file}
           log_it "Patched scripts using $patchfile"
           touch /var/cache/cloud/patch.required
@@ -98,8 +97,8 @@ patch() {
 }
 
 cleanup() {
-  rm -rf /home/cloud/agent.zip
-  mv /home/cloud/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+  rm -rf /tmp/agent.zip
+  mv /tmp/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
 }
 
 start() {

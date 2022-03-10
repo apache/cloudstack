@@ -70,9 +70,9 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
 
         Pair<Boolean, String> patchResult = null;
         try {
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", sshPort, pemFile, serverResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+            FileUtil.scpPatchFiles(controlIp, "/tmp/", sshPort, pemFile, serverResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
             patchResult = SshHelper.sshExecute(controlIp, sshPort, "root",
-                    pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 600000);
+                    pemFile, null, "/tmp/patch-sysvms.sh", 10000, 10000, 600000);
         } catch (Exception e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }

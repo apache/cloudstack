@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -195,8 +196,13 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
             }
 
             try {
-                citrixResourceBase.copyPatchFilesToVR(controlIp, "/home/cloud");
-                Thread.sleep(10000);
+                citrixResourceBase.copyPatchFilesToVR(controlIp, "/tmp/");
+                VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
+                if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
+                    String errMsg = "Failed to patch systemVM";
+                    s_logger.error(errMsg);
+                    return new StartAnswer(command, errMsg);
+                }
             } catch (Exception e) {
                 String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                 s_logger.error(errMsg, e);

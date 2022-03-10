@@ -662,7 +662,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
         ExecutionResult result = getSystemVmVersionAndChecksum(controlIp);
         try {
-            FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
+            FileUtil.scpPatchFiles(controlIp, "/tmp/", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }
@@ -687,7 +687,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         Pair<Boolean, String> patchResult = null;
         try {
             patchResult = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root",
-                    pemFile, null, "/home/cloud/patch-sysvms.sh", 10000, 10000, 600000);
+                    pemFile, null, "/tmp/patch-sysvms.sh", 10000, 10000, 600000);
         } catch (Exception e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
         }
@@ -2578,8 +2578,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 try {
                     String homeDir = System.getProperty("user.home");
                     File pemFile = new File(homeDir + "/.ssh/id_rsa");
-                    FileUtil.scpPatchFiles(controlIp, "/home/cloud", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
-                    Thread.sleep(10000);
+                    FileUtil.scpPatchFiles(controlIp, "/tmp/", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
+                    if (!_vrResource.isSystemVMSetup(vmInternalCSName, controlIp)) {
+                        String errMsg = "Failed to patch systemVM";
+                        s_logger.error(errMsg);
+                        return new StartAnswer(cmd, errMsg);
+                    }
                 } catch (Exception e) {
                     String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
                     s_logger.error(errMsg, e);
