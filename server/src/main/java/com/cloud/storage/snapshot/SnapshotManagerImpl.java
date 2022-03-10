@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -1542,5 +1543,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
+    }
+
+    @Override
+    public void markVolumeSnapshotsAsDestroyed(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        for (SnapshotVO snapshot: snapshots) {
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
+            if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            }
+        }
     }
 }
