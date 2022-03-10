@@ -1638,7 +1638,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "").toString());
+        InterfaceDef nic = getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "");
+        nic.setQueues(vm.getMaxVcpus());
+        vm.attachDevice(nic.toString());
     }
 
 
@@ -2195,7 +2197,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < nics.length; i++) {
             for (final NicTO nic : vmSpec.getNics()) {
                 if (nic.getDeviceId() == i) {
-                    createVif(vm, nic, nicAdapter);
+                    createVif(vm, nic, nicAdapter, vmSpec.getCpus());
                 }
             }
         }
@@ -2387,7 +2389,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
 
-    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter) throws InternalErrorException, LibvirtException {
+    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, int queues) throws InternalErrorException, LibvirtException {
 
         if (nic.getType().equals(TrafficType.Guest) && nic.getBroadcastType().equals(BroadcastDomainType.Vsp)) {
             String vrIp = nic.getBroadcastUri().getPath().substring(1);
@@ -2399,7 +2401,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        InterfaceDef device = getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter);
+        device.setQueues(queues);
+        vm.getDevices().addDevice(device);
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {

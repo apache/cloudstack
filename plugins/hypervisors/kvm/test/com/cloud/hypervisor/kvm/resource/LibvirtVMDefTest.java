@@ -60,6 +60,39 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(expected, ifDef.toString());
     }
 
+    public void testInterfaceDirectNetWithQueues() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "private");
+        ifDef.setQueues(4);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
+                        + "<source dev='targetDeviceName' mode='private'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='virtio'/>\n"
+                        + "<link state='up'/>\n"
+                        + "<driver queues='4'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+    }
+
+    public void testInterfaceDirectNetE1000WithQueuesShouldNotAddDriver() {
+        LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
+        ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.E1000, "private");
+        ifDef.setQueues(4);
+
+        String expected =
+                "<interface type='" + LibvirtVMDef.InterfaceDef.GuestNetType.DIRECT + "'>\n"
+                        + "<source dev='targetDeviceName' mode='private'/>\n"
+                        + "<mac address='00:11:22:aa:bb:dd'/>\n"
+                        + "<model type='e1000'/>\n"
+                        + "<link state='up'/>\n"
+                        + "</interface>\n";
+
+        assertEquals(expected, ifDef.toString());
+    }
+
     public void testInterfaceBridgeSlot() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defBridgeNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);

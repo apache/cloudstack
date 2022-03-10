@@ -957,6 +957,7 @@ public class LibvirtVMDef {
         private boolean _pxeDisable = false;
         private boolean _linkStateUp = true;
         private Integer _slot;
+        private Integer queues = 0;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -1096,6 +1097,14 @@ public class LibvirtVMDef {
             return _linkStateUp;
         }
 
+        public void setQueues(int queues) {
+            this.queues = queues;
+        }
+
+        public int getQueues() {
+            return this.queues;
+        }
+
         @Override
         public String toString() {
             StringBuilder netBuilder = new StringBuilder();
@@ -1143,6 +1152,9 @@ public class LibvirtVMDef {
 
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
+            }
+            if (_model == NicModel.VIRTIO && queues > 0) {
+                netBuilder.append(String.format("<driver queues='%d'/>\n", queues));
             }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
