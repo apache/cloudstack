@@ -67,6 +67,9 @@ export default {
     DedicateModal
   },
   inject: ['parentFetchData'],
+  created () {
+    this.fetchData()
+  },
   data () {
     return {
       modalActive: false,
