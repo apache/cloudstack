@@ -27,6 +27,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -208,6 +209,24 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
         }
         return response;
+    }
+
+    @Override
+    public List<String> listApiNames(Account account) {
+        List<String> apiNames = new ArrayList<>();
+        for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
+            boolean isAllowed = true;
+            for (APIChecker apiChecker : _apiAccessCheckers) {
+                try {
+                    apiChecker.checkAccess(account, apiName);
+                } catch (Exception ex) {
+                    isAllowed = false;
+                }
+            }
+            if (isAllowed)
+                apiNames.add(apiName);
+        }
+        return apiNames;
     }
 
     @Override

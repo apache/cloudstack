@@ -1813,6 +1813,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         int requiredNumScsiControllers = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT - scsiControllerInfo.first();
         int availableBusNum = scsiControllerInfo.second() + 1; // method returned current max. bus number
 
+        if (DiskControllerType.getType(scsiDiskController) != scsiControllerInfo.third()) {
+            s_logger.debug(String.format("Change controller type from: %s to: %s", scsiControllerInfo.third().toString(),
+                    scsiDiskController));
+            vmMo.tearDownDevices(new Class<?>[]{VirtualSCSIController.class});
+            vmMo.addScsiDeviceControllers(DiskControllerType.getType(scsiDiskController));
+            return;
+        }
+
         if (requiredNumScsiControllers == 0) {
             return;
         }

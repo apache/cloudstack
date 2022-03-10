@@ -143,6 +143,9 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
             "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<Boolean>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
+            "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
+
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",

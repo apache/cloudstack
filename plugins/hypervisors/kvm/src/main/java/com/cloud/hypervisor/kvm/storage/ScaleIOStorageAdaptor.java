@@ -214,12 +214,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        return true;
+        return false;
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        return true;
+        return false;
     }
 
     @Override

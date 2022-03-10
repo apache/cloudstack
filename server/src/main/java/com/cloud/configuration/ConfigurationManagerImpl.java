@@ -43,7 +43,6 @@ import java.util.Vector;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -85,6 +84,7 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -271,6 +271,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.googlecode.ipv6.IPv6Address;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -422,7 +423,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     protected DataCenterLinkLocalIpAddressDao _linkLocalIpAllocDao;
 
-    private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     protected Set<String> configValuesForValidation;
@@ -478,9 +478,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-        final String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.key());
-        _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, Integer.parseInt(Config.MaxVolumeSize.getDefaultValue()));
-
         final String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
         _defaultPageSize = NumbersUtil.parseLong(defaultPageSizeString, Long.parseLong(Config.DefaultPageSize.getDefaultValue()));
 
@@ -2943,6 +2940,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (rootDiskSizeInGiB != null && rootDiskSizeInGiB <= 0L) {
             throw new InvalidParameterValueException(String.format("The Root disk size is of %s GB but it must be greater than 0.", rootDiskSizeInGiB));
         } else if (rootDiskSizeInGiB != null) {
+            long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
+            if (rootDiskSizeInGiB > maxVolumeSizeInGb) {
+                throw new InvalidParameterValueException(String.format("The maximum size for a disk is %d GB.", maxVolumeSizeInGb));
+            }
             long rootDiskSizeInBytes = rootDiskSizeInGiB * GiB_TO_BYTES;
             offering.setDiskSize(rootDiskSizeInBytes);
         }
@@ -3264,10 +3265,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                 Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                 final Integer hypervisorSnapshotReserve, String cacheMode, final Map<String, String> details, final Long storagePolicyID) {
         long diskSize = 0;// special case for custom disk offerings
+        long maxVolumeSizeInGb = VolumeOrchestrationService.MaxVolumeSize.value();
         if (numGibibytes != null && numGibibytes <= 0) {
-            throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
-        } else if (numGibibytes != null && numGibibytes > _maxVolumeSizeInGb) {
-            throw new InvalidParameterValueException("The maximum size for a disk is " + _maxVolumeSizeInGb + " Gb.");
+            throw new InvalidParameterValueException("Please specify a disk size of at least 1 GB.");
+        } else if (numGibibytes != null && numGibibytes > maxVolumeSizeInGb) {
+            throw new InvalidParameterValueException(String.format("The maximum size for a disk is %d GB.", maxVolumeSizeInGb));
         }
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
 

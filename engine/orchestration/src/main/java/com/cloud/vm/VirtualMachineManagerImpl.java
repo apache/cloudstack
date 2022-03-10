@@ -1681,7 +1681,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool != null && storagePool.isManaged()) {
-                Map<String, String> info = new HashMap<>(3);
+                Map<String, String> info = new HashMap<>();
 
                 info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
                 info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
@@ -2849,11 +2849,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    private void updateVmPod(VMInstanceVO vm, long dstHostId) {
+        // update the VMs pod
+        HostVO host = _hostDao.findById(dstHostId);
+        VMInstanceVO newVm = _vmDao.findById(vm.getId());
+        newVm.setPodIdToDeployIn(host.getPodId());
+        _vmDao.persist(newVm);
     }
 
     /**
@@ -4583,6 +4593,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
             } else {
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+
+                updateVmPod(vm, dstHostId);
             }
 
             work.setStep(Step.Done);

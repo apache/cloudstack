@@ -2808,6 +2808,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
+                                    if (HypervisorType.Simulator == hypervisorType) {
+                                        continue;
+                                    }
                                     String templateName = getValidTemplateName(zoneId, hypervisorType);
                                     Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
                                             new Pair<>(hypervisorType, templateName);
@@ -3328,7 +3331,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
-                PreferredStoragePool
+                PreferredStoragePool,
+                SecStorageVMAutoScaleDown
         };
     }
 
