@@ -345,16 +345,16 @@ export default {
         },
         {
           api: 'reserveIpAddress',
-          icon: 'lock',
+          icon: 'lock-outlined',
           label: 'label.action.reserve.ip',
           dataView: true,
           show: (record) => { return record.state === 'Free' },
           popup: true,
-          component: () => import('@/views/network/ReservePublicIP.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ReservePublicIP.vue')))
         },
         {
           api: 'releaseIpAddress',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.release.ip',
           message: 'message.action.release.ip',
           dataView: true,
