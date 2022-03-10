@@ -26,7 +26,7 @@
       :pagination="false"
       :scroll="{ y: '55vh' }"
     >
-      <template slot="quota" slot-scope="text">
+      <template #quota="{ text }">
         <span v-if="text!==undefined">{{ `${currency} ${text}` }}</span>
       </template>
     </a-table>
@@ -66,26 +66,25 @@ export default {
           title: this.$t('label.quota.type.name'),
           dataIndex: 'name',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.quota.type.unit'),
           dataIndex: 'unit',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'unit' }
+          slots: { customRender: 'unit' }
         },
         {
           title: this.$t('label.quota.usage'),
           dataIndex: 'quota',
           width: 'calc(100% / 3)',
-          scopedSlots: { customRender: 'quota' }
+          slots: { customRender: 'quota' }
         }
       ]
     }
   },
   watch: {
-    tab (newTab, oldTab) {
-      this.tab = newTab
+    tab () {
       if (this.tab === 'quota.statement.quota') {
         this.fetchData()
       }

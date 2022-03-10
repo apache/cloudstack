@@ -18,7 +18,7 @@
 <template>
   <div style="width: 100%">
     <a-row :gutter="6">
-      <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
+      <a-col :md="24" :lg="layout === 'horizontal' ? 10 : 24">
         <a-checkbox
           :checked="checked"
           @change="handleCheckChange">
@@ -27,16 +27,16 @@
       </a-col>
       <a-col :md="24" :lg="layout === 'horizontal' ? 12 : 24">
         <a-form-item
-          v-if="reversed != checked"
+          v-if="reversed !== checked"
           :label="selectLabel">
           <a-select
-            v-model="selectedOption"
+            v-model:value="selectedOption"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            @change="val => { this.handleSelectChange(val) }">
+            @change="val => { handleSelectChange(val) }">
             <a-select-option
               v-for="(opt) in selectSource"
               :key="opt.id"
@@ -138,3 +138,9 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+.ant-list-split .ant-list-item div {
+  width: 100%;
+}
+</style>

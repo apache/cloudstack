@@ -18,14 +18,17 @@
  */
 package org.apache.cloudstack.ldap;
 
+import com.cloud.user.Account;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "ldap_trust_map")
@@ -49,13 +52,14 @@ public class LdapTrustMapVO implements InternalIdentity {
     private long accountId;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
 
     public LdapTrustMapVO() {
     }
 
-    public LdapTrustMapVO(long domainId, LdapManager.LinkType type, String name, short accountType, long accountId) {
+    public LdapTrustMapVO(long domainId, LdapManager.LinkType type, String name, Account.Type accountType, long accountId) {
         this.domainId = domainId;
         this.type = type;
         this.name = name;
@@ -80,7 +84,7 @@ public class LdapTrustMapVO implements InternalIdentity {
         return domainId;
     }
 
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -121,7 +125,7 @@ public class LdapTrustMapVO implements InternalIdentity {
         result = 31 * result + name.hashCode();
         result = 31 * result + (int) (domainId ^ (domainId >>> 32));
         result = 31 * result + (int) (accountId ^ (accountId >>> 32));
-        result = 31 * result + (int) accountType;
+        result = 31 * result + accountType.ordinal();
         return result;
     }
 }

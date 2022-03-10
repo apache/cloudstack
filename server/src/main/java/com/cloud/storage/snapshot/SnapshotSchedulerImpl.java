@@ -281,7 +281,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     continue;
                 }
                 Account volAcct = _acctDao.findById(volume.getAccountId());
-                if (volAcct == null || volAcct.getState() == Account.State.disabled) {
+                if (volAcct == null || volAcct.getState() == Account.State.DISABLED) {
                     // this account has been removed, so don't trigger recurring snapshot
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Skip snapshot for volume " + volume.getUuid() + " since its account has been removed or disabled");

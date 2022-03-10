@@ -19,54 +19,57 @@
   <div>
     <a-form
       class="form-content"
-      :form="form"
-      @submit="handleSubmit"
-      v-ctrl-enter="handleSubmit">
-      <a-form-item>
-        <a-radio-group
-          v-decorator="['zoneType', {
-            rules: [{
-              required: true,
-              message: $t('message.error.zone.type'),
-              initialValue: zoneType
-            }]
-          }]">
-          <a-card :gutter="12" class="card-item">
-            <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
-              <span style="margin-top: 20px;" class="card-form-item" v-else>
-                <a-icon type="setting" style="margin-right: 10px" />
-                {{ $t('label.advanced') }}
-              </span>
-            </a-col>
-            <a-col :md="18" :lg="18">
-              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>
-            </a-col>
-            <a-col :md="6" :lg="6" style="margin-top: 15px">
-              <a-form-item
-                class="card-form-item"
-                v-bind="formItemLayout">
-                <a-switch
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+     >
+      <a-form-item name="zoneType" ref="zoneType">
+        <a-radio-group v-model:value="form.zoneType">
+          <a-card class="card-item">
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6">
+                <a-radio class="card-form-item" value="Advanced" v-if="$config.basicZoneEnabled">{{ $t('label.advanced') }}</a-radio>
+                <span style="margin-top: 20px;" class="card-form-item" v-else>
+                  <setting-outlined style="margin-right: 10px" />
+                  {{ $t('label.advanced') }}
+                </span>
+              </a-col>
+              <a-col :md="18" :lg="18">
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Advanced) }}</a-card>
+              </a-col>
+            </a-row>
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6" style="margin-top: 15px">
+                <a-form-item
+                  name="securityGroupsEnabled"
+                  ref="securityGroupsEnabled"
                   class="card-form-item"
-                  v-decorator="['securityGroupsEnabled', { valuePropName: 'checked' }]"
-                  :value="securityGroupsEnabled"
-                  :disabled="!isAdvancedZone"
-                  autoFocus
-                />
-              </a-form-item>
-              <span>{{ $t('label.menu.security.groups') }}</span>
-            </a-col>
-            <a-col :md="18" :lg="18" style="margin-top: 15px;">
-              <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
-            </a-col>
+                  v-bind="formItemLayout">
+                  <a-switch
+                    class="card-form-item"
+                    v-model:checked="form.securityGroupsEnabled"
+                    :disabled="!isAdvancedZone"
+                    v-focus="true"
+                  />
+                </a-form-item>
+                <span>{{ $t('label.menu.security.groups') }}</span>
+              </a-col>
+              <a-col :md="18" :lg="18" style="margin-top: 15px;">
+                <a-card class="zone-support">{{ $t(zoneDescription.SecurityGroups) }}</a-card>
+              </a-col>
+            </a-row>
           </a-card>
-          <a-card :gutter="12" class="card-item" v-if="$config.basicZoneEnabled">
-            <a-col :md="6" :lg="6">
-              <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
-            </a-col>
-            <a-col :md="18" :lg="18">
-              <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
-            </a-col>
+          <a-card class="card-item" v-if="$config.basicZoneEnabled">
+            <a-row :gutter="12">
+              <a-col :md="6" :lg="6">
+                <a-radio class="card-form-item" value="Basic">{{ $t('label.basic') }}</a-radio>
+              </a-col>
+              <a-col :md="18" :lg="18">
+                <a-card class="ant-form-text zone-support">{{ $t(zoneDescription.Basic) }}</a-card>
+              </a-col>
+            </a-row>
           </a-card>
         </a-radio-group>
       </a-form-item>
@@ -80,6 +83,8 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
+
 export default {
   props: {
     prefillContent: {
@@ -98,39 +103,49 @@ export default {
       Basic: 'message.desc.basic.zone',
       Advanced: 'message.desc.advanced.zone',
       SecurityGroups: 'message.advanced.security.group'
-    }
+    },
+    formModel: {}
   }),
-  beforeCreate () {
-    this.form = this.$form.createForm(this, {
-      onFieldsChange: (_, changedFields) => {
-        this.$emit('fieldsChanged', changedFields)
-      }
-    })
+  created () {
+    this.initForm()
   },
-  mounted () {
-    this.form.setFieldsValue({
-      zoneType: this.zoneType,
-      securityGroupsEnabled: this.securityGroupsEnabled
-    })
+  watch: {
+    formModel: {
+      deep: true,
+      handler (changedFields) {
+        const fieldsChanged = toRaw(changedFields)
+        this.$emit('fieldsChanged', fieldsChanged)
+      }
+    }
   },
   computed: {
     isAdvancedZone () {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : 'Advanced'
+      return this.prefillContent.zoneType ? this.prefillContent.zoneType : 'Advanced'
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false)
+      return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     }
   },
   methods: {
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (!err) {
-          this.$emit('nextPressed')
-        }
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        zoneType: this.zoneType,
+        securityGroupsEnabled: this.securityGroupsEnabled
+      })
+      this.rules = reactive({
+        zoneType: [{ required: true, message: this.$t('message.error.zone.type') }]
+      })
+      this.formModel = toRaw(this.form)
+    },
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        this.$emit('nextPressed')
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

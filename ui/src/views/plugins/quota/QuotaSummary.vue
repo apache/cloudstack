@@ -58,7 +58,6 @@ export default {
   },
   methods: {
     changeResource (resource) {
-      console.log(resource)
       this.resource = resource
     }
   }

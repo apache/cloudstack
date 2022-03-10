@@ -19,7 +19,7 @@
   <span>
     {{ title }}
     <a-tooltip v-if="tooltip" :title="tooltip" :placement="tooltipPlacement">
-      <a-icon type="info-circle" class="tooltip-icon" />
+      <info-circle-outlined class="tooltip-icon" />
     </a-tooltip>
   </span>
 </template>

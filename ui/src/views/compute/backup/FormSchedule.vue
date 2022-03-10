@@ -23,17 +23,17 @@
       </label>
       <div class="form" v-ctrl-enter="handleSubmit">
         <a-form
-          :form="form"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical"
-          @submit="handleSubmit">
+          @finish="handleSubmit">
           <a-row :gutter="12">
             <a-col :md="24" :lg="24">
-              <a-form-item :label="$t('label.intervaltype')">
+              <a-form-item :label="$t('label.intervaltype')" ref="intervaltype" name="intervaltype">
                 <a-radio-group
-                  v-decorator="['intervaltype', {
-                    initialValue: intervalType
-                  }]"
-                  buttonStyle="solid"
+                  v-model:value="form.intervaltype"
+                  button-style="solid"
                   @change="handleChangeIntervalType">
                   <a-radio-button value="hourly">
                     {{ $t('label.hourly') }}
@@ -50,72 +50,53 @@
                 </a-radio-group>
               </a-form-item>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="intervalType==='hourly'">
-              <a-form-item :label="$t('label.time')">
-                <a-tooltip
-                  placement="right"
-                  :title="$t('label.minute.past.hour')">
-                  <a-input-number
-                    style="width: 100%"
-                    v-decorator="['time', {
-                      rules: [{required: true, message: $t('message.error.required.input')}]
-                    }]"
-                    :min="1"
-                    :max="59"
-                    autoFocus />
-                </a-tooltip>
+            <a-col :md="24" :lg="12" v-if="form.intervaltype==='hourly'">
+              <a-form-item :label="$t('label.time')" ref="time" name="time">
+                <a-input-number
+                  style="width: 100%"
+                  v-model:value="form.time"
+                  :placeholder="$t('label.minute.past.hour')"
+                  :min="1"
+                  :max="59"
+                  v-focus="true" />
               </a-form-item>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="['daily', 'weekly', 'monthly'].includes(intervalType)">
+            <a-col :md="24" :lg="12" v-if="['daily', 'weekly', 'monthly'].includes(form.intervaltype)">
               <a-form-item
                 class="custom-time-select"
-                :label="$t('label.time')">
+                :label="$t('label.time')"
+                ref="timeSelect"
+                name="timeSelect">
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
-                  v-decorator="['timeSelect', {
-                    rules: [{
-                      type: 'object',
-                      required: true,
-                      message: $t('message.error.time')
-                    }]
-                  }]" />
+                  v-model:value="form.timeSelect" />
               </a-form-item>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="intervalType==='weekly'">
-              <a-form-item :label="$t('label.day.of.week')">
+            <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
+              <a-form-item :label="$t('label.day.of.week')" ref="day-of-week" name="day-of-week">
                 <a-select
+                  v-model:value="form['day-of-week']"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  v-decorator="['day-of-week', {
-                    rules: [{
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }]
-                  }]" >
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
                   <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
             </a-col>
-            <a-col :md="24" :lg="12" v-if="intervalType==='monthly'">
-              <a-form-item :label="$t('label.day.of.month')">
+            <a-col :md="24" :lg="12" v-if="form.intervaltype==='monthly'">
+              <a-form-item :label="$t('label.day.of.month')" ref="day-of-month" name="day-of-month">
                 <a-select
+                  v-model:value="form['day-of-month']"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  v-decorator="['day-of-month', {
-                    rules: [{
-                      required: true,
-                      message: `${this.$t('message.error.select')}`
-                    }]
-                  }]">
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }">
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
                   </a-select-option>
@@ -123,19 +104,14 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24">
-              <a-form-item :label="$t('label.timezone')">
+              <a-form-item :label="$t('label.timezone')" ref="timezone" name="timezone">
                 <a-select
                   showSearch
-                  optionFilterProp="children"
+                  v-model:value="form.timezone"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
-                  v-decorator="['timezone', {
-                    rules: [{
-                      required: true,
-                      messamessage: `${this.$t('message.error.select')}`
-                    }]
-                  }]"
                   :loading="fetching">
                   <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                     {{ opt.name || opt.description }}
@@ -148,14 +124,14 @@
             <a-button
               :loading="actionLoading"
               @click="closeAction">
-              {{ this.$t('label.cancel') }}
+              {{ $t('label.cancel') }}
             </a-button>
             <a-button
               :loading="actionLoading"
               ref="submit"
               type="primary"
-              @click="handleSubmit">
-              {{ this.$t('label.ok') }}
+              htmlType="submit">
+              {{ $t('label.ok') }}
             </a-button>
           </div>
         </a-form>
@@ -165,6 +141,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
@@ -194,19 +171,28 @@ export default {
       timeZoneMap: [],
       fetching: false,
       actionLoading: false,
-      intervalValue: 0,
-      intervalType: 'hourly',
       listDayOfWeek: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  mounted () {
+  created () {
+    this.initForm()
     this.fetchTimeZone()
   },
   inject: ['refreshSchedule', 'closeSchedule'],
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        intervaltype: 'hourly'
+      })
+      this.rules = reactive({
+        time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
+        timeSelect: [{ type: 'object', required: true, message: this.$t('message.error.time') }],
+        'day-of-week': [{ type: 'number', required: true, message: `${this.$t('message.error.select')}` }],
+        'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
+        timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      })
+    },
     fetchTimeZone (value) {
       this.timeZoneMap = []
       this.fetching = true
@@ -238,32 +224,25 @@ export default {
       }
     },
     handleChangeIntervalType (e) {
-      this.intervalType = e.target.value
+      this.form.intervaltype = e.target.value
       this.resetForm()
 
-      switch (this.intervalType) {
-        case 'hourly':
-          this.intervalValue = 'HOURLY'
-          break
-        case 'daily':
-          this.intervalValue = 'DAILY'
-          break
+      switch (this.form.intervaltype) {
         case 'weekly':
-          this.intervalValue = 'WEEKLY'
           this.fetchDayOfWeek()
           break
         case 'monthly':
           this.intervalValue = 'MONTHLY'
           this.fetchDayOfMonth()
           break
+        default:
+          break
       }
     },
     handleSubmit (e) {
       if (this.actionLoading) return
-      this.form.validateFieldsAndScroll((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.virtualmachineid = this.resource.id
         params.intervaltype = values.intervaltype
@@ -295,16 +274,13 @@ export default {
         }).finally(() => {
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     resetForm () {
-      this.form.setFieldsValue({
-        time: undefined,
-        timezone: undefined,
-        timeSelect: undefined,
-        'day-of-week': undefined,
-        'day-of-month': undefined
-      })
+      this.formRef.value.resetFields()
+      this.form.intervaltype = 'hourly'
       this.tags = []
     },
     closeAction () {
@@ -320,11 +296,11 @@ export default {
     margin-bottom: 10px;
   }
 
-  /deep/.custom-time-select .ant-time-picker {
+  :deep(.custom-time-select) .ant-time-picker {
     width: 100%;
   }
 
-  /deep/.ant-divider-horizontal {
+  :deep(.ant-divider-horizontal) {
     margin-top: 0;
   }
 }

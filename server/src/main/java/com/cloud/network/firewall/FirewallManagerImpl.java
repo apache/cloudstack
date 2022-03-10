@@ -802,7 +802,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
         }
 
-        if (rule.getType() == FirewallRuleType.System && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (rule.getType() == FirewallRuleType.System && caller.getType() != Account.Type.ADMIN) {
             throw new InvalidParameterValueException("Only root admin can update the system wide firewall rule");
         }
 

@@ -17,7 +17,7 @@
 
 <template>
   <a-popover trigger="click" placement="bottomRight" :overlayStyle="{ width: '300px' }">
-    <template slot="content">
+    <template #content>
       <a-spin :spinning="loadding">
         <a-tabs>
           <a-tab-pane v-for="(tab, k) in tabs" :tab="tab.title" :key="k">
@@ -28,7 +28,7 @@
     </template>
     <span @click="fetchNotice" class="header-notice">
       <a-badge count="12">
-        <a-icon style="font-size: 16px; padding: 4px" type="bell" />
+        <bell-outlined style="font-size: 16px; padding: 4px" />
       </a-badge>
     </span>
   </a-popover>

@@ -36,15 +36,15 @@
         <pre>{{ $t('message.installwizard.cloudstack.helptext.survey') }}<a href="https://cloudstack.apache.org/survey.html" target="_blank">https://cloudstack.apache.org/survey.html</a></pre>
         <pre>{{ $t('message.installwizard.cloudstack.helptext.issues') }}<a href="https://github.com/apache/cloudstack/issues/new" target="_blank">https://github.com/apache/cloudstack/issues/new</a></pre>
 
-        <a-button @click="() => { this.step = 1 }" type="primary">
+        <a-button @click="() => { step = 1 }" type="primary">
           {{ $t('label.continue.install') }}
-          <a-icon type="double-right"/>
+          <double-right-outlined />
         </a-button>
       </div>
     </div>
     <a-modal
       :title="$t('message.change.password')"
-      :visible="this.step === 1"
+      :visible="step === 1"
       :closable="true"
       :maskClosable="false"
       :footer="null"
@@ -52,13 +52,13 @@
       centered
       width="auto">
       <change-user-password
-        :resource="this.resource"
-        @close-action="() => { if (this.step !== 2) this.step = 0 }"
-        @refresh-data="() => { this.step = 2 }" />
+        :resource="resource"
+        @close-action="() => { if (step !== 2) step = 0 }"
+        @refresh-data="() => { step = 2 }" />
     </a-modal>
     <a-modal
       :title="$t('label.installwizard.addzoneintro.title')"
-      :visible="this.step === 2"
+      :visible="step === 2"
       :closable="true"
       :maskClosable="false"
       :footer="null"

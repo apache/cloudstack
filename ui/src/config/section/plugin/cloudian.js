@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import cloudian from '@/assets/icons/cloudian.svg?inline'
 
 export default {
@@ -23,5 +24,5 @@ export default {
   docHelp: 'plugins/cloudian-connector.html',
   icon: cloudian,
   permission: ['cloudianSsoLogin'],
-  component: () => import('@/views/plugins/CloudianPlugin.vue')
+  component: shallowRef(defineAsyncComponent(() => import('@/views/plugins/CloudianPlugin.vue')))
 }

@@ -18,12 +18,12 @@
 const PERMISSION_ENUM = {
 }
 
-function plugin (Vue) {
+function plugin (app) {
   if (plugin.installed) {
     return
   }
 
-  !Vue.prototype.$auth && Object.defineProperties(Vue.prototype, {
+  !app.config.globalProperties.$auth && Object.defineProperties(app.config.globalProperties, {
     $auth: {
       get () {
         const _this = this
@@ -40,14 +40,14 @@ function plugin (Vue) {
     }
   })
 
-  !Vue.prototype.$enum && Object.defineProperties(Vue.prototype, {
+  !app.config.globalProperties.$enum && Object.defineProperties(app.config.globalProperties, {
     $enum: {
       get () {
         // const _this = this;
         return (val) => {
           let result = PERMISSION_ENUM
           val && val.split('.').forEach(v => {
-            result = result && result[v] || null
+            result = (result && result[v]) || null
           })
           return result
         }
