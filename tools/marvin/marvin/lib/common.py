@@ -1139,6 +1139,14 @@ def get_free_vlan(apiclient, zoneid):
         list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
 
     physical_network = list_physical_networks_response[0]
+    for physicalNetwork in list_physical_networks_response:
+        trafficTypes = TrafficType.list(
+            apiclient,
+            physicalnetworkid=physicalNetwork.id)
+        for trafficType in trafficTypes:
+            if trafficType.traffictype == "Guest":
+                physical_network = physicalNetwork
+                break
 
     networks = list_networks(apiclient, zoneid=zoneid)
     usedVlanIds = []
@@ -1161,6 +1169,7 @@ def get_free_vlan(apiclient, zoneid):
                 break
     else:
         vlans = xsplit(physical_network.vlan, ['-', ','])
+        list.sort(vlans)
 
         assert len(vlans) > 0
         assert int(vlans[0]) < int(
