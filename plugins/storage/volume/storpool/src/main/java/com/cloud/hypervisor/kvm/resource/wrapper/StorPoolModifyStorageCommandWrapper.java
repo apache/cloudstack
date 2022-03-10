@@ -53,24 +53,23 @@ public final class StorPoolModifyStorageCommandWrapper extends CommandWrapper<St
             return new Answer(command, false, "spNotFound");
         }
         try {
-            String volume = attachOrDetachVolume("attach", "volume", command.getVolumeName());
-            if (volume != null) {
-                return new Answer(command, false, volume);
-            } else {
-                final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-                final KVMStoragePool storagepool =
-                        storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                                .getUserInfo(), command.getPool().getType());
-                if (storagepool == null) {
-                    log.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
-                    return new Answer(command, false, " Failed to create storage pool");
-                }
-
-                final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-                final StorPoolModifyStoragePoolAnswer answer = new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId);
-
-                return answer;
+            String result = attachOrDetachVolume("attach", "volume", command.getVolumeName());
+            if (result != null) {
+                return new Answer(command, false, result);
             }
+            final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+            final KVMStoragePool storagepool =
+                    storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
+                            .getUserInfo(), command.getPool().getType());
+            if (storagepool == null) {
+                log.debug(String.format("Did not find a storage pool [%s]", command.getPool().getId()));
+                return new Answer(command, false, String.format("Failed to create storage pool [%s]", command.getPool().getId()));
+            }
+
+            final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
+            final StorPoolModifyStoragePoolAnswer answer = new StorPoolModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, clusterId);
+
+            return answer;
         } catch (Exception e) {
             log.debug(String.format("Could not modify storage due to %s", e.getMessage()));
             return new Answer(command, e);
