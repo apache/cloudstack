@@ -190,7 +190,7 @@
                   showSearch
                   optionFilterProp="children"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
                   <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
                     <span>

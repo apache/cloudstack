@@ -44,7 +44,7 @@
         :rowKey="item => item.accountid"
         :pagination="false" >
 
-        <template slot="action" slot-scope="text, record">
+        <template #action="text, record">
           <a-popconfirm
             :title="$t('message.confirm.remove.network.permission')"
             @confirm="removeNetworkPermission(record.accountid, record.projectid)"

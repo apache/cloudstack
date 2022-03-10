@@ -85,7 +85,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="vlanid" ref="vlanid">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()" name="vlanid" ref="vlanid">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             </template>
@@ -100,7 +100,7 @@
             <a-switch v-model:checked="form.bypassvlanoverlapcheck" />
           </a-form-item>
           <a-form-item
-            v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
+            v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan && isAdmin()"
             name="isolatedpvlantype"
             ref="isolatedpvlantype">
             <template #label>
@@ -201,9 +201,6 @@
                 </span>
               </a-select-option>
             </a-select>
-            <a-input
-              v-model:value="form.account"
-              :placeholder="apiParams.account.description"/>
           </a-form-item>
           <a-form-item v-if="scopeType === 'project'" name="projectid" ref="projectid">
             <template #label>
@@ -247,57 +244,19 @@
               </a-select-option>
             </a-select>
             <a-alert type="warning" v-if="!this.arrayHasItems(this.networkOfferings)">
-              <span slot="message" v-html="$t('message.shared.network.offering.warning')" />
+              <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
-            <tooltip-label slot="label" :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
-            <a-input
-              v-decorator="['vlanid', {
-                rules: [{ required: true, message: $t('message.please.enter.value') }]
-              }]"
-              :placeholder="this.$t('label.vlanid')"/>
-          </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
-            <tooltip-label slot="label" :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
-            <a-switch v-decorator="['bypassvlanoverlapcheck']" />
-          </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
-            <a-radio-group
-              v-decorator="['isolatedpvlantype', {
-                initialValue: this.isolatePvlanType
-              }]"
-              buttonStyle="solid"
-              @change="selected => { this.handleIsolatedPvlanTypeChange(selected.target.value) }">
-              <a-radio-button value="none">
-                {{ $t('label.none') }}
-              </a-radio-button>
-              <a-radio-button value="community">
-                {{ $t('label.community') }}
-              </a-radio-button>
-              <a-radio-button value="isolated">
-                {{ $t('label.secondary.isolated.vlan.type.isolated') }}
-              </a-radio-button>
-              <a-radio-button value="promiscuous">
-                {{ $t('label.secondary.isolated.vlan.type.promiscuous') }}
-              </a-radio-button>
-            </a-radio-group>
-          </a-form-item>
-          <a-form-item v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
-            <tooltip-label slot="label" :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
-            <a-input
-              v-decorator="['isolatedpvlan', {}]"
-              :placeholder="this.$t('label.isolatedpvlanid')"/>
-          </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && !this.selectedNetworkOffering.specifyvlan">
-            <tooltip-label slot="label" :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
+          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.specifyvlan">
+            <template #label>
+              <tooltip-label :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
+            </template>
             <a-select
               v-decorator="['associatednetworkid', {}]"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="accountLoading"
               :placeholder="this.$t('label.associatednetwork')"

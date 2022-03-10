@@ -25,12 +25,12 @@
     :pagination="false"
     :loading="fetchLoading"
   >
-    <template slot="name" slot-scope="text,item">
+    <template #name="text,item">
       <router-link v-if="item.issystem === false && !item.project" :to="{ path: '/guestnetwork/' + item.id }" >{{ text }}</router-link>
       <router-link v-else-if="item.issystem === false && item.project" :to="{ path: '/guestnetwork/' + item.id + '?projectid=' + item.projectid}" >{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
-    <template slot="status" slot-scope="text, item">
+    <template #status="text, item">
       <status class="status" :text="item.state" displayText />
     </template>
   </a-table>

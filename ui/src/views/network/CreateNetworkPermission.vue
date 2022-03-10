@@ -23,17 +23,18 @@
           :form="form"
           @submit="handleSubmit"
           layout="vertical">
-          <a-form-item v-if="isAdminOrDomainAdmin()">
-            <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.accountids.description"/>
+          <a-form-item v-if="isAdminOrDomainAdmin()" name="accountids" ref="accountids">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.accountids.description"/>
+            </template>
             <a-select
-              v-decorator="['accountids']"
               mode="multiple"
               :loading="accountLoading"
               :placeholder="apiParams.accountids.description"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(opt, optIndex) in this.accounts" :key="optIndex" :label="opt.name || opt.description">
                 <span>
@@ -44,17 +45,18 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="isAdminOrDomainAdmin()">
-            <tooltip-label slot="label" :title="$t('label.project')" :tooltip="apiParams.projectids.description"/>
+          <a-form-item v-if="isAdminOrDomainAdmin()" name="projectids" ref="projectids">
+            <template #label>
+              <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectids.description"/>
+            </template>
             <a-select
-              v-decorator="['projectids']"
               mode="multiple"
               :loading="projectLoading"
               :placeholder="apiParams.projectids.description"
               showSearch
               optionFilterProp="children"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex" :label="opt.name || opt.description">
                 <span>
@@ -66,7 +68,9 @@
             </a-select>
           </a-form-item>
           <a-form-item v-if="!isAdminOrDomainAdmin()">
-            <tooltip-label slot="label" :title="$t('label.accounts')" :tooltip="apiParams.accounts.description"/>
+            <template #label>
+              <tooltip-label :title="$t('label.accounts')" :tooltip="apiParams.accounts.description"/>
+            </template>
             <a-input
               v-decorator="['accounts', {}]"
               :placeholder="apiParams.accounts.description"/>
