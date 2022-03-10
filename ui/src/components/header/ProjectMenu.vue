@@ -65,8 +65,7 @@ export default {
   data () {
     return {
       projects: [],
-      loading: false,
-      showProjectMenu: true
+      loading: false
     }
   },
   created () {
@@ -75,7 +74,6 @@ export default {
   methods: {
     fetchData () {
       if (this.isDisabled()) {
-        this.showProjectMenu = false
         return
       }
       var page = 1
