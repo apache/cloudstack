@@ -18,7 +18,7 @@
 <template>
   <span class="header-notice-opener">
     <a-select
-      v-if="showProjectMenu"
+      v-if="!isDisabled()"
       class="project-select"
       :defaultValue="$t('label.default.view')"
       :loading="loading"
