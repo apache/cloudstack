@@ -23,7 +23,7 @@ from utility import getHealthChecksData, formatPort
 def checkMaxconn(haproxyData, haCfgSections):
     if "maxconn" in haproxyData and "maxconn" in haCfgSections["global"]:
         if haproxyData["maxconn"] != haCfgSections["global"]["maxconn"][0].strip():
-            print "global maxconn mismatch occured"
+            print "global maxconn mismatch occurred"
             return False
 
     return True

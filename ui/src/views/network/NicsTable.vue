@@ -23,7 +23,7 @@
     :rowKey="item => item.id"
     :pagination="false"
   >
-    <p slot="expandedRowRender" slot-scope="record">
+    <template #expandedRowRender="{ record }">
       <slot name="actions" :nic="record" />
       <a-descriptions style="margin-top: 10px" layout="vertical" :column="1" :bordered="false" size="small">
         <a-descriptions-item :label="$t('label.id')">
@@ -59,14 +59,14 @@
           </a-descriptions-item>
         </template>
       </a-descriptions>
-    </p>
-    <template slot="networkname" slot-scope="text, item">
-      <resource-icon v-if="!networkIconLoading && networkicon[item.id]" :image="networkicon[item.id]" size="1x" style="margin-right: 5px"/>
-      <a-icon v-else type="apartment" style="margin-right: 5px" />
-      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
+    </template>
+    <template #networkname="{ text, record }">
+      <resource-icon v-if="!networkIconLoading && networkicon[record.id]" :image="networkicon[record.id]" size="1x" style="margin-right: 5px"/>
+      <apartment-outlined v-else style="margin-right: 5px" />
+      <router-link :to="{ path: '/guestnetwork/' + record.networkid }">
         {{ text }}
       </router-link>
-      <a-tag v-if="item.isdefault">
+      <a-tag v-if="record.isdefault">
         {{ $t('label.default') }}
       </a-tag>
     </template>
@@ -99,12 +99,12 @@ export default {
         {
           title: this.$t('label.deviceid'),
           dataIndex: 'deviceid',
-          scopedSlots: { customRender: 'deviceid' }
+          slots: { customRender: 'deviceid' }
         },
         {
           title: this.$t('label.networkname'),
           dataIndex: 'networkname',
-          scopedSlots: { customRender: 'networkname' }
+          slots: { customRender: 'networkname' }
         },
         {
           title: this.$t('label.macaddress'),
@@ -128,10 +128,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      this.resource = newItem
-      if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
-        this.fetchNetworks()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
+          this.fetchNetworks()
+        }
       }
     }
   },

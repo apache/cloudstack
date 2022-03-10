@@ -16,10 +16,12 @@
 // under the License.
 
 // eslint-disable-next-line
-import { UserLayout, BasicLayout, RouteView, BlankLayout, PageView } from '@/layouts'
+import { UserLayout, BasicLayout, RouteView } from '@/layouts'
 import AutogenView from '@/views/AutogenView.vue'
 import IFramePlugin from '@/views/plugins/IFramePlugin.vue'
-import Vue from 'vue'
+
+import { shallowRef, defineAsyncComponent } from 'vue'
+import { vueProps } from '@/vue-app'
 
 import compute from '@/config/section/compute'
 import storage from '@/config/section/storage'
@@ -46,11 +48,11 @@ function generateRouterMap (section) {
     meta: {
       title: section.title,
       icon: section.icon,
-      docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
+      docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
       searchFilters: section.searchFilters,
       related: section.related
     },
-    component: RouteView
+    component: shallowRef(RouteView)
   }
 
   if (section.children && section.children.length > 0) {
@@ -61,7 +63,7 @@ function generateRouterMap (section) {
       if ('show' in child && !child.show()) {
         continue
       }
-      var component = child.component ? child.component : AutogenView
+      var component = child.component ? child.component : shallowRef(AutogenView)
       var route = {
         name: child.name,
         path: '/' + child.name,
@@ -70,7 +72,7 @@ function generateRouterMap (section) {
           title: child.title,
           name: child.name,
           icon: child.icon,
-          docHelp: Vue.prototype.$applyDocHelpMappings(child.docHelp),
+          docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
           permission: child.permission,
           resourceType: child.resourceType,
           filters: child.filters,
@@ -92,7 +94,7 @@ function generateRouterMap (section) {
               title: child.title,
               name: child.name,
               icon: child.icon,
-              docHelp: Vue.prototype.$applyDocHelpMappings(child.docHelp),
+              docHelp: vueProps.$applyDocHelpMappings(child.docHelp),
               permission: child.permission,
               resourceType: child.resourceType,
               params: child.params ? child.params : {},
@@ -128,7 +130,7 @@ function generateRouterMap (section) {
       map.children.push(route)
     }
   } else {
-    map.component = section.component ? section.component : AutogenView
+    map.component = section.component ? section.component : shallowRef(AutogenView)
     map.hideChildrenInMenu = true
 
     map.meta.name = section.name
@@ -147,7 +149,7 @@ function generateRouterMap (section) {
         title: section.title,
         name: section.name,
         icon: section.icon,
-        docHelp: Vue.prototype.$applyDocHelpMappings(section.docHelp),
+        docHelp: vueProps.$applyDocHelpMappings(section.docHelp),
         hidden: section.hidden,
         permission: section.permission,
         resourceType: section.resourceType,
@@ -158,7 +160,7 @@ function generateRouterMap (section) {
         tabs: section.tabs,
         actions: section.actions ? section.actions : []
       },
-      component: section.component ? section.component : AutogenView
+      component: section.component ? section.component : shallowRef(AutogenView)
     }]
   }
 
@@ -189,8 +191,8 @@ export function asyncRouterMap () {
   const routerMap = [{
     path: '/',
     name: 'index',
-    component: BasicLayout,
-    meta: { icon: 'home' },
+    component: shallowRef(BasicLayout),
+    meta: { icon: 'HomeOutlined' },
     redirect: '/dashboard',
     children: [
       {
@@ -198,16 +200,16 @@ export function asyncRouterMap () {
         name: 'dashboard',
         meta: {
           title: 'label.dashboard',
-          icon: 'dashboard',
+          icon: 'DashboardOutlined',
           tabs: [
             {
               name: 'dashboard',
-              component: () => import('@/views/dashboard/UsageDashboardChart')
+              component: shallowRef(defineAsyncComponent(() => import('@/views/dashboard/UsageDashboardChart')))
             },
             {
               name: 'accounts',
               show: (record, route, user) => { return record.account === user.account || ['Admin', 'DomainAdmin'].includes(user.roletype) },
-              component: () => import('@/views/project/AccountsTab')
+              component: shallowRef(defineAsyncComponent(() => import('@/views/project/AccountsTab')))
             },
             {
               name: 'limits',
@@ -215,7 +217,7 @@ export function asyncRouterMap () {
                 projectid: 'id'
               },
               show: (record, route, user) => { return ['Admin'].includes(user.roletype) },
-              component: () => import('@/components/view/ResourceLimitTab.vue')
+              component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
             }
           ]
         },
@@ -242,7 +244,7 @@ export function asyncRouterMap () {
       {
         path: '/exception',
         name: 'exception',
-        component: RouteView,
+        component: shallowRef(RouteView),
         hidden: true,
         redirect: '/exception/404',
         meta: { title: 'Exception', icon: 'warning' },
@@ -273,10 +275,10 @@ export function asyncRouterMap () {
     ]
   },
   {
-    path: '*', redirect: '/exception/404', hidden: true
+    path: '/:catchAll(.*)', redirect: '/exception/404', hidden: true
   }]
 
-  const plugins = Vue.prototype.$config.plugins
+  const plugins = vueProps.$config.plugins
   if (plugins && plugins.length > 0) {
     plugins.map(plugin => {
       routerMap[0].children.push({

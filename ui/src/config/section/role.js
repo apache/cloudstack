@@ -15,41 +15,42 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'role',
   title: 'label.roles',
-  icon: 'idcard',
+  icon: 'idcard-outlined',
   docHelp: 'adminguide/accounts.html#roles',
   permission: ['listRoles', 'listRolePermissions'],
   columns: ['name', 'type', 'description'],
   details: ['name', 'id', 'type', 'description'],
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'rules',
-    component: () => import('@/views/iam/RolePermissionTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/iam/RolePermissionTab.vue')))
   }],
   actions: [
     {
       api: 'createRole',
-      icon: 'plus',
+      icon: 'plus-outlined',
       label: 'label.add.role',
       listView: true,
       popup: true,
-      component: () => import('@/views/iam/CreateRole.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/CreateRole.vue')))
     },
     {
       api: 'importRole',
-      icon: 'cloud-upload',
+      icon: 'cloud-upload-outlined',
       label: 'label.import.role',
       listView: true,
       popup: true,
-      component: () => import('@/views/iam/ImportRole.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ImportRole.vue')))
     },
     {
       api: 'updateRole',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.edit.role',
       dataView: true,
       args: ['name', 'description', 'type'],
@@ -61,7 +62,7 @@ export default {
     },
     {
       api: 'deleteRole',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.delete.role',
       message: 'label.delete.role',
       dataView: true

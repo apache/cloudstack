@@ -15,49 +15,57 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-import App from './App.vue'
+import { vueApp, vueProps } from './vue-app'
 import router from './router'
 import store from './store'
 import { i18n, loadLanguageAsync } from './locales'
 
 import bootstrap from './core/bootstrap'
 import './core/lazy_use'
-import './core/ext'
+import extensions from './core/ext'
 import './permission' // permission control
 import './utils/filter' // global filter
-import { pollJobPlugin, notifierPlugin, toLocaleDatePlugin, configUtilPlugin, apiMetaUtilPlugin, showIconPlugin, resourceTypePlugin, fileSizeUtilPlugin } from './utils/plugins'
+import {
+  pollJobPlugin,
+  notifierPlugin,
+  toLocaleDatePlugin,
+  configUtilPlugin,
+  apiMetaUtilPlugin,
+  showIconPlugin,
+  resourceTypePlugin,
+  fileSizeUtilPlugin,
+  localesPlugin
+} from './utils/plugins'
 import { VueAxios } from './utils/request'
-import './utils/directives'
+import directives from './utils/directives'
 
-Vue.config.productionTip = false
-Vue.use(VueAxios, router)
-Vue.use(pollJobPlugin)
-Vue.use(notifierPlugin)
-Vue.use(toLocaleDatePlugin)
-Vue.use(showIconPlugin)
-Vue.use(resourceTypePlugin)
+vueApp.use(VueAxios, router)
+vueApp.use(pollJobPlugin)
+vueApp.use(notifierPlugin)
+vueApp.use(toLocaleDatePlugin)
+vueApp.use(configUtilPlugin)
+vueApp.use(apiMetaUtilPlugin)
+vueApp.use(showIconPlugin)
+vueApp.use(resourceTypePlugin)
+vueApp.use(fileSizeUtilPlugin)
+vueApp.use(localesPlugin)
+vueApp.use(extensions)
+vueApp.use(directives)
 
 fetch('config.json').then(response => response.json()).then(config => {
-  Vue.prototype.$config = config
+  vueProps.$config = config
   let basUrl = config.apiBase
   if (config.multipleServer) {
     basUrl = (config.servers[0].apiHost || '') + config.servers[0].apiBase
   }
 
-  Vue.axios.defaults.baseURL = basUrl
+  vueProps.axios.defaults.baseURL = basUrl
 
   loadLanguageAsync().then(() => {
-    new Vue({
-      router,
-      store,
-      i18n,
-      created: bootstrap,
-      render: h => h(App)
-    }).$mount('#app')
+    vueApp.use(store)
+      .use(router)
+      .use(i18n)
+      .use(bootstrap)
+      .mount('#app')
   })
 })
-
-Vue.use(configUtilPlugin)
-Vue.use(apiMetaUtilPlugin)
-Vue.use(fileSizeUtilPlugin)

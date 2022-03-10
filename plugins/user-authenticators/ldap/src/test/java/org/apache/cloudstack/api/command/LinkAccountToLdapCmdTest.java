@@ -60,7 +60,7 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
         long domainId = 1;
         String type = "GROUP";
         String ldapDomain = "CN=test,DC=ccp,DC=Citrix,DC=com";
-        short accountType = Account.ACCOUNT_TYPE_DOMAIN_ADMIN;
+        Account.Type accountType = Account.Type.DOMAIN_ADMIN;
         String username = "admin";
         long accountId = 24;
         String accountName = "test";
@@ -69,11 +69,11 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
         setHiddenField(linkAccountToLdapCmd, "admin", username);
         setHiddenField(linkAccountToLdapCmd, "type", type);
         setHiddenField(linkAccountToLdapCmd, "domainId", domainId);
-        setHiddenField(linkAccountToLdapCmd, "accountType", accountType);
+        setHiddenField(linkAccountToLdapCmd, "accountType", accountType.ordinal());
         setHiddenField(linkAccountToLdapCmd, "accountName", accountName);
 
 
-        LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(String.valueOf(domainId), type, ldapDomain, (short)accountType, username, accountName);
+        LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(String.valueOf(domainId), type, ldapDomain, accountType.ordinal(), username, accountName);
         when(ldapManager.linkAccountToLdap(linkAccountToLdapCmd)).thenReturn(response);
         when(ldapManager.getUser(username, type, ldapDomain, 1L))
                 .thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
@@ -82,7 +82,7 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
         UserAccountVO userAccount =  new UserAccountVO();
         userAccount.setAccountId(24);
         when(accountService.createUserAccount(eq(username), eq(""), eq("Admin"), eq("Admin"), eq("admin@ccp.citrix.com"), isNull(String.class),
-                eq(username), eq(Account.ACCOUNT_TYPE_DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
+                eq(username), eq(Account.Type.DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
                 (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
 
         linkAccountToLdapCmd.execute();

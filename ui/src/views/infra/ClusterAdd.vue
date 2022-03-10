@@ -21,13 +21,13 @@
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
         <a-select
-          v-model="zoneId"
+          v-model:value="zoneId"
           @change="fetchPods"
-          autoFocus
+          v-focus="true"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="zone in zonesList"
@@ -36,7 +36,7 @@
             :label="zone.name">
             <span>
               <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px" />
+              <global-outlined v-else style="margin-right: 5px" />
               {{ zone.name }}
             </span>
           </a-select-option>
@@ -46,12 +46,12 @@
       <div class="form__item">
         <div class="form__label">{{ $t('label.hypervisor') }}</div>
         <a-select
-          v-model="hypervisor"
+          v-model:value="hypervisor"
           @change="resetAllFields"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="hv in hypervisorsList"
@@ -65,11 +65,11 @@
       <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
         <a-select
-          v-model="podId"
+          v-model:value="podId"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="pod in podsList"
@@ -83,28 +83,28 @@
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
         <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.clustername" v-model="clustername"></a-input>
+        <a-input :placeholder="placeholder.clustername" v-model:value="clustername"></a-input>
       </div>
 
       <template v-if="hypervisor === 'VMware'">
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenter.host') }}</div>
-          <a-input v-model="host"></a-input>
+          <a-input v-model:value="host"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterusername') }}</div>
-          <a-input v-model="username"></a-input>
+          <a-input v-model:value="username"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterpassword') }}</div>
-          <a-input type="password" v-model="password"></a-input>
+          <a-input type="password" v-model:value="password"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterdatacenter') }}</div>
-          <a-input v-model="dataCenter"></a-input>
+          <a-input v-model:value="dataCenter"></a-input>
         </div>
       </template>
 
@@ -120,10 +120,10 @@
           :error="domainError" />
       </template>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div :span="24" class="action-button">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
         <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
@@ -306,7 +306,7 @@ export default {
         }
         this.parentFetchData()
         this.parentToggleLoading()
-        this.$parent.$parent.close()
+        this.$emit('close-action')
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,

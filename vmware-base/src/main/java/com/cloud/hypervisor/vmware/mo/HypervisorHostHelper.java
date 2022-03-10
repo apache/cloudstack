@@ -1759,7 +1759,7 @@ public class HypervisorHostHelper {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting to config vm.");
+                    s_logger.debug("[ignored] interrupted while waiting to config vm.");
                 }
             }
         }

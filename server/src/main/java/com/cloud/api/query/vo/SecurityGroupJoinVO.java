@@ -26,6 +26,7 @@ import javax.persistence.Table;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.user.Account;
 
 @Entity
 @Table(name = "security_group_view")
@@ -54,7 +55,8 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -174,7 +176,7 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

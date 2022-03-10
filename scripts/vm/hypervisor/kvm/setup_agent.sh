@@ -206,15 +206,15 @@ done
 
 #install_cloud_agent $dflag
 #install_cloud_consoleP $dflag
-paramters=
+parameters=
 if [ -n "$pubNic" ]
 then
-   paramters=" --pubNic=$pubNic"
+   parameters=" --pubNic=$pubNic"
 fi
 
 if [ -n "$prvNic" ]
 then
-   paramters=" --prvNic=$prvNic $paramters"
+   parameters=" --prvNic=$prvNic $parameters"
 fi
 
 selenabled=`cat /selinux/enforce`
@@ -224,5 +224,5 @@ then
     setenforce 0
 fi
 
-cloudstack-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $paramters -a > /dev/null
+cloudstack-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $parameters -a > /dev/null
 #cloud_consoleP_setup $host $zone $pod

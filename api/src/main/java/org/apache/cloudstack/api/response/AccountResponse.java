@@ -41,7 +41,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
-    private Short accountType;
+    private Integer accountType;
 
     @SerializedName(ApiConstants.ROLE_ID)
     @Param(description = "the ID of the role")
@@ -280,7 +280,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
         this.name = name;
     }
 
-    public void setAccountType(Short accountType) {
+    public void setAccountType(Integer accountType) {
         this.accountType = accountType;
     }
 

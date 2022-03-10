@@ -151,13 +151,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can resize volumes for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
                 Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to  project id=" + project.getId() + " in state=" + project.getState() +
                     " as it's no longer active");
             }
-        } else if (account.getState() == Account.State.disabled) {
+        } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of volume " + id + "  is disabled: " + account);
         }
 

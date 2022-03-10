@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'nsp',
   title: 'label.network.service.providers',
-  icon: 'compass',
+  icon: 'compass-outlined',
   docHelp: 'adminguide/networking.html#network-service-providers',
   hidden: true,
   permission: ['listNetworkServiceProviders'],
@@ -26,12 +27,12 @@ export default {
   details: ['name', 'state', 'servicelist', 'canenableindividualservice', 'physicalnetworkid'],
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }],
   actions: [
     {
       api: 'updateNetworkServiceProvider',
-      icon: 'stop',
+      icon: 'stop-outlined',
       label: 'label.disable.provider',
       message: 'message.confirm.disable.provider',
       dataView: true,
@@ -45,7 +46,7 @@ export default {
     },
     {
       api: 'updateNetworkServiceProvider',
-      icon: 'right-circle',
+      icon: 'right-circle-outlined',
       label: 'label.enable.provider',
       message: 'message.confirm.enable.provider',
       dataView: true,

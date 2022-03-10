@@ -105,7 +105,7 @@ public class ParamGenericValidationWorkerTest {
         params.put("_", "");
         params.put("addedParam", "");
 
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         // Execute
@@ -129,7 +129,7 @@ public class ParamGenericValidationWorkerTest {
         params.put("addedParam", "");
         params.put(unknownParamKey, "");
 
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
@@ -147,7 +147,7 @@ public class ParamGenericValidationWorkerTest {
 
     @Test
     public void testHandleWithoutAuthorization() throws ResourceAllocationException {
-        final short type = Account.ACCOUNT_TYPE_NORMAL;
+        final Account.Type type = Account.Type.NORMAL;
 
         driveAuthTest(type);
 
@@ -158,14 +158,14 @@ public class ParamGenericValidationWorkerTest {
 
     @Test
     public void testHandleWithAuthorization() throws ResourceAllocationException {
-        final short type = Account.ACCOUNT_TYPE_ADMIN;
+        final Account.Type type = Account.Type.ADMIN;
 
         driveAuthTest(type);
         // Assert
         assertEquals("There should be no errors since parameters have authorization", null, loggerOutput);
     }
 
-    protected void driveAuthTest(final short type) {
+    protected void driveAuthTest(final Account.Type type) {
 
         // Prepare
         final BaseCmd cmd = new FakeCmdWithRoleAdmin();

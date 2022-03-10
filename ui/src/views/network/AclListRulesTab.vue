@@ -20,14 +20,15 @@
     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-right: 10px"
         :disabled="!('createNetworkACL' in $store.getters.apis)"
         @click="openAddRuleModal">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add') }} {{ $t('label.aclid') }}
       </a-button>
 
-      <a-button type="dashed" @click="exportAclList" style="width: 100%" icon="download">
+      <a-button type="dashed" @click="exportAclList" style="width: 100%">
+        <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
     </div>
@@ -38,99 +39,113 @@
         @change="changeOrder"
         handle=".drag-handle"
         animation="200"
-        ghostClass="drag-ghost">
-        <transition-group type="transition">
-          <div v-for="acl in acls" :key="acl.id" class="list__item">
+        ghostClass="drag-ghost"
+        tag="transition-group"
+        :component-data="{type: 'transition'}"
+        item-key="id">
+        <template #item="{element}">
+          <div class="list__item">
             <div class="drag-handle">
-              <a-icon type="drag"></a-icon>
+              <drag-outlined />
             </div>
             <div class="list__container">
               <div class="list__col">
                 <div class="list__label">{{ $t('label.rule.number') }}</div>
-                <div>{{ acl.number }}</div>
+                <div>{{ element.number }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.cidrlist') }}</div>
-                <div>{{ acl.cidrlist }}</div>
+                <div>{{ element.cidrlist }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.action') }}</div>
-                <div>{{ acl.action }}</div>
+                <div>{{ element.action }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.protocol') }}</div>
-                <div>{{ acl.protocol }}</div>
+                <div>{{ element.protocol }}</div>
               </div>
-              <div class="list__col" v-if="acl.startport">
+              <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
                 <div>{{ acl.startport }}</div>
               </div>
-              <div class="list__col" v-if="acl.endport">
+              <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
-                <div>{{ acl.endport }}</div>
+                <div>{{ element.endport }}</div>
               </div>
-              <div class="list__col" v-if="acl.icmpcode">
+              <div class="list__col" v-if="element.icmpcode">
                 <div class="list__label">{{ $t('label.icmpcode') }}</div>
-                <div>{{ acl.icmpcode }}</div>
+                <div>{{ element.icmpcode }}</div>
               </div>
-              <div class="list__col" v-if="acl.icmptype">
+              <div class="list__col" v-if="element.icmptype">
                 <div class="list__label">{{ $t('label.icmptype') }}</div>
-                <div>{{ acl.icmptype }}</div>
+                <div>{{ element.icmptype }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.traffictype') }}</div>
-                <div>{{ acl.traffictype }}</div>
+                <div>{{ element.traffictype }}</div>
               </div>
               <div class="list__col">
                 <div class="list__label">{{ $t('label.description') }}</div>
-                <div>{{ acl.reason }}</div>
+                <div>{{ element.reason }}</div>
               </div>
             </div>
             <div class="list__actions">
-              <tooltip-button :tooltip="$t('label.tags')" icon="tag" @click="() => openTagsModal(acl)" />
-              <tooltip-button :tooltip="$t('label.edit')" icon="edit" @click="() => openEditRuleModal(acl)" />
-              <tooltip-button :tooltip="$t('label.delete')" icon="delete" type="danger" :disabled="!('deleteNetworkACL' in $store.getters.apis)" @click="() => handleDeleteRule(acl.id)" />
+              <tooltip-button :tooltip="$t('label.tags')" icon="tag-outlined" @onClick="() => openTagsModal(element)" />
+              <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(element)" />
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                icon="delete-outlined"
+                type="primary"
+                :danger="true"
+                :disabled="!('deleteNetworkACL' in $store.getters.apis)"
+                @onClick="() => handleDeleteRule(element.id)" />
             </div>
           </div>
-        </transition-group>
+        </template>
       </draggable>
     </div>
 
     <a-modal
       v-if="tagsModalVisible"
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :closable="true"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
       <div v-else>
-        <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+        <a-form
+          :ref="formRef"
+          :model="form"
+          :rules="tagRules"
+          class="add-tags"
+          v-ctrl-enter="handleAddTag"
+         >
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
-            <a-form-item>
+            <a-form-item ref="key" name="key">
               <a-input
-                autoFocus
-                v-decorator="['key', { rules: [{ required: true, message: $t('message.specifiy.tag.key')}] }]" />
+                v-focus="true"
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
-            <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: $t('message.specifiy.tag.value')}] }]" />
+            <a-form-item  ref="value" name="value">
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
           <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
-        <a-divider style="margin-top: 0;"></a-divider>
+        <a-divider style="margin-top: 0;" />
 
         <div class="tags-container">
           <div class="tags" v-for="(tag, index) in tags" :key="index">
-            <a-tag :key="index" :closable="true" :afterClose="() => handleDeleteTag(tag)">
+            <a-tag :key="index" :closable="true" @close="() => handleDeleteTag(tag)">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
           </div>
@@ -146,81 +161,90 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      v-model="ruleModalVisible"
-      @cancel="ruleModalVisible = false"
-      v-ctrl-enter="handleRuleModalForm">
-      <a-form :form="ruleForm" @submit="handleRuleModalForm">
-        <a-form-item :label="$t('label.number')">
-          <a-input-number autoFocus style="width: 100%" v-decorator="['number']" />
+      :visible="ruleModalVisible"
+      @cancel="ruleModalVisible = false">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleRuleModalForm"
+        v-ctrl-enter="handleRuleModalForm"
+       >
+        <a-form-item :label="$t('label.number')" ref="number" name="number">
+          <a-input-number v-focus="true" style="width: 100%" v-model:value="form.number" />
         </a-form-item>
-        <a-form-item :label="$t('label.cidrlist')">
-          <a-input v-decorator="['cidrlist']" />
+        <a-form-item :label="$t('label.cidrlist')" ref="cidrlist" name="cidrlist">
+          <a-input v-model:value="form.cidrlist" />
         </a-form-item>
-        <a-form-item :label="$t('label.action')">
+        <a-form-item :label="$t('label.action')" ref="action" name="action">
           <a-select
-            v-decorator="['action']"
+            v-model:value="form.action"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
             <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.protocol')">
+        <a-form-item :label="$t('label.protocol')" ref="protocol" name="protocol">
           <a-select
-            v-decorator="['protocol']"
+           v-model:value="form.protocol"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
             <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item v-if="ruleForm.getFieldValue('protocol') === 'protocolnumber'" :label="$t('label.protocolnumber')">
-          <a-input v-decorator="['protocolnumber' , { rules: [{ required: true, message: `${$t('label.required')}` }]}]" />
+        <a-form-item
+          v-if="form.protocol === 'protocolnumber'"
+          :label="$t('label.protocolnumber')"
+          ref="protocolnumber"
+          name="protocolnumber">
+          <a-input v-model:value="form.protocolnumber" />
         </a-form-item>
 
-        <div v-if="ruleForm.getFieldValue('protocol') === 'icmp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
-          <a-form-item :label="$t('label.icmptype')">
-            <a-input v-decorator="['icmptype']" :placeholder="$t('icmp.type.desc')" />
+        <div v-if="['icmp', 'protocolnumber'].includes(form.protocol)">
+          <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
+            <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
           </a-form-item>
-          <a-form-item :label="$t('label.icmpcode')">
-            <a-input v-decorator="['icmpcode']" :placeholder="$t('icmp.code.desc')" />
-          </a-form-item>
-        </div>
-
-        <div v-show="ruleForm.getFieldValue('protocol') === 'tcp' || ruleForm.getFieldValue('protocol') === 'udp' || ruleForm.getFieldValue('protocol') === 'protocolnumber'">
-          <a-form-item :label="$t('label.startport')">
-            <a-input-number style="width: 100%" v-decorator="['startport']" />
-          </a-form-item>
-          <a-form-item :label="$t('label.endport')">
-            <a-input-number style="width: 100%" v-decorator="['endport']" />
+          <a-form-item :label="$t('label.icmpcode')" ref="icmpcode" name="icmpcode">
+            <a-input v-model:value="form.icmpcode" :placeholder="$t('icmp.code.desc')" />
           </a-form-item>
         </div>
 
-        <a-form-item :label="$t('label.traffictype')">
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol)">
+          <a-form-item :label="$t('label.startport')" ref="startport" name="startport">
+            <a-input-number style="width: 100%" v-model:value="form.startport" />
+          </a-form-item>
+          <a-form-item :label="$t('label.endport')" ref="endport" name="endport">
+            <a-input-number style="width: 100%" v-model:value="form.endport" />
+          </a-form-item>
+        </div>
+
+        <a-form-item :label="$t('label.traffictype')" ref="traffictype" name="traffictype">
           <a-select
-            v-decorator="['traffictype']"
+            v-model:value="form.traffictype"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.description')">
+        <a-form-item :label="$t('label.description')" ref="reason" name="reason">
           <a-textarea
-            v-decorator="['reason']"
+            v-model:value="form.reason"
             :autosize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
@@ -235,6 +259,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import draggable from 'vuedraggable'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -262,8 +287,6 @@ export default {
       tags: [],
       selectedAcl: null,
       tagsModalVisible: false,
-      newTagsForm: this.$form.createForm(this),
-      ruleForm: this.$form.createForm(this),
       tagsLoading: false,
       ruleModalVisible: false,
       ruleModalTitle: this.$t('label.edit.rule'),
@@ -271,6 +294,7 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -280,12 +304,12 @@ export default {
       }
     }
   },
-  filters: {
-    capitalise: val => {
-      return val.toUpperCase()
-    }
-  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     csv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
       let result = null
       let ctr = null
@@ -341,8 +365,12 @@ export default {
       })
     },
     openTagsModal (acl) {
+      this.initForm()
+      this.rules = {
+        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+      }
       this.selectedAcl = acl
-      this.newTagsForm.resetFields()
       this.fetchTags(this.selectedAcl)
       this.tagsModalVisible = true
     },
@@ -380,16 +408,12 @@ export default {
         this.tagsLoading = false
       })
     },
-    handleAddTag (e) {
+    handleAddTag () {
       if (this.tagsLoading) return
       this.tagsLoading = true
 
-      e.preventDefault()
-      this.newTagsForm.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          this.tagsLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -422,25 +446,29 @@ export default {
           this.$notifyError(error)
           this.tagsLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.tagsLoading = false
       })
     },
     openEditRuleModal (acl) {
+      const self = this
+      this.initForm()
+      this.rules = { protocolnumber: [{ required: true, message: this.$t('label.required') }] }
       this.ruleModalTitle = this.$t('label.edit.rule')
       this.ruleFormMode = 'edit'
-      this.ruleForm.resetFields()
       this.ruleModalVisible = true
       this.selectedAcl = acl
       setTimeout(() => {
-        this.ruleForm.setFieldsValue({
-          number: acl.number,
-          cidrlist: acl.cidrlist,
-          action: acl.action,
-          protocol: acl.protocol,
-          startport: acl.startport,
-          endport: acl.endport,
-          traffictype: acl.traffictype,
-          reason: acl.reason
-        })
+        self.form.number = acl.number
+        self.form.cidrlist = acl.cidrlist
+        self.form.action = acl.action
+        self.form.protocol = acl.protocol
+        self.form.startport = acl.startport
+        self.form.endport = acl.endport
+        self.form.traffictype = acl.traffictype
+        self.form.reason = acl.reason
       }, 200)
     },
     getDataFromForm (values) {
@@ -469,11 +497,9 @@ export default {
 
       return data
     },
-    handleEditRule (e) {
-      e.preventDefault()
-      this.ruleForm.validateFieldsAndScroll((err, values) => {
-        if (err) return
-
+    handleEditRule () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
@@ -507,6 +533,8 @@ export default {
           this.$notifyError(error)
           this.fetchLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteRule (id) {
@@ -550,20 +578,17 @@ export default {
       this.ruleModalTitle = this.$t('label.add.rule')
       this.ruleModalVisible = true
       this.ruleFormMode = 'add'
-      this.ruleForm.resetFields()
+      this.initForm()
+      this.rules = { protocolnumber: [{ required: true, message: this.$t('label.required') }] }
       setTimeout(() => {
-        this.ruleForm.setFieldsValue({
-          action: 'allow',
-          protocol: 'tcp',
-          traffictype: 'ingress'
-        })
+        this.form.action = 'allow'
+        this.form.protocol = 'tcp'
+        this.form.traffictype = 'ingress'
       }, 200)
     },
     handleAddRule (e) {
-      e.preventDefault()
-      this.ruleForm.validateFieldsAndScroll((err, values) => {
-        if (err) return
-
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
@@ -581,6 +606,8 @@ export default {
           this.fetchLoading = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     changeOrder (e) {
@@ -632,6 +659,9 @@ export default {
       hiddenElement.target = '_blank'
       hiddenElement.download = 'AclRules-' + this.resource.name + '-' + this.resource.id + '.csv'
       hiddenElement.click()
+    },
+    capitalise (val) {
+      return val.toUpperCase()
     }
   }
 }

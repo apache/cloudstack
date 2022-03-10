@@ -20,14 +20,14 @@
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatesubject')">
-          <a-textarea v-model="formModel.templatesubject" />
+          <a-textarea v-model:value="formModel.templatesubject" />
         </a-form-item>
       </a-col>
     </a-row>
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatebody')">
-          <a-textarea v-model="formModel.templatebody" />
+          <a-textarea v-model:value="formModel.templatebody" />
         </a-form-item>
       </a-col>
     </a-row>
@@ -63,9 +63,6 @@ import { api } from '@/api'
 
 export default {
   name: 'EmailTemplateDetails',
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   data () {
     return {
       resource: {},

@@ -1036,7 +1036,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Override
     public ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
         }
         final Long clusterId = cmd.getClusterId();
@@ -1092,7 +1092,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Override
     public UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
         }
         final Long clusterId = cmd.getClusterId();
@@ -1127,7 +1127,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (template == null) {
                 template = createDefaultDummyVmImportTemplate();
                 if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid paramter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
                 }
             }
         } else {

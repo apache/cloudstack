@@ -257,11 +257,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.apiclient,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network.vlan,
@@ -291,11 +291,11 @@ class TestPersistentNetworks(cloudstackTestCase):
                 "network.gc.interval", "network.gc.wait"])
 
         verifyNetworkState(self.api_client, network.id, "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -420,11 +420,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         # Update the network with persistent network offering
@@ -500,11 +500,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -543,11 +543,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         # Update network with network offering which has RVR
@@ -619,11 +619,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -670,11 +670,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         isolated_network.update(
@@ -746,11 +746,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.api_client,
             isolated_network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -1365,11 +1365,11 @@ class TestPersistentNetworks(cloudstackTestCase):
         # Check network state now, this will bolster that network updation has
         # taken effect
         response = verifyNetworkState(self.api_client, network.id, "allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -1494,11 +1494,11 @@ class TestPersistentNetworks(cloudstackTestCase):
             self.apiclient,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network.vlan,
@@ -1742,11 +1742,11 @@ class TestAssignVirtualMachine(cloudstackTestCase):
             self.api_client,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network.vlan,
@@ -1784,7 +1784,7 @@ class TestAssignVirtualMachine(cloudstackTestCase):
                 "networks list validation failed, list is %s" %
                 networks)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 
@@ -1890,11 +1890,11 @@ class TestProjectAccountOperations(cloudstackTestCase):
             self.api_client,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             network.vlan,
@@ -1934,11 +1934,11 @@ class TestProjectAccountOperations(cloudstackTestCase):
             self.api_client,
             networks[0].id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             networks[0].vlan,
@@ -2026,11 +2026,11 @@ class TestProjectAccountOperations(cloudstackTestCase):
             self.apiclient,
             network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         return
 
@@ -2206,11 +2206,11 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             self.apiclient,
             isolated_persistent_network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             isolated_persistent_network.vlan,
@@ -2275,11 +2275,11 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             networks)
 
         verifyNetworkState(self.apiclient, networks[0].id, "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             networks[0].vlan,
@@ -2345,11 +2345,11 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             self.apiclient,
             isolated_persistent_network.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             isolated_persistent_network.vlan,
@@ -2408,11 +2408,11 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             self.apiclient,
             networks[0].id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             networks[0].vlan,
@@ -2700,11 +2700,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             self.apiclient,
             persistent_network_1.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             persistent_network_1.vlan,
@@ -2725,11 +2725,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             self.apiclient,
             persistent_network_2.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             persistent_network_2.vlan,
@@ -2743,21 +2743,21 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 self.apiclient,
                 persistent_network_1.id,
                 "implemented")
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 self.fail(exceptionMessage)
             response = verifyNetworkState(
                 self.apiclient,
                 persistent_network_2.id,
                 "implemented")
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 self.fail(exceptionMessage)
 
         elif value == "delete":
@@ -2858,11 +2858,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                                           persistent_network_1.id,
                                           "implemented"
                                           )
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 raise Exception(exceptionMessage)
             self.assertIsNotNone(
                 persistent_network_1.vlan,
@@ -2879,11 +2879,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 self.apiclient,
                 persistent_network_2.id,
                 "implemented")
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 raise Exception(exceptionMessage)
             self.assertIsNotNone(
                 persistent_network_2.vlan,
@@ -2977,11 +2977,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 self.apiclient,
                 persistent_network_1.id,
                 "implemented")
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 raise Exception(exceptionMessage)
             self.assertIsNotNone(
                 persistent_network_1.vlan,
@@ -3002,11 +3002,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                 self.apiclient,
                 persistent_network_2.id,
                 "implemented")
-            exceptionOccured = response[0]
+            exceptionOccurred = response[0]
             isNetworkInDesiredState = response[1]
             exceptionMessage = response[2]
 
-            if (exceptionOccured or (not isNetworkInDesiredState)):
+            if (exceptionOccurred or (not isNetworkInDesiredState)):
                 raise Exception(exceptionMessage)
             self.assertIsNotNone(
                 persistent_network_2.vlan,
@@ -3193,11 +3193,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             self.apiclient,
             persistent_network_1.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             persistent_network_1.vlan,
@@ -3218,11 +3218,11 @@ class TestVPCNetworkOperations(cloudstackTestCase):
             self.apiclient,
             persistent_network_2.id,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
         self.assertIsNotNone(
             persistent_network_2.vlan,

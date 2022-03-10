@@ -50,9 +50,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },
@@ -62,14 +65,12 @@ export default {
   methods: {
     fetchData () {
       if (!this.resource.id) return
-      this.$set(this.resource, 'vmwaredc', null)
       api('listVmwareDcs', {
         zoneid: this.resource.id
       }).then(response => {
         if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
           this.vmwaredc = response.listvmwaredcsresponse.VMwareDC[0]
         }
-        this.$set(this.resource, 'vmwaredc', this.vmwaredc)
       }).catch(error => {
         this.$notifyError(error)
       })
