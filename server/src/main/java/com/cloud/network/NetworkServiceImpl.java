@@ -5109,7 +5109,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, network);
 
         final Account owner = _accountMgr.getAccount(network.getAccountId());
-        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (owner.getType() == Account.Type.PROJECT) {
             // Currently project owned networks cannot be shared outside project but is available to all users within project by default.
             throw new InvalidParameterValueException("Update network permissions is an invalid operation on network " + network.getName()
                     + ". Project owned networks cannot be shared outside network.");

@@ -1719,7 +1719,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network == null) {
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
-        if (owner.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        if (owner.getType() == Account.Type.ADMIN) {
             return;
         }
         if (network.getGuestType() == GuestType.Shared) {
@@ -1732,12 +1732,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     private void checkNonSharedNetworkOperatePermissions(Account owner, Network network) {
         // check on isolated/L2 networks
         Account networkOwner = _accountDao.findByIdIncludingRemoved(network.getAccountId());
-        if (owner.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (owner.getType() == Account.Type.DOMAIN_ADMIN) {
             if (!_domainDao.isChildDomain(owner.getDomainId(), networkOwner.getDomainId())) {
                 throw new PermissionDeniedException(String.format("network %s cannot be operated by domain admin %s", network, owner));
             }
-        } else if (owner.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        } else if (owner.getType() == Account.Type.NORMAL) {
+            if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
                 checkProjectNetworkPermissions(owner, networkOwner, network);
             } else if (networkOwner.getAccountId() != owner.getAccountId()) {
                 throw new PermissionDeniedException(String.format("network %s cannot be operated by normal user %s", network, owner));
@@ -1749,10 +1749,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     private void checkSharedNetworkOperatePermissions(Account owner, Network network) {
         NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (networkOffering.isSpecifyVlan() && owner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (networkOffering.isSpecifyVlan() && owner.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Shared network %s with specifyvlan=true can only be operated by root admin", network));
         }
-        if (owner.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        if (owner.getType() == Account.Type.DOMAIN_ADMIN) {
             if (network.getAclType() == ACLType.Domain) {
                 // Allow domain admins to operate shared network for their domain.
                 Long networkDomainId = getDomainIdForSharedNetwork(network);
@@ -1766,13 +1766,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                     throw new PermissionDeniedException(String.format("Shared network %s belongs to an account in another domain cannot be operated by domain admin %s", network, owner));
                 }
             }
-        } else if (owner.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        } else if (owner.getType() == Account.Type.NORMAL) {
             // Allow normal users to operate shared network for themselves.
             if (network.getAclType() == ACLType.Account) {
                 // Allow domain admin to operate shared network for an account in its domain.
                 Long networkAccountId = getAccountIdForSharedNetwork(network);
                 Account networkOwner = _accountDao.findByIdIncludingRemoved(networkAccountId);
-                if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
                     checkProjectNetworkPermissions(owner, networkOwner, network);
                 } else if (networkOwner.getAccountId() != owner.getAccountId()) {
                     throw new PermissionDeniedException(String.format("Shared network %s belongs to another account cannot be operated by normal user %s", network, owner));
@@ -1780,7 +1780,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             } else {
                 throw new PermissionDeniedException(String.format("Shared network %s belongs to domain cannot be operated by normal user %s", network, owner));
             }
-        } else if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        } else if (owner.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Shared network %s cannot be operated by account %s with type = %d", network, owner, owner.getType()));
         }
     }

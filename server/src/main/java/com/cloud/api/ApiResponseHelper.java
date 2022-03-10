@@ -4645,7 +4645,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountById(permission.getAccountId());
         response.setAccountName(account.getName());
         response.setAccountId(account.getUuid());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             // convert account to projectIds
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
 
