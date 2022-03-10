@@ -138,6 +138,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForAccount.and("allocated", AllocatedIpCountForAccount.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCountForAccount.and().op("network", AllocatedIpCountForAccount.entity().getAssociatedWithNetworkId(), Op.NNULL);
         AllocatedIpCountForAccount.or("vpc", AllocatedIpCountForAccount.entity().getVpcId(), Op.NNULL);
+        AllocatedIpCountForAccount.or("state", AllocatedIpCountForAccount.entity().getState(), Op.EQ);
         AllocatedIpCountForAccount.cp();AllocatedIpCountForAccount.done();
 
         CountFreePublicIps = createSearchBuilder(Long.class);
@@ -368,6 +369,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     public long countAllocatedIPsForAccount(long accountId) {
         SearchCriteria<Long> sc = AllocatedIpCountForAccount.create();
         sc.setParameters("account", accountId);
+        sc.setParameters("state", State.Reserved);
         return customSearch(sc, null).get(0);
     }
 
