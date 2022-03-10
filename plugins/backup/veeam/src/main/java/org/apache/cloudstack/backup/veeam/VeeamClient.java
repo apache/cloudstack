@@ -601,6 +601,21 @@ public class VeeamClient {
         return result.first() && !result.second().contains("Failed to delete");
     }
 
+    public boolean deleteBackup(final String restorePointId) {
+        LOG.debug(String.format("Trying to delete restore point [name: %s].", restorePointId));
+        Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
+                String.format("$restorePoint = Get-VBRRestorePoint ^| Where-Object { $_.Id -eq '%s' }", restorePointId),
+                "if ($restorePoint) { Remove-VBRRestorePoint -Oib $restorePoint -Confirm:$false",
+                    "$repo = Get-VBRBackupRepository",
+                    "Sync-VBRBackupRepository -Repository $repo",
+                "} else { ",
+                    " Write-Output \"Failed to delete\"",
+                    " Exit 1",
+                "}"
+        ));
+        return result.first() && !result.second().contains("Failed to delete");
+    }
+
     public Map<String, Backup.Metric> getBackupMetrics() {
         final String separator = "=====";
         final List<String> cmds = Arrays.asList(

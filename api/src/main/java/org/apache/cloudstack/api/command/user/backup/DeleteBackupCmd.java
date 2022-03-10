@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -61,12 +62,23 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
             description = "id of the VM backup")
     private Long backupId;
 
+    @Parameter(name = ApiConstants.FORCED,
+            type = CommandType.BOOLEAN,
+            required = false,
+            description = "force the deletion of backup",
+            since = "4.16.0.5")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return backupId;
+    }
+
+    public Boolean isForced() {
+        return BooleanUtils.isTrue(forced);
     }
 
     /////////////////////////////////////////////////////
@@ -76,7 +88,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackup(backupId);
+            boolean result = backupManager.deleteBackup(getId(), isForced());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
