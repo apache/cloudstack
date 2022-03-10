@@ -5557,6 +5557,9 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testMemoryFreeInKBsDomainReturningOfSomeMemoryStatistics() throws LibvirtException {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
 
         MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();

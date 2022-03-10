@@ -23,6 +23,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.projects.ProjectAccount.Role;
@@ -45,7 +46,8 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
     private String accountName;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "account_role")
     @Enumerated(value = EnumType.STRING)
@@ -123,7 +125,7 @@ public class ProjectAccountJoinVO extends BaseViewVO implements InternalIdentity
         return accountName;
     }
 
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

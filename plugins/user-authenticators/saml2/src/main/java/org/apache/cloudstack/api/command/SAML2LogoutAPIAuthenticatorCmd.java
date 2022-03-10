@@ -73,7 +73,7 @@ public class SAML2LogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthen
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

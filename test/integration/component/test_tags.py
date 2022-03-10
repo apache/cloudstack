@@ -2317,7 +2317,7 @@ class TestResourceTags(cloudstackTestCase):
                 tags={tag_key: tag_value}
             )
         except Exception as e:
-            self.fail("Exception occured - %s" % e)
+            self.fail("Exception occurred - %s" % e)
         return
 
     @attr(tags=["advanced", "basic"], required_hardware="false")

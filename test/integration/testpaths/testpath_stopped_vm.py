@@ -48,7 +48,7 @@ def VerifyChangeInServiceOffering(self, virtualmachine, serviceoffering):
     """List the VM and verify that the new values for cpuspeed,
        cpunumber and memory match with the new service offering"""
 
-    exceptionOccured = False
+    exceptionOccurred = False
     exceptionMessage = ""
     try:
         vmlist = VirtualMachine.list(self.userapiclient, id=virtualmachine.id)
@@ -74,9 +74,9 @@ def VerifyChangeInServiceOffering(self, virtualmachine, serviceoffering):
                      service offering %s" %
                          (vm.memory, serviceoffering.memory))
     except Exception as e:
-        exceptionOccured = True
+        exceptionOccurred = True
         exceptionMessage = e
-    return [exceptionOccured, exceptionMessage]
+    return [exceptionOccurred, exceptionMessage]
 
 
 def VerifyRouterState(apiclient, account, domainid, desiredState,
@@ -634,8 +634,8 @@ class TestAdvancedZoneStoppedVM(cloudstackTestCase):
             virtual_machine,
             self.service_offering_2
         )
-        exceptionOccured, exceptionMessage = response[0], response[1]
-        self.assertFalse(exceptionOccured, exceptionMessage)
+        exceptionOccurred, exceptionMessage = response[0], response[1]
+        self.assertFalse(exceptionOccurred, exceptionMessage)
 
         virtual_machine.detach_volume(
             self.userapiclient,

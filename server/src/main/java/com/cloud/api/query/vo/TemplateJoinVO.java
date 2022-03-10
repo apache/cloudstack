@@ -26,6 +26,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -144,7 +145,8 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -270,7 +272,7 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

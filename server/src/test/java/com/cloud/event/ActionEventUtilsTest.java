@@ -26,9 +26,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.junit.After;
 import org.junit.Assert;
@@ -43,11 +43,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
 import com.cloud.network.IpAddress;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
@@ -173,7 +173,7 @@ public class ActionEventUtilsTest {
 
         }).when(eventBus).publish(Mockito.any(Event.class));
 
-        account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         account.setId(ACCOUNT_ID);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);

@@ -67,7 +67,7 @@ public static void setUp() throws ConfigurationException {
 
         // Standard responses
         AccountVO acct = new AccountVO(s_acctIdSeq);
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName("demo");
         s_testAccount = acct;
 

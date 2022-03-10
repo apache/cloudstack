@@ -19,7 +19,7 @@
   <div :style="!$route.meta.hiddenHeaderContent ? 'margin: -24px -24px 0px;' : null">
     <div class="page-menu-tabs">
       <a-tabs :tabBarStyle="{margin: 0}" @change="changeTab">
-        <a-tab-pane v-for="child in $route.permission" :tab="this.$t(child.meta.title)" :key="child.key"></a-tab-pane>
+        <a-tab-pane v-for="child in $route.permission" :tab="$t(child.meta.title)" :key="child.key"></a-tab-pane>
       </a-tabs>
     </div>
     <div class="content">

@@ -1337,9 +1337,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Zone " + vmInstance.getDataCenterId() + ", has a NetworkType of Basic. Can't add a new NIC to a VM on a Basic Network");
         }
 
-        // Perform account permission check on network
-        _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
-
         //ensure network belongs in zone
         if (network.getDataCenterId() != vmInstance.getDataCenterId()) {
             throw new CloudRuntimeException(vmInstance + " is in zone:" + vmInstance.getDataCenterId() + " but " + network + " is in zone:" + network.getDataCenterId());
@@ -2043,6 +2040,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 Long maxIopsInNewDiskOffering = null;
                 boolean autoMigrate = false;
                 boolean shrinkOk = false;
+                Long rootDiskSize = null;
                 if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
                 }
@@ -2055,7 +2053,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (customParameters.containsKey(ApiConstants.SHRINK_OK)) {
                     shrinkOk = Boolean.parseBoolean(customParameters.get(ApiConstants.SHRINK_OK));
                 }
+                if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
+                    rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
+                }
                 ChangeOfferingForVolumeCmd changeOfferingForVolumeCmd = new ChangeOfferingForVolumeCmd(rootVolumeOfVm.getId(), newDiskOffering.getId(), minIopsInNewDiskOffering, maxIopsInNewDiskOffering, autoMigrate, shrinkOk);
+                if (rootDiskSize != null) {
+                    changeOfferingForVolumeCmd.setSize(rootDiskSize);
+                }
                 Volume result = _volumeService.changeDiskOfferingForVolume(changeOfferingForVolumeCmd);
                 if (result == null) {
                     throw new CloudRuntimeException("Failed to change disk offering of the root volume");
@@ -2708,7 +2712,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
         if (cleanupDetails){
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 userVmDetailsDao.removeDetails(id);
             } else {
                 for (final UserVmDetailVO detail : userVmDetailsDao.listDetails(id)) {
@@ -2724,7 +2728,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("'extraconfig' should not be included in details as key");
                 }
 
-                if (caller != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (caller != null && caller.getType() != Account.Type.ADMIN) {
                     // Ensure denied or read-only detail is not passed by non-root-admin user
                     for (final String detailName : details.keySet()) {
                         if (userDenyListedSettings.contains(detailName)) {
@@ -3518,6 +3522,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Network is not security group enabled: " + network.getId());
                 }
 
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
             isSecurityGroupEnabledNetworkUsed = true;
@@ -3540,10 +3546,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("Can specify only Shared Guest networks when" + " deploy vm in Advance Security Group enabled zone");
                 }
 
-                // Perform account permission check
-                if (network.getAclType() == ACLType.Account) {
-                    _accountMgr.checkAccess(caller, AccessType.UseEntry, false, network);
-                }
+                _accountMgr.checkAccess(owner, AccessType.UseEntry, false, network);
+
                 networkList.add(network);
             }
         }
@@ -3758,7 +3762,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        if (owner.getState() == Account.State.disabled) {
+        if (owner.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of vm to deploy is disabled: " + owner);
         }
         VMTemplateVO template = _templateDao.findById(tmplt.getId());
@@ -3988,7 +3992,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
 
             //relax the check if the caller is admin account
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller.getType() != Account.Type.ADMIN) {
                 if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
                         && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
                     throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
@@ -5154,7 +5158,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
         }
 
-        if (owner.getState() == Account.State.disabled) {
+        if (owner.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
@@ -5653,7 +5657,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             // Bootmode and boottype are not supported on VMWare dpeloy-as-is templates (since 4.15)
             if ((cmd.getBootMode() != null || cmd.getBootType() != null)) {
-                throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware, as we honour what is defined in the template.");
+                throw new InvalidParameterValueException("Boot type and boot mode are not supported on VMware for templates registered as deploy-as-is, as we honour what is defined in the template.");
             }
         }
 
@@ -6810,7 +6814,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
         }
 
-        if (newAccount.getState() == Account.State.disabled) {
+        if (newAccount.getState() == Account.State.DISABLED) {
             throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
         }
 
@@ -7381,7 +7385,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("The owner of " + vm + " does not exist: " + vm.getAccountId());
         }
 
-        if (owner.getState() == Account.State.disabled) {
+        if (owner.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of " + vm + " is disabled: " + vm.getAccountId());
         }
 

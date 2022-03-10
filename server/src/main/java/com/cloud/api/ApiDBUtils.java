@@ -1250,7 +1250,7 @@ public class ApiDBUtils {
             // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
-            // rather than RBD. This block of code can (hopefuly) by checking to
+            // rather than RBD. This block of code can (hopefully) by checking to
             // see if the pool is using either RBD or NFS. However, it isn't
             // quite clear what to do if both storage types are used. If the image
             // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM

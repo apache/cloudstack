@@ -17,38 +17,41 @@
 
 <template>
   <resource-layout>
-    <div slot="left">
+    <template #left>
       <slot name="info-card">
         <info-card :resource="resource" :loading="loading" />
       </slot>
-    </div>
-    <a-spin :spinning="loading" slot="right">
+    </template>
+    <template #right>
       <a-card
         class="spin-content"
+        :loading="loading"
         :bordered="true"
         style="width:100%">
-        <component
-          v-if="tabs.length === 1"
-          :is="tabs[0].component"
-          :resource="resource"
-          :loading="loading"
-          :tab="tabs[0].name" />
+        <keep-alive v-if="tabs.length === 1">
+          <component
+            :is="tabs[0].component"
+            :resource="resource"
+            :loading="loading"
+            :tab="tabs[0].name" />
+        </keep-alive>
         <a-tabs
           v-else
           style="width: 100%"
           :animated="false"
           :activeKey="activeTab || tabs[0].name"
           @change="onTabChange" >
-          <a-tab-pane
-            v-for="tab in tabs"
-            :tab="$t('label.' + tab.name)"
-            :key="tab.name"
-            v-if="showTab(tab)">
-            <component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" />
-          </a-tab-pane>
+          <template v-for="tab in tabs" :key="tab.name">
+            <a-tab-pane
+              :key="tab.name"
+              :tab="$t('label.' + tab.name)"
+              v-if="showTab(tab)">
+              <keep-alive><component :is="tab.component" :resource="resource" :loading="loading" :tab="activeTab" /></keep-alive>
+            </a-tab-pane>
+          </template>
         </a-tabs>
       </a-card>
-    </a-spin>
+    </template>
   </resource-layout>
 </template>
 
@@ -97,33 +100,39 @@ export default {
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.resource = newItem
-      if (newItem.id === oldItem.id) return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem.id === oldItem.id) return
 
-      if (this.resource.associatednetworkid) {
-        api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
-          if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
-            this.networkService = response.listnetworksresponse.network[0]
-          } else {
-            this.networkService = {}
-          }
-        })
+        if (this.resource.associatednetworkid) {
+          api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
+            if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
+              this.networkService = response.listnetworksresponse.network[0]
+            } else {
+              this.networkService = {}
+            }
+          })
+        }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setActiveTab()
     }
   },
-  mounted () {
+  created () {
+    const self = this
     this.setActiveTab()
+    window.addEventListener('popstate', function () {
+      self.setActiveTab()
+    })
   },
   methods: {
     onTabChange (key) {
       this.activeTab = key
       const query = Object.assign({}, this.$route.query)
       query.tab = key
-      history.replaceState(
+      history.pushState(
         {},
         null,
         '#' + this.$route.path + '?' + Object.keys(query).map(key => {

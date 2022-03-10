@@ -20,70 +20,88 @@
     <a-form
       class="form-layout"
       layout="vertical"
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       v-ctrl-enter="handleSubmit"
-      @submit="handleSubmit">
+      @finish="handleSubmit">
       <a-alert style="margin-bottom: 5px" type="warning" show-icon>
-        <span slot="message" v-html="$t('message.restart.vm.to.update.settings')" />
+        <template #message>
+          <span v-html="$t('message.restart.vm.to.update.settings')" />
+        </template>
       </a-alert>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+      <a-form-item name="name" ref="name">
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
-          v-decorator="['name', { initialValue: resource.name || '' }]"
-          autoFocus />
+          v-model:value="form.name"
+          v-focus="true" />
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
-        <a-input
-          v-decorator="['displayname', { initialValue: resource.displayname || '' }]" />
+      <a-form-item name="displayname" ref="displayname">
+        <template #label>
+          <tooltip-label :title="$t('label.displayname')" :tooltip="apiParams.displayname.description"/>
+        </template>
+        <a-input v-model:value="form.displayname" />
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+      <a-form-item name="ostypeid" ref="ostypeid">
+        <template #label>
+          <tooltip-label :title="$t('label.ostypeid')" :tooltip="apiParams.ostypeid.description"/>
+        </template>
         <a-select
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           :loading="osTypes.loading"
-          v-decorator="['ostypeid', { initialValue: resource.ostypeid || '' }]">
+          v-model:value="form.ostypeid">
           <a-select-option v-for="(ostype) in osTypes.opts" :key="ostype.id">
             {{ ostype.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
-        <a-switch
-          :default-checked="resource.isdynamicallyscalable"
-          v-decorator="['isdynamicallyscalable']"
-          :disabled="!canDynamicScalingEnabled()" />
+      <a-form-item name="isdynamicallyscalable" ref="isdynamicallyscalable">
+        <template #label>
+          <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+        </template>
+        <a-switch v-model:checked="form.isdynamicallyscalable" />
       </a-form-item>
-      <a-form-item v-if="serviceOffering ? serviceOffering.offerha : false">
-        <tooltip-label slot="label" :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
-        <a-switch
-          :default-checked="resource.haenable"
-          v-decorator="['haenable']" />
+      <a-form-item name="haenable" ref="haenable" v-if="serviceOffering ? serviceOffering.offerha : false">
+        <template #label>
+          <tooltip-label :title="$t('label.haenable')" :tooltip="apiParams.haenable.description"/>
+        </template>
+        <a-switch v-model:checked="form.haenable" />
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.group')" :tooltip="apiParams.group.description"/>
+      <a-form-item name="group" ref="group">
+        <template #label>
+          <tooltip-label :title="$t('label.group')" :tooltip="apiParams.group.description"/>
+        </template>
         <a-auto-complete
-          v-decorator="['group', { initialValue: resource.group }]"
+          v-model:value="form.group"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
-          :dataSource="groups.opts" />
+          :options="groups.opts" />
+      </a-form-item>
+      <a-form-item>
+        <template #label>
+          <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+        </template>
+        <a-textarea v-model:value="form.userdata">
+        </a-textarea>
       </a-form-item>
 
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </a-spin>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -119,13 +137,24 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateVirtualMachine')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: this.resource.name,
+        displayname: this.resource.displayname,
+        ostypeid: this.resource.ostypeid,
+        isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        group: this.resource.group
+      })
+      this.rules = reactive({})
+    },
     fetchData () {
       this.fetchOsTypes()
       this.fetchInstaceGroups()
@@ -139,13 +168,12 @@ export default {
       params.isrecursive = true
       var apiName = 'listServiceOfferings'
       api(apiName, params).then(json => {
-        const offerings = json.listserviceofferingsresponse.serviceoffering
-        this.serviceOffering = offerings[0]
+        const offerings = json?.listserviceofferingsresponse?.serviceoffering || []
+        this.serviceOffering = offerings[0] || {}
       })
     },
     fetchTemplateData () {
       const params = {}
-      console.log('templateid ' + this.resource.templateid)
       params.id = this.resource.templateid
       params.isrecursive = true
       params.templatefilter = 'all'
@@ -192,17 +220,23 @@ export default {
       api('listInstanceGroups', params).then(json => {
         const groups = json.listinstancegroupsresponse.instancegroup || []
         groups.forEach(x => {
-          this.groups.opts.push(x.name)
+          this.groups.opts.push({ id: x.name, value: x.name })
         })
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => { this.groups.loading = false })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+    sanitizeReverse (value) {
+      const reversedValue = value
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
 
+      return reversedValue
+    },
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.id = this.resource.id
         params.name = values.name
@@ -214,10 +248,15 @@ export default {
         if (values.haenable !== undefined) {
           params.haenable = values.haenable
         }
-        params.group = values.group
+        if (values.group && values.group.length > 0) {
+          params.group = values.group
+        }
+        if (values.userdata && values.userdata.length > 0) {
+          params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        }
         this.loading = true
 
-        api('updateVirtualMachine', params).then(json => {
+        api('updateVirtualMachine', {}, 'POST', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
             duration: 2
@@ -227,6 +266,8 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => { this.loading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onCloseAction () {

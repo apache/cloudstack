@@ -1386,7 +1386,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
-                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        final String message = String.format("Exception occurred when executing taks! Error '%s'", e.getMessage());
                         s_logger.error(message);
                         throw new TaskExecutionException(message, e);
                     }

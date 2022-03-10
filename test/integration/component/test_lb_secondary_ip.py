@@ -1761,11 +1761,11 @@ class TestNetworkOperations(cloudstackTestCase):
             self.api_client,
             self.virtual_machine.nic[0].networkid,
             "allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         routers = Router.list(
@@ -1788,11 +1788,11 @@ class TestNetworkOperations(cloudstackTestCase):
             self.api_client,
             self.virtual_machine.nic[0].networkid,
             "implemented")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isNetworkInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isNetworkInDesiredState)):
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
             self.fail(exceptionMessage)
 
         routers = Router.list(

@@ -104,6 +104,10 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
         return size;
     }
 
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
     public Long getMinIops() {
         return minIops;
     }

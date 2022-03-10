@@ -964,7 +964,7 @@ public class ElastistorUtil {
         public List<Pair<String, String>> getCommandParameters();
 
         /*
-         * Adds new key-value pair to the query paramters lists.
+         * Adds new key-value pair to the query parameters lists.
          */
         public void putCommandParameter(String key, String value);
 
