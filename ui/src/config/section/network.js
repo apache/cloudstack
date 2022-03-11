@@ -896,8 +896,8 @@ export default {
       ]
     },
     {
-      name: 'firewallrule',
-      title: 'label.routing.policy',
+      name: 'tungstenfirewallpolicy',
+      title: 'label.firewall.policy',
       icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricFirewallPolicy'],

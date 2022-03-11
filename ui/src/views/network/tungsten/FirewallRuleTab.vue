@@ -79,7 +79,7 @@
       centered
       width="450px">
       <div v-ctrl-enter="submitFirewallRule">
-        <a-form :ref="formRef" :model="form" :rules="rules">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
           <a-form-item name="name" ref="name">
             <template #label>
               <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -123,7 +123,17 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="srctaguuid" ref="srctaguuid">
+          <a-form-item name="sourcetype" ref="sourcetype">
+            <template #label>
+              <tooltip-label :title="$t('label.sourcetype')" :tooltip="$t('label.sourcetype')"/>
+            </template>
+            <a-select v-model:value="form.sourcetype">
+              <a-select-option value="srctag">{{ $t('label.tag') }}</a-select-option>
+              <a-select-option value="srcaddress">{{ $t('label.group') }}</a-select-option>
+              <a-select-option value="srcnetwork">{{ $t('label.network') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="srctaguuid" ref="srctaguuid" v-if="form.sourcetype === 'srctag'">
             <template #label>
               <tooltip-label :title="$t('label.srctaguuid')" :tooltip="apiParams.srctaguuid.description"/>
             </template>
@@ -141,7 +151,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="srcaddressgroupuuid" ref="srcaddressgroupuuid">
+          <a-form-item name="srcaddressgroupuuid" ref="srcaddressgroupuuid" v-if="form.sourcetype === 'srcaddress'">
             <template #label>
               <tooltip-label :title="$t('label.srcaddressgroupuuid')" :tooltip="apiParams.srcaddressgroupuuid.description"/>
             </template>
@@ -159,7 +169,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="srcnetworkuuid" ref="srcnetworkuuid">
+          <a-form-item name="srcnetworkuuid" ref="srcnetworkuuid" v-if="form.sourcetype === 'srcnetwork'">
             <template #label>
               <tooltip-label :title="$t('label.srcnetworkuuid')" :tooltip="apiParams.srcnetworkuuid.description"/>
             </template>
@@ -193,7 +203,17 @@
               <a-select-option value="twoway">TWO WAY</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="desttaguuid" ref="desttaguuid">
+          <a-form-item name="sourcetype" ref="sourcetype">
+            <template #label>
+              <tooltip-label :title="$t('label.destinationtype')" :tooltip="$t('label.destinationtype')"/>
+            </template>
+            <a-select v-model:value="form.destinationtype">
+              <a-select-option value="destag">{{ $t('label.tag') }}</a-select-option>
+              <a-select-option value="desaddress">{{ $t('label.group') }}</a-select-option>
+              <a-select-option value="desnetwork">{{ $t('label.network') }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="desttaguuid" ref="desttaguuid" v-if="form.destinationtype === 'destag'">
             <template #label>
               <tooltip-label :title="$t('label.desttaguuid')" :tooltip="apiParams.desttaguuid.description"/>
             </template>
@@ -211,7 +231,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="destaddressgroupuuid" ref="destaddressgroupuuid">
+          <a-form-item name="destaddressgroupuuid" ref="destaddressgroupuuid" v-if="form.destinationtype === 'desaddress'">
             <template #label>
               <tooltip-label :title="$t('label.destaddressgroupuuid')" :tooltip="apiParams.destaddressgroupuuid.description"/>
             </template>
@@ -229,7 +249,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item name="destnetworkuuid" ref="destnetworkuuid">
+          <a-form-item name="destnetworkuuid" ref="destnetworkuuid" v-if="form.destinationtype === 'desnetwork'">
             <template #label>
               <tooltip-label :title="$t('label.destnetworkuuid')" :tooltip="apiParams.destnetworkuuid.description"/>
             </template>
@@ -391,7 +411,9 @@ export default {
       this.form = reactive({
         action: 'pass',
         direction: 'oneway',
-        sequence: 1
+        sequence: 1,
+        sourcetype: 'srctag',
+        destinationtype: 'destag'
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -490,12 +512,20 @@ export default {
         params.servicegroupuuid = values.servicegroupuuid
         params.direction = values.direction
         params.sequence = values.sequence
-        params.srctaguuid = values.srctaguuid
-        params.srcaddressgroupuuid = values.srcaddressgroupuuid
-        params.srcnetworkuuid = values.srcnetworkuuid
-        params.desttaguuid = values.desttaguuid
-        params.destaddressgroupuuid = values.destaddressgroupuuid
-        params.destnetworkuuid = values.destnetworkuuid
+        if (values.sourcetype === 'srctag') {
+          params.srctaguuid = values.srctaguuid
+        } else if (values.sourcetype === 'srcaddress') {
+          params.srcaddressgroupuuid = values.srcaddressgroupuuid
+        } else if (values.sourcetype === 'srcnetwork') {
+          params.srcnetworkuuid = values.srcnetworkuuid
+        }
+        if (values.destinationtype === 'destag') {
+          params.desttaguuid = values.desttaguuid
+        } else if (values.destinationtype === 'desaddress') {
+          params.destaddressgroupuuid = values.destaddressgroupuuid
+        } else if (values.destinationtype === 'desnetwork') {
+          params.destnetworkuuid = values.destnetworkuuid
+        }
         params.tagtypeuuid = values.tagtypeuuid
 
         api('createTungstenFabricFirewallRule', params).then(json => {
@@ -535,9 +565,9 @@ export default {
       params.zoneid = this.zoneId
       params.firewallpolicyuuid = uuid
 
-      api('deleteTungstenFabricFirewallPolicy', params).then(json => {
+      api('deleteTungstenFabricFirewallRule', params).then(json => {
         this.$pollJob({
-          jobId: json.deletetungstenfabricfirewallpolicyresponse.jobid,
+          jobId: json.deletetungstenfabricfirewallruleresponse.jobid,
           title: this.$t('label.delete.tungsten.firewall.policy'),
           description: params.firewallpolicyuuid,
           successMethod: () => {
@@ -562,7 +592,7 @@ export default {
     },
     closeAction () {
       this.firewallRuleModal = false
-      this.form.resetFields()
+      this.formRef.value.resetFields()
     },
     changePage (page, pageSize) {
       this.page = page

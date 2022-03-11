@@ -196,13 +196,13 @@ export default {
         return
       }
       this.currentAction.fields.forEach((field, index) => {
+        this.form[field.name] = field?.value || null
         switch (field.type) {
           case 'uuid':
             if (field.multiple) this.form[field.name] = []
             this.rules[field.name] = [{ required: field.required, message: this.$t('message.error.select') }]
             break
           case 'number':
-            this.form[field.name] = 0
             this.rules[field.name] = [{ required: field.required, message: this.$t('message.error.required.input') }]
             break
           default:

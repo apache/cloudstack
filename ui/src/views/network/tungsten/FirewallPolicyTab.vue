@@ -35,7 +35,7 @@
         :rowKey="item => item.uuid"
         :pagination="false">
         <template #name="{ text, record }">
-          <router-link :to="{ path: '/firewallrule/' + record.uuid, query: { zoneid: zoneId } }">{{ text }}</router-link>
+          <router-link :to="{ path: '/tungstenfirewallpolicy/' + record.uuid, query: { zoneid: zoneId } }">{{ text }}</router-link>
         </template>
         <template #firewallrule="{ record }">
           <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
