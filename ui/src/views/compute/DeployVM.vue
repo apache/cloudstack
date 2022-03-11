@@ -1645,9 +1645,9 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
-    handleSubmitAndStay () {
+    handleSubmitAndStay (e) {
       this.form.stayonpage = true
-      this.handleSubmit()
+      this.handleSubmit(e.domEvent)
       this.form.stayonpage = false
     },
     handleSubmit (e) {
