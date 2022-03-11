@@ -694,7 +694,7 @@ export default {
     {
       name: 'guestvlans',
       title: 'label.guest.vlan',
-      icon: 'folder',
+      icon: 'folder-outlined',
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],
@@ -703,10 +703,10 @@ export default {
       searchFilters: ['zoneid'],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'guest.networks',
-        component: () => import('@/views/network/GuestVlanNetworksTab.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestVlanNetworksTab.vue'))),
         show: (record) => { return (record.allocationstate === 'Allocated') }
       }],
       show: () => {

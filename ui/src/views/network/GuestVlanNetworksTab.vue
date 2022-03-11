@@ -25,13 +25,13 @@
     :pagination="false"
     :loading="fetchLoading"
   >
-    <template #name="text,item">
-      <router-link v-if="item.issystem === false && !item.project" :to="{ path: '/guestnetwork/' + item.id }" >{{ text }}</router-link>
-      <router-link v-else-if="item.issystem === false && item.project" :to="{ path: '/guestnetwork/' + item.id + '?projectid=' + item.projectid}" >{{ text }}</router-link>
+    <template #name="{ text, record }">
+      <router-link v-if="record.issystem === false && !record.projectid" :to="{ path: '/guestnetwork/' + record.id }" >{{ text }}</router-link>
+      <router-link v-else-if="record.issystem === false && record.projectid" :to="{ path: '/guestnetwork/' + record.id, query: { projectid: record.projectid}}" >{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
-    <template #status="text, item">
-      <status class="status" :text="item.state" displayText />
+    <template #state="{ record }">
+      <status :text="record.state" displayText></status>
     </template>
   </a-table>
 </template>
@@ -63,7 +63,7 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.type'),
@@ -71,8 +71,7 @@ export default {
         },
         {
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          scopedSlots: { customRender: 'status' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.broadcasturi'),
