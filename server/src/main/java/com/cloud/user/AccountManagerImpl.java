@@ -153,7 +153,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -2769,7 +2768,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     //TODO: deprecate this to use the new buildACLSearchParameters with permittedDomains, permittedAccounts, and permittedResources as return
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
+            Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
@@ -2809,9 +2808,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (!forProjectInvitation) {
                 if (projectId == -1L) {
                     if (caller.getType() == Account.Type.ADMIN) {
-                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                        domainIdRecursiveListProject.second(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
                         if (listAll) {
-                            domainIdRecursiveListProject.third(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
+                            domainIdRecursiveListProject.second(ListProjectResourcesCriteria.ListAllIncludingProjectResources);
                         }
                     } else {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
@@ -2833,7 +2832,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         } else {
             if (id == null) {
-                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+                domainIdRecursiveListProject.second(Project.ListProjectResourcesCriteria.SkipProjectResources);
             }
             if (permittedAccounts.isEmpty() && domainId == null) {
                 if (caller.getType() == Account.Type.NORMAL) {
@@ -2843,12 +2842,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         permittedAccounts.add(caller.getId());
                     } else if (caller.getType() != Account.Type.ADMIN) {
                         domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
                     }
                 } else if (domainId == null) {
                     if (caller.getType() == Account.Type.DOMAIN_ADMIN) {
                         domainIdRecursiveListProject.first(caller.getDomainId());
-                        domainIdRecursiveListProject.second(true);
                     }
                 }
             } else if (domainId != null) {
