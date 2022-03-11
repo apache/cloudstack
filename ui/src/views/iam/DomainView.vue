@@ -139,18 +139,6 @@ export default {
       }
     })
   },
-  watch: {
-    '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
-        this.fetchData()
-      }
-    },
-    '$i18n.global.locale' (to, from) {
-      if (to !== from) {
-        this.fetchData()
-      }
-    }
-  },
   provide () {
     return {
       parentCloseAction: this.closeAction,
