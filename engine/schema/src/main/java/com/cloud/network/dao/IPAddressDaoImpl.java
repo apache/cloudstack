@@ -156,7 +156,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         DeleteAllExceptGivenIp.and("ip", DeleteAllExceptGivenIp.entity().getAddress(), Op.NEQ);
 
         PublicIpSearchByAccountAndState = createSearchBuilder();
-        PublicIpSearchByAccountAndState.and("accountId", PublicIpSearchByAccountAndState.entity().getAccountId(), Op.EQ);
+        PublicIpSearchByAccountAndState.and("accountId", PublicIpSearchByAccountAndState.entity().getAllocatedToAccountId(), Op.EQ);
         PublicIpSearchByAccountAndState.and("dcId", PublicIpSearchByAccountAndState.entity().getDataCenterId(), Op.EQ);
         PublicIpSearchByAccountAndState.and("state", PublicIpSearchByAccountAndState.entity().getState(), Op.EQ);
         PublicIpSearchByAccountAndState.and("allocated", PublicIpSearchByAccountAndState.entity().getAllocatedTime(), Op.NNULL);
