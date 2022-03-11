@@ -573,6 +573,10 @@ public class NetworkHelperImpl implements NetworkHelper {
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
+            final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+            if (defaults != HypervisorType.None && !hypervisors.contains(defaults)) {
+                hypervisors.add(defaults);
+            }
         } else {
             final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
             if (defaults != HypervisorType.None) {
