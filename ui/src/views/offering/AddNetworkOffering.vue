@@ -81,7 +81,7 @@
             <br/>
           </span>
           <a-radio-group
-            v-model:value="internetProtocolValue"
+            v-model:value="form.internetprotocol"
             :disabled="!ipv6NetworkOfferingEnabled"
             buttonStyle="solid"
             @change="e => { internetProtocolValue = e.target.value }" >

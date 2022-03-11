@@ -44,6 +44,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -57,6 +58,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -81,6 +83,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -119,6 +122,38 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     NetworkModel networkModel;
     @Inject
     FirewallManager firewallManager;
+
+    private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
+        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
+        if (CollectionUtils.isEmpty(ranges)) {
+            s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
+            InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
+            ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+            throw ex;
+        }
+        Collections.shuffle(ranges);
+        VlanVO selectedVlan = ranges.get(0);
+        IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
+        if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
+            Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+            if (splits.hasNext()) {
+                splits.next();
+            }
+            if (splits.hasNext()) {
+                ipv6Network = splits.next();
+            }
+        }
+        IPv6Address ipv6Addr = NetUtils.EUI64Address(ipv6Network, nicMacAddress);
+        String event = EventTypes.EVENT_NET_IP6_ASSIGN;
+        String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Addr,  network.getUuid());
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+        final String guestType = selectedVlan.getVlanType().toString();
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
+                ipv6Addr.toString(), false, guestType, false, usageHidden,
+                IPv6Network.class.getName(), null);
+        return new Pair<>(ipv6Addr.toString(), selectedVlan);
+    }
 
     protected void releaseIpv6Subnet(long subnetId) {
         Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(subnetId);
@@ -258,41 +293,20 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
     }
 
-    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, String vlanId, String nicMacAddress) {
-        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
-        if (CollectionUtils.isEmpty(ranges)) {
-            s_logger.error(String.format("Unable to find IPv6 range for the zone ID: %d", network.getDataCenterId()));
-            throw new CloudRuntimeException(String.format("Cannot find IPv6 address for network %s", network.getName()));
+    @Override
+    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, Nic nic) {
+        try {
+            return assignPublicIpv6ToNetworkInternal(network, nic.getBroadcastUri().toString(), nic.getMacAddress());
+        } catch (InsufficientAddressCapacityException ex) {
+            throw new CloudRuntimeException(ex.getMessage());
         }
-        Collections.shuffle(ranges);
-        VlanVO selectedVlan = ranges.get(0);
-        IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
-        if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
-            Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
-            if (splits.hasNext()) {
-                splits.next();
-            }
-            if (splits.hasNext()) {
-                ipv6Network = splits.next();
-            }
-        }
-        IPv6Address ipv6Addr = NetUtils.EUI64Address(ipv6Network, nicMacAddress);
-        String event = EventTypes.EVENT_NET_IP6_ASSIGN;
-        String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Addr,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
-        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        final String guestType = selectedVlan.getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
-                ipv6Addr.toString(), false, guestType, false, usageHidden,
-                IPv6Network.class.getName(), null);
-        return new Pair<>(ipv6Addr.toString(), selectedVlan);
     }
 
     @Override
-    public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) {
+    public void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) throws InsufficientAddressCapacityException {
         boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         if (nic.getIPv6Address() == null && isIpv6Supported) {
-            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetwork(network, nic.getBroadCastUri().toString(), nic.getMacAddress());
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetworkInternal(network, nic.getBroadCastUri().toString(), nic.getMacAddress());
             final Vlan vlan = publicIpv6AddressVlanPair.second();
             final String routerIpv6 = publicIpv6AddressVlanPair.first();
             final String routerIpv6Gateway = vlan.getIp6Gateway();

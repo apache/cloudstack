@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -45,6 +46,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -1034,15 +1036,27 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("lock account " + ownerId + " is acquired");
                     }
+                    List<Long> vlanDbIds = null;
                     boolean displayIp = true;
                     if (guestNtwkId != null) {
                         Network ntwk = _networksDao.findById(guestNtwkId);
+                        if (_networkOfferingDao.isIpv6Supported(ntwk.getNetworkOfferingId())) {
+                            List<VlanVO> vlans = _vlanDao.listIpv6SupportingVlansByZone(dcId);
+                            if (CollectionUtils.isEmpty(vlans)) {
+                                s_logger.error("Unable to find VLAN IP range that support both IPv4 and IPv6");
+                                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
+                                ex.addProxyObject(ApiDBUtils.findZoneById(dcId).getUuid());
+                                throw ex;
+                            }
+                            vlanDbIds = vlans.stream().map(VlanVO::getId).collect(Collectors.toList());
+                            s_logger.info("Limiting IP ranges to IPv6 supporting VLAN IP ranges");
+                        }
                         displayIp = ntwk.getDisplayNetwork();
                     } else if (vpcId != null) {
                         VpcVO vpc = _vpcDao.findById(vpcId);
                         displayIp = vpc.isDisplay();
                     }
-                    return fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, null, false, vpcId, displayIp, false);
+                    return fetchNewPublicIp(dcId, null, vlanDbIds, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, null, false, vpcId, displayIp, false);
                 }
             });
             if (ip.getState() != State.Allocated) {

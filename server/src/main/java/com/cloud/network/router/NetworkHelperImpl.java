@@ -642,7 +642,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         return controlConfig;
     }
 
-    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) throws InsufficientAddressCapacityException {
         final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         if (routerDeploymentDefinition.isPublicNetwork()) {
