@@ -29,14 +29,11 @@
         :ref="`step${index}`">
       </a-step>
     </a-steps>
-    <a-form :form="form" class="form-content" >
+    <a-form :ref="formRef" :model="form" :rules="rules" class="form-content" >
       <div v-if="currentStep === 0">
-        <a-form-item :label="$t('label.name')" v-bind="formItemLayout">
+        <a-form-item name="name" ref="name" :label="$t('label.name')" v-bind="formItemLayout">
           <a-input
-            v-decorator="['name', {
-              initialValue: formModel.name,
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.name"
             @change="(e) => changeFieldValue('name', e.target.value)"/>
         </a-form-item>
       </div>
@@ -52,7 +49,7 @@
         {{ $t('label.previous') }}
       </a-button>
       <a-button ref="submit" type="primary" @click="handleNext" class="button-next">
-        <a-icon v-if="currentStep === 2" type="poweroff" />
+        <poweroff-outlined v-if="currentStep === 2" />
         <span v-if="currentStep < 2">{{ $t('label.next') }}</span>
         <span v-else>{{ $t('label.create.routing.policy') }}</span>
       </a-button>
@@ -77,6 +74,7 @@
 </template>
 
 <script>
+import { ref, reactive } from 'vue'
 import { api } from '@/api'
 import RoutingPolicyTerms from '@/views/network/tungsten/RoutingPolicyTerms'
 
@@ -120,20 +118,23 @@ export default {
       showError: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  created () {
+    this.initForm()
   },
-  created () {},
   inject: ['onFetchData'],
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     handleBack () {
       this.currentStep--
     },
     handleNext () {
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
         if (this.currentStep === 1) {
           const valid = this.checkPolicyTermValues()
           if (!valid) {

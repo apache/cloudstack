@@ -66,15 +66,16 @@
           <a-select-option value="VCS"> VCS </a-select-option>
           <a-select-option value="TF"> TF </a-select-option>
 
-          <a-tooltip
-            v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
-            slot="suffixIcon"
-            :title="$t('message.no.support.tungsten.fabric')">
-            <a-icon type="warning" style="color: #f5222d" />
-          </a-tooltip>
+          <template #suffixIcon>
+            <a-tooltip
+              v-if="tungstenNetworkIndex > -1 && tungstenNetworkIndex !== index"
+              :title="$t('message.no.support.tungsten.fabric')">
+              <warning-outlined style="color: #f5222d" />
+            </a-tooltip>
+          </template>
         </a-select>
       </template>
-      <template #traffics="{ record }">
+      <template #traffics="{ record, index }">
         <div v-for="traffic in record.traffics" :key="traffic.type">
           <a-tag
             :color="trafficColors[traffic.type]"

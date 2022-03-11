@@ -25,7 +25,7 @@
       :pagination="false"
       :rowKey="(record, idx) => record.id || record.name || idx + '-' + Math.random()"
       :scroll="{ y: 350 }">
-      <template slot="name" slot-scope="text, record">
+      <template #name="{ text, record }">
         <!-- <QuickView
           :actions="actions"
           :enabled="true"
@@ -38,39 +38,40 @@
         <router-link v-else-if="apiName === 'listTungstenFabricRoutingPolicy'" :to="{ path: '/tungstenroutingpolicy/' + record.uuid, query: { zoneid: resource.zoneid } }" >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="tungstenvms" slot-scope="text, record">
+      <template #tungstenvms="{ record }">
         <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
-      <template slot="network" slot-scope="text, record">
+      <template #network="{ record }">
         <ul><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
       </template>
-      <template slot="firewallpolicy" slot-scope="text, record">
+      <template #firewallpolicy="{ record }">
         <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
       </template>
-      <template slot="firewallrule" slot-scope="text, record">
+      <template #firewallrule="{ record }">
         <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
       </template>
-      <template slot="tungstenroutingpolicyterm" slot-scope="text, record">
+      <template #tungstenroutingpolicyterm="{ record }">
         <span v-if="record.tungstenroutingpolicyterm.length > 0">{{ record.tungstenroutingpolicyterm[0].name }}</span>
       </template>
-      <template slot="vm" slot-scope="text, record">
+      <template #vm="{ record }">
         <ul><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
-      <template slot="nic" slot-scope="text, record">
+      <template #nic="{ record }">
         <ul><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
-      <template slot="tag" slot-scope="text, record">
+      <template #tag="{ record }">
         <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
           <a-tag :key="tag.uuid">{{ tag.name }}</a-tag>
         </div>
       </template>
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <span v-for="(action, index) in actions" :key="index">
           <tooltip-button
             v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"
             style="margin-right: 5px"
             :tooltip="$t(action.label)"
-            :type="action.icon === 'delete' ? 'danger' : 'default'"
+            :danger="['delete-outlined', 'DeleteOutlined'].includes(action.icon)"
+            :type="(['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
             :icon="action.icon"
             @click="() => execAction(action, record)" />
         </span>
@@ -88,7 +89,7 @@
       @showSizeChange="changePageSize"
       showSizeChanger
       showQuickJumper>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>

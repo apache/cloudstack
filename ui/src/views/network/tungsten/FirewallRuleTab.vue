@@ -21,9 +21,9 @@
       <a-button
         :disabled="!('createTungstenFabricFirewallRule' in $store.getters.apis)"
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-bottom: 15px"
         @click="addFirewallRule">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add.firewallrule') }}
       </a-button>
       <a-table
@@ -34,7 +34,7 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template slot="actions" slot-scope="text, record">
+        <template #actions="{ record }">
           <a-popconfirm
             :title="$t('message.confirm.remove.firewall.rule')"
             @confirm="removeFirewallRule(record.uuid)"
@@ -43,8 +43,9 @@
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.remove.firewall.rule')"
-              type="danger"
-              icon="delete"
+              danger
+              type="primary"
+              icon="delete-outlined"
               :loading="deleteLoading" />
           </a-popconfirm>
         </template>
@@ -61,7 +62,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -75,204 +76,217 @@
       :closable="true"
       :footer="null"
       @cancel="closeAction"
-      v-ctrl-enter="submitFirewallRule"
       centered
       width="450px">
-      <a-form :form="form">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-          <a-input
-            :auto-focus="true"
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.name.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.action')" :tooltip="apiParams.action.description"/>
-          <a-select
-            v-decorator="['action', {
-              initialValue: 'pass',
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.action.description">
-            <a-select-option value="pass">PASS</a-select-option>
-            <a-select-option value="deny">DENY</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.servicegroupuuid')" :tooltip="apiParams.servicegroupuuid.description"/>
-          <a-select
-            v-decorator="['servicegroupuuid', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="serviceGroup.loading"
-            :placeholder="apiParams.servicegroupuuid.description">
-            <a-select-option v-for="group in serviceGroup.opts" :key="group.uuid">
-              {{ group.name || group.description || group.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srctaguuid')" :tooltip="apiParams.srctaguuid.description"/>
-          <a-select
-            v-decorator="['srctaguuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="srcTag.loading"
-            :placeholder="apiParams.srctaguuid.description">
-            <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
-              {{ tag.name || tag.description || tag.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcaddressgroupuuid')" :tooltip="apiParams.srcaddressgroupuuid.description"/>
-          <a-select
-            v-decorator="['srcaddressgroupuuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="srcAddress.loading"
-            :placeholder="apiParams.srcaddressgroupuuid.description">
-            <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
-              {{ address.name || address.description || address.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcnetworkuuid')" :tooltip="apiParams.srcnetworkuuid.description"/>
-          <a-select
-            v-decorator="['srcnetworkuuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="networks.loading"
-            :placeholder="apiParams.srcnetworkuuid.description">
-            <a-select-option v-for="network in networks.opts" :key="network.uuid">
-              {{ network.name || network.description || network.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.direction')" :tooltip="apiParams.direction.description"/>
-          <a-select
-            v-decorator="['direction', {
-              initialValue: 'oneway',
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.direction.description">
-            <a-select-option value="oneway">ONE WAY</a-select-option>
-            <a-select-option value="twoway">TWO WAY</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.desttaguuid')" :tooltip="apiParams.desttaguuid.description"/>
-          <a-select
-            v-decorator="['desttaguuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="srcTag.loading"
-            :placeholder="apiParams.desttaguuid.description">
-            <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
-              {{ tag.name || tag.description || tag.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destaddressgroupuuid')" :tooltip="apiParams.destaddressgroupuuid.description"/>
-          <a-select
-            v-decorator="['destaddressgroupuuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="srcAddress.loading"
-            :placeholder="apiParams.destaddressgroupuuid.description">
-            <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
-              {{ address.name || address.description || address.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destnetworkuuid')" :tooltip="apiParams.destnetworkuuid.description"/>
-          <a-select
-            v-decorator="['destnetworkuuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="networks.loading"
-            :placeholder="apiParams.destnetworkuuid.description">
-            <a-select-option v-for="network in networks.opts" :key="network.uuid">
-              {{ network.name || network.description || network.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.tagtypeuuid')" :tooltip="apiParams.tagtypeuuid.description"/>
-          <a-select
-            v-decorator="['tagtypeuuid']"
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="tagType.loading"
-            :placeholder="apiParams.tagtypeuuid.description">
-            <a-select-option v-for="tag in tagType.opts" :key="tag.uuid">
-              {{ tag.name || tag.description || tag.displaytext }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.sequence')" :tooltip="apiParams.sequence.description"/>
-          <a-input
-            :auto-focus="true"
-            v-decorator="['sequence', {
-              initialValue: 1,
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.sequence.description"/>
-        </a-form-item>
+      <div v-ctrl-enter="submitFirewallRule">
+        <a-form :ref="formRef" :model="form" :rules="rules">
+          <a-form-item name="name" ref="name">
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            </template>
+            <a-input
+              v-focus="true"
+              v-model:value="form.name"
+              :placeholder="apiParams.name.description"/>
+          </a-form-item>
+          <a-form-item name="action" ref="action">
+            <template #label>
+              <tooltip-label :title="$t('label.action')" :tooltip="apiParams.action.description"/>
+            </template>
+            <a-select
+              v-model:value="form.action"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :placeholder="apiParams.action.description">
+              <a-select-option value="pass">PASS</a-select-option>
+              <a-select-option value="deny">DENY</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="servicegroupuuid" ref="servicegroupuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.servicegroupuuid')" :tooltip="apiParams.servicegroupuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.servicegroupuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="serviceGroup.loading"
+              :placeholder="apiParams.servicegroupuuid.description">
+              <a-select-option v-for="group in serviceGroup.opts" :key="group.uuid">
+                {{ group.name || group.description || group.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="srctaguuid" ref="srctaguuid">
+            <template #label>
+              <tooltip-label :title="$t('label.srctaguuid')" :tooltip="apiParams.srctaguuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.srctaguuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="srcTag.loading"
+              :placeholder="apiParams.srctaguuid.description">
+              <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
+                {{ tag.name || tag.description || tag.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="srcaddressgroupuuid" ref="srcaddressgroupuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.srcaddressgroupuuid')" :tooltip="apiParams.srcaddressgroupuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.srcaddressgroupuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="srcAddress.loading"
+              :placeholder="apiParams.srcaddressgroupuuid.description">
+              <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
+                {{ address.name || address.description || address.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="srcnetworkuuid" ref="srcnetworkuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.srcnetworkuuid')" :tooltip="apiParams.srcnetworkuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.srcnetworkuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="networks.loading"
+              :placeholder="apiParams.srcnetworkuuid.description">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid">
+                {{ network.name || network.description || network.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="direction" ref="direction">
+            <template #label>
+              <tooltip-label :title="$t('label.direction')" :tooltip="apiParams.direction.description"/>
+            </template>
+            <a-select
+              v-model:value="form.direction"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :placeholder="apiParams.direction.description">
+              <a-select-option value="oneway">ONE WAY</a-select-option>
+              <a-select-option value="twoway">TWO WAY</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="desttaguuid" ref="desttaguuid">
+            <template #label>
+              <tooltip-label :title="$t('label.desttaguuid')" :tooltip="apiParams.desttaguuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.desttaguuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="srcTag.loading"
+              :placeholder="apiParams.desttaguuid.description">
+              <a-select-option v-for="tag in srcTag.opts" :key="tag.uuid">
+                {{ tag.name || tag.description || tag.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="destaddressgroupuuid" ref="destaddressgroupuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.destaddressgroupuuid')" :tooltip="apiParams.destaddressgroupuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.destaddressgroupuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="srcAddress.loading"
+              :placeholder="apiParams.destaddressgroupuuid.description">
+              <a-select-option v-for="address in srcAddress.opts" :key="address.uuid">
+                {{ address.name || address.description || address.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="destnetworkuuid" ref="destnetworkuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.destnetworkuuid')" :tooltip="apiParams.destnetworkuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.destnetworkuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="networks.loading"
+              :placeholder="apiParams.destnetworkuuid.description">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid">
+                {{ network.name || network.description || network.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="tagtypeuuid" ref="tagtypeuuid">
+            <template #label>
+              <tooltip-label :title="$t('label.tagtypeuuid')" :tooltip="apiParams.tagtypeuuid.description"/>
+            </template>
+            <a-select
+              v-model:value="form.tagtypeuuid"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="tagType.loading"
+              :placeholder="apiParams.tagtypeuuid.description">
+              <a-select-option v-for="tag in tagType.opts" :key="tag.uuid">
+                {{ tag.name || tag.description || tag.displaytext }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="sequence" ref="sequence">
+            <template #label>
+              <tooltip-label :title="$t('label.sequence')" :tooltip="apiParams.sequence.description"/>
+            </template>
+            <a-input
+              v-focus="true"
+              v-model:value="form.sequence"
+              :placeholder="apiParams.sequence.description"/>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button ref="submit" type="primary" @click="submitFirewallRule" :loading="addLoading">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button ref="submit" type="primary" @click="submitFirewallRule" :loading="addLoading">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -303,34 +317,34 @@ export default {
       columns: [{
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       }, {
         title: this.$t('label.action'),
         dataIndex: 'action',
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       }, {
         title: this.$t('label.servicegroupuuid'),
         dataIndex: 'servicegroupuuid',
-        scopedSlots: { customRender: 'servicegroupuuid' }
+        slots: { customRender: 'servicegroupuuid' }
       }, {
         title: this.$t('label.srcaddressgroupuuid'),
         dataIndex: 'srcaddressgroupuuid',
-        scopedSlots: { customRender: 'srcaddressgroupuuid' }
+        slots: { customRender: 'srcaddressgroupuuid' }
       }, {
         title: this.$t('label.direction'),
         dataIndex: 'direction',
-        scopedSlots: { customRender: 'direction' }
+        slots: { customRender: 'direction' }
       }, {
         title: this.$t('label.destaddressgroupuuid'),
         dataIndex: 'destaddressgroupuuid',
-        scopedSlots: { customRender: 'destaddressgroupuuid' }
+        slots: { customRender: 'destaddressgroupuuid' }
       }, {
         title: this.$t('label.tagtypeuuid'),
         dataIndex: 'tagtypeuuid',
-        scopedSlots: { customRender: 'tagtypeuuid' }
+        slots: { customRender: 'tagtypeuuid' }
       }, {
         title: this.$t('label.actions'),
-        scopedSlots: { customRender: 'actions' },
+        slots: { customRender: 'actions' },
         width: 80
       }],
       dataSource: [],
@@ -360,10 +374,10 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createTungstenFabricFirewallRule')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -372,6 +386,21 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        action: 'pass',
+        direction: 'oneway',
+        sequence: 1
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        action: [{ required: true, message: this.$t('message.error.select') }],
+        servicegroupuuid: [{ required: true, message: this.$t('message.error.select') }],
+        direction: [{ required: true, message: this.$t('message.error.select') }],
+        sequence: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) {
         return
@@ -451,8 +480,8 @@ export default {
     submitFirewallRule () {
       if (this.addLoading) return
       this.addLoading = true
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.firewallpolicyuuid = this.resource.uuid
         params.zoneid = this.zoneId
@@ -495,6 +524,8 @@ export default {
             }
           })
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     removeFirewallRule (uuid) {

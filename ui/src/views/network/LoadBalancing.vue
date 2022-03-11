@@ -494,7 +494,7 @@
         v-ctrl-enter="handleConfigHealthMonitor">
         <a-form-item name="type" ref="type" :label="$t('label.monitor.type')">
           <a-select
-            autoFocus
+            v-focus="true"
             v-model:value="monitorForm.type"
             @change="(value) => { healthMonitorParams.type = value }"
             showSearch
@@ -514,7 +514,7 @@
           <a-input v-model:value="monitorForm.timeout" />
         </a-form-item>
         <a-form-item name="interval" ref="interval" :label="$t('label.monitor.interval')">
-          <a-input v-decorator="monitorForm.interval" />
+          <a-input v-model:value="monitorForm.interval" />
         </a-form-item>
         <a-form-item
           name="httpmethodtype"
@@ -522,7 +522,7 @@
           :label="$t('label.monitor.http.method')"
           v-if="healthMonitorParams.type === 'HTTP'">
           <a-select
-            autoFocus
+            v-focus="true"
             v-model:value="monitorForm.httpmethodtype"
             showSearch
             optionFilterProp="label"
@@ -675,7 +675,7 @@ export default {
         },
         {
           title: this.$t('label.action.health.monitor'),
-          scopedSlots: { customRender: 'healthmonitor' }
+          slots: { customRender: 'healthmonitor' }
         },
         {
           title: this.$t('label.add.vms'),
@@ -769,12 +769,12 @@ export default {
     initMonitorForm () {
       this.monitorRef = ref()
       this.monitorForm = reactive({
-        type: healthMonitorParams.type,
-        retry: healthMonitorParams.retry,
-        timeout: healthMonitorParams.timeout,
-        interval: healthMonitorParams.interval,
-        httpmethodtype: healthMonitorParams.httpmethodtype,
-        urlpath: healthMonitorParams.urlpath
+        type: this.healthMonitorParams.type,
+        retry: this.healthMonitorParams.retry,
+        timeout: this.healthMonitorParams.timeout,
+        interval: this.healthMonitorParams.interval,
+        httpmethodtype: this.healthMonitorParams.httpmethodtype,
+        urlpath: this.healthMonitorParams.urlpath
       })
       this.monitorRules = reactive({
         retry: [{ required: true, message: this.$t('message.error.required.input') }],

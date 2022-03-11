@@ -74,16 +74,22 @@ export default {
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }, {
         name: 'tungsten.router.table',
-        component: () => import('@/views/network/tungsten/NetworkRouterTableTab.vue'),
-        show: (record) => { return 'listTungstenFabricNetworkRouteTable' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkRouterTableTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricNetworkRouteTable' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
       }, {
         name: 'tungsten.routing.polices',
-        component: () => import('@/views/network/tungsten/NetworkRoutingPolicyTab.vue'),
-        show: (record) => { return 'listTungstenFabricRoutingPolicy' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkRoutingPolicyTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricRoutingPolicy' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
       }, {
         name: 'tungsten.logical.router',
-        component: () => import('@/views/network/tungsten/LogicalRouterTab.vue'),
-        show: (record) => { return 'listTungstenFabricLogicalRouter' in store.getters.apis && record.broadcastdomaintype === 'Tungsten' }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/LogicalRouterTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricLogicalRouter' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
       }, {
         name: 'comments',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
@@ -702,7 +708,7 @@ export default {
     {
       name: 'tungstenfabric',
       title: 'label.tungsten.fabric',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       permission: ['listTungstenFabricProviders'],
       columns: [
         {
@@ -711,39 +717,47 @@ export default {
         },
         'zonename'
       ],
+      details: ['name', 'tungstengateway', 'tungstenproviderhostname', 'tungstenproviderintrospectport', 'tungstenproviderport', 'tungstenprovideruuid', 'tungstenprovidervrouterport', 'zonename'],
+      resourceType: 'TungstenFabric',
       tabs: [
         {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
           name: 'tungsten.fabric',
-          component: () => import('@/views/network/tungsten/TungstenFabric.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabric.vue'))),
+          show: (record) => { return !record.securitygroupsenabled }
         },
         {
           name: 'tungsten.fabric.routing',
-          component: () => import('@/views/network/tungsten/TungstenFabricRouting.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricRouting.vue'))),
+          show: (record) => { return !record.securitygroupsenabled }
         }
       ]
     },
     {
       name: 'tungstennetworkroutertable',
       title: 'label.tungsten.network.router.table',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricNetworkRouteTable'],
-      columns: ['name'],
-      details: ['uuid', 'name'],
+      columns: ['name', 'zonename'],
+      details: ['uuid', 'name', 'zonename'],
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'tungsten.static.routes',
-          component: () => import('@/views/network/tungsten/TungstenNetworkStaticRoute.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenNetworkStaticRoute.vue')))
         }
       ],
       actions: [
         {
           api: 'removeTungstenFabricNetworkRouteTable',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.network.route.table',
           message: 'label.confirm.remove.network.route.table',
           dataView: true
@@ -753,11 +767,11 @@ export default {
     {
       name: 'tungsteninterfaceroutertable',
       title: 'label.tungsten.interface.router.table',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricInterfaceRouteTable'],
-      columns: ['name'],
-      details: ['uuid', 'name'],
+      columns: ['name', 'zonename'],
+      details: ['uuid', 'name', 'zonename'],
       tabs: [
         {
           name: 'details',
@@ -771,7 +785,7 @@ export default {
       actions: [
         {
           api: 'removeTungstenFabricInterfaceRouteTable',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.interface.route.table',
           message: 'label.confirm.remove.interface.route.table',
           dataView: true
@@ -781,43 +795,43 @@ export default {
     {
       name: 'tungstenpolicy',
       title: 'label.network.policy',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricPolicy'],
-      columns: ['name'],
-      details: ['name'],
+      columns: ['name', 'zonename'],
+      details: ['name', 'zonename'],
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'rule',
-          component: () => import('@/views/network/tungsten/TungstenFabricPolicyRule.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricPolicyRule.vue')))
         },
         {
           name: 'tag',
-          component: () => import('@/views/network/tungsten/TungstenFabricPolicyTag.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenFabricPolicyTag.vue')))
         }
       ],
       actions: [
         {
           api: 'applyTungstenFabricPolicy',
-          icon: 'form',
+          icon: 'form-outlined',
           label: 'label.apply.tungsten.network.policy',
           dataView: true,
           args: ['networkuuid', 'majorsequence', 'minorsequence']
         },
         {
           api: 'removeTungstenFabricPolicy',
-          icon: 'close',
+          icon: 'close-outlined',
           label: 'label.remove.tungsten.network.policy',
           dataView: true,
           args: ['networkuuid']
         },
         {
           api: 'deleteTungstenFabricPolicy',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.tungsten.policy',
           message: 'label.confirm.delete.tungsten.policy',
           dataView: true,
@@ -830,29 +844,29 @@ export default {
     {
       name: 'tungstenpolicyset',
       title: 'label.application.policy.set',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricApplicationPolicySet'],
-      columns: ['name'],
-      details: ['name'],
+      columns: ['name', 'zonename'],
+      details: ['name', 'zonename'],
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'firewall.policy',
-          component: () => import('@/views/network/tungsten/FirewallPolicyTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallPolicyTab.vue')))
         },
         {
           name: 'tag',
-          component: () => import('@/views/network/tungsten/FirewallTagTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallTagTab.vue')))
         }
       ],
       actions: [
         {
           api: 'deleteTungstenFabricApplicationPolicySet',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.tungsten.policy.set',
           message: 'label.confirm.delete.tungsten.policy.set',
           dataView: true,
@@ -865,38 +879,38 @@ export default {
     {
       name: 'tungstenroutingpolicy',
       title: 'label.routing.policy',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricRoutingPolicy'],
-      columns: ['name'],
-      details: ['uuid', 'name'],
+      columns: ['name', 'zonename'],
+      details: ['uuid', 'name', 'zonename'],
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'routing.policy.terms',
-          component: () => import('@/views/network/tungsten/RoutingPolicyTermsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/RoutingPolicyTermsTab.vue')))
         }
       ]
     },
     {
       name: 'firewallrule',
       title: 'label.routing.policy',
-      icon: tungsten,
+      icon: shallowRef(tungsten),
       hidden: true,
       permission: ['listTungstenFabricFirewallPolicy'],
-      columns: ['name'],
-      details: ['uuid', 'name'],
+      columns: ['name', 'zonename'],
+      details: ['uuid', 'name', 'zonename'],
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'firewallrule',
-          component: () => import('@/views/network/tungsten/FirewallRuleTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/FirewallRuleTab.vue')))
         }
       ]
     }

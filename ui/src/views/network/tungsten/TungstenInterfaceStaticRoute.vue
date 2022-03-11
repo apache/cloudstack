@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('addTungstenFabricInterfaceStaticRoute' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="addInterfaceStaticRoute">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.tungsten.interface.static.route') }}
     </a-button>
     <a-table
@@ -32,7 +32,7 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <a-popconfirm
           v-if="'removeTungstenFabricInterfaceStaticRoute' in $store.getters.apis"
           placement="topRight"
@@ -44,8 +44,9 @@
         >
           <tooltip-button
             :tooltip="$t('label.action.delete.interface.static.route')"
-            type="danger"
-            icon="delete" />
+            danger
+            type="primary"
+            icon="delete-outlined" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -61,7 +62,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -77,22 +78,24 @@
       v-ctrl-enter="handleSubmit"
       centered
       width="450px">
-      <a-form :form="form" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.routeprefix')" :tooltip="apiParams.interfacerouteprefix.description"/>
+      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+        <a-form-item name="interfacerouteprefix" ref="interfacerouteprefix">
+          <template #label>
+            <tooltip-label :title="$t('label.routeprefix')" :tooltip="apiParams.interfacerouteprefix.description"/>
+          </template>
           <a-input
-            :auto-focus="true"
-            v-decorator="['interfacerouteprefix', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-focus="true"
+            v-model:value="form.interfacerouteprefix"
             :placeholder="apiParams.interfacerouteprefix.description"/>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.communities')" :tooltip="apiParams.interfacecommunities.description"/>
+        <a-form-item name="interfacecommunities" ref="interfacecommunities">
+          <template #label>
+            <tooltip-label :title="$t('label.communities')" :tooltip="apiParams.interfacecommunities.description"/>
+          </template>
           <a-select
             mode="tags"
             :token-separators="[',']"
-            v-decorator="['interfacecommunities', { rules: [{ type: 'array' }] }]"
+            v-model:value="form.interfacecommunities"
             :placeholder="apiParams.interfacecommunities.description">
             <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
           </a-select>
@@ -108,6 +111,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -141,17 +145,17 @@ export default {
         {
           title: this.$t('label.routeprefix'),
           dataIndex: 'routeprefix',
-          scopedSlots: { customRender: 'routeprefix' }
+          slots: { customRender: 'routeprefix' }
         },
         {
           title: this.$t('label.communities'),
           dataIndex: 'communities',
-          scopedSlots: { customRender: 'communities' }
+          slots: { customRender: 'communities' }
         },
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
+          slots: { customRender: 'action' },
           width: 80
         }
       ],
@@ -192,13 +196,21 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('addTungstenFabricInterfaceStaticRoute')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        interfacerouteprefix: [{ required: true, message: this.$t('message.error.required.input') }],
+        interfacecommunities: [{ type: 'array' }]
+      })
+    },
     fetchData () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) return
       this.zoneId = this.$route.query.zoneid || null
@@ -255,10 +267,8 @@ export default {
       this.interfaceStaticRouteModal = true
     },
     handleSubmit () {
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.zoneid = this.zoneId
@@ -295,6 +305,8 @@ export default {
           this.actionLoading = false
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

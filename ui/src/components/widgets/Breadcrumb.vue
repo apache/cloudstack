@@ -28,7 +28,7 @@
       <router-link
         v-else-if="tungstenPaths.includes(item.path)"
         :to="{ path: item.path === '' ? '/' : item.path, query: { zoneid: $route.query.zoneid } }">
-        <a-icon v-if="index == 0" :type="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
+        <render-icon v-if="index == 0" :icon="item.meta.icon" style="font-size: 16px" @click="resetToMainView" />
         {{ $t(item.meta.title) }}
       </router-link>
       <span v-else-if="$route.params.id">

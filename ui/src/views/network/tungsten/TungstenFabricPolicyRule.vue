@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('addTungstenFabricPolicyRule' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.rule') }}
     </a-button>
     <a-table
@@ -32,13 +32,13 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template slot="sourceport" slot-scope="text, record">
+      <template #sourceport="{ record }">
         <span>{{ record.srcstartport + ':' + record.srcendport }}</span>
       </template>
-      <template slot="destport" slot-scope="text, record">
+      <template #destport="{ record }">
         <span>{{ record.deststartport + ':' + record.destendport }}</span>
       </template>
-      <template slot="ruleAction" slot-scope="text, record">
+      <template #ruleAction="{ record }">
         <a-popconfirm
           v-if="'removeTungstenFabricPolicyRule' in $store.getters.apis"
           placement="topRight"
@@ -50,8 +50,9 @@
         >
           <tooltip-button
             :tooltip="$t('label.delete.rule')"
-            type="danger"
-            icon="delete" />
+            danger
+            type="primary"
+            icon="delete-outlined" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -67,7 +68,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -79,149 +80,138 @@
       :title="$t('label.add.rule')"
       :maskClosable="false"
       :footer="null"
-      @cancel="showAction = false"
-      v-ctrl-enter="handleSubmit">
-      <a-form :form="form" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.action')" :tooltip="apiParams.action.description"/>
-          <a-select
-            :auto-focus="true"
-            v-decorator="['action', {
-              initialValue: 'pass',
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.action.description">
-            <a-select-option value="pass">PASS</a-select-option>
-            <a-select-option value="deny">DENY</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.direction')" :tooltip="apiParams.direction.description"/>
-          <a-select
-            v-decorator="['direction', {
-              initialValue: 'oneway',
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.direction.description">
-            <a-select-option value="oneway">ONE WAY</a-select-option>
-            <a-select-option value="twoway">TWO WAY</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.protocol')" :tooltip="apiParams.protocol.description"/>
-          <a-select
-            v-decorator="['protocol', {
-              initialValue: 'tcp',
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.protocol.description">
-            <a-select-option value="tcp">TCP</a-select-option>
-            <a-select-option value="udp">UDP</a-select-option>
-            <a-select-option value="icmp">ICMP</a-select-option>
-            <a-select-option value="any">ANY</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcnetwork')" :tooltip="apiParams.srcnetwork.description"/>
-          <a-input
-            v-decorator="['srcnetwork', {
-              initialValue: 'any',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.srcnetwork.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcipprefix')" :tooltip="apiParams.srcnetwork.description"/>
-          <a-input
-            v-decorator="['srcipprefix', {
-              initialValue: '0.0.0.0',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.srcipprefix.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcipprefixlen')" :tooltip="apiParams.srcipprefixlen.description"/>
-          <a-input
-            v-decorator="['srcipprefixlen', {
-              initialValue: '0',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.srcipprefixlen.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcstartport')" :tooltip="apiParams.srcstartport.description"/>
-          <a-input
-            v-decorator="['srcstartport', {
-              initialValue: '-1',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.srcstartport.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.srcendport')" :tooltip="apiParams.srcendport.description"/>
-          <a-input
-            v-decorator="['srcendport', {
-              initialValue: '-1',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.srcendport.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destnetwork')" :tooltip="apiParams.destnetwork.description"/>
-          <a-input
-            v-decorator="['destnetwork', {
-              initialValue: 'any',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.destnetwork.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destipprefix')" :tooltip="apiParams.destipprefix.description"/>
-          <a-input
-            v-decorator="['destipprefix', {
-              initialValue: '0.0.0.0',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.destipprefix.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destipprefixlen')" :tooltip="apiParams.destipprefixlen.description"/>
-          <a-input
-            v-decorator="['destipprefixlen', {
-              initialValue: '0',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.destipprefixlen.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.deststartport')" :tooltip="apiParams.deststartport.description"/>
-          <a-input
-            v-decorator="['deststartport', {
-              initialValue: '-1',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.deststartport.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.destendport')" :tooltip="apiParams.destendport.description"/>
-          <a-input
-            v-decorator="['destendport', {
-              initialValue: '-1',
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.destendport.description"/>
-        </a-form-item>
-      </a-form>
+      @cancel="showAction = false">
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="action" ref="action">
+            <template #label>
+              <tooltip-label :title="$t('label.action')" :tooltip="apiParams.action.description"/>
+            </template>
+            <a-select
+              v-focus="true"
+              v-model:value="form.action"
+              :placeholder="apiParams.action.description">
+              <a-select-option value="pass">PASS</a-select-option>
+              <a-select-option value="deny">DENY</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="direction" ref="direction">
+            <template #label>
+              <tooltip-label :title="$t('label.direction')" :tooltip="apiParams.direction.description"/>
+            </template>
+            <a-select
+              v-model:value="form.direction"
+              :placeholder="apiParams.direction.description">
+              <a-select-option value="oneway">ONE WAY</a-select-option>
+              <a-select-option value="twoway">TWO WAY</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="protocol" ref="protocol">
+            <template #label>
+              <tooltip-label :title="$t('label.protocol')" :tooltip="apiParams.protocol.description"/>
+            </template>
+            <a-select
+              v-model:value="form.protocol"
+              :placeholder="apiParams.protocol.description">
+              <a-select-option value="tcp">TCP</a-select-option>
+              <a-select-option value="udp">UDP</a-select-option>
+              <a-select-option value="icmp">ICMP</a-select-option>
+              <a-select-option value="any">ANY</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="srcnetwork" ref="srcnetwork">
+            <template #label>
+              <tooltip-label :title="$t('label.srcnetwork')" :tooltip="apiParams.srcnetwork.description"/>
+            </template>
+            <a-input
+              v-model:value="form.srcnetwork"
+              :placeholder="apiParams.srcnetwork.description"/>
+          </a-form-item>
+          <a-form-item name="srcipprefix" ref="srcipprefix">
+            <template #label>
+              <tooltip-label :title="$t('label.srcipprefix')" :tooltip="apiParams.srcnetwork.description"/>
+            </template>
+            <a-input
+              v-model:value="form.srcipprefix"
+              :placeholder="apiParams.srcipprefix.description"/>
+          </a-form-item>
+          <a-form-item name="srcipprefixlen" ref="srcipprefixlen">
+            <template #label>
+              <tooltip-label :title="$t('label.srcipprefixlen')" :tooltip="apiParams.srcipprefixlen.description"/>
+            </template>
+            <a-input
+              v-model:value="form.srcipprefixlen"
+              :placeholder="apiParams.srcipprefixlen.description"/>
+          </a-form-item>
+          <a-form-item name="srcstartport" ref="srcstartport">
+            <template #label>
+              <tooltip-label :title="$t('label.srcstartport')" :tooltip="apiParams.srcstartport.description"/>
+            </template>
+            <a-input
+              v-model:value="form.srcstartport"
+              :placeholder="apiParams.srcstartport.description"/>
+          </a-form-item>
+          <a-form-item name="srcendport" ref="srcendport">
+            <template #label>
+              <tooltip-label :title="$t('label.srcendport')" :tooltip="apiParams.srcendport.description"/>
+            </template>
+            <a-input
+              v-model:value="form.srcendport"
+              :placeholder="apiParams.srcendport.description"/>
+          </a-form-item>
+          <a-form-item name="destnetwork" ref="destnetwork">
+            <template #label>
+              <tooltip-label :title="$t('label.destnetwork')" :tooltip="apiParams.destnetwork.description"/>
+            </template>
+            <a-input
+              v-model:value="form.destnetwork"
+              :placeholder="apiParams.destnetwork.description"/>
+          </a-form-item>
+          <a-form-item name="destipprefix" ref="destipprefix">
+            <template #label>
+              <tooltip-label :title="$t('label.destipprefix')" :tooltip="apiParams.destipprefix.description"/>
+            </template>
+            <a-input
+              v-model:value="form.destipprefix"
+              :placeholder="apiParams.destipprefix.description"/>
+          </a-form-item>
+          <a-form-item name="destipprefixlen" ref="destipprefixlen">
+            <template #label>
+              <tooltip-label :title="$t('label.destipprefixlen')" :tooltip="apiParams.destipprefixlen.description"/>
+            </template>
+            <a-input
+              v-model:value="form.destipprefixlen"
+              :placeholder="apiParams.destipprefixlen.description"/>
+          </a-form-item>
+          <a-form-item name="deststartport" ref="deststartport">
+            <template #label>
+              <tooltip-label :title="$t('label.deststartport')" :tooltip="apiParams.deststartport.description"/>
+            </template>
+            <a-input
+              v-model:value="form.deststartport"
+              :placeholder="apiParams.deststartport.description"/>
+          </a-form-item>
+          <a-form-item name="destendport" ref="destendport">
+            <template #label>
+              <tooltip-label :title="$t('label.destendport')" :tooltip="apiParams.destendport.description"/>
+            </template>
+            <a-input
+              v-model:value="form.destendport"
+              :placeholder="apiParams.destendport.description"/>
+          </a-form-item>
+        </a-form>
 
-      <div :span="24" class="action-button">
-        <a-button :loading="actionLoading" @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="actionLoading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button :loading="actionLoading" @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="actionLoading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -259,41 +249,41 @@ export default {
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         },
         {
           title: this.$t('label.direction'),
           dataIndex: 'direction',
-          scopedSlots: { customRender: 'direction' }
+          slots: { customRender: 'direction' }
         },
         {
           title: this.$t('label.protocol'),
           dataIndex: 'protocol',
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.srcnetwork'),
           dataIndex: 'srcnetwork',
-          scopedSlots: { customRender: 'srcnetwork' }
+          slots: { customRender: 'srcnetwork' }
         },
         {
           title: this.$t('label.sourceport'),
           dataIndex: 'sourceport',
-          scopedSlots: { customRender: 'sourceport' }
+          slots: { customRender: 'sourceport' }
         },
         {
           title: this.$t('label.destnetwork'),
           dataIndex: 'destnetwork',
-          scopedSlots: { customRender: 'destnetwork' }
+          slots: { customRender: 'destnetwork' }
         },
         {
           title: this.$t('label.destport'),
           dataIndex: 'destport',
-          scopedSlots: { customRender: 'destport' }
+          slots: { customRender: 'destport' }
         },
         {
           dataIndex: 'ruleAction',
-          scopedSlots: { customRender: 'ruleAction' },
+          slots: { customRender: 'ruleAction' },
           width: 50
         }
       ]
@@ -316,13 +306,46 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('addTungstenFabricPolicyRule')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        action: 'pass',
+        direction: 'oneway',
+        protocol: 'tcp',
+        srcnetwork: 'any',
+        srcipprefix: '0.0.0.0',
+        srcipprefixlen: '0',
+        srcstartport: '-1',
+        srcendport: '-1',
+        destnetwork: 'any',
+        destipprefix: '0.0.0.0',
+        destipprefixlen: '0',
+        deststartport: '-1',
+        destendport: '-1'
+      })
+      this.rules = reactive({
+        action: [{ required: true, message: this.$t('message.error.select') }],
+        direction: [{ required: true, message: this.$t('message.error.select') }],
+        protocol: [{ required: true, message: this.$t('message.error.select') }],
+        srcnetwork: [{ required: true, message: this.$t('message.error.required.input') }],
+        srcipprefix: [{ required: true, message: this.$t('message.error.required.input') }],
+        srcipprefixlen: [{ required: true, message: this.$t('message.error.required.input') }],
+        srcstartport: [{ required: true, message: this.$t('message.error.required.input') }],
+        srcendport: [{ required: true, message: this.$t('message.error.required.input') }],
+        destnetwork: [{ required: true, message: this.$t('message.error.required.input') }],
+        destipprefix: [{ required: true, message: this.$t('message.error.required.input') }],
+        destipprefixlen: [{ required: true, message: this.$t('message.error.required.input') }],
+        deststartport: [{ required: true, message: this.$t('message.error.required.input') }],
+        destendport: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) {
         return
@@ -346,10 +369,8 @@ export default {
       this.showAction = true
     },
     handleSubmit () {
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.zoneid = this.zoneId
@@ -393,6 +414,8 @@ export default {
           this.showAction = false
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     deleteRule (record) {

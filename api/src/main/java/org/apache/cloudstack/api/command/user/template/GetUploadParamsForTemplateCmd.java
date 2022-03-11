@@ -180,11 +180,12 @@ public class GetUploadParamsForTemplateCmd extends AbstractGetUploadParamsCmd {
         if (getZoneId() <= 0) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "invalid zoneid");
         }
-        if (!hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && osTypeId == null) {
+        if (!isDeployAsIs() && osTypeId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Missing parameter ostypeid");
         }
-        if (hypervisor.equalsIgnoreCase(Hypervisor.HypervisorType.VMware.toString()) && deployAsIs && osTypeId != null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parameter ostypeid, not applicable for VMware");
+        if (isDeployAsIs() && osTypeId != null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid parameter ostypeid, not applicable for" +
+                    "VMware when deploy-as-is is set to true");
         }
     }
 

@@ -21,9 +21,9 @@
       <a-button
         :disabled="!('applyTungstenFabricTag' in $store.getters.apis)"
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-bottom: 15px"
         @click="applyTag">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.apply.tungsten.tag') }}
       </a-button>
       <a-table
@@ -34,7 +34,7 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template slot="action" slot-scope="text, record">
+        <template #action="{ record }">
           <a-popconfirm
             :title="$t('message.delete.tungsten.tag')"
             @confirm="removeTag(record.uuid)"
@@ -43,8 +43,9 @@
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.remove.tag')"
-              type="danger"
-              icon="delete"
+              danger
+              type="primary"
+              icon="delete-outlined"
               :loading="deleteLoading" />
           </a-popconfirm>
         </template>
@@ -61,7 +62,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -77,20 +78,20 @@
       v-ctrl-enter="handleSubmit"
       centered
       width="450px">
-      <a-form :form="form">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
+      <a-form :ref="formRef" :model="form" :rules="rules">
+        <a-form-item name="taguuid" ref="taguuid">
+          <template #label>
+            <tooltip-label :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
+          </template>
           <a-select
-            :auto-focus="true"
+            v-focus="true"
             :loading="tagSrc.loading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            v-decorator="['taguuid', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
+            v-model:value="form.taguuid"
             :placeholder="apiParams.taguuid.description">
             <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid">{{ opt.name }}</a-select-option>
           </a-select>
@@ -106,6 +107,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -139,7 +141,7 @@ export default {
         dataIndex: 'name'
       }, {
         title: this.$t('label.action'),
-        scopedSlots: { customRender: 'action' },
+        slots: { customRender: 'action' },
         width: 80
       }],
       page: 1,
@@ -152,10 +154,10 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('applyTungstenFabricTag')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -164,6 +166,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        taguuid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData  () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) {
         return
@@ -202,8 +211,8 @@ export default {
     handleSubmit () {
       if (this.addLoading) return
       this.addLoading = true
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.applicationpolicysetuuid = this.resource.uuid
         params.zoneid = this.zoneId
@@ -237,6 +246,8 @@ export default {
             }
           })
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     removeTag (uuid) {
@@ -274,7 +285,9 @@ export default {
     },
     closeAction () {
       this.tagModal = false
-      this.form.resetFields()
+      if (this.formRef?.value) {
+        this.formRef.value.resetFields()
+      }
     },
     changePage (page, pageSize) {
       this.page = page

@@ -21,9 +21,9 @@
       <a-button
         :disabled="!('createTungstenFabricFirewallPolicy' in $store.getters.apis)"
         type="dashed"
-        icon="plus"
         style="width: 100%; margin-bottom: 15px"
         @click="addFirewallPolicy">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add.tungsten.firewall.policy') }}
       </a-button>
       <a-table
@@ -34,13 +34,13 @@
         :dataSource="dataSource"
         :rowKey="item => item.uuid"
         :pagination="false">
-        <template slot="name" slot-scope="text, record">
+        <template #name="{ text, record }">
           <router-link :to="{ path: '/firewallrule/' + record.uuid, query: { zoneid: zoneId } }">{{ text }}</router-link>
         </template>
-        <template slot="firewallrule" slot-scope="text, record">
+        <template #firewallrule="{ record }">
           <span v-if="record.firewallrule.length > 0">{{ record.firewallrule[0].name }}</span>
         </template>
-        <template slot="action" slot-scope="text, record">
+        <template #action="{ record }">
           <a-popconfirm
             :title="$t('label.confirm.delete.tungsten.firewall.policy')"
             @confirm="removeFirewallRule(record.uuid)"
@@ -49,8 +49,9 @@
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.delete.tungsten.firewall.policy')"
-              type="danger"
-              icon="delete"
+              danger
+              type="primary"
+              icon="delete-outlined"
               :loading="deleteLoading" />
           </a-popconfirm>
         </template>
@@ -67,7 +68,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -81,38 +82,40 @@
       :closable="true"
       :footer="null"
       @cancel="closeAction"
-      v-ctrl-enter="submitFirewallPolicy"
       centered
       width="450px">
-      <a-form :form="form">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-          <a-input
-            :auto-focus="true"
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.name.description"/>
-        </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.sequence')" :tooltip="apiParams.sequence.description"/>
-          <a-input
-            v-decorator="['sequence', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
-            :placeholder="apiParams.sequence.description"/>
-        </a-form-item>
+      <div v-ctrl-enter="submitFirewallPolicy">
+        <a-form :ref="formRef" :model="form" :rules="rules">
+          <a-form-item name="name" ref="name">
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            </template>
+            <a-input
+              v-focus="true"
+              v-model:value="form.name"
+              :placeholder="apiParams.name.description"/>
+          </a-form-item>
+          <a-form-item name="sequence" ref="sequence">
+            <template #label>
+              <tooltip-label :title="$t('label.sequence')" :tooltip="apiParams.sequence.description"/>
+            </template>
+            <a-input
+              v-model:value="form.sequence"
+              :placeholder="apiParams.sequence.description"/>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button ref="submit" type="primary" @click="submitFirewallPolicy" :loading="addLoading">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button ref="submit" type="primary" @click="submitFirewallPolicy" :loading="addLoading">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -143,14 +146,14 @@ export default {
       columns: [{
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       }, {
         title: this.$t('label.firewallrule'),
         dataIndex: 'firewallrule',
-        scopedSlots: { customRender: 'firewallrule' }
+        slots: { customRender: 'firewallrule' }
       }, {
         title: this.$t('label.action'),
-        scopedSlots: { customRender: 'action' },
+        slots: { customRender: 'action' },
         width: 80
       }],
       dataSource: [],
@@ -160,10 +163,10 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createTungstenFabricFirewallRule')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -172,6 +175,14 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        sequence: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) {
         return
@@ -200,8 +211,8 @@ export default {
     submitFirewallPolicy () {
       if (this.addLoading) return
       this.addLoading = true
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.applicationpolicysetuuid = this.resource.uuid
         params.zoneid = this.zoneId
@@ -233,6 +244,8 @@ export default {
             }
           })
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     removeFirewallRule (uuid) {

@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('addTungstenFabricRoutingPolicyTerm' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.routing.policy') }}
     </a-button>
     <a-table

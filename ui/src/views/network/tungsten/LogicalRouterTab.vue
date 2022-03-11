@@ -3,9 +3,9 @@
     <a-button
       :disabled="!('addTungstenFabricNetworkGatewayToLogicalRouter' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.logical.router') }}
     </a-button>
     <a-table
@@ -15,7 +15,7 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <a-popconfirm
           v-if="'removeTungstenFabricRouteTableFromNetwork' in $store.getters.apis"
           placement="topRight"
@@ -27,8 +27,9 @@
         >
           <tooltip-button
             :tooltip="$t('label.action.remove.logical.router')"
-            type="danger"
-            icon="delete" />
+            danger
+            type="primary"
+            icon="delete-outlined" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -43,7 +44,7 @@
         @change="changePage"
         @showSizeChange="changePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -57,14 +58,11 @@
       :footer="null"
       @cancel="showAction = false"
       v-ctrl-enter="handleSubmit">
-      <a-form :form="form" layout="vertical">
-        <a-form-item :label="$t('label.tungsten.logical.router')">
+      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+        <a-form-item name="logicalrouteruuid" ref="logicalrouteruuid" :label="$t('label.tungsten.logical.router')">
           <a-select
             :loading="logicalRouters.loading"
-            v-decorator="['logicalrouteruuid', {
-              initialValue: logicalRouterSelected,
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]">
+            v-model:value="form.logicalrouteruuid">
             <a-select-option v-for="logicalRouter in logicalRouters.opts" :key="logicalRouter.uuid">{{ logicalRouter.name }}</a-select-option>
           </a-select>
         </a-form-item>
@@ -79,6 +77,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -112,15 +111,14 @@ export default {
       }, {
         title: this.$t('label.action'),
         dataIndex: 'action',
-        scopedSlots: { customRender: 'action' },
+        slots: { customRender: 'action' },
         width: 80
       }],
       dataSource: [],
       logicalRouters: {
         loading: false,
         opts: []
-      },
-      logicalRouterSelected: ''
+      }
     }
   },
   watch: {
@@ -130,10 +128,8 @@ export default {
       }
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   computed: {
@@ -148,6 +144,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        logicalrouteruuid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       if (Object.keys(this.resource).length === 0) {
         return
@@ -176,7 +179,7 @@ export default {
       this.logicalRouters.opts = []
       api('listTungstenFabricLogicalRouter', { zoneid: this.resource.zoneid }).then(json => {
         this.logicalRouters.opts = json?.listtungstenfabriclogicalrouterresponse?.logicalrouter || []
-        this.logicalRouterSelected = this.logicalRouters.opts[0]?.uuid || null
+        this.form.logicalrouteruuid = this.logicalRouters.opts[0]?.uuid || null
       }).finally(() => {
         this.logicalRouters.loading = false
       })
@@ -195,8 +198,8 @@ export default {
       if (this.submitLoading) return
       this.submitLoading = true
 
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.zoneid = this.resource.zoneid
@@ -228,6 +231,8 @@ export default {
           this.showAction = false
           this.submitLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     deleteLogicalRouter (record) {

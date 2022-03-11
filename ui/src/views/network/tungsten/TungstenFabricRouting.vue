@@ -61,7 +61,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricNetworkRouteTable',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.fabric.route',
               listView: true,
               popup: true,
@@ -72,7 +72,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricNetworkRouteTable',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.remove.network.route.table',
               dataView: true,
               confirm: true,
@@ -85,14 +85,14 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            scopedSlots: { customRender: 'name' }
+            slots: { customRender: 'name' }
           }, {
             dataIndex: 'network',
             title: this.$t('label.network'),
-            scopedSlots: { customRender: 'network' }
+            slots: { customRender: 'network' }
           }, {
             title: this.$t('label.action'),
-            scopedSlots: { customRender: 'action' },
+            slots: { customRender: 'action' },
             width: 150
           }]
         },
@@ -102,7 +102,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricInterfaceRouteTable',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.interface.route',
               listView: true,
               popup: true,
@@ -113,7 +113,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricInterfaceRouteTable',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.remove.interface.route.table',
               dataView: true,
               confirm: true,
@@ -126,14 +126,14 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            scopedSlots: { customRender: 'name' }
+            slots: { customRender: 'name' }
           }, {
             dataIndex: 'tungstenvms',
             title: this.$t('label.tungstenvms'),
-            scopedSlots: { customRender: 'tungstenvms' }
+            slots: { customRender: 'tungstenvms' }
           }, {
             title: this.$t('label.action'),
-            scopedSlots: { customRender: 'action' },
+            slots: { customRender: 'action' },
             width: 150
           }]
         },
@@ -143,7 +143,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricRoutingPolicy',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.routing.policy',
               title: 'label.create.tungsten.routing.policy',
               listView: true,
@@ -152,7 +152,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricRoutingPolicy',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.remove.routing.policy',
               dataView: true,
               confirm: true,
@@ -165,14 +165,14 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            scopedSlots: { customRender: 'name' }
+            slots: { customRender: 'name' }
           }, {
             dataIndex: 'tungstenroutingpolicyterm',
             title: this.$t('label.tungstenroutingpolicyterm'),
-            scopedSlots: { customRender: 'tungstenroutingpolicyterm' }
+            slots: { customRender: 'tungstenroutingpolicyterm' }
           }, {
             title: this.$t('label.action'),
-            scopedSlots: { customRender: 'action' },
+            slots: { customRender: 'action' },
             width: 150
           }]
         },
@@ -182,7 +182,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricLogicalRouter',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.logical.route',
               listView: true,
               popup: true,
@@ -214,7 +214,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricLogicalRouter',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.remove.logical.router',
               dataView: true,
               confirm: true,
@@ -227,14 +227,14 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            scopedSlots: { customRender: 'name' }
+            slots: { customRender: 'name' }
           }, {
             dataIndex: 'network',
             title: this.$t('label.network'),
-            scopedSlots: { customRender: 'network' }
+            slots: { customRender: 'network' }
           }, {
             title: this.$t('label.action'),
-            scopedSlots: { customRender: 'action' },
+            slots: { customRender: 'action' },
             width: 150
           }]
         }

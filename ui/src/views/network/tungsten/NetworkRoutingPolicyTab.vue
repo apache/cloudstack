@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('addTungstenFabricRoutingPolicyToNetwork' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.tungsten.routing.policy') }}
     </a-button>
     <a-table
@@ -32,7 +32,7 @@
       :dataSource="dataSource"
       :rowKey="item => item.uuid"
       :pagination="false">
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <a-popconfirm
           v-if="'removeTungstenFabricRoutingPolicyFromNetwork' in $store.getters.apis"
           placement="topRight"
@@ -44,8 +44,9 @@
         >
           <tooltip-button
             :tooltip="$t('label.action.remove.tungsten.routing.policy')"
-            type="danger"
-            icon="delete" />
+            danger
+            type="primary"
+            icon="delete-outlined" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -61,7 +62,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -73,33 +74,34 @@
       :title="$t('label.add.tungsten.routing.policy')"
       :maskClosable="false"
       :footer="null"
-      @cancel="showAction = false"
-      v-ctrl-enter="handleSubmit">
-      <a-form :form="form" layout="vertical">
-        <a-alert type="warning">
-          <span slot="message" v-html="$t('message.confirm.add.routing.policy')" />
-        </a-alert>
-        <a-form-item :label="$t('label.network.routing.policy')">
-          <a-select
-            :loading="networks.loading"
-            v-decorator="['tungstenRoutingPolicy', {
-              initialValue: networkSelected,
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]">
-            <a-select-option v-for="network in networks.opts" :key="network.uuid">{{ network.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
+      @cancel="showAction = false">
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-alert type="warning">
+            <template #message>
+              <span v-html="$t('message.confirm.add.routing.policy')" />
+            </template>
+          </a-alert>
+          <a-form-item name="tungstenRoutingPolicy" ref="tungstenRoutingPolicy" :label="$t('label.network.routing.policy')">
+            <a-select
+              :loading="networks.loading"
+              v-model:value="form.tungstenRoutingPolicy">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid">{{ network.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
 
-      <div :span="24" class="action-button">
-        <a-button @click="() => { showAction = false }">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="() => { showAction = false }">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -132,15 +134,14 @@ export default {
       deleteLoading: false,
       submitLoading: false,
       showAction: false,
-      networkSelected: undefined,
       columns: [{
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       }, {
         title: this.$t('label.action'),
         dataIndex: 'action',
-        scopedSlots: { customRender: 'action' },
+        slots: { customRender: 'action' },
         width: 80
       }]
     }
@@ -161,13 +162,18 @@ export default {
       this.fetchData()
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        tungstenRoutingPolicy: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       if (!this.resource.id || !this.resource.zoneid) return
       const params = {}
@@ -197,7 +203,7 @@ export default {
       this.networks.opts = []
       api('listTungstenFabricRoutingPolicy', params).then(json => {
         this.networks.opts = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
-        this.networkSelected = this.networks.opts[0]?.uuid || undefined
+        this.form.tungstenRoutingPolicy = this.networks.opts[0]?.uuid || undefined
       }).finally(() => {
         this.networks.loading = false
       })
@@ -205,10 +211,8 @@ export default {
     handleSubmit () {
       if (this.submitLoading) return
       this.submitLoading = true
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.zoneid = this.resource.zoneid
@@ -242,6 +246,8 @@ export default {
           this.showAction = false
           this.submitLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     deleteLogicalRouter (record) {

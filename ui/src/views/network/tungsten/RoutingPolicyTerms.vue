@@ -17,39 +17,39 @@
 
 <template>
   <div>
-    <a-form :form="form">
-      <a-form-item :label="$t('label.community')" v-bind="formItemLayout">
+    <a-form :ref="formRef" :model="form" :rules="rules">
+      <a-form-item
+        name="tungstenroutingpolicyfromtermcommunities"
+        ref="tungstenroutingpolicyfromtermcommunities"
+        :label="$t('label.community')"
+        v-bind="formItemLayout">
         <a-select
           mode="tags"
           :token-separators="[',']"
-          v-decorator="['tungstenroutingpolicyfromtermcommunities', {
-            initialValue: formModel.tungstenroutingpolicyfromtermcommunities || [],
-            rules: [{ type: 'array' }]
-          }]"
+          v-model:value="form.tungstenroutingpolicyfromtermcommunities"
           @change="(value) => changeFieldValue('tungstenroutingpolicyfromtermcommunities', value)">
           <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item :label="$t('label.matchall')" v-bind="formItemLayout">
+      <a-form-item
+        name="tungstenroutingpolicymatchall"
+        ref="tungstenroutingpolicymatchall"
+        :label="$t('label.matchall')"
+        v-bind="formItemLayout">
         <a-checkbox
-          v-decorator="[
-            'tungstenroutingpolicymatchall',
-            {
-              initialValue: formModel.tungstenroutingpolicymatchall || false,
-              valuePropName: 'checked',
-            },
-          ]"
+          v-model:checked="form.tungstenroutingpolicymatchall"
           @change="(e) => changeFieldValue('tungstenroutingpolicymatchall', e.target.checked)"
         />
       </a-form-item>
-      <a-form-item :label="$t('label.protocol')" v-bind="formItemLayout">
+      <a-form-item
+        name="tungstenroutingpolicyprotocol"
+        ref="tungstenroutingpolicyprotocol"
+        :label="$t('label.protocol')"
+        v-bind="formItemLayout">
         <a-select
           mode="tags"
           :token-separators="[',']"
-          v-decorator="['tungstenroutingpolicyprotocol', {
-            initialValue: formModel.tungstenroutingpolicyprotocol || [],
-            rules: [{ type: 'array' }]
-          }]"
+          v-model:value="form.tungstenroutingpolicyprotocol"
           @change="(value) => changeFieldValue('tungstenroutingpolicyprotocol', value)">
           <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
         </a-select>
@@ -62,33 +62,33 @@
         :pagination="false"
         :rowKey="(record, idx) => idx"
         style="margin-bottom: 24px; width: 100%">
-        <template slot="prefix" slot-scope="text, record, index">
+        <template #prefix="{ text, index }">
           <a-input :value="text" @change="e => onCellChange(index, 'prefix', e.target.value)" />
         </template>
-        <template slot="prefixtype" slot-scope="text, record, index">
+        <template #prefixtype="{ text, index }">
           <a-select
             style="width: 100%"
             :defaultValue="text"
             @change="value => onCellChange(index, 'prefixtype', value)"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="extract"> extract </a-select-option>
             <a-select-option value="longer"> longer </a-select-option>
             <a-select-option value="orlonger"> orlonger </a-select-option>
           </a-select>
         </template>
-        <template slot="termtype" slot-scope="text, record, index">
+        <template #termtype="{ text, index }">
           <a-select
             style="width: 100%"
             :defaultValue="text"
             @change="value => onCellChange(index, 'termtype', value)"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="addcommunity"> add community </a-select-option>
             <a-select-option value="setcommunity"> set community </a-select-option>
@@ -99,7 +99,7 @@
             <a-select-option value="as-path"> as-path </a-select-option>
           </a-select>
         </template>
-        <template slot="termvalue" slot-scope="text, record, index">
+        <template #termvalue="{ text, index }">
           <a-input
             v-if="prefixList[index].termtype !== 'action'"
             :value="text"
@@ -111,14 +111,15 @@
             <a-select-option value="next">next</a-select-option>
           </a-select>
         </template>
-        <template slot="action" slot-scope="text, record, index">
+        <template #action="{ index }">
           <tooltip-button
             :tooltip="$t('label.delete.prefix')"
-            type="danger"
-            icon="delete"
-            @click="() => deletePrefix(index)" />
+            danger
+            type="primary"
+            icon="delete-outlined"
+            @onClick="() => deletePrefix(index)" />
         </template>
-        <template slot="footer">
+        <template #footer>
           <a-button @click="addNewPrefix">
             {{ $t('label.add.prefix') }}
           </a-button>
@@ -129,6 +130,7 @@
 </template>
 
 <script>
+import { ref, reactive } from 'vue'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -152,37 +154,48 @@ export default {
         {
           title: this.$t('label.prefix'),
           dataIndex: 'prefix',
-          scopedSlots: { customRender: 'prefix' }
+          slots: { customRender: 'prefix' }
         },
         {
           title: this.$t('label.prefix.type'),
           dataIndex: 'prefixtype',
-          scopedSlots: { customRender: 'prefixtype' }
+          slots: { customRender: 'prefixtype' }
         },
         {
           title: this.$t('label.term.type'),
           dataIndex: 'termtype',
-          scopedSlots: { customRender: 'termtype' }
+          slots: { customRender: 'termtype' }
         },
         {
           title: this.$t('label.value'),
           dataIndex: 'termvalue',
-          scopedSlots: { customRender: 'termvalue' }
+          slots: { customRender: 'termvalue' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ]
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.prefixList = this.formModel?.prefixList || []
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        tungstenroutingpolicyfromtermcommunities: this.formModel?.tungstenroutingpolicyfromtermcommunities || [],
+        tungstenroutingpolicymatchall: this.formModel?.tungstenroutingpolicymatchall || false,
+        tungstenroutingpolicyprotocol: this.formModel?.tungstenroutingpolicyprotocol || [],
+        prefixList: this.formModel?.prefixList || []
+      })
+      this.rules = reactive({
+        tungstenroutingpolicyfromtermcommunities: [{ type: 'array' }],
+        tungstenroutingpolicyprotocol: [{ type: 'array' }]
+      })
+    },
     addNewPrefix () {
       const index = this.prefixList.length
       this.prefixList.push({
@@ -191,25 +204,25 @@ export default {
         termtype: 'addcommunity',
         termvalue: ''
       })
-      this.formModel.prefixList = this.prefixList
+      this.form.prefixList = this.prefixList
       this.emitEvents()
     },
     deletePrefix (index) {
       this.prefixList.splice(index, 1)
-      this.formModel.prefixList = this.prefixList
+      this.form.prefixList = this.prefixList
       this.emitEvents()
     },
     changeFieldValue (field, value) {
-      this.formModel[field] = value
+      this.form[field] = value
       this.emitEvents()
     },
     onCellChange (key, name, value) {
       this.prefixList[key][name] = value
-      this.formModel.prefixList = this.prefixList
+      this.form.prefixList = this.prefixList
       this.emitEvents()
     },
     emitEvents () {
-      this.$emit('onChangeFields', this.formModel)
+      this.$emit('onChangeFields', this.form)
     }
   }
 }

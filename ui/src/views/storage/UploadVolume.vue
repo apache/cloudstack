@@ -41,7 +41,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="$t('label.volumename')"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="zoneId" ref="zoneId">
           <template #label>

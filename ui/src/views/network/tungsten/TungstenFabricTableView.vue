@@ -45,9 +45,9 @@
           centered
           width="auto"
         >
-          <span slot="title">
+          <template #title>
             {{ $t(currentAction.title || currentAction.label) }}
-          </span>
+          </template>
           <component
             :is="currentAction.component"
             :resource="resource"
@@ -68,57 +68,44 @@
         centered
         width="auto"
         @cancel="closeAction">
-        <span slot="title">
+        <template #title>
           {{ $t(currentAction.label) }}
-        </span>
-        <a-form :form="form" layout="vertical" class="form-layout">
-          <a-form-item
-            v-for="(field, index) in currentAction.fields"
-            :key="field.name"
-            v-if="!currentAction.mapping || !field.name in currentAction.mapping">
-            <tooltip-label
-              slot="label"
-              :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
-              :tooltip="apiParams[field.name].description" />
-            <a-select
-              v-if="field.type==='uuid'"
-              :auto-focus="index === 0"
-              :mode="field.multiple ? 'multiple' : 'default'"
-              v-decorator="[field.name, {
-                rules: [{
-                  required: field.required,
-                  message: $t('message.error.required.input')
-                }]
-              }]"
-              :loading="field.loading"
-              :placeholder="apiParams[field.name].description">
-              <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
-                {{ opt.name || opt.displayName || opt.description }}
-              </a-select-option>
-            </a-select>
-            <a-input-number
-              style="width: 100%"
-              v-else-if="field.type === 'number'"
-              :auto-focus="index === 0"
-              v-decorator="[field.name, {
-                initialValue: 0,
-                rules: [{
-                  required: field.required,
-                  message: $t('message.error.required.input')
-                }]
-              }]"
-              :placeholder="apiParams[field.name].description"/>
-            <a-input
-              v-else
-              :auto-focus="index === 0"
-              v-decorator="[field.name, {
-                rules: [{
-                  required: field.required,
-                  message: $t('message.error.required.input')
-                }]
-              }]"
-              :placeholder="apiParams[field.name].description"/>
-          </a-form-item>
+        </template>
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" class="form-layout">
+          <div v-for="(field, index) in currentAction.fields" :key="field.name">
+            <a-form-item
+              :name="field.name"
+              :ref="field.name"
+              v-if="!currentAction.mapping || !field.name in currentAction.mapping">
+              <template #label>
+                <tooltip-label
+                  :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
+                  :tooltip="apiParams[field.name].description" />
+              </template>
+              <a-select
+                v-if="field.type==='uuid'"
+                v-focus="index === 0"
+                :mode="field.multiple ? 'multiple' : null"
+                v-model:value="form[field.name]"
+                :loading="field.loading"
+                :placeholder="apiParams[field.name].description">
+                <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
+                  {{ opt.name || opt.displayName || opt.description }}
+                </a-select-option>
+              </a-select>
+              <a-input-number
+                style="width: 100%"
+                v-else-if="field.type === 'number'"
+                v-focus="index === 0"
+                v-model:value="form[field.name]"
+                :placeholder="apiParams[field.name].description"/>
+              <a-input
+                v-else
+                v-focus="index === 0"
+                v-model:value="form[field.name]"
+                :placeholder="apiParams[field.name].description"/>
+            </a-form-item>
+          </div>
 
           <div :span="24" class="action-button">
             <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -131,6 +118,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TungstenNetworkAction from '@/views/network/tungsten/TungstenNetworkAction'
 import TungstenNetworkTable from '@/views/network/tungsten/TungstenNetworkTable'
@@ -185,12 +173,10 @@ export default {
       onExecAction: this.execAction
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
     this.listAction = this.actions.filter(action => action.listView)
     this.detailAction = this.actions.filter(action => action.dataView)
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -199,6 +185,30 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+
+      if (!this.currentAction?.field || this.currentAction.field.length === 0) {
+        return
+      }
+      this.currentAction.fields.forEach((field, index) => {
+        switch (field.type) {
+          case 'uuid':
+            if (field.multiple) this.form[field.name] = []
+            this.rules[field.name] = [{ required: field.required, message: this.$t('message.error.select') }]
+            break
+          case 'number':
+            this.form[field.name] = 0
+            this.rules[field.name] = [{ required: field.required, message: this.$t('message.error.required.input') }]
+            break
+          default:
+            this.rules[field.name] = [{ required: field.required, message: this.$t('message.error.required.input') }]
+            break
+        }
+      })
+    },
     fetchData (args = {}) {
       if (!this.resource || !this.resource.zoneid) {
         return false
@@ -292,6 +302,7 @@ export default {
     execAction (action, record) {
       this.currentAction = action
       this.currentAction.record = record
+      this.initForm()
       if (this.currentAction.component) {
         this.showAddModal = true
         return
@@ -317,10 +328,8 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return false
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         // this.fetchLoading = true
         const params = {}
@@ -347,10 +356,16 @@ export default {
             this.fetchData()
             return
           }
+
+          let resourceName = values.name
+          if (this.currentAction.api === 'createTungstenFabricTag') {
+            resourceName = [values.tagtype, values.tagvalue].join('=')
+          }
+
           this.$pollJob({
             jobId,
             title: this.$t(this.currentAction.label),
-            description: values.name,
+            description: resourceName,
             successMessage: `${this.$t('label.success')}`,
             successMethod: () => {
               this.fetchData()
@@ -365,6 +380,8 @@ export default {
           this.fetchLoading = false
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onRemoveAction (record) {
@@ -380,10 +397,11 @@ export default {
       api(this.currentAction.api, params).then(json => {
         const jsonResponseName = [this.currentAction.api, 'response'].join('').toLowerCase()
         const jobId = json[jsonResponseName].jobid
+        const resourceName = record.name || record.uuid || record.id
         this.$pollJob({
           jobId,
           title: this.$t(this.currentAction.label),
-          description: record.name,
+          description: resourceName,
           successMessage: `${this.$t('label.success')}`,
           successMethod: () => {
             this.fetchData()

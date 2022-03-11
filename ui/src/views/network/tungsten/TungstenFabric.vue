@@ -59,7 +59,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricPolicy',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.policy',
               dataView: false,
               listView: true,
@@ -73,7 +73,7 @@ export default {
             },
             {
               api: 'applyTungstenFabricPolicy',
-              icon: 'form',
+              icon: 'form-outlined',
               label: 'label.apply.tungsten.network.policy',
               dataView: true,
               popup: true,
@@ -103,7 +103,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricPolicy',
-              icon: 'close',
+              icon: 'close-outlined',
               label: 'label.remove.tungsten.network.policy',
               dataView: true,
               popup: true,
@@ -124,7 +124,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricPolicy',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.policy',
               dataView: true,
               confirm: true,
@@ -138,16 +138,16 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              slots: { customRender: 'name' }
             },
             {
               dataIndex: 'network',
               title: this.$t('label.network'),
-              scopedSlots: { customRender: 'network' }
+              slots: { customRender: 'network' }
             },
             {
               title: this.$t('label.action'),
-              scopedSlots: { customRender: 'action' },
+              slots: { customRender: 'action' },
               width: 150
             }
           ]
@@ -159,7 +159,7 @@ export default {
             {
               api: 'createTungstenFabricApplicationPolicySet',
               label: 'label.add.tungsten.policy.set',
-              icon: 'plus',
+              icon: 'plus-outlined',
               dataView: false,
               listView: true,
               popup: true,
@@ -172,7 +172,7 @@ export default {
             },
             {
               api: 'addTungstenFabricFirewallPolicy',
-              icon: 'form',
+              icon: 'form-outlined',
               label: 'label.apply.tungsten.firewall.policy',
               dataView: true,
               popup: true,
@@ -206,7 +206,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricFirewallPolicy',
-              icon: 'close',
+              icon: 'close-outlined',
               label: 'label.remove.tungsten.firewall.policy',
               dataView: true,
               popup: true,
@@ -227,7 +227,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricApplicationPolicySet',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.policy.set',
               dataView: true,
               confirm: true,
@@ -241,21 +241,21 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              slots: { customRender: 'name' }
             },
             {
               dataIndex: 'firewallpolicy',
               title: this.$t('label.firewallpolicy'),
-              scopedSlots: { customRender: 'firewallpolicy' }
+              slots: { customRender: 'firewallpolicy' }
             },
             {
               dataIndex: 'tag',
               title: this.$t('label.tag'),
-              scopedSlots: { customRender: 'tag' }
+              slots: { customRender: 'tag' }
             },
             {
               title: this.$t('label.action'),
-              scopedSlots: { customRender: 'action' },
+              slots: { customRender: 'action' },
               width: 150
             }
           ]
@@ -266,7 +266,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricTag',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.tag',
               dataView: false,
               listView: true,
@@ -290,7 +290,7 @@ export default {
             },
             {
               api: 'removeTungstenFabricTag',
-              icon: 'close',
+              icon: 'close-outlined',
               label: 'label.remove.tungsten.tag',
               dataView: true,
               popup: true,
@@ -327,7 +327,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricTag',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.fabric.tag',
               dataView: true,
               confirm: true,
@@ -341,11 +341,11 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              slots: { customRender: 'name' }
             },
             {
               title: this.$t('label.action'),
-              scopedSlots: { customRender: 'action' },
+              slots: { customRender: 'action' },
               width: 150
             }
           ]
@@ -356,7 +356,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricTagType',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.tag.type',
               dataView: false,
               listView: true,
@@ -368,7 +368,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricTagType',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.fabric.tag.type',
               dataView: true,
               confirm: true,
@@ -381,10 +381,10 @@ export default {
           columns: [{
             dataIndex: 'name',
             title: this.$t('label.name'),
-            scopedSlots: { customRender: 'name' }
+            slots: { customRender: 'name' }
           }, {
             title: this.$t('label.action'),
-            scopedSlots: { customRender: 'action' },
+            slots: { customRender: 'action' },
             width: 150
           }]
         },
@@ -394,7 +394,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricServiceGroup',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.service.group',
               dataView: false,
               listView: true,
@@ -420,7 +420,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricServiceGroup',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.service.group',
               dataView: true,
               confirm: true,
@@ -434,26 +434,26 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              slots: { customRender: 'name' }
             },
             {
               dataIndex: 'protocol',
               title: this.$t('label.protocol'),
-              scopedSlots: { customRender: 'protocol' }
+              slots: { customRender: 'protocol' }
             },
             {
               dataIndex: 'startport',
               title: this.$t('label.startport'),
-              scopedSlots: { customRender: 'startport' }
+              slots: { customRender: 'startport' }
             },
             {
               dataIndex: 'endport',
               title: this.$t('label.endport'),
-              scopedSlots: { customRender: 'endport' }
+              slots: { customRender: 'endport' }
             },
             {
               title: this.$t('label.action'),
-              scopedSlots: { customRender: 'action' },
+              slots: { customRender: 'action' },
               width: 150
             }
           ]
@@ -464,7 +464,7 @@ export default {
           actions: [
             {
               api: 'createTungstenFabricAddressGroup',
-              icon: 'plus',
+              icon: 'plus-outlined',
               label: 'label.add.tungsten.address.group',
               listView: true,
               popup: true,
@@ -485,7 +485,7 @@ export default {
             },
             {
               api: 'deleteTungstenFabricAddressGroup',
-              icon: 'delete',
+              icon: 'delete-outlined',
               label: 'label.delete.tungsten.address.group',
               dataView: true,
               confirm: true,
@@ -499,21 +499,21 @@ export default {
             {
               dataIndex: 'name',
               title: this.$t('label.name'),
-              scopedSlots: { customRender: 'name' }
+              slots: { customRender: 'name' }
             },
             {
               dataIndex: 'ipprefix',
               title: this.$t('label.ipprefix'),
-              scopedSlots: { customRender: 'ipprefix' }
+              slots: { customRender: 'ipprefix' }
             },
             {
               dataIndex: 'ipprefixlen',
               title: this.$t('label.ipprefixlen'),
-              scopedSlots: { customRender: 'ipprefixlen' }
+              slots: { customRender: 'ipprefixlen' }
             },
             {
               title: this.$t('label.action'),
-              scopedSlots: { customRender: 'action' },
+              slots: { customRender: 'action' },
               width: 150
             }
           ]

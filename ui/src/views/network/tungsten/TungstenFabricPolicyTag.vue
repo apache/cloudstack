@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('applyTungstenFabricTag' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="width: 100%; margin-bottom: 15px"
       @click="onShowAction">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.apply.tungsten.tag') }}
     </a-button>
     <a-table
@@ -32,10 +32,10 @@
       :dataSource="dataSource"
       :rowKey="(item, index) => index"
       :pagination="false">
-      <template slot="policy" slot-scope="text, record">
+      <template #policy="{ record }">
         <span v-if="record.policy.length > 0">{{ record.policy[0].name }}</span>
       </template>
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <a-popconfirm
           v-if="'removeTungstenFabricTag' in $store.getters.apis"
           placement="topRight"
@@ -47,8 +47,9 @@
         >
           <tooltip-button
             :tooltip="$t('label.delete.tag')"
-            type="danger"
-            icon="delete" />
+            danger
+            type="primary"
+            icon="delete-outlined" />
         </a-popconfirm>
       </template>
     </a-table>
@@ -64,7 +65,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -76,33 +77,34 @@
       :title="$t('label.apply.tungsten.tag')"
       :maskClosable="false"
       :footer="null"
-      @cancel="showAction = false"
-      v-ctrl-enter="handleSubmit">
-      <a-form :form="form" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
-          <a-select
-            :auto-focus="true"
-            :loading="tags.loading"
-            v-decorator="['taguuid', {
-              initialValue: tagSelected,
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.taguuid.description">
-            <a-select-option v-for="item in tags.opts" :key="item.uuid">{{ item.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
+      @cancel="showAction = false">
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="taguuid" ref="taguuid">
+            <template #label>
+              <tooltip-label :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
+            </template>
+            <a-select
+              v-focus="true"
+              :loading="tags.loading"
+              v-model:value="form.taguuid"
+              :placeholder="apiParams.taguuid.description">
+              <a-select-option v-for="item in tags.opts" :key="item.uuid">{{ item.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
 
-      <div :span="24" class="action-button">
-        <a-button :loading="actionLoading" @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="actionLoading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button :loading="actionLoading" @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
+          <a-button :loading="actionLoading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -145,17 +147,17 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.policy'),
           dataIndex: 'policy',
-          scopedSlots: { customRender: 'policy' }
+          slots: { customRender: 'policy' }
         },
         {
           title: this.$t('label.action'),
           dataIndex: 'action',
-          scopedSlots: { customRender: 'action' },
+          slots: { customRender: 'action' },
           width: 70
         }
       ]
@@ -178,13 +180,20 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('applyTungstenFabricTag')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        taguuid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       if (!this.resource.uuid || !('zoneid' in this.$route.query)) {
         return
@@ -220,10 +229,8 @@ export default {
       }).finally(() => { this.tags.loading = false })
     },
     handleSubmit () {
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.zoneid = this.zoneId
@@ -259,6 +266,8 @@ export default {
           this.showAction = false
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     deleteRule (record) {

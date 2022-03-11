@@ -32,7 +32,7 @@
           <a-input
             v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
@@ -41,7 +41,7 @@
           <a-input
             v-model:value="form.displaytext"
             :placeholder="apiParams.displaytext.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
@@ -93,7 +93,7 @@
           <a-input
             v-model:value="form.networkdomain"
             :placeholder="apiParams.networkdomain.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
         <a-form-item name="maclearning" ref="maclearning" v-if="resource.redundantrouter">
           <template #label>
