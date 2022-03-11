@@ -171,7 +171,7 @@ public class ClusterServiceServletContainer {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e1) {
-                        s_logger.debug("[ignored] interupted while waiting to retry running the servlet container.");
+                        s_logger.debug("[ignored] interrupted while waiting to retry running the servlet container.");
                     }
                 }
             }

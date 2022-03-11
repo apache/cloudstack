@@ -20,7 +20,7 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-table
       :loading="loading"
@@ -32,14 +32,14 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <span slot="diskSizeTitle"><a-icon type="hdd" /> {{ $t('label.disksize') }}</span>
-      <span slot="iopsTitle"><a-icon type="rocket" /> {{ $t('label.minmaxiops') }}</span>
-      <template slot="diskSize" slot-scope="text, record">
+      <template #diskSizeTitle><hdd-outlined /> {{ $t('label.disksize') }}</template>
+      <template #iopsTitle><rocket-outlined /> {{ $t('label.minmaxiops') }}</template>
+      <template #diskSize="{ record }">
         <div v-if="record.isCustomized">{{ $t('label.iscustomized') }}</div>
         <div v-else-if="record.diskSize">{{ record.diskSize }} GB</div>
         <div v-else>-</div>
       </template>
-      <template slot="iops" slot-scope="text, record">
+      <template #iops="{ record }">
         <span v-if="record.miniops && record.maxiops">{{ record.miniops }} - {{ record.maxiops }}</span>
         <span v-else-if="record.miniops && !record.maxiops">{{ record.miniops }}</span>
         <span v-else-if="!record.miniops && record.maxiops">{{ record.maxiops }}</span>
@@ -58,7 +58,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -114,15 +114,13 @@ export default {
         },
         {
           dataIndex: 'disksize',
-          slots: { title: 'diskSizeTitle' },
           width: '30%',
-          scopedSlots: { customRender: 'diskSize' }
+          slots: { customRender: 'diskSize', title: 'diskSizeTitle' }
         },
         {
           dataIndex: 'iops',
-          slots: { title: 'iopsTitle' },
           width: '30%',
-          scopedSlots: { customRender: 'iops' }
+          slots: { customRender: 'iops', title: 'iopsTitle' }
         }
       ],
       selectedRowKeys: ['0'],
@@ -170,9 +168,12 @@ export default {
         this.onSelectRow(this.selectedRowKeys)
       }
     },
-    items (newData, oldData) {
-      this.initDataItem()
-      this.dataItems = this.dataItems.concat(newData)
+    items: {
+      deep: true,
+      handler (newData) {
+        this.initDataItem()
+        this.dataItems = this.dataItems.concat(newData)
+      }
     },
     loading () {
       if (!this.loading) {
@@ -246,17 +247,15 @@ export default {
     },
     onClickRow (record) {
       return {
-        on: {
-          click: () => {
-            const rowSelected = this.items.filter(item => item.id === record.key)
-            if (rowSelected && rowSelected.length > 0) {
-              this.diskSelected = rowSelected[0]
-            }
-            this.selectedRowKeys = [record.key]
-            this.$emit('select-disk-offering-item', record.key)
-            this.$emit('on-selected-disk-size', this.diskSelected)
-            this.$emit('on-selected-root-disk-size', this.diskSelected)
+        onClick: () => {
+          const rowSelected = this.items.filter(item => item.id === record.key)
+          if (rowSelected && rowSelected.length > 0) {
+            this.diskSelected = rowSelected[0]
           }
+          this.selectedRowKeys = [record.key]
+          this.$emit('select-disk-offering-item', record.key)
+          this.$emit('on-selected-disk-size', this.diskSelected)
+          this.$emit('on-selected-root-disk-size', this.diskSelected)
         }
       }
     }
@@ -269,7 +268,7 @@ export default {
     margin: 2rem 0;
   }
 
-  /deep/.ant-table-tbody > tr > td {
+  :deep(.ant-table-tbody) > tr > td {
     cursor: pointer;
   }
 </style>

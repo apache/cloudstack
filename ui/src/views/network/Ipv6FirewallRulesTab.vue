@@ -51,9 +51,9 @@
             :filterOption="(input, option) => {
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
+            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>
@@ -97,19 +97,19 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template slot="traffictype" slot-scope="record">
+      <template #traffictype="{record}">
         {{ record.traffictype }}
       </template>
-      <template slot="protocol" slot-scope="record">
-        {{ getCapitalise(record.protocol) }}
+      <template #protocol="{record}">
+        {{ capitalise(record.protocol) }}
       </template>
-      <template slot="startport" slot-scope="record">
+      <template #startport="{record}">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
       </template>
-      <template slot="endport" slot-scope="record">
+      <template #endport="{record}">
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{record}">
         <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteIpv6FirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
       </template>
     </a-table>
@@ -124,7 +124,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="{props}">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -235,17 +235,11 @@ export default {
   created () {
     this.fetchData()
   },
-  filters: {
-    capitalise: val => {
-      return val.toUpperCase()
-    }
-  },
   watch: {
     resource: function (newItem, oldItem) {
       if (!newItem || !newItem.id) {
         return
       }
-      this.resource = newItem
       this.fetchData()
     }
   },
@@ -312,7 +306,7 @@ export default {
         this.deleteRule(rule)
       }
     },
-    getCapitalise (val) {
+    capitalise (val) {
       if (val === 'all') return this.$t('label.all')
       return val.toUpperCase()
     },

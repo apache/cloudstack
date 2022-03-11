@@ -438,7 +438,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     @Override
     public String getProjectName(long accountId) {
         Account account = _accountDao.findById(accountId);
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             ProjectVO project = _projectDao.findByProjectAccountId(account.getId());
             if (project != null) {
                 return project.getName();
@@ -455,7 +455,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
     private ProjectVO getProject(long accountId) {
         Account account = _accountDao.findById(accountId);
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             return _projectDao.findByProjectAccountId(account.getId());
         }
         return null;

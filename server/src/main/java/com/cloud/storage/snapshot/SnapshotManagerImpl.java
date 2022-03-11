@@ -256,7 +256,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while retry cmd.");
+                s_logger.debug("[ignored] interrupted while retry cmd.");
             }
 
             s_logger.debug("Retrying...");
@@ -908,7 +908,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
             if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
-                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (owner.getType() == Account.Type.PROJECT) {
                     message = "domain/project";
                 }
 

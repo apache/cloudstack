@@ -509,7 +509,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             pool.setUsed(storage.getInfo().allocation);
             pool.setAvailable(storage.getInfo().available);
 
-            s_logger.debug("Succesfully refreshed pool " + uuid +
+            s_logger.debug("Successfully refreshed pool " + uuid +
                            " Capacity: " + toHumanReadableSize(storage.getInfo().capacity) +
                            " Used: " + toHumanReadableSize(storage.getInfo().allocation) +
                            " Available: " + toHumanReadableSize(storage.getInfo().available));
@@ -721,7 +721,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 s.free();
             }
 
-            s_logger.info("Storage pool " + uuid + " was succesfully removed from libvirt.");
+            s_logger.info("Storage pool " + uuid + " was successfully removed from libvirt.");
 
             return true;
         } catch (LibvirtException e) {
@@ -908,7 +908,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 r.confSet("key", pool.getAuthSecret());
                 r.confSet("client_mount_timeout", "30");
                 r.connect();
-                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                 IoCTX io = r.ioCtxCreate(pool.getSourceDir());
                 Rbd rbd = new Rbd(io);
@@ -926,7 +926,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         s_logger.debug("Removing snapshot " + pool.getSourceDir() + "/" + uuid + "@" + snap.name);
                         image.snapRemove(snap.name);
                     }
-                    s_logger.info("Succesfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
+                    s_logger.info("Successfully unprotected and removed any remaining snapshots (" + snaps.size() + ") of "
                         + pool.getSourceDir() + "/" + uuid + " Continuing to remove the RBD image");
                 } catch (RbdException e) {
                     s_logger.error("Failed to remove snapshot with exception: " + e.toString() +
@@ -1105,7 +1105,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     r.confSet("key", srcPool.getAuthSecret());
                     r.confSet("client_mount_timeout", "30");
                     r.connect();
-                    s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                    s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                     IoCTX io = r.ioCtxCreate(srcPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
@@ -1154,7 +1154,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                         }
 
                         rbd.clone(template.getName(), rbdTemplateSnapName, io, disk.getName(), RBD_FEATURES, rbdOrder);
-                        s_logger.debug("Succesfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
+                        s_logger.debug("Successfully cloned " + template.getName() + "@" + rbdTemplateSnapName + " to " + disk.getName());
                         /* We also need to resize the image if the VM was deployed with a larger root disk size */
                         if (disk.getVirtualSize() > template.getVirtualSize()) {
                             RbdImage diskImage = rbd.open(disk.getName());
@@ -1176,14 +1176,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     rSrc.confSet("key", srcPool.getAuthSecret());
                     rSrc.confSet("client_mount_timeout", "30");
                     rSrc.connect();
-                    s_logger.debug("Succesfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
+                    s_logger.debug("Successfully connected to source Ceph cluster at " + rSrc.confGet("mon_host"));
 
                     Rados rDest = new Rados(destPool.getAuthUserName());
                     rDest.confSet("mon_host", destPool.getSourceHost() + ":" + destPool.getSourcePort());
                     rDest.confSet("key", destPool.getAuthSecret());
                     rDest.confSet("client_mount_timeout", "30");
                     rDest.connect();
-                    s_logger.debug("Succesfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
+                    s_logger.debug("Successfully connected to source Ceph cluster at " + rDest.confGet("mon_host"));
 
                     IoCTX sIO = rSrc.ioCtxCreate(srcPool.getSourceDir());
                     Rbd sRbd = new Rbd(sIO);
@@ -1343,7 +1343,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
                 s_logger.debug("Starting copy from source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
                 qemu.convert(srcFile, destFile);
-                s_logger.debug("Succesfully converted source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
+                s_logger.debug("Successfully converted source image " + srcFile.getFileName() + " to RBD image " + rbdDestPath);
 
                 /* We have to stat the RBD image to see how big it became afterwards */
                 Rados r = new Rados(destPool.getAuthUserName());
@@ -1351,7 +1351,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 r.confSet("key", destPool.getAuthSecret());
                 r.confSet("client_mount_timeout", "30");
                 r.connect();
-                s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
+                s_logger.debug("Successfully connected to Ceph cluster at " + r.confGet("mon_host"));
 
                 IoCTX io = r.ioCtxCreate(destPool.getSourceDir());
                 Rbd rbd = new Rbd(io);

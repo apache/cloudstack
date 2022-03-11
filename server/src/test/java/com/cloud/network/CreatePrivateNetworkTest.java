@@ -98,7 +98,7 @@ public class CreatePrivateNetworkTest {
         networkService._networkMgr = _networkMgr;
         networkService._privateIpDao = _privateIpDao;
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         NetworkOfferingVO ntwkOff =

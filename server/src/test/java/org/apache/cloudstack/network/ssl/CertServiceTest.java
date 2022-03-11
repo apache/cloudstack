@@ -62,7 +62,7 @@ public class CertServiceTest {
 
     @Before
     public void setUp() {
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         final UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
     }
@@ -111,7 +111,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -168,7 +168,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -227,7 +227,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -277,7 +277,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -324,7 +324,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -376,7 +376,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -426,7 +426,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -475,7 +475,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -518,7 +518,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -563,7 +563,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -607,7 +607,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -651,7 +651,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -690,7 +690,7 @@ public class CertServiceTest {
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -728,7 +728,7 @@ public class CertServiceTest {
         final long certId = 1;
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);
@@ -777,7 +777,7 @@ public class CertServiceTest {
         final CertServiceImpl certService = new CertServiceImpl();
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        final Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        final Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._domainDao = Mockito.mock(DomainDao.class);

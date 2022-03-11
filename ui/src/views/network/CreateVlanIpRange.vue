@@ -20,120 +20,99 @@
     <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
-          :form="form"
-          @submit="handleSubmit"
-          layout="vertical">
-          <a-form-item v-if="pods && pods.length > 0">
-            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          layout="vertical"
+         >
+          <a-form-item :label="$t('label.podid')" v-if="pods && pods.length > 0" name="podid" ref="podid">
+            <template #label>
+              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            </template>
             <a-select
-              autoFocus
-              v-decorator="['podid', {
-                initialValue: this.pods && this.pods.length > 0 ? this.pods[0].id : '',
-                rules: [{ required: true, message: `${$t('label.required')}` }]
-              }]"
+              v-focus="true"
+              v-model:value="form.podid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+          <a-form-item name="gateway" ref="gateway">
+            <template #label>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="apiParams.gateway.description"/>
+            </template>
             <a-input
-              autoFocus
-              v-decorator="['gateway', {
-                rules: [{ required: true, message: $t('message.error.gateway') }]
-              }]"
+              v-focus="true"
+              v-model:value="form.gateway"
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+          <a-form-item name="netmask" ref="netmask">
+            <template #label>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+            </template>
             <a-input
-              v-decorator="['netmask', {
-                rules: [{ required: true, message: $t('message.error.netmask') }]
-              }]"
+              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-row :gutter="12">
-            <a-col :md="12" lg="12">
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+            <a-col :md="12" :lg="12">
+              <a-form-item name="startip" ref="startip">
+                <template #label>
+                  <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+                </template>
                 <a-input
-                  v-decorator="['startip', {
-                    rules: [
-                      { required: true, message: $t('message.error.startip') },
-                      {
-                        validator: checkIpFormat,
-                        ipV4: true,
-                        message: $t('message.error.ipv4.address')
-                      }
-                    ]
-                  }]"
+                  v-model:value="form.startip"
                   :placeholder="apiParams.startip.description"/>
               </a-form-item>
             </a-col>
             <a-col :md="12" :lg="12">
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+              <a-form-item name="endip" ref="endip">
+                <template #label>
+                  <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+                </template>
                 <a-input
-                  v-decorator="['endip', {
-                    rules: [
-                      { required: true, message: $t('message.error.endip') },
-                      {
-                        validator: checkIpFormat,
-                        ipV4: true,
-                        message: $t('message.error.ipv4.address')
-                      }
-                    ]
-                  }]"
+                  v-model:value="form.endip"
                   :placeholder="apiParams.endip.description"/>
               </a-form-item>
             </a-col>
           </a-row>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+          <a-form-item name="ip6cidr" ref="ip6cidr">
+            <template #label>
+              <tooltip-label :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+            </template>
             <a-input
-              v-decorator="['ip6cidr']"
+              v-model:value="form.ip6cidr"
               :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+          <a-form-item name="ip6gateway" ref="ip6gateway">
+            <template #label>
+              <tooltip-label :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+            </template>
             <a-input
-              v-decorator="['ip6gateway']"
+              v-model:value="form.ip6gateway"
               :placeholder="apiParams.ip6gateway.description"/>
           </a-form-item>
           <a-row :gutter="12">
             <a-col :md="12" :lg="12">
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+              <a-form-item name="startipv6" ref="startipv6">
+                <template #label>
+                  <tooltip-label :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+                </template>
                 <a-input
-                  v-decorator="['startipv6', {
-                    rules: [
-                      {
-                        validator: checkIpFormat,
-                        ipV6: true,
-                        message: $t('message.error.ipv6.address')
-                      }
-                    ]
-                  }]"
+                  v-model:value="form.startipv6"
                   :placeholder="apiParams.startipv6.description"/>
               </a-form-item>
             </a-col>
             <a-col :md="12" :lg="12">
-              <a-form-item>
-                <tooltip-label slot="label" :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+              <a-form-item name="endipv6" ref="endipv6">
+                <template #label>
+                  <tooltip-label :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+                </template>
                 <a-input
-                  v-decorator="['endipv6', {
-                    rules: [
-                      {
-                        validator: checkIpFormat,
-                        ipV6: true,
-                        message: $t('message.error.ipv6.address')
-                      }
-                    ]
-                  }]"
+                  v-model:value="form.endipv6"
                   :placeholder="apiParams.endip.description"/>
               </a-form-item>
             </a-col>
@@ -142,14 +121,14 @@
             <a-button
               :loading="loading"
               @click="closeAction">
-              {{ this.$t('label.cancel') }}
+              {{ $t('label.cancel') }}
             </a-button>
             <a-button
               :loading="loading"
               type="primary"
               ref="submit"
               @click="handleSubmit">
-              {{ this.$t('label.ok') }}
+              {{ $t('label.ok') }}
             </a-button>
           </div>
         </a-form>
@@ -159,6 +138,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -183,11 +163,49 @@ export default {
     }
   },
   created () {
-    this.form = this.$form.createForm(this)
+    this.initForm()
     this.apiParams = this.$getApiParams('createVlanIpRange')
-    this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        podid: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('message.error.gateway') }],
+        netmask: [{ required: true, message: this.$t('message.error.netmask') }],
+        startip: [
+          { required: true, message: this.$t('message.error.startip') },
+          {
+            validator: this.checkIpFormat,
+            ipV4: true,
+            message: this.$t('message.error.ipv4.address')
+          }
+        ],
+        endip: [
+          { required: true, message: this.$t('message.error.endip') },
+          {
+            validator: this.checkIpFormat,
+            ipV4: true,
+            message: this.$t('message.error.ipv4.address')
+          }
+        ],
+        startipv6: [
+          {
+            validator: this.checkIpFormat,
+            ipV6: true,
+            message: this.$t('message.error.ipV6.address')
+          }
+        ],
+        endipv6: [
+          {
+            validator: this.checkIpFormat,
+            ipV6: true,
+            message: this.$t('message.error.ipV6.address')
+          }
+        ]
+      })
+    },
     async fetchData () {
       await this.fetchZone()
       if (this.zone.networktype === 'Basic') {
@@ -214,6 +232,7 @@ export default {
         zoneid: this.resource.zoneid
       }).then(response => {
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
+        this.form.podid = this.pods && this.pods.length > 0 ? this.pods[0].id : ''
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -224,11 +243,8 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.forVirtualNetwork = false
         params.networkid = this.resource.id
@@ -263,20 +279,22 @@ export default {
           }).finally(() => {
             this.loading = false
           })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
       this.$emit('close-action')
     },
-    checkIpFormat (rule, value, callback) {
+    async checkIpFormat (rule, value) {
       if (!value || value === '') {
-        callback()
+        return Promise.resolve()
       } else if (rule.ipV4 && !this.ipV4Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else if (rule.ipV6 && !this.ipV6Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else {
-        callback()
+        return Promise.resolve()
       }
     }
   }

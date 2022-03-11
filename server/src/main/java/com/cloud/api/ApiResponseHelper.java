@@ -1980,7 +1980,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 continue;
             }
 
-            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() != Account.Type.PROJECT) {
                 regularAccounts.add(accountName);
             } else {
                 // convert account to projectIds
@@ -2049,7 +2049,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             Account account = securiytGroupAccounts.get(securityGroup.getAccountId());
 
-            if (securityGroup.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (securityGroup.getAccountType() == Account.Type.PROJECT) {
                 response.setProjectId(securityGroup.getProjectUuid());
                 response.setProjectName(securityGroup.getProjectName());
             } else {
@@ -2671,7 +2671,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateOwner(ControlledEntityResponse response, ControlledEntity object) {
         Account account = ApiDBUtils.findAccountById(object.getAccountId());
 
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             response.setProjectId(project.getUuid());
@@ -2687,7 +2687,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
 
-        if (object.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (object.getAccountType() == Account.Type.PROJECT) {
             response.setProjectId(object.getProjectUuid());
             response.setProjectName(object.getProjectName());
         } else {
@@ -2702,7 +2702,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountById(accountId);
         if (account == null) {
             s_logger.debug("Unable to find account with id: " + accountId);
-        } else if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        } else if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             if (project != null) {
@@ -3564,7 +3564,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat) {
         UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             //find the project
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
             if (project != null) {

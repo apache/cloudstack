@@ -15,33 +15,44 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-
 const ENTER_KEY_CODE = 13
 let lastFocusElm = null
 
-Vue.directive('ctrlEnter', {
-  bind: (el, binding, vnode) => {
-    el.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.keyCode === ENTER_KEY_CODE) {
-        e.preventDefault()
-        lastFocusElm = e.target
-        vnode.context.$refs.submit.$el.focus()
+export default {
+  install: (app) => {
+    app.directive('ctrlEnter', {
+      mounted: (el, binding, vnode) => {
+        el.addEventListener('keydown', (e) => {
+          if (e.ctrlKey && e.keyCode === ENTER_KEY_CODE) {
+            e.preventDefault()
+            lastFocusElm = e.target
+            const vm = binding.instance
+            vm.$refs.submit.$el.focus()
+          }
+        })
+
+        el.addEventListener('keyup', (e) => {
+          if (!e.ctrlKey || e.keyCode !== ENTER_KEY_CODE) {
+            e.preventDefault()
+            return
+          }
+
+          e.preventDefault()
+          if (typeof binding.value === 'function') {
+            if (lastFocusElm) lastFocusElm.focus()
+            const argument = binding.arg || e
+            binding.value(argument)
+          }
+        })
       }
     })
 
-    el.addEventListener('keyup', (e) => {
-      if (!e.ctrlKey || e.keyCode !== ENTER_KEY_CODE) {
-        e.preventDefault()
-        return
-      }
-
-      e.preventDefault()
-      if (typeof binding.value === 'function') {
-        if (lastFocusElm) lastFocusElm.focus()
-        const argument = binding.arg || e
-        binding.value(argument)
+    app.directive('focus', {
+      mounted: (el, binding, vnode) => {
+        if (binding.value) {
+          el.focus()
+        }
       }
     })
   }
-})
+}

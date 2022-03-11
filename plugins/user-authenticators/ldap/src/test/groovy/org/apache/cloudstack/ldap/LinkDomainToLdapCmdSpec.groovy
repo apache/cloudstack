@@ -143,7 +143,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         _accountService.getActiveAccountByName(username, domainId) >> null
         UserAccount userAccount = Mock(UserAccount)
         userAccount.getAccountId() >> 24
-        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.Type.DOMAIN_ADMIN, domainId,
                 username, null, _, _, User.Source.LDAP) >> userAccount
 
         linkDomainToLdapCmd.admin = username
@@ -209,7 +209,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         _accountService.getActiveAccountByName(username, domainId) >> null
         UserAccount userAccount = Mock(UserAccount)
         userAccount.getAccountId() >> 24
-        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
+        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.Type.DOMAIN_ADMIN, domainId,
                 username, null, _, _, User.Source.LDAP) >> { throw new RuntimeException("created failed from mock") }
 
         linkDomainToLdapCmd.admin = username

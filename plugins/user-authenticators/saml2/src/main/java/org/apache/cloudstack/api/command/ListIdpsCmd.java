@@ -62,7 +62,7 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override
