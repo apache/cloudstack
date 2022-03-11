@@ -19,31 +19,35 @@
   <a-spin :spinning="loading">
     <a-form
       class="form"
-      :form="form"
-      @submit="handleSubmit"
+      layout="vertical"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
       v-ctrl-enter="handleSubmit"
-      layout="vertical">
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+     >
+      <a-form-item ref="name" name="name">
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
-          v-decorator="['name', {
-            rules: [{ required: true, message: $t('message.error.volume.name') }]
-          }]"
-          :placeholder="$t('label.volumename')"
-          autoFocus />
+          v-focus="true"
+          v-model:value="form.name"
+          :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+      <a-form-item ref="zoneid" name="zoneid">
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
         <a-select
-          v-decorator="['zoneid', {
-            initialValue: selectedZoneId,
-            rules: [{ required: true, message: $t('message.error.zone') }] }]"
+          v-model:value="form.zoneid"
           :loading="loading"
           @change="zone => fetchDiskOfferings(zone)"
+          :placeholder="apiParams.zoneid.description"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(zone, index) in zones"
@@ -52,24 +56,25 @@
             :label="zone.name">
             <span>
               <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="global" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
               {{ zone.name }}
             </span>
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+      <a-form-item ref="diskofferingid" name="diskofferingid">
+        <template #label>
+          <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+        </template>
         <a-select
-          v-decorator="['diskofferingid', {
-            initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: $t('message.error.select') }]}]"
+          v-model:value="form.diskofferingid"
           :loading="loading"
           @change="id => onChangeDiskOffering(id)"
+          :placeholder="apiParams.diskofferingid.description || $t('label.diskofferingid')"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="(offering, index) in offerings"
@@ -80,54 +85,31 @@
         </a-select>
       </a-form-item>
       <span v-if="customDiskOffering">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+        <a-form-item ref="size" name="size">
+          <template #label>
+            <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+          </template>
           <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
-            :placeholder="$t('label.disksize')"/>
+            v-model:value="form.size"
+            :placeholder="apiParams.size.description"/>
         </a-form-item>
       </span>
       <span v-if="isCustomizedDiskIOps">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.miniops') }}
-            <a-tooltip :title="apiParams.miniops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item ref="miniops" name="miniops">
+          <template #label>
+            <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
+          </template>
           <a-input
-            v-decorator="['miniops', {
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
-            :placeholder="this.$t('label.miniops')"/>
+            v-model:value="form.miniops"
+            :placeholder="apiParams.miniops.description"/>
         </a-form-item>
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.maxiops') }}
-            <a-tooltip :title="apiParams.maxiops.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item ref="maxiops" name="maxiops">
+          <template #label>
+            <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
+          </template>
           <a-input
-            v-decorator="['maxiops', {
-              rules: [{
-                validator: (rule, value, callback) => {
-                  if (value && (isNaN(value) || value <= 0)) {
-                    callback(this.$t('message.error.number'))
-                  }
-                  callback()
-                }
-              }]
-            }]"
-            :placeholder="this.$t('label.maxiops')"/>
+            v-model:value="form.maxiops"
+            :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
       <div :span="24" class="action-button">
@@ -139,6 +121,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -153,27 +136,51 @@ export default {
     return {
       zones: [],
       offerings: [],
-      selectedZoneId: '',
-      selectedDiskOfferingId: '',
       customDiskOffering: false,
       loading: false,
       isCustomizedDiskIOps: false
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createVolume')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.volume.name') }],
+        zoneid: [{ required: true, message: this.$t('message.error.zone') }],
+        diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
+        miniops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }],
+        maxiops: [{
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listZones', { showicon: true }).then(json => {
         this.zones = json.listzonesresponse.zone || []
-        this.selectedZoneId = this.zones[0].id || ''
-        this.fetchDiskOfferings(this.selectedZoneId)
+        this.form.zoneid = this.zones[0].id || ''
+        this.fetchDiskOfferings(this.form.zoneid)
       }).finally(() => {
         this.loading = false
       })
@@ -185,7 +192,7 @@ export default {
         listall: true
       }).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.selectedDiskOfferingId = this.offerings[0].id || ''
+        this.form.diskofferingid = this.offerings[0].id || ''
         this.customDiskOffering = this.offerings[0].iscustomized || false
         this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
       }).finally(() => {
@@ -194,10 +201,8 @@ export default {
     },
     handleSubmit (e) {
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         api('createVolume', values).then(response => {
           this.$pollJob({
@@ -215,6 +220,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeModal () {

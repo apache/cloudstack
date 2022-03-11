@@ -134,13 +134,13 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
             final User user = _userDao.findByUuid(userUuid);
             final Domain domain = _domainDao.findByUuid(domainUuid);
             final UserAccount nextUserAccount = _accountService.getUserAccountById(user.getId());
-            if (nextUserAccount != null && !nextUserAccount.getAccountState().equals(Account.State.enabled.toString())) {
+            if (nextUserAccount != null && !nextUserAccount.getAccountState().equals(Account.State.ENABLED.toString())) {
                 throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.PARAM_ERROR.getHttpCode(),
                         "The requested user account is locked and cannot be switched to, please contact your administrator.",
                         params, responseType));
             }
             if (nextUserAccount == null
-                    || !nextUserAccount.getAccountState().equals(Account.State.enabled.toString())
+                    || !nextUserAccount.getAccountState().equals(Account.State.ENABLED.toString())
                     || !nextUserAccount.getUsername().equals(currentUserAccount.getUsername())
                     || !nextUserAccount.getExternalEntity().equals(currentUserAccount.getExternalEntity())
                     || (nextUserAccount.getDomainId() != domain.getId())

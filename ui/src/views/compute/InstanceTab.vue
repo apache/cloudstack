@@ -23,12 +23,12 @@
       :animated="false"
       @change="handleChangeTab">
       <a-tab-pane :tab="$t('label.details')" key="details">
-        <DetailsTab :resource="resource" :loading="loading" />
+        <DetailsTab :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.iso')" key="cdrom" v-if="vm.isoid">
-        <a-icon type="usb" />
+        <usb-outlined />
         <router-link :to="{ path: '/iso/' + vm.isoid }">{{ vm.isoname }}</router-link> <br/>
-        <a-icon type="barcode"/> {{ vm.isoid }}
+        <barcode-outlined /> {{ vm.isoid }}
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.volumes')" key="volumes" v-if="'listVolumes' in $store.getters.apis">
         <a-table
@@ -39,20 +39,20 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, item">
-            <a-icon type="hdd" />
-            <router-link :to="{ path: '/volume/' + item.id }">
+          <template #name="{ text, record }">
+            <hdd-outlined />
+            <router-link :to="{ path: '/volume/' + record.id }">
               {{ text }}
             </router-link>
-            <a-tag v-if="item.provisioningtype">
-              {{ item.provisioningtype }}
+            <a-tag v-if="record.provisioningtype">
+              {{ record.provisioningtype }}
             </a-tag>
           </template>
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" />{{ text }}
           </template>
-          <template slot="size" slot-scope="text, item">
-            {{ parseFloat(item.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+          <template #size="{ record }">
+            {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
           </template>
         </a-table>
       </a-tab-pane>
@@ -63,10 +63,10 @@
           @click="showAddModal"
           :loading="loadingNic"
           :disabled="!('addNicToVirtualMachine' in $store.getters.apis)">
-          <a-icon type="plus"></a-icon> {{ $t('label.network.addvm') }}
+          <template #icon><plus-outlined /></template> {{ $t('label.network.addvm') }}
         </a-button>
         <NicsTable :resource="vm" :loading="loading">
-          <span slot="actions" slot-scope="record">
+          <template #actions="record">
             <a-popconfirm
               :title="$t('label.set.default.nic')"
               @confirm="setAsDefault(record.nic)"
@@ -78,34 +78,34 @@
                 tooltipPlacement="bottom"
                 :tooltip="$t('label.set.default.nic')"
                 :disabled="!('updateDefaultNicForVirtualMachine' in $store.getters.apis)"
-                icon="check-square" />
+                icon="check-square-outlined" />
             </a-popconfirm>
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
               :tooltip="$t('label.change.ip.addess')"
-              icon="swap"
+              icon="swap-outlined"
               :disabled="!('updateVmNicIp' in $store.getters.apis)"
-              @click="onChangeIPAddress(record)" />
+              @onClick="onChangeIPAddress(record)" />
             <tooltip-button
               v-if="record.nic.type !== 'L2'"
               tooltipPlacement="bottom"
               :tooltip="$t('label.edit.secondary.ips')"
-              icon="environment"
+              icon="environment-outlined"
               :disabled="(!('addIpToNic' in $store.getters.apis) && !('addIpToNic' in $store.getters.apis))"
-              @click="onAcquireSecondaryIPAddress(record)" />
+              @onClick="onAcquireSecondaryIPAddress(record)" />
             <tooltip-button
-              v-if="('addTungstenFabricRouteTableToInterface' in $store.getters.apis)"
+              v-if="('addTungstenFabricRouteTableToInterface' in $store.getters.apis) && checkTungstenZone(record.nic)"
               tooltipPlacement="bottom"
               :tooltip="$t('label.add.router.table.to.instance')"
-              icon="plus"
-              @click="onShowAddRouterTable(record.nic)" />
+              icon="plus-outlined"
+              @onClick="onShowRouterTable(record.nic, 'ADD')" />
             <tooltip-button
-              v-if="('removeTungstenFabricRouteTableFromInterface' in $store.getters.apis)"
+              v-if="('removeTungstenFabricRouteTableFromInterface' in $store.getters.apis) && checkTungstenZone(record.nic)"
               tooltipPlacement="bottom"
               :tooltip="$t('label.action.remove.router.table.from.interface')"
-              icon="close"
-              @click="onShowRemoveRouterTable(record.nic)" />
+              icon="close-outlined"
+              @onClick="onShowRouterTable(record.nic, 'DEL')" />
             <a-popconfirm
               :title="$t('message.network.removenic')"
               @confirm="removeNIC(record.nic)"
@@ -117,17 +117,18 @@
                 tooltipPlacement="bottom"
                 :tooltip="$t('label.action.delete.nic')"
                 :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
-                type="danger"
-                icon="delete" />
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
             </a-popconfirm>
-          </span>
+          </template>
         </NicsTable>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.vm.snapshots')" key="vmsnapshots" v-if="'listVMSnapshot' in $store.getters.apis">
         <ListResourceTable
           apiName="listVMSnapshot"
-          :resource="resource"
-          :params="{virtualmachineid: this.resource.id}"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
           :columns="['displayname', 'state', 'type', 'created']"
           :routerlinks="(record) => { return { displayname: '/vmsnapshot/' + record.id } }"/>
       </a-tab-pane>
@@ -135,20 +136,20 @@
         <ListResourceTable
           apiName="listBackups"
           :resource="resource"
-          :params="{virtualmachineid: this.resource.id}"
+          :params="{virtualmachineid: dataResource.id}"
           :columns="['id', 'status', 'type', 'created']"
           :routerlinks="(record) => { return { id: '/backup/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="this.resource.securitygroup && this.resource.securitygroup.length > 0">
+      <a-tab-pane :tab="$t('label.securitygroups')" key="securitygroups" v-if="dataResource.securitygroup && dataResource.securitygroup.length > 0">
         <ListResourceTable
-          :items="this.resource.securitygroup"
+          :items="dataResource.securitygroup"
           :columns="['name', 'description']"
           :routerlinks="(record) => { return { name: '/securitygroups/' + record.id } }"
           :showSearch="false"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.settings')" key="settings">
-        <DetailSettings :resource="resource" :loading="loading" />
+        <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -164,20 +165,19 @@
       :maskClosable="false"
       :closable="true"
       :footer="null"
-      @cancel="closeModals"
-      v-ctrl-enter="submitAddNetwork">
+      @cancel="closeModals">
       {{ $t('message.network.addvm.desc') }}
-      <a-form @submit="submitAddNetwork">
+      <a-form @finish="submitAddNetwork" v-ctrl-enter="submitAddNetwork">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.network') }}:</p>
           <a-select
             :value="addNetworkData.network"
             @change="e => addNetworkData.network = e"
-            autoFocus
+            v-focus="true"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="network in addNetworkData.allNetworks"
@@ -186,13 +186,13 @@
               :label="network.name">
               <span>
                 <resource-icon v-if="network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="apartment" style="margin-right: 5px" />
+                <apartment-outlined v-else style="margin-right: 5px" />
                 {{ network.name }}
               </span>
             </a-select-option>
           </a-select>
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-          <a-input v-model="addNetworkData.ip"></a-input>
+          <a-input v-model:value="addNetworkData.ip"></a-input>
         </div>
 
         <div :span="24" class="action-button">
@@ -209,31 +209,30 @@
       :closable="true"
       :footer="null"
       @cancel="closeModals"
-      v-ctrl-enter="submitUpdateIP"
     >
       {{ $t('message.network.updateip') }}
 
-      <a-form @submit="submitUpdateIP">
+      <a-form @finish="submitUpdateIP" v-ctrl-enter="submitUpdateIP">
         <div class="modal-form">
           <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
           <a-select
             v-if="editNicResource.type==='Shared'"
-            v-model="editIpAddressValue"
+            v-model:value="editIpAddressValue"
             :loading="listIps.loading"
-            :autoFocus="editNicResource.type==='Shared'"
+            v-focus="editNicResource.type==='Shared'"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
               {{ ip.ipaddress }}
             </a-select-option>
           </a-select>
           <a-input
             v-else
-            v-model="editIpAddressValue"
-            :autoFocus="editNicResource.type!=='Shared'"></a-input>
+            v-model:value="editIpAddressValue"
+            v-focus="editNicResource.type!=='Shared'"></a-input>
         </div>
 
         <div :span="24" class="action-button">
@@ -251,38 +250,39 @@
       :closable="false"
       class="wide-modal"
       @cancel="closeModals"
-      v-ctrl-enter="submitSecondaryIP"
     >
       <p>
         {{ $t('message.network.secondaryip') }}
       </p>
       <a-divider />
-      <div class="modal-form">
-        <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
-        <a-select
-          v-if="editNicResource.type==='Shared'"
-          v-model="newSecondaryIp"
-          :loading="listIps.loading"
-          :autoFocus="editNicResource.type==='Shared'"
-          showSearch
-          optionFilterProp="children"
-          :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
-            {{ ip.ipaddress }}
-          </a-select-option>
-        </a-select>
-        <a-input
-          v-else
-          :placeholder="$t('label.new.secondaryip.description')"
-          v-model="newSecondaryIp"
-          :autoFocus="editNicResource.type!=='Shared'"></a-input>
-      </div>
+      <div v-ctrl-enter="submitSecondaryIP">
+        <div class="modal-form">
+          <p class="modal-form__label">{{ $t('label.publicip') }}:</p>
+          <a-select
+            v-if="editNicResource.type==='Shared'"
+            v-model:value="newSecondaryIp"
+            :loading="listIps.loading"
+            v-focus="editNicResource.type==='Shared'"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option v-for="ip in listIps.opts" :key="ip.ipaddress">
+              {{ ip.ipaddress }}
+            </a-select-option>
+          </a-select>
+          <a-input
+            v-else
+            :placeholder="$t('label.new.secondaryip.description')"
+            v-model:value="newSecondaryIp"
+            v-focus="editNicResource.type!=='Shared'"></a-input>
+        </div>
 
-      <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
-        <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
-        <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
+        <div style="margin-top: 10px; display: flex; justify-content:flex-end;">
+          <a-button @click="submitSecondaryIP" ref="submit" type="primary" style="margin-right: 10px;">{{ $t('label.add.secondary.ip') }}</a-button>
+          <a-button @click="closeModals">{{ $t('label.close') }}</a-button>
+        </div>
       </div>
 
       <a-divider />
@@ -297,8 +297,9 @@
             <tooltip-button
               tooltipPlacement="top"
               :tooltip="$t('label.action.release.ip')"
-              type="danger"
-              icon="delete" />
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
             {{ ip.ipaddress }}
           </a-popconfirm>
         </a-list-item>
@@ -306,29 +307,31 @@
     </a-modal>
 
     <a-modal
-      :visible="showAddRouterTable"
-      :title="$t('label.add.router.table.to.instance')"
+      :visible="showRouterTable"
+      :title="routerTableTitle"
       :maskClosable="false"
       :footer="null"
       :closable="false"
       class="wide-modal"
       @cancel="closeModals"
-      v-ctrl-enter="submitAddRouterTable"
     >
-      <a-alert type="warning" :message="$t('message.confirm.add.router.table.to.instance')"></a-alert>
+      <a-alert v-if="routerTableType === 'ADD'" type="warning" :message="$t('message.confirm.add.router.table.to.instance')"></a-alert>
+      <a-alert v-else type="warning" :message="$t('message.confirm.remove.router.table.to.instance')"></a-alert>
 
-      <a-form :form="formRouterTable" layout="vertical">
-        <a-form-item :label="$t('label.interface.router.table')">
+      <a-form
+        :ref="routerTableRef"
+        :model="formRouterTable"
+        :rules="routerTableRules"
+        layout="vertical"
+        v-ctrl-enter="submitRouterTable">
+        <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.interface.router.table')">
           <a-select
-            v-decorator="['tungstenRouteTable', {
-              initialValue: routerTableSelected,
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            autoFocus
+            v-model:value="formRouterTable.tungstenRouteTable"
+            v-focus="true"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="routerTables.loading">
             <a-select-option v-for="router in routerTables.opts" :key="router.uuid">{{ router.name }}</a-select-option>
@@ -337,44 +340,7 @@
 
         <div :span="24" class="action-button">
           <a-button :loading="routerTableLoading" @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button :loadin="routerTableLoading" type="primary" ref="submit" @click="submitAddRouterTable">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-modal>
-
-    <a-modal
-      :visible="showRemoveRouterTable"
-      :title="$t('label.action.remove.router.table.from.interface')"
-      :maskClosable="false"
-      :footer="null"
-      :closable="false"
-      class="wide-modal"
-      @cancel="closeModals"
-      v-ctrl-enter="submitRemoveRouterTable"
-    >
-      <a-alert type="warning" :message="$t('message.confirm.add.router.table.to.instance')"></a-alert>
-
-      <a-form :form="formRouterTable" layout="vertical">
-        <a-form-item :label="$t('label.interface.router.table')">
-          <a-select
-            v-decorator="['tungstenRouteTable', {
-              initialValue: routerTableSelected,
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            autoFocus
-            showSearch
-            optionFilterProp="children"
-            :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="routerTables.loading">
-            <a-select-option v-for="router in routerTables.opts" :key="router.uuid">{{ router.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
-
-        <div :span="24" class="action-button">
-          <a-button :loading="routerTableLoading" @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button :loadin="routerTableLoading" type="primary" ref="submit" @click="submitRemoveRouterTable">{{ $t('label.ok') }}</a-button>
+          <a-button :loading="routerTableLoading" type="primary" ref="submit" @click="submitRouterTable">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-modal>
@@ -383,7 +349,7 @@
 </template>
 
 <script>
-
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
@@ -446,12 +412,12 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state',
-          scopedSlots: { customRender: 'state' }
+          slots: { customRender: 'state' }
         },
         {
           title: this.$t('label.type'),
@@ -460,7 +426,7 @@ export default {
         {
           title: this.$t('label.size'),
           dataIndex: 'size',
-          scopedSlots: { customRender: 'size' }
+          slots: { customRender: 'size' }
         }
       ],
       editNicResource: {},
@@ -469,29 +435,40 @@ export default {
         opts: []
       },
       annotations: [],
-      showAddRouterTable: false,
-      showRemoveRouterTable: false,
-      formRouterTable: this.$form.createForm(this),
-      routerTableSelected: null,
+      dataResource: {},
+      showRouterTable: false,
       routerTableParams: {},
       routerTables: {
         loading: false,
         opts: []
       },
-      routerTableLoading: false
+      routerTableLoading: false,
+      routerTableType: '',
+      routerTableTitle: ''
     }
   },
   created () {
-    this.vm = this.resource
+    const self = this
+    this.dataResource = this.resource
+    this.vm = this.dataResource
+    this.initForm()
     this.fetchData()
-    console.log(this.resource)
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.vm = newItem
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        if (newData !== oldData) {
+          this.dataResource = newData
+          this.vm = this.dataResource
+          this.fetchData()
+        }
+      }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },
@@ -499,6 +476,16 @@ export default {
     this.setCurrentTab()
   },
   methods: {
+    initForm () {
+      this.routerTableRef = ref()
+      this.formRouterTable = reactive({})
+      this.routerTableRules = reactive({
+        tungstenRouteTable: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
+    checkTungstenZone (record) {
+      return record?.isolationuri === 'tf://tf' && record?.type !== 'Shared'
+    },
     setCurrentTab () {
       this.currentTab = this.$route.query.tab ? this.$route.query.tab : 'details'
     },
@@ -506,7 +493,7 @@ export default {
       this.currentTab = e
       const query = Object.assign({}, this.$route.query)
       query.tab = e
-      history.replaceState(
+      history.pushState(
         {},
         null,
         '#' + this.$route.path + '?' + Object.keys(query).map(key => {
@@ -527,9 +514,9 @@ export default {
         if (this.volumes) {
           this.volumes.sort((a, b) => { return a.deviceid - b.deviceid })
         }
-        this.$set(this.resource, 'volumes', this.volumes)
+        this.dataResource.volumes = this.volumes
       })
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
+      api('listAnnotations', { entityid: this.dataResource.id, entitytype: 'VM', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -591,14 +578,12 @@ export default {
       this.showAddNetworkModal = false
       this.showUpdateIpModal = false
       this.showSecondaryIpModal = false
-      this.showAddRouterTable = false
-      this.showRemoveRouterTable = false
+      this.showRouterTable = false
       this.addNetworkData.network = ''
       this.addNetworkData.ip = ''
       this.editIpAddressValue = ''
       this.newSecondaryIp = ''
       this.routerTableParams = {}
-      this.routerTableSelected = null
     },
     onChangeIPAddress (record) {
       this.editNicResource = record.nic
@@ -820,46 +805,42 @@ export default {
         this.fetchSecondaryIPs(this.selectedNicId)
       })
     },
-    onShowAddRouterTable (record) {
-      this.showAddRouterTable = true
+    onShowRouterTable (record, type) {
+      this.showRouterTable = true
       this.routerTableParams.tungstenvminterfaceuuid = record.id
       this.routerTables.loading = true
       this.routerTables.opts = []
+      this.routerTableType = type
+      if (this.routerTableType === 'DEL') {
+        this.routerTableTitle = this.$t('label.action.remove.router.table.from.interface')
+      } else {
+        this.routerTableTitle = this.$t('label.add.router.table.to.instance')
+      }
 
       const params = {}
-      params.zoneid = this.resource.zoneid
+      params.zoneid = this.dataResource.zoneid
       params.tungstenvminterfaceuuid = record.id
-      params.isattachedtointerface = false
+      params.isattachedtointerface = type === 'DEL'
       api('listTungstenFabricInterfaceRouteTable', params).then(json => {
         this.routerTables.opts = json?.listtungstenfabricinterfaceroutetableresponse?.interfaceroutetable || []
-        this.routerTableSelected = this.routerTables.opts[0]?.uuid || null
+        this.formRouterTable.tungstenRouteTable = this.routerTables.opts[0]?.uuid || null
       }).finally(() => {
         this.routerTables.loading = false
       })
     },
-    onShowRemoveRouterTable (record) {
-      this.showRemoveRouterTable = true
-      this.routerTableParams.tungstenvminterfaceuuid = record.id
-      this.routerTables.loading = true
-      this.routerTables.opts = []
-
-      const params = {}
-      params.zoneid = this.resource.zoneid
-      params.tungstenvminterfaceuuid = record.id
-      params.isattachedtointerface = true
-      api('listTungstenFabricInterfaceRouteTable', params).then(json => {
-        this.routerTables.opts = json?.listtungstenfabricinterfaceroutetableresponse?.interfaceroutetable || []
-        this.routerTableSelected = this.routerTables.opts[0]?.uuid || null
-      }).finally(() => {
-        this.routerTables.loading = false
-      })
+    submitRouterTable () {
+      if (this.routerTableType === 'DEL') {
+        this.removeRouterTable()
+      } else {
+        this.addRouterTable()
+      }
     },
-    submitAddRouterTable () {
+    addRouterTable () {
       if (this.routerTableLoading) return
-      this.formRouterTable.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.routerTableRef.value.validate(() => {
+        const values = toRaw(this.formRouterTable)
 
-        this.routerTableParams.zoneid = this.resource.zoneid
+        this.routerTableParams.zoneid = this.dataResource.zoneid
         this.routerTableParams.tungsteninterfaceroutetableuuid = values.tungstenRouteTable
         this.routerTableLoading = true
 
@@ -889,14 +870,16 @@ export default {
           this.closeModals()
           this.routerTableLoading = false
         })
+      }).catch((error) => {
+        this.routerTableRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    submitRemoveRouterTable () {
+    removeRouterTable () {
       if (this.routerTableLoading) return
-      this.formRouterTable.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.routerTableRef.value.validate(() => {
+        const values = toRaw(this.formRouterTable)
 
-        this.routerTableParams.zoneid = this.resource.zoneid
+        this.routerTableParams.zoneid = this.dataResource.zoneid
         this.routerTableParams.tungsteninterfaceroutetableuuid = values.tungstenRouteTable
         this.routerTableLoading = true
 
@@ -926,6 +909,8 @@ export default {
           this.closeModals()
           this.routerTableLoading = false
         })
+      }).catch((error) => {
+        this.routerTableRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }
@@ -1008,6 +993,7 @@ export default {
   .ant-tag {
     padding: 4px 10px;
     height: auto;
+    margin-left: 5px;
   }
 
   .title {
@@ -1058,7 +1044,7 @@ export default {
   min-width: 50vw;
 }
 
-/deep/ .ant-list-item {
+:deep(.ant-list-item) {
   padding-top: 12px;
   padding-bottom: 12px;
 }

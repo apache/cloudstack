@@ -20,20 +20,33 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.user.Account;
 import com.google.common.base.Enums;
+import org.apache.log4j.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
 
 // Enum for default roles in CloudStack
 public enum RoleType {
-    Admin(1L, Account.ACCOUNT_TYPE_ADMIN, 1),
-    ResourceAdmin(2L, Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN, 2),
-    DomainAdmin(3L, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, 4),
-    User(4L, Account.ACCOUNT_TYPE_NORMAL, 8),
-    Unknown(-1L, (short) -1, 0);
+    Admin(1L, Account.Type.ADMIN, 1),
+    ResourceAdmin(2L, Account.Type.RESOURCE_DOMAIN_ADMIN, 2),
+    DomainAdmin(3L, Account.Type.DOMAIN_ADMIN, 4),
+    User(4L, Account.Type.NORMAL, 8),
+    Unknown(-1L,  Account.Type.UNKNOWN, 0);
 
     private long id;
-    private short accountType;
+    private Account.Type accountType;
     private int mask;
 
-    RoleType(final long id, final short accountType, final int mask) {
+    private static Logger logger = Logger.getLogger(RoleType.class.getName());
+    private static Map<Account.Type, RoleType> ACCOUNT_TYPE_MAP = new HashMap<>();
+
+    static {
+        for (RoleType t: RoleType.values()) {
+            ACCOUNT_TYPE_MAP.put(t.getAccountType(),t);
+        }
+    }
+
+    RoleType(final long id, final Account.Type accountType, final int mask) {
         this.id = id;
         this.accountType = accountType;
         this.mask = mask;
@@ -43,7 +56,7 @@ public enum RoleType {
         return id;
     }
 
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -68,26 +81,15 @@ public enum RoleType {
         return Unknown;
     }
 
-    public static RoleType getByAccountType(final short accountType) {
-        RoleType roleType = RoleType.Unknown;
-        switch (accountType) {
-            case Account.ACCOUNT_TYPE_ADMIN:
-                roleType = RoleType.Admin;
-                break;
-            case Account.ACCOUNT_TYPE_DOMAIN_ADMIN:
-                roleType = RoleType.DomainAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN:
-                roleType = RoleType.ResourceAdmin;
-                break;
-            case Account.ACCOUNT_TYPE_NORMAL:
-                roleType = RoleType.User;
-                break;
+    public static RoleType getByAccountType(final Account.Type accountType) {
+        RoleType t = ACCOUNT_TYPE_MAP.get(accountType);
+        if (t == null) {
+            return RoleType.Unknown;
         }
-        return roleType;
+        return t;
     }
 
-    public static Long getRoleByAccountType(final Long roleId, final Short accountType) {
+    public static Long getRoleByAccountType(final Long roleId, final Account.Type accountType) {
         if (roleId == null && accountType != null) {
             RoleType defaultRoleType = RoleType.getByAccountType(accountType);
             if (defaultRoleType != null && defaultRoleType != RoleType.Unknown) {
@@ -97,10 +99,15 @@ public enum RoleType {
         return roleId;
     }
 
-    public static Short getAccountTypeByRole(final Role role, final Short accountType) {
-        if (role != null && role.getId() > 0L) {
+    /**
+     * This method returns the role account type if the role isn't null, else it returns the default account type.
+     * */
+    public static Account.Type getAccountTypeByRole(final Role role, final Account.Type defautAccountType) {
+        if (role != null) {
+            logger.debug(String.format("Role [%s] is not null; therefore, we use its account type [%s].", role, defautAccountType));
             return role.getRoleType().getAccountType();
         }
-        return accountType;
+        logger.debug(String.format("Role is null; therefore, we use the default account type [%s] value.", defautAccountType));
+        return defautAccountType;
     }
 }

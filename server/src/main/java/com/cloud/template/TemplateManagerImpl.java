@@ -1482,7 +1482,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
 
-        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (owner.getType() == Account.Type.PROJECT) {
             // Currently project owned templates cannot be shared outside project but is available to all users within project by default.
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName() +
                     ". Project owned templates cannot be shared outside template.");

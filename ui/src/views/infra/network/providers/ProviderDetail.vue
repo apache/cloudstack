@@ -18,19 +18,21 @@
 <template>
   <div>
     <a-list size="small" :dataSource="details">
-      <a-list-item slot="renderItem" slot-scope="item">
-        <div>
-          <strong>{{ $t(`label.${item}`) }}</strong>
-          <br />
-          <div v-if="item === 'servicelist'">
-            {{ nsp[item] ? nsp[item].join(', ') : '' }}
+      <template #renderItem="{item}">
+        <a-list-item>
+          <div>
+            <strong>{{ $t(`label.${item}`) }}</strong>
+            <br />
+            <div v-if="item === 'servicelist'">
+              {{ nsp[item] ? nsp[item].join(', ') : '' }}
+            </div>
+            <span v-else-if="item !== 'state'">{{ nsp[item] ? nsp[item] : '' }}</span>
+            <span v-else>
+              <status :text="nsp[item] ? nsp[item] : 'Disabled'" displayText />
+            </span>
           </div>
-          <span v-else-if="item !== 'state'">{{ nsp[item] ? nsp[item] : '' }}</span>
-          <span v-else>
-            <status :text="nsp[item] ? nsp[item] : 'Disabled'" displayText />
-          </span>
-        </div>
-      </a-list-item>
+        </a-list-item>
+      </template>
     </a-list>
   </div>
 </template>

@@ -851,7 +851,7 @@ class TestResizeVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during"
                             " VM deployment with new"
-                            "  rootdisk paramter : %s" % e)
+                            "  rootdisk parameter : %s" % e)
 
 
     @attr(tags=["advanced"], required_hardware="true")

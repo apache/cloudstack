@@ -103,8 +103,11 @@ export default {
   },
   inject: ['provideSetNsp', 'provideExecuteAction'],
   watch: {
-    nsp () {
-      this.fetchData()
+    nsp: {
+      deep: true,
+      handler () {
+        this.fetchData()
+      }
     }
   },
   created () {
@@ -124,7 +127,7 @@ export default {
         }
       } else {
         this.resource = this.nsp
-        this.$set(this.resource, 'zoneid', this.zoneId)
+        this.resource.zoneid = this.zoneId
       }
       if (this.itemNsp && Object.keys(this.itemNsp).length > 0) {
         this.provider = this.itemNsp
@@ -163,7 +166,7 @@ export default {
             dataIndex: col,
             width: 80,
             fixed: 'right',
-            scopedSlots: { customRender: col }
+            slots: { customRender: col }
           }
         }
         const width = 100 / (length) + '%'
@@ -171,7 +174,7 @@ export default {
           title: this.$t('label.' + col),
           width: width,
           dataIndex: col,
-          scopedSlots: { customRender: col }
+          slots: { customRender: col }
         }
       })
 
@@ -195,7 +198,6 @@ export default {
           description: (error.response?.headers?.['x-description']) || error.message
         })
       }
-      this.$forceUpdate()
     },
     executeApi (apiName, params) {
       return new Promise((resolve, reject) => {

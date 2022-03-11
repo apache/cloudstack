@@ -940,7 +940,7 @@ class TestTemplates(cloudstackTestCase):
         # 2. Perform snapshot on the root disk of this VM.
         # 3. Create a template from snapshot.
         # 4. Delete the template and create a new template with same name
-        # 5. Template should be created succesfully
+        # 5. Template should be created successfully
 
         # Create a snapshot from the ROOTDISK
         if self.hypervisor.lower() in ['hyperv']:

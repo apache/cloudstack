@@ -16,15 +16,16 @@
 // under the License.
 
 <template>
-  <a-icon v-if="loadingTable" type="loading" class="main-loading-spinner"></a-icon>
+  <loading-outlined v-if="loadingTable" class="main-loading-spinner" />
   <div v-else>
     <div style="width: 100%; display: flex; margin-bottom: 10px">
-      <a-button type="dashed" @click="exportRolePermissions" style="width: 100%" icon="download">
+      <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
+        <template #icon><download-outlined /></template>
         Export Rules
       </a-button>
     </div>
     <div v-if="updateTable" class="loading-overlay">
-      <a-icon type="loading" />
+      <loading-outlined />
     </div>
     <div
       class="rules-list ant-list ant-list-bordered"
@@ -34,10 +35,10 @@
         <div class="rules-table__col rules-table__col--grab"></div>
         <div class="rules-table__col rules-table__col--rule rules-table__col--new">
           <a-auto-complete
-            :autoFocus="true"
+            v-focus="true"
             :filterOption="filterOption"
-            :dataSource="apis"
-            :value="newRule"
+            :options="apis"
+            v-model:value="newRule"
             @change="val => newRule = val"
             :placeholder="$t('label.rule')"
             :class="{'rule-dropdown-error' : newRuleSelectError}" />
@@ -45,49 +46,49 @@
         <div class="rules-table__col rules-table__col--permission">
           <permission-editable
             :defaultValue="newRulePermission"
-            @change="onPermissionChange(null, $event)" />
+            @onChange="onPermissionChange(null, $event)" />
         </div>
         <div class="rules-table__col rules-table__col--description">
-          <a-input v-model="newRuleDescription" :placeholder="$t('label.description')"></a-input>
+          <a-input v-model:value="newRuleDescription" :placeholder="$t('label.description')"></a-input>
         </div>
         <div class="rules-table__col rules-table__col--actions">
           <tooltip-button
             tooltipPlacement="bottom"
             :tooltip="$t('label.save.new.rule')"
             :disabled="!('createRolePermission' in $store.getters.apis)"
-            icon="plus"
+            icon="plus-outlined"
             type="primary"
-            @click="onRuleSave" />
+            @onClick="onRuleSave" />
         </div>
       </div>
 
       <draggable
         v-model="rules"
         @change="changeOrder"
-        :disabled="!('updateRolePermission' in this.$store.getters.apis)"
+        :disabled="!('updateRolePermission' in $store.getters.apis)"
         handle=".drag-handle"
         animation="200"
-        ghostClass="drag-ghost">
-        <transition-group type="transition">
-          <div
-            v-for="(record, index) in rules"
-            :key="`item-${index}`"
-            class="rules-table-item ant-list-item">
+        ghostClass="drag-ghost"
+        tag="transition-group"
+        :component-data="{type: 'transition'}"
+        item-key="id">
+        <template #item="{element}">
+          <div class="rules-table-item ant-list-item">
             <div class="rules-table__col rules-table__col--grab drag-handle">
-              <a-icon type="drag"></a-icon>
+              <drag-outlined />
             </div>
             <div class="rules-table__col rules-table__col--rule">
-              {{ record.rule }}
+              {{ element.rule }}
             </div>
             <div class="rules-table__col rules-table__col--permission">
               <permission-editable
-                :defaultValue="record.permission"
-                @change="onPermissionChange(record, $event)" />
+                :default-value="element.permission"
+                @onChange="onPermissionChange(element, $event)" />
             </div>
             <div class="rules-table__col rules-table__col--description">
-              <template v-if="record.description">
-                {{ record.description }}
-              </template>
+              <div v-if="element.description">
+                {{ element.description }}
+              </div>
               <div v-else class="no-description">
                 {{ $t('message.no.description') }}
               </div>
@@ -95,11 +96,11 @@
             <div class="rules-table__col rules-table__col--actions">
               <rule-delete
                 :disabled="!('deleteRolePermission' in $store.getters.apis)"
-                :record="record"
-                @delete="onRuleDelete(record.id)" />
+                :record="element"
+                @delete="onRuleDelete(element.id)" />
             </div>
           </div>
-        </transition-group>
+        </template>
       </draggable>
     </div>
   </div>
@@ -140,20 +141,25 @@ export default {
     }
   },
   created () {
-    this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
+    this.apis = Object.keys(this.$store.getters.apis)
+      .sort((a, b) => a.localeCompare(b))
+      .map(value => { return { value: value } })
     this.fetchData()
   },
   watch: {
-    resource: function () {
-      this.fetchData(() => {
-        this.resetNewFields()
-      })
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData(() => {
+          this.resetNewFields()
+        })
+      }
     }
   },
   methods: {
     filterOption (input, option) {
       return (
-        option.componentOptions.children[0].text.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     resetNewFields () {
@@ -176,17 +182,20 @@ export default {
       })
     },
     updateApis () {
-      this.apis = Object.keys(this.$store.getters.apis).sort((a, b) => a.localeCompare(b))
+      this.apis = Object.keys(this.$store.getters.apis)
+        .sort((a, b) => a.localeCompare(b))
       var apisSupported = this.rules?.map(rule => rule.rule) || []
-      this.apis = this.apis.filter(api => !apisSupported.includes(api))
+      this.apis = this.apis.filter(api => !apisSupported.includes(api.value)).map(value => { return { value: value } })
     },
     changeOrder () {
+      this.updateTable = true
       api('updateRolePermission', {}, 'POST', {
         roleid: this.resource.id,
         ruleorder: this.rules.map(rule => rule.id)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.updateTable = false
         this.fetchData()
       })
     },
@@ -195,6 +204,7 @@ export default {
       api('deleteRolePermission', { id: key }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
+        this.updateTable = false
         this.fetchData()
       })
     },
@@ -212,6 +222,8 @@ export default {
         this.fetchData()
       }).catch(error => {
         this.$notifyError(error)
+      }).finally(() => {
+        this.updateTable = false
       })
     },
     onRuleSelect (value) {
@@ -235,6 +247,7 @@ export default {
       }).finally(() => {
         this.resetNewFields()
         this.fetchData()
+        this.updateTable = false
       })
     },
     rulesDataToCsv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
@@ -268,7 +281,7 @@ export default {
       hiddenElement.target = '_blank'
       hiddenElement.download = this.resource.name + '_' + this.resource.type + '.csv'
       hiddenElement.click()
-      hiddenElement.delete()
+      hiddenElement.remove()
     }
   }
 }

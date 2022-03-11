@@ -21,48 +21,72 @@
       <p v-html="$t('message.desc.create.ssh.key.pair')"></p>
       <a-form
         v-ctrl-enter="handleSubmit"
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.name')">
+        <a-form-item name="name" ref="name">
+          <template #label :title="apiParams.name.description">
+            {{ $t('label.name') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
-        <a-form-item :label="$t('label.publickey')">
+        <a-form-item name="publickey" ref="publickey">
+          <template #label :title="apiParams.publickey.description">
+            {{ $t('label.publickey') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['publickey', {}]"
+            v-model:value="form.publickey"
             :placeholder="apiParams.publickey.description"/>
         </a-form-item>
-        <a-form-item :label="$t('label.domainid')" v-if="this.isAdminOrDomainAdmin()">
+        <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin()">
+          <template #label :title="apiParams.domainid.description">
+            {{ $t('label.domainid') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-select
             id="domain-selection"
-            v-decorator="['domainid', {}]"
+            v-model:value="form.domainid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="apiParams.domainid.description"
-            @change="val => { this.handleDomainChanged(this.domains[val]) }">
-            <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
+            @change="val => { handleDomainChanged(domains[val]) }">
+            <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.account')" v-if="this.isAdminOrDomainAdmin() && !this.isObjectEmpty(this.selectedDomain) && this.selectedDomain.id !== null">
+        <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin() && !isObjectEmpty(selectedDomain) && selectedDomain.id !== null">
+          <template #label :title="apiParams.account.description">
+            {{ $t('label.account') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
           <a-input
-            v-decorator="['account', {}]"
+            v-model:value="form.account"
             :placeholder="apiParams.account.description"/>
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -70,14 +94,15 @@
       <p v-html="$t('message.desc.created.ssh.key.pair')"></p>
       <div :span="24" class="action-button">
         <a-button @click="notifyCopied" v-clipboard:copy="hiddenElement.innerHTML" type="primary">{{ $t('label.copy.clipboard') }}</a-button>
-        <a-button @click="downloadKey" type="primary">{{ this.$t('label.download') }}</a-button>
-        <a-button @click="closeAction">{{ this.$t('label.close') }}</a-button>
+        <a-button @click="downloadKey" type="primary">{{ $t('label.download') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.close') }}</a-button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -94,10 +119,10 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createSSHKeyPair', 'registerSSHKeyPair')
   },
   created () {
+    this.initForm()
     this.domains = [
       {
         id: null,
@@ -107,6 +132,13 @@ export default {
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }]
+      })
+    },
     fetchData () {
       if (this.isAdminOrDomainAdmin()) {
         this.fetchDomainData()
@@ -133,9 +165,7 @@ export default {
       }).finally(() => {
         this.domainLoading = false
         if (this.arrayHasItems(this.domains)) {
-          this.form.setFieldsValue({
-            domainid: 0
-          })
+          this.form.domainid = 0
           this.handleDomainChanged(this.domains[0])
         }
       })
@@ -146,10 +176,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           name: values.name
@@ -192,6 +220,8 @@ export default {
             this.loading = false
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     downloadKey () {

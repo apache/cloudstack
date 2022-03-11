@@ -1069,7 +1069,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             final DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -1096,7 +1096,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             final DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -1739,7 +1739,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idsNotIn", sb.entity().getId(), SearchCriteria.Op.NOTIN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1784,7 +1784,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
         if (type != null) {
             sc.setParameters("type", "%" + type);
@@ -1831,7 +1831,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
 
@@ -1849,7 +1849,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (podName != null) {
-            sc.setParameters("name", "%" + podName + "%");
+            sc.setParameters("name", podName);
         }
 
         if (zoneId != null) {
@@ -2173,7 +2173,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<IPAddressVO> addrs = new ArrayList<>();
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller.getType() != Account.Type.ADMIN) {
                 isAllocated = true;
             }
         } else if (vlanType == VlanType.DirectAttached) {
@@ -2203,13 +2203,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (networkMap == null) {
                     return new Pair<>(addrs, 0);
                 }
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (caller.getType() == Account.Type.NORMAL || caller.getType() == Account.Type.PROJECT) {
                     if (_networkMgr.isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
                         isAllocated = Boolean.TRUE;
                     } else {
                         return new Pair<>(addrs, 0);
                     }
-                } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                } else if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     if (caller.getDomainId() == networkMap.getDomainId() || _domainDao.isChildDomain(caller.getDomainId(), networkMap.getDomainId())) {
                         s_logger.debug("Caller " + caller.getUuid() + " has permission to access the network : " + network.getUuid());
                     } else {
@@ -2229,7 +2229,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Boolean isRecursive = null;
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
                     null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
@@ -2244,7 +2244,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         SearchCriteria<IPAddressVO> sc = sb.create();
         setParameters(sc, cmd, vlanType);
 
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
@@ -4177,7 +4177,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         try {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } catch (InvalidParameterValueException ex) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && accountName != null && domainId != null) {
+            if (caller.getType() == Account.Type.ADMIN && accountName != null && domainId != null) {
                 owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
             }
             if (owner == null) {
@@ -4638,7 +4638,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        if (adminUser.getState() == Account.State.disabled) {
+        if (adminUser.getState() == Account.State.DISABLED) {
             // This means its a new account, set the password using the
             // authenticator
 
@@ -4650,7 +4650,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
 
             adminUser.setPassword(encodedPassword);
-            adminUser.setState(Account.State.enabled);
+            adminUser.setState(Account.State.ENABLED);
             _userDao.persist(adminUser);
             s_logger.info("Admin user enabled");
         }

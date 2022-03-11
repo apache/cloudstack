@@ -20,24 +20,25 @@
     <div class="form" v-ctrl-enter="submitData">
 
       <div v-if="loading" class="loading">
-        <a-icon type="loading" style="color: #1890ff;"></a-icon>
+        <loading-outlined style="color: #1890ff;" />
       </div>
 
       <a-alert type="warning" style="margin-bottom: 20px">
-        <span slot="message" v-html="$t('message.assign.instance.another')"></span>
+        <template #message>
+          <label v-html="$t('message.assign.instance.another')"></label>
+        </template>
       </a-alert>
 
       <div class="form__item">
         <p class="form__label">{{ $t('label.accounttype') }}</p>
         <a-select
-          v-model="selectedAccountType"
-          defaultValue="account"
-          autoFocus
+          v-model:value="selectedAccountType"
+          v-focus="true"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>
         </a-select>
@@ -47,38 +48,37 @@
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select
           @change="changeDomain"
-          v-model="selectedDomain"
-          :defaultValue="selectedDomain"
+          v-model:value="selectedDomain"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="domain in domains" :key="domain.name" :value="domain.id" :label="domain.path || domain.name || domain.description">
             <span>
               <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="block" style="margin-right: 5px" />
+              <block-outlined v-else style="margin-right: 5px" />
               {{ domain.path || domain.name || domain.description }}
             </span>
           </a-select-option>
         </a-select>
       </div>
 
-      <template v-if="selectedAccountType === 'Account'">
+      <template v-if="selectedAccountType === $t('label.account')">
         <div class="form__item">
           <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
           <a-select
             @change="changeAccount"
-            v-model="selectedAccount"
+            v-model:value="selectedAccount"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="account in accounts" :key="account.name" :value="account.name">
               <span>
                 <resource-icon v-if="account && account.icon" :image="account.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="team" style="margin-right: 5px" />
+                <team-outlined v-else style="margin-right: 5px" />
                 {{ account.name }}
               </span>
             </a-select-option>
@@ -92,16 +92,16 @@
           <p class="form__label"><span class="required">*</span>{{ $t('label.project') }}</p>
           <a-select
             @change="changeProject"
-            v-model="selectedProject"
+            v-model:value="selectedProject"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="project in projects" :key="project.id" :value="project.id" :label="project.name">
               <span>
                 <resource-icon v-if="project && project.icon" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="project" style="margin-right: 5px" />
+                <project-outlined v-else style="margin-right: 5px" />
                 {{ project.name }}
               </span>
             </a-select-option>
@@ -113,16 +113,16 @@
       <div class="form__item">
         <p class="form__label">{{ $t('label.network') }}</p>
         <a-select
-          v-model="selectedNetwork"
+          v-model:value="selectedNetwork"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="network in networks" :key="network.id" :value="network.id" :label="network.name ? network.name : '-'">
             <span>
               <resource-icon v-if="network && network.icon" :image="network.icon.base64image" size="1x" style="margin-right: 5px"/>
-              <a-icon v-else type="apartment" style="margin-right: 5px" />
+              <apartment-outlined v-else style="margin-right: 5px" />
               {{ network.name ? network.name : '-' }}
             </span>
           </a-select-option>
@@ -305,7 +305,7 @@ export default {
         this.$notification.success({
           message: this.$t('label.loadbalancerinstance')
         })
-        this.$parent.$parent.close()
+        this.$emit('close-action')
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)

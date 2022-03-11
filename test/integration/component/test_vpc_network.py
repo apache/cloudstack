@@ -2731,11 +2731,11 @@ class TestRouterOperations(cloudstackTestCase):
                       (vpcvr.id, e))
 
         response = verifyRouterState(self.apiclient, vpcvr.id, "stopped")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isRouterInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isRouterInDesiredState)):
+        if (exceptionOccurred or (not isRouterInDesiredState)):
             self.fail(exceptionMessage)
 
         self.debug("Starting the router with ID: %s" % vpcvr.id)
@@ -2749,10 +2749,10 @@ class TestRouterOperations(cloudstackTestCase):
                       (vpcvr.id, e))
 
         response = verifyRouterState(self.apiclient, vpcvr.id, "running")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         isRouterInDesiredState = response[1]
         exceptionMessage = response[2]
 
-        if (exceptionOccured or (not isRouterInDesiredState)):
+        if (exceptionOccurred or (not isRouterInDesiredState)):
             self.fail(exceptionMessage)
         return

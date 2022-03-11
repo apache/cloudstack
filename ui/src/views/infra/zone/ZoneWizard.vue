@@ -166,7 +166,7 @@ export default {
     onFieldsChanged (data) {
       if (data.zoneType &&
         this.zoneConfig.zoneType &&
-        data.zoneType.value !== this.zoneConfig.zoneType.value) {
+        data.zoneType !== this.zoneConfig.zoneType) {
         this.zoneConfig.physicalNetworks = null
       }
 
@@ -204,33 +204,33 @@ export default {
       width: 800px;
     }
 
-    /deep/.form-action {
+    :deep(.form-action) {
       position: relative;
       margin-top: 16px;
       height: 35px;
     }
 
-    /deep/.button-next {
+    :deep(.button-next) {
       position: absolute;
       right: 0;
     }
 
-    /deep/.button-next.ant-btn-loading:not(.ant-btn-circle):not(.ant-btn-circle-outline):not(.ant-btn-icon-only) {
+    :deep(.button-next).ant-btn-loading:not(.ant-btn-circle):not(.ant-btn-circle-outline):not(.ant-btn-icon-only) {
       position: absolute;
       right: 0;
     }
 
-    /deep/.ant-steps {
+    :deep(.ant-steps) {
       overflow-x: auto;
       padding: 10px 0;
     }
 
-    /deep/.submit-btn {
+    :deep(.submit-btn) {
       display: none;
     }
   }
 
-  /deep/.ant-form-text {
+  :deep(.ant-form-text) {
     width: 100%;
   }
 

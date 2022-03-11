@@ -112,7 +112,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

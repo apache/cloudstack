@@ -961,7 +961,7 @@ public class NetscalerResource implements ServerResource {
                 try {
                     Thread.sleep(10000);
                 } catch (final InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for netscaler to be 'up'.");
+                    s_logger.debug("[ignored] interrupted while waiting for netscaler to be 'up'.");
                 }
                 final ns refreshNsObj = new ns();
                 refreshNsObj.set_id(newVpx.get_id());
@@ -3522,7 +3522,7 @@ public class NetscalerResource implements ServerResource {
         try {
             apiCallResult = nsconfig.save(_netscalerService);
             if (apiCallResult.errorcode != 0) {
-                throw new ExecutionException("Error occured while saving configuration changes to Netscaler device due to " + apiCallResult.message);
+                throw new ExecutionException("Error occurred while saving configuration changes to Netscaler device due to " + apiCallResult.message);
             }
         } catch (final nitro_exception e) {
             throw new ExecutionException("Failed to save configuration changes to Netscaler device due to " + e.getMessage());

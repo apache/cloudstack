@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 
 const mockStore = {
   state: {},
@@ -27,30 +27,26 @@ const mockStore = {
       user: {},
       permission: {}
     }
-    mockStore.mutations = {}
 
     if (state && Object.keys(state).length > 0) {
       mockStore.state = { ...mockStore.state, ...state }
-    }
-
-    if (mutations && Object.keys(mutations).length > 0) {
-      mockStore.mutations = { ...mockStore.mutations, ...mutations }
     }
 
     if (!actions) {
       actions = {}
     }
 
-    return new Vuex.Store({
+    return createStore({
       state: mockStore.state,
       getters: {
         apis: () => mockStore.state.user.apis,
         userInfo: () => mockStore.state.user.info,
+        defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize,
         headerNotices: () => mockStore.state.user.headerNotices,
-        defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize
+        customColumns: () => mockStore.state.user.customColumns
       },
-      actions,
-      mutations
+      mutations,
+      actions
     })
   }
 }

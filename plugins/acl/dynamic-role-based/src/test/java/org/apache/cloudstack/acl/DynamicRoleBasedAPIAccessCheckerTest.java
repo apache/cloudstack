@@ -53,7 +53,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
     }
 
     private Account getTestAccount() {
-        return new AccountVO("some name", 1L, "network-domain", (short)0, "some-uuid");
+        return new AccountVO("some name", 1L, "network-domain", Account.Type.NORMAL, "some-uuid");
     }
 
     private Role getTestRole() {
@@ -103,7 +103,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
 
     @Test
     public void testDefaultRootAdminAccess() {
-        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(new AccountVO("root admin", 1L, null, (short)1, "some-uuid"));
+        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(new AccountVO("root admin", 1L, null, Account.Type.ADMIN, "some-uuid"));
         Mockito.when(roleService.findRole(Mockito.anyLong())).thenReturn(new RoleVO(1L, "SomeRole", RoleType.Admin, "default root admin role"));
         assertTrue(apiAccessChecker.checkAccess(getTestUser(), "anyApi"));
     }

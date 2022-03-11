@@ -1433,7 +1433,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                 "The hostname should match with atleast one of instance name"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 public_ip_1.ipaddress.ipaddress,
                 e))
         try:
@@ -1454,7 +1454,7 @@ class TestMultipleLbRules(cloudstackTestCase):
                 "The hostname should match with atleast one of instance name"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 public_ip_2.ipaddress.ipaddress,
                 e))
         return
@@ -1750,7 +1750,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                 "The hostname should match with atleast one of instance name"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 public_ip.ipaddress.ipaddress,
                 e))
         try:
@@ -1772,7 +1772,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
                 "The hostname should match with atleast one of instance name"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 public_ip.ipaddress.ipaddress,
                 e))
         return
@@ -2340,7 +2340,7 @@ class TestVmWithLb(cloudstackTestCase):
             self.lb_rule_1.assign(self.apiclient, [self.vm_1, self.vm_2])
             self.vm_2.stop(self.apiclient)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         try:
             self.debug(
@@ -2369,7 +2369,7 @@ class TestVmWithLb(cloudstackTestCase):
                 "Hostnames must be same as another VM is stopped"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 self.public_ip_1.ipaddress.ipaddress,
                 e))
         self.debug("SSH into Netscaler to rules still persist")
@@ -2441,7 +2441,7 @@ class TestVmWithLb(cloudstackTestCase):
                 "Both request should be served by different instances"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 self.public_ip_1.ipaddress.ipaddress,
                 e))
         self.debug("SSH into Netscaler to rules still persist")
@@ -2556,7 +2556,7 @@ class TestVmWithLb(cloudstackTestCase):
                 "Both request should be served by different instances"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 self.public_ip_1.ipaddress.ipaddress,
                 e))
         self.debug("SSH into Netscaler to rules still persist")
@@ -2643,7 +2643,7 @@ class TestVmWithLb(cloudstackTestCase):
                     "Both request should be served by different instances"
                 )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 self.public_ip_1.ipaddress.ipaddress,
                 e))
         self.debug("SSH into Netscaler to rules still persist")
@@ -2715,7 +2715,7 @@ class TestVmWithLb(cloudstackTestCase):
                 "Both request should be served by same instance"
             )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            self.fail("Exception occurred during SSH: %s - %s" % (
                 self.public_ip_1.ipaddress.ipaddress,
                 e))
         delay = Configurations.list(

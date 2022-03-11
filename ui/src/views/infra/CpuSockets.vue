@@ -21,17 +21,21 @@
       <a-row>
         <a-col :span="24" style="padding-left: 12px">
           <breadcrumb>
-            <a-tooltip placement="bottom" slot="end">
-              <template slot="title">{{ $t('label.refresh') }}</template>
-              <a-button
-                style="margin-top: 4px"
-                :loading="loading"
-                shape="round"
-                size="small"
-                icon="reload"
-                @click="fetchData()"
-              >{{ $t('label.refresh') }}</a-button>
-            </a-tooltip>
+            <template #end>
+              <a-tooltip placement="bottom">
+                <template #title>{{ $t('label.refresh') }}</template>
+                <a-button
+                  style="margin-top: 4px"
+                  :loading="loading"
+                  shape="round"
+                  size="small"
+                  @click="fetchData()"
+                >
+                <template #icon><ReloadOutlined /></template>
+                {{ $t('label.refresh') }}
+              </a-button>
+              </a-tooltip>
+            </template>
           </breadcrumb>
         </a-col>
       </a-row>
@@ -42,7 +46,7 @@
         :columns="columns"
         :items="items"
         :loading="loading"
-        @refresh="this.fetchData" />
+        @refresh="fetchData" />
     </div>
   </div>
 </template>
@@ -77,7 +81,7 @@ export default {
     this.fetchData()
   },
   watch: {
-    '$i18n.locale' (to, from) {
+    '$i18n.global.locale' (to, from) {
       if (to !== from) {
         this.fetchData()
       }

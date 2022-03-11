@@ -19,61 +19,60 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit">
+        <a-form-item name="file" ref="file">
+          <template #label>
+            <tooltip-label :title="$t('label.rules.file')" :tooltip="$t('label.rules.file.to.import')"/>
+          </template>
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
             :remove="handleRemove"
             :beforeUpload="beforeUpload"
             @change="handleChange"
-            v-decorator="['file', {
-              rules: [{ required: true, message: $t('message.error.required.input') },
-                      {
-                        validator: checkCsvRulesFile,
-                        message: $t('label.error.rules.file.import')
-                      }
-              ]
-            }]">
+            v-model:value="form.file">
             <p class="ant-upload-drag-icon">
-              <a-icon type="cloud-upload" />
+              <cloud-upload-outlined />
             </p>
             <p class="ant-upload-text" v-if="fileList.length === 0">
               {{ $t('label.rules.file.import.description') }}
             </p>
           </a-upload-dragger>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
 
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+        <a-form-item name="description" ref="description">
+          <template #label>
+            <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          </template>
           <a-input
-            v-decorator="['description']"
+            v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+        <a-form-item name="type" ref="type">
+          <template #label>
+            <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          </template>
           <a-select
-            v-decorator="['type', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
+            v-model:value="form.type"
             :placeholder="apiParams.type.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
@@ -81,17 +80,16 @@
           </a-select>
         </a-form-item>
 
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
-          <a-switch
-            v-decorator="['forced', {
-              initialValue: false
-            }]" />
+        <a-form-item name="forced" ref="forced">
+          <template #label>
+            <tooltip-label :title="$t('label.forced')" :tooltip="apiParams.forced.description"/>
+          </template>
+          <a-switch v-model:checked="form.forced" />
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -99,6 +97,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -112,19 +111,38 @@ export default {
       fileList: [],
       defaultRoles: ['Admin', 'DomainAdmin', 'ResourceAdmin', 'User'],
       rulesCsv: '',
-      loading: false
+      loading: false,
+      csvFileType: ['.csv', 'text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('importRole')
   },
+  created () {
+    this.initForm()
+  },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        file: [
+          { required: true, message: this.$t('message.error.required.input') },
+          {
+            validator: this.checkCsvRulesFile,
+            message: this.$t('label.error.rules.file.import')
+          }
+        ],
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        type: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     handleRemove (file) {
       const index = this.fileList.indexOf(file)
       const newFileList = this.fileList.slice()
       newFileList.splice(index, 1)
       this.fileList = newFileList
+      this.form.file = undefined
     },
     handleChange (info) {
       if (info.file.status === 'error') {
@@ -135,20 +153,19 @@ export default {
       }
     },
     beforeUpload (file) {
-      if (file.type !== 'text/csv') {
+      if (!this.csvFileType.includes(file.type)) {
         return false
       }
 
       this.fileList = [file]
+      this.form.file = file
       return false
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]
@@ -174,6 +191,8 @@ export default {
         })
 
         this.importRole(params)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
@@ -239,24 +258,25 @@ export default {
       })
       return result
     },
-    checkCsvRulesFile (rule, value, callback) {
-      if (!value || value === '' || value.file === '') {
-        callback()
+    async checkCsvRulesFile (rule, value) {
+      if (!value || value === '') {
+        return Promise.resolve()
       } else {
-        if (value.file.type !== 'text/csv') {
-          callback(rule.message)
+        if (!this.csvFileType.includes(value.type)) {
+          return Promise.reject(rule.message)
         }
 
-        this.readCsvFile(value.file).then((validFile) => {
+        try {
+          const validFile = await this.readCsvFile(value)
           if (!validFile) {
-            callback(rule.message)
+            return Promise.reject(rule.message)
           } else {
-            callback()
+            return Promise.resolve()
           }
-        }).catch((reason) => {
+        } catch (reason) {
           console.log(reason)
-          callback(rule.message)
-        })
+          return Promise.reject(rule.message)
+        }
       }
     },
     readCsvFile (file) {

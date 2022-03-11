@@ -15,5 +15,5 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-export default new Vue()
+import mitt from 'mitt'
+export default mitt()

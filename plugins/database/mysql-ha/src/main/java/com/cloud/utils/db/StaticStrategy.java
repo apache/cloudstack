@@ -84,7 +84,7 @@ public class StaticStrategy implements BalanceStrategy {
                             try {
                                 Thread.sleep(250);
                             } catch (InterruptedException e) {
-                                s_logger.debug("[ignored] interupted while fail over in progres.");
+                                s_logger.debug("[ignored] interrupted while fail over in progres.");
                             }
 
                             // start fresh

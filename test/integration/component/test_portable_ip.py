@@ -639,10 +639,10 @@ class TestAssociatePublicIp(cloudstackTestCase):
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
         response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         ipInDesiredState = response[1]
         exceptionMessage = response[2]
-        if (exceptionOccured or (not ipInDesiredState)):
+        if (exceptionOccurred or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
             self.fail(exceptionMessage)
 
@@ -870,7 +870,7 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     )
             portableip.delete(self.apiclient)
         except Exception as e:
-            raise Exception("Exception occured: %s" % e)
+            raise Exception("Exception occurred: %s" % e)
         return
 
     @attr(tags=["advanced"], required_hardware="false")
@@ -893,10 +893,10 @@ class TestDisassociatePublicIp(cloudstackTestCase):
                                     )
 
         response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         ipInDesiredState = response[1]
         exceptionMessage = response[2]
-        if (exceptionOccured or (not ipInDesiredState)):
+        if (exceptionOccurred or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
             self.fail(exceptionMessage)
 
@@ -1124,10 +1124,10 @@ class TestDeleteAccount(cloudstackTestCase):
         self.debug("created public ip address (portable): %s" % portableip.ipaddress.ipaddress)
 
         response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         ipInDesiredState = response[1]
         exceptionMessage = response[2]
-        if (exceptionOccured or (not ipInDesiredState)):
+        if (exceptionOccurred or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
             self.account.delete(self.apiclient)
             self.fail(exceptionMessage)
@@ -1309,10 +1309,10 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                                     )
 
         response = isIpInDesiredState(self.apiclient, portableip.ipaddress.id, state="allocated")
-        exceptionOccured = response[0]
+        exceptionOccurred = response[0]
         ipInDesiredState = response[1]
         exceptionMessage = response[2]
-        if (exceptionOccured or (not ipInDesiredState)):
+        if (exceptionOccurred or (not ipInDesiredState)):
             portableip.delete(self.apiclient)
             self.fail(exceptionMessage)
 
