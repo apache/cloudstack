@@ -548,7 +548,7 @@ class TestVolumeList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## Domain Admin - Test cases  without passing listall paramter
+    ## Domain Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_as_domainadmin(self):
@@ -1290,7 +1290,7 @@ class TestVolumeList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## ROOT Admin - Test cases  without passing listall paramter
+    ## ROOT Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_as_rootadmin(self):
@@ -2004,7 +2004,7 @@ class TestVolumeList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ##  Regular User  - Test cases  without passing listall paramter
+    ##  Regular User  - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVolume_as_regularuser(self):

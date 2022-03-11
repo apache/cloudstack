@@ -19,91 +19,71 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span
-          slot="message"
-          v-html="resource.autoscalingenabled ? $t('message.action.scale.kubernetes.cluster.warning') : $t('message.kubernetes.cluster.scale')" />
+        <template #message>{{ resource.autoscalingenabled ? $t('message.action.scale.kubernetes.cluster.warning') : $t('message.kubernetes.cluster.scale') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item v-if="apiParams.autoscalingenabled">
-          <tooltip-label slot="label" :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
-          <a-switch :checked="this.autoscalingenabled" @change="val => { this.autoscalingenabled = val }" />
+        <a-form-item name="autoscalingenabled" ref="autoscalingenabled" v-if="apiParams.autoscalingenabled">
+          <template #label>
+            <tooltip-label :title="$t('label.cks.cluster.autoscalingenabled')" :tooltip="apiParams.autoscalingenabled.description"/>
+          </template>
+          <a-switch :checked="autoscalingenabled" @change="val => { autoscalingenabled = val }" />
         </a-form-item>
-        <span v-if="this.autoscalingenabled">
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
+        <span v-if="autoscalingenabled">
+          <a-form-item name="minsize" ref="minsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cks.cluster.minsize')" :tooltip="apiParams.minsize.description"/>
+            </template>
             <a-input
-              v-decorator="['minsize', {
-                initialValue: minsize,
-                rules: [{
-                  validator: (rule, value, callback) => {
-                    if (value && (isNaN(value) || value <= 0)) {
-                      callback(this.$t('message.error.number'))
-                    }
-                    callback()
-                  }
-                }]
-              }]"
+              v-model:value="form.minsize"
               :placeholder="apiParams.minsize.description"/>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.cks.cluster.maxsize')" :tooltip="apiParams.maxsize.description"/>
+          <a-form-item name="maxsize" ref="maxsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cks.cluster.maxsize')" :tooltip="apiParams.maxsize.description"/>
+            </template>
             <a-input
-              v-decorator="['maxsize', {
-                initialValue: maxsize,
-                rules: [{
-                  validator: (rule, value, callback) => {
-                    if (value && (isNaN(value) || value <= 0)) {
-                      callback(this.$t('message.error.number'))
-                    }
-                    callback()
-                  }
-                }]
-              }]"
+              v-model:value="form.maxsize"
               :placeholder="apiParams.maxsize.description"/>
           </a-form-item>
         </span>
         <span v-else>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+          <a-form-item name="serviceofferingid" ref="serviceofferingid">
+            <template #label>
+              <tooltip-label :title="$t('label.serviceofferingid')" :tooltip="apiParams.serviceofferingid.description"/>
+            </template>
             <a-select
               id="offering-selection"
-              v-decorator="['serviceofferingid', {}]"
+              v-model:value="form.serviceofferingid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="serviceOfferingLoading"
               :placeholder="apiParams.serviceofferingid.description">
-              <a-select-option v-for="(opt, optIndex) in this.serviceOfferings" :key="optIndex">
+              <a-select-option v-for="(opt, optIndex) in serviceOfferings" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+          <a-form-item name="size" ref="size">
+            <template #label>
+              <tooltip-label :title="$t('label.cks.cluster.size')" :tooltip="apiParams.size.description"/>
+            </template>
             <a-input
-              v-decorator="['size', {
-                initialValue: originalSize,
-                rules: [{
-                  validator: (rule, value, callback) => {
-                    if (value && (isNaN(value) || value <= 0)) {
-                      callback(this.$t('message.error.number'))
-                    }
-                    callback()
-                  }
-                }]
-              }]"
+              v-model:value="form.size"
               :placeholder="apiParams.size.description"/>
           </a-form-item>
         </span>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -111,6 +91,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -139,10 +120,11 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('scaleKubernetesCluster')
   },
   created () {
+    this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
+    this.form.size = this.originalSize
     if (!this.isObjectEmpty(this.resource)) {
       this.originalSize = this.resource.size
       if (this.apiParams.autoscalingenabled) {
@@ -151,11 +133,23 @@ export default {
         this.maxsize = this.resource.maxsize
       }
     }
-  },
-  mounted () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        size: this.originalSize,
+        minsize: this.minsize,
+        maxsize: this.maxsize
+      })
+      this.rules = reactive({
+        minsize: [{ type: 'number', validator: this.validateNumber }],
+        maxsize: [{ type: 'number', validator: this.validateNumber }],
+        size: [{ type: 'number', validator: this.validateNumber }]
+      })
+    },
     fetchData () {
       this.fetchKubernetesVersionData()
     },
@@ -202,9 +196,7 @@ export default {
         if (this.arrayHasItems(this.serviceOfferings)) {
           for (var i = 0; i < this.serviceOfferings.length; i++) {
             if (this.serviceOfferings[i].id === this.resource.serviceofferingid) {
-              this.form.setFieldsValue({
-                serviceofferingid: i
-              })
+              this.form.serviceofferingid = i
               break
             }
           }
@@ -214,10 +206,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.resource.id
@@ -253,10 +243,18 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.validate.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

@@ -227,7 +227,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName(), domainId);
-            final short accountType = ldapTrustMapVO.getAccountType();
+            final Account.Type accountType = ldapTrustMapVO.getAccountType();
             processLdapUser(password, domainId, user, rc, ldapUser, accountType);
         } catch (NoLdapUserMatchingQueryException e) {
             LOGGER.debug(e.getMessage());
@@ -237,7 +237,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         return rc;
     }
 
-    private void processLdapUser(String password, Long domainId, UserAccount user, Pair<Boolean, ActionOnFailedAuthentication> rc, LdapUser ldapUser, short accountType) {
+    private void processLdapUser(String password, Long domainId, UserAccount user, Pair<Boolean, ActionOnFailedAuthentication> rc, LdapUser ldapUser, Account.Type accountType) {
         if(!ldapUser.isDisabled()) {
             rc.first(_ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId));
             if(rc.first()) {
@@ -289,12 +289,12 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     }
 
     private void enableUserInCloudStack(UserAccount user) {
-        if(user != null && (user.getState().equalsIgnoreCase(Account.State.disabled.toString()))) {
+        if(user != null && (user.getState().equalsIgnoreCase(Account.State.DISABLED.toString()))) {
             _accountManager.enableUser(user.getId());
         }
     }
 
-    private void createCloudStackUserAccount(LdapUser user, long domainId, short accountType) {
+    private void createCloudStackUserAccount(LdapUser user, long domainId, Account.Type accountType) {
         String username = user.getUsername();
         _accountManager.createUserAccount(username, "", user.getFirstname(), user.getLastname(), user.getEmail(), null, username,
                                           accountType, RoleType.getByAccountType(accountType).getId(), domainId, null, null,

@@ -24,13 +24,13 @@
       </div>
       <p>
         <strong>{{ $t('label.domainid') }}</strong><br/>
-        <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
+        <router-link :to="{ path: '/domain/' + dedicatedDomainId, query: { tab: 'details'} }">{{ dedicatedDomainId }}</router-link>
       </p>
       <p v-if="dedicatedAccountId">
         <strong>{{ $t('label.account') }}</strong><br/>
         <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
       </p>
-      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="danger" @click="handleRelease">
+      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="primary" danger @click="handleRelease">
         {{ releaseButtonLabel }}
       </a-button>
     </div>
@@ -67,6 +67,9 @@ export default {
     DedicateModal
   },
   inject: ['parentFetchData'],
+  created () {
+    this.fetchData()
+  },
   data () {
     return {
       modalActive: false,
@@ -79,9 +82,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },

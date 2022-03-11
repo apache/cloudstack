@@ -17,26 +17,26 @@
 
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
-      <a-form-item :label="$t('label.samlenable')">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      :loading="loading"
+      @finish="handleSubmit">
+      <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
-          v-decorator="['samlEnable', {
-            initialValue: isSamlEnabled
-          }]"
-          :checked="isSamlEnabled"
-          @change="val => { isSamlEnabled = val }"
-          autoFocus
+          v-model:checked="form.samlEnable"
+          v-focus="true"
         />
       </a-form-item>
-      <a-form-item :label="$t('label.samlentity')">
+      <a-form-item name="samlEntity" ref="samlEntity" :label="$t('label.samlentity')">
         <a-select
-          v-decorator="['samlEntity', {
-            initialValue: selectedIdp
-          }]"
+          v-model:value="form.samlEntity"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="idp in idps" :key="idp.id">
             {{ idp.orgName }}
@@ -51,7 +51,9 @@
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'ConfigureSamlSsoAuth',
   props: {
@@ -62,19 +64,20 @@ export default {
   },
   data () {
     return {
-      selectedIdp: '',
       idps: [],
-      isSamlEnabled: false,
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.IsUserSamlAuthorized()
       this.loading = true
@@ -88,8 +91,8 @@ export default {
       api('listSamlAuthorization', {
         userid: this.resource.id
       }).then(response => {
-        this.isSamlEnabled = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
-        this.selectedIdp = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
+        this.form.samlEnable = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
+        this.form.samlEntity = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
       })
     },
     handleClose () {
@@ -98,11 +101,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-        this.loading = true
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         api('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,
@@ -124,6 +124,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

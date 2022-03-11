@@ -15,14 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import VueRouter from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 const mockRouter = {
   routes: [
     {
       path: '/',
       name: 'home',
-      meta: { icon: 'home' },
+      meta: {
+        name: 'home',
+        icon: 'home-outlined'
+      },
+      component: {
+        template: 'Home Page'
+      },
       children: []
     }
   ],
@@ -31,24 +37,41 @@ const mockRouter = {
       {
         path: '/exception',
         name: 'exception',
+        meta: {
+          title: 'label.title',
+          icon: 'bug-outlined'
+        },
+        component: {},
         children: [
           {
             path: '/exception/403',
             name: 403,
             hidden: true,
-            meta: { icon: 'icon-error-test' }
+            meta: {
+              title: 'label.title',
+              icon: 'bug-outlined'
+            },
+            component: {}
           },
           {
             path: '/exception/404',
             name: 404,
             hidden: true,
-            meta: { icon: 'icon-error-test' }
+            meta: {
+              title: 'label.title',
+              icon: 'bug-outlined'
+            },
+            component: {}
           },
           {
             path: '/exception/500',
             name: 500,
             hidden: true,
-            meta: { icon: 'icon-error-test' }
+            meta: {
+              title: 'label.title',
+              icon: 'bug-outlined'
+            },
+            component: {}
           }
         ]
       }
@@ -57,7 +80,10 @@ const mockRouter = {
       mockRouter.routes[0].children = [...mockRouter.routes[0].children, ...routes]
     }
 
-    return new VueRouter({ routes: mockRouter.routes, mode: 'history' })
+    return createRouter({
+      history: createWebHashHistory(),
+      routes: mockRouter.routes
+    })
   }
 }
 

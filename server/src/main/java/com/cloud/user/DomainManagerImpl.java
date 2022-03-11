@@ -547,7 +547,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         List<AccountVO> accounts = _accountDao.search(sc, null);
         for (AccountVO account : accounts) {
-            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() != Account.Type.PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
                 boolean deleteAccount = _accountMgr.deleteAccount(account, CallContext.current().getCallingUserId(), getCaller());
                 if (!deleteAccount) {

@@ -15,13 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import VueI18n from 'vue-i18n'
+import { createI18n } from 'vue-i18n'
 
 const mockI18n = {
-  mock: (locale = 'en', message = {}) => {
-    return new VueI18n({
+  mock: (locale = 'en', messages = {}) => {
+    return createI18n({
       locale: locale,
-      messages: message
+      messages: messages
     })
   }
 }

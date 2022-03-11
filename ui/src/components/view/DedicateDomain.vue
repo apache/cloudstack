@@ -24,12 +24,13 @@
         <a-select
           style="width: 100%"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }"
           @change="handleChangeDomain"
-          v-model="domainId">
+          v-focus="true"
+          v-model:value="domainId">
           <a-select-option v-for="(domain, index) in domainsList" :value="domain.id" :key="index">
             {{ domain.path || domain.name || domain.description }}
           </a-select-option>
@@ -42,9 +43,9 @@
         style="width: 100%"
         @change="handleChangeAccount"
         showSearch
-        optionFilterProp="children"
+        optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }" >
         <a-select-option v-for="(account, index) in accountsList" :value="account.name" :key="index">
           {{ account.name }}
