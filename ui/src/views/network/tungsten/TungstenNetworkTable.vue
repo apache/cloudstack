@@ -39,10 +39,10 @@
         <span v-else>{{ text }}</span>
       </template>
       <template #tungstenvms="{ record }">
-        <ul><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
+        <ul v-if="record.tungstenvms.length > 0"><li v-for="item in record.tungstenvms" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template #network="{ record }">
-        <ul><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
+        <ul v-if="record.network.length > 0"><li v-for="item in record.network" :key="item.uuid"><span v-if="item.name">{{ item.name }}</span></li></ul>
       </template>
       <template #firewallpolicy="{ record }">
         <span v-if="record.firewallpolicy.length > 0">{{ record.firewallpolicy.map(item => item.name).join(',') }}</span>
@@ -54,10 +54,10 @@
         <span v-if="record.tungstenroutingpolicyterm.length > 0">{{ record.tungstenroutingpolicyterm[0].name }}</span>
       </template>
       <template #vm="{ record }">
-        <ul><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
+        <ul v-if="record.vm.length > 0"><li v-for="item in record.vm" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template #nic="{ record }">
-        <ul><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
+        <ul v-if="record.nic.length > 0"><li v-for="item in record.nic" :key="item.uuid">{{ item.name }}</li></ul>
       </template>
       <template #tag="{ record }">
         <div class="tags" v-for="tag in record.tag" :key="tag.uuid">
@@ -65,10 +65,9 @@
         </div>
       </template>
       <template #action="{ record }">
-        <span v-for="(action, index) in actions" :key="index">
+        <span v-for="(action, index) in actions" :key="index" style="margin-right: 5px">
           <tooltip-button
             v-if="action.dataView && ('show' in action ? action.show(record, $store.getters) : true)"
-            style="margin-right: 5px"
             :tooltip="$t(action.label)"
             :danger="['delete-outlined', 'DeleteOutlined'].includes(action.icon)"
             :type="(['DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"

@@ -88,7 +88,8 @@
                 :mode="field.multiple ? 'multiple' : null"
                 v-model:value="form[field.name]"
                 :loading="field.loading"
-                :placeholder="apiParams[field.name].description">
+                :placeholder="apiParams[field.name].description"
+                @change="(value) => handleChangeUuid(field.name, field.opts, value)">
                 <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
                   {{ opt.name || opt.displayName || opt.description }}
                 </a-select-option>
@@ -164,7 +165,8 @@ export default {
       showAddModal: false,
       currentAction: {},
       listAction: [],
-      detailAction: []
+      detailAction: [],
+      tagType: ''
     }
   },
   provide: function () {
@@ -190,7 +192,7 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
 
-      if (!this.currentAction?.field || this.currentAction.field.length === 0) {
+      if (!this.currentAction?.fields || this.currentAction.fields.length === 0) {
         return
       }
       this.currentAction.fields.forEach((field, index) => {
@@ -340,6 +342,10 @@ export default {
           if (Array.isArray(values[key])) {
             inputVal = values[key].join(',')
           }
+          if (key === 'tagtype') {
+            params[key] = this.tagType
+            continue
+          }
           params[key] = inputVal
         }
         if (this.currentAction.args) {
@@ -418,6 +424,16 @@ export default {
     },
     closeAction () {
       this.showAddModal = false
+    },
+    handleChangeUuid (field, data, uuid) {
+      this.tagType = ''
+      if (field !== 'tagtype') {
+        return
+      }
+      const match = data.filter(item => item.uuid === uuid)
+      if (match && match.length > 0) {
+        this.tagType = match[0].name
+      }
     }
   }
 }

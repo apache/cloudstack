@@ -150,6 +150,7 @@ import {
   UserAddOutlined,
   UserOutlined,
   UploadOutlined,
+  WarningOutlined,
   WifiOutlined
 } from '@ant-design/icons-vue'
 
@@ -289,6 +290,7 @@ export default {
     app.component('UserAddOutlined', UserAddOutlined)
     app.component('UserOutlined', UserOutlined)
     app.component('UploadOutlined', UploadOutlined)
+    app.component('WarningOutlined', WarningOutlined)
     app.component('WifiOutlined', WifiOutlined)
   }
 }
