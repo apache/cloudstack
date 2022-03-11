@@ -89,12 +89,14 @@ export default {
                 {
                   name: 'majorsequence',
                   required: true,
-                  type: 'number'
+                  type: 'number',
+                  value: 0
                 },
                 {
                   name: 'minorsequence',
                   required: true,
-                  type: 'number'
+                  type: 'number',
+                  value: 0
                 }
               ],
               args: {
@@ -196,7 +198,8 @@ export default {
                 {
                   name: 'sequence',
                   required: true,
-                  type: 'number'
+                  type: 'number',
+                  value: 0
                 }
               ],
               show: record => record.firewallpolicy.length === 0,
@@ -406,15 +409,35 @@ export default {
                 },
                 {
                   name: 'protocol',
-                  required: true
+                  required: true,
+                  type: 'uuid',
+                  loading: false,
+                  optGet: (record) => {
+                    return [{
+                      uuid: 'any',
+                      name: 'ANY'
+                    }, {
+                      uuid: 'tcp',
+                      name: 'TCP'
+                    }, {
+                      uuid: 'udp',
+                      name: 'UDP'
+                    }, {
+                      uuid: 'icmp',
+                      name: 'ICMP'
+                    }]
+                  },
+                  value: 'any'
                 },
                 {
                   name: 'startport',
-                  required: true
+                  required: true,
+                  value: '-1'
                 },
                 {
                   name: 'endport',
-                  required: true
+                  required: true,
+                  value: '-1'
                 }
               ]
             },
