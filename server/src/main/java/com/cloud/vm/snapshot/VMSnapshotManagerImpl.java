@@ -1022,6 +1022,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                     throw (ConcurrentOperationException)jobResult;
                 else if (jobResult instanceof InvalidParameterValueException)
                     throw (InvalidParameterValueException)jobResult;
+                else if (jobResult instanceof CloudRuntimeException)
+                    throw (CloudRuntimeException)jobResult;
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
