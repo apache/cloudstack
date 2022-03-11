@@ -19,24 +19,26 @@
   <div>
     <a-card class="breadcrumb-card">
       <breadcrumb>
-        <a-tooltip placement="bottom" slot="end">
-          <template slot="title">{{ $t('label.refresh') }}</template>
-          <a-button
-            style="margin-top: 4px"
-            :loading="loading"
-            shape="round"
-            size="small"
-            icon="reload"
-            @click="fetchDetails()"
-          >{{ $t('label.refresh') }}</a-button>
-        </a-tooltip>
+        <template #end>
+          <a-tooltip placement="bottom">
+            <template #title>{{ $t('label.refresh') }}</template>
+            <a-button
+              style="margin-top: 4px"
+              :loading="loading"
+              shape="round"
+              size="small"
+              icon="reload"
+              @click="fetchDetails()"
+            >{{ $t('label.refresh') }}</a-button>
+          </a-tooltip>
+        </template>
       </breadcrumb>
     </a-card>
     <a-card>
       <a-row :gutter="12">
         <a-col :md="24" :lg="12" :gutter="12">
           <a-card>
-            <template slot="title">
+            <template #title>
               {{ $t('label.desc.db.stats') }}
             </template>
             <a-table
@@ -52,7 +54,7 @@
         </a-col>
         <a-col :md="24" :lg="12" :gutter="12">
           <a-card>
-            <template slot="title">
+            <template #title>
               {{ $t('label.desc.usage.stats') }}
             </template>
             <a-table
