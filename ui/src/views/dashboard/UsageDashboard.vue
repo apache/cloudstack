@@ -52,7 +52,7 @@
                 :bordered="false"
                 :loading="loading"
                 :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
-                <router-link :to="{ path: stat.path }">
+                <router-link :to="{ path: stat.path, query: stat.query }">
                   <div
                     class="usage-dashboard-chart-card-inner">
                     <h3>{{ stat.name }}</h3>
@@ -86,7 +86,7 @@
                 :key="event.id"
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: 'event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>
@@ -173,7 +173,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm?state=running&filter=running' })
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
@@ -181,7 +181,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm?state=stopped&filter=stopped' })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
