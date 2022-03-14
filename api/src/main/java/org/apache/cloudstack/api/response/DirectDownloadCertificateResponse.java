@@ -21,7 +21,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 
 @EntityReference(value = DirectDownloadCertificate.class)
 public class DirectDownloadCertificateResponse extends BaseResponse {

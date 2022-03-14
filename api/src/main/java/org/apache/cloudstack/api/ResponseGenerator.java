@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
-import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;

@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.direct.download;
 
-import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
