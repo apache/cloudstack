@@ -22,10 +22,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -291,7 +289,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @param vmStatsList the list of VM stats.
      * @return the set of responses that was created.
      */
-    protected Set<StatsResponse> createStatsResponse(List<VmStatsVO> vmStatsList) {
+    protected List<StatsResponse> createStatsResponse(List<VmStatsVO> vmStatsList) {
         List<StatsResponse> statsResponseList = new ArrayList<StatsResponse>();
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         for (VmStatsVO vmStats : vmStatsList) {
@@ -315,8 +313,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
             statsResponseList.add(response);
         }
-        return new HashSet<>(statsResponseList);
+        return statsResponseList;
     }
+
 
     @Override
     public InfrastructureResponse listInfrastructure() {

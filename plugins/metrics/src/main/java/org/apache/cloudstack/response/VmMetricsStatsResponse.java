@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.response;
 
-import java.util.Set;
+import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -41,7 +41,7 @@ public class VmMetricsStatsResponse extends BaseResponse {
 
     @SerializedName("stats")
     @Param(description = "the list of VM stats")
-    private Set<StatsResponse> stats;
+    private List<StatsResponse> stats;
 
     public void setId(String id) {
         this.id = id;
@@ -55,7 +55,7 @@ public class VmMetricsStatsResponse extends BaseResponse {
         this.displayName = displayName;
     }
 
-    public void setStats(Set<StatsResponse> stats) {
+    public void setStats(List<StatsResponse> stats) {
         this.stats = stats;
     }
 
