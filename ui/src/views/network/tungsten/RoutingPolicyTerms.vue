@@ -92,9 +92,9 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="addcommunity"> add community </a-select-option>
-            <a-select-option value="setcommunity"> set community </a-select-option>
-            <a-select-option value="removecommunity"> remove community </a-select-option>
+            <a-select-option value="add community"> add community </a-select-option>
+            <a-select-option value="set community"> set community </a-select-option>
+            <a-select-option value="remove community"> remove community </a-select-option>
             <a-select-option value="local-preference"> local-preference </a-select-option>
             <a-select-option value="med"> med </a-select-option>
             <a-select-option value="action"> action </a-select-option>
@@ -169,7 +169,7 @@ export default {
           slots: { customRender: 'termtype' }
         },
         {
-          title: this.$t('label.value'),
+          title: this.$t('label.action.value'),
           dataIndex: 'termvalue',
           slots: { customRender: 'termvalue' }
         },
@@ -199,11 +199,10 @@ export default {
       })
     },
     addNewPrefix () {
-      const index = this.prefixList.length
       this.prefixList.push({
-        prefix: 'Prefix ' + (index + 1),
+        prefix: '',
         prefixtype: 'extract',
-        termtype: 'addcommunity',
+        termtype: 'add community',
         termvalue: ''
       })
       this.form.prefixList = this.prefixList
@@ -219,6 +218,12 @@ export default {
       this.emitEvents()
     },
     onCellChange (key, name, value) {
+      if (name === 'termtype' && value === 'action') {
+        this.prefixList[key].termvalue = 'default'
+      }
+      if (name === 'termtype' && value !== 'action') {
+        this.prefixList[key].termvalue = ''
+      }
       this.prefixList[key][name] = value
       this.form.prefixList = this.prefixList
       this.emitEvents()

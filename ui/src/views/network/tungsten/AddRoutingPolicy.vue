@@ -187,7 +187,13 @@ export default {
         routingPolicyTermParams.tungstenroutingpolicymatchall = this.formModel?.tungstenroutingpolicymatchall || false
         routingPolicyTermParams.tungstenroutingpolicyprotocol = this.formModel?.tungstenroutingpolicyprotocol?.join(',') || ''
         routingPolicyTermParams.tungstenroutingpolicyfromtermprefixlist = this.prefixList?.map(item => [item.prefix, item.prefixtype].join('&')).join(',') || ''
-        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.prefixList.map(item => [item.termtype, item.termvalue].join('&')).join(',') || ''
+        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.prefixList.map(item => {
+          if (item.termtype === 'action') {
+            return [item.termvalue, item.termtype, ' '].join('&')
+          } else {
+            return [' ', item.termtype, item.termvalue].join('&')
+          }
+        }).join(',') || ''
         const jobId = await this.addTungstenFabricRoutingPolicyTerm(routingPolicyTermParams)
         await this.$pollJob({
           jobId,
