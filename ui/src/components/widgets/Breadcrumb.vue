@@ -85,7 +85,7 @@ export default {
       name: '',
       breadList: [],
       tungstenPaths: ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
-        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule']
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy']
     }
   },
   created () {

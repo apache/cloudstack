@@ -641,6 +641,7 @@
 "label.computeonly.offering": "Compute only Disk Offering",
 "label.configuration": "Configuration",
 "label.configure": "Configure",
+"label.configure.health.monitor": "Configure Health Monitor",
 "label.configure.ldap": "Configure LDAP",
 "label.configure.network.acls": "Configure Network ACLs",
 "label.configure.ovs": "Configure Ovs",

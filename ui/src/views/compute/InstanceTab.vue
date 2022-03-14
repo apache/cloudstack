@@ -318,31 +318,32 @@
       <a-alert v-if="routerTableType === 'ADD'" type="warning" :message="$t('message.confirm.add.router.table.to.instance')"></a-alert>
       <a-alert v-else type="warning" :message="$t('message.confirm.remove.router.table.to.instance')"></a-alert>
 
-      <a-form
-        :ref="routerTableRef"
-        :model="formRouterTable"
-        :rules="routerTableRules"
-        layout="vertical"
-        v-ctrl-enter="submitRouterTable">
-        <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.interface.router.table')">
-          <a-select
-            v-model:value="formRouterTable.tungstenRouteTable"
-            v-focus="true"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="routerTables.loading">
-            <a-select-option v-for="router in routerTables.opts" :key="router.uuid">{{ router.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
+      <div v-ctrl-enter="submitRouterTable">
+        <a-form
+          :ref="routerTableRef"
+          :model="formRouterTable"
+          :rules="routerTableRules"
+          layout="vertical">
+          <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.interface.router.table')">
+            <a-select
+              v-model:value="formRouterTable.tungstenRouteTable"
+              v-focus="true"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="routerTables.loading">
+              <a-select-option v-for="router in routerTables.opts" :key="router.uuid">{{ router.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button :loading="routerTableLoading" @click="closeModals">{{ $t('label.cancel') }}</a-button>
-          <a-button :loading="routerTableLoading" type="primary" ref="submit" @click="submitRouterTable">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button :loading="routerTableLoading" @click="closeModals">{{ $t('label.cancel') }}</a-button>
+            <a-button :loading="routerTableLoading" type="primary" ref="submit" @click="submitRouterTable">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
 
   </a-spin>
@@ -837,7 +838,8 @@ export default {
     },
     addRouterTable () {
       if (this.routerTableLoading) return
-      this.routerTableRef.value.validate(() => {
+
+      this.routerTableRef.value.validate().then(() => {
         const values = toRaw(this.formRouterTable)
 
         this.routerTableParams.zoneid = this.dataResource.zoneid
@@ -876,7 +878,7 @@ export default {
     },
     removeRouterTable () {
       if (this.routerTableLoading) return
-      this.routerTableRef.value.validate(() => {
+      this.routerTableRef.value.validate().then(() => {
         const values = toRaw(this.formRouterTable)
 
         this.routerTableParams.zoneid = this.dataResource.zoneid

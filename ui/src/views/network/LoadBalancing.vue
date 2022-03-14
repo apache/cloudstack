@@ -110,7 +110,10 @@
         </a-button>
       </template>
       <template #add="{record}">
-        <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+          <template #icon>
+            <plus-outlined />
+          </template>
           {{ $t('label.add') }}
         </a-button>
       </template>
@@ -479,7 +482,7 @@
 
     <a-modal
       v-if="healthMonitorModal"
-      :title="$t('label.configure.sticky.policy')"
+      :title="$t('label.configure.health.monitor')"
       :visible="healthMonitorModal"
       :footer="null"
       :maskClosable="false"
@@ -538,7 +541,7 @@
           ref="expectedcode"
           :label="$t('label.monitor.expected.code')"
           v-if="healthMonitorParams.type === 'HTTP'">
-          <a-input v-decorator="monitorForm.expectedcode" />
+          <a-input v-model:value="monitorForm.expectedcode" />
         </a-form-item>
         <a-form-item
           name="urlpath"
@@ -774,6 +777,7 @@ export default {
         timeout: this.healthMonitorParams.timeout,
         interval: this.healthMonitorParams.interval,
         httpmethodtype: this.healthMonitorParams.httpmethodtype,
+        expectedcode: this.healthMonitorParams.expectedcode,
         urlpath: this.healthMonitorParams.urlpath
       })
       this.monitorRules = reactive({
@@ -1328,7 +1332,7 @@ export default {
           newItem.push(...response.listnicsresponse.nic[0].secondaryip.map(ip => ip.ipaddress))
         }
         this.nics[index] = newItem
-        this.newRule.vmguestip[index] = this.nics[index][0]
+        this.newRule.vmguestip[index] = [this.nics[index][0]]
         this.addVmModalNicLoading = false
       }).catch(error => {
         this.$notifyError(error)
@@ -1543,7 +1547,7 @@ export default {
     handleConfigHealthMonitor () {
       if (this.healthMonitorLoading) return
 
-      this.monitorRef.value.validate(() => {
+      this.monitorRef.value.validate().then(() => {
         const values = toRaw(this.monitorForm)
 
         this.healthMonitorParams.type = values.type

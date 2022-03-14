@@ -159,7 +159,7 @@ export default {
     checkPolicyTermValues () {
       let valid = true
       this.prefixList.forEach(item => {
-        if (!item.termvalue) {
+        if (!item.termvalue || item.termtype === 'action') {
           return true
         }
 

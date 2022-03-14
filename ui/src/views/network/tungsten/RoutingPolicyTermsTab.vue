@@ -134,7 +134,7 @@ export default {
       let valid = true
       if (this.prefixList) return valid
       this.prefixList.forEach(item => {
-        if (!item.termvalue) {
+        if (!item.termvalue || item.termtype === 'action') {
           return true
         }
 

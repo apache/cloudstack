@@ -534,7 +534,7 @@ export default {
   methods: {
     isTungstenPath () {
       return ['/tungstennetworkroutertable', '/tungstenpolicy', '/tungsteninterfaceroutertable',
-        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule'].includes(this.$route.path)
+        '/tungstenpolicyset', '/tungstenroutingpolicy', '/firewallrule', '/tungstenfirewallpolicy'].includes(this.$route.path)
     },
     quickViewEnabled () {
       return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
