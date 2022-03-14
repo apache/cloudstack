@@ -607,15 +607,15 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     @Override
     public List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId) {
         if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException(zoneId == null ? "Please enter a zone ID" : "Cannot find a zone with ID = " + zoneId);
+            throw new InvalidParameterValueException("Cannot find a zone with ID = " + zoneId);
         }
         List<DirectDownloadCertificate> certificates = new LinkedList<>();
         if (certificateId != null) {
-            DirectDownloadCertificateVO certificate = directDownloadCertificateDao.findById(certificateId);
-            certificates.add(certificate);
+            certificates.add(directDownloadCertificateDao.findById(certificateId));
+        } else if (zoneId != null) {
+            certificates.addAll(directDownloadCertificateDao.listByZone(zoneId));
         } else {
-            List<DirectDownloadCertificateVO> zoneCertificates = directDownloadCertificateDao.listByZone(zoneId);
-            certificates.addAll(zoneCertificates);
+            certificates.addAll(directDownloadCertificateDao.listAll());
         }
         return certificates;
     }

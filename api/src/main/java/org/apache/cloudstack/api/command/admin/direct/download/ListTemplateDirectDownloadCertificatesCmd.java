@@ -41,7 +41,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = ListTemplateDirectDownloadCertificasCmd.APINAME,
+@APICommand(name = ListTemplateDirectDownloadCertificatesCmd.APINAME,
         description = "List the uploaded direct download certificates",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.17.0",
@@ -59,7 +59,7 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
             description = "the zone where certificates are uploaded")
     private Long zoneId;
 
-    private static final Logger LOG = Logger.getLogger(ListTemplateDirectDownloadCertificasCmd.class);
+    private static final Logger LOG = Logger.getLogger(ListTemplateDirectDownloadCertificatesCmd.class);
     public static final String APINAME = "listTemplateDirectDownloadCertificates";
 
     private void createResponse(final List<DirectDownloadCertificate> certificates) {
@@ -78,10 +78,8 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        if (id == null && zoneId == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please specify a direct download certificate id or a zone id for listing certificates");
-        }
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException,
+            ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         List<DirectDownloadCertificate> certificates = directDownloadManager.listDirectDownloadCertificates(id, zoneId);
         createResponse(certificates);
     }
