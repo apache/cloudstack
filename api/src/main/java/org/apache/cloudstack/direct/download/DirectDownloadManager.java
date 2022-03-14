@@ -17,11 +17,14 @@
 
 package org.apache.cloudstack.direct.download;
 
+import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.PluggableService;
+
+import java.util.List;
 
 public interface DirectDownloadManager extends DirectDownloadService, PluggableService, Configurable {
 
@@ -59,4 +62,6 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
      * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
      */
     boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId, Long hostId);
+
+    List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId);
 }

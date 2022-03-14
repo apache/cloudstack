@@ -23,10 +23,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
+import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -490,5 +492,7 @@ public interface ResponseGenerator {
     RollingMaintenanceResponse createRollingMaintenanceResponse(Boolean success, String details, List<RollingMaintenanceManager.HostUpdated> hostsUpdated, List<RollingMaintenanceManager.HostSkipped> hostsSkipped);
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
+
+    DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate);
 
 }

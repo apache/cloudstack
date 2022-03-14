@@ -67,6 +67,7 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -165,6 +166,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -4545,5 +4547,20 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
+    }
+
+    @Override
+    public DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate) {
+        DirectDownloadCertificateResponse response = new DirectDownloadCertificateResponse();
+        DataCenterVO datacenter = ApiDBUtils.findZoneById(certificate.getZoneId());
+        if (datacenter != null) {
+            response.setZoneId(datacenter.getUuid());
+        }
+        response.setId(certificate.getUuid());
+        response.setAlias(certificate.getAlias());
+        response.setCertificate(certificate.getCertificate());
+        response.setHypervisor(certificate.getHypervisorType().name());
+        response.setObjectName("directdownloadcertificate");
+        return response;
     }
 }

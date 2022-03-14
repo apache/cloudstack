@@ -17,6 +17,7 @@
 package org.apache.cloudstack.direct.download;
 
 import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -25,6 +25,7 @@ public class ApiConstants {
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
+    public static final String ALIAS = "alias";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";

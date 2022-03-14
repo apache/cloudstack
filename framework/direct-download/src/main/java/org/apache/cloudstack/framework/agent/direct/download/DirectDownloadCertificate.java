@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.direct.download;
+package org.apache.cloudstack.framework.agent.direct.download;
 
 import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.api.Identity;
@@ -25,5 +25,6 @@ public interface DirectDownloadCertificate extends InternalIdentity, Identity {
     String getCertificate();
     String getAlias();
     Hypervisor.HypervisorType getHypervisorType();
+    Long getZoneId();
 
 }

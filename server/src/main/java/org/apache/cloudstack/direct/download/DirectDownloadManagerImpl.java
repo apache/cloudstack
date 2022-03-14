@@ -29,6 +29,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
@@ -56,6 +58,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -600,6 +603,22 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             }
         }
         return true;
+    }
+
+    @Override
+    public List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId) {
+        if (zoneId != null && dataCenterDao.findById(zoneId) == null) {
+            throw new InvalidParameterValueException(zoneId == null ? "Please enter a zone ID" : "Cannot find a zone with ID = " + zoneId);
+        }
+        List<DirectDownloadCertificate> certificates = new LinkedList<>();
+        if (certificateId != null) {
+            DirectDownloadCertificateVO certificate = directDownloadCertificateDao.findById(certificateId);
+            certificates.add(certificate);
+        } else {
+            List<DirectDownloadCertificateVO> zoneCertificates = directDownloadCertificateDao.listByZone(zoneId);
+            certificates.addAll(zoneCertificates);
+        }
+        return certificates;
     }
 
     protected boolean revokeCertificateAliasFromHost(String alias, Long hostId) {
