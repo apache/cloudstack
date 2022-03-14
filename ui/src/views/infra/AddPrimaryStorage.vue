@@ -141,7 +141,7 @@
           </template>
           <a-input v-model:value="form.name" :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item name="protocol" ref="protocol" v-if="form.scope === 'cluster' || form.scope === 'host'">
+        <a-form-item name="protocol" ref="protocol" v-if="form.scope === 'zone' || form.scope === 'cluster' || form.scope === 'host'">
           <template #label>
             <tooltip-label :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
           </template>
