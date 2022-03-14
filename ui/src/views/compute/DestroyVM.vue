@@ -118,7 +118,7 @@
             <template #label>
               <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
             </template>
-            <a-switch v-model:value="expunge" v-focus="true" />
+            <a-switch v-model:checked="expunge" v-focus="true" />
           </a-form-item>
         </div>
 
