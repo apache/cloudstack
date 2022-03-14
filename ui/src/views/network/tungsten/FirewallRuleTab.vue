@@ -336,32 +336,25 @@ export default {
       deleteLoading: false,
       columns: [{
         title: this.$t('label.name'),
-        dataIndex: 'name',
-        slots: { customRender: 'name' }
+        dataIndex: 'name'
       }, {
         title: this.$t('label.action'),
-        dataIndex: 'action',
-        slots: { customRender: 'action' }
+        dataIndex: 'action'
       }, {
         title: this.$t('label.servicegroupuuid'),
-        dataIndex: 'servicegroupuuid',
-        slots: { customRender: 'servicegroupuuid' }
+        dataIndex: 'servicegroup'
       }, {
         title: this.$t('label.srcaddressgroupuuid'),
-        dataIndex: 'srcaddressgroupuuid',
-        slots: { customRender: 'srcaddressgroupuuid' }
+        dataIndex: 'srctag'
       }, {
         title: this.$t('label.direction'),
-        dataIndex: 'direction',
-        slots: { customRender: 'direction' }
+        dataIndex: 'direction'
       }, {
         title: this.$t('label.destaddressgroupuuid'),
-        dataIndex: 'destaddressgroupuuid',
-        slots: { customRender: 'destaddressgroupuuid' }
+        dataIndex: 'desttag'
       }, {
         title: this.$t('label.tagtypeuuid'),
-        dataIndex: 'tagtypeuuid',
-        slots: { customRender: 'tagtypeuuid' }
+        dataIndex: 'tagtype'
       }, {
         title: this.$t('label.actions'),
         slots: { customRender: 'actions' },
@@ -419,7 +412,13 @@ export default {
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         action: [{ required: true, message: this.$t('message.error.select') }],
         servicegroupuuid: [{ required: true, message: this.$t('message.error.select') }],
+        srctaguuid: [{ required: true, message: this.$t('message.error.select') }],
+        srcaddressgroupuuid: [{ required: true, message: this.$t('message.error.select') }],
+        srcnetworkuuid: [{ required: true, message: this.$t('message.error.select') }],
         direction: [{ required: true, message: this.$t('message.error.select') }],
+        desttaguuid: [{ required: true, message: this.$t('message.error.select') }],
+        destaddressgroupuuid: [{ required: true, message: this.$t('message.error.select') }],
+        destnetworkuuid: [{ required: true, message: this.$t('message.error.select') }],
         sequence: [{ required: true, message: this.$t('message.error.required.input') }]
       })
     },

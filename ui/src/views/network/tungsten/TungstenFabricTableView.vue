@@ -71,48 +71,50 @@
         <template #title>
           {{ $t(currentAction.label) }}
         </template>
-        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" class="form-layout">
-          <div v-for="(field, index) in currentAction.fields" :key="field.name">
-            <a-form-item
-              :name="field.name"
-              :ref="field.name"
-              v-if="!currentAction.mapping || !field.name in currentAction.mapping">
-              <template #label>
-                <tooltip-label
-                  :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
-                  :tooltip="apiParams[field.name].description" />
-              </template>
-              <a-select
-                v-if="field.type==='uuid'"
-                v-focus="index === 0"
-                :mode="field.multiple ? 'multiple' : null"
-                v-model:value="form[field.name]"
-                :loading="field.loading"
-                :placeholder="apiParams[field.name].description"
-                @change="(value) => handleChangeUuid(field.name, field.opts, value)">
-                <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
-                  {{ opt.name || opt.displayName || opt.description }}
-                </a-select-option>
-              </a-select>
-              <a-input-number
-                style="width: 100%"
-                v-else-if="field.type === 'number'"
-                v-focus="index === 0"
-                v-model:value="form[field.name]"
-                :placeholder="apiParams[field.name].description"/>
-              <a-input
-                v-else
-                v-focus="index === 0"
-                v-model:value="form[field.name]"
-                :placeholder="apiParams[field.name].description"/>
-            </a-form-item>
-          </div>
+        <div v-ctrl-enter="handleSubmit">
+          <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical" class="form-layout">
+            <div v-for="(field, index) in currentAction.fields" :key="field.name">
+              <a-form-item
+                :name="field.name"
+                :ref="field.name"
+                v-if="!currentAction.mapping || !field.name in currentAction.mapping">
+                <template #label>
+                  <tooltip-label
+                    :title="'label' in field ? $t(field.label) : $t('label.' + field.name)"
+                    :tooltip="apiParams[field.name].description" />
+                </template>
+                <a-select
+                  v-if="field.type==='uuid'"
+                  v-focus="index === 0"
+                  :mode="field.multiple ? 'multiple' : null"
+                  v-model:value="form[field.name]"
+                  :loading="field.loading"
+                  :placeholder="apiParams[field.name].description"
+                  @change="(value) => handleChangeUuid(field.name, field.opts, value)">
+                  <a-select-option v-for="opt in field.opts" :key="opt.uuid || opt.id || opt.name">
+                    {{ opt.name || opt.displayName || opt.description }}
+                  </a-select-option>
+                </a-select>
+                <a-input-number
+                  style="width: 100%"
+                  v-else-if="field.type === 'number'"
+                  v-focus="index === 0"
+                  v-model:value="form[field.name]"
+                  :placeholder="apiParams[field.name].description"/>
+                <a-input
+                  v-else
+                  v-focus="index === 0"
+                  v-model:value="form[field.name]"
+                  :placeholder="apiParams[field.name].description"/>
+              </a-form-item>
+            </div>
 
-          <div :span="24" class="action-button">
-            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-            <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
-          </div>
-        </a-form>
+            <div :span="24" class="action-button">
+              <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+            </div>
+          </a-form>
+        </div>
       </a-modal>
     </div>
   </div>

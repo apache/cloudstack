@@ -75,37 +75,38 @@
       :closable="true"
       :footer="null"
       @cancel="closeAction"
-      v-ctrl-enter="handleSubmit"
       centered
       width="450px">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item name="interfacerouteprefix" ref="interfacerouteprefix">
-          <template #label>
-            <tooltip-label :title="$t('label.routeprefix')" :tooltip="apiParams.interfacerouteprefix.description"/>
-          </template>
-          <a-input
-            v-focus="true"
-            v-model:value="form.interfacerouteprefix"
-            :placeholder="apiParams.interfacerouteprefix.description"/>
-        </a-form-item>
-        <a-form-item name="interfacecommunities" ref="interfacecommunities">
-          <template #label>
-            <tooltip-label :title="$t('label.communities')" :tooltip="apiParams.interfacecommunities.description"/>
-          </template>
-          <a-select
-            mode="tags"
-            :token-separators="[',']"
-            v-model:value="form.interfacecommunities"
-            :placeholder="apiParams.interfacecommunities.description">
-            <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
+      <div v-ctrl-enter="handleSubmit">
+         <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="interfacerouteprefix" ref="interfacerouteprefix">
+            <template #label>
+              <tooltip-label :title="$t('label.routeprefix')" :tooltip="apiParams.interfacerouteprefix.description"/>
+            </template>
+            <a-input
+              v-focus="true"
+              v-model:value="form.interfacerouteprefix"
+              :placeholder="apiParams.interfacerouteprefix.description"/>
+          </a-form-item>
+          <a-form-item name="interfacecommunities" ref="interfacecommunities">
+            <template #label>
+              <tooltip-label :title="$t('label.communities')" :tooltip="apiParams.interfacecommunities.description"/>
+            </template>
+            <a-select
+              mode="tags"
+              :token-separators="[',']"
+              v-model:value="form.interfacecommunities"
+              :placeholder="apiParams.interfacecommunities.description">
+              <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button :loading="actionLoading" @click="closeAction"> {{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="actionLoading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button :loading="actionLoading" @click="closeAction"> {{ this.$t('label.cancel') }}</a-button>
+            <a-button :loading="actionLoading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -311,7 +312,7 @@ export default {
     },
     closeAction () {
       this.interfaceStaticRouteModal = false
-      this.form.resetFields()
+      this.formRef.value.resetFields()
     },
     onChangePage (page, pageSize) {
       this.page = page

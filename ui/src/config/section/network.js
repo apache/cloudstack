@@ -775,11 +775,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'tungsten.static.routes',
-          component: () => import('@/views/network/tungsten/TungstenInterfaceStaticRoute.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/TungstenInterfaceStaticRoute.vue')))
         }
       ],
       actions: [

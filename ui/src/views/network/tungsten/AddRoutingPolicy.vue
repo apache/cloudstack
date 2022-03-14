@@ -61,13 +61,14 @@
       :closable="true"
       :footer="null"
       @cancel="() => { showError = false }"
-      v-ctrl-enter="() => { showError = false }"
       centered
     >
-      <span>{{ $t('message.error.routing.policy.term') }}</span>
-      <div :span="24" class="action-button">
-        <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+      <div v-ctrl-enter="() => { showError = false }">
+        <span>{{ $t('message.error.routing.policy.term') }}</span>
+        <div :span="24" class="action-button">
+          <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>

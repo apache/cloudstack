@@ -85,7 +85,7 @@
       centered
       width="450px">
       <div v-ctrl-enter="submitFirewallPolicy">
-        <a-form :ref="formRef" :model="form" :rules="rules">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
           <a-form-item name="name" ref="name">
             <template #label>
               <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
@@ -282,7 +282,7 @@ export default {
     },
     closeAction () {
       this.firewallPolicyModal = false
-      this.form.resetFields()
+      this.formRef.value.resetFields()
     },
     changePage (page, pageSize) {
       this.page = page

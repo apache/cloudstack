@@ -75,33 +75,34 @@
       :closable="true"
       :footer="null"
       @cancel="closeAction"
-      v-ctrl-enter="handleSubmit"
       centered
       width="450px">
-      <a-form :ref="formRef" :model="form" :rules="rules">
-        <a-form-item name="taguuid" ref="taguuid">
-          <template #label>
-            <tooltip-label :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
-          </template>
-          <a-select
-            v-focus="true"
-            :loading="tagSrc.loading"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            v-model:value="form.taguuid"
-            :placeholder="apiParams.taguuid.description">
-            <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid">{{ opt.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="taguuid" ref="taguuid">
+            <template #label>
+              <tooltip-label :title="$t('label.taguuid')" :tooltip="apiParams.taguuid.description"/>
+            </template>
+            <a-select
+              v-focus="true"
+              :loading="tagSrc.loading"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              v-model:value="form.taguuid"
+              :placeholder="apiParams.taguuid.description">
+              <a-select-option v-for="opt in tagSrc.opts" :key="opt.uuid">{{ opt.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button ref="submit" type="primary" @click="handleSubmit" :loading="addLoading">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button ref="submit" type="primary" @click="handleSubmit" :loading="addLoading">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
   </div>
 </template>

@@ -75,55 +75,56 @@
       :closable="true"
       :footer="null"
       @cancel="closeAction"
-      v-ctrl-enter="handleSubmit"
       centered
       width="450px">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item name="routeprefix" ref="routeprefix">
-          <template #label>
-            <tooltip-label :title="$t('label.routeprefix')" :tooltip="apiParams.routeprefix.description"/>
-          </template>
-          <a-input
-            v-focus="true"
-            v-model:value="form.routeprefix"
-            :placeholder="apiParams.routeprefix.description"/>
-        </a-form-item>
-        <a-form-item name="routenexthop" ref="routenexthop">
-          <template #label>
-           <tooltip-label :title="$t('label.routenexthop')" :tooltip="apiParams.routenexthop.description"/>
-          </template>
-          <a-input
-            v-model:value="form.routenexthop"
-            :placeholder="apiParams.routenexthop.description"/>
-        </a-form-item>
-        <a-form-item name="routenexthoptype" ref="routenexthoptype">
-          <template #label>
-            <tooltip-label :title="$t('label.routenexthoptype')" :tooltip="apiParams.routenexthoptype.description"/>
-          </template>
-          <a-select
-            v-model:value="form.routenexthoptype"
-            :placeholder="apiParams.routenexthoptype.description">
-            <a-select-option v-for="item in listRouteNextHopType" :key="item.id">{{ item.description }}</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="communities" ref="communities">
-          <template #label>
-            <tooltip-label :title="$t('label.communities')" :tooltip="apiParams.communities.description"/>
-          </template>
-          <a-select
-            mode="tags"
-            :token-separators="[',']"
-            v-model:value="form.communities"
-            :placeholder="apiParams.communities.description">
-            <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="routeprefix" ref="routeprefix">
+            <template #label>
+              <tooltip-label :title="$t('label.routeprefix')" :tooltip="apiParams.routeprefix.description"/>
+            </template>
+            <a-input
+              v-focus="true"
+              v-model:value="form.routeprefix"
+              :placeholder="apiParams.routeprefix.description"/>
+          </a-form-item>
+          <a-form-item name="routenexthop" ref="routenexthop">
+            <template #label>
+            <tooltip-label :title="$t('label.routenexthop')" :tooltip="apiParams.routenexthop.description"/>
+            </template>
+            <a-input
+              v-model:value="form.routenexthop"
+              :placeholder="apiParams.routenexthop.description"/>
+          </a-form-item>
+          <a-form-item name="routenexthoptype" ref="routenexthoptype">
+            <template #label>
+              <tooltip-label :title="$t('label.routenexthoptype')" :tooltip="apiParams.routenexthoptype.description"/>
+            </template>
+            <a-select
+              v-model:value="form.routenexthoptype"
+              :placeholder="apiParams.routenexthoptype.description">
+              <a-select-option v-for="item in listRouteNextHopType" :key="item.id">{{ item.description }}</a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item name="communities" ref="communities">
+            <template #label>
+              <tooltip-label :title="$t('label.communities')" :tooltip="apiParams.communities.description"/>
+            </template>
+            <a-select
+              mode="tags"
+              :token-separators="[',']"
+              v-model:value="form.communities"
+              :placeholder="apiParams.communities.description">
+              <a-select-option v-for="item in listCommunities" :key="item.id">{{ item.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
 
-        <div :span="24" class="action-button">
-          <a-button :loading="actionLoading" @click="closeAction"> {{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="actionLoading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+          <div :span="24" class="action-button">
+            <a-button :loading="actionLoading" @click="closeAction"> {{ this.$t('label.cancel') }}</a-button>
+            <a-button :loading="actionLoading" type="primary" @click="handleSubmit" ref="submit">{{ this.$t('label.ok') }}</a-button>
+          </div>
+        </a-form>
+      </div>
     </a-modal>
   </div>
 </template>
@@ -300,7 +301,7 @@ export default {
     },
     closeAction () {
       this.addStaticRouteModal = false
-      this.form.resetFields()
+      this.formRef.value.resetFields()
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {

@@ -56,21 +56,22 @@
       :title="$t('label.add.logical.router')"
       :maskClosable="false"
       :footer="null"
-      @cancel="showAction = false"
-      v-ctrl-enter="handleSubmit">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item name="logicalrouteruuid" ref="logicalrouteruuid" :label="$t('label.tungsten.logical.router')">
-          <a-select
-            :loading="logicalRouters.loading"
-            v-model:value="form.logicalrouteruuid">
-            <a-select-option v-for="logicalRouter in logicalRouters.opts" :key="logicalRouter.uuid">{{ logicalRouter.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
+      @cancel="showAction = false">
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="logicalrouteruuid" ref="logicalrouteruuid" :label="$t('label.tungsten.logical.router')">
+            <a-select
+              :loading="logicalRouters.loading"
+              v-model:value="form.logicalrouteruuid">
+              <a-select-option v-for="logicalRouter in logicalRouters.opts" :key="logicalRouter.uuid">{{ logicalRouter.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
 
-      <div :span="24" class="action-button">
-        <a-button @click="() => { showAction = false }">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="() => { showAction = false }">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>

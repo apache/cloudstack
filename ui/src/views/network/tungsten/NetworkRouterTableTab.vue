@@ -74,21 +74,22 @@
       :title="$t('label.add.tungsten.router.table')"
       :maskClosable="false"
       :footer="null"
-      @cancel="showAction = false"
-      v-ctrl-enter="handleSubmit">
-      <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
-        <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.tungsten.network.router.table')">
-          <a-select
-            :loading="networks.loading"
-            v-model:value="form.tungstenRouteTable">
-            <a-select-option v-for="network in networks.opts" :key="network.uuid">{{ network.name }}</a-select-option>
-          </a-select>
-        </a-form-item>
-      </a-form>
+      @cancel="showAction = false">
+      <div v-ctrl-enter="handleSubmit">
+        <a-form :ref="formRef" :model="form" :rules="rules" layout="vertical">
+          <a-form-item name="tungstenRouteTable" ref="tungstenRouteTable" :label="$t('label.tungsten.network.router.table')">
+            <a-select
+              :loading="networks.loading"
+              v-model:value="form.tungstenRouteTable">
+              <a-select-option v-for="network in networks.opts" :key="network.uuid">{{ network.name }}</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
 
-      <div :span="24" class="action-button">
-        <a-button @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <div :span="24" class="action-button">
+          <a-button @click="() => { showAction = false }">{{ this.$t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        </div>
       </div>
     </a-modal>
   </div>
