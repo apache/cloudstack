@@ -201,13 +201,13 @@ export default {
     margin-top: 8px;
     overflow-y: auto;
 
-    /deep/.has-error {
+    :deep(.has-error) {
       .ant-form-explain {
         text-align: left;
       }
     }
 
-    /deep/.ant-form-item-control {
+    :deep(.ant-form-item-control) {
       text-align: left;
     }
   }

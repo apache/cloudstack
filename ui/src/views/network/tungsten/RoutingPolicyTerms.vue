@@ -71,6 +71,7 @@
             :defaultValue="text"
             @change="value => onCellChange(index, 'prefixtype', value)"
             showSearch
+            :dropdownMatchSelectWidth="false"
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
@@ -87,6 +88,7 @@
             @change="value => onCellChange(index, 'termtype', value)"
             showSearch
             optionFilterProp="label"
+            :dropdownMatchSelectWidth="false"
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >

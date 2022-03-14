@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { shallowRef, defineAsyncComponent } from 'vue'
 import TungstenFabricTableView from '@/views/network/tungsten/TungstenFabricTableView'
 
 export default {
@@ -148,7 +149,7 @@ export default {
               title: 'label.create.tungsten.routing.policy',
               listView: true,
               popup: true,
-              component: () => import('@/views/network/tungsten/AddRoutingPolicy.vue')
+              component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/AddRoutingPolicy.vue')))
             },
             {
               api: 'removeTungstenFabricRoutingPolicy',
