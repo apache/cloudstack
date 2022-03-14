@@ -39,7 +39,7 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     private String zoneId;
 
     @SerializedName(ApiConstants.CERTIFICATE)
-    @Param(description = "the direct download certifica")
+    @Param(description = "the direct download certificate")
     private String certificate;
 
     @SerializedName(ApiConstants.HYPERVISOR)

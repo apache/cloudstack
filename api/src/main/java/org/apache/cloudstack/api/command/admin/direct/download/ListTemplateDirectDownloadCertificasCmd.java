@@ -46,7 +46,7 @@ import java.util.List;
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.17.0",
         authorized = {RoleType.Admin})
-public class ListTemplateDirectDownloadCertificasCmd extends BaseListCmd {
+public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
 
     @Inject
     DirectDownloadManager directDownloadManager;
@@ -80,7 +80,7 @@ public class ListTemplateDirectDownloadCertificasCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         if (id == null && zoneId == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please specify a direct download id or a zone id for listing certificates");
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please specify a direct download certificate id or a zone id for listing certificates");
         }
         List<DirectDownloadCertificate> certificates = directDownloadManager.listDirectDownloadCertificates(id, zoneId);
         createResponse(certificates);
