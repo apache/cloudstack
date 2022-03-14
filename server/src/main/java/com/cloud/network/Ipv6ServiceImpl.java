@@ -199,7 +199,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                Ipv6NetworkOfferingCreationEnabled,
+                Ipv6OfferingCreationEnabled,
                 Ipv6PrefixSubnetCleanupInterval
         };
     }

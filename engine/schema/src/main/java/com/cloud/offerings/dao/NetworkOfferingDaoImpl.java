@@ -17,7 +17,6 @@
 package com.cloud.offerings.dao;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -43,6 +42,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 @DB()
@@ -52,8 +52,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
-
-    private final List<NetworkOffering.InternetProtocol> ipv6EnabledProtocols = Arrays.asList(NetworkOffering.InternetProtocol.IPv6, NetworkOffering.InternetProtocol.DualStack);
 
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
@@ -275,14 +273,14 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
 
     @Override
-    public NetworkOffering.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId) {
+    public NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId) {
         String internetProtocolStr = _detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol);
-        return NetworkOffering.InternetProtocol.fromValue(internetProtocolStr);
+        return NetUtils.InternetProtocol.fromValue(internetProtocolStr);
     }
 
     @Override
     public boolean isIpv6Supported(long offeringId) {
-        NetworkOffering.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
-        return ipv6EnabledProtocols.contains(internetProtocol);
+        NetUtils.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
+        return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
     }
 }

@@ -40,10 +40,10 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     public static final int IPV6_SLAAC_CIDR_NETMASK = 64;
 
-    static final ConfigKey<Boolean> Ipv6NetworkOfferingCreationEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
-            "network.offering.ipv6.enabled",
+    static final ConfigKey<Boolean> Ipv6OfferingCreationEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
+            "ipv6.offering.enabled",
             "false",
-            "Indicates whether creation of IPv6 network offering is enabled or not.",
+            "Indicates whether creation of IPv6 network/VPC offering is enabled or not.",
             true);
 
     static final ConfigKey<Integer> Ipv6PrefixSubnetCleanupInterval = new ConfigKey<Integer>("Advanced", Integer.class,

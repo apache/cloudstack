@@ -140,7 +140,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     private String zone;
 
     @SerializedName(ApiConstants.INTERNET_PROTOCOL)
-    @Param(description = "the internet of the network offering")
+    @Param(description = "the internet protocol of the network offering")
     private String internetProtocol;
 
     public void setId(String id) {

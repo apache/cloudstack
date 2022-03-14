@@ -17,6 +17,9 @@
 package com.cloud.network.vpc.dao;
 
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.VpcOfferingVO;
@@ -26,11 +29,15 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 @DB()
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao {
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;
+
+    @Inject
+    VpcOfferingDetailsDao detailsDao;
 
     protected VpcOfferingDaoImpl() {
         super();
@@ -64,5 +71,17 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
         SearchCriteria<VpcOfferingVO> sc = AllFieldsSearch.create();
         sc.setParameters("uName", uniqueName);
         return findOneBy(sc);
+    }
+
+    @Override
+    public NetUtils.InternetProtocol getVpcOfferingInternetProtocol(long offeringId) {
+        String internetProtocolStr = detailsDao.getDetail(offeringId, ApiConstants.INTERNET_PROTOCOL);
+        return NetUtils.InternetProtocol.fromValue(internetProtocolStr);
+    }
+
+    @Override
+    public boolean isIpv6Supported(long offeringId) {
+        NetUtils.InternetProtocol internetProtocol = getVpcOfferingInternetProtocol(offeringId);
+        return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
     }
 }

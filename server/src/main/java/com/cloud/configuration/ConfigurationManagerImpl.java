@@ -5676,7 +5676,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public NetworkOffering createNetworkOffering(final CreateNetworkOfferingCmd cmd) {
         final String name = cmd.getNetworkOfferingName();
         final String displayText = cmd.getDisplayText();
-        final NetworkOffering.InternetProtocol internetProtocol = NetworkOffering.InternetProtocol.fromValue(cmd.getInternetProtocol());
+        final NetUtils.InternetProtocol internetProtocol = NetUtils.InternetProtocol.fromValue(cmd.getInternetProtocol());
         final String tags = cmd.getTags();
         final String trafficTypeString = cmd.getTraffictype();
         final boolean specifyVlan = cmd.getSpecifyVlan();
@@ -5747,8 +5747,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException(String.format("%s is supported only for %s guest type", ApiConstants.INTERNET_PROTOCOL, GuestType.Isolated));
             }
 
-            if (!Ipv6Service.Ipv6NetworkOfferingCreationEnabled.value() && !NetworkOffering.InternetProtocol.IPv4.equals(internetProtocol)) {
-                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported network offering", Ipv6Service.Ipv6NetworkOfferingCreationEnabled.key()));
+            if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !NetUtils.InternetProtocol.IPv4.equals(internetProtocol)) {
+                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported network offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
             }
         }
 
@@ -6118,7 +6118,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
             final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
-            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetworkOffering.InternetProtocol internetProtocol) {
+            final List<Long> domainIds, final List<Long> zoneIds, final boolean enableOffering, final NetUtils.InternetProtocol internetProtocol) {
 
         String servicePackageUuid;
         String spDescription = null;

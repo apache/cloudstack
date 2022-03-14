@@ -90,6 +90,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
@@ -540,7 +541,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                                    Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                                   List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetworkOffering.InternetProtocol internetProtocol) {
+                                                   List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol) {
         // TODO Auto-generated method stub
         return null;
     }

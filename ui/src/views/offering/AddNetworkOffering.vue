@@ -75,7 +75,7 @@
           <span v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
             <a-alert type="warning">
               <template #message>
-                <span v-html="ipv6NetworkOfferingEnabled ? $t('message.network.offering.internet.protocol.warning') : $t('message.network.offering.ipv6.warning')" />
+                <span v-html="ipv6NetworkOfferingEnabled ? $t('message.offering.internet.protocol.warning') : $t('message.offering.ipv6.warning')" />
               </template>
             </a-alert>
             <br/>
@@ -604,7 +604,7 @@ export default {
     },
     fetchIpv6NetworkOfferingConfiguration () {
       this.ipv6NetworkOfferingEnabled = false
-      var params = { name: 'network.offering.ipv6.enabled' }
+      var params = { name: 'ipv6.offering.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.ipv6NetworkOfferingEnabled = value === 'true'

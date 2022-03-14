@@ -342,7 +342,7 @@ export default {
       params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

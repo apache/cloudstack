@@ -82,6 +82,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
@@ -115,6 +116,7 @@ import com.cloud.network.vpc.dao.VpcServiceMapDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -178,6 +180,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     AccountManager _accountMgr;
     @Inject
     NetworkDao _ntwkDao;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
     @Inject
     NetworkOrchestrationService _ntwkMgr;
     @Inject
@@ -368,7 +372,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String displayText = cmd.getDisplayText();
         final List<String> supportedServices = cmd.getSupportedServices();
         final Map<String, List<String>> serviceProviderList = cmd.getServiceProviders();
-        final Map serviceCapabilitystList = cmd.getServiceCapabilitystList();
+        final Map serviceCapabilityList = cmd.getServiceCapabilityList();
+        final NetUtils.InternetProtocol internetProtocol = NetUtils.InternetProtocol.fromValue(cmd.getInternetProtocol());
         final Long serviceOfferingId = cmd.getServiceOfferingId();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
@@ -391,14 +396,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilitystList, serviceOfferingId,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled));
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilitystList, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
+            final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
+
+        if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
+            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
+        }
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -473,11 +482,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
         }
 
-        validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilitystList);
+        validateConnectivtyServiceCapabilities(svcProviderMap.get(Service.Connectivity), serviceCapabilityList);
 
-        final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilitystList);
-        final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilitystList);
-        final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilitystList);
+        final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilityList);
+        final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
+        final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
                 redundantRouter);
 
@@ -490,6 +499,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 for (Long zoneId : zoneIds) {
                     detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
+            }
+            if (internetProtocol != null) {
+                detailsVO.add(new VpcOfferingDetailsVO(offering.getId(), ApiConstants.INTERNET_PROTOCOL, String.valueOf(internetProtocol), true));
             }
             if (!detailsVO.isEmpty()) {
                 vpcOfferingDetailsDao.saveDetails(detailsVO);
@@ -1450,6 +1462,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         if (guestNtwkOff == null) {
             throw new InvalidParameterValueException("Can't find network offering by id specified");
+        }
+
+        if (!_vpcOffDao.isIpv6Supported(vpc.getVpcOfferingId()) && networkOfferingDao.isIpv6Supported(newNtwkOffId)) {
+            throw new InvalidParameterValueException(String.format("Network offering with IPv6 support cannot be used for network with VPC: %s", vpc.getUuid()));
         }
 
         if (networkId == null) {

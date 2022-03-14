@@ -42,6 +42,7 @@ import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing
@@ -215,7 +216,7 @@ public interface ConfigurationManager {
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
                                             boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
                                             Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
-                                            List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetworkOffering.InternetProtocol internetProtocol);
+                                            List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, final NetUtils.InternetProtocol internetProtocol);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, boolean forSystemVms, Long podId, String startIP, String endIP,
         String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
