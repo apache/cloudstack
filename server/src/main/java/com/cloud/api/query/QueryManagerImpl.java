@@ -3878,7 +3878,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
         }
 
-        if(caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if(caller.getType() != Account.Type.ADMIN) {
             templates = applyPublicTemplateRestriction(templates, caller);
             count = templates.size();
         }
