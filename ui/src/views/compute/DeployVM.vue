@@ -655,7 +655,7 @@
                 {{ $t('label.launch.vm') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark">
+                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
                     <a-menu-item type="primary" key="1">
                       <rocket-outlined />
                       {{ $t('label.launch.vm.and.stay') }}
@@ -2395,5 +2395,13 @@ export default {
 
   .form-item-hidden {
     display: none;
+  }
+
+  .btn-stay-on-page {
+    &.ant-dropdown-menu-dark {
+      .ant-dropdown-menu-item:hover {
+        background: transparent !important;
+      }
+    }
   }
 </style>
