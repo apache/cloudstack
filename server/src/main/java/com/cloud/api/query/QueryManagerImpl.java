@@ -2925,7 +2925,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if ((_accountMgr.isNormalUser(account.getId()) || _accountMgr.isDomainAdmin(account.getId())) || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
             if (isRecursive) { // domain + all sub-domains
                 if (account.getType() == Account.Type.NORMAL) {
-                    throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list disk offerings with isrecursive=true");
+                    isRecursive = false;
                 }
             }
         }
@@ -3153,7 +3153,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             if (isRecursive) { // domain + all sub-domains
                 if (caller.getType() == Account.Type.NORMAL) {
-                    throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
+                    isRecursive = false;
                 }
             }
         } else {
