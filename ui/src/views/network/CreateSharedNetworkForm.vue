@@ -75,7 +75,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="formPhysicalNetworkLoading"
               :placeholder="apiParams.physicalnetworkid.description"
@@ -93,7 +93,7 @@
               v-model:value="form.vlanid"
               :placeholder="apiParams.vlan.description"/>
           </a-form-item>
-          <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck">
+          <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck" v-if="isAdmin()">
             <template #label>
               <tooltip-label :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
             </template>
@@ -204,7 +204,7 @@
           </a-form-item>
           <a-form-item v-if="scopeType === 'project'" name="projectid" ref="projectid">
             <template #label>
-              <tooltip-label :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
+              <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectid.description"/>
             </template>
             <a-select
               v-model:value="form.projectid"
@@ -234,7 +234,7 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
               :placeholder="apiParams.networkofferingid.description"
@@ -247,16 +247,16 @@
               <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
-          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.specifyvlan">
+          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.specifyvlan" name="associatednetworkid" ref="associatednetworkid">
             <template #label>
               <tooltip-label :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
             </template>
             <a-select
-              v-decorator="['associatednetworkid', {}]"
+              v-model:value="form.associatednetworkid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="accountLoading"
               :placeholder="this.$t('label.associatednetwork')"
@@ -657,7 +657,7 @@ export default {
       this.handleNetworkOfferingChange(null)
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {
-        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -736,7 +736,7 @@ export default {
     },
     networkServiceProviderMap (id) {
       api('listNetworkOfferings', { id: id }).then(json => {
-        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0] || []
         const services = networkOffering.service
         this.selectedServiceProviderMap = {}
         for (const svc of services) {
@@ -763,7 +763,7 @@ export default {
       params.showicon = true
       this.domainLoading = true
       api('listDomains', params).then(json => {
-        const listDomains = json.listdomainsresponse.domain
+        const listDomains = json.listdomainsresponse.domain || []
         this.domains = listDomains
       }).finally(() => {
         this.domainLoading = false
@@ -792,14 +792,12 @@ export default {
       }
       this.accountLoading = true
       api('listAccounts', params).then(json => {
-        const listaccounts = json.listaccountsresponse.account
+        const listaccounts = json.listaccountsresponse.account || []
         this.accounts = listaccounts
       }).finally(() => {
         this.accountLoading = false
         if (this.arrayHasItems(this.accounts) && this.scopeType === 'account') {
-          this.form.setFieldsValue({
-            accountid: 0
-          })
+          this.form.accountid = 0
           this.handleAccountChange(this.accounts[0])
         }
       })
@@ -821,7 +819,7 @@ export default {
       }
       this.projectLoading = true
       api('listProjects', params).then(json => {
-        const listProjects = json.listprojectsresponse.project
+        const listProjects = json.listprojectsresponse.project || []
         this.projects = this.projects.concat(listProjects)
       }).finally(() => {
         this.projectLoading = false
@@ -889,8 +887,10 @@ export default {
           } else { // domain-specific
             params.subdomainaccess = this.parseBooleanValueForKey(values, 'subdomainaccess')
           }
-        } else { // zone-wide
+        } else if (isAdminOrDomainAdmin()) { // zone-wide
           params.acltype = 'domain' // server-side will make it Root domain (i.e. domainid=1)
+        } else {
+          params.acltype = 'account' // acl type is "account" for regular users
         }
         // IPv4 (begin)
         if (this.isValidTextValueForKey(values, 'ip4gateway')) {
