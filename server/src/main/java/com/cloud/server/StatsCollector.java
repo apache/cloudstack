@@ -301,6 +301,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -329,7 +331,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private boolean _dailyOrHourly = false;
-    protected long msId = ManagementServerNode.getManagementServerId();
+    protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
+    protected long msId = managementServerNodeId;
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -484,6 +487,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         long period = _usageAggregationRange * ONE_MINUTE_IN_MILLISCONDS;
         _diskStatsUpdateExecutor.scheduleAtFixedRate(new VmDiskStatsUpdaterTask(), (endDate - System.currentTimeMillis()), period, TimeUnit.MILLISECONDS);
+
+        ManagementServerHostVO mgmtServerVo = managementServerHostDao.findByMsid(managementServerNodeId);
+        if (mgmtServerVo != null) {
+            msId = mgmtServerVo.getId();
+        } else {
+            s_logger.warn(String.format("Cannot find management server with msid [%s]. "
+                    + "Therefore, VM stats will be recorded with the management server MAC address converted as a long in the mgmt_server_id column.", managementServerNodeId));
+        }
     }
 
     /**
