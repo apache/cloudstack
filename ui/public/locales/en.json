@@ -2887,7 +2887,7 @@
 "message.edit.traffic.type": "Please specify the traffic label you want associated with this traffic type.",
 "message.egress.rules.allow": "Allow (traffic matching the egress rules added will be denied)",
 "message.egress.rules.deny": "Deny (traffic matching the egress rules added will be allowed)",
-"message.egress.rules.info.for.network": "The default egress policy of this network is %x. <br><br> Outgoing traffic matching the following rules will be %y",
+"message.egress.rules.info.for.network": "The default egress policy of this network is %x. <br> Outgoing traffic matching the following rules will be %y",
 "message.enable.account": "Please confirm that you want to enable this account.",
 "message.enable.netsacler.provider.failed": "failed to enable Netscaler provider",
 "message.enable.securitygroup.provider.failed": "failed to enable security group provider",
