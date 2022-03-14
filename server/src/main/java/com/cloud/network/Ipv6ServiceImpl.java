@@ -294,9 +294,22 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, Nic nic) {
+    public Nic assignPublicIpv6ToNetwork(Network network, Nic nic) {
+        if (StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            return nic;
+        }
         try {
-            return assignPublicIpv6ToNetworkInternal(network, nic.getBroadcastUri().toString(), nic.getMacAddress());
+            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = assignPublicIpv6ToNetworkInternal(network, nic.getBroadcastUri().toString(), nic.getMacAddress());
+            Vlan vlan = publicIpv6AddressVlanPair.second();
+            final String ipv6Address = publicIpv6AddressVlanPair.first();
+            final String ipv6Gateway = vlan.getIp6Gateway();
+            final String ipv6Cidr = vlan.getIp6Cidr();
+            NicVO nicVO = nicDao.createForUpdate(nic.getId());
+            nicVO.setIPv6Address(ipv6Address);
+            nicVO.setIPv6Gateway(ipv6Gateway);
+            nicVO.setIPv6Cidr(ipv6Cidr);
+            nicDao.update(nic.getId(), nicVO);
+            return nicVO;
         } catch (InsufficientAddressCapacityException ex) {
             throw new CloudRuntimeException(ex.getMessage());
         }

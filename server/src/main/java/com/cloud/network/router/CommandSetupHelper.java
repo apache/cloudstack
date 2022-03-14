@@ -70,7 +70,6 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
@@ -1166,13 +1165,10 @@ public class CommandSetupHelper {
         if (isIpv6Supported) {
             setupCmd.setDefaultIp6Dns1(defaultIp6Dns1);
             setupCmd.setDefaultIp6Dns2(defaultIp6Dns2);
-            Pair<String, ? extends Vlan> publicIpv6AddressVlanPair = ipv6Service.assignPublicIpv6ToNetwork(network, nic);
-            Vlan vlan = publicIpv6AddressVlanPair.second();
-            setupCmd.setRouterIpv6(publicIpv6AddressVlanPair.first());
-            final String routerIpv6Gateway = vlan.getIp6Gateway();
-            final String routerIpv6Cidr = vlan.getIp6Cidr();
-            setupCmd.setRouterIpv6Gateway(routerIpv6Gateway);
-            setupCmd.setRouterIpv6Cidr(routerIpv6Cidr);
+            Nic updatedNic = ipv6Service.assignPublicIpv6ToNetwork(network, nic);
+            setupCmd.setRouterIpv6(updatedNic.getIPv6Address());
+            setupCmd.setRouterIpv6Gateway(updatedNic.getIPv6Gateway());
+            setupCmd.setRouterIpv6Cidr(updatedNic.getIPv6Cidr());
         }
     }
 

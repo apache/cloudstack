@@ -1464,10 +1464,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw new InvalidParameterValueException("Can't find network offering by id specified");
         }
 
-        if (!_vpcOffDao.isIpv6Supported(vpc.getVpcOfferingId()) && networkOfferingDao.isIpv6Supported(newNtwkOffId)) {
-            throw new InvalidParameterValueException(String.format("Network offering with IPv6 support cannot be used for network with VPC: %s", vpc.getUuid()));
-        }
-
         if (networkId == null) {
             // 1) Validate attributes that has to be passed in when create new
             // guest network

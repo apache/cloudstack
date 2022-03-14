@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
-import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
@@ -62,7 +61,7 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     void releaseIpv6SubnetForNetwork(long networkId);
 
-    Pair<String, ? extends Vlan> assignPublicIpv6ToNetwork(Network network, Nic nic);
+    Nic assignPublicIpv6ToNetwork(Network network, Nic nic);
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) throws InsufficientAddressCapacityException;
 
