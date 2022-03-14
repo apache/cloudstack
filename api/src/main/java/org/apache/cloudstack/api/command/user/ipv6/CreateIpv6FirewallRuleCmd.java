@@ -96,12 +96,22 @@ public class CreateIpv6FirewallRuleCmd extends BaseAsyncCreateCmd {
     }
 
     public String getProtocol() {
-        String p = protocol.trim();
-        // Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
+        String p = protocol == null ? "" : protocol.trim();
         if (StringUtils.isNumeric(p)) {
             int protoNumber = Integer.parseInt(p);
-            if (protoNumber == 1) {
-                p = "icmp";
+            switch (protoNumber) {
+                case 1:
+                    p = NetUtils.ICMP_PROTO;
+                    break;
+                case 6:
+                    p = NetUtils.TCP_PROTO;
+                    break;
+                case 17:
+                    p = NetUtils.UDP_PROTO;
+                    break;
+                default:
+                    throw new InvalidParameterValueException(String.format("Protocol %d not supported", protoNumber));
+
             }
         }
         return p;
