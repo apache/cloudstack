@@ -1156,7 +1156,7 @@
 "label.internallb.name.description": "Unique name for Internal LB",
 "label.internallb.sourceip.description": "Brief description of the Internal LB",
 "label.internallbvm": "InternalLbVm",
-"label.internet.protocol": "Internet Protocol",
+"label.internetprotocol": "Internet Protocol",
 "label.interval": "Polling Interval (in sec)",
 "label.intervaltype": "Interval Type",
 "label.introduction.to.cloudstack": "Introduction to CloudStack™",

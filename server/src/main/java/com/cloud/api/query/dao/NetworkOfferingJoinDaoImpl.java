@@ -98,6 +98,7 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
             networkOfferingResponse.setDomain(((NetworkOfferingJoinVO) offering).getDomainPath());
             networkOfferingResponse.setZoneId(((NetworkOfferingJoinVO) offering).getZoneUuid());
             networkOfferingResponse.setZone(((NetworkOfferingJoinVO) offering).getZoneName());
+            networkOfferingResponse.setInternetProtocol(((NetworkOfferingJoinVO) offering).getInternetProtocol());
         }
         networkOfferingResponse.setObjectName("networkoffering");
 

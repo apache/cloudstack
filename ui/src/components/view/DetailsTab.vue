@@ -25,7 +25,7 @@
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="item in dataResource">
+      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item)">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>

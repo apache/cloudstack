@@ -70,7 +70,7 @@
         </a-form-item>
         <a-form-item name="internetprotocol" ref="internetprotocol" v-if="guestType === 'isolated'">
           <template #label>
-            <tooltip-label :title="$t('label.internet.protocol')" :tooltip="apiParams.internetprotocol.description"/>
+            <tooltip-label :title="$t('label.internetprotocol')" :tooltip="apiParams.internetprotocol.description"/>
           </template>
           <span v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
             <a-alert type="warning">
