@@ -137,9 +137,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
             Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
             if (splits.hasNext()) {
-                splits.next();
-            }
-            if (splits.hasNext()) {
                 ipv6Network = splits.next();
             }
         }
