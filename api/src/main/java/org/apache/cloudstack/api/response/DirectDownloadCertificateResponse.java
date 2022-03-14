@@ -42,7 +42,7 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     @Param(description = "the direct download certifica")
     private String certificate;
 
-    @SerializedName("hypervisor")
+    @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor of the hosts where the certificate is uploaded")
     private String hypervisor;
 
