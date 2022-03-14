@@ -38,7 +38,7 @@
         </a-form-item>
       </div>
       <div v-else-if="currentStep === 1">
-        <routing-policy-terms :formModel="formModel" @onChangeFields="onChangeFields" />
+        <routing-policy-terms :formModel="formModel" :errors="errors" @onChangeFields="onChangeFields" />
       </div>
       <div v-else>
         <a-alert type="info" :message="$t('message.add.tungsten.routing.policy.available')"></a-alert>
@@ -64,7 +64,7 @@
       centered
     >
       <div v-ctrl-enter="() => { showError = false }">
-        <span>{{ $t('message.error.routing.policy.term') }}</span>
+        <span>{{ errorMessage }}</span>
         <div :span="24" class="action-button">
           <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
@@ -116,7 +116,12 @@ export default {
         title: 'label.finish'
       }],
       prefixList: [],
-      showError: false
+      errors: {
+        prefix: [],
+        termvalue: []
+      },
+      showError: false,
+      errorMessage: ''
     }
   },
   created () {
@@ -138,8 +143,15 @@ export default {
       this.formRef.value.validate().then(() => {
         if (this.currentStep === 1) {
           const valid = this.checkPolicyTermValues()
+          this.showError = false
+          if (this.errors.prefix.length > 0 || this.errors.termvalue.length > 0) {
+            this.showError = true
+            this.errorMessage = this.$t('message.error.required.input')
+            return
+          }
           if (!valid) {
             this.showError = true
+            this.errorMessage = this.$t('message.error.routing.policy.term')
             return
           }
         }
@@ -158,14 +170,25 @@ export default {
     },
     checkPolicyTermValues () {
       let valid = true
-      this.prefixList.forEach(item => {
-        if (!item.termvalue || item.termtype === 'action') {
+      this.errors.prefix = []
+      this.errors.termvalue = []
+      this.prefixList.forEach((item, index) => {
+        if (!item.prefix || !item.termvalue) {
+          if (!item.prefix) {
+            this.errors.prefix.push(index)
+          }
+          if (!item.termvalue) {
+            this.errors.termvalue.push(index)
+          }
+          return true
+        }
+
+        if (item.termvalue && item.termtype === 'action') {
           return true
         }
 
         if (!/^(\d+)([:])(\d+)$/.test(item.termvalue)) {
           valid = false
-          return false
         }
       })
 

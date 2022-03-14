@@ -63,7 +63,11 @@
         :rowKey="(record, idx) => idx"
         style="margin-bottom: 24px; width: 100%">
         <template #prefix="{ text, index }">
-          <a-input :value="text" @change="e => onCellChange(index, 'prefix', e.target.value)" />
+          <a-form-item
+            :hasFeedback="errors.prefix && errors.prefix.includes(index)"
+            :validateStatus="errors.prefix && errors.prefix.includes(index) ? 'error' : ''">
+            <a-input :value="text" @change="e => onCellChange(index, 'prefix', e.target.value)" />
+          </a-form-item>
         </template>
         <template #prefixtype="{ text, index }">
           <a-select
@@ -102,16 +106,20 @@
           </a-select>
         </template>
         <template #termvalue="{ text, index }">
-          <a-input
-            v-if="prefixList[index].termtype !== 'action'"
-            :value="text"
-            @change="e => onCellChange(index, 'termvalue', e.target.value)" />
-          <a-select v-else value="default" @change="value => onCellChange(index, 'termvalue', value)">
-            <a-select-option value="default">default</a-select-option>
-            <a-select-option value="accept">accept</a-select-option>
-            <a-select-option value="reject">reject</a-select-option>
-            <a-select-option value="next">next</a-select-option>
-          </a-select>
+          <a-form-item
+            :hasFeedback="errors.termvalue && errors.termvalue.includes(index)"
+            :validateStatus="errors.termvalue && errors.termvalue.includes(index) ? 'error' : ''">
+            <a-input
+              v-if="prefixList[index].termtype !== 'action'"
+              :value="text"
+              @change="e => onCellChange(index, 'termvalue', e.target.value)" />
+            <a-select v-else value="default" @change="value => onCellChange(index, 'termvalue', value)">
+              <a-select-option value="default">default</a-select-option>
+              <a-select-option value="accept">accept</a-select-option>
+              <a-select-option value="reject">reject</a-select-option>
+              <a-select-option value="next">next</a-select-option>
+            </a-select>
+          </a-form-item>
         </template>
         <template #action="{ index }">
           <tooltip-button
@@ -140,6 +148,10 @@ export default {
   components: { TooltipButton },
   props: {
     formModel: {
+      type: Object,
+      default: () => {}
+    },
+    errors: {
       type: Object,
       default: () => {}
     }
@@ -178,6 +190,11 @@ export default {
           slots: { customRender: 'action' }
         }
       ]
+    }
+  },
+  watch: {
+    listErrors () {
+      console.log(this.listErrors)
     }
   },
   created () {

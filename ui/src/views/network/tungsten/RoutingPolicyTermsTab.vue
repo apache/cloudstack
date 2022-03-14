@@ -48,6 +48,7 @@
         <a-form class="form-content">
           <routing-policy-terms
             :formModel="formModel"
+            :errors="errors"
             @onChangeFields="onChangeFields"
             @showError="() => { showError = true }"
             @closeError="() => { showError = false }" />
@@ -68,7 +69,7 @@
       centered
     >
       <div v-ctrl-enter="() => { showError = false }">
-        <span>{{ $t('message.error.routing.policy.term') }}</span>
+        <span>{{ errorMessage }}</span>
         <div :span="24" class="action-button">
           <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="showError = false">{{ $t('label.ok') }}</a-button>
@@ -106,7 +107,12 @@ export default {
       }],
       dataSource: [],
       prefixList: [],
-      zoneId: null
+      zoneId: null,
+      errors: {
+        prefix: [],
+        termvalue: []
+      },
+      errorMessage: ''
     }
   },
   watch: {
@@ -133,14 +139,23 @@ export default {
     checkPolicyTermValues () {
       let valid = true
       if (this.prefixList) return valid
-      this.prefixList.forEach(item => {
-        if (!item.termvalue || item.termtype === 'action') {
+      this.prefixList.forEach((item, index) => {
+        if (!item.prefix || !item.termvalue) {
+          if (!item.prefix) {
+            this.errors.prefix.push(index)
+          }
+          if (!item.termvalue) {
+            this.errors.termvalue.push(index)
+          }
+          return true
+        }
+
+        if (item.termvalue && item.termtype === 'action') {
           return true
         }
 
         if (!/^(\d+)([:])(\d+)$/.test(item.termvalue)) {
           valid = false
-          return false
         }
       })
 
@@ -148,8 +163,16 @@ export default {
     },
     async handleSubmit () {
       this.showError = false
-      if (!this.checkPolicyTermValues()) {
+      const valid = this.checkPolicyTermValues()
+      this.showError = false
+      if (this.errors.prefix.length > 0 || this.errors.termvalue.length > 0) {
         this.showError = true
+        this.errorMessage = this.$t('message.error.required.input')
+        return
+      }
+      if (!valid) {
+        this.showError = true
+        this.errorMessage = this.$t('message.error.routing.policy.term')
         return
       }
 
@@ -160,7 +183,13 @@ export default {
       params.tungstenroutingpolicymatchall = this.formModel?.tungstenroutingpolicymatchall || false
       params.tungstenroutingpolicyprotocol = this.formModel?.tungstenroutingpolicyprotocol?.join(',') || ''
       params.tungstenroutingpolicyfromtermprefixlist = this.prefixList.length > 0 ? this.prefixList.map(item => [item.prefix, item.prefixtype].join('&')).join(',') : ''
-      params.tungstenroutingpolicythentermlist = this.prefixList.length > 0 ? this.prefixList.map(item => [item.termtype, item.termvalue].join('&')).join(',') : ''
+      params.tungstenroutingpolicythentermlist = this.prefixList.length > 0 ? this.prefixList.map(item => {
+        if (item.termtype === 'action') {
+          return [item.termvalue, item.termtype, ' '].join('&')
+        } else {
+          return [' ', item.termtype, item.termvalue].join('&')
+        }
+      }).join(',') : ''
 
       const jobId = await this.addTungstenFabricRoutingPolicyTerm(params)
       await this.$pollJob({
