@@ -28,11 +28,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.log4j.Logger;
 
@@ -58,8 +60,16 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
             description = "the zone where certificates are uploaded")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.LIST_HOSTS, type = CommandType.BOOLEAN,
+            description = "if set to true: include the hosts where the certificate is uploaded to")
+    private Boolean listHosts;
+
     private static final Logger LOG = Logger.getLogger(ListTemplateDirectDownloadCertificatesCmd.class);
     public static final String APINAME = "listTemplateDirectDownloadCertificates";
+
+    public boolean isListHosts() {
+        return listHosts != null && listHosts;
+    }
 
     private void createResponse(final List<DirectDownloadCertificate> certificates) {
         final ListResponse<DirectDownloadCertificateResponse> response = new ListResponse<>();
@@ -69,6 +79,11 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
                 continue;
             }
             DirectDownloadCertificateResponse certificateResponse = _responseGenerator.createDirectDownloadCertificateResponse(certificate);
+            if (isListHosts()) {
+                List<DirectDownloadCertificateHostMap> hostMappings = directDownloadManager.getCertificateHostsMapping(certificate.getId());
+                List<DirectDownloadCertificateHostMapResponse> hostMapResponses = _responseGenerator.createDirectDownloadCertificateHostMapResponse(hostMappings);
+                certificateResponse.setHostsMap(hostMapResponses);
+            }
             responses.add(certificateResponse);
         }
         response.setResponses(responses);

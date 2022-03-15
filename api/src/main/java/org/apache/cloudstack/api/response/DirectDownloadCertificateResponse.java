@@ -23,6 +23,8 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 
+import java.util.List;
+
 @EntityReference(value = DirectDownloadCertificate.class)
 public class DirectDownloadCertificateResponse extends BaseResponse {
 
@@ -38,6 +40,10 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     @Param(description = "the zone id where the certificate is uploaded")
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the zone name where the certificate is uploaded")
+    private String zoneName;
+
     @SerializedName(ApiConstants.CERTIFICATE)
     @Param(description = "the direct download certificate")
     private String certificate;
@@ -45,6 +51,10 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor of the hosts where the certificate is uploaded")
     private String hypervisor;
+
+    @SerializedName(ApiConstants.HOSTS_MAP)
+    @Param(description = "the hosts where the certificate is uploaded to", responseObject = HostResponse.class)
+    private List<DirectDownloadCertificateHostMapResponse> hostsMap;
 
     public String getId() {
         return id;
@@ -84,5 +94,21 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
 
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
+    }
+
+    public String getZoneName() {
+        return zoneName;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
+    }
+
+    public List<DirectDownloadCertificateHostMapResponse> getHostsMap() {
+        return hostsMap;
+    }
+
+    public void setHostsMap(List<DirectDownloadCertificateHostMapResponse> hosts) {
+        this.hostsMap = hosts;
     }
 }

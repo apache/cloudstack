@@ -620,6 +620,14 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return certificates;
     }
 
+    @Override
+    public List<DirectDownloadCertificateHostMap> getCertificateHostsMapping(Long certificateId) {
+        if (certificateId == null) {
+            throw new InvalidParameterValueException("Please specify a certificate ID");
+        }
+        return new LinkedList<>(directDownloadCertificateHostMapDao.listByCertificateId(certificateId));
+    }
+
     protected boolean revokeCertificateAliasFromHost(String alias, Long hostId) {
         RevokeDirectDownloadCertificateCommand cmd = new RevokeDirectDownloadCertificateCommand(alias);
         try {

@@ -68,6 +68,7 @@ import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -161,6 +162,7 @@ import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -4555,6 +4557,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenterVO datacenter = ApiDBUtils.findZoneById(certificate.getZoneId());
         if (datacenter != null) {
             response.setZoneId(datacenter.getUuid());
+            response.setZoneName(datacenter.getName());
         }
         response.setId(certificate.getUuid());
         response.setAlias(certificate.getAlias());
@@ -4562,5 +4565,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setHypervisor(certificate.getHypervisorType().name());
         response.setObjectName("directdownloadcertificate");
         return response;
+    }
+
+    @Override
+    public List<DirectDownloadCertificateHostMapResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings) {
+        if (CollectionUtils.isEmpty(hostMappings)) {
+            return new ArrayList<>();
+        }
+        List<DirectDownloadCertificateHostMapResponse> responses = new ArrayList<>(hostMappings.size());
+        for (DirectDownloadCertificateHostMap map : hostMappings) {
+            DirectDownloadCertificateHostMapResponse response = new DirectDownloadCertificateHostMapResponse();
+            HostVO host = ApiDBUtils.findHostById(map.getHostId());
+            if (host != null) {
+                response.setHostId(host.getUuid());
+                response.setHostName(host.getName());
+            }
+            response.setRevoked(map.isRevoked());
+            response.setObjectName("directdownloadcertificatehostmap");
+            responses.add(response);
+        }
+        return responses;
     }
 }
