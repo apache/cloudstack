@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -51,6 +52,21 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
 
     @Inject
     EntityManager entityMgr;
+
+    private String getResourceName(Object obj) {
+        String[] possibleMethods = {"getDisplayName", "getHostName","getName", "getAccountName", "getUsername"};
+        for (String possibleMethodName : possibleMethods) {
+            try {
+                Method m = obj.getClass().getMethod(possibleMethodName);
+                String name = (String)m.invoke(obj);
+                if (StringUtils.isEmpty(name)) {
+                    continue;
+                }
+                return name;
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+        }
+        return null;
+    }
 
     protected EventJoinDaoImpl() {
 
@@ -104,10 +120,7 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
                 responseEvent.setResourceId(((Identity)objVO).getUuid());
             }
             if (objVO != null) {
-                try {
-                    Method m = objVO.getClass().getMethod("getName");
-                    responseEvent.setResourceName((String)m.invoke(objVO));
-                } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+                responseEvent.setResourceName(getResourceName(objVO));
             }
         }
         ApiResponseHelper.populateOwner(responseEvent, event);
