@@ -58,9 +58,9 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
             true);
 
     /**
-     * Revoke direct download certificate with alias 'alias' from hosts of hypervisor type 'hypervisor'
+     * Revoke direct download certificate from the hosts in the zone or a specific host
      */
-    boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId, Long hostId);
+    boolean revokeCertificate(Long certificateId, Long zoneId, Long hostId);
 
     List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId);
 

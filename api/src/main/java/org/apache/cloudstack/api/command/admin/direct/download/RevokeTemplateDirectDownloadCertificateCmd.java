@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -54,13 +55,10 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private static final Logger LOG = Logger.getLogger(RevokeTemplateDirectDownloadCertificateCmd.class);
     public static final String APINAME = "revokeTemplateDirectDownloadCertificate";
 
-    @Parameter(name = ApiConstants.NAME, type = BaseCmd.CommandType.STRING, required = true,
-            description = "alias of the SSL certificate")
-    private String certificateAlias;
-
-    @Parameter(name = ApiConstants.HYPERVISOR, type = BaseCmd.CommandType.STRING, required = true,
-            description = "hypervisor type")
-    private String hypervisor;
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
+            entityType = DirectDownloadCertificateResponse.class,
+            description = "id of the certificate")
+    private Long certificateId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
             description = "zone to revoke certificate", required = true)
@@ -72,13 +70,9 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        if (!hypervisor.equalsIgnoreCase("kvm")) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Currently supporting KVM hosts only");
-        }
         SuccessResponse response = new SuccessResponse(getCommandName());
         try {
-            LOG.debug("Revoking certificate " + certificateAlias + " from " + hypervisor + " hosts");
-            boolean result = directDownloadManager.revokeCertificateAlias(certificateAlias, hypervisor, zoneId, hostId);
+            boolean result = directDownloadManager.revokeCertificate(certificateId, zoneId, hostId);
             response.setSuccess(result);
             setResponseObject(response);
         } catch (Exception e) {

@@ -567,40 +567,66 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return syncCertificatesResult;
     }
 
-    @Override
-    public boolean revokeCertificateAlias(String certificateAlias, String hypervisor, Long zoneId, Long hostId) {
-        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
-        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findByAlias(certificateAlias, hypervisorType, zoneId);
-        if (certificateVO == null) {
-            throw new CloudRuntimeException("Certificate alias " + certificateAlias + " does not exist");
-        }
-
-        List<DirectDownloadCertificateHostMapVO> maps = null;
+    private List<DirectDownloadCertificateHostMapVO> getCertificateHostMappings(DirectDownloadCertificateVO certificateVO, Long hostId) {
+        List<DirectDownloadCertificateHostMapVO> maps;
         if (hostId == null) {
-             maps = directDownloadCertificateHostMapDao.listByCertificateId(certificateVO.getId());
+            maps = directDownloadCertificateHostMapDao.listByCertificateId(certificateVO.getId());
         } else {
             DirectDownloadCertificateHostMapVO hostMap = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
             if (hostMap == null) {
-                s_logger.info("Certificate " + certificateAlias + " cannot be revoked from host " + hostId + " as it is not available on the host");
-                return false;
+                String msg = "Certificate " + certificateVO.getAlias() + " cannot be revoked from host " + hostId + " as it is not available on the host";
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
             }
             maps = Collections.singletonList(hostMap);
         }
+        return maps;
+    }
 
+    @Override
+    public boolean revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
+        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
+        if (certificateVO == null) {
+            throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
+        }
+        String certificateAlias = certificateVO.getAlias();
+        if (certificateVO.getZoneId().equals(zoneId)) {
+            throw new CloudRuntimeException("The certificate with alias " + certificateAlias + " was uploaded " +
+                    " to the zone with ID=" + certificateVO.getZoneId() + " instead of the zone with ID=" + zoneId);
+        }
+
+        List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificateVO, hostId);
+        if (CollectionUtils.isEmpty(maps)) {
+            return true;
+        }
+
+        int success = 0;
+        int failed = 0;
+        int skipped = 0;
         s_logger.info("Attempting to revoke certificate alias: " + certificateAlias + " from " + maps.size() + " hosts");
-        if (CollectionUtils.isNotEmpty(maps)) {
-            for (DirectDownloadCertificateHostMapVO map : maps) {
-                Long mappingHostId = map.getHostId();
-                if (!revokeCertificateAliasFromHost(certificateAlias, mappingHostId)) {
-                    String msg = "Could not revoke certificate from host: " + mappingHostId;
-                    s_logger.error(msg);
-                    throw new CloudRuntimeException(msg);
+        for (DirectDownloadCertificateHostMapVO map : maps) {
+            Long mappingHostId = map.getHostId();
+            HostVO host = hostDao.findById(mappingHostId);
+            if (host == null || host.getDataCenterId() != zoneId || host.getHypervisorType() != HypervisorType.KVM) {
+                if (host != null) {
+                    s_logger.debug("Skipping host " + host.getName() + " since its not on the zone " + zoneId + " or not a KVM host");
                 }
+                skipped++;
+                continue;
+            }
+            if (!revokeCertificateAliasFromHost(certificateAlias, mappingHostId)) {
+                String msg = "Could not revoke certificate from host: " + mappingHostId;
+                s_logger.error(msg);
+                failed++;
+            } else {
                 s_logger.info("Certificate " + certificateAlias + " revoked from host " + mappingHostId);
                 map.setRevoked(true);
+                success++;
                 directDownloadCertificateHostMapDao.update(map.getId(), map);
             }
         }
+        s_logger.info(String.format("Certificate alias %s revoked from: %d hosts, %d failed, %d skipped",
+                certificateAlias, success, failed, skipped));
         return true;
     }
 
