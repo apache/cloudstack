@@ -22,13 +22,15 @@
         <a-form
           :ref="formRef"
           :model="form"
-          @submit="handleSubmit"
+          :rules="rules"
+          @finish="handleSubmit"
           layout="vertical">
           <a-form-item v-if="isAdminOrDomainAdmin()" name="accountids" ref="accountids">
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.accountids.description"/>
             </template>
             <a-select
+              v-model:value="form.accountids"
               mode="multiple"
               :loading="accountLoading"
               :placeholder="apiParams.accountids.description"
@@ -51,6 +53,7 @@
               <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectids.description"/>
             </template>
             <a-select
+              v-model:value="form.projectids"
               mode="multiple"
               :loading="projectLoading"
               :placeholder="apiParams.projectids.description"
@@ -170,7 +173,6 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)

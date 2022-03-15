@@ -41,10 +41,10 @@
         style="overflow-y: auto; width: 100%;"
         :columns="columns"
         :dataSource="networkpermissions"
-        :rowKey="item => item.accountid"
+        :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="text, record">
+        <template #action="{ record }">
           <a-popconfirm
             :title="$t('message.confirm.remove.network.permission')"
             @confirm="removeNetworkPermission(record.accountid, record.projectid)"
