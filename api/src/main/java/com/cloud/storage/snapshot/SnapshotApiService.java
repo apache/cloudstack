@@ -118,4 +118,6 @@ public interface SnapshotApiService {
     Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId);
 
     SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd updateSnapshotPolicyCmd);
+
+    void markVolumeSnapshotsAsDestroyed(Volume volume);
 }

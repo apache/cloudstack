@@ -27,7 +27,7 @@
           :bordered="false"
           :loading="loading"
           :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
-          <router-link v-if="stat.path" :to="{ path: stat.path }">
+          <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
             <div
               class="usage-dashboard-chart-card-inner">
               <h3>{{ stat.name }}</h3>

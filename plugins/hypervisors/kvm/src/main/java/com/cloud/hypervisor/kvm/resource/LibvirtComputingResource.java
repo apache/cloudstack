@@ -16,6 +16,77 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import com.cloud.configuration.Config;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.KVMHostInfo;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainBlockStats;
+import org.libvirt.DomainInfo;
+import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.DomainInterfaceStats;
+import org.libvirt.DomainSnapshot;
+import org.libvirt.LibvirtException;
+import org.libvirt.MemoryStatistic;
+import org.libvirt.Network;
+import org.libvirt.SchedParameter;
+import org.libvirt.SchedUlongParameter;
+import org.libvirt.VcpuInfo;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -47,7 +118,6 @@ import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
-import com.cloud.configuration.Config;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
@@ -117,74 +187,8 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
-import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
-import org.apache.cloudstack.utils.linux.CPUStat;
-import org.apache.cloudstack.utils.linux.KVMHostInfo;
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.joda.time.Duration;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainBlockStats;
-import org.libvirt.DomainInfo;
-import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.DomainInterfaceStats;
-import org.libvirt.DomainSnapshot;
-import org.libvirt.LibvirtException;
-import org.libvirt.MemoryStatistic;
-import org.libvirt.Network;
-import org.libvirt.VcpuInfo;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -332,6 +336,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _hostDistro;
     protected String _networkDirectSourceMode;
     protected String _networkDirectDevice;
+    protected String _sysvmISOPath;
     protected String _privNwName;
     protected String _privBridgeName;
     protected String _linkLocalBridgeName;
@@ -2886,6 +2891,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
             final DiskDef iso = new DiskDef();
+            iso.defISODisk(_sysvmISOPath);
             if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
                 iso.setBusType(DiskDef.DiskBus.SCSI);
             }
@@ -4599,5 +4605,36 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static long countDomainRunningVcpus(Domain dm) throws LibvirtException {
         VcpuInfo vcpus[] = dm.getVcpusInfo();
         return Arrays.stream(vcpus).filter(vcpu -> vcpu.state.equals(VcpuInfo.VcpuState.VIR_VCPU_RUNNING)).count();
+    }
+
+    /**
+     * Retrieves the cpu_shares (priority) of the running VM <br/>
+     * @param dm domain of the VM.
+     * @return the value of cpu_shares of the running VM.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public static Integer getCpuShares(Domain dm) throws LibvirtException {
+        for (SchedParameter c : dm.getSchedulerParameters()) {
+            if (c.field.equals("cpu_shares")) {
+                return Integer.parseInt(c.getValueAsString());
+            }
+        }
+        s_logger.warn(String.format("Could not get cpu_shares of domain: [%s]. Returning default value of 0. ", dm.getName()));
+        return 0;
+    }
+
+    /**
+     * Sets the cpu_shares (priority) of the running VM <br/>
+     * @param dm domain of the VM.
+     * @param cpuShares new priority of the running VM.
+     * @throws org.libvirt.LibvirtException
+     **/
+    public static void setCpuShares(Domain dm, Integer cpuShares) throws LibvirtException {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "cpu_shares";
+        params[0].value = cpuShares;
+
+        dm.setSchedulerParameters(params);
     }
 }

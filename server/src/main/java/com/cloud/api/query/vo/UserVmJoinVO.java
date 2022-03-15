@@ -34,6 +34,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -66,7 +67,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -445,7 +447,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

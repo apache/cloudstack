@@ -949,7 +949,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             user = userAcctPair.first();
             final Account account = userAcctPair.second();
 
-            if (user.getState() != Account.State.enabled || !account.getState().equals(Account.State.enabled)) {
+            if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
                 s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
                         "; accountState: " + account.getState());
                 return false;
@@ -1123,7 +1123,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("domain_UUID", domain.getUuid());
             }
 
-            session.setAttribute("type", Short.valueOf(account.getType()).toString());
+            session.setAttribute("type", account.getType().ordinal());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
             session.setAttribute("registered", Boolean.toString(userAcct.isRegistered()));
 
@@ -1159,8 +1159,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             account = accountMgr.getAccount(user.getAccountId());
         }
 
-        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) ||
-                !account.getState().equals(Account.State.enabled)) {
+        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.ENABLED) || (account == null) ||
+                !account.getState().equals(Account.State.ENABLED)) {
             s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
             return false;
         }

@@ -94,7 +94,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -530,7 +529,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             response.setKubernetesVersionName(version.getName());
         }
         Account account = ApiDBUtils.findAccountById(kubernetesCluster.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());
@@ -1198,11 +1197,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final String keyword = cmd.getKeyword();
         List<KubernetesClusterResponse> responsesList = new ArrayList<KubernetesClusterResponse>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-        Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Pair<Long, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), null);
         accountManager.buildACLSearchParameters(caller, clusterId, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+        Boolean isRecursive = cmd.isRecursive();
         Filter searchFilter = new Filter(KubernetesClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<KubernetesClusterVO> sb = kubernetesClusterDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);

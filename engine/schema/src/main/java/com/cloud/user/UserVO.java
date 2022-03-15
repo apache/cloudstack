@@ -122,7 +122,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.lastname = lastName;
         this.email = email;
         this.timezone = timezone;
-        this.state = State.enabled;
+        this.state = State.ENABLED;
         this.uuid = uuid;
         this.source = source;
     }

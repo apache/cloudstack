@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -125,7 +126,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -657,12 +657,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-                cmd.isRecursive(), null);
+        Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(cmd.getDomainId(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+        Boolean isRecursive = cmd.isRecursive();
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
@@ -908,7 +907,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
             if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
-                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (owner.getType() == Account.Type.PROJECT) {
                     message = "domain/project";
                 }
 
@@ -1542,5 +1541,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
+    }
+
+    @Override
+    public void markVolumeSnapshotsAsDestroyed(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        for (SnapshotVO snapshot: snapshots) {
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
+            if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            }
+        }
     }
 }

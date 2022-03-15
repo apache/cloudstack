@@ -61,7 +61,6 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -150,7 +149,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId,
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, Account.Type accountType, Long roleId,
                                          Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source) {
         // TODO Auto-generated method stub
         return null;
@@ -279,7 +278,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public void buildACLSearchParameters(Account arg0, Long arg1, String arg2,
             Long arg3, List<Long> arg4,
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
+            Pair<Long, ListProjectResourcesCriteria> arg5,
             boolean arg6, boolean arg7) {
         // TODO Auto-generated method stub
 
@@ -404,7 +403,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+    public Account createAccount(String accountName, Account.Type accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
         final AccountVO account = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override

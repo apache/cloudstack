@@ -182,7 +182,7 @@ public class ConfigurationManagerTest {
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
         when(configurationMgr._accountDao.findActiveAccount(anyString(), anyLong())).thenReturn(account);
         when(configurationMgr._accountMgr.getActiveAccountById(anyLong())).thenReturn(account);

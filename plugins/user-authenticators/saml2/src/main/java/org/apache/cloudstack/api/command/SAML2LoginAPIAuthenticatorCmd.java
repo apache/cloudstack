@@ -122,7 +122,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override
@@ -303,7 +303,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     // Log into the first enabled user account
                     // Users can switch to other allowed accounts later
                     for (UserAccountVO possibleUserAccount : possibleUserAccounts) {
-                        if (possibleUserAccount.getAccountState().equals(Account.State.enabled.toString())) {
+                        if (possibleUserAccount.getAccountState().equals(Account.State.ENABLED.toString())) {
                             userAccount = possibleUserAccount;
                             break;
                         }

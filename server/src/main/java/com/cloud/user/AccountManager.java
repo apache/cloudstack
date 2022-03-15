@@ -33,7 +33,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -52,7 +51,7 @@ public interface AccountManager extends AccountService, Configurable {
 
     Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
 
-    Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid);
+    Account createAccount(String accountName, Account.Type accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid);
 
     /**
      * Logs out a user
@@ -96,7 +95,7 @@ public interface AccountManager extends AccountService, Configurable {
             ListProjectResourcesCriteria listProjectResourcesCriteria);
 
     void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
+            Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
 
     void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
             ListProjectResourcesCriteria listProjectResourcesCriteria);
