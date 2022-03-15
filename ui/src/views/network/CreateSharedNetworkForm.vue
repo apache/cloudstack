@@ -264,7 +264,7 @@
               <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon type="user" style="margin-right: 5px" />
+                  <user-outlined style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -736,7 +736,7 @@ export default {
     },
     networkServiceProviderMap (id) {
       api('listNetworkOfferings', { id: id }).then(json => {
-        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0] || []
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
         const services = networkOffering.service
         this.selectedServiceProviderMap = {}
         for (const svc of services) {

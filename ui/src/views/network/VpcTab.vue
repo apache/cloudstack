@@ -195,7 +195,7 @@
                   <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
                     <span>
                       <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                      <a-icon type="user" style="margin-right: 5px" />
+                      <user-outlined style="margin-right: 5px" />
                       {{ opt.name || opt.description }}
                     </span>
                   </a-select-option>

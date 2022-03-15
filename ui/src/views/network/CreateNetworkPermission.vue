@@ -20,7 +20,8 @@
     <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
-          :form="form"
+          :ref="formRef"
+          :model="form"
           @submit="handleSubmit"
           layout="vertical">
           <a-form-item v-if="isAdminOrDomainAdmin()" name="accountids" ref="accountids">
@@ -36,10 +37,10 @@
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(opt, optIndex) in this.accounts" :key="optIndex" :label="opt.name || opt.description">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -58,10 +59,10 @@
               :filterOption="(input, option) => {
                 return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex" :label="opt.name || opt.description">
+              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -72,8 +73,9 @@
               <tooltip-label :title="$t('label.accounts')" :tooltip="apiParams.accounts.description"/>
             </template>
             <a-input
-              v-decorator="['accounts', {}]"
-              :placeholder="apiParams.accounts.description"/>
+              v-model:value="form.accounts"
+              :placeholder="apiParams.accounts.description"
+              v-focus="true" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
@@ -98,12 +100,15 @@
 <script>
 import { api } from '@/api'
 import { isAdminOrDomainAdmin } from '@/role'
+import { ref, reactive, toRaw } from 'vue'
+import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateNetworkPermissions',
   components: {
-    TooltipLabel
+    TooltipLabel,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -121,7 +126,8 @@ export default {
     }
   },
   created () {
-    this.form = this.$form.createForm(this)
+    this.formRef = ref()
+    this.form = reactive({})
     this.apiParams = this.$getApiParams('createNetworkPermissions')
     this.fetchData()
   },
@@ -166,11 +172,8 @@ export default {
       e.preventDefault()
 
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         params.networkid = this.resource.id
         var accountIndexes = values.accountids
@@ -214,13 +217,14 @@ export default {
           }).catch(error => {
             this.$notification.error({
               message: `${this.$t('label.error')} ${error.response.status}`,
-              description: error.response.data.updatenetworkpermissionsresponse
-                ? error.response.data.updatenetworkpermissionsresponse.errortext : error.response.data.errorresponse.errortext,
+              description: error.response.data.createnetworkpermissionsresponse.errortext || error.response.data.errorresponse.errortext,
               duration: 0
             })
           }).finally(() => {
             this.loading = false
           })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

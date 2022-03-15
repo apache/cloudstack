@@ -73,7 +73,7 @@ export default {
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       }, {
         name: 'network.permissions',
-        component: () => import('@/views/network/NetworkPermissions.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/NetworkPermissions.vue'))),
         show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) }
       },
       {

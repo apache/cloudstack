@@ -19,18 +19,18 @@
   <div>
     <a-spin :spinning="fetchLoading">
       <a-button
-        icon="plus"
         shape="round"
         style="float: right;margin-bottom: 10px; z-index: 8"
         @click="() => { showCreateForm = true }">
+        <template #icon><plus-outlined /></template>
         {{ $t('label.add.network.permission') }}
       </a-button>
       <a-button
-        icon="minus"
         shape="round"
         style="float: right;margin-bottom: 10px; z-index: 8"
         @click="showResetPermissionModal = true"
         :disabled="!('createNetworkPermissions' in $store.getters.apis)">
+        <template #icon><minus-outlined /></template>
         {{ $t('label.action.reset.network.permissions') }}
       </a-button>
       <br />
@@ -53,8 +53,9 @@
             <tooltip-button
               tooltipPlacement="bottom"
               :tooltip="$t('label.action.delete.network.permission')"
-              type="danger"
-              icon="delete" />
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
           </a-popconfirm>
         </template>
 
@@ -140,7 +141,7 @@ export default {
         },
         {
           title: '',
-          scopedSlots: { customRender: 'action' }
+          slots: { customRender: 'action' }
         }
       ]
     }
@@ -149,11 +150,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {
