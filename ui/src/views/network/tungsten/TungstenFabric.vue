@@ -173,62 +173,6 @@ export default {
               ]
             },
             {
-              api: 'addTungstenFabricFirewallPolicy',
-              icon: 'form-outlined',
-              label: 'label.apply.tungsten.firewall.policy',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'firewallpolicyuuid',
-                  required: true,
-                  type: 'uuid',
-                  api: 'listTungstenFabricFirewallPolicy',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'taguuid',
-                  required: true,
-                  type: 'uuid',
-                  api: 'listTungstenFabricTag',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'sequence',
-                  required: true,
-                  type: 'number',
-                  value: 0
-                }
-              ],
-              show: record => record.firewallpolicy.length === 0,
-              args: {
-                applicationpolicysetuuid: (record) => record.uuid
-              }
-            },
-            {
-              api: 'removeTungstenFabricFirewallPolicy',
-              icon: 'close-outlined',
-              label: 'label.remove.tungsten.firewall.policy',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'firewallpolicyuuid',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [],
-                  optGet: (record) => record.firewallpolicy
-                }
-              ],
-              show: (record) => record.firewallpolicy.length > 0,
-              args: {
-                applicationpolicysetuuid: (record) => record.uuid
-              }
-            },
-            {
               api: 'deleteTungstenFabricApplicationPolicySet',
               icon: 'delete-outlined',
               label: 'label.delete.tungsten.policy.set',

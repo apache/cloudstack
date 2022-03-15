@@ -562,7 +562,7 @@ export default {
       this.deleteLoading = true
       const params = {}
       params.zoneid = this.zoneId
-      params.firewallpolicyuuid = uuid
+      params.firewallruleuuid = uuid
 
       api('deleteTungstenFabricFirewallRule', params).then(json => {
         this.$pollJob({
