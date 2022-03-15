@@ -74,6 +74,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
+import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.BDDMockito;
@@ -5786,5 +5787,58 @@ public class LibvirtComputingResourceTest {
         Mockito.when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(hypervisorQemuVersion);
         libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
         return diskDef;
+    }
+
+    private SchedUlongParameter[] createSchedParametersWithCpuSharesOf2000 () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "cpu_shares";
+        params[0].value = 2000;
+
+        return params;
+    }
+
+    private SchedUlongParameter[] createSchedParametersWithoutCpuShares () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "weight";
+        params[0].value = 200;
+
+        return params;
+    }
+
+    @Test
+    public void getCpuSharesTestReturnCpuSharesIfFound() throws LibvirtException {
+        SchedUlongParameter[] cpuSharesOf2000 = createSchedParametersWithCpuSharesOf2000();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(cpuSharesOf2000);
+        int cpuShares = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(2000, cpuShares);
+    }
+
+    @Test
+    public void getCpuSharesTestReturnZeroIfCpuSharesNotFound() throws LibvirtException {
+        SchedUlongParameter[] withoutCpuShares = createSchedParametersWithoutCpuShares();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(withoutCpuShares);
+        int actualValue = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(0, actualValue);
+    }
+
+    @Test
+    public void setCpuSharesTestSuccessfullySetCpuShares() throws LibvirtException {
+        LibvirtComputingResource.setCpuShares(domainMock, 2000);
+        Mockito.verify(domainMock, times(1)).setSchedulerParameters(Mockito.argThat(schedParameters -> {
+            if (schedParameters == null || schedParameters.length > 1 || !(schedParameters[0] instanceof SchedUlongParameter)) {
+                return false;
+            }
+            SchedUlongParameter param = (SchedUlongParameter) schedParameters[0];
+            if (param.field != "cpu_shares" || param.value != 2000) {
+                return false;
+            }
+            return true;
+        }));
     }
 }
