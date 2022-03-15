@@ -366,6 +366,16 @@
             </li>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
+          <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
+          <div class="resource-detail-item__details">
+            <a-tooltip placement="top" :title="resource.resourcetype + ': ' + (resource.resourcename || resource.resourceid)">
+              <render-icon style="font-size: 16px; margin-right: 5px" :icon="$getIconFromResourceType(resource.resourcetype)" />
+              <router-link v-if="$router.resolve('/' + routeFromResourceType + '/' + resource.resourceid)" :to="{ path: '/' + routeFromResourceType + '/' + resource.resourceid }">{{ resource.resourcename || resource.resourceid }}</router-link>
+              <span v-else>{{ resource.resourcename || resource.resourceid }}</span>
+            </a-tooltip>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
@@ -835,6 +845,9 @@ export default {
         return this.resource.icon.base64image
       }
       return null
+    },
+    routeFromResourceType () {
+      return this.$getRouteFromResourceType(this.resource.resourcetype)
     }
   },
   methods: {

@@ -22,7 +22,7 @@ export default {
   docHelp: 'adminguide/events.html',
   permission: ['listEvents'],
   columns: ['level', 'type', 'state', 'description', 'resource', 'username', 'account', 'domain', 'created'],
-  details: ['username', 'id', 'description', 'state', 'level', 'type', 'account', 'domain', 'created'],
+  details: ['username', 'id', 'description', 'resourcetype', 'resourceid', 'state', 'level', 'type', 'account', 'domain', 'created'],
   searchFilters: ['level', 'domainid', 'account', 'keyword'],
   related: [{
     name: 'event',
