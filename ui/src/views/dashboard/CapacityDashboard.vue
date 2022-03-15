@@ -119,11 +119,11 @@
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
                 <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
-                <span v-if="event.resourcetype && event.resourceid && $getRouteFromResourceType(event.resourcetype)">
-                  <a-tooltip placement="top" :title="event.resourcetype + ': ' + (event.resourcename || event.resourceid)">
-                    <render-icon style="font-size: 16px; margin-right: 5px" :icon="$getIconFromResourceType(event.resourcetype)" />
-                    <router-link v-if="$router.resolve('/' + $getRouteFromResourceType(event.resourcetype) + '/' + event.resourceid)" :to="{ path: '/' + $getRouteFromResourceType(event.resourcetype) + '/' + event.resourceid }">{{ event.resourcename || event.resourceid }}</router-link>
-                    <span v-else><small>{{ event.resourcename || event.resourceid }}</small></span>
+                <span v-if="event.resourceroute">
+                  <a-tooltip placement="top" :title="event.resourcetype + ': ' + event.resourcedisplayname">
+                    <render-icon v-if="event.resourceicon" style="font-size: 16px; margin-right: 5px" :icon="event.resourceicon" />
+                    <router-link v-if="$router.resolve(event.resourceroute)" :to="{ path: event.resourceroute }">{{ event.resourcedisplayname }}</router-link>
+                    <span v-else><small>{{ event.resourcedisplayname }}</small></span>
                   </a-tooltip>
                 </span><br/>
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
@@ -249,6 +249,19 @@ export default {
         this.loading = false
         if (json && json.listeventsresponse && json.listeventsresponse.event) {
           this.events = json.listeventsresponse.event
+        }
+      }).finally(() => {
+        if (this.events && this.events.length > 0) {
+          for (var event of this.events) {
+            if (event.resourceid && event.resourcetype) {
+              var routePrefix = this.$getRouteFromResourceType(event.resourcetype)
+              if (routePrefix) {
+                event.resourceroute = '/' + routePrefix + '/' + event.resourceid
+                event.resourceicon = this.$getIconFromResourceType(event.resourcetype)
+              }
+              event.resourcedisplayname = event.resourcename || event.resourceid
+            }
+          }
         }
       })
     },
