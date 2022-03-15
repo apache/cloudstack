@@ -1016,6 +1016,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, serviceOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
                     (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
                     template, owner, null));
+            long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                     throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
@@ -1023,7 +1024,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
                 diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
                         (disk.getCapacity() / Resource.ResourceType.bytesToGiB), offering.getMinIops(), offering.getMaxIops(),
-                        template, owner, null));
+                        template, owner, deviceId));
+                deviceId++;
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
