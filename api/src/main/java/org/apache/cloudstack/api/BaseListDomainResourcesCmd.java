@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import com.cloud.user.Account;
+
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.context.CallContext;
 
 public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements IBaseListDomainResourcesCmd {
 
@@ -42,7 +45,10 @@ public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements 
     @Override
     public boolean isRecursive() {
         if (listAll()) {
-            return recursive == null ? true : recursive;
+            Account caller = CallContext.current().getCallingAccount();
+            if (caller.getType() != Account.Type.NORMAL) {
+                return recursive == null ? true : recursive;
+            }
         }
         return recursive == null ? false : recursive;
     }
