@@ -223,7 +223,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 return domain;
             }
         });
-        _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+        if (domain != null) {
+            _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+        }
         return domain;
     }
 
