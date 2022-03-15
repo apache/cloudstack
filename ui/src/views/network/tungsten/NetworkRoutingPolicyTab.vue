@@ -40,7 +40,7 @@
           :ok-text="$t('label.yes')"
           :cancel-text="$t('label.no')"
           :loading="deleteLoading"
-          @confirm="deleteLogicalRouter(record)"
+          @confirm="deleteRoutingPolicy(record)"
         >
           <tooltip-button
             :tooltip="$t('label.action.remove.tungsten.routing.policy')"
@@ -250,7 +250,7 @@ export default {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    deleteLogicalRouter (record) {
+    deleteRoutingPolicy (record) {
       const params = {}
       params.zoneid = this.resource.zoneid
       params.networkuuid = this.resource.id
