@@ -1200,7 +1200,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         accountManager.buildACLSearchParameters(caller, clusterId, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), clusterId);
         Filter searchFilter = new Filter(KubernetesClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<KubernetesClusterVO> sb = kubernetesClusterDao.createSearchBuilder();
         accountManager.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);

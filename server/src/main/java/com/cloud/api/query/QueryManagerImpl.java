@@ -566,7 +566,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyword = cmd.getKeyword();
 
         Long domainId = cmd.getDomainId();
-        boolean recursive = cmd.isRecursive();
+        boolean recursive = determineRecursiveness(cmd.isRecursive(), id);
         Long pageSizeVal = cmd.getPageSizeVal();
         Long startIndex = cmd.getStartIndex();
 
@@ -683,7 +683,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
@@ -887,7 +887,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(InstanceGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -945,7 +945,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(UserVmJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1270,7 +1270,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(SecurityGroupJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SecurityGroupJoinVO> sb = _securityGroupJoinDao.createSearchBuilder();
@@ -1397,7 +1397,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
@@ -1554,7 +1554,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
         boolean listAll = cmd.listAll();
-        boolean isRecursive = cmd.isRecursive();
+        boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         cmd.getTags();
 
 
@@ -1726,7 +1726,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSizeVal = cmd.getPageSizeVal();
         Long userId = cmd.getUserId();
-        boolean isRecursive = cmd.isRecursive();
+        boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         boolean listAll = cmd.listAll();
 
         Account caller = CallContext.current().getCallingAccount();
@@ -2051,7 +2051,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         Filter searchFilter = new Filter(VolumeJoinVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         // hack for now, this should be done better but due to needing a join I
@@ -2293,7 +2293,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = cmd.getSearchName();
-        boolean isRecursive = cmd.isRecursive();
+        boolean isRecursive = determineRecursiveness(cmd.isRecursive(), accountId);
         boolean listAll = cmd.listAll();
         boolean callerIsAdmin = _accountMgr.isAdmin(caller.getId());
         Account account;
@@ -2899,7 +2899,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object keyword = cmd.getKeyword();
         Long domainId = cmd.getDomainId();
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         Long zoneId = cmd.getZoneId();
         Long volumeId = cmd.getVolumeId();
         Long storagePoolId = cmd.getStoragePoolId();
@@ -3068,7 +3068,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isSystem = cmd.getIsSystem();
         String vmTypeStr = cmd.getSystemVmType();
         ServiceOfferingVO currentVmOffering = null;
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         Long zoneId = cmd.getZoneId();
         Integer cpuNumber = cmd.getCpuNumber();
         Integer memory = cmd.getMemory();
@@ -4001,7 +4001,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         final String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), affinityGroupId);
         final Boolean listAll = cmd.listAll();
         final Long startIndex = cmd.getStartIndex();
         final Long pageSize = cmd.getPageSizeVal();

@@ -1194,6 +1194,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             final Long zoneId, Boolean isRecursive, final Boolean listAll, final Boolean restartRequired, final Map<String, String> tags, final Long projectId,
             final Boolean display) {
         final Account caller = CallContext.current().getCallingAccount();
+        isRecursive = determineRecursiveness(isRecursive, id);
         final List<Long> permittedAccounts = new ArrayList<Long>();
         final Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(domainId,null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
@@ -2093,7 +2094,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final String vlan = cmd.getVlan();
         final Long vpcId = cmd.getVpcId();
         final Long id = cmd.getId();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         final Boolean listAll = cmd.listAll();
         Long domainId = cmd.getDomainId();
         final String accountName = cmd.getAccountName();
@@ -2341,7 +2342,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long gatewayId = cmd.getGatewayId();
         final Long vpcId = cmd.getVpcId();
         Long domainId = cmd.getDomainId();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         final Boolean listAll = cmd.listAll();
         final String accountName = cmd.getAccountName();
         final Account caller = CallContext.current().getCallingAccount();

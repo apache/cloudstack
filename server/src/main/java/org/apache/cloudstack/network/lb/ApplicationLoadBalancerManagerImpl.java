@@ -394,7 +394,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                 domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(ApplicationLoadBalancerRuleVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<ApplicationLoadBalancerRuleVO> sb = _lbDao.createSearchBuilder();

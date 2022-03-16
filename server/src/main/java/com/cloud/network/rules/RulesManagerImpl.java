@@ -838,7 +838,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<PortForwardingRuleVO> sb = _portForwardingDao.createSearchBuilder();
@@ -1041,6 +1041,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         Long projectId, boolean isRecursive, boolean listAll) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        isRecursive = determineRecursiveness(isRecursive, id);;
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);

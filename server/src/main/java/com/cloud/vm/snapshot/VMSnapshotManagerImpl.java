@@ -232,7 +232,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 false);
         Long domainId = domainIdRecursiveListProject.first();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
 
         Filter searchFilter = new Filter(VMSnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VMSnapshotVO> sb = _vmSnapshotDao.createSearchBuilder();

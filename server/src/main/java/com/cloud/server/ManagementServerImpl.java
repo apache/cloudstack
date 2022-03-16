@@ -2226,7 +2226,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, null, null);
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
-        Boolean isRecursive = cmd.listAll();
+        Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), ipId);
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
@@ -4214,7 +4214,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         final Long domainId = domainIdRecursiveListProject.first();
         final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        final Boolean isRecursive = cmd.isRecursive();
+        final Boolean isRecursive = determineRecursiveness(cmd.isRecursive(), id);
         final SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         final Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
