@@ -38,7 +38,17 @@
         </a-form-item>
       </div>
       <div v-else-if="currentStep === 1">
-        <routing-policy-terms :formModel="formModel" :errors="errors" @onChangeFields="onChangeFields" />
+        <routing-policy-terms
+          :formModel="formModel"
+          :errors="errors"
+          @onChangeFields="onChangeFields" />
+      </div>
+      <div v-else-if="currentStep === 2">
+        <routing-policy-terms
+          :termThen="true"
+          :formModel="formModel"
+          :errors="errors"
+          @onChangeFields="onChangeFields" />
       </div>
       <div v-else>
         <a-alert type="info" :message="$t('message.add.tungsten.routing.policy.available')"></a-alert>
@@ -49,8 +59,8 @@
         {{ $t('label.previous') }}
       </a-button>
       <a-button ref="submit" type="primary" @click="handleNext" class="button-next">
-        <poweroff-outlined v-if="currentStep === 2" />
-        <span v-if="currentStep < 2">{{ $t('label.next') }}</span>
+        <poweroff-outlined v-if="currentStep === 3" />
+        <span v-if="currentStep < 3">{{ $t('label.next') }}</span>
         <span v-else>{{ $t('label.create.routing.policy') }}</span>
       </a-button>
     </div>
@@ -112,10 +122,14 @@ export default {
         name: 'routingpolicyterms',
         title: 'label.routing.policy.terms'
       }, {
+        name: 'routingpolicytermsthen',
+        title: 'label.routing.policy.terms.then'
+      }, {
         name: 'finish',
         title: 'label.finish'
       }],
       prefixList: [],
+      termsList: [],
       errors: {
         prefix: [],
         termvalue: []
@@ -141,9 +155,9 @@ export default {
     },
     handleNext () {
       this.formRef.value.validate().then(() => {
-        if (this.currentStep === 1) {
+        if (this.currentStep > 0) {
+          this.checkPolicyPrefix()
           const valid = this.checkPolicyTermValues()
-          this.showError = false
           if (this.errors.prefix.length > 0 || this.errors.termvalue.length > 0) {
             this.showError = true
             this.errorMessage = this.$t('message.error.required.input')
@@ -155,7 +169,7 @@ export default {
             return
           }
         }
-        if (this.currentStep === 2) {
+        if (this.currentStep === 3) {
           return this.handleSubmit()
         }
         this.currentStep++
@@ -167,19 +181,22 @@ export default {
     onChangeFields (formModel) {
       this.formModel = { ...this.formModel, ...formModel }
       this.prefixList = this.formModel?.prefixList || []
+      this.termsList = this.formModel?.termsList || []
+    },
+    checkPolicyPrefix () {
+      this.errors.prefix = []
+      this.prefixList.forEach((item, index) => {
+        if (!item.prefix) {
+          this.errors.prefix.push(index)
+        }
+      })
     },
     checkPolicyTermValues () {
       let valid = true
-      this.errors.prefix = []
       this.errors.termvalue = []
-      this.prefixList.forEach((item, index) => {
-        if (!item.prefix || !item.termvalue) {
-          if (!item.prefix) {
-            this.errors.prefix.push(index)
-          }
-          if (!item.termvalue) {
-            this.errors.termvalue.push(index)
-          }
+      this.termsList.forEach((item, index) => {
+        if (!item.termvalue) {
+          this.errors.termvalue.push(index)
           return true
         }
 
@@ -210,7 +227,7 @@ export default {
         routingPolicyTermParams.tungstenroutingpolicymatchall = this.formModel?.tungstenroutingpolicymatchall || false
         routingPolicyTermParams.tungstenroutingpolicyprotocol = this.formModel?.tungstenroutingpolicyprotocol?.join(',') || ''
         routingPolicyTermParams.tungstenroutingpolicyfromtermprefixlist = this.prefixList?.map(item => [item.prefix, item.prefixtype].join('&')).join(',') || ''
-        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.prefixList.map(item => {
+        routingPolicyTermParams.tungstenroutingpolicythentermlist = this.termsList.map(item => {
           if (item.termtype === 'action') {
             return [item.termvalue, item.termtype, ' '].join('&')
           } else {

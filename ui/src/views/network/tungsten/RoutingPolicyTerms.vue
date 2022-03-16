@@ -19,6 +19,7 @@
   <div>
     <a-form :ref="formRef" :model="form" :rules="rules">
       <a-form-item
+        v-if="!termThen"
         name="tungstenroutingpolicyfromtermcommunities"
         ref="tungstenroutingpolicyfromtermcommunities"
         :label="$t('label.community')"
@@ -32,6 +33,7 @@
         </a-select>
       </a-form-item>
       <a-form-item
+        v-if="!termThen"
         name="tungstenroutingpolicymatchall"
         ref="tungstenroutingpolicymatchall"
         :label="$t('label.matchall')"
@@ -42,6 +44,7 @@
         />
       </a-form-item>
       <a-form-item
+        v-if="!termThen"
         name="tungstenroutingpolicyprotocol"
         ref="tungstenroutingpolicyprotocol"
         :label="$t('label.protocol')"
@@ -56,6 +59,7 @@
       </a-form-item>
 
       <a-table
+        v-if="!termThen"
         bordered
         :dataSource="prefixList"
         :columns="prefixColumns"
@@ -70,54 +74,20 @@
           </a-form-item>
         </template>
         <template #prefixtype="{ text, index }">
-          <a-select
-            style="width: 100%"
-            :defaultValue="text"
-            @change="value => onCellChange(index, 'prefixtype', value)"
-            showSearch
-            :dropdownMatchSelectWidth="false"
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option value="extract"> extract </a-select-option>
-            <a-select-option value="longer"> longer </a-select-option>
-            <a-select-option value="orlonger"> orlonger </a-select-option>
-          </a-select>
-        </template>
-        <template #termtype="{ text, index }">
-          <a-select
-            style="width: 100%"
-            :defaultValue="text"
-            @change="value => onCellChange(index, 'termtype', value)"
-            showSearch
-            optionFilterProp="label"
-            :dropdownMatchSelectWidth="false"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
-            <a-select-option value="add community"> add community </a-select-option>
-            <a-select-option value="set community"> set community </a-select-option>
-            <a-select-option value="remove community"> remove community </a-select-option>
-            <a-select-option value="local-preference"> local-preference </a-select-option>
-            <a-select-option value="med"> med </a-select-option>
-            <a-select-option value="action"> action </a-select-option>
-            <a-select-option value="as-path"> as-path </a-select-option>
-          </a-select>
-        </template>
-        <template #termvalue="{ text, index }">
-          <a-form-item
-            :hasFeedback="errors.termvalue && errors.termvalue.includes(index)"
-            :validateStatus="errors.termvalue && errors.termvalue.includes(index) ? 'error' : ''">
-            <a-input
-              v-if="prefixList[index].termtype !== 'action'"
-              :value="text"
-              @change="e => onCellChange(index, 'termvalue', e.target.value)" />
-            <a-select v-else value="default" @change="value => onCellChange(index, 'termvalue', value)">
-              <a-select-option value="default">default</a-select-option>
-              <a-select-option value="accept">accept</a-select-option>
-              <a-select-option value="reject">reject</a-select-option>
-              <a-select-option value="next">next</a-select-option>
+          <a-form-item>
+            <a-select
+              style="width: 100%"
+              :defaultValue="text"
+              @change="value => onCellChange(index, 'prefixtype', value)"
+              showSearch
+              :dropdownMatchSelectWidth="false"
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option value="exact"> exact </a-select-option>
+              <a-select-option value="longer"> longer </a-select-option>
+              <a-select-option value="orlonger"> orlonger </a-select-option>
             </a-select>
           </a-form-item>
         </template>
@@ -135,6 +105,66 @@
           </a-button>
         </template>
       </a-table>
+
+      <a-table
+        v-if="termThen"
+        bordered
+        :dataSource="termThenList"
+        :columns="termThenColumns"
+        :pagination="false"
+        :rowKey="(record, idx) => idx"
+        style="margin-bottom: 24px; width: 100%">
+        <template #termtype="{ text, index }">
+          <a-form-item>
+            <a-select
+              style="width: 100%"
+              :defaultValue="text"
+              @change="value => onCellChange(index, 'termtype', value)"
+              showSearch
+              optionFilterProp="label"
+              :dropdownMatchSelectWidth="false"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
+              <a-select-option value="add community"> add community </a-select-option>
+              <a-select-option value="set community"> set community </a-select-option>
+              <a-select-option value="remove community"> remove community </a-select-option>
+              <a-select-option value="local-preference"> local-preference </a-select-option>
+              <a-select-option value="med"> med </a-select-option>
+              <a-select-option value="action"> action </a-select-option>
+              <a-select-option value="as-path"> as-path </a-select-option>
+            </a-select>
+          </a-form-item>
+        </template>
+        <template #termvalue="{ index }">
+          <a-form-item
+            :hasFeedback="errors.termvalue && errors.termvalue.includes(index)"
+            :validateStatus="errors.termvalue && errors.termvalue.includes(index) ? 'error' : ''">
+            <a-input
+              v-if="termThenList[index].termtype !== 'action'"
+              @change="e => onCellChange(index, 'termvalue', e.target.value)" />
+            <a-select v-else value="default" @change="value => onCellChange(index, 'termvalue', value)">
+              <a-select-option value="default">default</a-select-option>
+              <a-select-option value="accept">accept</a-select-option>
+              <a-select-option value="reject">reject</a-select-option>
+              <a-select-option value="next">next</a-select-option>
+            </a-select>
+          </a-form-item>
+        </template>
+        <template #action="{ index }">
+          <tooltip-button
+            :tooltip="$t('label.delete.term')"
+            danger
+            type="primary"
+            icon="delete-outlined"
+            @onClick="() => deleteTerms(index)" />
+        </template>
+        <template #footer>
+          <a-button @click="addNewTerms">
+            {{ $t('label.add.term.then') }}
+          </a-button>
+        </template>
+      </a-table>
     </a-form>
   </div>
 </template>
@@ -147,6 +177,10 @@ export default {
   name: 'RoutingPolicyTerms',
   components: { TooltipButton },
   props: {
+    termThen: {
+      type: Boolean,
+      default: false
+    },
     formModel: {
       type: Object,
       default: () => {}
@@ -176,6 +210,13 @@ export default {
           slots: { customRender: 'prefixtype' }
         },
         {
+          slots: { customRender: 'action' },
+          width: 50
+        }
+      ],
+      termThenList: [],
+      termThenColumns: [
+        {
           title: this.$t('label.term.type'),
           dataIndex: 'termtype',
           slots: { customRender: 'termtype' }
@@ -186,20 +227,16 @@ export default {
           slots: { customRender: 'termvalue' }
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'action' }
+          slots: { customRender: 'action' },
+          width: 50
         }
       ]
-    }
-  },
-  watch: {
-    listErrors () {
-      console.log(this.listErrors)
     }
   },
   created () {
     this.initForm()
     this.prefixList = this.formModel?.prefixList || []
+    this.termThenList = this.formModel?.termsList || []
   },
   methods: {
     initForm () {
@@ -208,7 +245,8 @@ export default {
         tungstenroutingpolicyfromtermcommunities: this.formModel?.tungstenroutingpolicyfromtermcommunities || [],
         tungstenroutingpolicymatchall: this.formModel?.tungstenroutingpolicymatchall || false,
         tungstenroutingpolicyprotocol: this.formModel?.tungstenroutingpolicyprotocol || [],
-        prefixList: this.formModel?.prefixList || []
+        prefixList: this.formModel?.prefixList || [],
+        termThenList: this.formModel?.termsList || []
       })
       this.rules = reactive({
         tungstenroutingpolicyfromtermcommunities: [{ type: 'array' }],
@@ -218,9 +256,7 @@ export default {
     addNewPrefix () {
       this.prefixList.push({
         prefix: '',
-        prefixtype: 'extract',
-        termtype: 'add community',
-        termvalue: ''
+        prefixtype: 'exact'
       })
       this.form.prefixList = this.prefixList
       this.emitEvents()
@@ -230,17 +266,37 @@ export default {
       this.form.prefixList = this.prefixList
       this.emitEvents()
     },
+    addNewTerms () {
+      this.termThenList.push({
+        termtype: 'add community',
+        termvalue: ''
+      })
+      this.form.termsList = this.termThenList
+      this.emitEvents()
+    },
+    deleteTerms (index) {
+      this.termThenList.splice(index, 1)
+      this.form.termsList = this.termThenList
+      this.emitEvents()
+    },
     changeFieldValue (field, value) {
       this.form[field] = value
       this.emitEvents()
     },
     onCellChange (key, name, value) {
-      if (name === 'termtype' && value === 'action') {
-        this.prefixList[key].termvalue = 'default'
+      if (['termtype', 'termvalue'].includes(name)) {
+        if (name === 'termtype' && value === 'action') {
+          this.termThenList[key].termvalue = 'default'
+        }
+        if (name === 'termtype' && value !== 'action') {
+          this.termThenList[key].termvalue = ''
+        }
+        this.termThenList[key][name] = value
+        this.form.termsList = this.termThenList
+        this.emitEvents()
+        return
       }
-      if (name === 'termtype' && value !== 'action') {
-        this.prefixList[key].termvalue = ''
-      }
+
       this.prefixList[key][name] = value
       this.form.prefixList = this.prefixList
       this.emitEvents()

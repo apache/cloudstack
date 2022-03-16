@@ -45,17 +45,45 @@
       width="auto"
       centered>
       <div class="form" v-ctrl-enter="handleSubmit">
+        <a-steps
+          ref="zoneStep"
+          labelPlacement="vertical"
+          size="small"
+          :current="currentStep">
+          <a-step
+            v-for="(item, index) in steps"
+            :key="item.name"
+            :title="$t(item.title)"
+            :ref="`step${index}`">
+          </a-step>
+        </a-steps>
         <a-form class="form-content">
-          <routing-policy-terms
-            :formModel="formModel"
-            :errors="errors"
-            @onChangeFields="onChangeFields"
-            @showError="() => { showError = true }"
-            @closeError="() => { showError = false }" />
+          <div v-if="currentStep === 0">
+            <routing-policy-terms
+              :formModel="formModel"
+              :errors="errors"
+              @onChangeFields="onChangeFields" />
+          </div>
+          <div v-else-if="currentStep === 1">
+            <routing-policy-terms
+              :termThen="true"
+              :formModel="formModel"
+              :errors="errors"
+              @onChangeFields="onChangeFields" />
+          </div>
+          <div v-else>
+            <a-alert type="info" :message="$t('message.add.tungsten.routing.policy.available')"></a-alert>
+          </div>
         </a-form>
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <div class="form-action" :span="24">
+          <a-button @click="handleBack" class="button-back" v-if="currentStep > 0">
+            {{ $t('label.previous') }}
+          </a-button>
+          <a-button ref="submit" type="primary" @click="handleNext" class="button-next">
+            <poweroff-outlined v-if="currentStep === 2" />
+            <span v-if="currentStep < 2">{{ $t('label.next') }}</span>
+            <span v-else>{{ $t('label.create.routing.policy') }}</span>
+          </a-button>
         </div>
       </div>
     </a-modal>
@@ -101,12 +129,24 @@ export default {
       showAction: false,
       showError: false,
       formModel: {},
+      currentStep: 0,
+      steps: [{
+        name: 'routingpolicyterms',
+        title: 'label.routing.policy.terms'
+      }, {
+        name: 'routingpolicytermsthen',
+        title: 'label.routing.policy.terms.then'
+      }, {
+        name: 'finish',
+        title: 'label.finish'
+      }],
       columns: [{
         title: this.$t('label.name'),
         dataIndex: 'tungstenroutingpolicytermname'
       }],
       dataSource: [],
       prefixList: [],
+      termsList: [],
       zoneId: null,
       errors: {
         prefix: [],
@@ -128,25 +168,29 @@ export default {
     onShowAction () {
       this.showAction = true
     },
-    onChangeFields (formModel, prefixList) {
+    onChangeFields (formModel) {
       this.formModel = { ...this.formModel, ...formModel }
       this.prefixList = this.formModel?.prefixList || []
+      this.termsList = this.formModel?.termsList || []
     },
     closeAction () {
       this.formModel = {}
       this.showAction = false
     },
+    checkPolicyPrefix () {
+      this.errors.prefix = []
+      this.prefixList.forEach((item, index) => {
+        if (!item.prefix) {
+          this.errors.prefix.push(index)
+        }
+      })
+    },
     checkPolicyTermValues () {
       let valid = true
-      if (this.prefixList) return valid
-      this.prefixList.forEach((item, index) => {
-        if (!item.prefix || !item.termvalue) {
-          if (!item.prefix) {
-            this.errors.prefix.push(index)
-          }
-          if (!item.termvalue) {
-            this.errors.termvalue.push(index)
-          }
+      this.errors.termvalue = []
+      this.termsList.forEach((item, index) => {
+        if (!item.termvalue) {
+          this.errors.termvalue.push(index)
           return true
         }
 
@@ -161,10 +205,12 @@ export default {
 
       return valid
     },
-    async handleSubmit () {
-      this.showError = false
+    handleBack () {
+      this.currentStep--
+    },
+    handleNext () {
+      this.checkPolicyPrefix()
       const valid = this.checkPolicyTermValues()
-      this.showError = false
       if (this.errors.prefix.length > 0 || this.errors.termvalue.length > 0) {
         this.showError = true
         this.errorMessage = this.$t('message.error.required.input')
@@ -175,7 +221,12 @@ export default {
         this.errorMessage = this.$t('message.error.routing.policy.term')
         return
       }
-
+      if (this.currentStep === 2) {
+        return this.handleSubmit()
+      }
+      this.currentStep++
+    },
+    async handleSubmit () {
       const params = {}
       params.zoneid = this.zoneId
       params.tungstenroutingpolicyuuid = this.resource.uuid
@@ -183,9 +234,9 @@ export default {
       params.tungstenroutingpolicymatchall = this.formModel?.tungstenroutingpolicymatchall || false
       params.tungstenroutingpolicyprotocol = this.formModel?.tungstenroutingpolicyprotocol?.join(',') || ''
       params.tungstenroutingpolicyfromtermprefixlist = this.prefixList.length > 0 ? this.prefixList.map(item => [item.prefix, item.prefixtype].join('&')).join(',') : ''
-      params.tungstenroutingpolicythentermlist = this.prefixList.length > 0 ? this.prefixList.map(item => {
+      params.tungstenroutingpolicythentermlist = this.termsList.length > 0 ? this.termsList.map(item => {
         if (item.termtype === 'action') {
-          return [item.termvalue, item.termtype, ' '].join('&')
+          return [item.termtype, item.termvalue, ' '].join('&')
         } else {
           return [' ', item.termtype, item.termvalue].join('&')
         }
@@ -240,6 +291,17 @@ export default {
     :deep(.ant-form-item-control) {
       text-align: left;
     }
+  }
+
+  .form-action {
+    position: relative;
+    margin-top: 16px;
+    height: 35px;
+  }
+
+  .button-next {
+    position: absolute;
+    right: 0;
   }
 }
 </style>
