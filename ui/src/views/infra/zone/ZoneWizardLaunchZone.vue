@@ -953,13 +953,13 @@ export default {
         }
 
         if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenPublicNetwork()
+          await this.stepCreateTungstenPublicFabricNetwork()
         } else {
           await this.stepConfigureStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenPublicNetwork()
+          await this.stepCreateTungstenPublicFabricNetwork()
         } else {
           await this.stepConfigureStorageTraffic()
         }
@@ -985,13 +985,13 @@ export default {
       try {
         if (!this.stepData.stepMove.includes('createTungstenFabricProvider')) {
           const providerParams = {}
-          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname?.value || null
-          providerParams.name = this.prefillContent?.tungstenName?.value || null
+          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname || null
+          providerParams.name = this.prefillContent?.tungstenName || null
           providerParams.zoneid = this.stepData.zoneReturned.id
-          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort?.value || null
-          providerParams.tungstengateway = this.prefillContent?.tungstenGateway?.value || null
-          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter?.value || null
-          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort?.value || null
+          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort || null
+          providerParams.tungstengateway = this.prefillContent?.tungstenGateway || null
+          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter || null
+          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort || null
           await this.createTungstenFabricProvider(providerParams)
           this.stepData.stepMove.push('createTungstenFabricProvider')
         }
@@ -1548,7 +1548,7 @@ export default {
         if (this.prefillContent.secondaryStoragePolicy &&
           this.prefillContent.secondaryStoragePolicy.value.length > 0) {
           params['details[' + index.toString() + '].key'] = 'storagepolicy'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStoragePolicy
           index++
         }
       }
