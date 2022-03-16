@@ -574,13 +574,16 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     private List<DirectDownloadCertificateHostMapVO> getCertificateHostMappings(DirectDownloadCertificateVO certificateVO, Long hostId) {
         List<DirectDownloadCertificateHostMapVO> maps;
         if (hostId == null) {
-            maps = directDownloadCertificateHostMapDao.listByCertificateId(certificateVO.getId());
+            maps = directDownloadCertificateHostMapDao.listByCertificateIdAndRevoked(certificateVO.getId(), false);
         } else {
             DirectDownloadCertificateHostMapVO hostMap = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
             if (hostMap == null) {
                 String msg = "Certificate " + certificateVO.getAlias() + " cannot be revoked from host " + hostId + " as it is not available on the host";
                 s_logger.error(msg);
                 throw new CloudRuntimeException(msg);
+            } else if (hostMap.isRevoked()) {
+                s_logger.debug("Certificate " + certificateVO.getAlias() + " was already revoked from host " + hostId + " skipping it");
+                return new LinkedList<>();
             }
             maps = Collections.singletonList(hostMap);
         }
