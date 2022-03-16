@@ -19,9 +19,10 @@
 package org.apache.cloudstack.direct.download;
 
 import static com.cloud.storage.Storage.ImageFormat;
-import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.FAILED;
-import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.REVOKED;
-import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.SKIPPED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus.FAILED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus.REVOKED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus.SKIPPED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus.UPLOADED;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -454,7 +455,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public boolean uploadCertificateToHosts(String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
+    public List<HostCertificateStatus> uploadCertificateToHosts(String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
         if (alias != null && (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca"))) {
             throw new CloudRuntimeException("Please provide a different alias name for the certificate");
         }
@@ -462,6 +463,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         List<HostVO> hosts;
         DirectDownloadCertificateVO certificateVO;
         HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
+
+        if (hypervisorType != HypervisorType.KVM) {
+            throw new CloudRuntimeException("Direct download certificates only supported on KVM");
+        }
 
         if (hostId == null) {
             hosts = getRunningHostsToUploadCertificate(zoneId, hypervisorType);
@@ -481,48 +486,55 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             certificateVO = directDownloadCertificateDao.findByAlias(alias, hypervisorType, zoneId);
             if (certificateVO == null) {
                 s_logger.info("Certificate must be uploaded on zone " + zoneId);
-                return false;
+                return new ArrayList<>();
             }
         }
 
         s_logger.info("Attempting to upload certificate: " + alias + " to " + hosts.size() + " hosts on zone " + zoneId);
-        int hostCount = 0;
+        int success = 0;
+        int failed = 0;
+        List<HostCertificateStatus> results = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(hosts)) {
             for (HostVO host : hosts) {
-                if (!uploadCertificate(certificateVO.getId(), host.getId())) {
-                    String msg = "Could not upload certificate " + alias + " on host: " + host.getName() + " (" + host.getUuid() + ")";
-                    s_logger.error(msg);
-                    throw new CloudRuntimeException(msg);
+                if (host == null) {
+                    continue;
                 }
-                hostCount++;
+                HostCertificateStatus hostStatus;
+                Pair<Boolean, String> result = provisionCertificate(certificateVO.getId(), host.getId());
+                if (!result.first()) {
+                    String msg = "Could not upload certificate " + alias + " on host: " + host.getName() + " (" + host.getUuid() + "): " + result.second();
+                    s_logger.error(msg);
+                    failed++;
+                    hostStatus = new HostCertificateStatus(FAILED, host, result.second());
+                } else {
+                    success++;
+                    hostStatus = new HostCertificateStatus(UPLOADED, host, "");
+                }
+                results.add(hostStatus);
             }
         }
-        s_logger.info("Certificate was successfully uploaded to " + hostCount + " hosts");
-        return true;
+        s_logger.info("Certificate was successfully uploaded to " + success + " hosts, " + failed + " failed");
+        return results;
     }
 
-    /**
-     * Upload and import certificate to hostId on keystore
-     */
-    public boolean uploadCertificate(long certificateId, long hostId) {
-        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
-        if (certificateVO == null) {
-            throw new CloudRuntimeException("Could not find certificate with id " + certificateId + " to upload to host: " + hostId);
-        }
+    private Pair<Boolean, String> setupCertificateOnHost(DirectDownloadCertificate certificate, long hostId) {
+        String certificateStr = certificate.getCertificate();
+        String alias = certificate.getAlias();
+        long certificateId = certificate.getId();
 
-        String certificate = certificateVO.getCertificate();
-        String alias = certificateVO.getAlias();
-
-        s_logger.debug("Uploading certificate: " + certificateVO.getAlias() + " to host " + hostId);
-        SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificate, alias);
+        s_logger.debug("Uploading certificate: " + alias + " to host " + hostId);
+        SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificateStr, alias);
         Answer answer = agentManager.easySend(hostId, cmd);
+        Pair<Boolean, String> result;
         if (answer == null || !answer.getResult()) {
             String msg = "Certificate " + alias + " could not be added to host " + hostId;
             if (answer != null) {
                 msg += " due to: " + answer.getDetails();
             }
             s_logger.error(msg);
-            return false;
+            result = new Pair<>(false, msg);
+        } else {
+            result = new Pair<>(true, "OK");
         }
 
         s_logger.info("Certificate " + alias + " successfully uploaded to host: " + hostId);
@@ -534,8 +546,25 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             DirectDownloadCertificateHostMapVO mapVO = new DirectDownloadCertificateHostMapVO(certificateId, hostId);
             directDownloadCertificateHostMapDao.persist(mapVO);
         }
+        return result;
+    }
+    /**
+     * Upload and import certificate to hostId on keystore
+     */
+    public Pair<Boolean, String> provisionCertificate(long certificateId, long hostId) {
+        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
+        if (certificateVO == null) {
+            throw new CloudRuntimeException("Could not find certificate with id " + certificateId + " to upload to host: " + hostId);
+        }
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            throw new CloudRuntimeException("Cannot find a host with ID " + hostId);
+        }
+        if (host.getHypervisorType() != HypervisorType.KVM) {
+            throw new CloudRuntimeException("Cannot provision certificate to host " + host.getName() + " since it is not KVM");
+        }
 
-        return true;
+        return setupCertificateOnHost(certificateVO, hostId);
     }
 
     @Override
@@ -555,8 +584,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             DirectDownloadCertificateHostMapVO mapping = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
             if (mapping == null) {
                 s_logger.debug("Syncing certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") on host: " + hostId + ", uploading it");
-                if (!uploadCertificate(certificateVO.getId(), hostId)) {
-                    String msg = "Could not sync certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") on host: " + hostId + ", upload failed";
+                Pair<Boolean, String> result = provisionCertificate(certificateVO.getId(), hostId);
+                if (!result.first()) {
+                    String msg = "Could not sync certificate " + certificateVO.getId() + " (" + certificateVO.getAlias() + ") on host: " + hostId + ", upload failed: " + result.second();
                     s_logger.error(msg);
                     syncCertificatesResult = false;
                 } else {
@@ -591,7 +621,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public List<HostCertificateRevoke> revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
+    public List<HostCertificateStatus> revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
         DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
         if (certificateVO == null) {
             throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
@@ -602,7 +632,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                     " to the zone with ID=" + certificateVO.getZoneId() + " instead of the zone with ID=" + zoneId);
         }
 
-        List<HostCertificateRevoke> hostsList = new ArrayList<>();
+        List<HostCertificateStatus> hostsList = new ArrayList<>();
         List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificateVO, hostId);
         if (CollectionUtils.isEmpty(maps)) {
             return hostsList;
@@ -615,12 +645,12 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         for (DirectDownloadCertificateHostMapVO map : maps) {
             Long mappingHostId = map.getHostId();
             HostVO host = hostDao.findById(mappingHostId);
-            HostCertificateRevoke hostStatus;
+            HostCertificateStatus hostStatus;
             if (host == null || host.getDataCenterId() != zoneId || host.getHypervisorType() != HypervisorType.KVM) {
                 if (host != null) {
                     String reason = host.getDataCenterId() != zoneId ? "Host is not in the zone " + zoneId : "Host hypervisor is not KVM";
                     s_logger.debug("Skipping host " + host.getName() + ": " + reason);
-                    hostStatus = new HostCertificateRevoke(SKIPPED, host, reason);
+                    hostStatus = new HostCertificateStatus(SKIPPED, host, reason);
                     hostsList.add(hostStatus);
                 }
                 skipped++;
@@ -630,12 +660,12 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             if (!result.first()) {
                 String msg = "Could not revoke certificate from host: " + mappingHostId + ": " + result.second();
                 s_logger.error(msg);
-                hostStatus = new HostCertificateRevoke(FAILED, host, result.second());
+                hostStatus = new HostCertificateStatus(FAILED, host, result.second());
                 failed++;
             } else {
                 s_logger.info("Certificate " + certificateAlias + " revoked from host " + mappingHostId);
                 map.setRevoked(true);
-                hostStatus = new HostCertificateRevoke(REVOKED, host, null);
+                hostStatus = new HostCertificateStatus(REVOKED, host, null);
                 success++;
                 directDownloadCertificateHostMapDao.update(map.getId(), map);
             }
@@ -760,10 +790,13 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                                         s_logger.debug("Certificate " + certificateVO.getId() +
                                                 " (" + certificateVO.getAlias() + ") was not uploaded to host: " + hostVO.getId() +
                                                 " uploading it");
-                                        boolean result = directDownloadManager.uploadCertificate(certificateVO.getId(), hostVO.getId());
+                                        Pair<Boolean, String> result = directDownloadManager.provisionCertificate(certificateVO.getId(), hostVO.getId());
                                         s_logger.debug("Certificate " + certificateVO.getAlias() + " " +
-                                                (result ? "uploaded" : "could not be uploaded") +
+                                                (result.first() ? "uploaded" : "could not be uploaded") +
                                                 " to host " + hostVO.getId());
+                                        if (!result.first()) {
+                                            s_logger.error("Certificate " + certificateVO.getAlias() + " failed: " + result.second());
+                                        }
                                     }
                                 }
                             }

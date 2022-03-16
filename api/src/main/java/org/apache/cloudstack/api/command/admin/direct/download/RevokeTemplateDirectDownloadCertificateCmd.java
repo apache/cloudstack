@@ -34,11 +34,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.RevokeDirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke;
+import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -47,7 +47,7 @@ import java.util.List;
 
 @APICommand(name = RevokeTemplateDirectDownloadCertificateCmd.APINAME,
         description = "Revoke a certificate from hosts in a zone",
-        responseObject = RevokeDirectDownloadCertificateResponse.class,
+        responseObject = DirectDownloadCertificateHostStatusResponse.class,
         since = "4.13",
         authorized = {RoleType.Admin})
 public class RevokeTemplateDirectDownloadCertificateCmd extends BaseListCmd {
@@ -71,14 +71,15 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseListCmd {
             description = "(optional) the host ID to revoke certificate")
     private Long hostId;
 
-    private void createResponse(final List<HostCertificateRevoke> hostsRevokeStatusList) {
-        final ListResponse<RevokeDirectDownloadCertificateResponse> response = new ListResponse<>();
-        final List<RevokeDirectDownloadCertificateResponse> responses = new ArrayList<>();
-        for (final HostCertificateRevoke status : hostsRevokeStatusList) {
+    private void createResponse(final List<HostCertificateStatus> hostsRevokeStatusList) {
+        final ListResponse<DirectDownloadCertificateHostStatusResponse> response = new ListResponse<>();
+        final List<DirectDownloadCertificateHostStatusResponse> responses = new ArrayList<>();
+        for (final HostCertificateStatus status : hostsRevokeStatusList) {
             if (status == null) {
                 continue;
             }
-            RevokeDirectDownloadCertificateResponse revokeResponse = _responseGenerator.createDirectDownloadCertificateRevokeResponse(status);
+            DirectDownloadCertificateHostStatusResponse revokeResponse =
+                    _responseGenerator.createDirectDownloadCertificateHostStatusResponse(status, "revoketemplatedirectdownloadcertificate");
             responses.add(revokeResponse);
         }
         response.setResponses(responses);
@@ -89,7 +90,7 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            List<HostCertificateRevoke> hostsResult = directDownloadManager.revokeCertificate(certificateId, zoneId, hostId);
+            List<HostCertificateStatus> hostsResult = directDownloadManager.revokeCertificate(certificateId, zoneId, hostId);
             createResponse(hostsResult);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed revoking certificate: " + e.getMessage());

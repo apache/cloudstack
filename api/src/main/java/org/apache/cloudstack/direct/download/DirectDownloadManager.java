@@ -58,12 +58,12 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
             "Requesting a connection from connection manager timeout in milliseconds for direct download",
             true);
 
-    class HostCertificateRevoke {
+    class HostCertificateStatus {
         public enum CertificateStatus {
-            REVOKED, FAILED, SKIPPED
+            REVOKED, FAILED, SKIPPED, UPLOADED
         }
 
-        HostCertificateRevoke(CertificateStatus status, Host host, String details) {
+        HostCertificateStatus(CertificateStatus status, Host host, String details) {
             this.status = status;
             this.host = host;
             this.details = details;
@@ -89,9 +89,15 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
     /**
      * Revoke direct download certificate from the hosts in the zone or a specific host
      */
-    List<HostCertificateRevoke> revokeCertificate(Long certificateId, Long zoneId, Long hostId);
+    List<HostCertificateStatus> revokeCertificate(Long certificateId, Long zoneId, Long hostId);
 
     List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId);
 
     List<DirectDownloadCertificateHostMap> getCertificateHostsMapping(Long certificateId);
+
+    /**
+     * Upload client certificate to each running host
+     * @return
+     */
+    List<HostCertificateStatus> uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
 }

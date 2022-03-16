@@ -26,7 +26,7 @@ import com.cloud.server.ResourceIcon;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.cloudstack.api.response.RevokeDirectDownloadCertificateResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
@@ -501,5 +501,5 @@ public interface ResponseGenerator {
 
     List<DirectDownloadCertificateHostMapResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
 
-    RevokeDirectDownloadCertificateResponse createDirectDownloadCertificateRevokeResponse(DirectDownloadManager.HostCertificateRevoke status);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status, String objectName);
 }

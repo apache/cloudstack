@@ -21,7 +21,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-public class RevokeDirectDownloadCertificateResponse extends BaseResponse {
+public class DirectDownloadCertificateHostStatusResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "the ID of the host")
