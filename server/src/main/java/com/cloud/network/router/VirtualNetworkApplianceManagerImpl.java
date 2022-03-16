@@ -3236,6 +3236,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterVersionCheckEnabled,
                 SetServiceMonitor,
                 VirtualRouterServiceOffering,
+                VirtualRouterHypervisorType,
                 RouterAlertsCheckInterval,
                 RouterHealthChecksEnabled,
                 RouterHealthChecksBasicInterval,

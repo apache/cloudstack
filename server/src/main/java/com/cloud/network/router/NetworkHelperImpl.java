@@ -567,7 +567,14 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientServerCapacityException {
         final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        if (dest.getCluster() != null) {
+        HypervisorType routerHypervisorType = HypervisorType.None;
+        final String routerHypervisorTypeStr = VirtualNetworkApplianceManager.VirtualRouterHypervisorType.valueIn(routerDeploymentDefinition.getOwner().getId());
+        if (routerHypervisorTypeStr != null) {
+            routerHypervisorType = HypervisorType.getType(routerHypervisorTypeStr);
+        }
+        if (routerHypervisorType != HypervisorType.None) {
+            hypervisors.add(routerHypervisorType);
+        } else if (dest.getCluster() != null) {
             if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
                 hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
             } else {
