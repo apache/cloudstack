@@ -64,6 +64,15 @@
               <a-tab-pane :tab="$t('label.' + tab.name)" :key="tab.name" v-if="checkShowTabDetail(tab)">
                 <keep-alive>
                   <component
+                    v-if="tab.resourceType"
+                    :is="tab.component"
+                    :resource="resource"
+                    :resourceType="tab.resourceType"
+                    :loading="loading"
+                    :tab="tabActive"
+                    :bordered="false" />
+                  <component
+                    v-else
                     :is="tab.component"
                     :resource="resource"
                     :items="items"
