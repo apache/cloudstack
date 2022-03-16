@@ -263,17 +263,13 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(metrics.threadswaitingcount   <= metrics.threadstotalcount)
 
         self.assertTrue(hasattr(metrics, 'systemmemorytotal'))
-        self.assertTrue(isinstance(metrics.systemmemorytotal, int))
+        self.assertTrue(isinstance(metrics.systemmemorytotal, str))
         self.assertTrue(hasattr(metrics, 'systemmemoryfree'))
-        self.assertTrue(isinstance(metrics.systemmemoryfree, int))
-        self.assertTrue(metrics.systemmemoryfree <= metrics.systemmemorytotal)
-        # it might be (metrics.systemmemoryused <= metrics.systemmemorytotal) because it is virtual committed memory :(
-        # not sure if we can validate this somehow
+        self.assertTrue(isinstance(metrics.systemmemoryfree, str))
         self.assertTrue(hasattr(metrics, 'systemmemoryused'))
-        self.assertTrue(isinstance(metrics.systemmemoryused, int))
-
+        self.assertTrue(isinstance(metrics.systemmemoryused, str))
         self.assertTrue(hasattr(metrics, 'systemmemoryvirtualsize'))
-        self.assertTrue(isinstance(metrics.systemmemoryvirtualsize, int))
+        self.assertTrue(isinstance(metrics.systemmemoryvirtualsize, str))
 
         self.assertTrue(hasattr(metrics, 'loginfo'))
         self.assertTrue(isinstance(metrics.loginfo, str))
