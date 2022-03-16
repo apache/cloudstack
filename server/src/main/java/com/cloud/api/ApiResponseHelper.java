@@ -120,6 +120,7 @@ import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.RevokeDirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
@@ -163,6 +164,8 @@ import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -4585,5 +4588,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             responses.add(response);
         }
         return responses;
+    }
+
+    @Override
+    public RevokeDirectDownloadCertificateResponse createDirectDownloadCertificateRevokeResponse(DirectDownloadManager.HostCertificateRevoke hostStatus) {
+        RevokeDirectDownloadCertificateResponse response = new RevokeDirectDownloadCertificateResponse();
+        Host host = hostStatus.getHost();
+        if (host != null) {
+            response.setHostId(host.getUuid());
+            response.setHostName(host.getName());
+        }
+        CertificateStatus status = hostStatus.getStatus();
+        response.setStatus(status.name());
+        response.setDetails(hostStatus.getDetails());
+        response.setObjectName("revokedirectdownloadcertificate");
+        return response;
     }
 }

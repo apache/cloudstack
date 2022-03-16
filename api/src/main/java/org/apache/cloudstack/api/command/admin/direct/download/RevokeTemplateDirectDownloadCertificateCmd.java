@@ -28,26 +28,29 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.RevokeDirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 @APICommand(name = RevokeTemplateDirectDownloadCertificateCmd.APINAME,
-        description = "Revoke a certificate alias from a KVM host",
-        responseObject = SuccessResponse.class,
-        requestHasSensitiveInfo = true,
-        responseHasSensitiveInfo = true,
+        description = "Revoke a certificate from hosts in a zone",
+        responseObject = RevokeDirectDownloadCertificateResponse.class,
         since = "4.13",
         authorized = {RoleType.Admin})
-public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
+public class RevokeTemplateDirectDownloadCertificateCmd extends BaseListCmd {
 
     @Inject
     DirectDownloadManager directDownloadManager;
@@ -68,15 +71,28 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
             description = "(optional) the host ID to revoke certificate")
     private Long hostId;
 
+    private void createResponse(final List<HostCertificateRevoke> hostsRevokeStatusList) {
+        final ListResponse<RevokeDirectDownloadCertificateResponse> response = new ListResponse<>();
+        final List<RevokeDirectDownloadCertificateResponse> responses = new ArrayList<>();
+        for (final HostCertificateRevoke status : hostsRevokeStatusList) {
+            if (status == null) {
+                continue;
+            }
+            RevokeDirectDownloadCertificateResponse revokeResponse = _responseGenerator.createDirectDownloadCertificateRevokeResponse(status);
+            responses.add(revokeResponse);
+        }
+        response.setResponses(responses);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        SuccessResponse response = new SuccessResponse(getCommandName());
         try {
-            boolean result = directDownloadManager.revokeCertificate(certificateId, zoneId, hostId);
-            response.setSuccess(result);
-            setResponseObject(response);
+            List<HostCertificateRevoke> hostsResult = directDownloadManager.revokeCertificate(certificateId, zoneId, hostId);
+            createResponse(hostsResult);
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed revoking certificate: " + e.getMessage());
         }
     }
 

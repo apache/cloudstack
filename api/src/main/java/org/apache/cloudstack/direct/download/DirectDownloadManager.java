@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.direct.download;
 
+import com.cloud.host.Host;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -57,10 +58,38 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
             "Requesting a connection from connection manager timeout in milliseconds for direct download",
             true);
 
+    class HostCertificateRevoke {
+        public enum CertificateStatus {
+            REVOKED, FAILED, SKIPPED
+        }
+
+        HostCertificateRevoke(CertificateStatus status, Host host, String details) {
+            this.status = status;
+            this.host = host;
+            this.details = details;
+        }
+
+        private CertificateStatus status;
+        private Host host;
+        private String details;
+
+        public CertificateStatus getStatus() {
+            return status;
+        }
+
+        public Host getHost() {
+            return host;
+        }
+
+        public String getDetails() {
+            return details;
+        }
+    }
+
     /**
      * Revoke direct download certificate from the hosts in the zone or a specific host
      */
-    boolean revokeCertificate(Long certificateId, Long zoneId, Long hostId);
+    List<HostCertificateRevoke> revokeCertificate(Long certificateId, Long zoneId, Long hostId);
 
     List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId);
 

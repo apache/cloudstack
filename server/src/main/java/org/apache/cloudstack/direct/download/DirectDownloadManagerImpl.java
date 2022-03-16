@@ -19,6 +19,9 @@
 package org.apache.cloudstack.direct.download;
 
 import static com.cloud.storage.Storage.ImageFormat;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.FAILED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.REVOKED;
+import static org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateRevoke.CertificateStatus.SKIPPED;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,6 +44,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand.DownloadProtocol;
@@ -584,7 +588,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public boolean revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
+    public List<HostCertificateRevoke> revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
         DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
         if (certificateVO == null) {
             throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
@@ -595,9 +599,10 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
                     " to the zone with ID=" + certificateVO.getZoneId() + " instead of the zone with ID=" + zoneId);
         }
 
+        List<HostCertificateRevoke> hostsList = new ArrayList<>();
         List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificateVO, hostId);
         if (CollectionUtils.isEmpty(maps)) {
-            return true;
+            return hostsList;
         }
 
         int success = 0;
@@ -607,27 +612,35 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         for (DirectDownloadCertificateHostMapVO map : maps) {
             Long mappingHostId = map.getHostId();
             HostVO host = hostDao.findById(mappingHostId);
+            HostCertificateRevoke hostStatus;
             if (host == null || host.getDataCenterId() != zoneId || host.getHypervisorType() != HypervisorType.KVM) {
                 if (host != null) {
-                    s_logger.debug("Skipping host " + host.getName() + " since its not on the zone " + zoneId + " or not a KVM host");
+                    String reason = host.getDataCenterId() != zoneId ? "Host is not in the zone " + zoneId : "Host hypervisor is not KVM";
+                    s_logger.debug("Skipping host " + host.getName() + ": " + reason);
+                    hostStatus = new HostCertificateRevoke(SKIPPED, host, reason);
+                    hostsList.add(hostStatus);
                 }
                 skipped++;
                 continue;
             }
-            if (!revokeCertificateAliasFromHost(certificateAlias, mappingHostId)) {
-                String msg = "Could not revoke certificate from host: " + mappingHostId;
+            Pair<Boolean, String> result = revokeCertificateAliasFromHost(certificateAlias, mappingHostId);
+            if (!result.first()) {
+                String msg = "Could not revoke certificate from host: " + mappingHostId + ": " + result.second();
                 s_logger.error(msg);
+                hostStatus = new HostCertificateRevoke(FAILED, host, result.second());
                 failed++;
             } else {
                 s_logger.info("Certificate " + certificateAlias + " revoked from host " + mappingHostId);
                 map.setRevoked(true);
+                hostStatus = new HostCertificateRevoke(REVOKED, host, null);
                 success++;
                 directDownloadCertificateHostMapDao.update(map.getId(), map);
             }
+            hostsList.add(hostStatus);
         }
         s_logger.info(String.format("Certificate alias %s revoked from: %d hosts, %d failed, %d skipped",
                 certificateAlias, success, failed, skipped));
-        return true;
+        return hostsList;
     }
 
     @Override
@@ -654,15 +667,15 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return new LinkedList<>(directDownloadCertificateHostMapDao.listByCertificateId(certificateId));
     }
 
-    protected boolean revokeCertificateAliasFromHost(String alias, Long hostId) {
+    protected Pair<Boolean, String> revokeCertificateAliasFromHost(String alias, Long hostId) {
         RevokeDirectDownloadCertificateCommand cmd = new RevokeDirectDownloadCertificateCommand(alias);
         try {
             Answer answer = agentManager.send(hostId, cmd);
-            return answer != null && answer.getResult();
+            return new Pair<>(answer != null && answer.getResult(), answer != null ? answer.getDetails() : "");
         } catch (AgentUnavailableException | OperationTimedoutException e) {
             s_logger.error("Error revoking certificate " + alias + " from host " + hostId, e);
+            return new Pair<>(false, e.getMessage());
         }
-        return false;
     }
 
     @Override
