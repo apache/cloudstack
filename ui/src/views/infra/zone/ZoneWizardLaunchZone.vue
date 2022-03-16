@@ -985,13 +985,13 @@ export default {
       try {
         if (!this.stepData.stepMove.includes('createTungstenFabricProvider')) {
           const providerParams = {}
-          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname || null
-          providerParams.name = this.prefillContent?.tungstenName || null
+          providerParams.tungstenproviderhostname = this.prefillContent?.tungstenHostname || ''
+          providerParams.name = this.prefillContent?.tungstenName || ''
           providerParams.zoneid = this.stepData.zoneReturned.id
-          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort || null
-          providerParams.tungstengateway = this.prefillContent?.tungstenGateway || null
-          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter || null
-          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort || null
+          providerParams.tungstenproviderport = this.prefillContent?.tungstenPort || ''
+          providerParams.tungstengateway = this.prefillContent?.tungstenGateway || ''
+          providerParams.tungstenprovidervrouterport = this.prefillContent?.tungstenVrouter || ''
+          providerParams.tungstenproviderintrospectport = this.prefillContent?.tungstenIntrospectPort || ''
           await this.createTungstenFabricProvider(providerParams)
           this.stepData.stepMove.push('createTungstenFabricProvider')
         }

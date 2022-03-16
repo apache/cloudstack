@@ -85,6 +85,12 @@ export default {
           return ('listTungstenFabricRoutingPolicy' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
         }
       }, {
+        name: 'network.policy',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/NetworkPolicyTab.vue'))),
+        show: (record) => {
+          return ('listTungstenFabricLogicalRouter' in store.getters.apis) && (record.broadcasturi === 'tf://tf' && record.type !== 'Shared')
+        }
+      }, {
         name: 'tungsten.logical.router',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/tungsten/LogicalRouterTab.vue'))),
         show: (record) => {
@@ -832,41 +838,6 @@ export default {
       ],
       actions: [
         {
-          api: 'applyTungstenFabricPolicy',
-          icon: 'form-outlined',
-          label: 'label.apply.tungsten.network.policy',
-          dataView: true,
-          args: ['networkuuid', 'majorsequence', 'minorsequence'],
-          mapping: {
-            networkuuid: {
-              api: 'listTungstenFabricNetwork',
-              params: (record) => { return { zoneid: record.zoneid } }
-            },
-            policyuuid: {
-              value: (record) => { return record.uuid }
-            },
-            zoneid: {
-              value: (record) => { return record.zoneid }
-            }
-          }
-        },
-        {
-          api: 'removeTungstenFabricPolicy',
-          icon: 'close-outlined',
-          label: 'label.remove.tungsten.network.policy',
-          dataView: true,
-          args: ['networkuuid'],
-          mapping: {
-            networkuuid: {
-              api: 'listTungstenFabricPolicy',
-              params: (record) => { return { policyuuid: record.uuid } }
-            },
-            zoneid: {
-              value: (record) => { return record.zoneid }
-            }
-          }
-        },
-        {
           api: 'deleteTungstenFabricPolicy',
           icon: 'delete-outlined',
           label: 'label.delete.tungsten.policy',
@@ -943,17 +914,14 @@ export default {
       ],
       actions: [
         {
-          api: 'removeTungstenFabricRoutingPolicyFromNetwork',
+          api: 'removeTungstenFabricRoutingPolicy',
           icon: 'delete-outlined',
-          label: 'label.action.remove.tungsten.routing.policy',
-          message: 'message.action.remove.routing.policy',
+          label: 'label.remove.routing.policy',
+          message: 'message.confirm.remove.routing.policy',
           dataView: true,
           mapping: {
-            tungstennetworkroutetableuuid: {
+            tungstenroutingpolicyuuid: {
               value: (record) => { return record.uuid }
-            },
-            networkuuid: {
-              value: (record) => { return record.networkuuid }
             },
             zoneid: {
               value: (record) => { return record.zoneid }

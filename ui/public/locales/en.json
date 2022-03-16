@@ -3740,5 +3740,12 @@
 "state.suspended": "Suspended",
 "title.upload.volume": "Upload Volume",
 "user.login": "Login",
-"user.logout": "Logout"
+"user.logout": "Logout",
+"message.success.apply.network.policy": "Successfully applied Network Policy",
+"message.error.apply.network.policy": "Applying Network Policy failed",
+"label.action.remove.network.policy": "Remove Network Policy",
+"message.success.remove.network.policy": "Successfully removed Network Policy",
+"message.error.remove.network.policy": "Removing Network Policy failed",
+"message.confirm.remove.network.policy": "Please confirm that you want to remove this Network Policy?",
+"label.policyuuid": "Network Policy"
 }

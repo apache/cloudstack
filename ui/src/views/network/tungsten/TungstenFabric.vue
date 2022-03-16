@@ -72,59 +72,6 @@ export default {
               ]
             },
             {
-              api: 'applyTungstenFabricPolicy',
-              icon: 'form-outlined',
-              label: 'label.apply.tungsten.network.policy',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'networkuuid',
-                  required: true,
-                  type: 'uuid',
-                  api: 'listTungstenFabricNetwork',
-                  loading: false,
-                  opts: []
-                },
-                {
-                  name: 'majorsequence',
-                  required: true,
-                  type: 'number',
-                  value: 0
-                },
-                {
-                  name: 'minorsequence',
-                  required: true,
-                  type: 'number',
-                  value: 0
-                }
-              ],
-              args: {
-                policyuuid: (record) => record.uuid
-              }
-            },
-            {
-              api: 'removeTungstenFabricPolicy',
-              icon: 'close-outlined',
-              label: 'label.remove.tungsten.network.policy',
-              dataView: true,
-              popup: true,
-              fields: [
-                {
-                  name: 'networkuuid',
-                  required: true,
-                  type: 'uuid',
-                  loading: false,
-                  opts: [],
-                  optGet: (record) => record.network
-                }
-              ],
-              show: (record) => record.network.length > 0,
-              args: {
-                policyuuid: (record) => record.uuid
-              }
-            },
-            {
               api: 'deleteTungstenFabricPolicy',
               icon: 'delete-outlined',
               label: 'label.delete.tungsten.policy',
