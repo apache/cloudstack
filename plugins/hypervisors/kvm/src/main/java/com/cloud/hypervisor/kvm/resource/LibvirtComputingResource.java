@@ -371,6 +371,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _rngPath = "/dev/random";
     protected int _rngRatePeriod = 1000;
     protected int _rngRateBytes = 2048;
+    protected int _manualCpuSpeed = 0;
     protected String _agentHooksBasedir = "/etc/cloudstack/agent/hooks";
 
     protected String _agentHooksLibvirtXmlScript = "libvirt-vm-xml-transformer.groovy";
@@ -1033,6 +1034,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (Boolean.parseBoolean(value)) {
             _noMemBalloon = true;
         }
+
+        value = (String)params.get("host.cpu.manual.speed.mhz");
+        _manualCpuSpeed = NumbersUtil.parseInt(value, 0);
 
         _videoHw = (String) params.get("vm.video.hardware");
         value = (String) params.get("vm.video.ram");
@@ -3294,7 +3298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {
