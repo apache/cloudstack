@@ -594,7 +594,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
         }
         String certificateAlias = certificateVO.getAlias();
-        if (certificateVO.getZoneId().equals(zoneId)) {
+        if (!certificateVO.getZoneId().equals(zoneId)) {
             throw new CloudRuntimeException("The certificate with alias " + certificateAlias + " was uploaded " +
                     " to the zone with ID=" + certificateVO.getZoneId() + " instead of the zone with ID=" + zoneId);
         }
