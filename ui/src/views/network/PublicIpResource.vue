@@ -115,6 +115,7 @@ export default {
     async filterTabs () {
       // Public IPs in Free state have nothing
       if (['Free', 'Reserved'].includes(this.resource.state)) {
+        this.tabs = this.defaultTabs
         return
       }
       // VPC IPs with source nat have only VPN
