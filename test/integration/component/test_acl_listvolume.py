@@ -443,7 +443,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_domainadmin_listall_true_rec_false(self):
         """
         # Test listing of Volumes by passing listall="true" and isrecusriv="false" parameter as domain admin
-        # Validate that it returns all the Volumes that is owned by accounts in this domain and all its subdomain
+        # Validate that it returns all the Volumes that is owned by accounts in this domain.
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -451,7 +451,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, listall="true", isrecursive="false")
         self.debug("List as Domain Admin  - listall=true,isrecursive=false %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 9,
+        self.assertEqual(len(volumeList) == 3,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -631,7 +631,7 @@ class TestVolumeList(cloudstackTestCase):
     def test_listVolume_as_domainadmin_domainid_listall_true(self):
         """
         # Test listing of Volumes by passing domainId and listall="true" parameter as domain admin
-        # Validate that it returns all the Volumes in the domain passed
+        # Validate that it returns all the Volumes in the domain passed and all the subdomains
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -639,7 +639,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as Domain Admin passing domainId  - listall=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1381,7 +1381,7 @@ class TestVolumeList(cloudstackTestCase):
         volumeList = Volume.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as ROOT Admin passing domainId  - listall=true %s" % volumeList)
 
-        self.assertEqual(len(volumeList) == 3,
+        self.assertEqual(len(volumeList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 

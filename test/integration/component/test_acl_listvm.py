@@ -430,7 +430,7 @@ class TestVMList(cloudstackTestCase):
     def test_listVM_as_domainadmin_listall_true_rec_false(self):
         """
         # Test listing of Vms by passing listall="true" and isrecusriv="false" parameter as domain admin
-        # Validate that it returns all the Vms that is owned by accounts in this domain and all its subdomain
+        # Validate that it returns all the Vms that is owned by accounts in this domain.
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -438,7 +438,7 @@ class TestVMList(cloudstackTestCase):
         vmList = VirtualMachine.list(self.apiclient, listall="true", isrecursive="false")
         self.debug("List as Domain Admin  - listall=true,isrecursive=false %s" % vmList)
 
-        self.assertEqual(len(vmList) == 9,
+        self.assertEqual(len(vmList) == 3,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -618,7 +618,8 @@ class TestVMList(cloudstackTestCase):
     def test_listVM_as_domainadmin_domainid_listall_true(self):
         """
         # Test listing of Vms by passing domainId and listall="true" parameter as domain admin
-        # Validate that it returns all the Vms in the domain passed
+        # Validate that it returns all the Vms in the domain passed and it's sub-domains (when
+        isrecursive isn't passed, it defaults to true)
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -626,7 +627,7 @@ class TestVMList(cloudstackTestCase):
         vmList = VirtualMachine.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as Domain Admin passing domainId  - listall=true %s" % vmList)
 
-        self.assertEqual(len(vmList) == 3,
+        self.assertEqual(len(vmList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1364,7 +1365,7 @@ class TestVMList(cloudstackTestCase):
     def test_listVM_as_rootadmin_domainid_listall_true(self):
         """
         # Test listing of Vms by passing domainid and listall="true" parameter as admin
-        # Validate that it returns all the Vms in the domain passed
+        # Validate that it returns all the Vms in the domain passed and it's subdomains
         """
 
         self.apiclient.connection.apiKey = self.user_a_apikey
@@ -1372,7 +1373,7 @@ class TestVMList(cloudstackTestCase):
         vmList = VirtualMachine.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as ROOT Admin passing domainId  - listall=true %s" % vmList)
 
-        self.assertEqual(len(vmList) == 3,
+        self.assertEqual(len(vmList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 

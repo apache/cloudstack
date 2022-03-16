@@ -457,7 +457,7 @@ class TestSnapshotList(cloudstackTestCase):
     def test_listSnapshot_as_domainadmin_listall_true_rec_false(self):
         """
         Test listing of Snapshots by passing listall="true" and isrecusriv="false" parameter as domain admin
-        Validate that it returns all the Snapshots that is owned by accounts in this domain and all its subdomain
+        Validate that it returns all the Snapshots that is owned by accounts in this domain.
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -465,7 +465,7 @@ class TestSnapshotList(cloudstackTestCase):
         snapshotList = Snapshot.list(self.apiclient, listall="true", isrecursive="false")
         self.debug("List as Domain Admin  - listall=true,isrecursive=false %s" % snapshotList)
 
-        self.assertEqual(len(snapshotList) == 9,
+        self.assertEqual(len(snapshotList) == 3,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -645,7 +645,8 @@ class TestSnapshotList(cloudstackTestCase):
     def test_listSnapshot_as_domainadmin_domainid_listall_true(self):
         """
         Test listing of Snapshots by passing domainId and listall="true" parameter as domain admin
-        Validate that it returns all the Snapshots in the domain passed
+        Validate that it returns all the Snapshots in the domain passed. When listall="true" and isrescursive
+        isn't passed them isrecursive is treated as 'true'
         """
 
         self.apiclient.connection.apiKey = self.user_d1_apikey
@@ -653,7 +654,7 @@ class TestSnapshotList(cloudstackTestCase):
         snapshotList = Snapshot.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as Domain Admin passing domainId  - listall=true %s" % snapshotList)
 
-        self.assertEqual(len(snapshotList) == 3,
+        self.assertEqual(len(snapshotList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 
@@ -1391,7 +1392,7 @@ class TestSnapshotList(cloudstackTestCase):
     def test_listSnapshot_as_rootadmin_domainid_listall_true(self):
         """
         Test listing of Snapshots by passing domainid and listall="true" parameter as admin
-        Validate that it returns all the Snapshots in the domain passed
+        Validate that it returns all the Snapshots in the domain passed and its subdomains
         """
 
         self.apiclient.connection.apiKey = self.user_a_apikey
@@ -1399,7 +1400,7 @@ class TestSnapshotList(cloudstackTestCase):
         snapshotList = Snapshot.list(self.apiclient, domainid=self.domain_11.id, listall="true")
         self.debug("List as ROOT Admin passing domainId  - listall=true %s" % snapshotList)
 
-        self.assertEqual(len(snapshotList) == 3,
+        self.assertEqual(len(snapshotList) == 4,
                          True,
                          "Number of items in list response check failed!!")
 
