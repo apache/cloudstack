@@ -82,7 +82,7 @@
               <span v-html="$t('message.confirm.add.routing.policy')" />
             </template>
           </a-alert>
-          <a-form-item name="tungstenRoutingPolicy" ref="tungstenRoutingPolicy" :label="$t('label.network.routing.policy')">
+          <a-form-item name="tungstenRoutingPolicy" ref="tungstenRoutingPolicy" :label="$t('label.routing.policy')">
             <a-select
               :loading="networks.loading"
               v-model:value="form.tungstenRoutingPolicy">
@@ -186,7 +186,7 @@ export default {
 
       this.fetchLoading = true
       api('listTungstenFabricRoutingPolicy', params).then(json => {
-        this.dataSource = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
+        this.dataSource = json?.listtungstenfabricroutingpolicyresponse?.routingpolicy || []
         this.itemCount = json?.listtungstenfabricroutingpolicyresponse?.count || 0
       }).catch(error => {
         this.$notifyError(error)
@@ -202,7 +202,7 @@ export default {
       this.networks.loading = true
       this.networks.opts = []
       api('listTungstenFabricRoutingPolicy', params).then(json => {
-        this.networks.opts = json?.listtungstenfabricroutingpolicyresponse?.routetable || []
+        this.networks.opts = json?.listtungstenfabricroutingpolicyresponse?.routingpolicy || []
         this.form.tungstenRoutingPolicy = this.networks.opts[0]?.uuid || undefined
       }).finally(() => {
         this.networks.loading = false
