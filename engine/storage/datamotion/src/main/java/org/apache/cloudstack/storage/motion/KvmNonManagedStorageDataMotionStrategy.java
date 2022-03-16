@@ -85,8 +85,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
         if (super.internalCanHandle(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE) {
             return StrategyPriority.CANT_HANDLE;
         }
-        if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE &&
-                canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE) {
+        if (canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) != StrategyPriority.CANT_HANDLE) {
             return StrategyPriority.HYPERVISOR;
         }
 
