@@ -40,6 +40,7 @@ public class EventJoinDaoImplTest {
         Mockito.when(event.getResourceType()).thenReturn(resourceType);
         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
         Mockito.when(vm.getUuid()).thenReturn(resourceUuid);
+        Mockito.when(vm.getHostName()).thenReturn(null);
         Mockito.when(vm.getName()).thenReturn(resourceName);
         Mockito.when(entityManager.validEntityType(VirtualMachine.class)).thenReturn(true);
         Mockito.when(entityManager.findByIdIncludingRemoved(VirtualMachine.class, resourceId)).thenReturn(vm);

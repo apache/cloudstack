@@ -16,6 +16,7 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
 
 export default {
   name: 'accountuser',
@@ -34,7 +35,8 @@ export default {
     {
       name: 'events',
       resourceType: 'User',
-      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [

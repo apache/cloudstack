@@ -32,7 +32,9 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -674,6 +676,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<EventJoinVO>, Integer> searchForEventsInternal(ListEventsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+        boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getId());
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Long id = cmd.getId();
@@ -710,6 +713,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
             if (resourceId == null) {
                 throw new InvalidParameterValueException(String.format("Invalid %s", ApiConstants.RESOURCE_ID));
+            }
+            if (!isRootAdmin && object instanceof ControlledEntity) {
+                ControlledEntity entity = (ControlledEntity)object;
+                _accountMgr.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.ListEntry, entity.getAccountId() == caller.getId(), entity);
             }
         }
 

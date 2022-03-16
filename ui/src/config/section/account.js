@@ -57,7 +57,8 @@ export default {
     {
       name: 'events',
       resourceType: 'Account',
-      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [

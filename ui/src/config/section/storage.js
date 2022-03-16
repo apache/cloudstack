@@ -71,7 +71,8 @@ export default {
         {
           name: 'events',
           resourceType: 'Volume',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
@@ -311,7 +312,8 @@ export default {
         {
           name: 'events',
           resourceType: 'Snapshot',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
