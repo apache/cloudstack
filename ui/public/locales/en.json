@@ -2964,6 +2964,7 @@
 "message.create.template": "Are you sure you want to create template?",
 "message.create.template.vm": "Create VM from template <b id=\"p_name\"></b>",
 "message.create.template.volume": "Please specify the following information before creating a template of your disk volume: <b><span id=\"volume_name\"></span></b>. Creation of the template can range from several minutes to longer depending on the size of the volume.",
+"message.create.tungsten.public.network": "Create Tungsten-Fabric public network",
 "message.create.volume.failed": "Failed to Create volume",
 "message.create.volume.processing": "Volume creation in progress",
 "message.create.vpc.offering": "VPC offering created",
