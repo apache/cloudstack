@@ -47,7 +47,8 @@ import com.cloud.user.Account;
         responseObject = IPAddressResponse.class,
         responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ReserveIPAddrCmd.class.getName());
     private static final String s_name = "reserveipaddressresponse";

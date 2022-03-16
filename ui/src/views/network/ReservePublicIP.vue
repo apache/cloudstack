@@ -44,7 +44,7 @@
         </a-select>
       </div>
 
-      <div class="form__item">
+      <div class="form__item" v-if="isAdminOrDomainAdmin()" >
         <p class="form__label"><span class="required">*</span>{{ $t('label.domain') }}</p>
         <a-select
           @change="changeDomain"
@@ -65,7 +65,7 @@
       </div>
 
       <template v-if="selectedAccountType === $t('label.account')">
-        <div class="form__item">
+        <div class="form__item" v-if="isAdminOrDomainAdmin()">
           <p class="form__label"><span class="required">*</span>{{ $t('label.account') }}</p>
           <a-select
             @change="changeAccount"
@@ -127,6 +127,7 @@
 <script>
 import { api } from '@/api'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import { isAdminOrDomainAdmin } from '@/role'
 
 export default {
   name: 'AssignInstance',
@@ -155,9 +156,16 @@ export default {
     }
   },
   created () {
-    this.fetchData()
+    if (isAdminOrDomainAdmin()) {
+      this.fetchData()
+    } else {
+      this.fetchProjects()
+    }
   },
   methods: {
+    isAdminOrDomainAdmin () {
+      return isAdminOrDomainAdmin()
+    },
     fetchData () {
       this.loading = true
       api('listDomains', {
@@ -231,7 +239,7 @@ export default {
       let variableValue = ''
 
       if (this.selectedAccountType === 'Account') {
-        if (!this.selectedAccount) {
+        if (!this.selectedAccount && isAdminOrDomainAdmin()) {
           this.accountError = true
           return
         }

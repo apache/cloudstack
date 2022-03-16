@@ -935,7 +935,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // verify permissions
         Account caller = CallContext.current().getCallingAccount();
-        _accountMgr.checkAccess(caller, null, true, ipVO);
+        _accountMgr.checkAccess(caller, null, true, account);
 
         VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
         if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {

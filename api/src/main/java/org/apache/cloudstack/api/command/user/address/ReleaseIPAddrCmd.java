@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.address;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -37,7 +38,8 @@ import com.cloud.network.IpAddress;
         since = "4.17",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ReleaseIPAddrCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ReleaseIPAddrCmd.class.getName());
 
