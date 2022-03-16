@@ -953,13 +953,13 @@ export default {
         }
 
         if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenPublicFabricNetwork()
+          await this.stepCreateTungstenFabricPublicNetwork()
         } else {
           await this.stepConfigureStorageTraffic()
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenPublicFabricNetwork()
+          await this.stepCreateTungstenFabricPublicNetwork()
         } else {
           await this.stepConfigureStorageTraffic()
         }
