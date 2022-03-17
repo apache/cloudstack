@@ -1612,6 +1612,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
         List<String> supportedServicesStr = cmd.getSupportedServices();
         Boolean restartRequired = cmd.isRestartRequired();
+        boolean listAll = cmd.listAll();
         boolean isRecursive = cmd.isRecursive();
         Boolean specifyIpRanges = cmd.isSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
@@ -1689,6 +1690,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             path = _domainDao.findById(domainId).getPath();
         } else {
             path = _domainDao.findById(caller.getDomainId()).getPath();
+        }
+
+        if (listAll && domainId == null) {
+            isRecursive = true;
         }
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);

@@ -18,11 +18,11 @@
 <template>
   <span class="header-notice-opener">
     <a-select
+      v-if="!isDisabled()"
       class="project-select"
       :defaultValue="$t('label.default.view')"
       :loading="loading"
       :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : $t('label.default.view')"
-      :disabled="isDisabled()"
       :filterOption="filterProject"
       @change="changeProject"
       @focus="fetchData"

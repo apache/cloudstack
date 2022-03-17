@@ -522,6 +522,7 @@ export default {
         promiscuousmode: '',
         macaddresschanges: '',
         forgedtransmits: '',
+        maclearning: this.macLearningValue,
         sourcenattype: 'peraccount',
         inlinemode: 'false',
         isolation: 'dedicated',
