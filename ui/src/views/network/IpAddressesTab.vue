@@ -137,7 +137,7 @@
               }" >
               <a-select-option
                 v-for="ip in listPublicIpAddress"
-                :key="ip.ipaddress">{{ ip.ipaddress }}</a-select-option>
+                :key="ip.ipaddress">{{ ip.ipaddress }} ({{ ip.state }})</a-select-option>
             </a-select>
           </a-form-item>
           <div :span="24" class="action-button">
@@ -367,7 +367,7 @@ export default {
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
-          description: error.response.data.errorresponse.errortext,
+          description: error.response.data.associateipaddressresponse.errortext || error.response.data.errorresponse.errortext,
           duration: 0
         })
       }).finally(() => {
@@ -447,9 +447,10 @@ export default {
       try {
         const listPublicIpAddress = await this.fetchListPublicIpAddress()
         listPublicIpAddress.forEach(item => {
-          if (item.state === 'Free') {
+          if (item.state === 'Free' || item.state === 'Reserved') {
             this.listPublicIpAddress.push({
-              ipaddress: item.ipaddress
+              ipaddress: item.ipaddress,
+              state: item.state
             })
           }
         })
