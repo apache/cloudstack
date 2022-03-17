@@ -374,6 +374,8 @@ class networkConfigSUSE(serviceCfgBase, networkConfigBase):
         if self.syscfg.env.bridgeType == "openvswitch":
             if cfo.getEntry("IPADDR"):
                 cfo.rmEntry("IPADDR", cfo.getEntry("IPADDR"))
+        elif self.syscfg.env.bridgeType == "native":
+            cfo.addEntry("BRIDGE", brName)
         else:
             raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
         cfo.save()
