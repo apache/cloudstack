@@ -21,16 +21,16 @@
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist" autoFocus></a-input>
+          <a-input v-model:value="newRule.cidrlist" autoFocus></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
-          <a-input v-model="newRule.destcidrlist"></a-input>
+          <a-input v-model:value="newRule.destcidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.traffictype') }}</div>
           <a-select
-            v-model="newRule.traffictype"
+            v-model:value="newRule.traffictype"
             showSearch
             optionFilterProp="children"
             :filterOption="(input, option) => {
@@ -43,7 +43,7 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            v-model="newRule.protocol"
+            v-model:value="newRule.protocol"
             style="width: 100%;"
             @change="resetRulePorts"
             showSearch
@@ -59,22 +59,22 @@
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.startport') }}</div>
-          <a-input v-model="newRule.startport"></a-input>
+          <a-input v-model:value="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
-          <a-input v-model="newRule.endport"></a-input>
+          <a-input v-model:value="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model="newRule.icmptype"></a-input>
+          <a-input v-model:value="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model="newRule.icmpcode"></a-input>
+          <a-input v-model:value="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button :disabled="!('createIpv6FirewallRule' in $store.getters.apis)" ref="submit" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('createIpv6FirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -82,10 +82,11 @@
     <a-divider/>
     <a-button
       v-if="(('deleteIpv6FirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.ip.v6.firewall.rules') }}
     </a-button>
     <a-table
@@ -110,7 +111,14 @@
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
       <template #actions="{record}">
-        <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteIpv6FirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          :disabled="!('deleteIpv6FirewallRule' in $store.getters.apis)"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          buttonClass="rule-action"
+          @click="deleteRule(record)" />
       </template>
     </a-table>
     <a-pagination
@@ -124,7 +132,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template #buildOptionText="{props}">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -206,23 +214,23 @@ export default {
         },
         {
           title: this.$t('label.traffictype'),
-          scopedSlots: { customRender: 'traffictype' }
+          slots: { customRender: 'traffictype' }
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.icmptype.start.port'),
-          scopedSlots: { customRender: 'startport' }
+          slots: { customRender: 'startport' }
         },
         {
           title: this.$t('label.icmpcode.end.port'),
-          scopedSlots: { customRender: 'endport' }
+          slots: { customRender: 'endport' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
@@ -292,7 +300,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -451,6 +459,14 @@ export default {
 
     button {
       margin-right: 20px;
+    }
+
+  }
+
+  .rule-action {
+
+    &:not(:last-of-type) {
+      margin-right: 10px;
     }
 
   }

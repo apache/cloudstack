@@ -61,7 +61,7 @@ export default {
         show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis }
       }, {
         name: 'ip.v6.firewall',
-        component: () => import('@/views/network/Ipv6FirewallRulesTab.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
         show: (record) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis }
       }, {
         name: 'public.ip.addresses',

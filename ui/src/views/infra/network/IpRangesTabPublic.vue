@@ -218,7 +218,7 @@
           <a-form-item name="ip6gateway" ref="ip6gateway" :label="$t('label.gateway')" class="form__item">
             <a-input v-model:value="form.ip6gateway" />
           </a-form-item>
-          <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.gateway')" class="form__item">
+          <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
             <a-input v-model:value="form.ip6cidr" />
           </a-form-item>
         </div>
@@ -421,13 +421,17 @@ export default {
   methods: {
     initAddIpRangeForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        iptype: ''
+      })
       this.rules = reactive({
         podid: [{ required: true, message: this.$t('label.required') }],
         gateway: [{ required: true, message: this.$t('label.required') }],
         netmask: [{ required: true, message: this.$t('label.required') }],
         startip: [{ required: true, message: this.$t('label.required') }],
-        endip: [{ required: true, message: this.$t('label.required') }]
+        endip: [{ required: true, message: this.$t('label.required') }],
+        ip6gateway: [{ required: true, message: this.$t('label.required') }],
+        ip6cidr: [{ required: true, message: this.$t('label.required') }]
       })
     },
     initFormUpdateRange () {
