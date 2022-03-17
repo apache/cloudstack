@@ -62,7 +62,7 @@ export default {
     if (this.resourceType) {
       var routePrefix = this.$getRouteFromResourceType(this.resourceType)
       if (routePrefix && this.resourceId) {
-        this.resourceRoute = '/' + this.resourceRoutePrefix + '/' + this.resourceId
+        this.resourceRoute = '/' + routePrefix + '/' + this.resourceId
       }
       this.resourceIcon = this.$getIconFromResourceType(this.resourceType)
       this.resourceIconTooltip = this.$t('label.' + this.resourceType.toString().toLowerCase())
