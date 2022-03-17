@@ -128,6 +128,7 @@ import com.cloud.user.User;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -1195,10 +1196,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             final Boolean display) {
         final Account caller = CallContext.current().getCallingAccount();
         final List<Long> permittedAccounts = new ArrayList<Long>();
-        final Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(domainId,null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
+                null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
-        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+        isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         final Filter searchFilter = new Filter(VpcVO.class, "created", false, null, null);
 
         final SearchBuilder<VpcVO> sb = _vpcDao.createSearchBuilder();
@@ -2103,10 +2106,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long projectId = cmd.getProjectId();
 
         final Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        final Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(domainId, null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
+                null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
-        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+        isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         final SearchBuilder<VpcGatewayVO> sb = _vpcGatewayDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -2350,10 +2355,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Long projectId = cmd.getProjectId();
         final String state = cmd.getState();
 
-        final Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(domainId, null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
+                null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
-        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+        isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         final Filter searchFilter = new Filter(StaticRouteVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         final SearchBuilder<StaticRouteVO> sb = _staticRouteDao.createSearchBuilder();

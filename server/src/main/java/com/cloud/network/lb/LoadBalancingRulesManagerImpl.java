@@ -144,6 +144,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -2324,11 +2325,13 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Pair<Long, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, ListProjectResourcesCriteria>(cmd.getDomainId(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
+                cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
+                domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        Boolean isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
