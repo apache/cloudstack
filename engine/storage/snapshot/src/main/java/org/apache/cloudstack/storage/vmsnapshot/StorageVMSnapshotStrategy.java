@@ -360,6 +360,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
+        //This check could be removed when PR #5297 is merged
         if (vmHasNFSOrLocalVolumes(vmId)) {
             return StrategyPriority.CANT_HANDLE;
         }
