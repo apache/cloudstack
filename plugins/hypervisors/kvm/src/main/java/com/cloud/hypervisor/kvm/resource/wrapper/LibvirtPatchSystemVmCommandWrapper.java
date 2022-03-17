@@ -60,12 +60,10 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         String scriptChecksum = lines[1].trim();
         String checksum = serverResource.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
-        if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
-            if (!cmd.isForced()) {
-                String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
-                s_logger.info(msg);
-                return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
-            }
+        if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
+            String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
+            s_logger.info(msg);
+            return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
         }
 
         Pair<Boolean, String> patchResult = null;
@@ -79,7 +77,7 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
 
         if (patchResult.first()) {
             String scriptVersion = lines[1];
-            if (patchResult.second() != null) {
+            if (StringUtils.isNotEmpty(patchResult.second())) {
                 String res = patchResult.second().replace("\n", " ");
                 String[] output = res.split(":");
                 if (output.length != 2) {

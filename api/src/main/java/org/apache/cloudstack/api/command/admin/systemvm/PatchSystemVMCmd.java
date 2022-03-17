@@ -62,7 +62,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     }
 
     public boolean isForced() {
-        return force != null ? force : false;
+        return force != null && force;
     }
 
     /////////////////////////////////////////////////////

@@ -659,9 +659,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String sysVMName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String homeDir = System.getProperty("user.home");
         File pemFile = new File(homeDir + "/.ssh/id_rsa");
-
-        ExecutionResult result = getSystemVmVersionAndChecksum(controlIp);
+        ExecutionResult result;
         try {
+            result = getSystemVmVersionAndChecksum(controlIp);
             FileUtil.scpPatchFiles(controlIp, "/tmp/", DefaultDomRSshPort, pemFile, systemVmPatchFiles, BASEPATH);
         } catch (CloudRuntimeException e) {
             return new PatchSystemVmAnswer(cmd, e.getMessage());
@@ -676,12 +676,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         String scriptChecksum = lines[1].trim();
         String checksum = calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum)) {
-            if (!cmd.isForced()) {
-                String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
-                s_logger.info(msg);
-                return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
-            }
+        if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
+            String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
+            s_logger.info(msg);
+            return new PatchSystemVmAnswer(cmd, msg, lines[0], lines[1]);
         }
 
         Pair<Boolean, String> patchResult = null;
@@ -693,7 +691,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
 
         String scriptVersion = lines[1];
-        if (patchResult.second() != null) {
+        if (StringUtils.isNotEmpty(patchResult.second())) {
             String res = patchResult.second().replace("\n", " ");
             String[] output = res.split(":");
             if (output.length != 2) {
