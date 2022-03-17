@@ -1050,9 +1050,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 throw new CloudRuntimeException("Failed to create security group");
             }
             List<String> cirdList = new ArrayList<>();
-            cirdList.add("0.0.0.0/0");
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), "all", null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), "all", null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.EgressRule);
+            cirdList.add(NetUtils.ALL_IP4_CIDRS);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.EgressRule);
 
         }
 
