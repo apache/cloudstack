@@ -267,7 +267,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             ipv6GuestPrefixSubnetNetworkMapDao.persist(ip6Subnet);
         }
         IPv6Network network = IPv6Network.fromString(ip6Subnet.getSubnet());
-        return new Pair<>(network.getFirst().toString(), network.toString());
+        IPv6Address gateway = network.getFirst().add(1);
+        return new Pair<>(gateway.toString(), network.toString());
     }
 
     @Override
@@ -353,7 +354,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             List<NicVO> nics = nicDao.listByVmId(router.getId());
             for (NicVO nic : nics) {
                 String address = nic.getIPv6Address();
-                if (!PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver()) || StringUtils.isEmpty(address)) {
+                if (!PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver()) ||
+                        StringUtils.isEmpty(address) ||
+                        addresses.contains(address)) {
                     continue;
                 }
                 addresses.add(address);
