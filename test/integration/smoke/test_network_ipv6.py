@@ -50,6 +50,8 @@ from marvin.lib.decoratorGenerators import skipTestIf
 
 _multiprocess_shared_ = True
 
+ipv6_offering_config_name = "ipv6.offering.enabled"
+
 class TestCreateIpv6NetworkOffering(cloudstackTestCase):
 
     @classmethod
@@ -59,9 +61,9 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
         cls.initial_ipv6_offering_enabled = Configurations.list(
             cls.apiclient,
-            name="network.offering.ipv6.enabled")[0].value
+            name=ipv6_offering_config_name)[0].value
         Configurations.update(cls.apiclient,
-            "network.offering.ipv6.enabled",
+            ipv6_offering_config_name,
             "true")
         cls._cleanup = []
         return
@@ -70,7 +72,7 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
     def tearDownClass(cls):
         if cls.initial_ipv6_offering_enabled != None:
             Configurations.update(cls.apiclient,
-                "network.offering.ipv6.enabled",
+                ipv6_offering_config_name,
                 cls.initial_ipv6_offering_enabled)
         super(TestCreateIpv6NetworkOffering, cls).tearDownClass()
 
@@ -342,9 +344,9 @@ class TestIpv6Network(cloudstackTestCase):
         if cls.ipv6NotSupported == False:
             cls.initial_ipv6_offering_enabled = Configurations.list(
                 cls.apiclient,
-                name="network.offering.ipv6.enabled")[0].value
+                name=ipv6_offering_config_name)[0].value
             Configurations.update(cls.apiclient,
-                "network.offering.ipv6.enabled",
+                ipv6_offering_config_name,
                 "true")
             cls.domain = get_domain(cls.apiclient)
             cls.account = Account.create(
@@ -403,7 +405,7 @@ class TestIpv6Network(cloudstackTestCase):
     def tearDownClass(cls):
         if cls.initial_ipv6_offering_enabled != None:
             Configurations.update(cls.apiclient,
-                "network.offering.ipv6.enabled",
+                ipv6_offering_config_name,
                 cls.initial_ipv6_offering_enabled)
         super(TestIpv6Network, cls).tearDownClass()
         if cls.test_ipv6_guestprefix != None:
@@ -432,13 +434,19 @@ class TestIpv6Network(cloudstackTestCase):
             cls.apiclient,
             zoneid=cls.zone.id
         )
+        ipv4_range_vlan = None
         if isinstance(list_public_ip_range_response, list) == True and len(list_public_ip_range_response) > 0:
             for ip_range in list_public_ip_range_response:
-                ip_range = ip_range.vlan
                 if ip_range.ip6cidr != None and ip_range.ip6gateway != None:
                     return ip_range
+                if ip_range.netmask != None and ip_range.gateway != None:
+                    vlan = ip_range.vlan
+                    if ipv4_range_vlan == None and vlan.startswith("vlan://"):
+                        vlan = vlan.replace("vlan://", "")
+                        ipv4_range_vlan = int(vlan)
         ipv6_publiciprange_service = cls.services["publicip6range"]
         ipv6_publiciprange_service["zoneid"] = cls.zone.id
+        ipv6_publiciprange_service["vlan"] = ipv4_range_vlan
         ipv6_publiciprange = PublicIpRange.create(
             cls.apiclient,
             ipv6_publiciprange_service
