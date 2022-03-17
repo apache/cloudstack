@@ -23,6 +23,7 @@ from marvin.lib.utils import random_gen, cleanup_resources, validateList, is_sna
 from marvin.lib.base import (Account,
                              Configurations,
                              ServiceOffering,
+                             StoragePool,
                              Template,
                              VirtualMachine,
                              VmSnapshot,
@@ -61,6 +62,14 @@ class TestVmSnapshot(cloudstackTestCase):
             type='Routing',
             hypervisor='KVM')
 
+        pools = StoragePool.list(
+            cls.apiclient,
+            zoneid=cls.zone.id)
+
+        for pool in pools:
+            if pool.type == "NetworkFilesystem" or pool.type == "Filesystem":
+                raise unittest.SkipTest("Storage-based snapshots functionality is not supported for NFS/Local primary storage")
+
         for host in hosts:
             if host.details['Host.OS'] in ['CentOS']:
                 raise unittest.SkipTest("The standard `qemu-kvm` which is the default for CentOS does not support the new functionality. It has to be installed `qemu-kvm-ev`")
@@ -92,7 +101,6 @@ class TestVmSnapshot(cloudstackTestCase):
         cls.services["templates"]["ostypeid"] = template.ostypeid
         cls.services["zoneid"] = cls.zone.id
 
-        # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
@@ -176,15 +184,6 @@ class TestVmSnapshot(cloudstackTestCase):
                 self.debug(c)
                 result = ssh_client.execute(c)
                 self.debug(result)
-            
-            #need to install qemu-guest-agent on the guest machine to be able to freeze/thaw the VM
-#             qemu_guest_agent_result = ssh_client.execute("yum install -y qemu-guest-agent")
-#             self.debug(qemu_guest_agent_result)
-#             qemu_chkconfig = ssh_client.execute("chkconfig qemu-ga on")
-#             self.debug(qemu_chkconfig)
-#             qemu_start = ssh_client.execute("service qemu-ga start")
-#             self.debug(qemu_start)
-            
         except Exception:
             self.fail("SSH failed for Virtual machine: %s" %
                       self.virtual_machine.ipaddress)
@@ -320,7 +319,6 @@ class TestVmSnapshot(cloudstackTestCase):
 
         list_snapshot_response = VmSnapshot.list(
             self.apiclient,
-            #vmid=self.virtual_machine.id,
             virtualmachineid=self.virtual_machine.id,
             listall=False)
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
