@@ -291,15 +291,8 @@
         <span v-else>{{ text }}</span>
       </template>
     </template>
-    <template #resource="{ text, record }">
-      <span v-if="record.resourcetype && record.resourceid && $getRouteFromResourceType(record.resourcetype)" >
-        <a-tooltip placement="top" :title="record.resourcetype + ': ' + (record.resourcename || record.resourceid)">
-          <render-icon style="font-size: 16px; margin-right: 5px" :icon="$getIconFromResourceType(record.resourcetype)" />
-          <router-link v-if="$router.resolve('/' + $getRouteFromResourceType(record.resourcetype) + '/' + record.resourceid)" :to="{ path: '/' + $getRouteFromResourceType(record.resourcetype) + '/' + record.resourceid }">{{ record.resourcename || record.resourceid }}</router-link>
-          <span v-else>{{ record.resourcename || record.resourceid }}</span>
-        </a-tooltip>
-      </span>
-      <span v-else>{{ text }}</span>
+    <template #resource="{ record }">
+      <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
     </template>
     <template #domain="{ text, record }">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
@@ -439,6 +432,7 @@ import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import RenderIcon from '@/utils/renderIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'ListView',
@@ -448,7 +442,8 @@ export default {
     QuickView,
     TooltipButton,
     ResourceIcon,
-    RenderIcon
+    RenderIcon,
+    ResourceLabel
   },
   props: {
     columns: {

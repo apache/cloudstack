@@ -369,11 +369,7 @@
         <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
           <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
           <div class="resource-detail-item__details">
-            <a-tooltip placement="top" :title="resource.resourcetype + ': ' + (resource.resourcename || resource.resourceid)">
-              <render-icon style="font-size: 16px; margin-right: 5px" :icon="$getIconFromResourceType(resource.resourcetype)" />
-              <router-link v-if="$router.resolve('/' + routeFromResourceType + '/' + resource.resourceid)" :to="{ path: '/' + routeFromResourceType + '/' + resource.resourceid }">{{ resource.resourcename || resource.resourceid }}</router-link>
-              <span v-else>{{ resource.resourcename || resource.resourceid }}</span>
-            </a-tooltip>
+            <resource-label :resourceType="resource.resourcetype" :resourceId="resource.resourceid" :resourceName="resource.resourcename" />
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
@@ -715,6 +711,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'InfoCard',
@@ -725,7 +722,8 @@ export default {
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
-    RenderIcon
+    RenderIcon,
+    ResourceLabel
   },
   props: {
     resource: {

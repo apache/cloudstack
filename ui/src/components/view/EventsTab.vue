@@ -23,9 +23,9 @@
       :items="events"
       :actions="actions"
       :columnKeys="columnKeys"
-      :selectedColumns="columnKeys"
+      :selectedColumns="selectedColumnKeys"
       ref="listview"
-      @selection-change="onRowSelectionChange"
+      @update-selected-columns="updateSelectedColumns"
       @refresh="this.fetchData"/>
       <a-pagination
         class="row-element"
@@ -74,7 +74,8 @@ export default {
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['level', 'type', 'state', 'username', 'account', 'domain', 'created'],
+      columnKeys: ['level', 'type', 'state', 'description', 'username', 'account', 'domain', 'created'],
+      selectedColumnKeys: [],
       columns: [],
       cols: [],
       events: [],
@@ -97,15 +98,9 @@ export default {
     }
   },
   created () {
+    this.selectedColumnKeys = this.columnKeys
+    this.updateSelectedColumns('description')
     this.pageSize = this.pageSizeOptions[0] * 1
-    for (var columnKey of this.columnKeys) {
-      this.columns.push({
-        title: this.$t('label.' + String(columnKey).toLowerCase()),
-        dataIndex: columnKey,
-        slots: { customRender: columnKey },
-        sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
-      })
-    }
     this.fetchData()
   },
   watch: {
@@ -143,6 +138,33 @@ export default {
       this.page = page
       this.pageSize = pageSize
       this.fetchData()
+    },
+    updateSelectedColumns (key) {
+      if (this.selectedColumnKeys.includes(key)) {
+        this.selectedColumnKeys = this.selectedColumnKeys.filter(x => x !== key)
+      } else {
+        this.selectedColumnKeys.push(key)
+      }
+      this.updateColumns()
+    },
+    updateColumns () {
+      this.columns = []
+      for (var columnKey of this.columnKeys) {
+        if (!this.selectedColumnKeys.includes(columnKey)) continue
+        this.columns.push({
+          title: this.$t('label.' + String(columnKey).toLowerCase()),
+          dataIndex: columnKey,
+          slots: { customRender: columnKey },
+          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+        })
+      }
+      this.columns.push({
+        dataIndex: 'dropdownFilter',
+        slots: {
+          filterDropdown: 'filterDropdown',
+          filterIcon: 'filterIcon'
+        }
+      })
     }
   }
 }

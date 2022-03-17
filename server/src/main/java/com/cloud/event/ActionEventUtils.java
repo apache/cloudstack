@@ -239,8 +239,11 @@ public class ActionEventUtils {
 
     private static Ternary<Long, String, String> getResourceDetailsUsingEntityClassAndContext(Class<?> entityClass, ApiCommandResourceType resourceType) {
         CallContext context = CallContext.current();
-        if (resourceType == null) {
-            resourceType = ApiCommandResourceType.valueFromAssociatedClass(entityClass);
+        ApiCommandResourceType alternateResourceType = ApiCommandResourceType.valueFromAssociatedClass(entityClass);
+        if (resourceType == null ||
+                (ObjectUtils.allNotNull(resourceType, alternateResourceType) &&
+                        resourceType.getAssociatedClass() != alternateResourceType.getAssociatedClass())) {
+            resourceType = alternateResourceType;
         }
         String entityType = resourceType == null ? entityClass.getSimpleName() : resourceType.toString();
         String entityUuid = null;
