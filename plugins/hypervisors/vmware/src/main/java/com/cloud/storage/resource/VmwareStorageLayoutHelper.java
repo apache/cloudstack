@@ -247,11 +247,25 @@ public class VmwareStorageLayoutHelper implements Configurable {
         s_logger.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
         ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
 
-        if (folderName != null) {
-            String[] files = ds.listDirContent(folderName);
-            if (files == null || files.length == 0) {
-                ds.deleteFolder(folderName, dcMo.getMor());
+        try {
+            if (folderName != null) {
+                String[] files = ds.listDirContent(folderName);
+                if (files == null || files.length == 0) {
+                    ds.deleteFolder(folderName, dcMo.getMor());
+                }
             }
+        } catch (Exception e) {
+            String firstLink = "https://communities.vmware.com/t5/VMware-vSphere-Discussions/VCSA-6-7-Datastore-browser-empty-error-500/td-p/2300628";
+            String secondLink = "https://communities.vmware.com/t5/vCenter-Server-Discussions/Cannot-Open-VM-folder-in-url-in-vCenter-appliance-6-7/m-p/1871308";
+            String thirdLink = "https://www.mail-archive.com/users@cloudstack.apache.org/msg31406.html";
+            String jiraIssue = "https://issues.apache.org/jira/browse/CLOUDSTACK-8600";
+            String prLink = "https://github.com/apache/cloudstack/pull/545";
+            String message = String.format("Failed to list folder content of VM [name: %s] due to: [%s]. For more information about this error, please check this links [%s, %s, %s]. "
+                    + "To know why ACS tries to check folder content, please check these links [%s, %s]. This error apparently only occurs with datastores that use the NFS protocol and "
+                    + "in specific versions of VMWare. Users using VMFS or VMWare versions greater than 6.7 have not reported this error. If the operation performed is a volume detach, "
+                    + "it was successful. If you want to know why this error occurs in VMWare, please contact VMWare's technical support.",
+                    vmName, e.getMessage(), firstLink, secondLink, thirdLink, jiraIssue, prLink);
+            s_logger.warn(message, e);
         }
     }
 
