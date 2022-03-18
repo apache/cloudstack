@@ -35,6 +35,12 @@ function debconf_packages() {
   echo "libc6 libraries/restart-without-asking boolean false" | debconf-set-selections
 }
 
+function apt_clean() {
+  apt-get -y autoremove --purge
+  apt-get clean
+  apt-get autoclean
+}
+
 function install_packages() {
   export DEBIAN_FRONTEND=noninteractive
   export DEBIAN_PRIORITY=critical
