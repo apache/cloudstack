@@ -608,8 +608,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 s_logger.debug(String.format("Got HOST_UEFI_ENABLE [%s] for hostId [%s]:", uefiEnabled, host.getUuid()));
                 if (uefiEnabled != null) {
                     _hostDao.loadDetails(host);
-                    host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
-                    _hostDao.saveDetails(host);
+                    if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                        host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
+                        _hostDao.saveDetails(host);
+                    }
                 }
             }
         }
