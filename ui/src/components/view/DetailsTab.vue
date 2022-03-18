@@ -41,13 +41,20 @@
           </div>
           <div v-else-if="['name', 'type'].includes(item)">
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
-            <span v-else>{{ dataResource[item] }}</span>
+            <span v-else>{{ dataResource[item] }}</span>h
           </div>
           <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
-            {{ $toLocaleDate(dataResource[item]) }}
+            {{ $toLocaleDate(dataResource[item]) }}h
           </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
+          </div>
+          <div v-else-if="item === 'securitygroup'">
+            <div v-if="dataResource[item] && dataResource[item].length > 0">
+              <span v-for="(securityGroup, idx) in dataResource[item]" :key="idx">
+                {{ securityGroup.name }} &nbsp;
+              </span>
+            </div>
           </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
