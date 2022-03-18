@@ -42,14 +42,18 @@ public final class LibvirtReadyCommandWrapper extends CommandWrapper<ReadyComman
     public Answer execute(final ReadyCommand command, final LibvirtComputingResource libvirtComputingResource) {
         Map<String, String> hostDetails = new HashMap<String, String>();
 
+        if (hostSupportsUefi()) {
+            hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+        }
+
+        return new ReadyAnswer(command, hostDetails);
+    }
+
+    private boolean hostSupportsUefi() {
         String cmd = "rpm -qa | grep -i ovmf";
         s_logger.debug("Running command : " + cmd);
         int result = Script.runSimpleBashScriptForExitValue(cmd);
         s_logger.debug("Got result : " + result);
-        if (result == 0) {
-            hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.toString(true));
-        }
-
-        return new ReadyAnswer(command, hostDetails);
+        return result == 0;
     }
 }

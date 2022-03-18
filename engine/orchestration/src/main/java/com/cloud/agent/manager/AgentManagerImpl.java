@@ -603,10 +603,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (answer instanceof ReadyAnswer) {
             ReadyAnswer readyAnswer = (ReadyAnswer)answer;
             Map<String, String> detailsMap = readyAnswer.getDetailsMap();
-            s_logger.info("Got details map : " + detailsMap);
             if (detailsMap != null) {
                 String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
-                s_logger.info("Got HOST_UEFI_ENABLE : " + uefiEnabled);
+                s_logger.debug(String.format("Got HOST_UEFI_ENABLE [%s] for hostId [%s]:", uefiEnabled, host.getUuid()));
                 if (uefiEnabled != null) {
                     _hostDao.loadDetails(host);
                     host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);

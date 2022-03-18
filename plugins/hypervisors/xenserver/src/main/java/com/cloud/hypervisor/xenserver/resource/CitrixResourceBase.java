@@ -1779,9 +1779,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             details.put("product_brand", productBrand);
             details.put("product_version", _host.getProductVersion());
-            if (isUefiSupported(_host.getProductVersion())) {
-                details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
-            }
             if (hr.softwareVersion.get("product_version_text_short") != null) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));

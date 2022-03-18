@@ -367,10 +367,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 details.put("url", hostMo.getHostName());
                 details.put("username", username);
                 details.put("password", password);
-                boolean uefiLegacySupported = hostMo.isUefiLegacySupported();
-                if (uefiLegacySupported) {
-                    details.put(Host.HOST_UEFI_ENABLE, "true");
-                }
                 String guid = morHost.getType() + ":" + morHost.getValue() + "@" + url.getHost();
                 details.put("guid", guid);
 
