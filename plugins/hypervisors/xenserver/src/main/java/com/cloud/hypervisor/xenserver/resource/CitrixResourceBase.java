@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import static com.cloud.hypervisor.xenserver.discoverer.XcpServerDiscoverer.isUefiSupported;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.BufferedReader;
