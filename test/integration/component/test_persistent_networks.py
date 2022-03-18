@@ -239,7 +239,7 @@ class TestPersistentNetworks(cloudstackTestCase):
         password = self.hostConfig["password"]
         try:
             ssh_client = self.get_ssh_client(host.ipaddress, username, password)
-            res = ssh_client.execute("ip addr | grep breth0-" + str(vlan_id) + " > /dev/null 2>&1; echo $?")
+            res = ssh_client.execute("ip addr | grep breth.*-" + str(vlan_id) + " > /dev/null 2>&1; echo $?")
             return res[0]
         except Exception as e:
             self.fail(e)
