@@ -164,7 +164,7 @@ public class ImplicitPlannerTest {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
 
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName("user1");
         acct.setDomainId(domainId);
         acct.setId(accountId);

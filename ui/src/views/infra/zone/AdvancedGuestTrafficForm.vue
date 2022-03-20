@@ -25,8 +25,11 @@
     </a-card>
     <a-form
       class="form-content"
-      :form="form"
-      @submit="handleSubmit">
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+     >
       <a-form-item
         :label="$t('label.vlan.range')"
         v-bind="formItemLayout"
@@ -34,36 +37,26 @@
         :validate-status="validStatus"
         has-feedback>
         <a-form-item
+          name="vlanRangeStart"
+          ref="vlanRangeStart"
           has-feedback
           :style="{ display: 'inline-block', width: 'calc(50% - 12px)' }">
           <a-input-number
-            v-decorator="['vlanRangeStart', {
-              rules: [{
-                validator: validateFromTo,
-                fromInput: true,
-                compare: 'vlanRangeEnd',
-                initialValue: getPrefilled('vlanRangeStart')
-              }]
-            }]"
+            v-model:value="form.vlanRangeStart"
             style="width: 100%;"
-            autoFocus
+            v-focus="true"
           />
         </a-form-item>
         <span :style="{ display: 'inline-block', width: '24px', textAlign: 'center' }">
           -
         </span>
         <a-form-item
+          name="vlanRangeEnd"
+          ref="vlanRangeEnd"
           has-feedback
           :style="{ display: 'inline-block', width: 'calc(50% - 12px)' }">
           <a-input-number
-            v-decorator="['vlanRangeEnd', {
-              rules: [{
-                validator: validateFromTo,
-                toInput: true,
-                compare: 'vlanRangeStart',
-                initialValue: getPrefilled('vlanRangeEnd')
-              }]
-            }]"
+            v-model:value="form.vlanRangeEnd"
             style="width: 100%;"
           />
         </a-form-item>
@@ -84,6 +77,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 export default {
   name: 'AdvancedGuestTrafficForm',
   props: {
@@ -112,35 +106,55 @@ export default {
       validMessage: ''
     }
   },
-  created () {
-    this.form = this.$form.createForm(this, {
-      onFieldsChange: (_, changedFields) => {
-        this.$emit('fieldsChanged', changedFields)
+  watch: {
+    formModel: {
+      deep: true,
+      handler (changedFields) {
+        const fieldsChanged = toRaw(changedFields)
+        this.$emit('fieldsChanged', fieldsChanged)
       }
-    })
+    }
+  },
+  created () {
+    this.initForm()
   },
   mounted () {
     this.fillValue()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        vlanRangeStart: this.getPrefilled('vlanRangeStart'),
+        vlanRangeEnd: this.getPrefilled('vlanRangeEnd')
+      })
+      this.rules = reactive({
+        vlanRangeStart: [{
+          validator: this.validateFromTo,
+          fromInput: true,
+          compare: 'vlanRangeEnd'
+        }],
+        vlanRangeEnd: [{
+          validator: this.validateFromTo,
+          toInput: true,
+          compare: 'vlanRangeStart'
+        }]
+      })
+    },
     fillValue () {
-      const fieldVal = {}
-      fieldVal.vlanRangeStart = this.getPrefilled('vlanRangeStart')
-      this.form.setFieldsValue(fieldVal)
-      fieldVal.vlanRangeEnd = this.getPrefilled('vlanRangeEnd')
-      this.form.setFieldsValue(fieldVal)
+      this.form.vlanRangeStart = this.getPrefilled('vlanRangeStart')
+      this.form.vlanRangeEnd = this.getPrefilled('vlanRangeEnd')
+      this.formModel = toRaw(this.form)
     },
     getPrefilled (key) {
-      return this.prefillContent[key] ? this.prefillContent[key].value : null
+      return this.prefillContent?.[key] || null
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        this.validStatus = ''
-        this.validMessage = ''
-        if (err) {
-          return
-        }
+    handleSubmit () {
+      this.validStatus = ''
+      this.validMessage = ''
+
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         if (!this.checkFromTo(values.vlanRangeStart, values.vlanRangeEnd)) {
           this.validStatus = 'error'
           this.validMessage = this.$t('message.error.vlan.range')
@@ -151,28 +165,30 @@ export default {
           return
         }
         this.$emit('nextPressed')
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleBack (e) {
       this.$emit('backPressed')
     },
-    validateFromTo (rule, value, callback) {
+    async validateFromTo (rule, value) {
       let fromVal = ''
       let toVal = ''
       this.validStatus = ''
       this.validMessage = ''
       if (rule.fromInput) {
         fromVal = value
-        toVal = this.form.getFieldValue(rule.compare)
+        toVal = this.form[rule.compare]
       } else if (rule.toInput) {
         toVal = value
-        fromVal = this.form.getFieldValue(rule.compare)
+        fromVal = this.form[rule.compare]
       }
       if (!this.checkFromTo(fromVal, toVal)) {
         this.validStatus = 'error'
         this.validMessage = this.$t('message.error.vlan.range')
       }
-      callback()
+      return Promise.resolve()
     },
     checkFromTo (fromVal, toVal) {
       if (!fromVal) fromVal = 0
@@ -199,13 +215,13 @@ export default {
     overflow-y: auto;
     padding: 16px 20px 0;
 
-    /deep/.has-error {
+    :deep(.has-error) {
       .ant-form-explain {
         text-align: left;
       }
     }
 
-    /deep/.ant-form-item-control {
+    :deep(.ant-form-item-control) {
       text-align: left;
     }
   }

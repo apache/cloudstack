@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.reflections.Reflections;
 
@@ -165,10 +166,27 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        s_logger.debug(String.format("Disconnect physical disks using volume map: %s", volumeToDisconnect.toString()));
+        if (MapUtils.isEmpty(volumeToDisconnect)) {
+            return false;
+        }
+
+        if (volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE) != null) {
+            String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
+            StorageAdaptor adaptor = _storageMapper.get(poolType);
+            if (adaptor != null) {
+                s_logger.info(String.format("Disconnecting physical disk using the storage adaptor found for pool type: %s", poolType));
+                return adaptor.disconnectPhysicalDisk(volumeToDisconnect);
+            }
+
+            s_logger.debug(String.format("Couldn't find the storage adaptor for pool type: %s to disconnect the physical disk, trying with others", poolType));
+        }
+
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
+                s_logger.debug(String.format("Disconnected physical disk using the storage adaptor for pool type: %s", set.getKey()));
                 return true;
             }
         }
@@ -177,10 +195,12 @@ public class KVMStoragePoolManager {
     }
 
     public boolean disconnectPhysicalDiskByPath(String path) {
+        s_logger.debug(String.format("Disconnect physical disk by path: %s", path));
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
 
             if (adaptor.disconnectPhysicalDiskByPath(path)) {
+                s_logger.debug(String.format("Disconnected physical disk by local path: %s, using the storage adaptor for pool type: %s", path, set.getKey()));
                 return true;
             }
         }
@@ -305,7 +325,7 @@ public class KVMStoragePoolManager {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get storage pool.");
+                s_logger.debug("[ignored] interrupted while trying to get storage pool.");
             }
             cnt++;
         }

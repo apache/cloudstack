@@ -15,13 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Status from '@/components/widgets/Status'
+import { flushPromises } from '@vue/test-utils'
+
 import common from '../../../common'
 import mockData from '../../../mockData/Status.mock.json'
+import Status from '@/components/widgets/Status'
 
 let router, i18n
 
-router = common.createMockRouter()
+router = common.createMockRouter(mockData.routes)
 i18n = common.createMockI18n('en', mockData.messages)
 
 const factory = (opts = {}) => {
@@ -39,125 +41,97 @@ const factory = (opts = {}) => {
 describe('Components > Widgets > Status.vue', () => {
   describe('Methods', () => {
     describe('getText()', () => {
-      it('getText() is called and the value returned is null', () => {
-        const propsData = {
-          text: 'Running',
-          displayText: false
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value is empty', async () => {
+        const wrapper = factory({ props: { text: 'Running', displayText: false } })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text"></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Running', () => {
-        const propsData = {
-          text: 'Running',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Running`', async () => {
+        const wrapper = factory({
+          props: { text: 'Running', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Running</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Stopped', () => {
-        const propsData = {
-          text: 'Stopped',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Stopped`', async () => {
+        const wrapper = factory({
+          props: { text: 'Stopped', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Stopped</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Starting', () => {
-        const propsData = {
-          text: 'Starting',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Starting`', async () => {
+        const wrapper = factory({
+          props: { text: 'Starting', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Starting</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Stopping', () => {
-        const propsData = {
-          text: 'Stopping',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Stopping`', async () => {
+        const wrapper = factory({
+          props: { text: 'Stopping', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Stopping</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Suspended', () => {
-        const propsData = {
-          text: 'Suspended',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Suspended`', async () => {
+        const wrapper = factory({
+          props: { text: 'Suspended', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Suspended</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Pending', () => {
-        const propsData = {
-          text: 'Pending',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Pending`', async () => {
+        const wrapper = factory({
+          props: { text: 'Pending', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Pending</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Expunging', () => {
-        const propsData = {
-          text: 'Expunging',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-
+      it('getText() is called and return value equal `Expunging`', async () => {
+        const wrapper = factory({
+          props: { text: 'Expunging', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Expunging</span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getText() is called with state equal Error', () => {
-        const propsData = {
-          text: 'Error',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getText() is called and return value equal `Error`', async () => {
+        const wrapper = factory({
+          props: { text: 'Error', displayText: true }
+        })
+        await flushPromises()
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-text">Error</span>'
 
@@ -166,227 +140,156 @@ describe('Components > Widgets > Status.vue', () => {
     })
 
     describe('getBadgeStatus()', () => {
-      it('getBadgeStatus() is called and the value returned is default status', () => {
-        const propsData = {
-          text: 'Another',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getBadgeStatus() is called and return is default status', () => {
+        const wrapper = factory({
+          props: {
+            text: 'Another',
+            displayText: true
+          }
+        })
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-dot ant-badge-status-default"></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getBadgeStatus() is called and the value returned is success status', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getBadgeStatus() is called and return is success status', () => {
+        const wrapper = factory({
+          props: {
+            text: 'Active',
+            displayText: true
+          }
+        })
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-dot ant-badge-status-success"></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getBadgeStatus() is called and the value returned is error status', () => {
-        const propsData = {
-          text: 'Disabled',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getBadgeStatus() is called and return is error status', () => {
+        const wrapper = factory({
+          props: {
+            text: 'Disabled',
+            displayText: true
+          }
+        })
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-dot ant-badge-status-error"></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getBadgeStatus() is called and the value returned is processing status', () => {
-        const propsData = {
-          text: 'Migrating',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getBadgeStatus() is called and return is processing status', () => {
+        const wrapper = factory({
+          props: {
+            text: 'Migrating',
+            displayText: true
+          }
+        })
         const received = wrapper.html()
         const expected = '<span class="ant-badge-status-dot ant-badge-status-processing"></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getBadgeStatus() is called and the value returned is error status', () => {
-        const propsData = {
-          text: 'Alert',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-        const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-error"></span><span class="ant-badge-status-text">Alert</span></span>'
-
-        expect(received).toContain(expected)
-      })
-
-      it('getBadgeStatus() is called and the value returned is warning status with state equal Allocated', () => {
-        const propsData = {
-          text: 'Allocated',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
-        const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Allocated</span></span>'
-
-        expect(received).toContain(expected)
-      })
-
-      it('getBadgeStatus() is called and the value returned is success status with state equal Allocated', () => {
-        const propsData = {
-          text: 'Allocated',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/publicip',
-          meta: {
-            icon: 'test-router-1'
+      it('getBadgeStatus() is called and return is error status with state equal `Alert`', () => {
+        const wrapper = factory({
+          props: {
+            text: 'Alert',
+            displayText: true
           }
-        }])
-        router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+        })
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Allocated</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-error"></span><span class="ant-badge-status-text">Alert</span></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getBadgeStatus() is called and the value returned is warning status with state equal Created', () => {
-        const propsData = {
-          text: 'Created',
-          displayText: true
-        }
-
-        const wrapper = factory({ props: propsData })
+      it('getBadgeStatus() is called and return is success status with state equal `Allocated`', async () => {
+        const wrapper = factory({
+          props: {
+            text: 'Allocated',
+            displayText: true
+          }
+        })
+        router.push({ name: 'testRouter1' })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Created</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Allocated</span></span>'
+
+        expect(received).toContain(expected)
+      })
+
+      it('getBadgeStatus() is called and return is warning status with state equal `Allocated`', async () => {
+        const wrapper = factory({
+          props: {
+            text: 'Allocated',
+            displayText: true
+          }
+        })
+        router.push('/')
+        await router.isReady()
+        await flushPromises()
+        const received = wrapper.html()
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Allocated</span></span>'
 
         expect(received).toContain(expected)
       })
     })
 
     describe('getTooltip()', () => {
-      it('getTooltip() is called with `$route.path` equal `/vmsnapshot`', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/vmsnapshot',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
-        router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+      it('getTooltip() is called with `$route.path` equal `/vmsnapshot`', async () => {
+        const wrapper = factory({ props: { text: 'Active', displayText: true } })
+        router.push({ name: 'testRouter2' })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getTooltip() is called with `$route.path` equal `/vm`', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/vm',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
-        router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+      it('getTooltip() is called with `$route.path` equal `/vm`', async () => {
+        const wrapper = factory({ props: { text: 'Active', displayText: true } })
+        router.push({ name: 'testRouter3' })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getTooltip() is called with `$route.path` equal `/volume`', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/volume',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
-        router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+      it('getTooltip() is called with `$route.path` equal `/volume`', async () => {
+        const wrapper = factory({ props: { text: 'Active', displayText: true } })
+        router.push({ name: 'testRouter4' })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getTooltip() is called with `$route.path` equal `/guestnetwork`', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/guestnetwork',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
-        router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+      it('getTooltip() is called with `$route.path` equal `/guestnetwork`', async () => {
+        const wrapper = factory({ props: { text: 'Active', displayText: true } })
+        router.push({ name: 'testRouter5' })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })
 
-      it('getTooltip() is called with `$route.path` equal `/publicip`', () => {
-        const propsData = {
-          text: 'Active',
-          displayText: true
-        }
-
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/publicip',
-          meta: {
-            icon: 'test-router-1'
-          }
-        }])
+      it('getTooltip() is called with `$route.path` equal `/publicip`', async () => {
+        const wrapper = factory({ props: { text: 'Active', displayText: true } })
         router.push({ name: 'testRouter1' })
-
-        const wrapper = factory({ router: router, props: propsData })
+        await router.isReady()
+        await flushPromises()
         const received = wrapper.html()
-        const expected = '<span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" style="display: inline-flex;"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
+        const expected = '<span style="display: inline-flex;" class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-success"></span><span class="ant-badge-status-text">Active</span></span>'
 
         expect(received).toContain(expected)
       })

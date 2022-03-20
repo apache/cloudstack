@@ -1101,6 +1101,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public ExecutionResult cleanupCommand(NetworkElementCommand cmd) {
+        if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
+            return cleanupNetworkElementCommand((IpAssocCommand)cmd);
+        }
         return new ExecutionResult(true, null);
     }
 
@@ -1155,7 +1158,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 Thread.currentThread();
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get mac.");
+                s_logger.debug("[ignored] interrupted while trying to get mac.");
             }
         }
 
@@ -1326,15 +1329,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     nicTo.getMac(), deviceNumber + 1, true, true);
         }
 
-        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-        deviceConfigSpec.setDevice(nic);
-        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-        vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-        if (!vmMo.configureVm(vmConfigSpec)) {
-            throw new Exception("Failed to configure devices when running PlugNicCommand");
-        }
+        configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.ADD, "PlugNicCommand");
     }
 
     private ReplugNicAnswer execute(ReplugNicCommand cmd) {
@@ -1395,16 +1390,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 VmwareHelper.updateNicDevice(nic, networkInfo.first(), networkInfo.second());
             }
 
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-            deviceConfigSpec.setDevice(nic);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-
-            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure devices when running ReplugNicCommand");
-            }
+            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.EDIT, "ReplugNicCommand");
 
             return new ReplugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1445,16 +1431,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (nic == null) {
                 return new UnPlugNicAnswer(cmd, true, "success");
             }
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-            deviceConfigSpec.setDevice(nic);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
-
-            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure devices when running unplugNicCommand");
-            }
+            configureNicDevice(vmMo, nic, VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
 
             return new UnPlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
@@ -1501,17 +1478,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 device.setBacking(dataCenterMo.getDvPortBackingInfo(networkInfo));
             }
 
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-
-            //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-            deviceConfigSpec.setDevice(device);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
-
-            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
-            if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to configure devices when plugPublicNic");
-            }
+            configureNicDevice(vmMo, device, VirtualDeviceConfigSpecOperation.EDIT, "plugPublicNic");
         } catch (Exception e) {
 
             // restore allocation mask in case of exceptions
@@ -1579,15 +1546,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
                 String vlanId = BroadcastDomainType.getValue(broadcastUri);
 
-                String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
-                Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
+                String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
+                Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Find public NIC index, public network name: " + publicNeworkName + ", index: " + publicNicInfo.first());
+                    s_logger.debug("Find public NIC index, public network name: " + publicNetworkName + ", index: " + publicNicInfo.first());
                 }
 
                 boolean addVif = false;
-                if (ip.isAdd() && publicNicInfo.first().intValue() == -1) {
+                if (ip.isAdd() && publicNicInfo.first() == -1) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Plug new NIC to associate" + controlIp + " to " + ip.getPublicIp());
                     }
@@ -1601,18 +1568,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         nicDeviceType = VirtualEthernetCardType.valueOf(ip.getDetails().get("nicAdapter"));
                     }
                     plugNicCommandInternal(routerName, nicDeviceType, nicTO, VirtualMachine.Type.DomainRouter);
-                    publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
-                    if (publicNicInfo.first().intValue() >= 0) {
+                    publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
+                    if (publicNicInfo.first() >= 0) {
                         networkUsage(controlIp, "addVif", "eth" + publicNicInfo.first());
                     }
                 }
 
-                if (publicNicInfo.first().intValue() < 0) {
+                if (publicNicInfo.first() < 0) {
                     String msg = "Failed to find DomR VIF to associate/disassociate IP with.";
                     s_logger.error(msg);
                     throw new InternalErrorException(msg);
                 }
-                ip.setNicDevId(publicNicInfo.first().intValue());
+                ip.setNicDevId(publicNicInfo.first());
                 ip.setNewNic(addVif);
             }
         } catch (Throwable e) {
@@ -1620,6 +1587,81 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new ExecutionResult(false, e.toString());
         }
         return new ExecutionResult(true, null);
+    }
+
+    private ExecutionResult cleanupNetworkElementCommand(IpAssocCommand cmd) {
+        VmwareContext context = getServiceContext();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(routerName);
+            // command may sometimes be redirected to a wrong host, we relax
+            // the check and will try to find it within datacenter
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    final DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
+                    vmMo = dcMo.findVm(routerName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = String.format("Router %s no longer exists to execute IPAssoc command ", routerName);
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            final String lastIp = cmd.getAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP);
+            for (IpAddressTO ip : ips) {
+                if (ip.isAdd() || lastIp.equalsIgnoreCase("false")) {
+                    continue;
+                }
+                Pair<VirtualDevice, Integer> nicInfo = getVirtualDevice(vmMo, ip);
+
+                if (nicInfo.second() == 2) {
+                    return new ExecutionResult(true, "Not removing eth2 in network VR because it is the public NIC of source NAT");
+                }
+                if (nicInfo.first() == null) {
+                    return new ExecutionResult(false, "Couldn't find NIC");
+                }
+                configureNicDevice(vmMo, nicInfo.first(), VirtualDeviceConfigSpecOperation.REMOVE, "unplugNicCommand");
+            }
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString() + " will shortcut rest of IPAssoc commands", e);
+            return new ExecutionResult(false, e.toString());
+        }
+        return new ExecutionResult(true, null);
+    }
+
+    private Pair<VirtualDevice, Integer> getVirtualDevice(VirtualMachineMO vmMo, IpAddressTO ip) throws Exception {
+        NicTO nicTO = ip.getNicTO();
+        URI broadcastUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
+        if (BroadcastDomainType.getSchemeValue(broadcastUri) != BroadcastDomainType.Vlan) {
+            throw new InternalErrorException(String.format("Unable to assign a public IP to a VIF on network %s", ip.getBroadcastUri()));
+        }
+        String vlanId = BroadcastDomainType.getValue(broadcastUri);
+
+        String publicNetworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
+        Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNetworkName);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Find public NIC index, public network name: %s , index: %s", publicNetworkName, publicNicInfo.first()));
+        }
+
+        return new Pair<>(findVirtualNicDevice(vmMo, nicTO.getMac()), publicNicInfo.first());
+    }
+
+    private void configureNicDevice(VirtualMachineMO vmMo, VirtualDevice nic, VirtualDeviceConfigSpecOperation operation, String commandName) throws Exception {
+        VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        deviceConfigSpec.setDevice(nic);
+        deviceConfigSpec.setOperation(operation);
+
+
+        vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+        if (!vmMo.configureVm(vmConfigSpec)) {
+            throw new Exception(String.format("Failed to configure devices when running %s", commandName));
+        }
     }
 
     @Override
@@ -1791,6 +1833,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         Ternary<Integer, Integer, DiskControllerType> scsiControllerInfo = vmMo.getScsiControllerInfo();
         int requiredNumScsiControllers = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT - scsiControllerInfo.first();
         int availableBusNum = scsiControllerInfo.second() + 1; // method returned current max. bus number
+
+        if (DiskControllerType.getType(scsiDiskController) != scsiControllerInfo.third()) {
+            s_logger.debug(String.format("Change controller type from: %s to: %s", scsiControllerInfo.third().toString(),
+                    scsiDiskController));
+            vmMo.tearDownDevices(new Class<?>[]{VirtualSCSIController.class});
+            vmMo.addScsiDeviceControllers(DiskControllerType.getType(scsiDiskController));
+            return;
+        }
 
         if (requiredNumScsiControllers == 0) {
             return;
@@ -6446,7 +6496,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                        s_logger.debug("[ignored] interupted while waiting to retry connect after failure.", e);
+                        s_logger.debug("[ignored] interrupted while waiting to retry connect after failure.", e);
                     }
                 }
             }
@@ -6454,7 +6504,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] interupted while waiting to retry connect.");
+                s_logger.debug("[ignored] interrupted while waiting to retry connect.");
             }
         }
 

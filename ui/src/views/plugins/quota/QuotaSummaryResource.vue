@@ -21,7 +21,7 @@
     :resource="quotaResource"
     :tabs="tabs"
     :historyTab="activeTab"
-    @onTabChange="(tab) => { this.activeTab = tab }"/>
+    @onTabChange="(tab) => { activeTab = tab }"/>
 </template>
 
 <script>
@@ -58,9 +58,12 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource () {
-      if (Object.keys(this.resource).length === 0) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        if (Object.keys(this.resource).length === 0) {
+          this.fetchData()
+        }
       }
     }
   },

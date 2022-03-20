@@ -18,55 +18,63 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        :loading="loading"
+        layout="vertical"
+        @finish="handleSubmit">
+        <a-form-item name="username" ref="username">
+          <template #label>
+            <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+          </template>
           <a-input
-            v-decorator="['username', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.username"
             :placeholder="apiParams.username.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+        <a-form-item name="email" ref="email">
+          <template #label>
+            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+          </template>
           <a-input
-            v-decorator="['email', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.email"
             :placeholder="apiParams.email.description" />
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+            <a-form-item name="firstname" ref="firstname">
+              <template #label>
+                <tooltip-label :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+              </template>
               <a-input
-                v-decorator="['firstname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+            <a-form-item name="lastname" ref="lastname">
+              <template #label>
+                <tooltip-label :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+              </template>
               <a-input
-                v-decorator="['lastname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+        <a-form-item name="timezone" ref="timezone">
+          <template #label>
+            <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          </template>
           <a-select
-            v-decorator="['timezone']"
+            v-model:value="form.timezone"
             :loading="timeZoneLoading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -83,6 +91,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
@@ -113,13 +122,23 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateUser')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        email: [{ required: true, message: this.$t('message.error.required.input') }],
+        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
+        lastname: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.userId = this.$route.params.id || null
       this.fetchTimeZone()
@@ -149,7 +168,7 @@ export default {
         }
         fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
+          form[field.name] = fieldValue
         }
       })
       this.loading = false
@@ -160,10 +179,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.userId,
@@ -192,6 +209,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

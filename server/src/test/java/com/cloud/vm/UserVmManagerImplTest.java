@@ -33,15 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.configuration.Resource;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.user.dao.AccountDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -59,24 +50,34 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -151,6 +152,9 @@ public class UserVmManagerImplTest {
     @Mock
     ResourceLimitService resourceLimitMgr;
 
+    @Mock
+    VolumeApiService volumeApiService;
+
     private long vmId = 1l;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
@@ -169,7 +173,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
 
-        Mockito.when(callerAccount.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+        Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
@@ -474,6 +478,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
 
+        Mockito.when(volumeApiService.validateVolumeSizeInBytes(Mockito.anyLong())).thenReturn(true);
         long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);

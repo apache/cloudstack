@@ -49,6 +49,7 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.systemvm.template.version>4.16.1.0</project.systemvm.template.version>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -76,14 +77,14 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.log4j.version>1.2.17</cs.log4j.version>
+        <cs.reload4j.version>1.2.18.4</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
-        <cs.commons-compress.version>1.20</cs.commons-compress.version>
+        <cs.commons-compress.version>1.21</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
         <cs.commons-fileupload.version>1.4</cs.commons-fileupload.version>
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
@@ -113,7 +114,7 @@
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.27.2</cs.wiremock.version>
-        <cs.xercesImpl.version>2.12.0</cs.xercesImpl.version>
+        <cs.xercesImpl.version>2.12.2</cs.xercesImpl.version>
 
         <!-- Dependencies versions -->
         <cs.amqp-client.version>5.10.0</cs.amqp-client.version>
@@ -121,9 +122,9 @@
         <cs.aspectjrt.version>1.9.6</cs.aspectjrt.version>
         <cs.aws.sdk.version>1.11.940</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
-        <cs.axis.version>1.4</cs.axis.version>
+        <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
-        <cs.bcprov.version>1.64</cs.bcprov.version>
+        <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
         <cs.checkstyle-lib.version>8.18</cs.checkstyle-lib.version>
         <cs.cxf.version>3.2.14</cs.cxf.version>
@@ -145,7 +146,7 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.36.v20210114</cs.jetty.version>
+        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.9</cs.joda-time.version>
@@ -165,13 +166,13 @@
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
-        <cs.tomcat-embed-core.version>8.5.61</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>10.0.2</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
-        <cs.xstream.version>1.4.15</cs.xstream.version>
+        <cs.xstream.version>1.4.19</cs.xstream.version>
         <org.springframework.version>5.3.3</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.gmaven.version>1.12.0</cs.gmaven.version>
@@ -439,9 +440,9 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${cs.log4j.version}</version>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${cs.reload4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -455,14 +456,14 @@
                 <version>${cs.ehcache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis-jaxrpc</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2-jaxws</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -555,6 +556,11 @@
                 <version>${cs.bcprov.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-jdk15on</artifactId>
+                <version>${cs.bcprov.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${cs.groovy.version}</version>
@@ -618,6 +624,12 @@
                 <groupId>org.owasp.esapi</groupId>
                 <artifactId>esapi</artifactId>
                 <version>2.1.0.1</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!-- Test dependency in mysql for db tests -->
             <dependency>
@@ -658,7 +670,7 @@
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesimpl</artifactId>
-                <version>2.12.0</version>
+                <version>${cs.xercesImpl.version}</version>
             </dependency>
             <dependency>
                 <groupId>xml-apis</groupId>

@@ -437,7 +437,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                     (!template.isPublicTemplate() && (account.getId() != template.getAccountId()) && (template.getTemplateType() != TemplateType.PERHOST))) {
                     //special handling for the project case
                     Account owner = _accountMgr.getAccount(template.getAccountId());
-                    if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    if (owner.getType() == Account.Type.PROJECT) {
                         if (!_projectMgr.canAccessProjectAccount(account, owner.getId())) {
                             throw new PermissionDeniedException(msg + ". Permission denied. The caller can't access project's template");
                         }

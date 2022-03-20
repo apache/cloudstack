@@ -564,6 +564,11 @@
                         <artifactId>bcpkix-jdk15on</artifactId>
                         <version>${cs.bcprov.version}</version>
                     </dependency>
+                    <dependency>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bctls-jdk15on</artifactId>
+                        <version>${cs.bcprov.version}</version>
+                    </dependency>
                 </dependencies>
                 <configuration>
                     <supportedPackagings>
@@ -751,6 +756,12 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.bouncycastle</groupId>
+                                    <artifactId>bctls-jdk15on</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
@@ -786,6 +797,7 @@
                                     <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
                                     <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                                    <exclude>org.bouncycastle:bctls-jdk15on</exclude>
                                     <exclude>mysql:mysql-connector-java</exclude>
                                 </excludes>
                             </artifactSet>
@@ -905,21 +917,6 @@
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>f5</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.cloudstack</groupId>
-                    <artifactId>cloud-plugin-network-f5</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

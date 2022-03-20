@@ -15,16 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { flushPromises } from '@vue/test-utils'
+
 import mockAxios from '../../../mock/mockAxios'
-import MigrateWizard from '@/views/compute/MigrateWizard'
 import common from '../../../common'
 import mockData from '../../../mockData/MigrateWizard.mock'
+import MigrateWizard from '@/views/compute/MigrateWizard'
 
 jest.mock('axios', () => mockAxios)
 
-let wrapper, i18n, store, mocks, router
+let i18n
+let store
+let mocks
+let router
+let wrapper
+const originalFunc = {}
 
-const state = {}
+router = common.createMockRouter(mockData.routes)
+i18n = common.createMockI18n('en', mockData.messages)
+store = common.createMockStore()
 mocks = {
   $message: {
     error: jest.fn((message) => {})
@@ -63,14 +72,12 @@ mocks = {
     }
   })
 }
-i18n = common.createMockI18n('en', mockData.messages)
-store = common.createMockStore(state)
 
 const factory = (opts = {}) => {
+  router = opts.router || router
   i18n = opts.i18n || i18n
   store = opts.store || store
   mocks = opts.mocks || mocks
-  router = opts.router || router
 
   return common.createFactory(MigrateWizard, {
     router,
@@ -82,216 +89,184 @@ const factory = (opts = {}) => {
   })
 }
 
+router.push('/')
 describe('Views > compute > MigrateWizard.vue', () => {
-  // jest.spyOn(console, 'warn').mockImplementation(() => {})
-
   beforeEach(() => {
     jest.clearAllMocks()
 
-    if (wrapper) {
-      wrapper.destroy()
-    }
-    if (router && router.currentRoute.name !== 'home') {
-      router.replace({ name: 'home' })
+    if (!wrapper) {
+      mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+      wrapper = factory({
+        props: { resource: {} },
+        data: { columns: [] }
+      })
     }
 
-    if (i18n.locale !== 'en') {
-      i18n.locale = 'en'
+    if (i18n.global.locale !== 'en') i18n.global.locale = 'en'
+  })
+
+  afterEach(() => {
+    if (wrapper) {
+      wrapper.vm.columns = []
+      wrapper.vm.searchQuery = ''
+      wrapper.vm.page = 1
+      wrapper.vm.pageSize = 10
+      wrapper.vm.selectedHost = {}
+    }
+
+    if (Object.keys(originalFunc).length > 0) {
+      Object.keys(originalFunc).forEach(key => {
+        switch (key) {
+          case 'fetchData':
+            wrapper.vm.fetchData = originalFunc[key]
+            break
+          default:
+            break
+        }
+      })
     }
   })
 
   describe('Methods', () => {
     describe('fetchData()', () => {
-      it('check api is called with resource is empty and searchQuery is null', () => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
-          }
-        }
+      it('API should be called with resource is empty and searchQuery is empty', async (done) => {
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: {} })
+        await wrapper.setData({ columns: [] })
+        await wrapper.vm.fetchData()
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: {
-            resource: {}
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'findHostsForMigration',
+            virtualmachineid: undefined,
+            keyword: '',
+            page: 1,
+            pagesize: 10,
+            response: 'json'
           }
         })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'findHostsForMigration',
-              virtualmachineid: undefined,
-              keyword: '',
-              page: 1,
-              pagesize: 10,
-              response: 'json'
-            }
-          })
-        })
+        done()
       })
 
-      it('check api is called with resource.id is null and searchQuery is null', () => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
-          }
-        }
+      it('API should be called with resource.id is empty and searchQuery is empty', async (done) => {
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: { id: null } })
+        await wrapper.setData({ columns: [] })
+        await wrapper.vm.fetchData()
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: {
-            resource: { id: null }
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'findHostsForMigration',
+            virtualmachineid: null,
+            keyword: '',
+            page: 1,
+            pagesize: 10,
+            response: 'json'
           }
         })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'findHostsForMigration',
-              virtualmachineid: null,
-              keyword: '',
-              page: 1,
-              pagesize: 10,
-              response: 'json'
-            }
-          })
-        })
+        done()
       })
 
-      it('check api is called with resource.id is not null and searchQuery is null', () => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
-          }
-        }
+      it('API should be called with resource.id is not empty and searchQuery is empty', async (done) => {
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: { id: 'test-id-value' } })
+        await wrapper.setData({ columns: [] })
+        await wrapper.vm.fetchData()
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: {
-            resource: { id: 'test-id-value' }
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'findHostsForMigration',
+            virtualmachineid: 'test-id-value',
+            keyword: '',
+            page: 1,
+            pagesize: 10,
+            response: 'json'
           }
         })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'findHostsForMigration',
-              virtualmachineid: 'test-id-value',
-              keyword: '',
-              page: 1,
-              pagesize: 10,
-              response: 'json'
-            }
-          })
-        })
+        done()
       })
 
-      it('check api is called with resource.id is not null and searchQuery is not null', () => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
+      it('API should be called with resource.id is not empty and searchQuery is not empty', async (done) => {
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: { id: 'test-id-value' } })
+        await wrapper.setData({ searchQuery: 'test-query-value', columns: [] })
+        await wrapper.vm.fetchData()
+        await flushPromises()
+
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'findHostsForMigration',
+            virtualmachineid: 'test-id-value',
+            keyword: 'test-query-value',
+            page: 1,
+            pagesize: 10,
+            response: 'json'
           }
-        }
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: { resource: { id: 'test-id-value' } },
-          data: { searchQuery: 'test-query-value' }
         })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'findHostsForMigration',
-              virtualmachineid: 'test-id-value',
-              keyword: 'test-query-value',
-              page: 1,
-              pagesize: 10,
-              response: 'json'
-            }
-          })
-        })
+        done()
       })
 
-      it('check api is called with params assign by resource, searchQuery, page, pageSize', () => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
-          }
-        }
+      it('API should be called with params assign by resource, searchQuery, page, pageSize', async (done) => {
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: { id: 'test-id-value' } })
+        await wrapper.setData({
+          searchQuery: 'test-query-value',
+          page: 2,
+          pageSize: 20,
+          columns: []
+        })
+        await wrapper.vm.fetchData()
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: { resource: { id: 'test-id-value' } },
-          data: {
-            searchQuery: 'test-query-value',
-            page: 2,
-            pageSize: 20
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'findHostsForMigration',
+            virtualmachineid: 'test-id-value',
+            keyword: 'test-query-value',
+            page: 1,
+            pagesize: 20,
+            response: 'json'
           }
         })
-
-        wrapper.vm.$nextTick(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'findHostsForMigration',
-              virtualmachineid: 'test-id-value',
-              keyword: 'test-query-value',
-              page: 2,
-              pagesize: 20,
-              response: 'json'
-            }
-          })
-        })
+        done()
       })
 
       it('check hosts, totalCount when api is called with response result is empty', async (done) => {
-        const mockData = {
-          findhostsformigrationresponse: {
-            count: 0,
-            host: []
-          }
-        }
+        await mockAxios.mockResolvedValue({ findhostsformigrationresponse: { count: 0, host: [] } })
+        await wrapper.setProps({ resource: {} })
+        await wrapper.vm.fetchData()
+        await flushPromises()
 
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({ props: { resource: {} } })
-
-        await wrapper.vm.$nextTick()
-
-        setTimeout(() => {
-          expect(wrapper.vm.hosts).toEqual([])
-          expect(wrapper.vm.totalCount).toEqual(0)
-
-          done()
-        })
+        expect(wrapper.vm.hosts).toEqual([])
+        expect(wrapper.vm.totalCount).toEqual(0)
+        done()
       })
 
-      it('check hosts, totalCount when api is called with response result is not empty', async (done) => {
-        const mockData = {
+      it('check hosts, totalCount when api is called with response result is empty', async (done) => {
+        await mockAxios.mockResolvedValue({
           findhostsformigrationresponse: {
             count: 1,
             host: [{
@@ -303,48 +278,40 @@ describe('Views > compute > MigrateWizard.vue', () => {
               select: 'test-host-select'
             }]
           }
-        }
-
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({ props: { resource: {} } })
-
-        await wrapper.vm.$nextTick()
-
-        setTimeout(() => {
-          expect(wrapper.vm.hosts).toEqual([{
-            id: 'test-host-id',
-            name: 'test-host-name',
-            suitability: 'test-host-suitability',
-            cpuused: 'test-host-cpuused',
-            memused: 'test-host-memused',
-            select: 'test-host-select'
-          }])
-          expect(wrapper.vm.totalCount).toEqual(1)
-
-          done()
         })
+        await wrapper.setProps({ resource: {} })
+        await wrapper.vm.fetchData()
+        await flushPromises()
+
+        expect(wrapper.vm.hosts).toEqual([{
+          id: 'test-host-id',
+          name: 'test-host-name',
+          suitability: 'test-host-suitability',
+          cpuused: 'test-host-cpuused',
+          memused: 'test-host-memused',
+          select: 'test-host-select'
+        }])
+        expect(wrapper.vm.totalCount).toEqual(1)
+        done()
       })
 
-      it('check $message.error is called when api is called with throw error', async (done) => {
+      it('check $message.error should be called when api is called with throw error', async (done) => {
         const mockError = 'Error: throw error message'
-        console.error = jest.fn()
 
-        mockAxios.mockRejectedValue(mockError)
-        wrapper = factory({ props: { resource: {} } })
+        await mockAxios.mockRejectedValue(mockError)
+        await wrapper.setProps({ resource: {} })
+        await wrapper.vm.fetchData()
+        await flushPromises()
+        await flushPromises()
 
-        await wrapper.vm.$nextTick()
-
-        setTimeout(() => {
-          expect(mocks.$message.error).toHaveBeenCalled()
-          expect(mocks.$message.error).toHaveBeenCalledWith(`${i18n.t('message.load.host.failed')}: ${mockError}`)
-
-          done()
-        })
+        expect(mocks.$message.error).toHaveBeenCalled()
+        expect(mocks.$message.error).toHaveBeenLastCalledWith(`${i18n.global.t('message.load.host.failed')}: ${mockError}`)
+        done()
       })
     })
 
     describe('submitForm()', () => {
-      it('check api is called when selectedHost.requiresStorageMotion is true and isUserVm=true', async (done) => {
+      it('API should be called with selectedHost.requiresStorageMotion is true', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -356,55 +323,41 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
 
-        router = common.createMockRouter([{
-          name: 'testRouter1',
-          path: '/test-router-1',
-          meta: {
-            name: 'vm'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+        await router.push({ name: 'testRouter1' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-        router.push({ name: 'testRouter1' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: true,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
+        })
         await wrapper.vm.submitForm()
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'migrateVirtualMachineWithVolume',
-              hostid: 'test-host-id',
-              virtualmachineid: 'test-resource-id',
-              response: 'json'
-            }
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'migrateVirtualMachineWithVolume',
+            hostid: 'test-host-id',
+            virtualmachineid: 'test-resource-id',
+            response: 'json'
+          }
         })
+        done()
       })
 
-      it('check api is called when selectedHost.requiresStorageMotion is false and isUserVm=true', async (done) => {
+      it('API should be called with selectedHost.requiresStorageMotion is false', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id'
@@ -416,57 +369,43 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
 
-        router = common.createMockRouter([{
-          name: 'testRouter2',
-          path: '/test-router-2',
-          meta: {
-            name: 'vm'
-          }
-        }])
-        wrapper = factory({
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: false,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+        await router.push({ name: 'testRouter2' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-
-        router.push({ name: 'testRouter2' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: false,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
+        })
         await wrapper.vm.submitForm()
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'migrateVirtualMachine',
-              hostid: 'test-host-id',
-              virtualmachineid: 'test-resource-id',
-              response: 'json'
-            }
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'migrateVirtualMachine',
+            hostid: 'test-host-id',
+            virtualmachineid: 'test-resource-id',
+            response: 'json'
+          }
         })
+        done()
       })
 
-      it('check api is called when isUserVm=false', async (done) => {
+      it('API should be called with $route.meta.name not equals `vm`', async (done) => {
         const mockData = {
-          migratevirtualmachineresponse: {
+          migratesystemvmresponse: {
             jobid: 'test-job-id'
           },
           queryasyncjobresultresponse: {
@@ -476,54 +415,41 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
-        router = common.createMockRouter([{
-          name: 'testRouter3',
-          path: '/test-router-3',
-          meta: {
-            name: 'test'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+
+        await router.push({ name: 'testRouter3' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-        router.push({ name: 'testRouter3' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: false,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
+        })
         await wrapper.vm.submitForm()
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mockAxios).toHaveBeenCalled()
-          expect(mockAxios).toHaveBeenCalledWith({
-            url: '/',
-            method: 'GET',
-            data: new URLSearchParams(),
-            params: {
-              command: 'migrateSystemVm',
-              hostid: 'test-host-id',
-              virtualmachineid: 'test-resource-id',
-              response: 'json'
-            }
-          })
-
-          done()
+        expect(mockAxios).toHaveBeenCalled()
+        expect(mockAxios).toHaveBeenLastCalledWith({
+          url: '/',
+          method: 'GET',
+          data: new URLSearchParams(),
+          params: {
+            command: 'migrateSystemVm',
+            hostid: 'test-host-id',
+            virtualmachineid: 'test-resource-id',
+            response: 'json'
+          }
         })
+        done()
       })
 
-      it('check $pollJob have successMethod() is called with requiresStorageMotion is true', async (done) => {
+      it('$pollJob have successMethod() should be called with requiresStorageMotion is true', async (done) => {
         const mockData = {
           migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-1'
@@ -535,44 +461,31 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
-        router = common.createMockRouter([{
-          name: 'testRouter4',
-          path: '/test-router-4',
-          meta: {
-            name: 'vm'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+
+        await router.push({ name: 'testRouter4' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-        router.push({ name: 'testRouter4' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: true,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
+        })
         await wrapper.vm.submitForm()
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$pollJob).toHaveBeenCalled()
-          expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
-          done()
-        })
+        expect(mocks.$pollJob).toHaveBeenCalled()
+        expect(wrapper.emitted()['close-action'][0]).toEqual([])
+        done()
       })
 
-      it('check $pollJob have successMethod() is called with requiresStorageMotion is false', async (done) => {
+      it('$pollJob have successMethod() should be called with requiresStorageMotion is false', async (done) => {
         const mockData = {
           migratevirtualmachineresponse: {
             jobid: 'test-job-id-case-2'
@@ -584,94 +497,33 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
-        router = common.createMockRouter([{
-          name: 'testRouter5',
-          path: '/test-router-5',
-          meta: {
-            name: 'vm'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: false,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
-          }
-        })
-        router.push({ name: 'testRouter5' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
-        await wrapper.vm.submitForm()
 
-        setTimeout(() => {
-          expect(mocks.$pollJob).toHaveBeenCalled()
-          expect(wrapper.emitted()['close-action'][0]).toEqual([])
-          done()
+        await router.push({ name: 'testRouter5' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
+          }
         })
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: false,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
+        })
+        await wrapper.vm.submitForm()
+        await flushPromises()
+
+        expect(mocks.$pollJob).toHaveBeenCalled()
+        expect(wrapper.emitted()['close-action'][0]).toEqual([])
+        done()
       })
 
-      it('check $pollJob have successMethod() is called with isUserVm is false', async (done) => {
+      it('$pollJob have errorMethod() should be called', async (done) => {
         const mockData = {
-          migratesystemvmresponse: {
-            jobid: 'test-job-id-case-2'
-          },
-          queryasyncjobresultresponse: {
-            jobstatus: 1,
-            jobresult: {
-              name: 'test-name-value'
-            }
-          }
-        }
-        mockAxios.mockResolvedValue(mockData)
-        router = common.createMockRouter([{
-          name: 'testRouter6',
-          path: '/test-router-6',
-          meta: {
-            name: 'test'
-          }
-        }])
-        wrapper = factory({
-          router: router,
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: false,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
-          }
-        })
-        router.push({ name: 'testRouter6' })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
-        await wrapper.vm.submitForm()
-
-        setTimeout(() => {
-          expect(mocks.$pollJob).toHaveBeenCalled()
-          expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
-          done()
-        })
-      })
-
-      it('check $pollJob have errorMethod() is called', async (done) => {
-        const mockData = {
-          migratesystemvmresponse: {
+          migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-3'
           },
           queryasyncjobresultresponse: {
@@ -681,145 +533,123 @@ describe('Views > compute > MigrateWizard.vue', () => {
             }
           }
         }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+
+        await router.push({ name: 'testRouter6' })
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
-        await wrapper.vm.submitForm()
-
-        setTimeout(() => {
-          expect(mocks.$pollJob).toHaveBeenCalled()
-          expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
-          done()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: true,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
         })
+        await wrapper.vm.submitForm()
+        await flushPromises()
+
+        expect(mocks.$pollJob).toHaveBeenCalled()
+        expect(wrapper.emitted()['close-action'][0]).toEqual([])
+        done()
       })
 
-      it('check $pollJob have catchMethod() is called', async (done) => {
+      it('$pollJob have catchMethod() should be called', async (done) => {
         const mockData = {
-          migratesystemvmresponse: {
+          migratevirtualmachinewithvolumeresponse: {
             jobid: 'test-job-id-case-4'
           }
         }
-        mockAxios.mockResolvedValue(mockData)
-        wrapper = factory({
-          props: {
-            resource: {
-              id: 'test-resource-id',
-              name: 'test-resource-name'
-            }
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+
+        await mockAxios.mockResolvedValue(mockData)
+        await wrapper.setProps({
+          resource: {
+            id: 'test-resource-id',
+            name: 'test-resource-name'
           }
         })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
-        await wrapper.vm.submitForm()
-
-        setTimeout(() => {
-          expect(mocks.$pollJob).toHaveBeenCalled()
-          expect(wrapper.emitted()['close-action'][0]).toEqual([])
-
-          done()
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: true,
+            id: 'test-host-id',
+            name: 'test-host-name'
+          }
         })
+        await wrapper.vm.submitForm()
+        await flushPromises()
+
+        expect(mocks.$pollJob).toHaveBeenCalled()
+        expect(wrapper.emitted()['close-action'][0]).toEqual([])
+        done()
       })
 
-      it('check $message.error is called when api is called with throw error', async (done) => {
-        const mockError = {
-          message: 'Error: throw error message'
-        }
-        mockAxios.mockRejectedValue(mockError)
-        wrapper = factory({
-          props: {
-            resource: {}
-          },
-          data: {
-            selectedHost: {
-              requiresStorageMotion: true,
-              id: 'test-host-id',
-              name: 'test-host-name'
-            }
+      it('$message.error should be called when api is called with throw error', async (done) => {
+        const mockError = { message: 'Error: throw error message' }
+
+        await mockAxios.mockRejectedValue(mockError)
+        await wrapper.setProps({ resource: {} })
+        await wrapper.setData({
+          selectedHost: {
+            requiresStorageMotion: true,
+            id: 'test-host-id',
+            name: 'test-host-name'
           }
         })
-        wrapper.vm.loading = false
-        await wrapper.vm.$nextTick()
         await wrapper.vm.submitForm()
+        await flushPromises()
 
-        setTimeout(() => {
-          expect(mocks.$notification.error).toHaveBeenCalled()
-          expect(mocks.$notification.error).toHaveBeenCalledWith({
-            message: i18n.t('message.request.failed'),
-            description: 'Error: throw error message',
-            duration: 0
-          })
-
-          done()
+        expect(mocks.$notification.error).toHaveBeenCalled()
+        expect(mocks.$notification.error).toHaveBeenCalledWith({
+          message: i18n.global.t('message.request.failed'),
+          description: 'Error: throw error message',
+          duration: 0
         })
+        done()
       })
     })
 
     describe('handleChangePage()', () => {
-      it('check page, pageSize and fetchData() when handleChangePage() is called', () => {
-        wrapper = factory({
-          props: {
-            resource: {}
-          },
-          data: {
-            page: 1,
-            pageSize: 10
-          }
-        })
-        const spyFetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+      it('check page, pageSize and fetchData() when handleChangePage() is called', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn()
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.handleChangePage(2, 20)
-
-          expect(wrapper.vm.page).toEqual(2)
-          expect(wrapper.vm.pageSize).toEqual(20)
-          expect(spyFetchData).toBeCalled()
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+        await wrapper.setProps({ resource: {} })
+        await wrapper.setData({
+          page: 1,
+          pageSize: 10
         })
+        await wrapper.vm.handleChangePage(2, 20)
+        await flushPromises()
+
+        expect(wrapper.vm.page).toEqual(2)
+        expect(wrapper.vm.pageSize).toEqual(20)
+        expect(fetchData).toBeCalled()
+        done()
       })
     })
 
     describe('handleChangePageSize()', () => {
-      it('check page, pageSize and fetchData() when handleChangePageSize() is called', () => {
-        wrapper = factory({
-          props: {
-            resource: {}
-          },
-          data: {
-            page: 1,
-            pageSize: 10
-          }
-        })
-        const spyFetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+      it('check page, pageSize and fetchData() when handleChangePageSize() is called', async (done) => {
+        originalFunc.fetchData = wrapper.vm.fetchData
+        wrapper.vm.fetchData = jest.fn()
 
-        wrapper.vm.$nextTick(() => {
-          wrapper.vm.handleChangePageSize(2, 20)
-
-          expect(wrapper.vm.page).toEqual(2)
-          expect(wrapper.vm.pageSize).toEqual(20)
-          expect(spyFetchData).toBeCalled()
+        const fetchData = jest.spyOn(wrapper.vm, 'fetchData').mockImplementation(() => {})
+        await wrapper.setProps({ resource: {} })
+        await wrapper.setData({
+          page: 1,
+          pageSize: 10
         })
+        await wrapper.vm.handleChangePage(2, 20)
+        await flushPromises()
+
+        expect(wrapper.vm.page).toEqual(2)
+        expect(wrapper.vm.pageSize).toEqual(20)
+        expect(fetchData).toBeCalled()
+        done()
       })
     })
   })

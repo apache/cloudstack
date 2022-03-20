@@ -16,6 +16,26 @@
 // under the License.
 package com.cloud.agent;
 
+import com.cloud.agent.Agent.ExitStatus;
+import com.cloud.agent.dao.StorageComponent;
+import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.ProcessUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.backoff.BackoffAlgorithm;
+import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+
+import javax.naming.ConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,28 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-
-import com.cloud.agent.Agent.ExitStatus;
-import com.cloud.agent.dao.StorageComponent;
-import com.cloud.agent.dao.impl.PropertiesStorage;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.ProcessUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.backoff.BackoffAlgorithm;
-import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
@@ -423,13 +421,13 @@ public class AgentShell implements IAgentShell, Daemon {
             } catch (final ClassNotFoundException e) {
                 throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
             } catch (final SecurityException e) {
-                throw new ConfigurationException("Security excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Security exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final NoSuchMethodException e) {
-                throw new ConfigurationException("Method not found excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Method not found exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalArgumentException e) {
-                throw new ConfigurationException("Illegal argument excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Illegal argument exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final InstantiationException e) {
-                throw new ConfigurationException("Instantiation excetion when loading resource: " + name + " due to: " + e.toString());
+                throw new ConfigurationException("Instantiation exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalAccessException e) {
                 throw new ConfigurationException("Illegal access exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final InvocationTargetException e) {
@@ -515,7 +513,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 while (!_exit)
                     Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] AgentShell was interupted.");
+                s_logger.debug("[ignored] AgentShell was interrupted.");
             }
 
         } catch (final ConfigurationException e) {

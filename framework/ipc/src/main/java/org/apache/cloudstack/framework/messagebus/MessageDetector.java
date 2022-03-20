@@ -41,7 +41,7 @@ public class MessageDetector implements MessageSubscriber {
             try {
                 wait(timeoutInMiliseconds);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while waiting on any message.");
+                s_logger.debug("[ignored] interrupted while waiting on any message.");
             }
         }
     }

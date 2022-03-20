@@ -267,7 +267,7 @@ public class NetconfHelper {
                 }
             }
         } catch (final Exception e) {
-            throw new CloudRuntimeException("Error occured while reading from the stream: " + e.getMessage());
+            throw new CloudRuntimeException("Error occurred while reading from the stream: " + e.getMessage());
         }
 
         return response;

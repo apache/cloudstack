@@ -807,9 +807,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             try {
                 resources = discoverer.find(dcId, podId, clusterId, uri, username, password, hostTags);
             } catch (final DiscoveryException e) {
-                throw e;
+                String errorMsg = String.format("Could not add host at [%s] with zone [%s], pod [%s] and cluster [%s] due to: [%s].",
+                        uri, dcId, podId, clusterId, e.getMessage());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errorMsg, e);
+                }
+                throw new DiscoveryException(errorMsg, e);
             } catch (final Exception e) {
-                s_logger.info("Exception in host discovery process with discoverer: " + discoverer.getName() + ", skip to another discoverer if there is any");
+                String err = "Exception in host discovery process with discoverer: " + discoverer.getName();
+                s_logger.info(err + ", skip to another discoverer if there is any");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(err + ":" + e.getMessage(), e);
+                }
             }
             processResourceEvent(ResourceListener.EVENT_DISCOVER_AFTER, resources);
 
@@ -863,8 +872,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.warn(msg);
             throw new DiscoveryException(msg);
         }
-        s_logger.warn("Unable to find the server resources at " + url);
-        throw new DiscoveryException("Unable to add the host");
+        String errorMsg = "Cannot find the server resources at " + url;
+        s_logger.warn(errorMsg);
+        throw new DiscoveryException("Unable to add the host: " + errorMsg);
     }
 
     @Override

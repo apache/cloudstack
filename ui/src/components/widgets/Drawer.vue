@@ -144,7 +144,7 @@ export default {
       border-radius: 0 5px 5px 0;
     }
 
-    button {
+    :deep(button) {
       border-top-left-radius: 0;
       border-bottom-left-radius: 0;
       padding-left: 10px;
@@ -159,7 +159,7 @@ export default {
       border-radius: 5px 0 0 5px;
     }
 
-    button {
+    :deep(button) {
       border-top-right-radius: 0;
       border-bottom-right-radius: 0;
       padding-left: 12px;

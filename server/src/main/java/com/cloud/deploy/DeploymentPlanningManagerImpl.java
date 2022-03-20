@@ -422,14 +422,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 if (host.getStatus() == Status.Up) {
-                    boolean hostTagsMatch = true;
-                    if(offering.getHostTag() != null){
-                        _hostDao.loadHostTags(host);
-                        if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
-                            hostTagsMatch = false;
-                        }
-                    }
-                    if (hostTagsMatch) {
+                    if (checkVmProfileAndHost(vmProfile, host)) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
                                 "cpuOvercommitRatio");
@@ -752,9 +745,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         //Only when the type is instance VM and not explicitly dedicated.
         if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
             //add explicitly dedicated resources in avoidList
-
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding pods to avoid lists for non-explicit VM deployment: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding clusters to avoid lists for non-explicit VM deployment: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding hosts to avoid lists for non-explicit VM deployment: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
 
@@ -833,8 +834,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
 
             //Add in avoid list or no addition if no dedication
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding pods to avoid lists: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding clusters to avoid lists: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding hosts to avoid lists: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
     }

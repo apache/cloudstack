@@ -17,10 +17,10 @@
 package com.cloud.projects;
 
 import java.io.UnsupportedEncodingException;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -105,6 +105,8 @@ import org.apache.commons.lang3.BooleanUtils;
 @Component
 public class ProjectManagerImpl extends ManagerBase implements ProjectManager, Configurable {
     public static final Logger s_logger = Logger.getLogger(ProjectManagerImpl.class);
+
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     @Inject
     private DomainDao _domainDao;
@@ -265,7 +267,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 StringBuilder acctNm = new StringBuilder("PrjAcct-");
                 acctNm.append(name).append("-").append(ownerFinal.getDomainId());
 
-                Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, null, domainId, null, null, UUID.randomUUID().toString());
+                Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.Type.PROJECT, null, domainId, null, null, UUID.randomUUID().toString());
 
                 Project project = _projectDao.persist(new ProjectVO(name, displayText, ownerFinal.getDomainId(), projectAccount.getId()));
 
@@ -1349,10 +1351,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
 
     public static String generateToken(int length) {
         String charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        Random rand = new Random(System.currentTimeMillis());
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < length; i++) {
-            int pos = rand.nextInt(charset.length());
+            int pos = secureRandom.nextInt(charset.length());
             sb.append(charset.charAt(pos));
         }
         return sb.toString();

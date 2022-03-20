@@ -214,12 +214,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        return true;
+        return false;
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        return true;
+        return false;
     }
 
     @Override
@@ -271,7 +271,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
             qemu.convert(srcFile, destFile, true);
-            LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            LOGGER.debug("Successfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
             try {
                 Map<String, String> srcInfo = qemu.info(srcFile);
@@ -373,7 +373,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             LOGGER.debug("Starting copy from source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
             QemuImg qemu = new QemuImg(timeout);
             qemu.convert(srcFile, destFile);
-            LOGGER.debug("Succesfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
+            LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
             LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
             destDisk = null;

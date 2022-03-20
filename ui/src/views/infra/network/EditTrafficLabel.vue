@@ -18,66 +18,73 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        :loading="loading"
+        @finish="handleSubmit"
+        layout="vertical"
+       >
+        <a-form-item name="id" ref="id">
+          <template #label>
+            <tooltip-label :title="$t('label.traffictype')" :tooltip="apiParams.id.description"/>
+          </template>
           <a-select
-            autoFocus
-            v-decorator="['id', {
-              initialValue: selectedType,
-              rules: [{ required: true, message: $t('message.error.select') }] }]"
+            v-focus="true"
+            v-model:value="form.id"
             :loading="typeLoading"
             :placeholder="apiParams.id.description"
             @change="onChangeTrafficType"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="type in trafficTypes" :key="type.id">
               {{ type.traffictype }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
+        <a-form-item name="kvmnetworklabel" ref="kvmnetworklabel">
+          <template #label>
+            <tooltip-label :title="$t('label.kvmnetworklabel')" :tooltip="apiParams.kvmnetworklabel.description"/>
+          </template>
           <a-input
-            v-decorator="['kvmnetworklabel', {
-              initialValue: trafficResource.kvmnetworklabel
-            }]"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            v-model:value="form.kvmnetworklabel"
+            :placeholder="apiParams.kvmnetworklabel.description" />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
+        <a-form-item name="vmwarenetworklabel" ref="vmwarenetworklabel">
+          <template #label>
+            <tooltip-label :title="$t('label.vmwarenetworklabel')" :tooltip="apiParams.vmwarenetworklabel.description"/>
+          </template>
           <a-input
-            v-decorator="['vmwarenetworklabel', {
-              initialValue: trafficResource.vmwarenetworklabel
-            }]"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            v-model:value="form.vmwarenetworklabel"
+            :placeholder="apiParams.vmwarenetworklabel.description" />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
+        <a-form-item name="xennetworklabel" ref="xennetworklabel">
+          <template #label>
+            <tooltip-label :title="$t('label.xennetworklabel')" :tooltip="apiParams.xennetworklabel.description"/>
+          </template>
           <a-input
-            v-decorator="['xennetworklabel', {
-              initialValue: trafficResource.xennetworklabel
-            }]"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            v-model:value="form.xennetworklabel"
+            :placeholder="apiParams.xennetworklabel.description" />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
+        <a-form-item name="hypervnetworklabel" ref="hypervnetworklabel">
+          <template #label>
+            <tooltip-label :title="$t('label.hypervnetworklabel')" :tooltip="apiParams.hypervnetworklabel.description"/>
+          </template>
           <a-input
-            v-decorator="['hypervnetworklabel', {
-              initialValue: trafficResource.hypervnetworklabel
-            }]"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            v-model:value="form.hypervnetworklabel"
+            :placeholder="apiParams.hypervnetworklabel.description" />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
+        <a-form-item name="ovm3networklabel" ref="ovm3networklabel">
+          <template #label>
+            <tooltip-label :title="$t('label.ovm3networklabel')" :tooltip="apiParams.ovm3networklabel.description"/>
+          </template>
           <a-input
-            v-decorator="['ovm3networklabel', {
-              initialValue: trafficResource.ovm3networklabel
-            }]"
-            :placeholder="$t('label.network.label.display.for.blank.value')" />
+            v-model:value="form.ovm3networklabel"
+            :placeholder="apiParams.ovm3networklabel.description" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
@@ -89,6 +96,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -114,31 +122,44 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateTrafficType')
   },
   inject: ['parentFetchData'],
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        id: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
+    fillEditFromFieldValues () {
+      this.form.kvmnetworklabel = this.trafficResource.kvmnetworklabel
+      this.form.vmwarenetworklabel = this.trafficResource.vmwarenetworklabel
+      this.form.xennetworklabel = this.trafficResource.xennetworklabel
+      this.form.hypervnetworklabel = this.trafficResource.hypervnetworklabel
+      this.form.ovm3networklabel = this.trafficResource.ovm3networklabel
+    },
     fetchData () {
       this.typeLoading = true
 
       api('listTrafficTypes', { physicalnetworkid: this.resource.id })
         .then(json => {
           this.trafficTypes = json.listtraffictypesresponse.traffictype || []
-          this.selectedType = this.trafficTypes[0].id || undefined
+          this.form.id = this.trafficTypes[0].id || undefined
           this.trafficResource = this.trafficTypes[0] || {}
           this.traffictype = this.trafficTypes[0].traffictype || undefined
-        })
-        .catch(error => {
+          this.fillEditFromFieldValues()
+        }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
             description: error.response.data.errorresponse.errortext
           })
-        })
-        .finally(() => {
+        }).finally(() => {
           this.typeLoading = false
         })
     },
@@ -146,14 +167,13 @@ export default {
       if (!trafficId) return
       this.trafficResource = this.trafficTypes.filter(item => item.id === trafficId)[0] || {}
       this.traffictype = this.trafficResource.traffictype || undefined
+      this.fillEditFromFieldValues()
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {}
         for (const key in values) {
@@ -176,6 +196,8 @@ export default {
           this.loading = false
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

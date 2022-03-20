@@ -204,7 +204,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         UserAccount userAccount = Mock(UserAccount)
         userAccountDao.getUserAccount(username, domainId) >> userAccount
         userAccount.getId() >> 1
-        userAccount.getState() >> Account.State.disabled.toString()
+        userAccount.getState() >> Account.State.DISABLED.toString()
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
         ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> true

@@ -342,10 +342,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-
-                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
+                    String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
+                            host.getUuid(), e.getLocalizedMessage());
+                    s_logger.error(errorMsg);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(errorMsg, e);
+                    }
                 }
                 if (answer != null) {
                     return answer;
@@ -1381,7 +1386,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
-                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        final String message = String.format("Exception occurred when executing taks! Error '%s'", e.getMessage());
                         s_logger.error(message);
                         throw new TaskExecutionException(message, e);
                     }

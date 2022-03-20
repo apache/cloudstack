@@ -22,6 +22,7 @@ import java.net.InetAddress;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -346,15 +347,18 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
-        short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
-        // TODO Auto-generated method stub
-        return null;
+    public UserAccount createUserAccount(CreateAccountCmd cmd) {
+        return createUserAccount(cmd.getUsername(), cmd.getPassword(), cmd.getFirstName(),
+                cmd.getLastName(), cmd.getEmail(), cmd.getTimeZone(), cmd.getAccountName(),
+                cmd.getAccountType(), cmd.getRoleId(), cmd.getDomainId(),
+                cmd.getNetworkDomain(), cmd.getDetails(), cmd.getAccountUUID(),
+                cmd.getUserUUID(), User.Source.UNKNOWN);
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId,
-                                         Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+                                         Account.Type accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String accountUUID,
+                                         String userUUID, User.Source source) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -385,7 +389,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public Account createAccount(String accountName, short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
+    public Account createAccount(String accountName, Account.Type accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String uuid) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -105,6 +105,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -287,24 +288,43 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Failed to get the backup provider for the zone, please contact the administrator");
         }
 
-        vm.setBackupOfferingId(offering.getId());
-        vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-        if (vmInstanceDao.update(vm.getId(), vm)) {
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                    "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
-                    Backup.class.getSimpleName(), vm.getUuid());
-        } else {
-            throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
-        }
+        return transactionAssignVMToBackupOffering(vm, offering, backupProvider) != null;
+    }
 
-        try {
-            if (backupProvider.assignVMToBackupOffering(vm, offering)) {
-                return vmInstanceDao.update(vm.getId(), vm);
+    private VMInstanceVO transactionAssignVMToBackupOffering(VMInstanceVO vm, BackupOfferingVO offering, BackupProvider backupProvider) {
+        return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<VMInstanceVO>() {
+            @Override
+            public VMInstanceVO doInTransaction(final TransactionStatus status) {
+                try {
+                    long vmId = vm.getId();
+                    vm.setBackupOfferingId(offering.getId());
+                    vm.setBackupVolumes(createVolumeInfoFromVolumes(volumeDao.findByInstance(vmId)));
+
+                    if (!backupProvider.assignVMToBackupOffering(vm, offering)) {
+                        throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
+                    }
+
+                    if (!vmInstanceDao.update(vmId, vm)) {
+                        backupProvider.removeVMFromBackupOffering(vm);
+                        throw new CloudRuntimeException("Failed to update VM assignment to the backup offering in the DB, please try again.");
+                    }
+
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vmId,
+                            "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
+                    LOG.debug(String.format("VM [%s] successfully added to Backup Offering [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm,
+                            "uuid", "instanceName", "backupOfferingId", "backupVolumes"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering,
+                                    "uuid", "name", "externalId", "provider")));
+                } catch (Exception e) {
+                    String msg = String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
+                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName", "backupOfferingId", "backupVolumes"),
+                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering, "uuid", "name", "externalId", "provider"),
+                            backupProvider.getName(), backupProvider.getClass().getSimpleName(), e.getMessage());
+                    LOG.error(msg);
+                    LOG.debug(msg, e);
+                }
+                return vm;
             }
-        } catch (Exception e) {
-            LOG.error("Exception caught while assigning VM to backup offering by the backup provider", e);
-        }
-        throw new CloudRuntimeException("Failed to assign the VM to the backup offering, please try removing the assignment and try again.");
+        });
     }
 
     @Override
@@ -906,7 +926,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
 
             final Account backupAccount = accountService.getAccount(vm.getAccountId());
-            if (backupAccount == null || backupAccount.getState() == Account.State.disabled) {
+            if (backupAccount == null || backupAccount.getState() == Account.State.DISABLED) {
                 LOG.debug(String.format("Skip backup for VM [uuid: %s, name: %s] since its account has been removed or disabled.", vm.getUuid(), vm.getInstanceName()));
                 continue;
             }

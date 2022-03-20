@@ -20,6 +20,7 @@ package org.apache.cloudstack.ldap;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
@@ -109,9 +110,9 @@ public class LdapAuthenticatorTest {
         LdapAuthenticator auth = spy(ldapAuthenticator);
         when(auth.getMappedGroups(maps)).thenReturn(mappedGroups);
 
-        LdapTrustMapVO trustMap = new LdapTrustMapVO(domainId, LdapManager.LinkType.GROUP, "cn=name", (short)2, 1l);
+        LdapTrustMapVO trustMap = new LdapTrustMapVO(domainId, LdapManager.LinkType.GROUP, "cn=name", Account.Type.DOMAIN_ADMIN, 1l);
 
-        AccountVO account = new AccountVO("accountName" , domainId, "domain.net", (short)2, "final String uuid");
+        AccountVO account = new AccountVO("accountName" , domainId, "domain.net", Account.Type.DOMAIN_ADMIN, "final String uuid");
         when(accountManager.getAccount(anyLong())).thenReturn(account);
         when(ldapManager.getUser(username, domainId)).thenReturn(userSpy);
         when(ldapManager.getLinkedLdapGroup(domainId, "g1")).thenReturn(trustMap);

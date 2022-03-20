@@ -97,7 +97,7 @@ mounts=$(cat /proc/mounts |grep nfs|grep $MountPoint)
 if [ $? -gt 0 ]
 then
    # remount it
-   mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac,timeo=133,retrans=10 &> /dev/null
+   mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac &> /dev/null
    if [ $? -gt 0 ]
    then
       printf "Failed to remount $NfsSvrIP:$NfsSvrPath under $MountPoint" 

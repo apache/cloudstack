@@ -18,7 +18,7 @@
 <template>
   <span class="row-action-button">
     <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
-      <template slot="title">
+      <template #title>
         {{ $t('label.view.console') }}
       </template>
       <console :resource="resource" :size="size" />
@@ -28,7 +28,7 @@
       :key="actionIndex"
       arrowPointAtCenter
       placement="bottomRight">
-      <template slot="title">
+      <template #title>
         {{ $t(action.label) }}
       </template>
       <a-badge
@@ -42,15 +42,16 @@
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
-          :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-          :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
+          :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+          :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
+          :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
           style="margin-left: 5px"
           :size="size"
           @click="execAction(action)">
-          <span v-if="!dataView && action.icon === 'plus'">
+          <span v-if="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon)">
             {{ $t(action.label) }}
           </span>
-          <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+          <render-icon v-if="(typeof action.icon === 'string')" :icon="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
         </a-button>
       </a-badge>
@@ -61,15 +62,16 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
-        :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-        :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
+        :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+        :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
+        :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
         @click="execAction(action)">
-        <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
+        <span v-if="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
-        <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+        <render-icon v-if="(typeof action.icon === 'string')" :icon="action.icon" />
         <font-awesome-icon v-else :icon="action.icon" />
       </a-button>
     </a-tooltip>
@@ -78,11 +80,13 @@
 
 <script>
 import { api } from '@/api'
+import RenderIcon from '@/utils/renderIcon'
 import Console from '@/components/widgets/Console'
 
 export default {
   name: 'ActionButton',
   components: {
+    RenderIcon,
     Console
   },
   data () {
@@ -132,11 +136,14 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.handleShowBadge()
       }
-      this.handleShowBadge()
     }
   },
   methods: {
@@ -186,8 +193,8 @@ export default {
 
         Promise.all(arrAsync).then(response => {
           for (let j = 0; j < response.length; j++) {
-            this.$set(this.actionBadge, response[j].api, {})
-            this.$set(this.actionBadge[response[j].api], 'badgeNum', response[j].count)
+            this.actionBadge[response[j].api] = {}
+            this.actionBadge[response[j].api].badgeNum = response[j].count
           }
         }).catch(() => {})
       }
@@ -201,7 +208,7 @@ export default {
   margin-left: 5px;
 }
 
-/deep/.button-action-badge .ant-badge-count {
+:deep(.button-action-badge) .ant-badge-count {
   right: 10px;
   z-index: 8;
 }
