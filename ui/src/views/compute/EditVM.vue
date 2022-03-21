@@ -91,6 +91,25 @@
         <a-textarea v-model:value="form.userdata">
         </a-textarea>
       </a-form-item>
+      <a-form-item ref="securitygroupids" name="securitygroupids" :label="$t('label.security.groups')" v-if="securityGroupsEnabled">
+        <a-select
+          mode="multiple"
+          :placeholder="$t('label.select.security.groups')"
+          v-model:value="form.securitygroupids"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          :loading="securitygroups.loading"
+          v-focus="true">
+          <a-select-option v-for="securitygroup in securitygroups.opts" :key="securitygroup.id" :label="securitygroup.name">
+            <div>
+              {{ securitygroup.name ||  securitygroup.id }}
+            </div>
+          </a-select-option>
+        </a-select>
+      </a-form-item>
 
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -124,8 +143,13 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      securityGroupsEnabled: false,
       dynamicScalingVmConfig: false,
       loading: false,
+      securitygroups: {
+        loading: false,
+        opts: []
+      },
       osTypes: {
         loading: false,
         opts: []
@@ -151,16 +175,47 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
-        group: this.resource.group
+        group: this.resource.group,
+        securitygroupids: this.resource.securitygroup.map(x => x.id)
       })
       this.rules = reactive({})
     },
     fetchData () {
+      this.fetchZoneDetails()
+      this.fetchSecurityGroups()
       this.fetchOsTypes()
       this.fetchInstaceGroups()
       this.fetchServiceOfferingData()
       this.fetchTemplateData()
       this.fetchDynamicScalingVmConfig()
+    },
+    fetchZoneDetails () {
+      api('listZones', {
+        zoneid: this.resource.zoneid
+      }).then(response => {
+        const zone = response?.listzonesresponse?.zone || []
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+      })
+    },
+    fetchSecurityGroups () {
+      this.securitygroups.loading = true
+      api('listSecurityGroups', {
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        const items = json.listsecuritygroupsresponse.securitygroup || []
+        if (items && items.length > 0) {
+          for (let i = 0; i < items.length; i++) {
+            this.securitygroups.opts.push(items[i])
+          }
+          this.securitygroups.opts.sort((a, b) => {
+            if (a.name < b.name) return -1
+            if (a.name > b.name) return 1
+            return 0
+          })
+        }
+      }).finally(() => {
+        this.securitygroups.loading = false
+      })
     },
     fetchServiceOfferingData () {
       const params = {}
@@ -242,6 +297,11 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
+        if (this.securityGroupsEnabled) {
+          if (values.securitygroupids) {
+            params.securitygroupids = values.securitygroupids
+          }
+        }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
         }
