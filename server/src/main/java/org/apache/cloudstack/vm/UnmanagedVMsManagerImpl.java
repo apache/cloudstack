@@ -681,7 +681,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private Pair<DiskProfile, StoragePool> importDisk(UnmanagedInstanceTO.Disk disk, VirtualMachine vm, Cluster cluster, DiskOffering diskOffering,
                                                       Volume.Type type, String name, Long diskSize, Long minIops, Long maxIops, VirtualMachineTemplate template,
-                                                      Account owner, Long deviceId) {
+                                                      Account owner, Long deviceId, Integer volumeGroup) {
         final DataCenter zone = dataCenterDao.findById(vm.getDataCenterId());
         final String path = StringUtils.isEmpty(disk.getFileBaseName()) ? disk.getImagePath() : disk.getFileBaseName();
         String chainInfo = disk.getChainInfo();
@@ -693,7 +693,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         }
         StoragePool storagePool = getStoragePool(disk, zone, cluster);
         DiskProfile profile = volumeManager.importVolume(type, name, diskOffering, diskSize,
-                minIops, maxIops, vm, template, owner, deviceId, storagePool.getId(), path, chainInfo);
+                minIops, maxIops, vm, template, owner, deviceId, storagePool.getId(), path, chainInfo, volumeGroup);
 
         return new Pair<DiskProfile, StoragePool>(profile, storagePool);
     }
@@ -908,7 +908,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
 
     private UserVm importVirtualMachineInternal(final UnmanagedInstanceTO unmanagedInstance, final String instanceName, final DataCenter zone, final Cluster cluster, final HostVO host,
                                                 final VirtualMachineTemplate template, final String displayName, final String hostName, final Account caller, final Account owner, final Long userId,
-                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap,
+                                                final ServiceOfferingVO serviceOffering, final Map<String, Long> dataDiskOfferingMap, final Map<String,Integer> diskVolumeGroupMap,
                                                 final Map<String, Long> nicNetworkMap, final Map<String, Network.IpAddresses> callerNicIpAddressMap,
                                                 final Map<String, String> details, final boolean migrateAllowed, final boolean forced) {
         UserVm userVm = null;
@@ -998,16 +998,20 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
                     (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
-                    template, owner, null));
+                    template, owner, null, null));
             long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
+                Integer volumeGroup = -1;
+                if(diskVolumeGroupMap != null && !diskVolumeGroupMap.isEmpty()){
+                    volumeGroup = diskVolumeGroupMap.get(disk.getDiskId());
+                }
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                     throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
                 }
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
                 diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
                         (disk.getCapacity() / Resource.ResourceType.bytesToGiB), offering.getMinIops(), offering.getMaxIops(),
-                        template, owner, deviceId));
+                        template, owner, deviceId, volumeGroup));
                 deviceId++;
             }
         } catch (Exception e) {
@@ -1180,6 +1184,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         final Map<String, Long> nicNetworkMap = cmd.getNicNetworkList();
         final Map<String, Network.IpAddresses> nicIpAddressMap = cmd.getNicIpAddressList();
         final Map<String, Long> dataDiskOfferingMap = cmd.getDataDiskToDiskOfferingList();
+        final Map<String, Integer> diskVolumeGroupMap = cmd.getVolumeGroups();
         final Map<String, String> details = cmd.getDetails();
         final boolean forced = cmd.isForced();
         List<HostVO> hosts = resourceManager.listHostsInClusterByStatus(clusterId, Status.Up);
@@ -1233,7 +1238,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                     }
                     userVm = importVirtualMachineInternal(unmanagedInstance, instanceName, zone, cluster, host,
                             template, displayName, hostName, caller, owner, userId,
-                            serviceOffering, dataDiskOfferingMap,
+                            serviceOffering, dataDiskOfferingMap, diskVolumeGroupMap,
                             nicNetworkMap, nicIpAddressMap,
                             details, cmd.getMigrateAllowed(), forced);
                     break;

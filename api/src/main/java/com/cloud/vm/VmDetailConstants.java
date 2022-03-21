@@ -72,6 +72,7 @@ public interface VmDetailConstants {
     String IP6_ADDRESS = "ip6Address";
     String DISK = "disk";
     String DISK_OFFERING = "diskOffering";
+    String VOLUME_GROUP = "volumeGroup";
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
     String KEY_PAIR_NAMES = "keypairnames";

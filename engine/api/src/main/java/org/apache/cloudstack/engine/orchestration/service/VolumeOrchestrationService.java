@@ -163,10 +163,11 @@ public interface VolumeOrchestrationService {
      * @param poolId ID of pool in which volume is stored
      * @param path image path of the volume
      * @param chainInfo chain info for the volume. Hypervisor specific.
+     * @param volumeGroup group of volume
      * @return  DiskProfile of imported volume
      */
     DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
-                             Account owner, Long deviceId, Long poolId, String path, String chainInfo);
+                             Account owner, Long deviceId, Long poolId, String path, String chainInfo, Integer volumeGroup);
 
     /**
      * Unmanage VM volumes

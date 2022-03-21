@@ -259,6 +259,18 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         return dataDiskToDiskOfferingMap;
     }
 
+    public Map<String, Integer> getVolumeGroups() {
+        Map<String, Integer> dataDiskVolumeGroups = new HashMap<>();
+        if (MapUtils.isNotEmpty(dataDiskToDiskOfferingList)) {
+            for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
+                String disk = entry.get(VmDetailConstants.DISK);
+                Integer volumeGroup = Integer.parseInt(entry.get(VmDetailConstants.VOLUME_GROUP));
+                dataDiskVolumeGroups.put(disk, volumeGroup);
+            }
+        }
+        return dataDiskVolumeGroups;
+    }
+
     public Map<String, String> getDetails() {
         if (MapUtils.isEmpty(details)) {
             return new HashMap<String, String>();

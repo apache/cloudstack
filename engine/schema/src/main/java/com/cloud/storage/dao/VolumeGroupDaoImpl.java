@@ -36,7 +36,7 @@ public class VolumeGroupDaoImpl extends GenericDaoBase<VolumeGroupVO, Long> impl
     public void addVolumeToGroup(long vmId, long volumeId, long deviceId, int groupNumber) {
         if (groupNumber != -1) {
             if (deviceId == 0L) {
-                groupNumber = 1;
+                groupNumber = 0;
             }
             VolumeGroupVO group = new VolumeGroupVO();
             group.setVmId(vmId);

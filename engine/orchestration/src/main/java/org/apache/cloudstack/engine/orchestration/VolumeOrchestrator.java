@@ -124,6 +124,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.dao.VolumeGroupDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -232,6 +233,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private SecondaryStorageVmDao secondaryStorageVmDao;
     @Inject
     VolumeApiService _volumeApiService;
+    @Inject
+    private VolumeGroupDao _volumeGroupDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -2022,7 +2025,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public DiskProfile importVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops,
                                     VirtualMachine vm, VirtualMachineTemplate template, Account owner,
-                                    Long deviceId, Long poolId, String path, String chainInfo) {
+                                    Long deviceId, Long poolId, String path, String chainInfo, Integer volumeGroup) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -2069,6 +2072,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol.setState(Volume.State.Ready);
         vol.setAttached(new Date());
         vol = _volsDao.persist(vol);
+
+        if(volumeGroup != null){
+            int volGroup = volumeGroup;
+            _volumeGroupDao.addVolumeToGroup(vm.getId(), vol.getId(), vol.getDeviceId(), volGroup);
+        }
+
         return toDiskProfile(vol, offering);
     }
 
@@ -2091,6 +2100,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         s_logger.debug(String.format("Skipping Destroy for the volume [%s] as it is in [%s] state.", volToString, vol.getState().toString()));
                     } else {
                         volService.unmanageVolume(vol.getId());
+                        _volumeGroupDao.deleteVolumeFromGroup(vol.getId());
                     }
                 }
             }
