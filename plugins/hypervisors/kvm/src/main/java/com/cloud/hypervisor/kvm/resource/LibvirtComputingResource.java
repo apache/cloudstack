@@ -1304,17 +1304,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _localStoragePath = StringUtils.join(_localStoragePaths, CONFIG_VALUES_SEPARATOR);
 
         for (String localStorageUUID : localStorageUUIDs) {
-            if (StringUtils.isBlank(localStorageUUID)) {
-                throw new ConfigurationException("The UUID of local storage pools must be non-blank");
-            }
-            try {
-                UUID.fromString(localStorageUUID);
-            } catch (IllegalArgumentException ex) {
-                throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
-            }
+            validateLocalStorageUUID(localStorageUUID);
             _localStorageUUIDs.add(localStorageUUID);
         }
         _localStorageUUID = StringUtils.join(_localStorageUUIDs, CONFIG_VALUES_SEPARATOR);
+    }
+
+    private void validateLocalStorageUUID(String localStorageUUID) throws ConfigurationException {
+        if (StringUtils.isBlank(localStorageUUID)) {
+            throw new ConfigurationException("The UUID of local storage pools must be non-blank");
+        }
+        try {
+            UUID.fromString(localStorageUUID);
+        } catch (IllegalArgumentException ex) {
+            throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
+        }
     }
 
     public boolean configureHostParams(final Map<String, String> params) {
