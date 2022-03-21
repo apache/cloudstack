@@ -1027,6 +1027,56 @@ class VirtualMachine:
             cmd.details[0]["memory"] = custommemory
         return apiclient.scaleVirtualMachine(cmd)
 
+    @classmethod
+    def importUnmanagedVM(cls, apiclient, clusterid, name, serviceofferingid, displayname=None,
+                                     diskofferinglist=None, nicnetworklist=None, nicipaddresslist=None,
+                                     datadiskofferinglist=None, details=None, projectid=None, hostname=None,
+                                     migrateallowed=None, domainid=None, account=None, templateid=None
+                                     ):
+        cmd = importUnmanagedInstance.importUnmanagedInstanceCmd()
+        cmd.clusterid = clusterid
+        cmd.name = name
+        cmd.serviceofferingid = serviceofferingid
+
+        if displayname:
+            cmd.displayname = displayname
+
+        if diskofferinglist:
+            cmd.diskofferinglist = diskofferinglist
+
+        if nicnetworklist:
+            cmd.nicnetworklist = nicnetworklist
+
+        if nicipaddresslist:
+            cmd.nicipaddresslist = nicipaddresslist
+
+        if datadiskofferinglist:
+            cmd.datadiskofferinglist = datadiskofferinglist
+
+        if details:
+            cmd.details = details
+
+        if projectid:
+            cmd.projectid = projectid
+
+        if hostname:
+            cmd.hostname = hostname
+
+        if migrateallowed:
+            cmd.migrateallowed = migrateallowed
+
+        if domainid:
+            cmd.domainid = domainid
+
+        if account:
+            cmd.account = account
+
+        if templateid:
+            cmd.templateid = templateid
+
+        return apiclient.importUnmanagedInstance(cmd)
+
+
     def unmanage(self, apiclient):
         """Unmanage a VM from CloudStack (currently VMware only)"""
         cmd = unmanageVirtualMachine.unmanageVirtualMachineCmd()
