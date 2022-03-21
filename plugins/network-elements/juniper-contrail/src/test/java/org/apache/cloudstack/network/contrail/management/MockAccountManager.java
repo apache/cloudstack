@@ -61,6 +61,7 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -278,7 +279,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public void buildACLSearchParameters(Account arg0, Long arg1, String arg2,
             Long arg3, List<Long> arg4,
-            Pair<Long, ListProjectResourcesCriteria> arg5,
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
             boolean arg6, boolean arg7) {
         // TODO Auto-generated method stub
 

@@ -21,8 +21,7 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -35,6 +34,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;

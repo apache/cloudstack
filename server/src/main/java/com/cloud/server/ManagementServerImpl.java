@@ -316,6 +316,8 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.ReleaseIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.ReserveIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
@@ -2147,13 +2149,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String state = cmd.getState();
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
-            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
+            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
                 isAllocated = Boolean.FALSE;
             } else {
                 isAllocated = Boolean.TRUE; // default
             }
         } else {
-            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
+            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
                 if (isAllocated) {
                     throw new InvalidParameterValueException("Conflict: allocatedonly is true but state is Free");
                 }
@@ -2226,21 +2228,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, null, null);
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
-        Boolean isRecursive = cmd.listAll();
+        Boolean isRecursive = null;
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
         if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
-            final Pair<Long, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<>(cmd.getDomainId(), null);
+            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
+                    null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
             domainId = domainIdRecursiveListProject.first();
-            listProjectResourcesCriteria = domainIdRecursiveListProject.second();
+            isRecursive = domainIdRecursiveListProject.second();
+            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
             _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
         buildParameters(sb, cmd, vlanType == VlanType.VirtualNetwork ? true : isAllocated);
 
         SearchCriteria<IPAddressVO> sc = sb.create();
-        setParameters(sc, cmd, vlanType);
+        setParameters(sc, cmd, vlanType, isAllocated);
 
         if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -2303,7 +2307,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
-            setParameters(sc2, cmd, vlanType);
+            setParameters(sc2, cmd, vlanType, isAllocated);
             sc2.setParameters("ids", freeAddrIds.toArray());
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
@@ -2367,7 +2371,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType) {
+    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
@@ -2435,6 +2439,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (state != null) {
             sc.setParameters("state", state);
+        } else if (isAllocated != null && isAllocated) {
+            sc.setParameters("state", IpAddress.State.Allocated);
         }
 
         sc.setParameters( "forsystemvms", false);
@@ -3197,6 +3203,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListProjectAccountsCmd.class);
         cmdList.add(AssociateIPAddrCmd.class);
         cmdList.add(DisassociateIPAddrCmd.class);
+        cmdList.add(ReserveIPAddrCmd.class);
+        cmdList.add(ReleaseIPAddrCmd.class);
         cmdList.add(ListPublicIpAddressesCmd.class);
         cmdList.add(CreateAutoScalePolicyCmd.class);
         cmdList.add(CreateAutoScaleVmGroupCmd.class);
@@ -4210,11 +4218,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Account caller = getCaller();
         final List<Long> permittedAccounts = new ArrayList<Long>();
 
-        final Pair<Long, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         final Long domainId = domainIdRecursiveListProject.first();
-        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        final Boolean isRecursive = cmd.isRecursive();
+        final Boolean isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         final SearchBuilder<SSHKeyPairVO> sb = _sshKeyPairDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         final Filter searchFilter = new Filter(SSHKeyPairVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
