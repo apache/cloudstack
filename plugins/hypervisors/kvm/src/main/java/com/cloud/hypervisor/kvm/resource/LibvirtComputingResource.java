@@ -215,6 +215,8 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
+    private static final String CONFIG_VALUES_SEPARATOR = ",";
+
     private static final String LEGACY = "legacy";
     private static final String SECURE = "secure";
 
@@ -381,6 +383,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
+
+    protected List<String> _localStoragePaths = new ArrayList<>();
+    protected List<String> _localStorageUUIDs = new ArrayList<>();
 
     private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
     private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
@@ -1008,20 +1013,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_localStoragePath == null) {
             _localStoragePath = "/var/lib/libvirt/images/";
         }
+        _localStorageUUID = (String)params.get("local.storage.uuid");
+        if (_localStorageUUID == null) {
+            _localStorageUUID = UUID.randomUUID().toString();
+        }
+
+        String[] localStorageRelativePaths = _localStoragePath.split(CONFIG_VALUES_SEPARATOR);
+        String[] localStorageUUIDs = _localStorageUUID.split(CONFIG_VALUES_SEPARATOR, -1);
+        if (localStorageRelativePaths.length != localStorageUUIDs.length) {
+            throw new ConfigurationException("The path and UUID of local storage pools have different length");
+        }
+        for (String localStorageRelativePath : localStorageRelativePaths) {
+            final File storagePath = new File(localStorageRelativePath);
+            _localStoragePaths.add(storagePath.getAbsolutePath());
+        }
+        _localStoragePath = StringUtils.join(_localStoragePaths, CONFIG_VALUES_SEPARATOR);
+        params.put("local.storage.path", _localStoragePath);
+
+        for (String localStorageUUID : localStorageUUIDs) {
+            if (StringUtils.isBlank(localStorageUUID)) {
+                throw new ConfigurationException("The UUID of local storage pools must be non-blank");
+            }
+            try {
+                UUID.fromString(localStorageUUID);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
+            }
+            _localStorageUUIDs.add(localStorageUUID);
+        }
+        _localStorageUUID = StringUtils.join(_localStorageUUIDs, CONFIG_VALUES_SEPARATOR);
+        params.put("local.storage.uuid", _localStorageUUID);
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
         _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
         String _qemuSocketsPathVar = (String)params.get("qemu.sockets.path");
         if (_qemuSocketsPathVar != null && StringUtils.isNotBlank(_qemuSocketsPathVar)) {
             _qemuSocketsPath = new File(_qemuSocketsPathVar);
-        }
-
-        final File storagePath = new File(_localStoragePath);
-        _localStoragePath = storagePath.getAbsolutePath();
-
-        _localStorageUUID = (String)params.get("local.storage.uuid");
-        if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.randomUUID().toString();
         }
 
         value = (String)params.get("scripts.timeout");
@@ -3285,12 +3312,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _hostDistro = cmd.getHostDetails().get("Host.OS");
         }
 
+        List<StartupCommand> startupCommands = new ArrayList<>();
+        startupCommands.add(cmd);
+        for (int i = 0; i < _localStoragePaths.size(); i++) {
+            String localStoragePath = _localStoragePaths.get(i);
+            String localStorageUUID = _localStorageUUIDs.get(i);
+            StartupStorageCommand sscmd = createLocalStoragePool(localStoragePath, localStorageUUID, cmd);
+            if (sscmd != null) {
+                startupCommands.add(sscmd);
+            }
+        }
+        StartupCommand[] startupCommandsArray = new StartupCommand[startupCommands.size()];
+        int i = 0;
+        for (StartupCommand startupCommand : startupCommands) {
+            startupCommandsArray[i] = startupCommand;
+            i++;
+        }
+        return startupCommandsArray;
+    }
+
+    private StartupStorageCommand createLocalStoragePool(String localStoragePath, String localStorageUUID, StartupRoutingCommand cmd) {
         StartupStorageCommand sscmd = null;
         try {
-
-            final KVMStoragePool localStoragePool = _storagePoolMgr.createStoragePool(_localStorageUUID, "localhost", -1, _localStoragePath, "", StoragePoolType.Filesystem);
+            final KVMStoragePool localStoragePool = _storagePoolMgr.createStoragePool(localStorageUUID, "localhost", -1, localStoragePath, "", StoragePoolType.Filesystem);
             final com.cloud.agent.api.StoragePoolInfo pi =
-                    new com.cloud.agent.api.StoragePoolInfo(localStoragePool.getUuid(), cmd.getPrivateIpAddress(), _localStoragePath, _localStoragePath,
+                    new com.cloud.agent.api.StoragePoolInfo(localStoragePool.getUuid(), cmd.getPrivateIpAddress(), localStoragePath, localStoragePath,
                             StoragePoolType.Filesystem, localStoragePool.getCapacity(), localStoragePool.getAvailable());
 
             sscmd = new StartupStorageCommand();
@@ -3301,12 +3347,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Unable to initialize local storage pool: " + e);
         }
-
-        if (sscmd != null) {
-            return new StartupCommand[] {cmd, sscmd};
-        } else {
-            return new StartupCommand[] {cmd};
-        }
+        return sscmd;
     }
 
     public String diskUuidToSerial(String uuid) {
