@@ -105,8 +105,9 @@
         </a-button>
       </template>
       <template #add="{record}">
-        <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
-          {{ $t('label.add') }}
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+          <template #icon><plus-outlined /></template>
+            {{ $t('label.add') }}
         </a-button>
       </template>
       <template #expandedRowRender="{ record }">
