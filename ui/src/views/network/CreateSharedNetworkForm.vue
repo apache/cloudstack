@@ -450,8 +450,15 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
+      if (isAdmin()) {
+        this.scopeType = 'all'
+      } else if (isAdminOrDomainAdmin()) {
+        this.scopeType = 'domain'
+      } else {
+        this.scopeType = 'account'
+      }
       this.form = reactive({
-        scope: 'all',
+        scope: this.scopeType,
         isolatedpvlantype: 'none'
       })
       this.rules = reactive({
