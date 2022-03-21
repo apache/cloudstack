@@ -19,33 +19,19 @@
 # Import Local Modules
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (listHypervisorCapabilities,
-                                  attachIso,
-                                  deleteVolume
-                                  )
-from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
                              Volume,
-                             Host,
-                             Iso,
-                             Configurations,
-                             DiskOffering,
-                             Domain,
-                             StoragePool)
+                             Cluster,
+                             DiskOffering)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
-                               get_pod,
-                               find_storage_pool_type,
-                               update_resource_limit)
+                               get_pod)
+
 import re
-import json
-from types import SimpleNamespace
-from marvin.codes import PASS
-# Import System modules
-import time
+
 
 
 class TestAttachVolumeWithGroup(cloudstackTestCase):
@@ -58,6 +44,7 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.test_client.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
+        cls.check_volume_group_tbl = "SELECT volume_group.id FROM volume_group,vm_instance WHERE volume_group.vm_id = vm_instance.id AND vm_instance.uuid='{}'"
         cls.template = get_template(
             cls.api_client,
             cls.zone.id,
@@ -84,16 +71,7 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
         )
         cls._cleanup.append(cls.service_offering)
 
-        cls.virtual_machine = VirtualMachine.create(
-            cls.api_client,
-            cls.test_data["virtual_machine"],
-            accountid=cls.account.name,
-            domainid=cls.account.domainid,
-            serviceofferingid=cls.service_offering.id,
-            templateid=cls.template.id,
-            zoneid=cls.zone.id
-        )
-        cls._cleanup.append(cls.virtual_machine)
+
 
     @classmethod
     def tearDownClass(cls):
@@ -101,6 +79,7 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
 
     def setUp(self):
         self.api_client = self.test_client.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
     def tearDown(self):
@@ -108,6 +87,16 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "needle"])
     def test_attach_mixed_volumes(self):
+        self.virtual_machine = VirtualMachine.create(
+            self.api_client,
+            self.test_data["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(self.virtual_machine)
         volume_list = []
         volume_count = 9
         for i in range(0, volume_count):
@@ -168,6 +157,93 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
                 volume[0]
             )
             self.cleanup.append(volume)
+
+
+    @attr(tags=["advanced", "advancedns", "needle"])
+    def test_unmanage_ingest_vm(self):
+        virtual_machine = VirtualMachine.create(
+            self.api_client,
+            self.test_data['virtual_machine'],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+        volume_count = 3
+        volume_list = []
+
+        for i in range(0, volume_count):
+            volume_list.append(Volume.create(
+                    self.api_client,
+                    self.test_data["volume"],
+                    zoneid=self.zone.id,
+                    account=self.account.name,
+                    domainid=self.account.domainid,
+                    diskofferingid=self.disk_offering.id))
+
+        for i in range(0, volume_count):
+            virtual_machine.attach_volume(
+                             self.api_client,
+                             volume_list[i],
+                             volumegroup=i)
+
+        virtual_machine.unmanage(self.api_client)
+        result = self.dbclient.execute(self.check_volume_group_tbl.format(virtual_machine.id))
+        self.assertEqual(len(result), 0, msg="After unmanage vm, at least one volume group was not removed")
+
+        cluster_list = Cluster.list(self.api_client,
+                                   hypervisor=virtual_machine.hypervisor,
+                                   zonename=virtual_machine.zonename)
+
+
+        for cluster in cluster_list:
+            unmanage_vm_list = VirtualMachine.listUnmanagedInstances(self.api_client,
+                                                                   clusterid=cluster.id,
+                                                                   name=virtual_machine.instancename)
+
+            if unmanage_vm_list and len(unmanage_vm_list) == 1:
+                data_disk_offering_list = []
+                controller_units = [0, 1, 2]
+                for volume in unmanage_vm_list[0].disk:
+                    if not (volume.controllerunit == 0 and volume.position == 0):
+                        data_disk_offering_list.append({
+                            'disk': volume.id,
+                            'diskOffering': self.disk_offering.id,
+                            'volumeGroup': volume.controllerunit
+                        })
+                        self.assertIn(volume.controllerunit, controller_units,
+                                      msg="After unmanage vm, at least one volume is connected on wrong controller")
+                        controller_units.remove(volume.controllerunit)
+
+                details = {'dataDiskController': virtual_machine.details['dataDiskController'],
+                           'rootDiskController': virtual_machine.details['rootDiskController']}
+                imported_vm = VirtualMachine.importUnmanagedVM(apiclient=self.api_client,
+                                                              clusterid=unmanage_vm_list[0].clusterid,
+                                                              name=unmanage_vm_list[0].name,
+                                                              details=[details],
+                                                              datadiskofferinglist=data_disk_offering_list,
+                                                              serviceofferingid=virtual_machine.serviceofferingid)
+                vm = VirtualMachine(imported_vm.__dict__, {})
+                vm.stop(apiclient=self.api_client)
+                vm.start(apiclient=self.api_client)
+
+                vols = Volume.list(apiclient=self.api_client, virtualmachineid=vm.id)
+                allowed_controller_cfg = ["scsi0:0", "scsi0:1", "scsi1:0", "scsi2:0"]
+                for vol in vols:
+                    for cfg in allowed_controller_cfg:
+                        m = re.search(cfg, vol['chaininfo'])
+                        if m is not None:
+                            allowed_controller_cfg.remove(cfg)
+                            break
+                self.assertEqual(len(allowed_controller_cfg), 0,
+                                 msg="After import vm, at least one volume is connected on the wrong controller.")
+
+                vm.delete(apiclient=self.api_client, expunge=True)
+                result = self.dbclient.execute(self.check_volume_group_tbl.format(vm.id))
+                self.assertEqual(len(result), 0, msg="After delete vm, at least one volume group was not removed")
+                break
+
 
     @classmethod
     def tearDownClass(cls):
