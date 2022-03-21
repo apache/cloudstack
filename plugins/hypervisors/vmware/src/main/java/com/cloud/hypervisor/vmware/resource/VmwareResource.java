@@ -2362,8 +2362,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
                         ideUnitNumber++;
                     } else {
-                        deviceNumber = scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0) % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
-                        scsiUnitNumberMap.merge(vol.getGroupNumber(), 0, (a,b) -> a + 1);
+                        // group 0 is root controller, therefore we replace it with -1 (volume with no group) for right device number
+                        int groupNumber = vol.getGroupNumber() == 0 ? -1 : vol.getGroupNumber();
+                        deviceNumber = scsiUnitNumberMap.getOrDefault(groupNumber, 0) % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
+                        scsiUnitNumberMap.merge(groupNumber, 0, (a,b) -> a + 1);
                     }
 
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
