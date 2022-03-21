@@ -26,8 +26,6 @@ import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -43,6 +41,8 @@ import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElement
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
