@@ -477,6 +477,9 @@ export default {
       } else {
         this.fetchNetworkOfferingData()
       }
+      if (this.scopeType !== 'all') {
+        this.handleScopeTypeChange(this.scopeType)
+      }
     },
     isAdmin () {
       return isAdmin()
