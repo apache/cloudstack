@@ -21,7 +21,6 @@ const fs = require('fs')
 const packageJson = fs.readFileSync('./package.json')
 const version = JSON.parse(packageJson).version || 'main'
 const createThemeColorReplacerPlugin = require('./theme.config')
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 function resolve (dir) {
   return path.join(__dirname, dir)
@@ -56,18 +55,7 @@ const vueConfig = {
       })
     ],
     optimization: {
-      minimizer: [
-        new UglifyJsPlugin({
-          cache: true,
-          parallel: true,
-          uglifyOptions: {
-            compress: false,
-            ecma: 6,
-            mangle: true
-          },
-          sourceMap: true
-        })
-      ],
+      minimizer: [],
       splitChunks: {
         cacheGroups: {
           commons: {
