@@ -1009,40 +1009,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        _localStoragePath = (String)params.get("local.storage.path");
-        if (_localStoragePath == null) {
-            _localStoragePath = "/var/lib/libvirt/images/";
-        }
-        _localStorageUUID = (String)params.get("local.storage.uuid");
-        if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.randomUUID().toString();
-        }
-
-        String[] localStorageRelativePaths = _localStoragePath.split(CONFIG_VALUES_SEPARATOR);
-        String[] localStorageUUIDs = _localStorageUUID.split(CONFIG_VALUES_SEPARATOR, -1);
-        if (localStorageRelativePaths.length != localStorageUUIDs.length) {
-            throw new ConfigurationException("The path and UUID of local storage pools have different length");
-        }
-        for (String localStorageRelativePath : localStorageRelativePaths) {
-            final File storagePath = new File(localStorageRelativePath);
-            _localStoragePaths.add(storagePath.getAbsolutePath());
-        }
-        _localStoragePath = StringUtils.join(_localStoragePaths, CONFIG_VALUES_SEPARATOR);
-        params.put("local.storage.path", _localStoragePath);
-
-        for (String localStorageUUID : localStorageUUIDs) {
-            if (StringUtils.isBlank(localStorageUUID)) {
-                throw new ConfigurationException("The UUID of local storage pools must be non-blank");
-            }
-            try {
-                UUID.fromString(localStorageUUID);
-            } catch (IllegalArgumentException ex) {
-                throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
-            }
-            _localStorageUUIDs.add(localStorageUUID);
-        }
-        _localStorageUUID = StringUtils.join(_localStorageUUIDs, CONFIG_VALUES_SEPARATOR);
-        params.put("local.storage.uuid", _localStorageUUID);
+        configureLocalStorage(params);
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
         _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
@@ -1313,6 +1280,41 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    private void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
+        _localStoragePath = (String)params.get("local.storage.path");
+        if (_localStoragePath == null) {
+            _localStoragePath = "/var/lib/libvirt/images/";
+        }
+        _localStorageUUID = (String)params.get("local.storage.uuid");
+        if (_localStorageUUID == null) {
+            _localStorageUUID = UUID.randomUUID().toString();
+        }
+
+        String[] localStorageRelativePaths = _localStoragePath.split(CONFIG_VALUES_SEPARATOR);
+        String[] localStorageUUIDs = _localStorageUUID.split(CONFIG_VALUES_SEPARATOR);
+        if (localStorageRelativePaths.length != localStorageUUIDs.length) {
+            throw new ConfigurationException("The path and UUID of local storage pools have different length");
+        }
+        for (String localStorageRelativePath : localStorageRelativePaths) {
+            final File storagePath = new File(localStorageRelativePath);
+            _localStoragePaths.add(storagePath.getAbsolutePath());
+        }
+        _localStoragePath = StringUtils.join(_localStoragePaths, CONFIG_VALUES_SEPARATOR);
+
+        for (String localStorageUUID : localStorageUUIDs) {
+            if (StringUtils.isBlank(localStorageUUID)) {
+                throw new ConfigurationException("The UUID of local storage pools must be non-blank");
+            }
+            try {
+                UUID.fromString(localStorageUUID);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
+            }
+            _localStorageUUIDs.add(localStorageUUID);
+        }
+        _localStorageUUID = StringUtils.join(_localStorageUUIDs, CONFIG_VALUES_SEPARATOR);
     }
 
     public boolean configureHostParams(final Map<String, String> params) {
