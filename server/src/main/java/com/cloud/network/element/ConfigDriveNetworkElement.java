@@ -639,7 +639,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         if (location == Location.SECONDARY) {
             dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(vm.getDataCenterId());
-            agentId = findAgentIdForImageStore(dataStore);
+            if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(vm.getDataCenterId()) &&
+                    !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(vm.getDataCenterId()) && dataStore != null) {
+                agentId = findAgentIdForImageStore(dataStore);
+            }
         } else if (location == Location.PRIMARY) {
             List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             if (volumes != null && volumes.size() > 0) {
