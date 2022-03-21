@@ -36,7 +36,7 @@ public class VmMetricsResponse extends UserVmResponse {
     private String cpuTotal;
 
     @SerializedName("memorytotal")
-    @Param(description = "the total memory capacity in GiB")
+    @Param(description = "the total memory capacity in GB")
     private String memTotal;
 
     @SerializedName("networkread")
@@ -79,25 +79,25 @@ public class VmMetricsResponse extends UserVmResponse {
 
     public void setNetworkRead(final Long networkReadKbs) {
         if (networkReadKbs != null) {
-            this.networkRead = String.format("%.2f MB", networkReadKbs / 1024.0);
+            this.networkRead = String.format("%.2f MiB", networkReadKbs / 1024.0);
         }
     }
 
     public void setNetworkWrite(final Long networkWriteKbs) {
         if (networkWriteKbs != null) {
-            this.networkWrite = String.format("%.2f MB", networkWriteKbs / 1024.0);
+            this.networkWrite = String.format("%.2f MiB", networkWriteKbs / 1024.0);
         }
     }
 
     public void setDiskRead(final Long diskReadKbs) {
         if (diskReadKbs != null) {
-            this.networkRead = String.format("%.2f MB", diskReadKbs / 1024.0);
+            this.diskRead = String.format("%.2f MiB", diskReadKbs / 1024.0);
         }
     }
 
     public void setDiskWrite(final Long diskWriteKbs) {
         if (diskWriteKbs != null) {
-            this.networkWrite = String.format("%.2f MB", diskWriteKbs / 1024.0);
+            this.diskWrite = String.format("%.2f MiB", diskWriteKbs / 1024.0);
         }
     }
 
