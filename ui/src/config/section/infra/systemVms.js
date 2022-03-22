@@ -139,7 +139,7 @@ export default {
     },
     {
       api: 'patchSystemVm',
-      icon: 'diff',
+      icon: 'diff-outlined',
       label: 'label.action.patch.systemvm',
       message: 'message.action.patch.systemvm',
       dataView: true,
