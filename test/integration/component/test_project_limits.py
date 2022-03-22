@@ -736,16 +736,6 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             True,
                             "Check Public IP state is allocated or not"
                         )
-
-        # Exception should be raised for second Public IP
-        with self.assertRaises(Exception):
-            PublicIPAddress.create(
-                                           self.apiclient,
-                                           zoneid=virtual_machine_1.zoneid,
-                                           services=self.services["server"],
-                                           networkid=network.id,
-                                           projectid=self.project.id
-                                           )
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"], required_hardware="false")
@@ -845,7 +835,6 @@ class TestResourceLimitsProject(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
-        self.cleanup.append(self.project_1)
 
         self.debug(
             "Updating volume resource limits for project: %s" %
@@ -872,7 +861,16 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
+        self.cleanup.append(virtual_machine_1)
+        networks = Network.list(
+            self.apiclient,
+            projectid=self.project_1.id,
+            listall=True
+        )
+        for network in networks:
+            self.cleanup.append(Network(network.__dict__))
 
+        self.cleanup.append(self.project_1)
         # Exception should be raised for second volume
         with self.assertRaises(Exception):
             Volume.create(
@@ -980,6 +978,14 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 zoneid=self.zone.id,
                                 projectid=self.project.id
                             )
+        networks = Network.list(
+            self.apiclient,
+            projectid=self.project.id,
+            listall=True
+        )
+        for network in networks:
+            self.cleanup.append(Network(network.__dict__))
+
         return
 
 class TestMaxProjectNetworks(cloudstackTestCase):
@@ -1020,7 +1026,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            cleanup_resources(cls.api_client, reversed(cls._cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1040,7 +1046,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, self.cleanup)
+            cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.account.delete(self.apiclient)
             interval = list_configurations(
                                     self.apiclient,
@@ -1102,18 +1108,20 @@ class TestMaxProjectNetworks(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
+            self.cleanup.append(network)
             self.debug("Created network with ID: %s" % network.id)
         self.debug(
             "Creating network in account already having networks : %s" %
                                                             config_value)
 
         with self.assertRaises(Exception):
-            Network.create(
+            network = Network.create(
                                     self.apiclient,
                                     self.services["network"],
                                     projectid=project.id,
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
+            self.cleanup.append(network)
         self.debug('Create network failed (as expected)')
         return
