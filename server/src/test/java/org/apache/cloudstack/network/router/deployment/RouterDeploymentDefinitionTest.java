@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.cloud.network.router.deployment;
+package org.apache.cloudstack.network.router.deployment;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;

@@ -19,54 +19,61 @@
   <div>
     <div>
       <a-alert
-        type="info"
-        v-html="$t('message.egress.rules.info.for.network').replace('%x', resource.egressdefaultpolicy ? '<b>' + $t('label.allow') + '</b>' :
-          '<b>' + $t('label.deny') + '</b>').replace('%y', resource.egressdefaultpolicy ? '<b>' + $t('message.denied') + '</b>' : '<b>' + $t('message.allowed') + '</b>')" />
+        type="info">
+        <template #message>
+        <div
+          v-html="$t('message.egress.rules.info.for.network').replace('%x', resource.egressdefaultpolicy ? '<b>' + $t('label.allow') + '</b>' :
+          '<b>' + $t('label.deny') + '</b>').replace('%y', resource.egressdefaultpolicy ? '<b>' + $t('message.denied') + '</b>' : '<b>' + $t('message.allowed') + '</b>.')" />
+        </template>
+      </a-alert>
       <a-divider />
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input v-model="newRule.cidrlist" autoFocus></a-input>
+          <a-input v-model:value="newRule.cidrlist" v-focus="true"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destcidr') }}</div>
-          <a-input v-model="newRule.destcidrlist"></a-input>
+          <a-input v-model:value="newRule.destcidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            v-model="newRule.protocol"
+            v-model:value="newRule.protocol"
             style="width: 100%;"
             @change="resetRulePorts"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') | capitalise }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') | capitalise }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') | capitalise }}</a-select-option>
+            <a-select-option value="tcp">{{ capitalise($t('label.tcp'))  }}</a-select-option>
+            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
+            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.startport') }}</div>
-          <a-input v-model="newRule.startport"></a-input>
+          <a-input v-model:value="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
-          <a-input v-model="newRule.endport"></a-input>
+          <a-input v-model:value="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model="newRule.icmptype"></a-input>
+          <a-input v-model:value="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model="newRule.icmpcode"></a-input>
+          <a-input v-model:value="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item">
-          <a-button :disabled="!('createEgressFirewallRule' in $store.getters.apis)" ref="submit" type="primary" icon="plus" @click="addRule">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" :disabled="!('createEgressFirewallRule' in $store.getters.apis)" type="primary" @click="addRule">
+            <template #icon><plus-outlined /></template>
+            {{ $t('label.add') }}
+          </a-button>
         </div>
       </div>
     </div>
@@ -74,10 +81,11 @@
     <a-divider/>
     <a-button
       v-if="(('deleteEgressFirewallRule' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.egress.firewall.rules') }}
     </a-button>
     <a-table
@@ -89,17 +97,23 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template slot="protocol" slot-scope="record">
+      <template #protocol="{ record }">
         {{ getCapitalise(record.protocol) }}
       </template>
-      <template slot="startport" slot-scope="record">
+      <template #startport="{ record }">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
       </template>
-      <template slot="endport" slot-scope="record">
+      <template #endport="{ record }">
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
       </template>
-      <template slot="actions" slot-scope="record">
-        <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)" type="danger" icon="delete" @click="deleteRule(record)" />
+      <template #actions="{ record }">
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="deleteRule(record)" />
       </template>
     </a-table>
     <a-pagination
@@ -113,7 +127,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -194,19 +208,19 @@ export default {
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: this.$t('label.icmptype.start.port'),
-          scopedSlots: { customRender: 'startport' }
+          slots: { customRender: 'startport' }
         },
         {
           title: this.$t('label.icmpcode.end.port'),
-          scopedSlots: { customRender: 'endport' }
+          slots: { customRender: 'endport' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
@@ -219,18 +233,15 @@ export default {
   created () {
     this.fetchData()
   },
-  filters: {
-    capitalise: val => {
-      return val.toUpperCase()
-    }
-  },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.resource = newItem
-      this.fetchData()
     }
   },
   inject: ['parentFetchData'],
@@ -270,7 +281,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -282,7 +293,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -304,7 +315,7 @@ export default {
       this.loading = true
       api('deleteEgressFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deleteegressfirewallruleresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.delete.egress.firewall'),
           description: rule.id,
@@ -312,14 +323,14 @@ export default {
           successMessage: this.$t('message.success.remove.egress.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.remove.egress.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             this.fetchData()
           },
@@ -389,6 +400,9 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    capitalise (val) {
+      return val.toUpperCase()
     }
   }
 }

@@ -55,28 +55,27 @@ function getChecksum() {
 function createMetadataFile() {
   local fileData=$(cat $SOURCEFILE)
   echo -e "["default"]\nversion = $VERSION.${securityversion}\n" >> $METADATAFILE
-  for i in "${!templates[@]}"
+  for template in "${templates[@]}"
   do
-    section="$i"
-    hvName=$(getGenericName $i)
+    section="${template%%:*}"
+    hvName=$(getGenericName $section)
 
-    templatename="systemvm-${i}-${VERSION}"
+    templatename="systemvm-${section}-${VERSION}"
     checksum=$(getChecksum "$fileData" "$VERSION-$hvName")
-    downloadurl="${templates[$i]}"
+    downloadurl="${template#*:}"
     filename=$(echo ${downloadurl##*'/'})
     echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\n" >> $METADATAFILE
   done
 }
 
-declare -A templates
+declare -a templates
 getTemplateVersion $1
-templates=( ["kvm"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
-            ["vmware"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-vmware.ova"
-            ["xenserver"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-xen.vhd.bz2"
-            ["hyperv"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-hyperv.vhd.zip"
-            ["lxc"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
-            ["ovm3"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-ovm.raw.bz2" )
-
+templates=( "kvm:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
+            "vmware:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-vmware.ova"
+            "xenserver:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-xen.vhd.bz2"
+            "hyperv:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-hyperv.vhd.zip"
+            "lxc:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
+            "ovm3:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-ovm.raw.bz2" )
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
 mkdir -p $PARENTPATH

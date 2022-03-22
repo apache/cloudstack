@@ -27,6 +27,7 @@ import javax.persistence.Table;
 
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -81,7 +82,8 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -139,7 +141,7 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

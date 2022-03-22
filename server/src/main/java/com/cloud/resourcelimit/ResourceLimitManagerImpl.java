@@ -308,7 +308,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             // If the account has an no limit set, then return global default account limits
             Long value = null;
-            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() == Account.Type.PROJECT) {
                 value = projectResourceLimitMap.get(type);
             } else {
                 value = accountResourceLimitMap.get(type);
@@ -349,7 +349,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             // If the account has an no limit set, then return global default account limits
             Long value = null;
-            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() == Account.Type.PROJECT) {
                 value = projectResourceLimitMap.get(type);
             } else {
                 value = accountResourceLimitMap.get(type);
@@ -516,7 +516,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             return;
         }
 
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             project = _projectDao.findByProjectAccountId(account.getId());
         }
 
@@ -713,12 +713,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 throw new InvalidParameterValueException("Only " + Resource.RESOURCE_UNLIMITED + " limit is supported for Root Admin accounts");
             }
 
-            if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+            if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN)) {
                 // If the admin is trying to update their own account, disallow.
                 throw new PermissionDeniedException("Unable to update resource limit for their own account " + accountId + ", permission denied");
             }
 
-            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() == Account.Type.PROJECT) {
                 _accountMgr.checkAccess(caller, AccessType.ModifyProject, true, account);
             } else {
                 _accountMgr.checkAccess(caller, null, true, account);
@@ -736,7 +736,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 throw new PermissionDeniedException("Cannot update resource limit for ROOT domain " + domainId + ", permission denied");
             }
 
-            if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if ((caller.getDomainId() == domainId.longValue()) && caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                 // if the admin is trying to update their own domain, disallow...
                 throw new PermissionDeniedException("Unable to update resource limit for domain " + domainId + ", permission denied");
             }

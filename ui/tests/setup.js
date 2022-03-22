@@ -15,29 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
-import Vuex from 'vuex'
-import Antd from 'ant-design-vue'
-import VueRouter from 'vue-router'
-import VueI18n from 'vue-i18n'
-import VueStorage from 'vue-ls'
-import VueClipboard from 'vue-clipboard2'
-import config from '@/config/settings'
-import { createLocalVue } from '@vue/test-utils'
 import registerRequireContextHook from 'babel-plugin-require-context-hook/register'
-import '@/utils/directives'
+import { config } from '@vue/test-utils'
 
-const localVue = createLocalVue()
-
-Vue.use(Antd)
-Vue.use(VueStorage, config.storageOptions)
-
-localVue.use(VueRouter)
-localVue.use(VueI18n)
-localVue.use(Vuex)
-localVue.use(VueClipboard)
+import componentsUse from '@/core/lazy_lib/components_use'
+import iconsUse from '@/core/lazy_lib/icons_use'
+import extensions from '@/core/ext'
+import directives from '@/utils/directives'
 
 registerRequireContextHook()
+
+config.global.plugins.push(componentsUse)
+config.global.plugins.push(iconsUse)
+config.global.plugins.push(extensions)
+config.global.plugins.push(directives)
 
 window.matchMedia = window.matchMedia || function () {
   return {
@@ -46,5 +37,3 @@ window.matchMedia = window.matchMedia || function () {
     removeListener: function () {}
   }
 }
-
-module.exports = localVue

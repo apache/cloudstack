@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
 import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableHelper;
@@ -93,7 +94,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
     final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal GiB_DECIMAL = new BigDecimal(ByteScaleUtils.GiB);
-    List<Short> lockablesAccountTypes = Arrays.asList(Account.ACCOUNT_TYPE_NORMAL, Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+    List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
     List<Integer> quotaTypesToAvoidCalculation = Arrays.asList(QuotaTypes.VM_DISK_IO_READ, QuotaTypes.VM_DISK_IO_WRITE, QuotaTypes.VM_DISK_BYTES_READ,
             QuotaTypes.VM_DISK_BYTES_WRITE);

@@ -15,23 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
+import { vueProps } from '@/vue-app'
 import moment from 'moment'
 import 'moment/locale/en-gb'
 moment.locale('en-gb')
 
-Vue.filter('NumberFormat', function (value) {
-  if (!value) {
-    return '0'
+vueProps.$filters = {
+  NumberFormat: (value) => {
+    if (!value) {
+      return '0'
+    }
+    const intPartFormat = value.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')
+    return intPartFormat
+  },
+
+  dayjs: (dataStr, pattern = 'YYYY-MM-DD HH:mm:ss') => {
+    return moment(dataStr).format(pattern)
+  },
+
+  moment: (dataStr, pattern = 'YYYY-MM-DD HH:mm:ss') => {
+    return moment(dataStr).format(pattern)
   }
-  const intPartFormat = value.toString().replace(/(\d)(?=(?:\d{3})+$)/g, '$1,')
-  return intPartFormat
-})
-
-Vue.filter('dayjs', function (dataStr, pattern = 'YYYY-MM-DD HH:mm:ss') {
-  return moment(dataStr).format(pattern)
-})
-
-Vue.filter('moment', function (dataStr, pattern = 'YYYY-MM-DD HH:mm:ss') {
-  return moment(dataStr).format(pattern)
-})
+}

@@ -16,12 +16,16 @@
 // under the License.
 
 <template>
-  <div class="form" v-ctrl-enter="handleKeyboardSubmit">
+  <a-form class="form" layout="vertical" v-ctrl-enter="handleKeyboardSubmit">
     <a-alert class="top-spaced" type="warning">
-      <span slot="message" v-html="$t('message.migrate.volume')" />
+      <template #message>
+        <span v-html="$t('message.migrate.volume')" />
+      </template>
     </a-alert>
-    <a-form-item>
-      <tooltip-label slot="label" :title="$t('label.storagepool')" :tooltip="$t('message.migrate.volume.tooltip')"/>
+    <a-form-item style="margin-top: 10px;">
+      <template #label>
+        <tooltip-label :title="$t('label.storagepool')" :tooltip="$t('message.migrate.volume.tooltip')"/>
+      </template>
       <storage-pool-select-view
         ref="storagePoolSelection"
         :resource="resource"
@@ -31,32 +35,29 @@
         @select="handleStoragePoolSelect" />
     </a-form-item>
     <div class="top-spaced" v-if="storagePools.length > 0">
-      <template v-if="this.resource.virtualmachineid">
+      <div v-if="resource.virtualmachineid">
         <p class="modal-form__label" @click="replaceDiskOffering = !replaceDiskOffering" style="cursor:pointer;">
           {{ $t('label.usenewdiskoffering') }}
         </p>
-        <a-switch
-          v-decorator="['replaceDiskOffering']"
-          :checked="replaceDiskOffering"
-          @change="val => { replaceDiskOffering = val }"/>
+        <a-checkbox v-model:checked="replaceDiskOffering" />
 
         <template v-if="replaceDiskOffering">
           <p class="modal-form__label">{{ $t('label.newdiskoffering') }}</p>
           <a-select
             :loading="diskOfferingLoading"
-            v-model="selectedDiskOffering"
+            v-model:value="selectedDiskOffering"
             style="width: 100%;"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="(diskOffering, index) in diskOfferings" :value="diskOffering.id" :key="index">
               {{ diskOffering.displaytext }}
             </a-select-option>
           </a-select>
         </template>
-      </template>
+      </div>
     </div>
 
     <a-divider />
@@ -65,8 +66,7 @@
       <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
       <a-button type="primary" ref="submit" :disabled="!selectedStoragePool" @click="submitForm">{{ $t('label.ok') }}</a-button>
     </div>
-
-  </div>
+  </a-form>
 </template>
 
 <script>

@@ -92,12 +92,10 @@ public class QuotaManagerImplTest {
 
     @Test
     public void isLockableTestValidateAccountTypes() {
-        List<Short> accounTypes = Arrays.asList(Account.ACCOUNT_TYPE_NORMAL, Account.ACCOUNT_TYPE_ADMIN, Account.ACCOUNT_TYPE_DOMAIN_ADMIN,
-                Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN, Account.ACCOUNT_TYPE_READ_ONLY_ADMIN, Account.ACCOUNT_TYPE_PROJECT);
-        List<Short> lockablesAccountTypes = Arrays.asList(Account.ACCOUNT_TYPE_NORMAL, Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
         AccountVO accountVO = new AccountVO();
-        for (Short accountType : accounTypes) {
+        Arrays.asList(Account.Type.values()).forEach(accountType -> {
             accountVO.setType(accountType);
 
             if (lockablesAccountTypes.contains(accountType)) {
@@ -105,7 +103,7 @@ public class QuotaManagerImplTest {
             } else {
                 Assert.assertFalse(quotaManagerImplSpy.isLockable(accountVO));
             }
-        }
+        });
     }
 
     @Test

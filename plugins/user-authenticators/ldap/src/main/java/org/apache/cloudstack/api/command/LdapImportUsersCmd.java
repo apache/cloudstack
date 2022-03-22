@@ -68,8 +68,8 @@ public class LdapImportUsersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.TIMEZONE, type = CommandType.STRING, description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
-    private Short accountType;
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
     private Long roleId;
@@ -167,12 +167,15 @@ public class LdapImportUsersCmd extends BaseListCmd {
         setResponseObject(response);
     }
 
-    public Short getAccountType() {
-        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    public Account.Type getAccountType() {
+        if (accountType == null) {
+            return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
+        }
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
     }
 
     public Long getRoleId() {
-        return RoleType.getRoleByAccountType(roleId, accountType);
+        return RoleType.getRoleByAccountType(roleId, getAccountType());
     }
 
     private String getAccountName(LdapUser user) {

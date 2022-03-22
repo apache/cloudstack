@@ -18,6 +18,7 @@ package com.cloud.vm;
 
 import java.util.Date;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -28,6 +29,6 @@ public interface InstanceGroup extends ControlledEntity, Identity, InternalIdent
 
     Date getCreated();
 
-    Short getAccountType();
+    Account.Type getAccountType();
 
 }

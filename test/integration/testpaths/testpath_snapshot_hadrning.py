@@ -448,7 +448,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
         """snapshot hardning
             1. Take VM snapshot then migrate the VM to another host
                 and again take volume snapshot and check its integrity
-            2. Verify that snapshot gets created successfuly while VM
+            2. Verify that snapshot gets created successfully while VM
                 is getting Migrated to another host
             3. Verify that snapshot should succeed after vm's are HA-ed
                 to different host and also check its integrity
@@ -860,7 +860,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
             1. Take VM snapshot then migrate the VM to another
                 host and again take
                 volume snapshot and check its intigrity
-            2. Verify that snapshot gets created successfuly
+            2. Verify that snapshot gets created successfully
                 while VM is getting
                 Migrated to another host
             3. Verify that snapshot should succeed after vm's are

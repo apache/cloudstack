@@ -56,8 +56,8 @@ public class LdapCreateAccountCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, description = "Type of the account. Specify 0 for user, 1 for root admin, and 2 for domain admin")
-    private Short accountType;
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, description = "Type of the account. Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
     private Long roleId;
@@ -105,12 +105,15 @@ public class LdapCreateAccountCmd extends BaseCmd {
         }
     }
 
-    public Short getAccountType() {
-        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    public Account.Type getAccountType() {
+        if (accountType == null) {
+            return RoleType.getAccountTypeByRole(roleService.findRole(roleId), null);
+        }
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType.intValue()));
     }
 
     public Long getRoleId() {
-        return RoleType.getRoleByAccountType(roleId, accountType);
+        return RoleType.getRoleByAccountType(roleId, getAccountType());
     }
 
     private String getAccountName() {

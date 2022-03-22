@@ -49,9 +49,9 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-               type = CommandType.LONG,
+               type = CommandType.INTEGER,
                description = "list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
-    private Long accountType;
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "list account by account ID")
     private Long id;
@@ -79,8 +79,8 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getAccountType() {
-        return accountType;
+    public Account.Type getAccountType() {
+        return Account.Type.getFromValue(accountType);
     }
 
     public Long getId() {

@@ -55,37 +55,37 @@ public class RoleTypeTest {
 
     @Test
     public void testGetByAccountType() {
-        Assert.assertEquals(RoleType.getByAccountType(Account.ACCOUNT_TYPE_NORMAL), RoleType.User);
-        Assert.assertEquals(RoleType.getByAccountType(Account.ACCOUNT_TYPE_ADMIN), RoleType.Admin);
-        Assert.assertEquals(RoleType.getByAccountType(Account.ACCOUNT_TYPE_DOMAIN_ADMIN), RoleType.DomainAdmin);
-        Assert.assertEquals(RoleType.getByAccountType(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN), RoleType.ResourceAdmin);
-        Assert.assertEquals(RoleType.getByAccountType(Account.ACCOUNT_TYPE_PROJECT), RoleType.Unknown);
+        Assert.assertEquals(RoleType.getByAccountType(Account.Type.NORMAL), RoleType.User);
+        Assert.assertEquals(RoleType.getByAccountType(Account.Type.ADMIN), RoleType.Admin);
+        Assert.assertEquals(RoleType.getByAccountType(Account.Type.DOMAIN_ADMIN), RoleType.DomainAdmin);
+        Assert.assertEquals(RoleType.getByAccountType(Account.Type.RESOURCE_DOMAIN_ADMIN), RoleType.ResourceAdmin);
+        Assert.assertEquals(RoleType.getByAccountType(Account.Type.PROJECT), RoleType.Unknown);
     }
 
     @Test
     public void testGetRoleByAccountTypeWhenRoleIdIsProvided() {
-        Assert.assertEquals(RoleType.getRoleByAccountType(123L, Account.ACCOUNT_TYPE_ADMIN), Long.valueOf(123L));
+        Assert.assertEquals(RoleType.getRoleByAccountType(123L, Account.Type.ADMIN), Long.valueOf(123L));
         Assert.assertEquals(RoleType.getRoleByAccountType(1234L, null), Long.valueOf(1234L));
     }
 
     @Test
     public void testGetRoleByAccountTypeForDefaultAccountTypes() {
-        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.ACCOUNT_TYPE_ADMIN), (Long) RoleType.Admin.getId());
-        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.ACCOUNT_TYPE_NORMAL), (Long) RoleType.User.getId());
-        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.ACCOUNT_TYPE_DOMAIN_ADMIN), (Long) RoleType.DomainAdmin.getId());
-        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN), (Long) RoleType.ResourceAdmin.getId());
-        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.ACCOUNT_TYPE_PROJECT), null);
+        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.Type.ADMIN), (Long) RoleType.Admin.getId());
+        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.Type.NORMAL), (Long) RoleType.User.getId());
+        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.Type.DOMAIN_ADMIN), (Long) RoleType.DomainAdmin.getId());
+        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.Type.RESOURCE_DOMAIN_ADMIN), (Long) RoleType.ResourceAdmin.getId());
+        Assert.assertEquals(RoleType.getRoleByAccountType(null, Account.Type.PROJECT), null);
     }
 
     @Test
     public void testGetAccountTypeByRoleWhenRoleIsNull() {
-        for (Short accountType: Arrays.asList(
-                Account.ACCOUNT_TYPE_NORMAL,
-                Account.ACCOUNT_TYPE_ADMIN,
-                Account.ACCOUNT_TYPE_DOMAIN_ADMIN,
-                Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN,
-                Account.ACCOUNT_TYPE_PROJECT,
-                (short) 12345)) {
+        for (Account.Type accountType: Arrays.asList(
+                Account.Type.NORMAL,
+                Account.Type.ADMIN,
+                Account.Type.DOMAIN_ADMIN,
+                Account.Type.RESOURCE_DOMAIN_ADMIN,
+                Account.Type.PROJECT,
+                null)) {
             Assert.assertEquals(RoleType.getAccountTypeByRole(null, accountType), accountType);
         }
     }
@@ -95,6 +95,6 @@ public class RoleTypeTest {
         Role role = Mockito.mock(Role.class);
         Mockito.when(role.getRoleType()).thenReturn(RoleType.Admin);
         Mockito.when(role.getId()).thenReturn(100L);
-        Assert.assertEquals(RoleType.getAccountTypeByRole(role, null), (Short) RoleType.Admin.getAccountType());
+        Assert.assertEquals(RoleType.getAccountTypeByRole(role, null), RoleType.Admin.getAccountType());
     }
 }

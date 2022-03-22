@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'storagepool',
   title: 'label.primary.storage',
-  icon: 'database',
+  icon: 'database-outlined',
   docHelp: 'adminguide/storage.html#primary-storage',
   permission: ['listStoragePoolsMetrics'],
   columns: () => {
@@ -42,34 +43,34 @@ export default {
   resourceType: 'PrimaryStorage',
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'settings',
-    component: () => import('@/components/view/SettingsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue')))
   }, {
     name: 'comments',
-    component: () => import('@/components/view/AnnotationsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   actions: [
     {
       api: 'createStoragePool',
-      icon: 'plus',
+      icon: 'plus-outlined',
       docHelp: 'installguide/configuration.html#add-primary-storage',
       label: 'label.add.primary.storage',
       listView: true,
       popup: true,
-      component: () => import('@/views/infra/AddPrimaryStorage.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/AddPrimaryStorage.vue')))
     },
     {
       api: 'updateStoragePool',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
       args: ['name', 'tags', 'capacitybytes', 'capacityiops']
     },
     {
       api: 'updateStoragePool',
-      icon: 'pause-circle',
+      icon: 'pause-circle-outlined',
       label: 'label.disable.storage',
       message: 'message.confirm.disable.storage',
       dataView: true,
@@ -78,7 +79,7 @@ export default {
     },
     {
       api: 'updateStoragePool',
-      icon: 'play-circle',
+      icon: 'play-circle-outlined',
       label: 'label.enable.storage',
       message: 'message.confirm.enable.storage',
       dataView: true,
@@ -87,7 +88,7 @@ export default {
     },
     {
       api: 'syncStoragePool',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.sync.storage',
       message: 'message.confirm.sync.storage',
       dataView: true,
@@ -95,7 +96,7 @@ export default {
     },
     {
       api: 'enableStorageMaintenance',
-      icon: 'plus-square',
+      icon: 'plus-square-outlined',
       label: 'label.action.enable.maintenance.mode',
       message: 'message.action.primarystorage.enable.maintenance.mode',
       dataView: true,
@@ -103,7 +104,7 @@ export default {
     },
     {
       api: 'cancelStorageMaintenance',
-      icon: 'minus-square',
+      icon: 'minus-square-outlined',
       label: 'label.action.cancel.maintenance.mode',
       message: 'message.action.cancel.maintenance.mode',
       dataView: true,
@@ -111,7 +112,7 @@ export default {
     },
     {
       api: 'deleteStoragePool',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.delete.primary.storage',
       dataView: true,
       args: ['forced'],

@@ -167,6 +167,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException {
+        return null;
+    }
+
+    @Override
+    public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return false;
+    }
+
+    @Override
     public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         return null;
