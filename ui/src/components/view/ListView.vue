@@ -284,7 +284,7 @@
       </template>
       <template v-if="text && !text.startsWith('PrjAcct-')">
         <router-link
-          v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
+          v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`).matched[0].redirect !== '/exception/404'"
           :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
         <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
         <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
@@ -296,21 +296,21 @@
       <span v-else>{{ text }}</span>
     </template>
     <template #domainpath="{ text, record }">
-      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).name !== '404'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).matched[0].redirect !== '/exception/404'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #zone="{ text, record }">
       <a href="javascript:;">
-        <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+        <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </a>
     </template>
     <template #zonename="{ text, record }">
-      <router-link v-if="$router.resolve('/zone/' + record.zoneid).name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+      <router-link v-if="$router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #rolename="{ text, record }">
-      <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).name !== '404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
+      <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
     <template #readonly="{ record }">
