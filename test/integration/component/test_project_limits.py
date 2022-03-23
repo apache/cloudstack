@@ -174,18 +174,18 @@ class TestProjectLimits(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls._cleanup = [
-            cls.admin,
-            cls.user,
+            cls.disk_offering,
             cls.domain,
-            cls.disk_offering
-            ]
+            cls.user,
+            cls.admin
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            super(TestProjectLimits,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -199,7 +199,7 @@ class TestProjectLimits(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created accounts, domains etc
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestProjectLimits,self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -570,19 +570,19 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls._cleanup = [
-                        cls.project,
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        cls.domain
-                        ]
+            cls.domain,
+            cls.account,
+            cls.disk_offering,
+            cls.service_offering,
+            cls.project
+        ]
         return
 
     @classmethod
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, cls._cleanup)
+            super(TestResourceLimitsProject,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -596,7 +596,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestResourceLimitsProject,self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -835,6 +835,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                          account=self.account.name,
                          domainid=self.account.domainid
                          )
+        self.cleanup.append(self.project_1)
 
         self.debug(
             "Updating volume resource limits for project: %s" %
@@ -868,9 +869,8 @@ class TestResourceLimitsProject(cloudstackTestCase):
             listall=True
         )
         for network in networks:
-            self.cleanup.append(Network(network.__dict__))
+            self.cleanup.insert(1,Network(network.__dict__))
 
-        self.cleanup.append(self.project_1)
         # Exception should be raised for second volume
         with self.assertRaises(Exception):
             Volume.create(
@@ -1026,7 +1026,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             #Cleanup resources used
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
+            super(TestMaxProjectNetworks,cls).tearDownClass()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1046,7 +1046,7 @@ class TestMaxProjectNetworks(cloudstackTestCase):
     def tearDown(self):
         try:
             #Clean up, terminate the created network offerings
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
+            super(TestMaxProjectNetworks,self).tearDown()
             self.account.delete(self.apiclient)
             interval = list_configurations(
                                     self.apiclient,
