@@ -349,8 +349,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _pool;
     protected String _localGateway;
     private boolean _canBridgeFirewall;
-    protected String _localStoragePath;
-    protected String _localStorageUUID;
     protected boolean _noMemBalloon = false;
     protected String _guestCpuArch;
     protected String _guestCpuMode;
@@ -384,8 +382,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
 
-    protected List<String> _localStoragePaths = new ArrayList<>();
-    protected List<String> _localStorageUUIDs = new ArrayList<>();
+    protected List<String> localStoragePaths = new ArrayList<>();
+    protected List<String> localStorageUUIDs = new ArrayList<>();
 
     private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
     private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
@@ -1283,31 +1281,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
-        _localStoragePath = (String)params.get("local.storage.path");
-        if (_localStoragePath == null) {
-            _localStoragePath = "/var/lib/libvirt/images/";
+        String localStoragePath = (String)params.get("local.storage.path");
+        if (localStoragePath == null) {
+            localStoragePath = "/var/lib/libvirt/images/";
         }
-        _localStorageUUID = (String)params.get("local.storage.uuid");
-        if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.randomUUID().toString();
+        String localStorageUUIDString = (String)params.get("local.storage.uuid");
+        if (localStorageUUIDString == null) {
+            localStorageUUIDString = UUID.randomUUID().toString();
         }
 
-        String[] localStorageRelativePaths = _localStoragePath.split(CONFIG_VALUES_SEPARATOR);
-        String[] localStorageUUIDs = _localStorageUUID.split(CONFIG_VALUES_SEPARATOR);
-        if (localStorageRelativePaths.length != localStorageUUIDs.length) {
+        String[] localStorageRelativePaths = localStoragePath.split(CONFIG_VALUES_SEPARATOR);
+        String[] localStorageUUIDStrings = localStorageUUIDString.split(CONFIG_VALUES_SEPARATOR);
+        if (localStorageRelativePaths.length != localStorageUUIDStrings.length) {
             throw new ConfigurationException("The path and UUID of local storage pools have different length");
         }
         for (String localStorageRelativePath : localStorageRelativePaths) {
             final File storagePath = new File(localStorageRelativePath);
-            _localStoragePaths.add(storagePath.getAbsolutePath());
+            localStoragePaths.add(storagePath.getAbsolutePath());
         }
-        _localStoragePath = StringUtils.join(_localStoragePaths, CONFIG_VALUES_SEPARATOR);
 
-        for (String localStorageUUID : localStorageUUIDs) {
+        for (String localStorageUUID : localStorageUUIDStrings) {
             validateLocalStorageUUID(localStorageUUID);
-            _localStorageUUIDs.add(localStorageUUID);
+            localStorageUUIDs.add(localStorageUUID);
         }
-        _localStorageUUID = StringUtils.join(_localStorageUUIDs, CONFIG_VALUES_SEPARATOR);
     }
 
     private void validateLocalStorageUUID(String localStorageUUID) throws ConfigurationException {
@@ -3320,9 +3316,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         List<StartupCommand> startupCommands = new ArrayList<>();
         startupCommands.add(cmd);
-        for (int i = 0; i < _localStoragePaths.size(); i++) {
-            String localStoragePath = _localStoragePaths.get(i);
-            String localStorageUUID = _localStorageUUIDs.get(i);
+        for (int i = 0; i < localStoragePaths.size(); i++) {
+            String localStoragePath = localStoragePaths.get(i);
+            String localStorageUUID = localStorageUUIDs.get(i);
             StartupStorageCommand sscmd = createLocalStoragePool(localStoragePath, localStorageUUID, cmd);
             if (sscmd != null) {
                 startupCommands.add(sscmd);
