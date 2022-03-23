@@ -1955,7 +1955,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
         except Exception as e:
             self.debug("Waiting for account.cleanup.interval" +
-                       " to cleanup any remaining resouces")
+                       " to cleanup any remaining resources")
             # Sleep 3*account.gc to ensure that all resources are deleted
             wait_for_cleanup(self.apiclient, ["account.cleanup.interval"] * 3)
             with self.assertRaises(CloudstackAPIException):

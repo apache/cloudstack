@@ -91,7 +91,7 @@ public interface ManagementService {
     static final String Name = "management-server";
 
     /**
-     * returns the a map of the names/values in the configuraton table
+     * returns the a map of the names/values in the configuration table
      *
      * @return map of configuration name/values
      */
