@@ -347,7 +347,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
     }
 
-    //Intermediate funciton used in detectRulesConflict to check for the conflicting cidrs in the rules already applied and the newRule being applied.
+    //Intermediate function used in detectRulesConflict to check for the conflicting cidrs in the rules already applied and the newRule being applied.
     boolean detectConflictingCidrs(List<String> cidrList1, List<String> cidrList2){
         if(cidrList1.isEmpty() && cidrList2.isEmpty()){
             return true;
