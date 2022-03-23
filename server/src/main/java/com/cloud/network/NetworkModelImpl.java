@@ -95,6 +95,7 @@ import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.IpDeployingRequester;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -1726,6 +1727,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             checkSharedNetworkOperatePermissions(owner, network);
         } else {
             checkNonSharedNetworkOperatePermissions(owner, network);
+        }
+    }
+
+    @Override
+    public void checkRouterPermissions(Account owner, VirtualRouter router) {
+        Account account = _accountMgr.getAccount(router.getAccountId());
+        try {
+            _accountMgr.checkAccess(owner, null, true, account);
+            return;
+        } catch (PermissionDeniedException ex) {
+            s_logger.info("Account " + owner + " do not have permission on router owner " + account);
+        }
+        List<NicVO> routerNics = _nicDao.listByVmId(router.getId());
+        for (final Nic routerNic : routerNics) {
+            final NetworkVO network = _networksDao.findById(routerNic.getNetworkId());
+            if (TrafficType.Guest.equals(network.getTrafficType())) {
+                checkNetworkOperatePermissions(owner, network);
+            }
         }
     }
 

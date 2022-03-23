@@ -46,6 +46,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -543,6 +544,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
 
     @Override
     public void checkNetworkOperatePermissions(Account owner, Network network) {
+
+    }
+
+    @Override
+    public void checkRouterPermissions(Account owner, VirtualRouter router) {
 
     }
 
