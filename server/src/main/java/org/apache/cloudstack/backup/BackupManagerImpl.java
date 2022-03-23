@@ -94,6 +94,7 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -499,11 +500,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
 
-        final Pair<Long, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Pair<Long, Project.ListProjectResourcesCriteria>(cmd.getDomainId(), null);
+        final Ternary<Long, Boolean, Project.ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, Project.ListProjectResourcesCriteria>(cmd.getDomainId(),
+                cmd.isRecursive(), null);
         accountManager.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         final Long domainId = domainIdRecursiveListProject.first();
-        Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.second();
-        Boolean isRecursive = cmd.isRecursive();
+        final Boolean isRecursive = domainIdRecursiveListProject.second();
+        final Project.ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         final Filter searchFilter = new Filter(BackupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<BackupVO> sb = backupDao.createSearchBuilder();

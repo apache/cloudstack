@@ -41,9 +41,6 @@ public abstract class BaseListDomainResourcesCmd extends BaseListCmd implements 
 
     @Override
     public boolean isRecursive() {
-        if (listAll()) {
-            return recursive == null ? true : recursive;
-        }
         return recursive == null ? false : recursive;
     }
 

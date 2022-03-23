@@ -41,6 +41,7 @@ public interface IpAddress extends ControlledEntity, Identity, InternalIdentity,
         Allocating, // The IP Address is being propagated to other network elements and is not ready for use yet.
         Allocated, // The IP address is in used.
         Releasing, // The IP address is being released for other network elements and is not ready for allocation.
+        Reserved,   // The IP address is reserved and is not ready for allocation.
         Free // The IP address is ready to be allocated.
     }
 

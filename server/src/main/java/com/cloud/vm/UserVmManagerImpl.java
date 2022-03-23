@@ -2638,7 +2638,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Map<String, String> customParameters = new HashMap<>();
             customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(newCpu));
             customParameters.put(VmDetailConstants.MEMORY, String.valueOf(newMemory));
-            customParameters.put(VmDetailConstants.CPU_SPEED, details.get(VmDetailConstants.CPU_SPEED));
+            if (svcOffering.isCustomCpuSpeedSupported()) {
+                customParameters.put(VmDetailConstants.CPU_SPEED, details.get(VmDetailConstants.CPU_SPEED));
+            }
             validateCustomParameters(svcOffering, customParameters);
         }
         if (VirtualMachineManager.ResourceCountRunningVMsonly.value()) {

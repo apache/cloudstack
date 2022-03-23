@@ -1696,8 +1696,10 @@ export default {
         deployVmData.clusterid = values.clusterid
         deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
-        deployVmData.boottype = values.boottype
-        deployVmData.bootmode = values.bootmode
+        if (!this.template?.deployasis) {
+          deployVmData.boottype = values.boottype
+          deployVmData.bootmode = values.bootmode
+        }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
