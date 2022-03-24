@@ -27,6 +27,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -154,8 +155,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         }
         boolean useGatewayAsIp = isGateway;
         if (isGateway) {
-            DomainRouterVO domainRouterVO = domainRouterDao.findById(vm.getId());
-            if (VirtualRouter.RedundantState.BACKUP.equals(domainRouterVO.getRedundantState())) {
+            List<DomainRouterVO> routers = domainRouterDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+            DomainRouterVO existingRouter = CollectionUtils.isNotEmpty(routers) ? routers.get(0) : null;
+            if (existingRouter != null &&
+                    existingRouter.getIsRedundantRouter()&&
+                    VirtualRouter.RedundantState.UNKNOWN.equals(existingRouter.getRedundantState())) {
                 useGatewayAsIp = false;
             }
         }
