@@ -3730,7 +3730,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("publicTemplate", SearchCriteria.Op.SC, scc);
             } else if (templateFilter == TemplateFilter.all && caller.getType() != Account.Type.ADMIN) {
                 SearchCriteria<TemplateJoinVO> scc = _templateJoinDao.createSearchCriteria();
-                scc.addOr("publicTemplate", SearchCriteria.Op.SC, scc);
+                scc.addOr("publicTemplate", SearchCriteria.Op.EQ, true);
 
                 if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
                     scc.addOr("domainPath", SearchCriteria.Op.LIKE, _domainDao.findById(caller.getDomainId()).getPath() + "%");
