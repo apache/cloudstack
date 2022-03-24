@@ -505,7 +505,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private Location getConfigDriveLocation(long vmId) {
         final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
-        UserVmVO virtualMachine = _userVmDao.findById(vmId);
         if (vmDetailConfigDriveLocation != null) {
             if (Location.HOST.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
                 return Location.HOST;
@@ -514,9 +513,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             } else {
                 return Location.SECONDARY;
             }
-        }
-        if (virtualMachine.getState() == VirtualMachine.State.Stopped && virtualMachine.getLastHostId() == null && VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(virtualMachine.getDataCenterId())) {
-            return Location.PRIMARY;
         }
         return Location.SECONDARY;
     }
@@ -634,6 +630,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
+        if (hostId == null) {
+            LOG.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
+            return true;
+        }
         if (location == Location.HOST) {
             return deleteConfigDriveIsoOnHostCache(vm, hostId);
         }
