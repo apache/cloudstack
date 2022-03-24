@@ -288,6 +288,7 @@ class CsRedundant(object):
             CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).stop()
 
         CsHelper.service("dnsmasq", "stop")
+        CsHelper.service("radvd", "stop")
 
         self.cl.set_primary_state(False)
         self.cl.save()
