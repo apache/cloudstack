@@ -217,7 +217,6 @@ export default {
             this.listVolumes[item.id].opts = item.volumes || []
           })
         })
-        console.log(this.listVolumes)
       }
     },
     async fetchVolumes () {
