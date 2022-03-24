@@ -21,11 +21,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -37,6 +41,8 @@ import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.DeleteIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -70,6 +76,7 @@ import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -95,6 +102,8 @@ import com.googlecode.ipv6.IPv6NetworkMask;
 public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Service {
 
     public static final Logger s_logger = Logger.getLogger(Ipv6ServiceImpl.class.getName());
+
+    private static final boolean IS_ALLOACTE_PREFIX_RANDOMLY = true;
 
     ScheduledExecutorService _ipv6GuestPrefixSubnetNetworkMapStateScanner;
 
@@ -150,6 +159,46 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 ipv6Addr.toString(), false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
         return new Pair<>(ipv6Addr.toString(), selectedVlan);
+    }
+
+    private Ipv6GuestPrefixSubnetNetworkMapVO preallocatePrefixSubnetSequentially(DataCenterGuestIpv6PrefixVO prefix) {
+        Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
+        Ipv6GuestPrefixSubnetNetworkMapVO last = ipv6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
+        String lastUsedSubnet = last != null ? last.getSubnet() : null;
+        final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
+        Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+        while (splits.hasNext()) {
+            IPv6Network i = splits.next();
+            if (lastUsedSubnet == null) {
+                ip6Subnet = new Ipv6GuestPrefixSubnetNetworkMapVO(prefix.getId(), i.toString(), null, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
+                break;
+            }
+            if (i.toString().equals(lastUsedSubnet)) {
+                lastUsedSubnet = null;
+            }
+        }
+        return ip6Subnet;
+    }
+
+    private Ipv6GuestPrefixSubnetNetworkMapVO preallocatePrefixSubnetRandomly(DataCenterGuestIpv6PrefixVO prefix) {
+        Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
+        List<Ipv6GuestPrefixSubnetNetworkMapVO> prefixSubnetNetworkMapVOList = ipv6GuestPrefixSubnetNetworkMapDao.listUsedByPrefix(prefix.getId());
+        List<String> usedPrefixList = prefixSubnetNetworkMapVOList.stream().map(Ipv6GuestPrefixSubnetNetworkMap::getSubnet).collect(Collectors.toList());
+        final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
+        Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+        List<IPv6Network> availableSubnets = new ArrayList<>();
+        while (splits.hasNext()) {
+            IPv6Network i = splits.next();
+            if (!usedPrefixList.contains(i.toString())) {
+                availableSubnets.add(i);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(availableSubnets)) {
+            Random r = new Random();
+            IPv6Network subnet = availableSubnets.get(r.nextInt(availableSubnets.size()));
+            ip6Subnet = new Ipv6GuestPrefixSubnetNetworkMapVO(prefix.getId(), subnet.toString(), null, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
+        }
+        return ip6Subnet;
     }
 
     protected void releaseIpv6Subnet(long subnetId) {
@@ -237,20 +286,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         for (DataCenterGuestIpv6PrefixVO prefix : prefixes) {
             ip6Subnet = ipv6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
             if (ip6Subnet == null) {
-                Ipv6GuestPrefixSubnetNetworkMapVO last = ipv6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
-                String lastUsedSubnet = last != null ? last.getSubnet() : null;
-                final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
-                Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
-                while (splits.hasNext()) {
-                    IPv6Network i = splits.next();
-                    if (lastUsedSubnet == null) {
-                        ip6Subnet = new Ipv6GuestPrefixSubnetNetworkMapVO(prefix.getId(), i.toString(), null, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
-                        break;
-                    }
-                    if (i.toString().equals(lastUsedSubnet)) {
-                        lastUsedSubnet = null;
-                    }
-                }
+                ip6Subnet = IS_ALLOACTE_PREFIX_RANDOMLY ?
+                        preallocatePrefixSubnetRandomly(prefix) :
+                        preallocatePrefixSubnetSequentially(prefix);
             }
             if (ip6Subnet != null) {
                 break;
@@ -363,6 +401,24 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             }
         }
         return addresses;
+    }
+
+    @Override
+    public void updateIpv6RoutesForVpcResponse(Vpc vpc, VpcResponse response) {
+        Set<Ipv6RouteResponse> ipv6Routes = new LinkedHashSet<>();
+        List<? extends Network> networks = networkModel.listNetworksByVpc(vpc.getId());
+        for (Network network : networks) {
+            if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+                List<String> networkPublicIpv6 = getPublicIpv6AddressesForNetwork(network);
+                for (String address : networkPublicIpv6) {
+                    Ipv6RouteResponse route = new Ipv6RouteResponse(network.getIp6Cidr(), address);
+                    ipv6Routes.add(route);
+                }
+            }
+        }
+        if (CollectionUtils.isNotEmpty(ipv6Routes)) {
+            response.setIpv6Routes(ipv6Routes);
+        }
     }
 
     @Override

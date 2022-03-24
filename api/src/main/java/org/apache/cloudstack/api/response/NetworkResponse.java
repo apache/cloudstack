@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
@@ -278,7 +277,7 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     @SerializedName(ApiConstants.IPV6_ROUTES)
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
-    private Set<Ipv6Route> ipv6Routes;
+    private Set<Ipv6RouteResponse> ipv6Routes;
 
     public NetworkResponse() {}
 
@@ -564,43 +563,11 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
         this.ipv6Routing = ipv6Routing;
     }
 
-    public void setIpv6Routes(Set<Ipv6Route> ipv6Routes) {
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
         this.ipv6Routes = ipv6Routes;
     }
 
-    public void addIpv6Route(Ipv6Route ipv6Route) {
+    public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
-    }
-
-    public static class Ipv6Route extends BaseResponse {
-
-        @SerializedName(ApiConstants.SUBNET)
-        @Param(description = "the guest IPv6 cidr for route")
-        private String subnet;
-
-        @SerializedName(ApiConstants.GATEWAY)
-        @Param(description = "the outbound IPv6 gateway")
-        private String gateway;
-
-        public Ipv6Route(String subnet, String gateway) {
-            this.subnet = subnet;
-            this.gateway = gateway;
-        }
-
-        public String getSubnet() {
-            return subnet;
-        }
-
-        public void setSubnet(String subnet) {
-            this.subnet = subnet;
-        }
-
-        public String getGateway() {
-            return gateway;
-        }
-
-        public void setGateway(String gateway) {
-            this.gateway = gateway;
-        }
     }
 }

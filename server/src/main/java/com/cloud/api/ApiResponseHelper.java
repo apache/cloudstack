@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpRangeResponse;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
@@ -2516,7 +2517,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
                 List<String> ipv6Addresses = ipv6Service.getPublicIpv6AddressesForNetwork(network);
                 for (String address : ipv6Addresses) {
-                    NetworkResponse.Ipv6Route route = new NetworkResponse.Ipv6Route(network.getIp6Cidr(), address);
+                    Ipv6RouteResponse route = new Ipv6RouteResponse(network.getIp6Cidr(), address);
                     response.addIpv6Route(route);
                 }
             }
@@ -3198,6 +3199,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
         response.setObjectName("vpc");
         return response;
     }

@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -30,6 +31,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.Nic;
@@ -68,6 +70,8 @@ public interface Ipv6Service extends PluggableService, Configurable {
     void releasePublicIpv6ForNic(Network network, String nicIpv6Address);
 
     List<String> getPublicIpv6AddressesForNetwork(Network network);
+
+    void updateIpv6RoutesForVpcResponse(Vpc vpc, VpcResponse response);
 
     FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
 

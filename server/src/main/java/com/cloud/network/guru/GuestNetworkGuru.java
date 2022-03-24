@@ -64,6 +64,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
@@ -78,12 +79,14 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru, Configurable {
@@ -117,6 +120,9 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     NetworkOfferingDao networkOfferingDao;
     @Inject
     Ipv6AddressManager ipv6AddressManager;
+    @Inject
+    DomainRouterDao domainRouterDao;
+
     Random _rand = new Random(System.currentTimeMillis());
 
     static final ConfigKey<Boolean> UseSystemGuestVlans =
@@ -139,6 +145,31 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     protected GuestNetworkGuru() {
         super();
         _isolationMethods = null;
+    }
+
+    private void updateNicIpv6(Network network, NicProfile nic, VirtualMachineProfile vm, DataCenter dc, boolean isGateway) throws InsufficientAddressCapacityException {
+        boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
+        if (!isIpv6Supported || nic.getIPv6Address() != null || network.getIp6Cidr() == null || network.getIp6Gateway() == null) {
+            return;
+        }
+        boolean useGatewayAsIp = isGateway;
+        if (isGateway) {
+            DomainRouterVO domainRouterVO = domainRouterDao.findById(vm.getId());
+            if (VirtualRouter.RedundantState.BACKUP.equals(domainRouterVO.getRedundantState())) {
+                useGatewayAsIp = false;
+            }
+        }
+        if (useGatewayAsIp) {
+            nic.setIPv6Address(network.getIp6Gateway());
+            nic.setIPv6Cidr(network.getIp6Cidr());
+            nic.setIPv6Gateway(network.getIp6Gateway());
+            if (nic.getIPv4Address() != null) {
+                nic.setFormat(Networks.AddressFormat.DualStack);
+            } else {
+                nic.setFormat(Networks.AddressFormat.Ip6);
+            }
+        }
+        ipv6AddressManager.setNicIp6Address(nic, dc, network);
     }
 
     @Override
@@ -355,7 +386,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
-        boolean isIpv6Supported = networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId());
         boolean isGateway = false;
         //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
         if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
@@ -423,19 +453,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());
             }
         }
-        if (nic.getIPv6Address() == null && isIpv6Supported && network.getIp6Cidr() != null && network.getIp6Gateway() != null) {
-            if (isGateway) {
-                nic.setIPv6Address(network.getIp6Gateway());
-                nic.setIPv6Cidr(network.getIp6Cidr());
-                nic.setIPv6Gateway(network.getIp6Gateway());
-                if (nic.getIPv4Address() != null) {
-                    nic.setFormat(Networks.AddressFormat.DualStack);
-                } else {
-                    nic.setFormat(Networks.AddressFormat.Ip6);
-                }
-            }
-            ipv6AddressManager.setNicIp6Address(nic, dc, network);
-        }
+        updateNicIpv6(network, nic, vm, dc, isGateway);
         return nic;
     }
 
