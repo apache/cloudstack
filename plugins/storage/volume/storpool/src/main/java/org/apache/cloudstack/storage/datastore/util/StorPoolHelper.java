@@ -23,20 +23,24 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.snapshot.StorPoolConfigurationManager;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
@@ -60,6 +64,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -258,5 +264,35 @@ public class StorPoolHelper {
         TemplateDataStoreVO templ = templStoreDao.findByTemplate(id, role);
         templ.setLocalDownloadPath(path);
         templStoreDao.persist(templ);
+    }
+
+    public static List<StoragePoolDetailVO> listFeaturesUpdates(StoragePoolDetailsDao storagePoolDetails, long poolId) {
+        SearchBuilder<StoragePoolDetailVO> sb = storagePoolDetails.createSearchBuilder();
+        sb.and("pool_id", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        SearchCriteria<StoragePoolDetailVO> sc = sb.create();
+        sc.setParameters("pool_id", poolId);
+        sc.setParameters("name", "SP-FEATURE" + "%");
+        return storagePoolDetails.search(sc, null);
+    }
+
+    public static boolean isPoolSupportsAllFunctionalityFromPreviousVersion(StoragePoolDetailsDao storagePoolDetails, List<String> currentPluginFeatures, List<StoragePoolDetailVO> poolFeaturesBeforeUpgrade, long poolId) {
+        if (CollectionUtils.isEmpty(currentPluginFeatures) && CollectionUtils.isEmpty(poolFeaturesBeforeUpgrade)) {
+            return true;
+        }
+
+        List<String> poolDetails = poolFeaturesBeforeUpgrade.stream().map(StoragePoolDetailVO::getName).collect(Collectors.toList());
+        List<String> detailsNotContainedInCurrent = new ArrayList<>(CollectionUtils.removeAll(poolDetails, currentPluginFeatures));
+        List<String> detailsNotContainedInDataBase = new ArrayList<>(CollectionUtils.removeAll(currentPluginFeatures, poolDetails));
+        if (!CollectionUtils.isEmpty(detailsNotContainedInCurrent)) {
+            return false;
+        } else if (!CollectionUtils.isEmpty(detailsNotContainedInDataBase)) {
+            for (String features : detailsNotContainedInDataBase) {
+                StoragePoolDetailVO storageNewFeatures = new StoragePoolDetailVO(poolId, features, features, false);
+                storagePoolDetails.persist(storageNewFeatures);
+            }
+            return true;
+        }
+        return true;
     }
 }

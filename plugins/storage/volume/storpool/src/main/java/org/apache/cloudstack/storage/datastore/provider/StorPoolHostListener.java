@@ -32,6 +32,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.util.StorPoolFeaturesAndFixes;
 import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
@@ -100,6 +101,17 @@ public class StorPoolHostListener implements HypervisorHostListener {
 
         if (host.isInMaintenanceStates()) {
             addModifyCommandToCommandsAllowedInMaintenanceMode();
+        }
+
+        List<String> driverSupportedFeatures = StorPoolFeaturesAndFixes.getAllClassConstants();
+        List<StoragePoolDetailVO> driverFeaturesBeforeUpgrade = StorPoolHelper.listFeaturesUpdates(storagePoolDetailsDao, poolId);
+        boolean isCurrentVersionSupportsEverythingFromPrevious = StorPoolHelper.isPoolSupportsAllFunctionalityFromPreviousVersion(storagePoolDetailsDao, driverSupportedFeatures, driverFeaturesBeforeUpgrade, poolId);
+        if (!isCurrentVersionSupportsEverythingFromPrevious) {
+            String msg = "The current StorPool driver does not support all functionality from the one before upgrade to CS";
+            StorPoolUtil.spLog("Storage pool [%s] is not connected to host [%s] because the functionality after the upgrade is not full",
+                    poolId, hostId);
+            alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, pool.getDataCenterId(), pool.getPodId(), msg, msg);
+            return false;
         }
 
         StorPoolModifyStoragePoolCommand cmd = new StorPoolModifyStoragePoolCommand(true, pool, volumeOnPool.getValue());
