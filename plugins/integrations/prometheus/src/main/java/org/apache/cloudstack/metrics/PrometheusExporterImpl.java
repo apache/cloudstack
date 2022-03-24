@@ -142,7 +142,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             int isDedicated = (dr != null) ? 1 : 0;
             metricsList.add(new ItemHostIsDedicated(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), isDedicated));
 
-            List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
+            List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
             String hosttags = StringUtils.join(hostTags, ",");
             for (String tag : hostTags) {
                 Integer current = totalHosts.get(tag) != null ? totalHosts.get(tag) : 0;
@@ -254,7 +254,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         }
 
         List<String> allHostTags = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.gethostTags(h.getId()).stream())
+                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
                 .distinct()
                 .collect(Collectors.toList());
 
