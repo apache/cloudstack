@@ -497,7 +497,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             agentId = dest.getHost().getId();
         }
         if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(dest.getDataCenter().getId()) &&
-                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId())) {
+                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId()) && dataStore != null) {
             agentId = findAgentIdForImageStore(dataStore);
         }
         return agentId;
@@ -505,6 +505,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private Location getConfigDriveLocation(long vmId) {
         final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        UserVmVO virtualMachine = _userVmDao.findById(vmId);
         if (vmDetailConfigDriveLocation != null) {
             if (Location.HOST.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
                 return Location.HOST;
@@ -513,6 +514,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             } else {
                 return Location.SECONDARY;
             }
+        }
+        if (virtualMachine.getState() == VirtualMachine.State.Stopped && virtualMachine.getLastHostId() == null && VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(virtualMachine.getDataCenterId())) {
+            return Location.PRIMARY;
         }
         return Location.SECONDARY;
     }
@@ -639,8 +643,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         if (location == Location.SECONDARY) {
             dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(vm.getDataCenterId());
-            if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(vm.getDataCenterId()) &&
-                    !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(vm.getDataCenterId()) && dataStore != null) {
+            if (dataStore != null) {
                 agentId = findAgentIdForImageStore(dataStore);
             }
         } else if (location == Location.PRIMARY) {
