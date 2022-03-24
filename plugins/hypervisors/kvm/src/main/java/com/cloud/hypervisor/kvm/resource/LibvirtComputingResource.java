@@ -382,6 +382,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
 
+    protected static final String LOCAL_STORAGE_PATH = "local.storage.path";
+    protected static final String LOCAL_STORAGE_UUID = "local.storage.uuid";
+    protected static final String DEFAULT_LOCAL_STORAGE_PATH = "/var/lib/libvirt/images/";
+
     protected List<String> localStoragePaths = new ArrayList<>();
     protected List<String> localStorageUUIDs = new ArrayList<>();
 
@@ -1280,12 +1284,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
-        String localStoragePath = (String)params.get("local.storage.path");
+    protected void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
+        String localStoragePath = (String)params.get(LOCAL_STORAGE_PATH);
         if (localStoragePath == null) {
-            localStoragePath = "/var/lib/libvirt/images/";
+            localStoragePath = DEFAULT_LOCAL_STORAGE_PATH;
         }
-        String localStorageUUIDString = (String)params.get("local.storage.uuid");
+        String localStorageUUIDString = (String)params.get(LOCAL_STORAGE_UUID);
         if (localStorageUUIDString == null) {
             localStorageUUIDString = UUID.randomUUID().toString();
         }
