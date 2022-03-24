@@ -52,7 +52,7 @@
                 :bordered="false"
                 :loading="loading"
                 :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
-                <router-link :to="{ path: stat.path, query: stat.query }">
+                <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
                   <div
                     class="usage-dashboard-chart-card-inner">
                     <h3>{{ stat.name }}</h3>
@@ -141,6 +141,8 @@ export default {
       (state, getters) => getters.project,
       (newValue, oldValue) => {
         if (newValue && newValue.id && (!oldValue || newValue.id !== oldValue.id)) {
+          this.fetchData()
+        } else if (store.getters.userInfo.roletype !== 'Admin') {
           this.fetchData()
         }
       }
