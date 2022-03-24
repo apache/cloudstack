@@ -286,15 +286,18 @@ public class StatsCollectorTest {
     public void persistVirtualMachineStatsTestPersistsSuccessfully() {
         statsCollector.msId = 1L;
         Date timestamp = new Date();
-        Mockito.doReturn(2L).when(statsForCurrentIterationMock).getVmId();
+        VmStatsEntry statsForCurrentIteration = new VmStatsEntry(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "vm");
         Mockito.doReturn(new VmStatsVO()).when(vmStatsDaoMock).persist(Mockito.any());
+        String expectedVmStatsStr = "{\"vmId\":2,\"cpuUtilization\":6.0,\"networkReadKBs\":7.0,\"networkWriteKBs\":8.0,\"diskReadIOs\":12.0,\"diskWriteIOs\":13.0,\"diskReadKBs\":10.0"
+                + ",\"diskWriteKBs\":11.0,\"memoryKBs\":3.0,\"intFreeMemoryKBs\":4.0,\"targetMemoryKBs\":5.0,\"numCPUs\":9,\"entityType\":\"vm\"}";
 
-        statsCollector.persistVirtualMachineStats(statsForCurrentIterationMock, timestamp);
+        statsCollector.persistVirtualMachineStats(statsForCurrentIteration, timestamp);
 
         Mockito.verify(vmStatsDaoMock).persist(vmStatsVOCaptor.capture());
         VmStatsVO actual = vmStatsVOCaptor.getAllValues().get(0);
         Assert.assertEquals(Long.valueOf(2L), actual.getVmId());
         Assert.assertEquals(Long.valueOf(1L), actual.getMgmtServerId());
+        Assert.assertEquals(expectedVmStatsStr, actual.getVmStatsData());
         Assert.assertEquals(timestamp, actual.getTimestamp());
     }
 
@@ -346,12 +349,12 @@ public class StatsCollectorTest {
     public void accumulateVmMetricsStatsTest() {
         String fakeStatsData1 = "{\"vmId\":1,\"cpuUtilization\":1.0,\"networkReadKBs\":1.0,"
                 + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
-                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intfreememoryKBs\":1.0,"
-                + "\"targetmemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
+                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
+                + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
         String fakeStatsData2 = "{\"vmId\":1,\"cpuUtilization\":10.0,\"networkReadKBs\":1.0,"
                 + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
-                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intfreememoryKBs\":1.0,"
-                + "\"targetmemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
+                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
+                + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
         Mockito.doReturn(fakeStatsData1).when(vmStatsVoMock1).getVmStatsData();
         Mockito.doReturn(fakeStatsData2).when(vmStatsVoMock2).getVmStatsData();
 

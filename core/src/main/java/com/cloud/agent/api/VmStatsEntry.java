@@ -29,8 +29,27 @@ public class VmStatsEntry extends VmStatsEntryBase {
 
     }
 
-    public VmStatsEntry(double memoryKBs,double intfreememoryKBs,double targetmemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
-        super(memoryKBs, intfreememoryKBs, targetmemoryKBs, cpuUtilization, networkReadKBs, networkWriteKBs, numCPUs, entityType);
+    /**
+     * Creates an instance of {@code VmStatsEntry} with all the stats attributes filled in.
+     *
+     * @param vmId the VM ID.
+     * @param memoryKBs the memory total (in KBs).
+     * @param intFreeMemoryKBs the internal free memory (in KBs).
+     * @param targetMemoryKBs the target memory (in KBs).
+     * @param cpuUtilization the CPU utilization.
+     * @param networkReadKBs the network read (in KBs).
+     * @param networkWriteKBs the network write (in KBs).
+     * @param numCPUs the number of CPUs.
+     * @param diskReadKBs the disk read (in KBs).
+     * @param diskWriteKBs the disk write (in KBs).
+     * @param diskReadIOs the disk read I/O.
+     * @param diskWriteIOs the disk write I/O.
+     * @param entityType the entity type.
+     */
+    public VmStatsEntry(long vmId, double memoryKBs, double intFreeMemoryKBs, double targetMemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs,
+            double diskReadKBs, double diskWriteKBs, double diskReadIOs, double diskWriteIOs, String entityType) {
+        super(vmId, memoryKBs, intFreeMemoryKBs, targetMemoryKBs, cpuUtilization, networkReadKBs, networkWriteKBs, numCPUs, diskReadKBs, diskWriteKBs, diskReadIOs, diskWriteIOs,
+                entityType);
     }
 
     public UserVmVO getUserVmVO() {

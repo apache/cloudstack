@@ -32,8 +32,8 @@ public class VmStatsEntryBase implements VmStats {
     private double diskReadKBs;
     private double diskWriteKBs;
     private double memoryKBs;
-    private double intfreememoryKBs;
-    private double targetmemoryKBs;
+    private double intFreeMemoryKBs;
+    private double targetMemoryKBs;
     private int numCPUs;
     private String entityType;
 
@@ -41,14 +41,36 @@ public class VmStatsEntryBase implements VmStats {
 
     }
 
-    public VmStatsEntryBase(double memoryKBs,double intfreememoryKBs,double targetmemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType) {
+    /**
+     * Creates an instance of {@code VmStatsEntryBase} with all the stats attributes filled in.
+     *
+     * @param memoryKBs the memory total (in KBs).
+     * @param intFreeMemoryKBs the internal free memory (in KBs).
+     * @param targetMemoryKBs the target memory (in KBs).
+     * @param cpuUtilization the CPU utilization.
+     * @param networkReadKBs the network read (in KBs).
+     * @param networkWriteKBs the network write (in KBs).
+     * @param numCPUs the number of CPUs.
+     * @param diskReadKBs the disk read (in KBs).
+     * @param diskWriteKBs the disk write (in KBs).
+     * @param diskReadIOs the disk read I/O.
+     * @param diskWriteIOs the disk write I/O.
+     * @param entityType the entity type.
+     */
+    public VmStatsEntryBase(long vmId, double memoryKBs, double intFreeMemoryKBs, double targetMemoryKBs, double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs,
+            double diskReadKBs, double diskWriteKBs, double diskReadIOs, double diskWriteIOs, String entityType) {
+        this.vmId = vmId;
         this.memoryKBs = memoryKBs;
-        this.intfreememoryKBs = intfreememoryKBs;
-        this.targetmemoryKBs = targetmemoryKBs;
+        this.intFreeMemoryKBs = intFreeMemoryKBs;
+        this.targetMemoryKBs = targetMemoryKBs;
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
         this.numCPUs = numCPUs;
+        this.diskReadKBs = diskReadKBs;
+        this.diskWriteKBs = diskWriteKBs;
+        this.diskReadIOs = diskReadIOs;
+        this.diskWriteIOs = diskWriteIOs;
         this.entityType = entityType;
     }
 
@@ -135,20 +157,20 @@ public class VmStatsEntryBase implements VmStats {
 
     @Override
     public double getIntFreeMemoryKBs() {
-        return intfreememoryKBs;
+        return intFreeMemoryKBs;
     }
 
-    public void setIntFreeMemoryKBs(double intfreememoryKBs) {
-        this.intfreememoryKBs = intfreememoryKBs;
+    public void setIntFreeMemoryKBs(double intFreeMemoryKBs) {
+        this.intFreeMemoryKBs = intFreeMemoryKBs;
     }
 
     @Override
     public double getTargetMemoryKBs() {
-        return targetmemoryKBs;
+        return targetMemoryKBs;
     }
 
-    public void setTargetMemoryKBs(double targetmemoryKBs) {
-        this.targetmemoryKBs = targetmemoryKBs;
+    public void setTargetMemoryKBs(double targetMemoryKBs) {
+        this.targetMemoryKBs = targetMemoryKBs;
     }
 
     public int getNumCPUs() {
