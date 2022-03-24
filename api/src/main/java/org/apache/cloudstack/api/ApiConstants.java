@@ -58,6 +58,10 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String CERTIFICATE_ISSUER = "issuer";
+    public static final String CERTIFICATE_SERIALNUM = "serialnum";
+    public static final String CERTIFICATE_SUBJECT = "subject";
+    public static final String CERTIFICATE_VALIDITY = "validity";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";

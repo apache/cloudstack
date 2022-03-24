@@ -44,9 +44,25 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
     @Param(description = "the zone name where the certificate is uploaded")
     private String zoneName;
 
-    @SerializedName(ApiConstants.CERTIFICATE)
-    @Param(description = "the direct download certificate")
-    private String certificate;
+    @SerializedName(ApiConstants.VERSION)
+    @Param(description = "the direct download certificate version")
+    private String version;
+
+    @SerializedName(ApiConstants.CERTIFICATE_SUBJECT)
+    @Param(description = "the direct download certificate subject")
+    private String subject;
+
+    @SerializedName(ApiConstants.CERTIFICATE_ISSUER)
+    @Param(description = "the direct download certificate issuer")
+    private String issuer;
+
+    @SerializedName(ApiConstants.CERTIFICATE_VALIDITY)
+    @Param(description = "the direct download certificate issuer")
+    private String validity;
+
+    @SerializedName(ApiConstants.CERTIFICATE_SERIALNUM)
+    @Param(description = "the direct download certificate serial num")
+    private String serialNum;
 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor of the hosts where the certificate is uploaded")
@@ -80,14 +96,6 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
         this.zoneId = zoneId;
     }
 
-    public String getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(String certificate) {
-        this.certificate = certificate;
-    }
-
     public String getHypervisor() {
         return hypervisor;
     }
@@ -110,5 +118,45 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
 
     public void setHostsMap(List<DirectDownloadCertificateHostMapResponse> hosts) {
         this.hostsMap = hosts;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    public String getValidity() {
+        return validity;
+    }
+
+    public void setValidity(String validity) {
+        this.validity = validity;
+    }
+
+    public String getSerialNum() {
+        return serialNum;
+    }
+
+    public void setSerialNum(String serialNum) {
+        this.serialNum = serialNum;
     }
 }

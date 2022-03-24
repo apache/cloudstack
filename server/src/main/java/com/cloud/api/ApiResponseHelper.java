@@ -18,6 +18,8 @@ package com.cloud.api;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -370,6 +373,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.apache.commons.lang3.StringUtils;
+import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -4554,6 +4558,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
     }
 
+    protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
+        try {
+            Certificate cert = CertificateHelper.buildCertificate(certStr);
+            if (cert instanceof X509CertImpl) {
+                X509CertImpl certificate = (X509CertImpl) cert;
+                response.setVersion(String.valueOf(certificate.getVersion()));
+                response.setSubject(certificate.getSubjectDN().toString());
+                response.setIssuer(certificate.getIssuerDN().toString());
+                response.setSerialNum(certificate.getSerialNumberObject().toString());
+                response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
+            }
+        } catch (CertificateException e) {
+            s_logger.error("Error parsing direct download certificate: " + certStr, e);
+        }
+    }
+
     @Override
     public DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate) {
         DirectDownloadCertificateResponse response = new DirectDownloadCertificateResponse();
@@ -4564,7 +4584,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setId(certificate.getUuid());
         response.setAlias(certificate.getAlias());
-        response.setCertificate(certificate.getCertificate());
+        handleCertificateResponse(certificate.getCertificate(), response);
         response.setHypervisor(certificate.getHypervisorType().name());
         response.setObjectName("directdownloadcertificate");
         return response;
