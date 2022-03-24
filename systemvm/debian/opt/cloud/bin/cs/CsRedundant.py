@@ -289,6 +289,7 @@ class CsRedundant(object):
 
         CsHelper.service("dnsmasq", "stop")
         CsHelper.service("radvd", "stop")
+        CsHelper.service("radvd", "disable")
 
         self.cl.set_primary_state(False)
         self.cl.save()
