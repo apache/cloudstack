@@ -22,6 +22,7 @@ package org.apache.cloudstack;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.regex.Pattern;
 
 import org.apache.cloudstack.saml.SAMLUtils;
 import org.apache.cloudstack.utils.security.CertUtils;
@@ -36,6 +37,15 @@ public class SAMLUtilsTest extends TestCase {
     @Test
     public void testGenerateSecureRandomId() throws Exception {
         assertTrue(SAMLUtils.generateSecureRandomId().length() > 0);
+    }
+
+    @Test
+    public void testGenerateSecureRandomId2() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            String randomId = SAMLUtils.generateSecureRandomId();
+            System.out.println("randomId is " + randomId);
+            assertTrue(Pattern.compile("^[a-z]").matcher(randomId).find());
+        }
     }
 
     @Test
