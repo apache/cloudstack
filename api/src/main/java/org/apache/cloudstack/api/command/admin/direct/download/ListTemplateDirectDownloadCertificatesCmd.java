@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = ListTemplateDirectDownloadCertificatesCmd.APINAME,
-        description = "List the uploaded direct download certificates",
+        description = "List the uploaded certificates for direct download templates",
         responseObject = DirectDownloadCertificateResponse.class,
         since = "4.17.0",
         authorized = {RoleType.Admin})

@@ -25,7 +25,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "direct_download_certificate_host_map")
-public class DirectDownloadCertificateHostMapVO implements DirectDownloadCertificateHostMap{
+public class DirectDownloadCertificateHostMapVO implements DirectDownloadCertificateHostMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

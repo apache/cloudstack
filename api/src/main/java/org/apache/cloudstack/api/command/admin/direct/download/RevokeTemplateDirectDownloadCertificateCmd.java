@@ -46,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @APICommand(name = RevokeTemplateDirectDownloadCertificateCmd.APINAME,
-        description = "Revoke a certificate from hosts in a zone",
+        description = "Revoke a direct download certificate from hosts in a zone",
         responseObject = DirectDownloadCertificateHostStatusResponse.class,
         since = "4.13",
         authorized = {RoleType.Admin})
