@@ -4785,7 +4785,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
         }
         s_logger.info(String.format("Successfully patched system VM %s", systemVM.getInstanceName()));
-        if (systemVM.getType() == VirtualMachine.Type.DomainRouter) {
+        List<VirtualMachine.Type> routerTypes = new ArrayList<>();
+        routerTypes.add(VirtualMachine.Type.DomainRouter);
+        routerTypes.add(VirtualMachine.Type.InternalLoadBalancerVm);
+        if (routerTypes.contains(systemVM.getType())) {
             boolean updated = updateRouterDetails(systemVM.getId(), answer.getScriptsVersion(), answer.getTemplateVersion());
             if (!updated) {
                 s_logger.warn("Failed to update router's script and template version details");

@@ -3296,7 +3296,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             setRestartRequired(network, restartRequired);
             return status;
         } else if (livePatch) {
-            List<DomainRouterVO> domainRouters = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+            List<DomainRouterVO> domainRouters = routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER, VirtualRouter.Role.INTERNAL_LB_VM);
             for (DomainRouterVO router: domainRouters) {
                 try {
                     VMInstanceVO instanceVO = _vmDao.findById(router.getId());
