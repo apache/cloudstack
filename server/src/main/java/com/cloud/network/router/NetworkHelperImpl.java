@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
@@ -278,7 +279,14 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
         final long dcid = router.getDataCenterId();
         String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
-        return CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+        String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz");
+        String routerChecksum = router.getScriptsVersion() == null ? "" : router.getScriptsVersion();
+        boolean routerVersionMatch = CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+        if (routerVersionMatch) {
+            return true;
+        }
+        boolean routerCheckSumMatch = currentCheckSum.equals(routerChecksum);
+        return routerCheckSumMatch;
     }
 
     protected DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)

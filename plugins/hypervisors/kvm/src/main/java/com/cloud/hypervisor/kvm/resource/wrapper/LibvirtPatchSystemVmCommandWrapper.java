@@ -29,6 +29,7 @@ import com.cloud.utils.FileUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -58,7 +59,7 @@ public class LibvirtPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyst
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = serverResource.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
+        String checksum = ChecksumUtil.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
             String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);

@@ -19,7 +19,6 @@
 
 package com.cloud.resource;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.NetworkInterface;
@@ -33,8 +32,6 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
@@ -308,14 +305,5 @@ public abstract class ServerResourceBase implements ServerResource {
     @Override
     public boolean stop() {
         return true;
-    }
-
-    public String calculateCurrentChecksum(String name, String path) {
-        String cloudScriptsPath = Script.findScript("", path);
-        if (cloudScriptsPath == null) {
-            throw new CloudRuntimeException(String.format("Unable to find cloudScripts path, cannot update SystemVM %s", name));
-        }
-        String md5sum = DigestHelper.calculateChecksum(new File(cloudScriptsPath));
-        return md5sum;
     }
 }

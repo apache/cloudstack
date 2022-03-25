@@ -14,44 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.router;
+package com.cloud.utils.validation;
 
-import com.cloud.vm.VirtualMachine;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.security.DigestHelper;
 
-/**
- *  bridge internal and external traffic.
- */
-public interface VirtualRouter extends VirtualMachine {
-    public enum Role {
-        VIRTUAL_ROUTER, LB, INTERNAL_LB_VM, NETSCALER_VM
+import java.io.File;
+
+public class ChecksumUtil {
+    public static String calculateCurrentChecksum(String name, String path) {
+        String cloudScriptsPath = Script.findScript("", path);
+        if (cloudScriptsPath == null) {
+            throw new CloudRuntimeException(String.format("Unable to find cloudScripts path, cannot update SystemVM %s", name));
+        }
+        String md5sum = DigestHelper.calculateChecksum(new File(cloudScriptsPath));
+        return md5sum;
     }
-
-    public enum UpdateState {
-        UPDATE_NEEDED, UPDATE_IN_PROGRESS, UPDATE_COMPLETE, UPDATE_FAILED
-    }
-
-    Role getRole();
-
-    boolean getIsRedundantRouter();
-
-    public enum RedundantState {
-        UNKNOWN, PRIMARY, BACKUP, FAULT
-    }
-
-    RedundantState getRedundantState();
-
-    String getPublicIpAddress();
-
-    boolean isStopPending();
-
-    void setStopPending(boolean stopPending);
-
-    /**
-     * @return
-     */
-    Long getVpcId();
-
-    String getTemplateVersion();
-
-    String getScriptsVersion();
 }

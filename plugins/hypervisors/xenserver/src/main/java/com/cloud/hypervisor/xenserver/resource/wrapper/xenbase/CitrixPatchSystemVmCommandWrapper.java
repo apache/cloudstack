@@ -26,6 +26,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.validation.ChecksumUtil;
 import com.xensource.xenapi.Connection;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -58,7 +59,7 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = serverResource.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
+        String checksum = ChecksumUtil.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
         if (!StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !command.isForced()) {
             String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
             s_logger.info(msg);

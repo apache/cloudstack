@@ -51,6 +51,7 @@ import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -674,7 +675,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
 
         String scriptChecksum = lines[1].trim();
-        String checksum = calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
+        String checksum = ChecksumUtil.calculateCurrentChecksum(sysVMName, "vms/cloud-scripts.tgz").trim();
 
         if (!org.apache.commons.lang3.StringUtils.isEmpty(checksum) && checksum.equals(scriptChecksum) && !cmd.isForced()) {
             String msg = String.format("No change in the scripts checksum, not patching systemVM %s", sysVMName);
