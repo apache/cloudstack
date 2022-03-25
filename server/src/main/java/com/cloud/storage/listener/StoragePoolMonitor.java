@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -108,10 +109,12 @@ public class StoragePoolMonitor implements Listener {
                 List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), HypervisorType.Any);
                 pools.addAll(zoneStoragePoolsByAnyHypervisor);
 
+                // get the disabled pools list if global setting is true.
+                if (StorageManager.MountDisabledStoragePool.value()) {
+                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+                }
+
                 for (StoragePoolVO pool : pools) {
-                    if (pool.getStatus() != StoragePoolStatus.Up) {
-                        continue;
-                    }
                     if (!pool.isShared()) {
                         continue;
                     }
