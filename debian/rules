@@ -81,6 +81,10 @@ override_dh_auto_install:
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
+	# Bundle KVM-only ARM64 template for oss build
+	sed -i 's/5108eeb0547912a41cb2bc508985f89f/75363b76acb4801a9aa76c94cc9a67c7/g' $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/metadata.ini || true
+	sed -i 's/systemvmtemplate-4.16.1-kvm.qcow2.bz2/systemvmtemplate-4.16.1-kvm.qcow2/g' $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/metadata.ini || true
+	wget https://dl.yadav.cloud/cloudstack-arm64/systemvmtemplates/systemvmtemplate-4.16.1-kvm-arm64.qcow2 -O $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/systemvmtemplate-4.16.1-kvm.qcow2
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
