@@ -25,6 +25,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 @Entity
 @Table(name = "vm_stats")
 public class VmStatsVO {
@@ -79,15 +81,7 @@ public class VmStatsVO {
 
     @Override
     public String toString() {
-        return new StringBuilder("VmStatsVO[vmId=").append(vmId)
-            .append("|mgmtServerId=")
-            .append(mgmtServerId)
-            .append("|timestamp=")
-            .append(timestamp)
-            .append("|vmStatsData=")
-            .append(vmStatsData)
-            .append("]")
-            .toString();
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "vmId", "mgmtServerId", "timestamp", "vmStatsData");
     }
 
 }
