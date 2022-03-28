@@ -1045,7 +1045,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         SecurityGroupVO securityGroupVO = null;
         if (zone.isSecurityGroupEnabled()) {
-            securityGroupVO = securityGroupManager.createSecurityGroup(KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME, "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
+            securityGroupVO = securityGroupManager.createSecurityGroup(KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME.concat(Long.toHexString(System.currentTimeMillis())), "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
             if (securityGroupVO == null) {
                 throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
             }
