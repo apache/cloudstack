@@ -142,23 +142,7 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             int isDedicated = (dr != null) ? 1 : 0;
             metricsList.add(new ItemHostIsDedicated(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), isDedicated));
 
-            List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
-            String hosttags = StringUtils.join(hostTags, ",");
-            for (String tag : hostTags) {
-                Integer current = totalHosts.get(tag) != null ? totalHosts.get(tag) : 0;
-                totalHosts.put(tag, current + 1);
-            }
-            if (host.getStatus() == Status.Up) {
-                for (String tag : hostTags) {
-                    Integer current = upHosts.get(tag) != null ? upHosts.get(tag) : 0;
-                    upHosts.put(tag, current + 1);
-                }
-            } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
-                for (String tag : hostTags) {
-                    Integer current = downHosts.get(tag) != null ? downHosts.get(tag) : 0;
-                    downHosts.put(tag, current + 1);
-                }
-            }
+            String hostTags = markTagMaps(host, totalHosts, upHosts,  downHosts);
 
             // Get account, domain details for dedicated hosts
             if (isDedicated == 1) {
@@ -173,32 +157,32 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO cpuCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
             if (cpuCapacity != null) {
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity(), isDedicated, hosttags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), isDedicated, hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity(), isDedicated, hostTags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L, isDedicated, hosttags));
-                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L, isDedicated, hosttags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L, isDedicated, hostTags));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L, isDedicated, hostTags));
             }
 
             final String memoryFactor = String.valueOf(CapacityManager.MemOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO memCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
             if (memCapacity != null) {
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, memCapacity.getUsedCapacity(), isDedicated, hosttags));
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity(), isDedicated, hosttags));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, memCapacity.getUsedCapacity(), isDedicated, hostTags));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, 0L, isDedicated, hosttags));
-                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, 0L, isDedicated, hosttags));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, 0L, isDedicated, hostTags));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, 0L, isDedicated, hostTags));
             }
 
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
 
             final CapacityVO coreCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU_CORE);
             if (coreCapacity != null) {
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, coreCapacity.getUsedCapacity(), isDedicated, hosttags));
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, coreCapacity.getTotalCapacity(), isDedicated, hosttags));
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, coreCapacity.getUsedCapacity(), isDedicated, hostTags));
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, coreCapacity.getTotalCapacity(), isDedicated, hostTags));
             } else {
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, 0L, isDedicated, hosttags));
-                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, 0L, isDedicated, hosttags));
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, 0L, isDedicated, hostTags));
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, 0L, isDedicated, hostTags));
             }
         }
 
@@ -220,6 +204,30 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
         metricsList.add(new ItemHost(zoneName, zoneUuid, ONLINE, up, null));
         metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, down, null));
         metricsList.add(new ItemHost(zoneName, zoneUuid, TOTAL, total, null));
+
+        addHostTagsMetrics(metricsList, dcId, zoneName, zoneUuid, totalHosts, upHosts, downHosts, total, up, down);
+    }
+
+    private String markTagMaps(HostVO host, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts) {
+        List<String> hostTags = _hostTagsDao.getHostTags(host.getId());
+        markTags(hostTags,totalHosts);
+        if (host.getStatus() == Status.Up) {
+            markTags(hostTags, upHosts);
+        } else if (host.getStatus() == Status.Disconnected || host.getStatus() == Status.Down) {
+            markTags(hostTags, downHosts);
+        }
+        return StringUtils.join(hostTags, ",");
+    }
+
+    private void markTags(List<String> tags, Map<String, Integer> tagMap) {
+        tags.forEach(tag -> {
+            int current = tagMap.get(tag) != null ? tagMap.get(tag) : 0;
+            tagMap.put(tag, current + 1);
+        });
+    }
+
+    private void addHostTagsMetrics(final List<Item> metricsList, final long dcId, final String zoneName, final String zoneUuid, Map<String, Integer> totalHosts, Map<String, Integer> upHosts, Map<String, Integer> downHosts, int total, int up, int down) {
+
         for (Map.Entry<String, Integer> entry : totalHosts.entrySet()) {
             String tag = entry.getKey();
             Integer count = entry.getValue();
@@ -235,12 +243,25 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 metricsList.add(new ItemHost(zoneName, zoneUuid, OFFLINE, 0, tag));
             }
         }
-        for (Map.Entry<String, Integer> entry : totalHosts.entrySet()) {
-            String tag = entry.getKey();
-            Ternary<Long, Long, Long> allocatedCapacityByTag = capacityDao.findCapacityByZoneAndHostTag(dcId, tag);
-            metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, allocatedCapacityByTag.first(), 0, tag));
-            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.second(),0, tag));
-            metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
+
+        totalHosts.keySet()
+                .forEach( tag -> {
+                    Ternary<Long, Long, Long> allocatedCapacityByTag = capacityDao.findCapacityByZoneAndHostTag(dcId, tag);
+                    metricsList.add(new ItemVMCore(zoneName, zoneUuid, null, null, null, ALLOCATED, allocatedCapacityByTag.first(), 0, tag));
+                    metricsList.add(new ItemHostCpu(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.second(), 0, tag));
+                    metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
+                });
+
+        List<String> allHostTags = hostDao.listAll().stream()
+                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        for (final State state : State.values()) {
+            for (final String hostTag : allHostTags) {
+                final Long count = vmDao.countByZoneAndStateAndHostTag(dcId, state, hostTag);
+                metricsList.add(new ItemVMByTag(zoneName, zoneUuid, state.name().toLowerCase(), count, hostTag));
+            }
         }
     }
 
@@ -251,18 +272,6 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                 continue;
             }
             metricsList.add(new ItemVM(zoneName, zoneUuid, state.name().toLowerCase(), count));
-        }
-
-        List<String> allHostTags = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
-                .distinct()
-                .collect(Collectors.toList());
-
-        for (final State state : State.values()) {
-            for (final String hosttag : allHostTags) {
-                final Long count = vmDao.countByZoneAndStateAndHostTag(dcId, state, hosttag);
-                metricsList.add(new ItemVMByTag(zoneName, zoneUuid, state.name().toLowerCase(), count, hosttag));
-            }
         }
     }
 
