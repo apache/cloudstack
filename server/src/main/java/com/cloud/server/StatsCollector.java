@@ -1581,6 +1581,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 statsForCurrentIteration.getDiskWriteKBs(), statsForCurrentIteration.getDiskReadIOs(), statsForCurrentIteration.getDiskWriteIOs(),
                 statsForCurrentIteration.getEntityType());
         VmStatsVO vmStatsVO = new VmStatsVO(statsForCurrentIteration.getVmId(), msId, timestamp, gson.toJson(vmStats));
+        s_logger.trace(String.format("Recording VM stats: [%s].", vmStatsVO.toString()));
         vmStatsDao.persist(vmStatsVO);
     }
 

@@ -77,4 +77,17 @@ public class VmStatsVO {
         return vmStatsData;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder("VmStatsVO[vmId=").append(vmId)
+            .append("|mgmtServerId=")
+            .append(mgmtServerId)
+            .append("|timestamp=")
+            .append(timestamp)
+            .append("|vmStatsData=")
+            .append(vmStatsData)
+            .append("]")
+            .toString();
+    }
+
 }
