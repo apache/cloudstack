@@ -99,7 +99,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+    public boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups) {
         s_logger.debug("Removing VM ID " + vm.getUuid() + " from backup offering by the Dummy Backup Provider");
         return true;
     }

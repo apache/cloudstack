@@ -364,6 +364,7 @@ import com.cloud.vm.dao.VmStatsDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -2378,17 +2379,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         try {
 
-            if (vm.getBackupOfferingId() != null) {
-                List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-                if (CollectionUtils.isEmpty(backupsForVm)) {
-                    backupManager.removeVMFromBackupOffering(vm.getId(), true);
-                } else {
-                    throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
-                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
-                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
-                            vm.getBackupExternalId(), backupsForVm.size()));
-                }
-            }
+            removeBackupOfferingBeforeDeleteVmIfNeeded(vm);
 
             releaseNetworkResourcesOnExpunge(vm.getId());
 
@@ -2424,6 +2415,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         } finally {
             _vmDao.releaseFromLockTable(vm.getId());
+        }
+    }
+
+    protected void removeBackupOfferingBeforeDeleteVmIfNeeded(UserVmVO vm) {
+        if (vm.getBackupOfferingId() == null) {
+            s_logger.debug(String.format("VM [%s] does not have a Backup Offering. Don't need to remove then.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
+            return;
+        }
+        s_logger.debug(String.format("VM [%s] has backup offering with id [%s]. Trying to remove this backup offering.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId()));
+        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (CollectionUtils.isEmpty(backupsForVm)) {
+            s_logger.debug(String.format("VM [%s] with backup offering [id: %s] does not have any backups. Trying to delete job.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId()));
+            backupManager.removeVMFromBackupOffering(vm.getId(), true);
+        } else {
+            s_logger.debug(String.format("VM [uuid: %s, name: %s] has a Backup Offering [id: %s, external id: %s] with %s backups. "
+                    + "Trying to disable/remove only the job, but keeping the backups.", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                    vm.getBackupExternalId(), backupsForVm.size()));
+            backupManager.removeVMFromBackupOffering(vm.getId(), false);
         }
     }
 
@@ -3209,9 +3221,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
-        // Detach all data disks from VM
-        List<VolumeVO> dataVols = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-        detachVolumesFromVm(dataVols);
+        if (vm.getHypervisorType() == HypervisorType.VMware) {
+            removeBackupOfferingIfNeededAndDetachVolumes(vm);
+        } else {
+            detachVolumesFromVm(volumesToBeDeleted);
+        }
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
@@ -3223,6 +3237,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
         return destroyedVm;
+    }
+
+    protected void removeBackupOfferingIfNeededAndDetachVolumes(UserVmVO vm) {
+        removeBackupOfferingBeforeDeleteVmIfNeeded(vm);
+
+        List<VolumeVO> allVolumes = _volsDao.findByInstance(vm.getId());
+        allVolumes.removeIf(vol -> vol.getVolumeType() == Volume.Type.ROOT);
+        detachVolumesFromVm(allVolumes);
     }
 
     private List<VolumeVO> getVolumesFromIds(DestroyVMCmd cmd) {

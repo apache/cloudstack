@@ -2291,9 +2291,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if target VM has backups
-        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
-            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have any backups", vm.getName(), vm.getUuid()));
-        }
+        validateIfVmHasBackups(vm, true);
     }
 
     /**
@@ -2365,6 +2363,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
         return vm;
+    }
+
+    protected void validateIfVmHasBackups(UserVmVO vm, boolean attach) {
+        if (vm.getBackupOfferingId() != null) {
+            String errorMsg = "Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
+                    + "set the global configuration 'backup.enable.attach.detach.of.volumes' to true.";
+            if (attach)
+                errorMsg = "Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
+                        + "'backup.enable.attach.detach.of.volumes' to true.";
+            throw new InvalidParameterValueException(errorMsg);
+        }
     }
 
     /**
@@ -2572,9 +2581,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
         }
 
-        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
-            throw new InvalidParameterValueException("Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering.");
-        }
+        validateIfVmHasBackups(vm, false);
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (asyncExecutionContext != null) {

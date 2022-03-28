@@ -102,6 +102,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findIncludingRemovedByZone(long zoneId);
 
+    VolumeVO findByPath(String path);
+
     /**
      * Gets the Total Primary Storage space allocated for an account
      *

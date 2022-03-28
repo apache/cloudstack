@@ -18,10 +18,7 @@ package com.cloud.vm;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,7 +37,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.backup.Backup;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -50,8 +46,6 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.commons.lang3.StringUtils;
-import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_instance")
@@ -197,8 +191,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name = "backup_external_id")
     protected String backupExternalId;
 
-    @Column(name = "backup_volumes", length = 65535)
-    protected String backupVolumes;
+    @Column(name = "backup_name")
+    private String backupName;
 
     public VMInstanceVO(long id, long serviceOfferingId, String name, String instanceName, Type type, Long vmTemplateId, HypervisorType hypervisorType, long guestOSId,
                         long domainId, long accountId, long userId, boolean haEnabled) {
@@ -608,14 +602,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     }
 
     @Override
-    public List<Backup.VolumeInfo> getBackupVolumeList() {
-        if (StringUtils.isEmpty(this.backupVolumes)) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    public String getBackupName() {
+        return backupName;
     }
 
-    public void setBackupVolumes(String backupVolumes) {
-        this.backupVolumes = backupVolumes;
+    public void setBackupName(String backupName) {
+        this.backupName = backupName;
     }
 }

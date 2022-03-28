@@ -28,6 +28,10 @@ public class UuidUtils {
         return uuid.substring(0, uuid.indexOf('-'));
     }
 
+    public static boolean isUuid(String data) {
+        return validateUUID(data);
+    }
+
     public static boolean validateUUID(String uuid) {
         RegularExpression regex = new RegularExpression("[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}");
         return regex.matches(uuid);

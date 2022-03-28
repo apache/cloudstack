@@ -17,7 +17,6 @@
 package org.apache.cloudstack.engine.cloud.entity.api.db;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.backup.Backup;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -47,7 +44,6 @@ import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_instance")
@@ -183,8 +179,8 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Column(name = "backup_external_id")
     private String backupExternalId;
 
-    @Column(name = "backup_volumes")
-    private String backupVolumes;
+    @Column(name = "backup_name")
+    private String backupName;
 
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
@@ -585,7 +581,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     }
 
     @Override
-    public List<Backup.VolumeInfo> getBackupVolumeList() {
-        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    public String getBackupName() {
+        return backupName;
     }
 }

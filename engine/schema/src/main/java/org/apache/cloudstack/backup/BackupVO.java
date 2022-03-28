@@ -17,6 +17,9 @@
 
 package org.apache.cloudstack.backup;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -27,6 +30,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.commons.lang3.StringUtils;
+import com.google.gson.Gson;
 
 @Entity
 @Table(name = "backups")
@@ -72,6 +78,9 @@ public class BackupVO implements Backup {
 
     @Column(name = "zone_id")
     private long zoneId;
+
+    @Column(name = "backup_volumes", length = 65535)
+    protected String backupVolumes;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -191,5 +200,17 @@ public class BackupVO implements Backup {
     @Override
     public String getName() {
         return null;
+    }
+
+    @Override
+    public List<Backup.VolumeInfo> getBackupVolumeList() {
+        if (StringUtils.isEmpty(this.backupVolumes)) {
+            return Collections.emptyList();
+        }
+        return Arrays.asList(new Gson().fromJson(this.backupVolumes, Backup.VolumeInfo[].class));
+    }
+
+    public void setBackupVolumes(String backupVolumes) {
+        this.backupVolumes = backupVolumes;
     }
 }

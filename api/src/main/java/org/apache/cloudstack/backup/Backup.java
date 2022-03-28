@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup;
 
+import java.util.List;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -60,11 +62,13 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private String id;
         private String created;
         private String type;
+        private List<String> paths;
 
-        public RestorePoint(String id, String created, String type) {
+        public RestorePoint(String id, String created, String type, List<String> paths) {
             this.id = id;
             this.created = created;
             this.type = type;
+            this.paths = paths;
         }
 
         public String getId() {
@@ -90,6 +94,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         public void setType(String type) {
             this.type = type;
         }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths;
+        }
+
+        public List<String> getPaths() {
+            return paths;
+        }
     }
 
     class VolumeInfo {
@@ -97,12 +109,14 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private Volume.Type type;
         private Long size;
         private String path;
+        private Long deviceId;
 
-        public VolumeInfo(String uuid, String path, Volume.Type type, Long size) {
+        public VolumeInfo(String uuid, String path, Volume.Type type, Long size, Long deviceId) {
             this.uuid = uuid;
             this.type = type;
             this.size = size;
             this.path = path;
+            this.deviceId = deviceId;
         }
 
         public String getUuid() {
@@ -125,9 +139,17 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
             return size;
         }
 
+        public void setDeviceId(Long deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        public Long getDeviceId() {
+            return deviceId;
+        }
+
         @Override
         public String toString() {
-            return StringUtils.join(":", uuid, path, type, size);
+            return StringUtils.join(":", uuid, path, type, size, deviceId);
         }
     }
 
@@ -139,4 +161,6 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Long getSize();
     Long getProtectedSize();
     long getZoneId();
+    long getBackupOfferingId();
+    List<Backup.VolumeInfo> getBackupVolumeList();
 }
