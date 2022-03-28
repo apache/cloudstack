@@ -644,7 +644,7 @@
               <a-form-item name="stayonpage" ref="stayonpage">
                 <a-switch
                   class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
+                  v-model:checked="this.stayonpage" />
               </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => $router.back()" :disabled="loading.deploy">
@@ -777,6 +777,7 @@ export default {
       rowCount: {},
       loading: {
         deploy: false,
+        stayonpage: false,
         templates: false,
         isos: false,
         hypervisors: false,
@@ -1646,9 +1647,8 @@ export default {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
     handleSubmitAndStay (e) {
-      this.form.stayonpage = true
+      this.stayonpage = true
       this.handleSubmit(e.domEvent)
-      this.form.stayonpage = false
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1878,11 +1878,13 @@ export default {
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.emit('vm-refresh-data')
           })
-          if (!values.stayonpage) {
+          if (!this.stayonpage) {
             this.$router.back()
           }
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {
