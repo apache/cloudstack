@@ -909,7 +909,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                               max=1,
                               projectid=self.project.id
                               )
-        
+
         # Register the First Template in the project
         self.debug("Register the First Template in the project")
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
@@ -949,7 +949,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
 
             time.sleep(self.services["sleep"])
             timeout = timeout - 1
-            
+
         #Verify template response to check whether template added successfully
         self.assertEqual(
                         isinstance(list_template_response, list),

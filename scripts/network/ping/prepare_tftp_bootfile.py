@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         exit(1)
 
     (cmd, tftp_dir, mac, cifs_server, share, directory, template_dir, cifs_username, cifs_password, ip, netmask, gateway) = sys.argv[1:]
-    
+
     if cmd == "restore":
         ret = prepare(True)
     elif cmd == "backup":
@@ -91,5 +91,5 @@ if __name__ == "__main__":
     else:
         print "Unknown cmd: %s"%cmd
         ret = 1
-        
+
     exit(ret)
