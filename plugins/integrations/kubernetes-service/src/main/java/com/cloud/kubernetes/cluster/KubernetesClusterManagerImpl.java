@@ -1045,15 +1045,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         SecurityGroupVO securityGroupVO = null;
         if (zone.isSecurityGroupEnabled()) {
-            securityGroupVO = securityGroupManager.createSecurityGroup("CKSSecurityGroup", "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
+            securityGroupVO = securityGroupManager.createSecurityGroup(KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME, "Security group for CKS nodes", owner.getDomainId(), owner.getId(), owner.getAccountName());
             if (securityGroupVO == null) {
-                throw new CloudRuntimeException("Failed to create security group");
+                throw new CloudRuntimeException(String.format("Failed to create security group: %s", KubernetesClusterActionWorker.CKS_CLUSTER_SECURITY_GROUP_NAME));
             }
-            List<String> cirdList = new ArrayList<>();
-            cirdList.add(NetUtils.ALL_IP4_CIDRS);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cirdList, null, SecurityRule.SecurityRuleType.EgressRule);
-
+            List<String> cidrList = new ArrayList<>();
+            cidrList.add(NetUtils.ALL_IP4_CIDRS);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO, 22, 22, null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO, 6443, 6443, null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
