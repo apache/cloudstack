@@ -82,15 +82,6 @@ public class Ipv6GuestPrefixSubnetNetworkMapDaoImpl extends GenericDaoBase<Ipv6G
     }
 
     @Override
-    public Ipv6GuestPrefixSubnetNetworkMapVO findLast(long prefixId) {
-        SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = PrefixIdSearch.create();
-        sc.setParameters("prefixId", prefixId);
-        Filter searchFilter = new Filter(Ipv6GuestPrefixSubnetNetworkMapVO.class, "id", false, null, 1L);
-        List<Ipv6GuestPrefixSubnetNetworkMapVO> list = listBy(sc, searchFilter);
-        return CollectionUtils.isNotEmpty(list) ? list.get(0) : null;
-    }
-
-    @Override
     public Ipv6GuestPrefixSubnetNetworkMapVO findByNetworkId(long networkId) {
         SearchCriteria<Ipv6GuestPrefixSubnetNetworkMapVO> sc = NetworkIdSearch.create();
         sc.setParameters("networkId", networkId);

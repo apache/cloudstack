@@ -103,8 +103,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
 
     public static final Logger s_logger = Logger.getLogger(Ipv6ServiceImpl.class.getName());
 
-    private static final boolean IS_ALLOACTE_PREFIX_RANDOMLY = true;
-
     ScheduledExecutorService _ipv6GuestPrefixSubnetNetworkMapStateScanner;
 
     @Inject
@@ -159,25 +157,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                 ipv6Addr.toString(), false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
         return new Pair<>(ipv6Addr.toString(), selectedVlan);
-    }
-
-    private Ipv6GuestPrefixSubnetNetworkMapVO preallocatePrefixSubnetSequentially(DataCenterGuestIpv6PrefixVO prefix) {
-        Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
-        Ipv6GuestPrefixSubnetNetworkMapVO last = ipv6GuestPrefixSubnetNetworkMapDao.findLast(prefix.getId());
-        String lastUsedSubnet = last != null ? last.getSubnet() : null;
-        final IPv6Network ip6Prefix = IPv6Network.fromString(prefix.getPrefix());
-        Iterator<IPv6Network> splits = ip6Prefix.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
-        while (splits.hasNext()) {
-            IPv6Network i = splits.next();
-            if (lastUsedSubnet == null) {
-                ip6Subnet = new Ipv6GuestPrefixSubnetNetworkMapVO(prefix.getId(), i.toString(), null, Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
-                break;
-            }
-            if (i.toString().equals(lastUsedSubnet)) {
-                lastUsedSubnet = null;
-            }
-        }
-        return ip6Subnet;
     }
 
     private Ipv6GuestPrefixSubnetNetworkMapVO preallocatePrefixSubnetRandomly(DataCenterGuestIpv6PrefixVO prefix) {
@@ -286,9 +265,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         for (DataCenterGuestIpv6PrefixVO prefix : prefixes) {
             ip6Subnet = ipv6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
             if (ip6Subnet == null) {
-                ip6Subnet = IS_ALLOACTE_PREFIX_RANDOMLY ?
-                        preallocatePrefixSubnetRandomly(prefix) :
-                        preallocatePrefixSubnetSequentially(prefix);
+                ip6Subnet = preallocatePrefixSubnetRandomly(prefix);
             }
             if (ip6Subnet != null) {
                 break;
