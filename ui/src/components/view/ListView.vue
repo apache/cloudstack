@@ -428,7 +428,6 @@ import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'ListView',
@@ -437,8 +436,7 @@ export default {
     Status,
     QuickView,
     TooltipButton,
-    ResourceIcon,
-    RenderIcon
+    ResourceIcon
   },
   props: {
     columns: {

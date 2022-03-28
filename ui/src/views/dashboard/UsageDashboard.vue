@@ -68,8 +68,7 @@
         </a-card>
       </a-row>
     </a-col>
-    <a-col
-      :xl="8">
+    <a-col :xl="8">
       <chart-card :loading="loading" >
         <div class="usage-dashboard-chart-card-inner">
           <a-button>
@@ -100,7 +99,6 @@
 <script>
 import { api } from '@/api'
 import store from '@/store'
-import RenderIcon from '@/utils/renderIcon'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import UsageDashboardChart from '@/views/dashboard/UsageDashboardChart'
@@ -109,8 +107,7 @@ export default {
   name: 'UsageDashboard',
   components: {
     ChartCard,
-    UsageDashboardChart,
-    RenderIcon
+    UsageDashboardChart
   },
   props: {
     resource: {
@@ -273,6 +270,12 @@ export default {
        padding-top: 12px;
        padding-left: 3px;
        white-space: normal;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .ant-col-xl-8 {
+      width: 100%;
     }
   }
 </style>
