@@ -27,6 +27,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 
@@ -66,10 +67,10 @@ public class ConfigurationVO implements Configuration {
     private Date updated;
 
     @Column(name = "group_id")
-    private Long groupId = 0L;
+    private Long groupId = 1L;
 
     @Column(name = "subgroup_id")
-    private Long subGroupId = 0L;
+    private Long subGroupId = 1L;
 
     @Column(name = "parent")
     private String parent;
@@ -81,16 +82,28 @@ public class ConfigurationVO implements Configuration {
     }
 
     public ConfigurationVO(String category, String instance, String component, String name, String value, String description) {
+        this(category, instance, component, name, value, description, null, null);
+    }
+
+    public ConfigurationVO(String category, String instance, String component, String name, String value, String description, String displayText, String parentConfigName) {
+        this(category, instance, component, name, value, description, displayText, parentConfigName, null, null);
+    }
+
+    public ConfigurationVO(String category, String instance, String component, String name, String value, String description, String displayText, String parentConfigName, Long groupId, Long subGroupId) {
         this.category = category;
         this.instance = instance;
         this.component = component;
         this.name = name;
         this.description = description;
+        this.parent = parentConfigName;
         setValue(value);
+        setDisplayText(displayText);
+        setGroupId(groupId);
+        setSubGroupId(subGroupId);
     }
 
     public ConfigurationVO(String component, ConfigKey<?> key) {
-        this(key.category(), "DEFAULT", component, key.key(), key.defaultValue(), key.description());
+        this(key.category(), "DEFAULT", component, key.key(), key.defaultValue(), key.description(), key.displayText(), key.parent());
         defaultValue = key.defaultValue();
         dynamic = key.isDynamic();
         scope = key.scope() != null ? key.scope().toString() : null;
@@ -205,7 +218,11 @@ public class ConfigurationVO implements Configuration {
     }
 
     public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+        if (groupId != null) {
+            this.groupId = groupId;
+        } else {
+            this.groupId = 1L;
+        }
     }
 
     @Override
@@ -214,7 +231,11 @@ public class ConfigurationVO implements Configuration {
     }
 
     public void setSubGroupId(Long subGroupId) {
-        this.subGroupId = subGroupId;
+        if (subGroupId != null) {
+            this.subGroupId = subGroupId;
+        } else {
+            this.subGroupId = 1L;
+        }
     }
 
     @Override
@@ -232,6 +253,14 @@ public class ConfigurationVO implements Configuration {
     }
 
     public void setDisplayText(String displayText) {
+        if (StringUtils.isBlank(displayText)) {
+            String name = getName();
+            if (StringUtils.isNotBlank(name)) {
+                name = name.replace(".", " ");
+                displayText = name.substring(0, 1).toUpperCase() + name.substring(1);
+            }
+        }
+
         this.displayText = displayText;
     }
 }

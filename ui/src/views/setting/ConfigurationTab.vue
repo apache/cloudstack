@@ -71,16 +71,8 @@ export default {
       columns: [
         {
           title: 'Display Text',
-          // title: this.$t('label.displaytext'),
           dataIndex: 'displaytext',
-          // scopedSlots: { customRender: 'displaytext' }
           slots: { customRender: 'displaytext' }
-        },
-        {
-          title: this.$t('label.value'),
-          dataIndex: 'value',
-          // scopedSlots: { customRender: 'value' }
-          slots: { customRender: 'value' }
         }
       ],
       apiName: 'listConfigurations',
@@ -97,6 +89,7 @@ export default {
       this.tabLoading = true
       const params = {
         group: this.group,
+        subgroup: this.subgroup,
         pagesize: -1
       }
       console.log('group name: ' + this.group)

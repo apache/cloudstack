@@ -16,21 +16,13 @@
 // under the License.
 package org.apache.cloudstack.framework.config.dao;
 
-//import java.util.Map;
-
-//import javax.annotation.PostConstruct;
-//import javax.naming.ConfigurationException;
-
 import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
 import org.apache.log4j.Logger;
-//import org.springframework.stereotype.Component;
 
-//import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-//@Component
 public class ConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroupVO, Long> implements ConfigurationGroupDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationGroupDaoImpl.class);
 
@@ -39,7 +31,6 @@ public class ConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroup
     public ConfigurationGroupDaoImpl() {
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
-        //setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
     }
 
     public ConfigurationGroupVO findByName(String name) {
@@ -47,15 +38,4 @@ public class ConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroup
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
     }
-
-//    @Override
-//    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-//        super.configure(name, params);
-//        return true;
-//    }
-
-//    @PostConstruct
-//    protected void init() throws ConfigurationException {
-//        configure(getName(), getConfigParams());
-//    }
 }

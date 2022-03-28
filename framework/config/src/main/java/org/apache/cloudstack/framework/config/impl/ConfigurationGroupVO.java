@@ -40,7 +40,7 @@ public class ConfigurationGroupVO implements ConfigurationGroup {
     private String description = null;
 
     @Column(name = "precedence")
-    private Long precedence = 1L;
+    private Long precedence = 999L;
 
     protected ConfigurationGroupVO() {
     }
@@ -48,7 +48,7 @@ public class ConfigurationGroupVO implements ConfigurationGroup {
     public ConfigurationGroupVO(String name, String description) {
         this.name = name;
         this.description = description;
-        this.precedence = new Long(9999);
+        this.precedence = 999L;
     }
 
     public ConfigurationGroupVO(String name, String description, Long precedence) {

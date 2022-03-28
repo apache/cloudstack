@@ -16,9 +16,16 @@
 // under the License.
 
 <template>
-    <b>{{ configrecord.displaytext }}</b> {{ ' (' + configrecord.name + ')' }} <br/> {{ configrecord.description }}
-
-    <ConfigurationValue :configrecord="configrecord" :loading="loading" />
+    <a-container class="config-row">
+      <a-row :gutter="12">
+          <a-col :md="18">
+            <b> {{configrecord.displaytext }} </b> {{ ' (' + configrecord.name + ')' }} <br/> {{ configrecord.description }}
+          </a-col>
+          <a-col :md="6">
+            <ConfigurationValue :configrecord="configrecord" :loading="loading" />
+          </a-col>
+      </a-row>
+    </a-container>
 </template>
 <script>
 import ConfigurationValue from './ConfigurationValue'
@@ -55,6 +62,12 @@ export default {
   methods: {
     fetchData () {
       this.fetchLoading = false
+    },
+    getRowClassName (record, index) {
+      if (index % 2 === 0) {
+        return 'light-row'
+      }
+      return 'dark-row'
     }
   }
 }

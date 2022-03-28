@@ -7535,35 +7535,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
-    public Pair<String, String> getConfigurationGroup(final String configName) {
-        if (configName != null) {
+    public Pair<String, String> getConfigurationGroupAndSubGroup(final String configName) {
+        if (StringUtils.isNotBlank(configName)) {
             final ConfigurationVO cfg = _configDao.findByName(configName);
             if (cfg != null) {
-                if (cfg.getSubGroupId() != 0) {
-                    ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
-                    if (configSubGroup != null) {
-                        String subGroupName = configSubGroup.getName();
-                        ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
-                        String groupName = configGroup != null ? configGroup.getName() : "Misc";
-                        return new Pair<String, String>(groupName, subGroupName);
-                    }
-                }
-
-                String[] nameWords = configName.split("\\.");
-                if (nameWords.length > 0) {
-                    for (int index = 0; index < nameWords.length; index++) {
-                        ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findByName(nameWords[index]);
-                        if (configSubGroup == null) {
-                            configSubGroup = _configSubGroupDao.findByKeyword(nameWords[index]);
-                        }
-
-                        if (configSubGroup != null) {
-                            String subGroupName = configSubGroup.getName();
-                            ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
-                            String groupName = configGroup != null ? configGroup.getName() : "Misc";
-                            return new Pair<String, String>(groupName, subGroupName);
-                        }
-                    }
+                ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
+                if (configSubGroup != null) {
+                    String subGroupName = configSubGroup.getName();
+                    ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
+                    String groupName = configGroup != null ? configGroup.getName() : "Miscellaneous";
+                    return new Pair<String, String>(groupName, subGroupName);
                 }
             } else {
                 s_logger.warn("Configuration " + configName + " not found");
@@ -7571,7 +7552,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         s_logger.debug("Returning default configuration group for config: " + configName);
-        return new Pair<String, String>("Others", "Misc");
+        return new Pair<String, String>("Miscellaneous", "Others");
     }
 
     @Override

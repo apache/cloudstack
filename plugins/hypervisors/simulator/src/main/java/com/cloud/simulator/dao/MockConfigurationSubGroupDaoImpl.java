@@ -24,14 +24,27 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import com.cloud.utils.db.GenericDaoBase;
 
 public class MockConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSubGroupVO, Long> implements ConfigurationSubGroupDao {
+    @Override
     public ConfigurationSubGroupVO findByName(String name) {
         return null;
     }
 
+    @Override
+    public ConfigurationSubGroupVO startsWithName(String name) {
+        return null;
+    }
+
+    @Override
     public ConfigurationSubGroupVO findByKeyword(String keyword) {
         return null;
     }
 
+    @Override
+    public ConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId) {
+        return null;
+    }
+
+    @Override
     public List<ConfigurationSubGroupVO> findByGroup(Long groupId) {
         return null;
     }

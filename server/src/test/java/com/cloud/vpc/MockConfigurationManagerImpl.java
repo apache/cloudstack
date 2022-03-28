@@ -663,7 +663,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     @Override
-    public Pair<String, String> getConfigurationGroup(String configName) {
+    public Pair<String, String> getConfigurationGroupAndSubGroup(String configName) {
         // TODO Auto-generated method stub
         return null;
     }

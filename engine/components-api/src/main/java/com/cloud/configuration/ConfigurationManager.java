@@ -267,7 +267,7 @@ public interface ConfigurationManager {
 
     String getConfigurationType(String configName); // Value type
 
-    Pair<String, String> getConfigurationGroup(String configName);
+    Pair<String, String> getConfigurationGroupAndSubGroup(String configName);
 
     List<ConfigurationSubGroupVO> getConfigurationSubGroups(Long groupId);
 }

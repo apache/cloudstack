@@ -93,13 +93,13 @@ public class ListCfgsByCmd extends BaseListCmd {
             description = "the ID of the Image Store to update the parameter value for corresponding image store")
     private Long imageStoreId;
 
-    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name", since = "4.17.0")
+    @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name (primarily used for UI)", since = "4.17.0")
     private String groupName;
 
-    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "lists configuration by subgroup name", since = "4.17.0")
+    @Parameter(name = ApiConstants.SUBGROUP, type = CommandType.STRING, description = "lists configuration by subgroup name (primarily used for UI)", since = "4.17.0")
     private String subGroupName;
 
-    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name", since = "4.17.0")
+    @Parameter(name = ApiConstants.PARENT, type = CommandType.STRING, description = "lists configuration by parent name (primarily used for UI)", since = "4.17.0")
     private String parentName;
 
     // ///////////////////////////////////////////////////

@@ -33,10 +33,14 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
@@ -70,6 +74,10 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    ConfigurationGroupDao _configGroupDao;
+    @Inject
+    ConfigurationSubGroupDao _configSubGroupDao;
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
@@ -139,6 +147,28 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     private void createOrupdateConfigObject(Date date, String componentName, ConfigKey<?> key, String value) {
+        Long groupId = 1L;
+        Long subGroupId = 1L;
+        if (key.group() != null) {
+            Ternary<String, String, Long> group = key.group();
+            ConfigurationGroupVO groupVO = _configGroupDao.findByName(group.first());
+            if (groupVO == null) {
+                groupVO = new ConfigurationGroupVO(group.first(), group.second(), group.third());
+                groupVO = _configGroupDao.persist(groupVO);
+            }
+            groupId = groupVO.getId();
+        }
+
+        if (key.subGroup() != null) {
+            Pair<String, Long> subGroup = key.subGroup();
+            ConfigurationSubGroupVO subGroupVO = _configSubGroupDao.findByNameAndGroup(subGroup.first(), groupId);
+            if (subGroupVO == null) {
+                subGroupVO = new ConfigurationSubGroupVO();
+                subGroupVO = _configSubGroupDao.persist(subGroupVO);
+            }
+            subGroupId = subGroupVO.getId();
+        }
+
         ConfigurationVO vo = _configDao.findById(key.key());
         if (vo == null) {
             vo = new ConfigurationVO(componentName, key);
@@ -146,16 +176,34 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             if (value != null) {
                 vo.setValue(value);
             }
+
+            if (key.group() == null && key.subGroup() == null ) {
+                Pair<Long, Long> configGroupAndSubGroup = getConfigurationGroupAndSubGroupByName(key.key());
+                vo.setGroupId(configGroupAndSubGroup.first());
+                vo.setSubGroupId(configGroupAndSubGroup.second());
+            } else {
+                vo.setGroupId(groupId);
+                vo.setSubGroupId(subGroupId);
+            }
+
             _configDao.persist(vo);
         } else {
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
                 !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
-                !ObjectUtils.equals(vo.getComponent(), componentName)) {
+                !ObjectUtils.equals(vo.getComponent(), componentName) ||
+                (key.displayText() != null && !ObjectUtils.equals(vo.getDisplayText(), key.displayText())) ||
+                (key.parent() != null && !ObjectUtils.equals(vo.getParent(), key.parent())) ||
+                (key.group() != null && vo.getGroupId() != groupId) ||
+                (key.subGroup() != null && vo.getSubGroupId() != subGroupId)) {
                 vo.setDynamic(key.isDynamic());
                 vo.setDescription(key.description());
+                vo.setDisplayText(key.displayText());
                 vo.setDefaultValue(key.defaultValue());
                 vo.setScope(key.scope().toString());
                 vo.setComponent(componentName);
+                vo.setParent(key.parent());
+                vo.setGroupId(groupId);
+                vo.setSubGroupId(subGroupId);
                 vo.setUpdated(date);
                 _configDao.persist(vo);
             }
@@ -227,6 +275,33 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public <T> void createOrUpdateConfigObject(String componentName, ConfigKey<T> key, String value) {
         createOrupdateConfigObject(new Date(), componentName, key, value);
+    }
 
+    private Pair<Long, Long> getConfigurationGroupAndSubGroupByName(String configName) {
+        Long subGroupId = 1L;
+        Long groupId = 1L;
+        if (StringUtils.isNotBlank(configName)) {
+            String[] nameWords = configName.split("\\.");
+            if (nameWords.length > 0) {
+                for (int index = 0; index < nameWords.length; index++) {
+                    ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findByName(nameWords[index]);
+                    if (configSubGroup == null) {
+                        configSubGroup = _configSubGroupDao.startsWithName(nameWords[index]);
+                    }
+
+                    if (configSubGroup == null) {
+                        configSubGroup = _configSubGroupDao.findByKeyword(nameWords[index]);
+                    }
+
+                    if (configSubGroup != null) {
+                        subGroupId = configSubGroup.getId();
+                        groupId = configSubGroup.getGroupId();
+                        break;
+                    }
+                }
+            }
+        }
+
+        return new Pair<Long, Long>(groupId, subGroupId);
     }
 }

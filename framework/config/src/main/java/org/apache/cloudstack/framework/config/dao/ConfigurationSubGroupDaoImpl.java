@@ -18,44 +18,49 @@ package org.apache.cloudstack.framework.config.dao;
 
 import java.util.Arrays;
 import java.util.List;
-//import java.util.Map;
-
-//import javax.annotation.PostConstruct;
-//import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-//import org.springframework.stereotype.Component;
 
-//import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-//@Component
 public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSubGroupVO, Long> implements ConfigurationSubGroupDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationSubGroupDaoImpl.class);
 
     final SearchBuilder<ConfigurationSubGroupVO> NameSearch;
     final SearchBuilder<ConfigurationSubGroupVO> GroupSearch;
+    final SearchBuilder<ConfigurationSubGroupVO> NameAndGroupSearch;
 
     public ConfigurationSubGroupDaoImpl() {
         NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.LIKE);
         NameSearch.done();
 
         GroupSearch = createSearchBuilder();
         GroupSearch.and("groupId", GroupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
         GroupSearch.done();
-        //setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM_BOOTSTRAP);
+
+        NameAndGroupSearch = createSearchBuilder();
+        NameAndGroupSearch.and("name", NameAndGroupSearch.entity().getName(), SearchCriteria.Op.EQ);
+        NameAndGroupSearch.and("groupId", NameAndGroupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
+        NameAndGroupSearch.done();
     }
 
     @Override
     public ConfigurationSubGroupVO findByName(String name) {
         SearchCriteria<ConfigurationSubGroupVO> sc = NameSearch.create();
         sc.setParameters("name", name);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public ConfigurationSubGroupVO startsWithName(String name) {
+        SearchCriteria<ConfigurationSubGroupVO> sc = NameSearch.create();
+        sc.setParameters("name", name + "%");
         return findOneIncludingRemovedBy(sc);
     }
 
@@ -91,21 +96,18 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
     }
 
     @Override
+    public ConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId) {
+        SearchCriteria<ConfigurationSubGroupVO> sc = NameAndGroupSearch.create();
+        sc.setParameters("name", name);
+        sc.setParameters("groupId", groupId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
     public List<ConfigurationSubGroupVO> findByGroup(Long groupId) {
         SearchCriteria<ConfigurationSubGroupVO> sc = GroupSearch.create();
         sc.setParameters("groupId", groupId);
         final Filter filter = new Filter(ConfigurationSubGroupVO.class, "precedence", true, null, null);
         return listIncludingRemovedBy(sc, filter);
     }
-
-//    @Override
-//    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-//        super.configure(name, params);
-//        return true;
-//    }
-
-//    @PostConstruct
-//    protected void init() throws ConfigurationException {
-//        configure(getName(), getConfigParams());
-//    }
 }

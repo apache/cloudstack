@@ -139,14 +139,15 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
                 }
 
                 for (int index = 0; index < nameWords.length; index++) {
-                    Pair<Long, Long> configGroup = getConfigurationGroup(conn, nameWords[index]);
-                    if (configGroup.first() != 0 && configGroup.second() != 0) {
-                        stmt = "UPDATE `cloud`.`configuration` SET subgroup_id = ? , group_id = ? WHERE name = ?";
+                    Pair<Long, Long> configGroupAndSubGroup = getConfigurationGroupAndSubGroup(conn, nameWords[index]);
+                    if (configGroupAndSubGroup.first() != 1 && configGroupAndSubGroup.second() != 1) {
+                        stmt = "UPDATE `cloud`.`configuration` SET group_id = ?, subgroup_id = ? WHERE name = ?";
                         pstmt = conn.prepareStatement(stmt);
-                        pstmt.setLong(1, configGroup.first());
-                        pstmt.setLong(2, configGroup.second());
+                        pstmt.setLong(1, configGroupAndSubGroup.first());
+                        pstmt.setLong(2, configGroupAndSubGroup.second());
                         pstmt.setString(3, configName);
                         pstmt.executeUpdate();
+                        break;
                     }
                 }
             }
@@ -161,25 +162,25 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private Pair<Long, Long> getConfigurationGroup(Connection conn, String subGroupName) {
-        Long subGroupId = 0L;
-        Long groupId = 0L;
+    private Pair<Long, Long> getConfigurationGroupAndSubGroup(Connection conn, String name) {
+        Long subGroupId = 1L;
+        Long groupId = 1L;
         try {
             String stmt = "SELECT id, group_id FROM `cloud`.`configuration_subgroup` WHERE name = ?";
             PreparedStatement pstmt = conn.prepareStatement(stmt);
-            pstmt.setString(1, subGroupName);
+            pstmt.setString(1, name);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
                 subGroupId = rs.getLong(1);
                 groupId = rs.getLong(2);
             } else {
                 // Try with keywords in the configuration subgroup
-                stmt = "SELECT id, group_id, keywords FROM `cloud`.`configuration_subgroup`";
+                stmt = "SELECT id, group_id, keywords FROM `cloud`.`configuration_subgroup` WHERE keywords IS NOT NULL";
                 pstmt = conn.prepareStatement(stmt);
                 ResultSet rsConfigurationSubGroups = pstmt.executeQuery();
                 while (rsConfigurationSubGroups.next()) {
-                    subGroupId = rsConfigurationSubGroups.getLong(1);
-                    groupId = rsConfigurationSubGroups.getLong(2);
+                    Long keywordsSubGroupId = rsConfigurationSubGroups.getLong(1);
+                    Long keywordsGroupId = rsConfigurationSubGroups.getLong(2);
                     String keywords = rsConfigurationSubGroups.getString(3);
                     if(StringUtils.isBlank(keywords)) {
                         continue;
@@ -194,8 +195,10 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     for (String configKeyword : keywordsList) {
                         if (StringUtils.isNotBlank(configKeyword)) {
                             configKeyword = configKeyword.strip();
-                            if (configKeyword.equalsIgnoreCase(subGroupName) || configKeyword.toLowerCase().startsWith(subGroupName.toLowerCase())) {
-                                break;
+                            if (configKeyword.equalsIgnoreCase(name) || configKeyword.toLowerCase().startsWith(name.toLowerCase())) {
+                                subGroupId = keywordsSubGroupId;
+                                groupId = keywordsGroupId;
+                                return new Pair<Long, Long>(groupId, subGroupId);
                             }
                         }
                     }
@@ -208,6 +211,6 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error("Failed to get configuration subgroup due to " + e.getMessage(), e);
         }
 
-        return new Pair<Long, Long>(subGroupId, groupId);
+        return new Pair<Long, Long>(groupId, subGroupId);
     }
 }

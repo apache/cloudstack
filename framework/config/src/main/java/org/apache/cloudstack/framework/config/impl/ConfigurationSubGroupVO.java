@@ -40,7 +40,7 @@ public class ConfigurationSubGroupVO implements ConfigurationSubGroup {
     private String keywords = null;
 
     @Column(name = "precedence")
-    private Long precedence = 1L;
+    private Long precedence = 999L;
 
     @Column(name = "group_id")
     private Long groupId;
@@ -51,7 +51,7 @@ public class ConfigurationSubGroupVO implements ConfigurationSubGroup {
     public ConfigurationSubGroupVO(String name, String keywords) {
         this.name = name;
         this.keywords = keywords;
-        this.precedence = new Long(9999);
+        this.precedence = 999L;
     }
 
     public ConfigurationSubGroupVO(String name, String keywords, Long precedence) {

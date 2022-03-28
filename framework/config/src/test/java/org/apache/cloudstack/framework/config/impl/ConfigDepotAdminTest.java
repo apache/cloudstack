@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -57,6 +58,9 @@ public class ConfigDepotAdminTest extends TestCase {
     ConfigurationDao _configDao;
 
     @Mock
+    ConfigurationSubGroupDao _configSubGroupDao;
+
+    @Mock
     ScopedConfigStorage _scopedStorage;
 
     /**
@@ -68,6 +72,7 @@ public class ConfigDepotAdminTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         _depotAdmin = new ConfigDepotImpl();
         _depotAdmin._configDao = _configDao;
+        _depotAdmin._configSubGroupDao = _configSubGroupDao;
         _depotAdmin._configurables = new ArrayList<Configurable>();
         _depotAdmin._configurables.add(_configurable);
         _depotAdmin._scopedStorages = new ArrayList<ScopedConfigStorage>();
@@ -80,12 +85,15 @@ public class ConfigDepotAdminTest extends TestCase {
         dynamicIntCV.setValue("100");
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
+        ConfigurationSubGroupVO testSubGroup = new ConfigurationSubGroupVO("TestSubGroup", null, 1L);
+        testSubGroup.setGroupId(9L);
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK});
         when(_configDao.findById(StaticIntCK.key())).thenReturn(null);
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
+        when(_configSubGroupDao.findByName("statIntKey")).thenReturn(testSubGroup);
 
         _depotAdmin.populateConfigurations();
 

@@ -24,6 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ConfigurationSubGroupDao extends GenericDao<ConfigurationSubGroupVO, Long> {
     ConfigurationSubGroupVO findByName(String name);
+    ConfigurationSubGroupVO startsWithName(String name);
     ConfigurationSubGroupVO findByKeyword(String keyword);
+    ConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId);
     List<ConfigurationSubGroupVO> findByGroup(Long groupId);
 }

@@ -563,7 +563,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConfigurationResponse createConfigurationResponse(Configuration cfg) {
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
         cfgResponse.setCategory(cfg.getCategory());
-        Pair<String, String> category = _configMgr.getConfigurationGroup(cfg.getName());
+        Pair<String, String> category = _configMgr.getConfigurationGroupAndSubGroup(cfg.getName());
         cfgResponse.setGroup(category.first());
         cfgResponse.setSubGroup(category.second());
         cfgResponse.setDescription(cfg.getDescription());

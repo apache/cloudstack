@@ -22,6 +22,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
 import com.cloud.utils.db.GenericDaoBase;
 
 public class MockConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroupVO, Long> implements ConfigurationGroupDao {
+    @Override
     public ConfigurationGroupVO findByName(String name) {
         return null;
     }
