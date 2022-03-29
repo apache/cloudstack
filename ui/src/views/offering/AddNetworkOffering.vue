@@ -938,6 +938,10 @@ export default {
           }
         }
 
+        if (values.guestiptype === 'l2' && values.userdatal2 === true) {
+          params.supportedservices = 'UserData'
+        }
+
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
           params.egressdefaultpolicy = false
         }
