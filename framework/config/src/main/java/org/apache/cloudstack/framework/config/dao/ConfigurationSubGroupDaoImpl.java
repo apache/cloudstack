@@ -22,12 +22,14 @@ import java.util.List;
 import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+@Component
 public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSubGroupVO, Long> implements ConfigurationSubGroupDao {
     private static final Logger s_logger = Logger.getLogger(ConfigurationSubGroupDaoImpl.class);
 
@@ -36,6 +38,8 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
     final SearchBuilder<ConfigurationSubGroupVO> NameAndGroupSearch;
 
     public ConfigurationSubGroupDaoImpl() {
+        super();
+
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.LIKE);
         NameSearch.done();

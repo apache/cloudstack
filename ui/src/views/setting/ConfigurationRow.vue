@@ -18,10 +18,10 @@
 <template>
     <a-container class="config-row">
       <a-row :gutter="12">
-          <a-col :md="18">
+          <a-col :md="17">
             <b> {{configrecord.displaytext }} </b> {{ ' (' + configrecord.name + ')' }} <br/> {{ configrecord.description }}
           </a-col>
-          <a-col :md="6">
+          <a-col :md="7">
             <ConfigurationValue :configrecord="configrecord" :loading="loading" />
           </a-col>
       </a-row>

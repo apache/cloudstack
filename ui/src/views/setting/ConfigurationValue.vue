@@ -49,7 +49,7 @@
         />
       </span>
       <span v-else-if="configrecord.type ==='Range'">
-        <a-row :gutter="1">
+        <a-row :gutter="12">
           <a-col :md="10" :lg="10">
             <a-slider
               :defaultValue="configrecord.value * 100"
@@ -62,7 +62,7 @@
               @change="value => setConfigurationEditable(configrecord, value)"
             />
           </a-col>
-          <a-col :md="2" :lg="2">
+          <a-col :md="4" :lg="4">
             <a-input-number
               :defaultValue="configrecord.value * 100"
               :disabled=true
@@ -88,7 +88,7 @@
       </span>
       <span v-else>
         <a-input
-          style="width: 15vw;float: right;margin-bottom: 10px; z-index: 8;"
+          style="width: 13vw;float: right;margin-bottom: 10px; z-index: 8;"
           :defaultValue="configrecord.value"
           :disabled="!('updateConfiguration' in $store.getters.apis)"
           v-model:value="editableValue"
@@ -113,7 +113,6 @@
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
           @onClick="resetConfigurationValue(configrecord)"
-          v-if="editableValueKey !== null"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
       </span>
