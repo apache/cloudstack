@@ -217,11 +217,7 @@
               :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
               <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
-                <span>
-                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <project-outlined v-else style="margin-right: 5px" />
-                  {{ opt.name || opt.description }}
-                </span>
+                {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -252,19 +248,18 @@
               <tooltip-label :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
             </template>
             <a-select
-              v-model:value="form.associatednetworkid"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :loading="accountLoading"
+              :loading="networkLoading"
               :placeholder="this.$t('label.associatednetwork')"
               @change="val => { this.handleNetworkChange(this.networks[val]) }">
               <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <apartment-outlined style="margin-right: 5px" />
+                  <apartment-outlined v-else style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
