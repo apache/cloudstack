@@ -98,7 +98,7 @@
         </span>
 
         <span v-if="record.hasannotations">
-          <span v-if="record.id">
+          <span v-if="record.id && $route.path !== '/ssh'">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.id, query: { tab: 'comments' } }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
