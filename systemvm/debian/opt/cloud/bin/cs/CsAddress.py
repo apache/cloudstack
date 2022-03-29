@@ -147,6 +147,12 @@ class CsInterface:
         else:
             return self.config.cmdline().get_guest_gw()
 
+    def get_gateway6(self):
+        if self.config.is_vpc() or not self.is_guest():
+            return self.get_attr("gateway6")
+        else:
+            return self.config.cmdline().get_guest_gw6()
+
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
         net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
@@ -155,9 +161,18 @@ class CsInterface:
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
 
+    def get_gateway6_cidr(self):
+        return "%s/%s" % (self.get_gateway6(), self.get_cidr6_size())
+
     def get_size(self):
         """ Return the network size in bits (24, 16, 8 etc) """
         return self.get_attr("size")
+
+    def get_cidr6_size(self):
+        if not self.is_guest():
+            return self.get_attr("size6")
+        else:
+            return self.config.cmdline().get_guest_cidr6_size()
 
     def get_device(self):
         return self.get_attr("device")

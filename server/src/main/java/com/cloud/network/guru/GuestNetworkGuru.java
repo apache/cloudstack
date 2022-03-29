@@ -27,7 +27,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -65,7 +64,6 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
@@ -153,18 +151,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         if (!isIpv6Supported || nic.getIPv6Address() != null || network.getIp6Cidr() == null || network.getIp6Gateway() == null) {
             return;
         }
-        boolean useGatewayAsIp = isGateway;
         if (isGateway) {
-            List<DomainRouterVO> routers = domainRouterDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
-            DomainRouterVO existingRouter = CollectionUtils.isNotEmpty(routers) ? routers.get(0) : null;
-            if (existingRouter != null &&
-                    existingRouter.getIsRedundantRouter()&&
-                    VirtualRouter.RedundantState.UNKNOWN.equals(existingRouter.getRedundantState())) {
-                useGatewayAsIp = false;
-            }
-        }
-        if (useGatewayAsIp) {
-            nic.setIPv6Address(network.getIp6Gateway());
             nic.setIPv6Cidr(network.getIp6Cidr());
             nic.setIPv6Gateway(network.getIp6Gateway());
             if (nic.getIPv4Address() != null) {
@@ -172,6 +159,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             } else {
                 nic.setFormat(Networks.AddressFormat.Ip6);
             }
+            DomainRouterVO router = domainRouterDao.findById(vm.getId());
+            if (router != null &&
+                    router.getIsRedundantRouter()) {
+                return;
+            }
+            nic.setIPv6Address(network.getIp6Gateway());
         }
         ipv6AddressManager.setNicIp6Address(nic, dc, network);
     }

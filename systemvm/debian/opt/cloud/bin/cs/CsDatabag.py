@@ -65,6 +65,16 @@ class CsCmdLine(CsDataBag):
             return self.idata()['guestgw']
         return False
 
+    def get_guest_gw6(self):
+        if "guestgw6" in self.idata():
+            return self.idata()['guestgw6']
+        return False
+
+    def get_guest_cidr6_size(self):
+        if "guestcidr6size" in self.idata():
+            return self.idata()['guestcidr6size']
+        return False
+
     def is_redundant(self):
         if "redundant_router" in self.idata():
             return self.idata()['redundant_router'] == "true"

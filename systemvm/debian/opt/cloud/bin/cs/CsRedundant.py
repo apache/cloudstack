@@ -331,6 +331,8 @@ class CsRedundant(object):
             else:
                 logging.error("Device %s was not ready could not bring it up" % dev)
 
+        self._add_ipv6_guest_gateway()
+
         logging.debug("Configuring static routes")
         static_routes = CsStaticRoutes("staticroutes", self.config)
         static_routes.process()
@@ -415,3 +417,28 @@ class CsRedundant(object):
                 str = "        %s brd %s dev %s\n" % (interface.get_gateway_cidr(), interface.get_broadcast(), interface.get_device())
                 lines.append(str)
         return lines
+
+    def _add_ipv6_guest_gateway(self):
+        """
+        Configure guest network gateway as IPv6 address for guest interface
+        for redundant primary VR
+        """
+        interfaces = [interface for interface in self.address.get_interfaces() if interface.is_guest()]
+        dev = ''
+        for interface in interfaces:
+            if dev == interface.get_device() or not interface.get_gateway6_cidr() :
+                continue
+            dev = interface.get_device()
+            command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, interface.get_gateway6_cidr())
+            ipConfigured = CsHelper.execute(command)
+            if ipConfigured:
+                logging.info("IPv6 gateway %s as IP already present for %s" % (interface.get_gateway6_cidr(), dev))
+                return
+            command = "ip link show %s | grep 'state UP'" % dev
+            devUp = CsHelper.execute(command)
+            if not devUp:
+                logging.error("ERROR setting IPv6 gateway as IP for device %s as it is not ready" % dev)
+                return
+            logging.info("Device %s is present, let's add IPv6 gateway  %s as IP" % (dev, interface.get_gateway6_cidr()))
+            cmd = "ip -6 addr add  %s dev %s" % (interface.get_gateway6_cidr(), dev)
+            CsHelper.execute(cmd)

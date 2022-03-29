@@ -2146,6 +2146,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(createRedundantRouterArgs(guestNic, router));
             final Network net = _networkModel.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
+            buf.append(" guestgw6=").append(net.getIp6Gateway());
+            buf.append(" guestcidr6size=").append(NetUtils.getIp6CidrSize(guestNic.getIPv6Cidr()));
             final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
