@@ -1051,9 +1051,14 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             }
             List<String> cidrList = new ArrayList<>();
             cidrList.add(NetUtils.ALL_IP4_CIDRS);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO, 22, 22, null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO, 6443, 6443, null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
-            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO, null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
+                    KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_SSH_PORT_SG,
+                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.TCP_PROTO,
+                    KubernetesClusterActionWorker.CLUSTER_API_PORT, KubernetesClusterActionWorker.CLUSTER_API_PORT,
+                    null, null, cidrList, null, SecurityRule.SecurityRuleType.IngressRule);
+            securityGroupService.authorizeSecurityGroupRule(securityGroupVO.getId(), NetUtils.ALL_PROTO,
+                    null, null, null, null, cidrList, null, SecurityRule.SecurityRuleType.EgressRule);
         }
 
         final Network defaultNetwork = getKubernetesClusterNetworkIfMissing(cmd.getName(), zone, owner, (int)controlNodeCount, (int)clusterSize, cmd.getExternalLoadBalancerIpAddress(), cmd.getNetworkId());
