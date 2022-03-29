@@ -328,6 +328,8 @@ class CsRedundant(object):
                         route.add_defaultroute(gateway)
                 except Exception:
                     logging.error("ERROR getting gateway from device %s" % dev)
+                if dev == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
+                    self._add_ipv6_to_interface(interface, interface.get_ip6())
             else:
                 logging.error("Device %s was not ready could not bring it up" % dev)
 
@@ -418,27 +420,36 @@ class CsRedundant(object):
                 lines.append(str)
         return lines
 
+    def _add_ipv6_to_interface(self, interface, ipv6):
+        """
+        Add an IPv6 to an interface. This is useful for adding,
+        - guest IPv6 gateway for primary VR guest NIC
+        - public IPv6 for primary VR public NIC as its IPv6 gets lost on link down
+        """
+        dev = ''
+        if dev == interface.get_device() or not ipv6 :
+            return
+        dev = interface.get_device()
+        command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, ipv6)
+        ipConfigured = CsHelper.execute(command)
+        if ipConfigured:
+            logging.info("IPv6 address %s already present for %s" % (ipv6, dev))
+            return
+        command = "ip link show %s | grep 'state UP'" % dev
+        devUp = CsHelper.execute(command)
+        if not devUp:
+            logging.error("ERROR setting IPv6 address for device %s as it is not ready" % dev)
+            return
+        logging.info("Device %s is present, let's add IPv6 address  %s" % (dev, ipv6))
+        cmd = "ip -6 addr add  %s dev %s" % (ipv6, dev)
+        CsHelper.execute(cmd)
+
     def _add_ipv6_guest_gateway(self):
         """
         Configure guest network gateway as IPv6 address for guest interface
         for redundant primary VR
         """
-        interfaces = [interface for interface in self.address.get_interfaces() if interface.is_guest()]
-        dev = ''
-        for interface in interfaces:
-            if dev == interface.get_device() or not interface.get_gateway6_cidr() :
+        for interface in self.address.get_interfaces():
+            if not interface.is_guest():
                 continue
-            dev = interface.get_device()
-            command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, interface.get_gateway6_cidr())
-            ipConfigured = CsHelper.execute(command)
-            if ipConfigured:
-                logging.info("IPv6 gateway %s as IP already present for %s" % (interface.get_gateway6_cidr(), dev))
-                return
-            command = "ip link show %s | grep 'state UP'" % dev
-            devUp = CsHelper.execute(command)
-            if not devUp:
-                logging.error("ERROR setting IPv6 gateway as IP for device %s as it is not ready" % dev)
-                return
-            logging.info("Device %s is present, let's add IPv6 gateway  %s as IP" % (dev, interface.get_gateway6_cidr()))
-            cmd = "ip -6 addr add  %s dev %s" % (interface.get_gateway6_cidr(), dev)
-            CsHelper.execute(cmd)
+            self._add_ipv6_to_interface(interface, interface.get_gateway6_cidr())

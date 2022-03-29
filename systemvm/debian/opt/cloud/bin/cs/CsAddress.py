@@ -135,6 +135,11 @@ class CsInterface:
     def get_ip(self):
         return self.get_attr("public_ip")
 
+    def get_ip6(self):
+        if not self.is_public() and not self.is_guest():
+            return self.get_attr("public_ip6")
+        return self.config.cmdline().get_dev_ip6prelen(self.get_device())
+
     def get_network(self):
         return self.get_attr("network")
 

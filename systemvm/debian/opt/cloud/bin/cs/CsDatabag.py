@@ -174,12 +174,9 @@ class CsCmdLine(CsDataBag):
             return self.idata()['ip6gateway']
         return False
 
-    def get_eth0_ip6(self):
-        if "eth0ip6" in self.idata():
-            return self.idata()['eth0ip6']
-        return False
-
-    def get_eth2_ip6(self):
-        if "eth2ip6" in self.idata():
-            return self.idata()['eth2ip6']
-        return False
+    def get_dev_ip6prelen(self, devname):
+        ipkey = devname + "ip6"
+        prelenkey = devname + "ip6prelen"
+        if ipkey not in self.idata() or prelenkey not in self.idata():
+            return False
+        return "%s/%s" % (self.idata()[ipkey], (self.idata()[prelenkey])
