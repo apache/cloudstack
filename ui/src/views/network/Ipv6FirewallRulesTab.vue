@@ -35,7 +35,8 @@
             optionFilterProp="children"
             :filterOption="(input, option) => {
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }" >
+            }"
+            @change="val => { handleTrafficTypeChange(val) }" >
             <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
             <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
           </a-select>
@@ -51,10 +52,9 @@
             :filterOption="(input, option) => {
               return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ capitalise($t('label.tcp')) }}</a-select-option>
-            <a-select-option value="udp">{{ capitalise($t('label.udp')) }}</a-select-option>
-            <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
-            <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
+            <a-select-option v-for="opt in protocols" :key="opt">
+              {{ $t('label.' + opt) }}
+            </a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
@@ -232,6 +232,12 @@ export default {
           title: this.$t('label.action'),
           slots: { customRender: 'actions' }
         }
+      ],
+      protocols: [
+        'tcp',
+        'udp',
+        'icmp',
+        'all'
       ]
     }
   },
@@ -408,6 +414,16 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleTrafficTypeChange (trafficType) {
+      if (trafficType === 'egress') {
+        this.protocols = this.protocols.filter(x => x !== 'all')
+      } else {
+        if (!this.protocols.includes('all')) {
+          this.protocols.push('all')
+        }
+      }
+      console.log(this.protocols)
     }
   }
 }
