@@ -2305,7 +2305,7 @@
 "message.setup.physical.network.during.zone.creation": "Cuando se esta agregando una zona avanzada, se necesita setear una o m\u00e1s redes f\u00edsicas. Cada red se corresponder\u00e1 con una NIC del hipervisor. Cada red f\u00edsica puede transportar uno o m\u00e1s tipos de tr\u00e1fico, con ciertas restricciones en como ellos se combinan.<br/><br/><strong>Arrastre y suelte uno o m\u00e1s tipos de tr\u00e1fico</strong> sobre cada red f\u00edsica.",
 "message.setup.physical.network.during.zone.creation.basic": "Cuando se esta agregando un zona b\u00e1sica, puedes configurar un red f\u00edsica que se corresponda a una NIC del hipervisor. La red transporta varios tipos de tr\u00e1fico.<br/><br/>Puedes tambi\u00e9n <strong>arrastrar y soltar</strong> otro tipos de tr\u00e1fico en la interfaz f\u00edsica.",
 "message.setup.successful": "La configuraci\u00f3n del cloud finalizo satisfactoriamente.",
-"message.specifiy.tag.key.value": "Por favor especifique una etiqueta con clave y valor",
+"message.specify.tag.key.value": "Por favor especifique una etiqueta con clave y valor",
 "message.specify.url": "Por favor especifique la URL",
 "message.step.1.desc": "Por favor seleccione una plantilla para su nueva instancia virtual. Tambi\u00e9n puede escoger  seleccionar una plantilla en blanco en la que instalar una im\u00e1gen ISO.",
 "message.step.2.continue": "Por favor seleccione una oferta de servicio para continuar",
