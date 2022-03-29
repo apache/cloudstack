@@ -2722,25 +2722,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public String getVolumePath(final Connect conn, final DiskTO volume, boolean diskOnHostCache) throws LibvirtException, URISyntaxException {
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
+        final String dataPath = data.getPath();
 
-        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
-                store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
-
-            if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
-                String configDrivePath = getConfigPath() + "/" + data.getPath();
-                return configDrivePath;
+        if (volume.getType() == Volume.Type.ISO && dataPath != null) {
+            if (dataPath.startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
+                return getConfigPath() + "/" + data.getPath();
             }
 
-            final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
-            final int index = isoPath.lastIndexOf("/");
-            final String path = isoPath.substring(0, index);
-            final String name = isoPath.substring(index + 1);
-            final KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(path);
-            final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
-            return isoVol.getPath();
-        } else {
-            return data.getPath();
+            if (store instanceof NfsTO || store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload()) {
+                final String isoPath = store.getUrl().split("\\?")[0] + File.separator + dataPath;
+                final int index = isoPath.lastIndexOf("/");
+                final String path = isoPath.substring(0, index);
+                final String name = isoPath.substring(index + 1);
+                final KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(path);
+                final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
+                return isoVol.getPath();
+            }
         }
+
+        return dataPath;
     }
 
     public void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
