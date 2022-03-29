@@ -41,6 +41,8 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
+ICMPV6_TYPE_ANY = "{destination-unreachable, packet-too-big, time-exceeded, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, parameter-problem, router-renumbering}"
+
 def removeUndesiredCidrs(cidrs, version):
     version_char = ":"
     if version == 4:
@@ -307,9 +309,9 @@ class CsAcl(CsDataBag):
                 if protocol != "all":
                     icmp_type = ""
                     proto = protocol
-                    if protocol == "icmp":
-                        protocol = "icmpv6"
-                        icmp_type = "any"
+                    if proto == "icmp":
+                        proto = "icmpv6"
+                        icmp_type = ICMPV6_TYPE_ANY
                     if 'icmp_type' in rule and rule['icmp_type'] != -1:
                         icmp_type = rule['icmp_type']
                     if proto and icmp_type:
@@ -332,7 +334,8 @@ class CsAcl(CsDataBag):
                     if last_port and port and \
                        last_port != first_port:
                         port = "{%s-%s}" % (port, last_port)
-                    proto = "%s dport %s" % (proto, port)
+                    if port:
+                        proto = "%s dport %s" % (proto, port)
 
                 action = "drop"
                 if 'allowed' in rule.keys() and rule['allowed']:
@@ -477,9 +480,9 @@ class CsIpv6Firewall(CsDataBag):
             if protocol != "all":
                 icmp_type = ""
                 proto = protocol
-                if protocol == "icmp":
-                    protocol = "icmpv6"
-                    icmp_type = "any"
+                if proto == "icmp":
+                    proto = "icmpv6"
+                    icmp_type = ICMPV6_TYPE_ANY
                 if 'icmp_type' in rule and rule['icmp_type'] != -1:
                     icmp_type = rule['icmp_type']
                 if proto and icmp_type:
@@ -497,7 +500,8 @@ class CsIpv6Firewall(CsDataBag):
                 if last_port and port and \
                    last_port != first_port:
                     port = "{%s-%s}" % (port, last_port)
-                proto = "%s dport %s" % (proto, port)
+                if port:
+                    proto = "%s dport %s" % (proto, port)
 
             action = "accept"
             if chain == "fw_chain_egress":

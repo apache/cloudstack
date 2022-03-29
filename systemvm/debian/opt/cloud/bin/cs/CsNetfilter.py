@@ -238,7 +238,8 @@ class CsNetfilters(object):
             action = 'accept'
         CsHelper.execute("nft add table %s %s" % (address_family, table))
         CsHelper.execute("nft add chain %s %s %s '{type filter hook %s priority 0; policy %s; }'" % (address_family, table, chain, hook, action))
-#         CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-request,nd-neighbor-solicit} accept" % (address_family, table, chain))
+        # accept neighbour discovery otherwise connectivity breaks
+        CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-request, echo-reply, nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert} accept" % (address_family, table, chain))
         for fw in rules:
             chain = fw['chain']
             type = fw['type']
@@ -248,6 +249,8 @@ class CsNetfilters(object):
                 if "egress" in chain:
                     hook = "output"
                 CsHelper.execute("nft add chain %s %s %s '{type filter hook %s priority 0; policy %s; }'" % (address_family, table, chain, hook, rule))
+                if rule == "drop":
+                    CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-reply, nd-neighbor-solicit, nd-neighbor-advert} accept" % (address_family, table, chain))
             else:
                 logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
                 CsHelper.execute("nft add rule ip6 %s %s %s" % (table, chain, rule))

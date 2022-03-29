@@ -124,6 +124,9 @@ setup_interface_ipv6() {
   local prelen="$3"
   local intf=eth${intfnum}
 
+  sysctl net.ipv6.conf.$intf.accept_dad=0
+  sysctl net.ipv6.conf.$intf.use_tempaddr=0
+
   echo "iface $intf inet6 static" >> /etc/network/interfaces
   echo "  address $ipv6 " >> /etc/network/interfaces
   echo "  netmask $prelen" >> /etc/network/interfaces
