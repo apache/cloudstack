@@ -21,7 +21,7 @@
 import sys, os, time, atexit
 import traceback
 import subprocess
-from signal import SIGTERM 
+from signal import SIGTERM
 import cherrypy
 import copy
 
@@ -88,11 +88,11 @@ class Daemon(object):
         self.stdout = stdout
         self.stderr = stderr
         self.pidfile = pidfile
-    
+
     @staticmethod
     def register_atexit_hook(hook):
         Daemon.atexit_hooks.append(hook)
-        
+
     @staticmethod
     def _atexit():
         for hook in Daemon.atexit_hooks:

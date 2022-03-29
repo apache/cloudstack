@@ -82,7 +82,7 @@
           </div>
         </template>
         <div class="form__item" style="flex: 0">
-          <a-button :disabled="!('authorizeSecurityGroupInress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
+          <a-button :disabled="!('authorizeSecurityGroupIngress' in $store.getters.apis) && !('authorizeSecurityGroupEgress' in $store.getters.apis)" type="primary" @click="handleAddRule">{{ $t('label.add') }}</a-button>
         </div>
       </div>
     </div>
@@ -279,12 +279,12 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
     },
     fetchData () {
-      this.tabType = this.$parent.tab === this.$t('label.ingress.rule') ? 'ingress' : 'egress'
+      this.tabType = this.$route.query.tab === 'ingress.rule' ? 'ingress' : 'egress'
       this.rules = this.tabType === 'ingress' ? this.resource.ingressrule : this.resource.egressrule
     },
     getCapitalise (val) {

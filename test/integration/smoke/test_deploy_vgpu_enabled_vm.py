@@ -86,7 +86,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             # No XenServer available with GPU Drivers installed
             self.noSuitableHost = True
             return
-        
+
     def setUp(self):
         self.testdata = self.testClient.getParsedTestDataConfig()["vgpu"]
         self.apiclient = self.testClient.getApiClient()
@@ -97,7 +97,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 	            self.skipTest("Skipping test because suitable hypervisor/host not\
         	            present")
             self.testdata = self.testClient.getParsedTestDataConfig()
-        
+
         self.cleanup = []
 
         # Get Zone, Domain and Default Built-in template
@@ -111,7 +111,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         )
 
         if self.hypervisor.lower() in ["xenserver"]:
-            
+
             # Before running this test for Xen Server, register a windows template with ostype as
             # 'Windows 7 (32-bit)'
             self.template = get_template(
@@ -119,7 +119,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                 self.zone.id,
                 self.testdata["ostype"])
             self.cleanup.append(self.template)
-            
+
             self.testdata["mode"] = self.zone.networktype
 
             if self.template == FAILED:
@@ -139,10 +139,10 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
 	            self.testdata["service_offerings"]["vgpu260qwin"],
         	)
             self.cleanup.append(self.service_offering)
-            
+
         elif self.hypervisor.lower() in ["vmware"]:
             self.testdata["isolated_network"]["zoneid"] = self.zone.id
-            
+
             self.userapiclient = self.testClient.getUserApiClient(
          		UserName=self.account.name,
 		        DomainName=self.account.domain
@@ -157,7 +157,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
         	    self.testdata["isolated_network_offering"])
         	# Enable Isolated Network offering
             self.isolated_network_offering.update(self.apiclient, state='Enabled')
-            
+
             # Register a private template in the account with nic adapter vmxnet3
             # Also add required 3D GPU details for enabling it
             self.template = Template.register(
@@ -169,7 +169,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                 details=[{"mks.enable3d" : "true", "mks.use3dRenderer" : "automatic",
                      "svga.autodetect" : "false", "svga.vramSize" : "131072"}]
             )
-		
+
 
     @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
     def test_deploy_vgpu_enabled_vm(self):
@@ -184,7 +184,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             self.cleanup.append(self.account)
             self.skipTest("This test case is written specifically\
                     for XenServer hypervisor")
-            
+
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.testdata["small"],
@@ -243,11 +243,11 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
                 user=self.testdata['configurableData']['host']["username"],
                 passwd=self.testdata['configurableData']['host']["password"])
             res = sshClient.execute(
-                "xe vgpu-list vm-name-label=%s params=type-uuid %s" % 
+                "xe vgpu-list vm-name-label=%s params=type-uuid %s" %
                 (vm.instancename))
             self.debug("SSH result: %s" % res)
         except Exception as e:
-            self.fail("SSH Access failed for %s: %s" % 
+            self.fail("SSH Access failed for %s: %s" %
                       (hostip, e)
                       )
         result = str(res)
@@ -314,7 +314,7 @@ class TestDeployvGPUenabledVM(cloudstackTestCase):
             networkofferingid=self.isolated_network_offering.id)
 
         self.virtual_machine.add_nic(self.apiclient, self.isolated_network.id)
-        
+
         self.cleanup = [self.virtual_machine, self.isolated_network, self.isolated_network_offering, self.service_offering, self.account, self.template]
 
         qresultset = self.dbclient.execute("select id from vm_instance where uuid = '%s';" % self.virtual_machine.id)

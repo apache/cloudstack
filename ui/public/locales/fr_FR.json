@@ -2275,7 +2275,7 @@
 "message.setup.physical.network.during.zone.creation": "Lorsque vous ajoutez une zone avanc\u00e9e, vous avez besoin de d\u00e9finir un ou plusieurs r\u00e9seaux physiques. Chaque r\u00e9seau correspond \u00e0 une carte r\u00e9seau sur l'hyperviseur. Chaque r\u00e9seau physique peut supporter un ou plusieurs types de trafic, avec certaines restrictions sur la fa\u00e7on dont ils peuvent \u00eatre combin\u00e9s.<br/><br/><strong>Glisser et d\u00e9poser un ou plusieurs types de trafic</strong> sur chaque r\u00e9seau physique.",
 "message.setup.physical.network.during.zone.creation.basic": "Quand vous ajoutez une zone basique, vous pouvez param\u00e9trer un seul r\u00e9seau physique, correspondant \u00e0 une carte r\u00e9seau sur l'hyperviseur. Ce r\u00e9seau comportera plusieurs types de trafic.<br/><br/>Vous pouvez \u00e9galement <strong>glisser et d\u00e9poser</strong> d'autres types de trafic sur le r\u00e9seau physique.",
 "message.setup.successful": "Installation du Cloud r\u00e9ussie !",
-"message.specifiy.tag.key.value": "Sp\u00e9cifier une cl\u00e9 et valeur de tag",
+"message.specify.tag.key.value": "Sp\u00e9cifier une cl\u00e9 et valeur de tag",
 "message.specify.url": "Renseigner l'URL",
 "message.step.1.desc": "S\u00e9lectionnez un mod\u00e8le pour votre nouvelle instance virtuelle. Vous pouvez \u00e9galement choisir un mod\u00e8le vierge sur lequel une image ISO pourra \u00eatre install\u00e9e.",
 "message.step.2.continue": "S\u00e9lectionnez une offre de service pour continuer",
