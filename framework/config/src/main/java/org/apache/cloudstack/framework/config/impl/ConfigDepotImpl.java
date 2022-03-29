@@ -188,23 +188,40 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
             _configDao.persist(vo);
         } else {
+            boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
                 !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
-                !ObjectUtils.equals(vo.getComponent(), componentName) ||
-                (key.displayText() != null && !ObjectUtils.equals(vo.getDisplayText(), key.displayText())) ||
-                (key.parent() != null && !ObjectUtils.equals(vo.getParent(), key.parent())) ||
-                (key.group() != null && vo.getGroupId() != groupId) ||
-                (key.subGroup() != null && vo.getSubGroupId() != subGroupId)) {
+                !ObjectUtils.equals(vo.getComponent(), componentName)) {
                 vo.setDynamic(key.isDynamic());
                 vo.setDescription(key.description());
-                vo.setDisplayText(key.displayText());
                 vo.setDefaultValue(key.defaultValue());
                 vo.setScope(key.scope().toString());
                 vo.setComponent(componentName);
-                vo.setParent(key.parent());
-                vo.setGroupId(groupId);
-                vo.setSubGroupId(subGroupId);
                 vo.setUpdated(date);
+                configUpdated = true;
+            }
+
+            if (key.displayText() != null && !ObjectUtils.equals(vo.getDisplayText(), key.displayText())) {
+                vo.setDisplayText(key.displayText());
+                configUpdated = true;
+            }
+
+            if (key.parent() != null && !ObjectUtils.equals(vo.getParent(), key.parent())) {
+                vo.setParent(key.parent());
+                configUpdated = true;
+            }
+
+            if (key.group() != null && vo.getGroupId() != groupId) {
+                vo.setGroupId(groupId);
+                configUpdated = true;
+            }
+
+            if (key.subGroup() != null && vo.getSubGroupId() != subGroupId) {
+                vo.setSubGroupId(subGroupId);
+                configUpdated = true;
+            }
+
+            if (configUpdated) {
                 _configDao.persist(vo);
             }
         }
@@ -285,9 +302,6 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             if (nameWords.length > 0) {
                 for (int index = 0; index < nameWords.length; index++) {
                     ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findByName(nameWords[index]);
-                    if (configSubGroup == null) {
-                        configSubGroup = _configSubGroupDao.startsWithName(nameWords[index]);
-                    }
 
                     if (configSubGroup == null) {
                         configSubGroup = _configSubGroupDao.findByKeyword(nameWords[index]);

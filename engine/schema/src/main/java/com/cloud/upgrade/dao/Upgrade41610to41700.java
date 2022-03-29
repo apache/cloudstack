@@ -195,7 +195,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
                     for (String configKeyword : keywordsList) {
                         if (StringUtils.isNotBlank(configKeyword)) {
                             configKeyword = configKeyword.strip();
-                            if (configKeyword.equalsIgnoreCase(name) || configKeyword.toLowerCase().startsWith(name.toLowerCase())) {
+                            if (configKeyword.equalsIgnoreCase(name)) {
                                 subGroupId = keywordsSubGroupId;
                                 groupId = keywordsGroupId;
                                 return new Pair<Long, Long>(groupId, subGroupId);
