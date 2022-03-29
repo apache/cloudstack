@@ -2376,7 +2376,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
-        _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         if (!network.isRedundant() && makeRedundant) {
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
