@@ -164,10 +164,10 @@
               :loading="domainLoading"
               :placeholder="apiParams.domainid.description"
               @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <block-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
+                  <block-outlined v-else style="margin-right: 5px" />
                   {{ opt.path || opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -193,10 +193,10 @@
               :loading="accountLoading"
               :placeholder="apiParams.account.description"
               @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex" :label="opt.name || opt.description">
+              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <project-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
+                  <user-outlined v-else style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -216,10 +216,10 @@
               :loading="projectLoading"
               :placeholder="apiParams.projectid.description"
               @change="val => { handleProjectChange(projects[val]) }">
-              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
+              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <project-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
+                  <project-outlined v-else style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -264,7 +264,7 @@
               <a-select-option v-for="(opt, optIndex) in this.networks" :key="optIndex" :label="opt.name || opt.description">
                 <span>
                   <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <user-outlined style="margin-right: 5px" />
+                  <apartment-outlined style="margin-right: 5px" />
                   {{ opt.name || opt.description }}
                 </span>
               </a-select-option>
@@ -467,8 +467,9 @@ export default {
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         vlanid: [{ required: true, message: this.$t('message.please.enter.value') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
-        domainid: [{ required: true, message: this.$t('message.error.select') }],
-        projectid: [{ required: true, message: this.$t('message.error.select') }]
+        domainid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        account: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        projectid: [{ type: 'number', required: true, message: this.$t('message.error.select') }]
       })
     },
     fetchData () {
@@ -609,6 +610,7 @@ export default {
         case 'domain':
         {
           this.fetchDomainData()
+          this.fetchNetworkOfferingData()
           break
         }
         case 'project':
@@ -616,7 +618,6 @@ export default {
           if (isAdminOrDomainAdmin()) {
             this.fetchDomainData()
           } else {
-            this.fetchNetworkOfferingData()
             this.fetchProjectData()
           }
           break
@@ -627,7 +628,6 @@ export default {
             this.fetchDomainData()
           } else {
             this.fetchNetworkOfferingData()
-            this.fetchAccountData()
           }
           break
         }
@@ -694,6 +694,9 @@ export default {
         return
       }
       if (this.isObjectEmpty(this.selectedNetworkOffering) || this.selectedNetworkOffering.specifyvlan) {
+        return
+      }
+      if (this.isObjectEmpty(this.selectedProject) && this.scopeType === 'project') {
         return
       }
       this.networkLoading = true
@@ -786,10 +789,13 @@ export default {
     handleDomainChange (domain) {
       this.selectedDomain = domain
       if (!this.isObjectEmpty(domain)) {
-        this.fetchNetworkOfferingData()
-        this.fetchAccountData()
-        this.fetchProjectData()
-        this.fetchNetworkData()
+        if (this.scopeType === 'domain') {
+          this.fetchNetworkOfferingData()
+        } else if (this.scopeType === 'account') {
+          this.fetchAccountData()
+        } else if (this.scopeType === 'project') {
+          this.fetchProjectData()
+        }
       }
     },
     fetchAccountData () {
@@ -801,14 +807,16 @@ export default {
         params.domainid = this.selectedDomain.id
       }
       this.accountLoading = true
+      this.handleAccountChange(null)
       api('listAccounts', params).then(json => {
-        const listaccounts = json.listaccountsresponse.account || []
-        this.accounts = listaccounts
+        this.accounts = json.listaccountsresponse.account || []
       }).finally(() => {
         this.accountLoading = false
         if (this.arrayHasItems(this.accounts) && this.scopeType === 'account') {
-          this.form.accountid = 0
+          this.form.account = 0
           this.handleAccountChange(this.accounts[0])
+        } else {
+          this.form.account = null
         }
       })
     },
@@ -828,20 +836,24 @@ export default {
         params.domainid = this.selectedDomain.id
       }
       this.projectLoading = true
+      this.handleProjectChange(null)
       api('listProjects', params).then(json => {
-        const listProjects = json.listprojectsresponse.project || []
-        this.projects = this.projects.concat(listProjects)
+        this.projects = json.listprojectsresponse.project || []
       }).finally(() => {
         this.projectLoading = false
         if (this.arrayHasItems(this.projects) && this.scopeType === 'project') {
           this.form.projectid = 0
           this.handleProjectChange(this.projects[0])
+        } else {
+          this.form.projectid = null
         }
       })
     },
     handleProjectChange (project) {
       this.selectedProject = project
-      this.fetchNetworkData()
+      if (!this.isObjectEmpty(project)) {
+        this.fetchNetworkOfferingData()
+      }
     },
     handleSubmit (e) {
       if (this.actionLoading) return
