@@ -153,7 +153,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                s_logger.debug("Editing mount path");
+                s_logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
             }
             // delete the metadata of vm snapshots before migration
@@ -568,7 +568,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
         String newIsoVolumePath = null;
         if (newDisk != null) {
-            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk);
+            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk, to.isConfigDriveOnHostCache());
         }
         return newIsoVolumePath;
     }

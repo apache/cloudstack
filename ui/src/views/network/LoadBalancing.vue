@@ -773,8 +773,8 @@ export default {
     openTagsModal (id) {
       this.initForm()
       this.rules = {
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       }
       this.tagsModalLoading = true
       this.tagsModalVisible = true

@@ -132,6 +132,7 @@ export default {
       this.activeTab = key
       const query = Object.assign({}, this.$route.query)
       query.tab = key
+      this.$route.query.tab = key
       history.pushState(
         {},
         null,
