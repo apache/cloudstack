@@ -124,7 +124,6 @@ export default {
   },
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
-    this.form.size = this.originalSize
     if (!this.isObjectEmpty(this.resource)) {
       this.originalSize = this.resource.size
       if (this.apiParams.autoscalingenabled) {
