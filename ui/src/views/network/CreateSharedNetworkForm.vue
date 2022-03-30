@@ -709,6 +709,7 @@ export default {
         case 'domain':
         {
           params.domainid = this.selectedDomain.id
+          params.ignoreproject = true
           break
         }
         case 'project':
@@ -721,6 +722,7 @@ export default {
         {
           params.domainid = this.selectedAccount.domainid
           params.account = this.selectedAccount.name
+          params.ignoreproject = true
           break
         }
         default:
