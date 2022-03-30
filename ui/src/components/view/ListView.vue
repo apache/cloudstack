@@ -710,6 +710,9 @@ export default {
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
     generateCommentsPath (record) {
+      if (this.entityTypeToPath(record.entitytype) === 'ssh') {
+        return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityname
+      }
       return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid
     },
     generateHumanReadableEntityType (record) {
