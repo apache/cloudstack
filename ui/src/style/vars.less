@@ -47,7 +47,7 @@
 @box-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.15);
 @loading-color: @primary-color;
 
-.ant-layout.ant-layout-has-sider>.ant-layout,
+// .ant-layout.ant-layout-has-sider>.ant-layout,
 .ant-layout.ant-layout-has-sider>.ant-layout-content {
   width: auto;
 }
@@ -171,6 +171,18 @@ a {
   fill: @navigation-text-color;
 }
 
+.ant-menu-dark .ant-menu-item {
+  .anticon .custom-icon {
+    fill: @project-nav-text-color;
+  }
+
+  &.ant-menu-item-selected {
+    .anticon .custom-icon {
+      fill: #fff;
+    }
+  }
+}
+
 .ant-menu-item a {
   .anticon .custom-icon {
     transition: fill 0.3s ease-out;
@@ -178,6 +190,10 @@ a {
   &:hover .anticon .custom-icon {
     fill: @primary-color;
   }
+}
+
+.ant-menu-dark .ant-menu-item:hover .anticon .custom-icon {
+  fill: #fff;
 }
 
 .ant-menu-item:hover,

@@ -68,11 +68,9 @@
 
 <script>
 import store from '@/store'
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'HeaderNotice',
-  components: { RenderIcon },
   data () {
     return {
       loading: false,

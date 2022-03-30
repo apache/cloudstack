@@ -133,7 +133,6 @@
 <script>
 import { api } from '@/api'
 
-import RenderIcon from '@/utils/renderIcon'
 import ChartCard from '@/components/widgets/ChartCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
@@ -141,7 +140,6 @@ import ResourceLabel from '@/components/widgets/ResourceLabel'
 export default {
   name: 'CapacityDashboard',
   components: {
-    RenderIcon,
     ChartCard,
     ResourceIcon,
     ResourceLabel

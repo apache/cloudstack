@@ -27,13 +27,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'ResourceLabel',
-  components: {
-    RenderIcon
-  },
   props: {
     resourceType: {
       type: String,
