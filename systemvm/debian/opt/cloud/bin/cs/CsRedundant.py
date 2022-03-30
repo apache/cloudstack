@@ -247,6 +247,7 @@ class CsRedundant(object):
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
         CsHelper.service("dnsmasq", "stop")
+        CsHelper.service("radvd", "stop")
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
@@ -289,7 +290,6 @@ class CsRedundant(object):
 
         CsHelper.service("dnsmasq", "stop")
         CsHelper.service("radvd", "stop")
-        CsHelper.service("radvd", "disable")
 
         self.cl.set_primary_state(False)
         self.cl.save()
@@ -353,6 +353,7 @@ class CsRedundant(object):
                 CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
 
         CsHelper.service("dnsmasq", "restart")
+        CsHelper.service("radvd", "restart")
         self.cl.set_primary_state(True)
         self.cl.save()
         self.release_lock()
