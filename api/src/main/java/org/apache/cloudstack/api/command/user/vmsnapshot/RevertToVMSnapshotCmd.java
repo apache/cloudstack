@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -97,4 +98,13 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd implements UserCmd {
         return EventTypes.EVENT_VM_SNAPSHOT_REVERT;
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getVmSnapShotId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VmSnapshot;
+    }
 }

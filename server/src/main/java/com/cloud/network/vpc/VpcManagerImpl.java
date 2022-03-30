@@ -2532,7 +2532,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
 
         s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
-
+        CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
         return _ipAddressDao.findById(ipId);
     }
 

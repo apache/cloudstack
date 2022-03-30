@@ -369,6 +369,8 @@ export const resourceTypePlugin = {
           return 'guestnetwork'
         case 'ServiceOffering':
           return 'computeoffering'
+        case 'IpAddress':
+          return 'publicip'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
@@ -388,6 +390,10 @@ export const resourceTypePlugin = {
         case 'VpcOffering':
         case 'BackupOffering':
         case 'Zone':
+        case 'Vpc':
+        case 'VmSnapshot':
+        case 'Pod':
+        case 'Cluster':
           return resourceType.toLowerCase()
       }
       return ''

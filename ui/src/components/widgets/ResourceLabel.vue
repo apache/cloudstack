@@ -16,11 +16,12 @@
 // under the License.
 
 <template>
-  <div v-if="resourceType && resourceId && resourceRoute" >
-    <a-tooltip placement="top" :title="resourceIconTooltip">
-      <render-icon style="font-size: 16px; margin-right: 5px" :icon="resourceIcon" v-if="resourceIcon" />
+  <div v-if="resourceType && resourceId" >
+    <a-tooltip v-if="resourceIcon" placement="top" :title="resourceIconTooltip">
+      <render-icon style="font-size: 16px; margin-right: 5px" :icon="resourceIcon" />
     </a-tooltip>
-    <router-link v-if="$router.resolve(resourceRoute)" :to="{ path: resourceRoute }">{{ resourceName || resourceId }}</router-link>
+    <a-tag v-else>{{ resourceType }}</a-tag>
+    <router-link v-if="resourceRoute && $router.resolve(resourceRoute)" :to="{ path: resourceRoute }">{{ resourceName || resourceId }}</router-link>
     <span v-else>{{ resourceName || resourceId }}</span>
   </div>
 </template>
@@ -36,11 +37,11 @@ export default {
   props: {
     resourceType: {
       type: String,
-      required: true
+      default: ''
     },
     resourceId: {
       type: String,
-      required: true
+      default: ''
     },
     resourceName: {
       type: String,

@@ -308,6 +308,12 @@ export default {
         show: (record) => { return record.issourcenat }
       },
       {
+        name: 'events',
+        resourceType: 'IpAddress',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],

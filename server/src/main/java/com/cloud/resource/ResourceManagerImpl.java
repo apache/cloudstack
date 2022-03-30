@@ -578,6 +578,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
                 s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
                 success = true;
+                CallContext.current().putContextParameter(Cluster.class, cluster.getUuid());
                 return result;
             }
 

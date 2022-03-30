@@ -337,6 +337,9 @@
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="resource" resourceType="Vpc" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="resource"
@@ -356,6 +359,7 @@ import Status from '@/components/widgets/Status'
 import IpAddressesTab from './IpAddressesTab'
 import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
+import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
@@ -366,6 +370,7 @@ export default {
     IpAddressesTab,
     RoutersTab,
     VpcTiersTab,
+    EventsTab,
     AnnotationsTab
   },
   mixins: [mixinDevice],

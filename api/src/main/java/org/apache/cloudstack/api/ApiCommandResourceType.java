@@ -34,6 +34,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.snapshot.VMSnapshot;
 
 public enum ApiCommandResourceType {
     None(null),
@@ -44,6 +45,7 @@ public enum ApiCommandResourceType {
     AutoScaleVmProfile(com.cloud.network.as.AutoScaleVmProfile.class),
     Backup(org.apache.cloudstack.backup.Backup.class),
     BackupOffering(org.apache.cloudstack.backup.BackupOffering.class),
+    Cluster(com.cloud.org.Cluster.class),
     Condition(com.cloud.network.as.Condition.class),
     ConsoleProxy(VirtualMachine.class),
     Counter(com.cloud.network.as.Counter.class),
@@ -67,6 +69,7 @@ public enum ApiCommandResourceType {
     NetworkOffering(com.cloud.offering.NetworkOffering.class),
     PhysicalNetwork(com.cloud.network.PhysicalNetwork.class),
     PhysicalNetworkServiceProvider(com.cloud.network.PhysicalNetworkServiceProvider.class),
+    Pod(com.cloud.dc.Pod.class),
     PortableIpAddress(PortableIp.class),
     PrivateGateway(com.cloud.network.vpc.PrivateGateway.class),
     Project(com.cloud.projects.Project.class),
@@ -80,6 +83,7 @@ public enum ApiCommandResourceType {
     TrafficType(com.cloud.network.PhysicalNetworkTrafficType.class),
     User(com.cloud.user.User.class),
     VirtualMachine(VirtualMachine.class),
+    VmSnapshot(VMSnapshot.class),
     Volume(com.cloud.storage.Volume.class),
     Vpc(com.cloud.network.vpc.Vpc.class),
     VpcOffering(com.cloud.network.vpc.VpcOffering.class),
