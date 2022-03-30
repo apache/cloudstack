@@ -1648,7 +1648,6 @@ export default {
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
       this.handleSubmit(e.domEvent)
-      this.form.stayonpage = false
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1883,6 +1882,9 @@ export default {
           }
         }).catch(error => {
           this.$notifyError(error)
+          this.loading.deploy = false
+        }).finally(() => {
+          this.form.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {
