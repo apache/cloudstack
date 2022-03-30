@@ -239,7 +239,7 @@
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
-            <a-alert type="warning" v-if="!this.arrayHasItems(this.networkOfferings)">
+            <a-alert type="warning" :loading="networkOfferingLoading" v-if="networkOfferingWarning">
               <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
@@ -413,6 +413,7 @@ export default {
       selectedDomain: {},
       networkOfferings: [],
       networkOfferingLoading: false,
+      networkOfferingWarning: false,
       selectedNetworkOffering: {},
       networks: [],
       networkLoading: false,
@@ -670,8 +671,10 @@ export default {
         if (this.arrayHasItems(this.networkOfferings)) {
           this.form.networkofferingid = 0
           this.handleNetworkOfferingChange(this.networkOfferings[0])
+          this.networkOfferingWarning = false
         } else {
           this.form.networkofferingid = null
+          this.networkOfferingWarning = true
         }
       })
     },
@@ -761,6 +764,7 @@ export default {
       })
     },
     fetchDomainData () {
+      this.networkOfferingWarning = false
       const params = {}
       if (!this.isObjectEmpty(this.selectedZone) && this.selectedZone.domainid != null) {
         params.id = this.selectedZone.domainid
@@ -794,6 +798,7 @@ export default {
       }
     },
     fetchAccountData () {
+      this.networkOfferingWarning = false
       this.accounts = []
       const params = {}
       params.showicon = true
@@ -822,6 +827,7 @@ export default {
       }
     },
     fetchProjectData () {
+      this.networkOfferingWarning = false
       this.projects = []
       const params = {}
       params.listall = true
