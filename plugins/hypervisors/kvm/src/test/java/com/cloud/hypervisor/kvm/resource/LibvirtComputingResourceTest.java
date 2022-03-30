@@ -5841,4 +5841,40 @@ public class LibvirtComputingResourceTest {
             return true;
         }));
     }
+
+    private void configLocalStorageTests(Map<String, Object> params) throws ConfigurationException {
+        LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
+        libvirtComputingResourceSpy.configureLocalStorage(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithEmptyParams() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        configLocalStorageTests(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithMultiplePaths() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString() + "," + UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithDifferentLength() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithInvalidUUID() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, "111111");
+        configLocalStorageTests(params);
+    }
+
 }

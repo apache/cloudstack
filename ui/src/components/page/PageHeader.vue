@@ -51,13 +51,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'PageHeader',
-  components: {
-    RenderIcon
-  },
   props: {
     title: {
       type: String,

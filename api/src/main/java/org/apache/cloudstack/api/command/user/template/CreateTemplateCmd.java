@@ -96,7 +96,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")
     private Boolean sshKeyEnabled;
 
-    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requires HVM, false otherwise")
     private Boolean requiresHvm;
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID,

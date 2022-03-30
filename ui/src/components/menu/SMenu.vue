@@ -61,11 +61,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'SMenu',
-  components: { RenderIcon },
   props: {
     menu: {
       type: Array,

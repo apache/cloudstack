@@ -2273,7 +2273,7 @@
 "message.setup.physical.network.during.zone.creation": "Halad\u00f3 z\u00f3na l\u00e9trehoz\u00e1sakor egy vagy t\u00f6bb fizikai h\u00e1l\u00f3zatot kell konfigur\u00e1lnod. Minden h\u00e1l\u00f3zat egy h\u00e1l\u00f3zati k\u00e1rty\u00e1nak felel meg a hiperv\u00edzoron. Minden fizikai h\u00e1l\u00f3zat egy vagy t\u00f6bb t\u00edpus\u00fa forgalmat bonyol\u00edthat, bizonyos megk\u00f6t\u00e9sekkel arra, hogy azokat hogyan lehet kombin\u00e1lni. <br/><br/><strong>H\u00fazz egy vagy t\u00f6bb forgalom t\u00edpust</strong> minden fizikai h\u00e1l\u00f3zatra.",
 "message.setup.physical.network.during.zone.creation.basic": "Alap z\u00f3na l\u00e9trehoz\u00e1sakor egy fizikai h\u00e1l\u00f3zatot hozhatsz l\u00e9tre amely hiperv\u00edzor h\u00e1l\u00f3zati k\u00e1rty\u00e1j\u00e1nak felel meg.<br/><br/>M\u00e1s forgalom-t\u00edpusokat is <strong>r\u00e1h\u00fazhatsz</strong> a fizikai h\u00e1l\u00f3zatra.",
 "message.setup.successful": "A felh\u0151 be\u00e1ll\u00edt\u00e1sa sikeres!",
-"message.specifiy.tag.key.value": "Please specify a tag key and value",
+"message.specify.tag.key.value": "Please specify a tag key and value",
 "message.specify.url": "K\u00e9rlek adj meg egy URL-t!",
 "message.step.1.desc": "Please select a template for your new virtual instance. You can also choose to select a blank template from which an ISO image can be installed onto.",
 "message.step.2.continue": "V\u00e1lassz egy aj\u00e1nlatot a folytat\u00e1shoz!",

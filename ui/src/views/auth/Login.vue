@@ -282,6 +282,8 @@ export default {
       })
     },
     loginSuccess (res) {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
       this.$router.push({ path: '/dashboard' }).catch(() => {})
     },
     requestFailed (err) {

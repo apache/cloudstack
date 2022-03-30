@@ -275,6 +275,7 @@ export default {
       resourceType: 'PublicIpAddress',
       columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
+      filters: ['allocated', 'reserved', 'free'],
       component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),
       tabs: [{
         name: 'details',
@@ -311,7 +312,7 @@ export default {
           label: 'label.action.enable.static.nat',
           docHelp: 'adminguide/networking_and_traffic.html#enabling-or-disabling-static-nat',
           dataView: true,
-          show: (record) => { return !record.virtualmachineid && !record.issourcenat },
+          show: (record) => { return record.state === 'Allocated' && !record.virtualmachineid && !record.issourcenat },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/EnableStaticNat.vue')))
         },
@@ -337,7 +338,27 @@ export default {
           message: 'message.action.release.ip',
           docHelp: 'adminguide/networking_and_traffic.html#releasing-an-ip-address-alloted-to-a-vpc',
           dataView: true,
-          show: (record) => { return !record.issourcenat },
+          show: (record) => { return record.state === 'Allocated' && !record.issourcenat },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'reserveIpAddress',
+          icon: 'lock-outlined',
+          label: 'label.action.reserve.ip',
+          dataView: true,
+          show: (record) => { return record.state === 'Free' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ReservePublicIP.vue')))
+        },
+        {
+          api: 'releaseIpAddress',
+          icon: 'delete-outlined',
+          label: 'label.action.release.ip',
+          message: 'message.action.release.ip',
+          dataView: true,
+          show: (record) => { return record.state === 'Reserved' },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

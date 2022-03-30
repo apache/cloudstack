@@ -62,6 +62,7 @@
         <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
           <a-radio-group
             v-model:value="form.offeringtype"
+            @change="selected => { handleComputeOfferingTypeChange(selected.target.value) }"
             buttonStyle="solid">
             <a-radio-button value="fixed">
               {{ $t('label.fixed') }}

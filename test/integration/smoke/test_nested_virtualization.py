@@ -42,7 +42,7 @@ class TestNestedVirtualization(cloudstackTestCase):
         testClient = super(TestNestedVirtualization, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
-        
+
         cls.logger = logging.getLogger('TestNestedVirtualization')
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
@@ -69,7 +69,7 @@ class TestNestedVirtualization(cloudstackTestCase):
                                                 cls.services["isolated_network_offering"])
         # Enable Isolated Network offering
         cls.isolated_network_offering.update(cls.apiclient, state='Enabled')
-        
+
         if cls.template == FAILED:
             assert False, "get_test_template() failed to return template"
 
@@ -83,7 +83,7 @@ class TestNestedVirtualization(cloudstackTestCase):
         """Test nested virtualization on Vmware hypervisor"""
         if self.hypervisor.lower() not in ["vmware"]:
              self.skipTest("Skipping test because suitable hypervisor/host not present")
-             
+
         # 1) Update nested virtualization configurations, if needed
         configs = Configurations.list(self.apiclient, name="vmware.nested.virtualization")
         rollback_nv = False

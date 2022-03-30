@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -86,7 +86,7 @@ class TestBaremetal(cloudstackTestCase):
         networkoffering = NetworkOffering.create(self.apiclient, self.services["network_offering"])
         networkoffering.update(self.apiclient, state="Enabled")
         self.cleanup.append(networkoffering)
-        
+
         physical_network = PhysicalNetwork.list(self.apiclient, zoneid=self.zoneid)[0];
         dhcp_provider = NetworkServiceProvider.list(self.apiclient, name="BaremetalDhcpProvider", physical_network_id=physical_network.id)[0]
         NetworkServiceProvider.update(
@@ -106,10 +106,10 @@ class TestBaremetal(cloudstackTestCase):
                                           id=userdata_provider.id,
                                           state='Enabled'
                                           )
-        
+
         network = Network.create(self.apiclient, self.services["network"], zoneid=self.zoneid, networkofferingid=networkoffering.id)
         self.cleanup.insert(0, network)
-        
+
         pod = Pod.list(self.apiclient)[0]
         cmd = createVlanIpRange.createVlanIpRangeCmd()
         cmd.podid = pod.id
@@ -120,4 +120,4 @@ class TestBaremetal(cloudstackTestCase):
         cmd.endip = "10.1.1.40"
         cmd.forVirtualNetwork="false"
         self.apiclient.createVlanIpRange(cmd)
-        
+
