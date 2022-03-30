@@ -1897,7 +1897,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                         "in the domain '" + domainId + "'.");
             }
 
+            Role role = roleService.findRole(roleId);
+            Long currentAccRoleId = account.getRoleId();
+            Role currentRole = roleService.findRole(currentAccRoleId);
+
+            if (role.getRoleType().ordinal() < currentRole.getRoleType().ordinal() && ((account.getType() == Account.Type.NORMAL && role.getRoleType().getAccountType().ordinal() > Account.Type.NORMAL.ordinal()) ||
+                    account.getType().ordinal() > Account.Type.NORMAL.ordinal() && role.getRoleType().getAccountType().ordinal() < account.getType().ordinal() && role.getRoleType().getAccountType().ordinal() > 0)) {
+                throw new PermissionDeniedException(String.format("Unable to update account role to %s as you are " +
+                        "attempting to escalate the account %s to account type %s which has higher privileges", role.getName(), account.getAccountName(), role.getRoleType().getAccountType().name()));
+            }
             acctForUpdate.setRoleId(roleId);
+            acctForUpdate.setType(role.getRoleType().getAccountType());
             checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);
         }
 
