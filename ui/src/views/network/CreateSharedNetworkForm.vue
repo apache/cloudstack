@@ -606,7 +606,6 @@ export default {
         case 'domain':
         {
           this.fetchDomainData()
-          this.fetchNetworkOfferingData()
           break
         }
         case 'project':
