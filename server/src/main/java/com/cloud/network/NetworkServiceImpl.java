@@ -2568,7 +2568,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Can't allow networks which traffic type is not " + TrafficType.Guest);
         }
 
-        _accountMgr.checkAccess(callerAccount, null, true, network);
+        _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         _accountMgr.checkAccess(_accountMgr.getActiveAccountById(network.getAccountId()), offering, _dcDao.findById(network.getDataCenterId()));
 
         if (cmd instanceof UpdateNetworkCmdByAdmin) {
