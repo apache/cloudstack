@@ -710,7 +710,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         @Override
-        protected Point creteInfluxDbPoint(Object metricsObject) {
+        protected Point createInfluxDbPoint(Object metricsObject) {
             return createInfluxDbPointForHostMetrics(metricsObject);
         }
     }
@@ -753,7 +753,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
 
          @Override
-         protected Point creteInfluxDbPoint(Object metricsObject) {
+         protected Point createInfluxDbPoint(Object metricsObject) {
              return null;
          }
      }
@@ -824,10 +824,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             getJvmDimensions(newEntry);
             LOGGER.trace("Metrics collection extra...");
             getRuntimeData(newEntry);
-            getCpuData(newEntry);
             getMemoryData(newEntry);
             // newEntry must now include a pid!
             getProcFileSystemData(newEntry);
+            // proc memory data has precedence over mbean memory data
+            getCpuData(newEntry);
             getFileSystemData(newEntry);
             getDataBaseStatistics(newEntry, mshost.getMsid());
             gatherAllMetrics(newEntry);
@@ -854,7 +855,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             MemoryMXBean mxBean = ManagementFactory.getMemoryMXBean();
             newEntry.setTotalInit(mxBean.getHeapMemoryUsage().getInit() + mxBean.getNonHeapMemoryUsage().getInit());
             newEntry.setTotalUsed(mxBean.getHeapMemoryUsage().getUsed() + mxBean.getNonHeapMemoryUsage().getUsed());
-            newEntry.setTotalMax(mxBean.getHeapMemoryUsage().getMax() + mxBean.getNonHeapMemoryUsage().getMax());
+            newEntry.setMaxJvmMemoryBytes(mxBean.getHeapMemoryUsage().getMax() + mxBean.getNonHeapMemoryUsage().getMax());
             newEntry.setTotalCommitted(mxBean.getHeapMemoryUsage().getCommitted() + mxBean.getNonHeapMemoryUsage().getCommitted());
         }
 
@@ -870,9 +871,16 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             }
             if (bean instanceof OperatingSystemMXBean) {
                 OperatingSystemMXBean mxBean = (OperatingSystemMXBean) bean;
-                newEntry.setSystemMemoryTotal(mxBean.getTotalPhysicalMemorySize());
-                newEntry.setSystemMemoryFree(mxBean.getFreePhysicalMemorySize());
-                newEntry.setSystemMemoryUsed(mxBean.getCommittedVirtualMemorySize());
+                // if we got these from /proc, skip the bean
+                if (newEntry.getSystemMemoryTotal() == 0) {
+                    newEntry.setSystemMemoryTotal(mxBean.getTotalPhysicalMemorySize());
+                }
+                if (newEntry.getSystemMemoryFree() == 0) {
+                    newEntry.setSystemMemoryFree(mxBean.getFreePhysicalMemorySize());
+                }
+                if (newEntry.getSystemMemoryUsed() <= 0) {
+                    newEntry.setSystemMemoryUsed(mxBean.getCommittedVirtualMemorySize());
+                }
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace(String.format("data from 'OperatingSystemMXBean': total mem: %d, free mem: %d, used mem: %d",
                             newEntry.getSystemMemoryTotal(),
@@ -900,18 +908,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         private void getJvmDimensions(@NotNull ManagementServerHostStatsEntry newEntry) {
             Runtime runtime = Runtime.getRuntime();
-            newEntry.setTotalMemoryBytes(runtime.totalMemory());
-            newEntry.setFreeMemoryBytes(runtime.freeMemory());
-            newEntry.setAvailableProcessors(runtime.availableProcessors());
-            newEntry.setTotalMax(runtime.maxMemory());
+            newEntry.setTotalJvmMemoryBytes(runtime.totalMemory());
+            newEntry.setFreeJvmMemoryBytes(runtime.freeMemory());
+            newEntry.setMaxJvmMemoryBytes(runtime.maxMemory());
             //long maxMem = runtime.maxMemory();
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format(
                         "Metrics proc - %d , maxMem - %d , totalMemory - %d , freeMemory - %f ",
                         newEntry.getAvailableProcessors(),
-                        newEntry.getTotalMax(),
-                        newEntry.getTotalMemoryBytes(),
-                        newEntry.getFreeMemoryBytes()));
+                        newEntry.getMaxJvmMemoryBytes(),
+                        newEntry.getTotalJvmMemoryBytes(),
+                        newEntry.getFreeJvmMemoryBytes()));
             }
         }
 
@@ -1110,7 +1117,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         @Override
-        protected Point creteInfluxDbPoint(Object metricsObject) {
+        protected Point createInfluxDbPoint(Object metricsObject) {
             return null;
         }
 
@@ -1253,7 +1260,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         @Override
-        protected Point creteInfluxDbPoint(Object metricsObject) {
+        protected Point createInfluxDbPoint(Object metricsObject) {
             return createInfluxDbPointForVmMetrics(metricsObject);
         }
     }
@@ -2068,7 +2075,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 LOGGER.debug(String.format("Sending stats to %s host %s:%s", externalStatsType, externalStatsHost, externalStatsPort));
 
                 for (Object metricsObject : metricsObjects) {
-                    Point vmPoint = creteInfluxDbPoint(metricsObject);
+                    Point vmPoint = createInfluxDbPoint(metricsObject);
                     points.add(vmPoint);
                 }
                 writeBatches(influxDbConnection, databaseName, points);
@@ -2080,7 +2087,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         /**
          * Creates a InfluxDB point for the given stats collector (VmStatsCollector, or HostCollector).
          */
-        protected abstract Point creteInfluxDbPoint(Object metricsObject);
+        protected abstract Point createInfluxDbPoint(Object metricsObject);
     }
 
     public boolean imageStoreHasEnoughCapacity(DataStore imageStore) {

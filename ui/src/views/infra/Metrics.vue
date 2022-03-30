@@ -143,15 +143,25 @@ export default {
           map[key].forEach(function (value, i) {
             var metric = {}
             if (i === 0) {
-              metric.name = 'newest load-average (queries/second)'
+              metric.name = 'database load over the latest stats collection period (in queries/second)'
             } else {
-              metric.name = 'load-average-' + (i + 1) + ' (q/s)'
+              metric.name = 'load-' + (i + 1) + ' (q/s)'
             }
             metric.value = value
             array.push(metric)
           })
-        } else {
+        } else if (key === 'connections') {
           var metric = {}
+          metric.name = 'connection attempts since start'
+          metric.value = map[key]
+          array.push(metric)
+        } else if (key === 'uptime') {
+          metric = {}
+          metric.name = 'uptime in seconds'
+          metric.value = map[key]
+          array.push(metric)
+        } else {
+          metric = {}
           metric.name = key
           metric.value = map[key]
           array.push(metric)

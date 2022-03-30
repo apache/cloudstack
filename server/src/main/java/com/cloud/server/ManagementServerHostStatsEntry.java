@@ -28,16 +28,16 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private Date collectionTime;
     private long sessions;
     private double cpuUtilization;
-    private long totalMemoryBytes;
-    private double freeMemoryBytes;
-    private double processMemoryBytes;
+    private long totalJvmMemoryBytes;
+    private long freeJvmMemoryBytes;
+    private long maxJvmMemoryBytes;
+    private long processJvmMemoryBytes;
     private long jvmUptime;
     private long jvmStartTime;
     private int availableProcessors;
     private double loadAverage;
     long totalInit;
     long totalUsed;
-    long totalMax;
     long totalCommitted;
     private long pid;
     private String jvmName;
@@ -110,18 +110,18 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public long getTotalMemoryBytes() {
-        return totalMemoryBytes;
+    public long getTotalJvmMemoryBytes() {
+        return totalJvmMemoryBytes;
     }
 
     @Override
-    public double getFreeMemoryBytes() {
-        return freeMemoryBytes;
+    public double getFreeJvmMemoryBytes() {
+        return freeJvmMemoryBytes;
     }
 
     @Override
-    public double getProcessMemoryBytes() {
-        return processMemoryBytes;
+    public long getProcessJvmMemoryBytes() {
+        return processJvmMemoryBytes;
     }
 
     @Override
@@ -155,8 +155,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
-    public long getTotalMax() {
-        return totalMax;
+    public long getMaxJvmMemoryBytes() {
+        return maxJvmMemoryBytes;
     }
 
     @Override
@@ -212,20 +212,20 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         this.cpuUtilization = cpuUtilization;
     }
 
-    public void setTotalMemoryBytes(long totalMemoryBytes) {
-        this.totalMemoryBytes = totalMemoryBytes;
+    public void setTotalJvmMemoryBytes(long totalJvmMemoryBytes) {
+        this.totalJvmMemoryBytes = totalJvmMemoryBytes;
     }
 
-    public void setFreeMemoryBytes(double freeMemoryBytes) {
-        this.freeMemoryBytes = freeMemoryBytes;
+    public void setFreeJvmMemoryBytes(long freeJvmMemoryBytes) {
+        this.freeJvmMemoryBytes = freeJvmMemoryBytes;
     }
 
-    public void setProcessMemoryBytes(double processMemoryBytes) {
-        this.processMemoryBytes = processMemoryBytes;
+    public void setProcessJvmMemoryBytes(long processJvmMemoryBytes) {
+        this.processJvmMemoryBytes = processJvmMemoryBytes;
     }
 
     protected void validateSome() {
-        assert totalMemoryBytes - processMemoryBytes > freeMemoryBytes;
+        assert totalJvmMemoryBytes - processJvmMemoryBytes > freeJvmMemoryBytes;
     }
 
     public void setJvmUptime(long jvmUptime) {
@@ -252,8 +252,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
         this.totalUsed = totalUsed;
     }
 
-    public void setTotalMax(long totalMax) {
-        this.totalMax = totalMax;
+    public void setMaxJvmMemoryBytes(long maxJvmMemoryBytes) {
+        this.maxJvmMemoryBytes = maxJvmMemoryBytes;
     }
 
     public void setTotalCommitted(long totalCommitted) {

@@ -36,11 +36,11 @@ public interface ManagementServerHostStats {
 
     double getCpuUtilization();
 
-    long getTotalMemoryBytes();
+    long getTotalJvmMemoryBytes();
 
-    double getFreeMemoryBytes();
+    double getFreeJvmMemoryBytes();
 
-    double getProcessMemoryBytes();
+    long getProcessJvmMemoryBytes();
 
     long getJvmUptime();
 
@@ -54,7 +54,7 @@ public interface ManagementServerHostStats {
 
     long getTotalUsed();
 
-    long getTotalMax();
+    long getMaxJvmMemoryBytes();
 
     long getTotalCommitted();
 

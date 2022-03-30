@@ -286,8 +286,7 @@ public class DbUtil {
         String vars = String.join(",", var);
         Map<String, String> result = new HashMap<>();
         String sql = String.format("SHOW %s WHERE FIND_IN_SET(Variable_name,?)",type);
-        final TransactionLegacy txn = TransactionLegacy.open("metrics");
-        try {
+        try (TransactionLegacy txn = TransactionLegacy.open("metrics")) {
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setString(1, vars);
             final ResultSet rs = pstmt.executeQuery();

@@ -42,7 +42,7 @@ public class DbMetricsResponse extends BaseResponse {
     private int connections;
 
     @SerializedName(MetricConstants.UPTIME)
-    @Param(description = "the uptime of the DB")
+    @Param(description = "the uptime of the DB in seconds")
     private int uptime;
 
     @SerializedName(MetricConstants.TLS_VERSIONS)
