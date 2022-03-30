@@ -1622,7 +1622,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         associatedNetwork = implementedNetworkInCreation(caller, zone, associatedNetwork);
-        if (associatedNetwork == null || associatedNetwork.getState() != Network.State.Implemented) {
+        if (associatedNetwork == null || (associatedNetwork.getState() != Network.State.Implemented && associatedNetwork.getState() != Network.State.Setup)) {
             throw new InvalidParameterValueException("Unable to implement associated network " + associatedNetwork);
         }
         return associatedNetwork;
