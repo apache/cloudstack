@@ -16,11 +16,12 @@
 // under the License.
 
 import store from '@/store'
+import { shallowRef, defineAsyncComponent } from 'vue'
 
 export default {
   name: 'managementserver',
   title: 'label.management.servers',
-  icon: 'control',
+  icon: 'CloudServerOutlined',
   permission: ['listManagementServersMetrics'],
   columns: () => {
     const fields = ['name', 'state', 'version']
@@ -34,7 +35,7 @@ export default {
   tabs: [
     {
       name: 'details',
-      component: () => import('@/components/view/DetailsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     }
   ]
 }

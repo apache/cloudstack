@@ -64,7 +64,7 @@ export default {
     {
       name: 'metric',
       title: 'label.db.usage.metrics',
-      icon: 'bar-chart',
+      icon: 'bar-chart-outlined',
       docHelp: 'adminguide/management.html#metrics',
       permission: ['listDbMetrics', 'listUsageServerMetrics'],
       component: () => import('@/views/infra/Metrics.vue')
