@@ -21,18 +21,18 @@
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
           <div class="form__label">{{ $t('label.sourcecidr') }}</div>
-          <a-input autoFocus v-model="newRule.cidrlist"></a-input>
+          <a-input v-focus="true" v-model:value="newRule.cidrlist"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.protocol') }}</div>
           <a-select
-            v-model="newRule.protocol"
+            v-model:value="newRule.protocol"
             style="width: 100%;"
             @change="resetRulePorts"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
             <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
@@ -41,19 +41,19 @@
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.startport') }}</div>
-          <a-input v-model="newRule.startport"></a-input>
+          <a-input v-model:value="newRule.startport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">
           <div class="form__label">{{ $t('label.endport') }}</div>
-          <a-input v-model="newRule.endport"></a-input>
+          <a-input v-model:value="newRule.endport"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmptype') }}</div>
-          <a-input v-model="newRule.icmptype"></a-input>
+          <a-input v-model:value="newRule.icmptype"></a-input>
         </div>
         <div v-show="newRule.protocol === 'icmp'" class="form__item">
           <div class="form__label">{{ $t('label.icmpcode') }}</div>
-          <a-input v-model="newRule.icmpcode"></a-input>
+          <a-input v-model:value="newRule.icmpcode"></a-input>
         </div>
         <div class="form__item" style="margin-left: auto;">
           <a-button :disabled="!('createFirewallRule' in $store.getters.apis)" type="primary" ref="submit" @click="addRule">{{ $t('label.add') }}</a-button>
@@ -64,10 +64,11 @@
     <a-divider/>
     <a-button
       v-if="(('deleteFirewallRule' in $store.getters.apis) && this.selectedItems.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.firewall.rules') }}
     </a-button>
     <a-table
@@ -79,25 +80,26 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template slot="protocol" slot-scope="record">
+      <template #protocol="{ record }">
         {{ getCapitalise(record.protocol) }}
       </template>
-      <template slot="startport" slot-scope="record">
+      <template #startport="{ record }">
         {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
       </template>
-      <template slot="endport" slot-scope="record">
+      <template #endport="{ record }">
         {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{ record }">
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" buttonClass="rule-action" @click="() => openTagsModal(record.id)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
           <tooltip-button
             :tooltip="$t('label.delete')"
-            type="danger"
-            icon="delete"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
             buttonClass="rule-action"
             :disabled="!('deleteFirewallRule' in $store.getters.apis)"
-            @click="deleteRule(record)" />
+            @onClick="deleteRule(record)" />
         </div>
       </template>
     </a-table>
@@ -112,38 +114,45 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
       :title="$t('label.edit.tags')"
-      v-model="tagsModalVisible"
+      :visible="tagsModalVisible"
       :footer="null"
       :closable="true"
       :afterClose="closeModal"
       :maskClosable="false"
-      @cancel="tagsModalVisible = false"
-      v-ctrl-enter="handleAddTag">
-      <a-form :form="newTagsForm" @submit="handleAddTag">
+      @cancel="tagsModalVisible = false">
+      <a-form
+        layout="vertical"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleAddTag"
+        v-ctrl-enter="handleAddTag"
+       >
         <div class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
-            <a-form-item>
+            <a-form-item name="key" ref="key">
               <a-input
-                autoFocus
-                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+                v-focus="true"
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
-            <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+            <a-form-item name="value" ref="value">
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
           <a-button
-            html-type="submit"
+            style="margin-bottom: 5px;"
+            ref="submit"
             type="primary"
             :disabled="!('createTags' in $store.getters.apis)"
             @click="handleAddTag"
@@ -151,14 +160,14 @@
         </div>
       </a-form>
 
-      <a-divider></a-divider>
+      <a-divider />
 
       <div class="tags-container">
-        <template class="tags" v-for="(tag) in tags">
-          <a-tag :key="tag.key" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+        <span class="tags" v-for="(tag) in tags" :key="tag.key">
+          <a-tag :key="tag.key" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
             {{ tag.key }} = {{ tag.value }}
           </a-tag>
-        </template>
+        </span>
       </div>
 
       <a-button class="add-tags-done" @click="tagsModalVisible = false" type="primary">{{ $t('label.done') }}</a-button>
@@ -183,6 +192,7 @@
 </template>
 
 <script>
+import { reactive, ref, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -239,15 +249,15 @@ export default {
         },
         {
           title: this.$t('label.protocol'),
-          scopedSlots: { customRender: 'protocol' }
+          slots: { customRender: 'protocol' }
         },
         {
           title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`,
-          scopedSlots: { customRender: 'startport' }
+          slots: { customRender: 'startport' }
         },
         {
           title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`,
-          scopedSlots: { customRender: 'endport' }
+          slots: { customRender: 'endport' }
         },
         {
           title: this.$t('label.state'),
@@ -255,10 +265,9 @@ export default {
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
-      ],
-      newTagsForm: this.$form.createForm(this)
+      ]
     }
   },
   computed: {
@@ -267,18 +276,29 @@ export default {
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.resource = newItem
-      this.fetchData()
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listFirewallRules', {
@@ -316,7 +336,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -328,7 +348,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -350,7 +370,7 @@ export default {
       this.loading = true
       api('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.delete.firewall'),
           description: rule.id,
@@ -358,14 +378,14 @@ export default {
           successMessage: this.$t('message.success.remove.firewall.rule'),
           successMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'success' })
             }
             this.fetchData()
           },
           errorMessage: this.$t('message.remove.firewall.rule.failed'),
           errorMethod: () => {
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, rule.id, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: rule.id, state: 'failed' })
             }
             this.fetchData()
           },
@@ -423,14 +443,14 @@ export default {
     closeModal () {
       this.selectedRule = null
       this.tagsModalVisible = false
-      this.newTag.key = null
-      this.newTag.value = null
+      this.form.key = null
+      this.form.value = null
       this.showConfirmationAction = false
     },
     openTagsModal (id) {
+      this.initForm()
       this.selectedRule = id
       this.tagsModalVisible = true
-      this.newTagsForm.resetFields()
 
       api('listTags', {
         resourceId: id,
@@ -446,14 +466,11 @@ export default {
     handleAddTag (e) {
       e.preventDefault()
       if (this.addTagLoading) return
-      this.addTagLoading = true
 
-      this.newTagsForm.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          this.tagsLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
+        this.addTagLoading = true
         api('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
@@ -485,6 +502,8 @@ export default {
         }).finally(() => {
           this.addTagLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleDeleteTag (tag) {
@@ -527,6 +546,9 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    capitalise (val) {
+      return val.toUpperCase()
     }
   }
 }

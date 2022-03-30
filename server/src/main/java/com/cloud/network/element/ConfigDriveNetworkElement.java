@@ -497,7 +497,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             agentId = dest.getHost().getId();
         }
         if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.valueIn(dest.getDataCenter().getId()) &&
-                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId())) {
+                !VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId()) && dataStore != null) {
             agentId = findAgentIdForImageStore(dataStore);
         }
         return agentId;
@@ -630,6 +630,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
+        if (hostId == null) {
+            LOG.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
+            return true;
+        }
         if (location == Location.HOST) {
             return deleteConfigDriveIsoOnHostCache(vm, hostId);
         }
@@ -639,7 +643,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         if (location == Location.SECONDARY) {
             dataStore = _dataStoreMgr.getImageStoreWithFreeCapacity(vm.getDataCenterId());
-            agentId = findAgentIdForImageStore(dataStore);
+            if (dataStore != null) {
+                agentId = findAgentIdForImageStore(dataStore);
+            }
         } else if (location == Location.PRIMARY) {
             List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
             if (volumes != null && volumes.size() > 0) {

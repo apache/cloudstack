@@ -18,55 +18,50 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       layout="vertical"
-      @submit="handleSubmit">
+      @finish="handleSubmit"
+     >
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.ip')">
+          <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
               :placeholder="apiParams.url.description"
-              autoFocus
-              v-decorator="['ip', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-focus="true"
+              v-model:value="form.ip" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.username')">
+          <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
               :placeholder="apiParams.username.description"
-              v-decorator="['username', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-model:value="form.username" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.password')">
+          <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
               :placeholder="apiParams.password.description"
-              v-decorator="['password', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-model:value="form.password" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.networkdevicetype')">
+          <a-form-item name="networkdevicetype" ref="networkdevicetype" :label="$t('label.networkdevicetype')">
             <a-select
               :placeholder="apiParams.networkdevicetype.description"
-              v-decorator="['networkdevicetype', {
-                rules: [{ required: true, message: $t('message.error.select') }]
-              }]"
+              v-model:value="form.networkdevicetype"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option
                 v-for="opt in networkDeviceType"
@@ -77,77 +72,75 @@
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.publicinterface')">
-            <a-input
-              v-decorator="['publicinterface']" />
+          <a-form-item name="publicinterface" ref="publicinterface" :label="$t('label.publicinterface')">
+            <a-input v-model:value="form.publicinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.privateinterface')">
-            <a-input
-              v-decorator="['privateinterface']" />
+          <a-form-item name="privateinterface" ref="privateinterface" :label="$t('label.privateinterface')">
+            <a-input v-model:value="form.privateinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.usageinterface')">
-            <a-input
-              v-decorator="['usageinterface']" />
+          <a-form-item name="usageinterface" ref="usageinterface" :label="$t('label.usageinterface')">
+            <a-input v-model:value="form.usageinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.numretries')">
+          <a-form-item name="numretries" ref="numretries" :label="$t('label.numretries')">
             <a-input-number
               style="width: 100%"
-              v-decorator="['numretries', { initialValue: 2 }]" />
+              v-model:value="form.numretries" />
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.timeout')">
+          <a-form-item name="timeout" ref="timeout" :label="$t('label.timeout')">
             <a-input-number
               style="width: 100%"
-              v-decorator="['timeout', { initialValue: 300 }]" />
+              v-model:value="form.timeout" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.publicnetwork')">
+          <a-form-item name="publicnetwork" ref="publicnetwork" :label="$t('label.publicnetwork')">
             <a-input
-              v-decorator="['publicnetwork', { initialValue: 'untrusted' }]"
+              v-model:value="form.publicnetwork"
               :disabled="true" />
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.privatenetwork')">
+          <a-form-item name="privatenetwork" ref="privatenetwork" :label="$t('label.privatenetwork')">
             <a-input
-              v-decorator="['privatenetwork', { initialValue: 'trusted' }]"
+              v-model:value="form.privatenetwork"
               :disabled="true" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.capacity')">
+          <a-form-item name="capacity" ref="capacity" :label="$t('label.capacity')">
             <a-input
-              v-decorator="['capacity']" />
+              v-model:value="form.capacity" />
           </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -180,10 +173,8 @@ export default {
       return items
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.apiParams = this.$getApiParams('addSrxFirewall')
   },
   mounted () {
@@ -196,13 +187,28 @@ export default {
     onCloseAction () {
       this.provideCloseAction()
     },
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        numretries: 2,
+        timeout: 300,
+        publicnetwork: 'untrusted',
+        privatenetwork: 'untrusted'
+      })
+      this.rules = reactive({
+        ip: [{ required: true, message: this.$t('message.error.required.input') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        networkdevicetype: [{ required: true, message: this.$t('message.error.select') }],
+        numretries: [{ type: 'number' }],
+        timeout: [{ type: 'number' }]
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll(async (err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(async () => {
+        const values = toRaw(this.form)
         const params = {}
         params.physicalnetworkid = this.resource.physicalnetworkid
         params.username = values.username
@@ -335,6 +341,8 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     addNetworkServiceProvider (args) {

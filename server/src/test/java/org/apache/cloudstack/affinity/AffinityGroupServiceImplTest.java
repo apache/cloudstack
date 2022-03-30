@@ -142,7 +142,7 @@ public class AffinityGroupServiceImplTest {
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
         acct = new AccountVO(200L);
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName(ACCOUNT_NAME);
         acct.setDomainId(DOMAIN_ID);
 

@@ -18,29 +18,43 @@
 <template>
   <div :class="['form-layout', { 'form-list': selectedRowKeys.length > 0 }]" v-ctrl-enter="handleSubmit">
     <div v-if="selectedRowKeys.length === 0">
-      <a-alert type="warning" v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')" /><br/>
+      <a-alert type="warning">
+        <template #message>
+          <span v-html="resource.backupofferingid ? $t('message.action.destroy.instance.with.backups') : $t('message.action.destroy.instance')"></span>
+        </template>
+      </a-alert>
+      <br/>
       <a-spin :spinning="loading">
         <a-form
-          :form="form"
-          @submit="handleSubmit"
+          :model="form"
+          :ref="formRef"
+          :rules="rules"
+          @finish="handleSubmit"
           layout="vertical">
-          <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-            <tooltip-label slot="label" :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
-            <a-switch v-decorator="['expunge']" :auto-focus="true" />
+          <a-form-item
+            name="expunge"
+            ref="expunge"
+            v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
+            <template #label>
+              <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
+            </template>
+            <a-switch v-model:checked="form.expunge" v-focus="true" />
           </a-form-item>
 
-          <a-form-item v-if="volumes.length > 0">
-            <tooltip-label slot="label" :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
+          <a-form-item v-if="volumes.length > 0" name="volumeids" ref="volumeids">
+            <template #label>
+              <tooltip-label :title="$t('label.delete.volumes')" :tooltip="apiParams.volumeids.description"/>
+            </template>
             <a-select
-              v-decorator="['volumeids']"
+              v-model:value="form.volumeids"
               :placeholder="$t('label.delete.volumes')"
               mode="multiple"
               :loading="loading"
-              :autoFocus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm"
+              v-focus="$store.getters.userInfo.roletype !== 'Admin' && !$store.getters.features.allowuserexpungerecovervm"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="volume in volumes" :key="volume.id">
                 {{ volume.name }}
@@ -50,8 +64,8 @@
           <p v-else v-html="$t('label.volume.empty')" />
 
           <div :span="24" class="action-button">
-            <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-            <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+            <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+            <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
           </div>
         </a-form>
       </a-spin>
@@ -60,54 +74,59 @@
       <div v-if="!showGroupActionModal">
         <div>
           <a-alert type="error">
-            <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-            <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-            <span slot="message" v-html="$t(action.currentAction.message)" />
+            <message-outlined type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
+            <template #message>
+              <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+              <span v-html="$t(action.currentAction.message)" />
+            </template>
           </a-alert>
         </div>
         <div v-if="selectedRowKeys.length > 0" class="row-keys">
           <a-divider />
-          <a-table
-            v-if="selectedRowKeys.length > 0"
-            size="middle"
-            :columns="chosenColumns"
-            :dataSource="selectedItems"
-            :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-            :pagination="true"
-            style="overflow-y: auto"
-          >
-            <p
-              slot="expandedRowRender"
-              slot-scope="record"
-              style="margin: 0">
-              <a-form-item :label="$t('label.delete.volumes')" v-if="listVolumes[record.id].opts.length > 0">
-                <a-select
-                  mode="multiple"
-                  showSearch
-                  optionFilterProp="children"
-                  :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  :loading="listVolumes[record.id].loading"
-                  :placeholder="$t('label.delete.volumes')"
-                  @change="(value) => onChangeVolume(record.id, value)">
-                  <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
-                    {{ item.name || item.description }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-              <span v-else v-html="$t('label.volume.empty')" />
-            </p>
-          </a-table>
-          <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-            <tooltip-label slot="label" :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
-            <a-switch v-model="expunge" :auto-focus="true" />
-          </a-form-item>
+          <a-form layout="vertical">
+            <a-table
+              v-if="selectedRowKeys.length > 0"
+              size="middle"
+              :columns="chosenColumns"
+              :dataSource="selectedItems"
+              :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+              :pagination="true"
+              style="overflow-y: auto"
+            >
+              <template
+                #expandedRowRender="{ record } "
+                style="margin: 0">
+                <a-form-item :label="$t('label.delete.volumes')" v-if="listVolumes[record.id].opts.length > 0">
+                  <a-select
+                    mode="multiple"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    :loading="listVolumes[record.id].loading"
+                    :placeholder="$t('label.delete.volumes')"
+                    @change="(value) => onChangeVolume(record.id, value)">
+                    <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
+                      {{ item.name || item.description }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+                <span v-else v-html="$t('label.volume.empty')" />
+              </template>
+            </a-table>
+            <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
+              <template #label>
+                <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
+              </template>
+              <a-switch v-model:checked="expunge" v-focus="true" />
+            </a-form-item>
+          </a-form>
         </div>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </div>
     </div>
@@ -121,6 +140,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
@@ -168,10 +188,14 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('destroyVirtualMachine')
   },
   created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({
+      volumeids: [{ type: 'array' }]
+    })
     this.fetchData()
   },
   methods: {
@@ -192,7 +216,6 @@ export default {
             this.listVolumes[item.id].loading = false
             this.listVolumes[item.id].opts = item.volumes || []
           })
-          this.$forceUpdate()
         })
       }
     },
@@ -235,10 +258,8 @@ export default {
       if (this.selectedRowKeys.length > 0) {
         this.destroyGroupVMs()
       } else {
-        this.form.validateFieldsAndScroll(async (err, values) => {
-          if (err) {
-            return
-          }
+        this.formRef.value.validate().then(async () => {
+          const values = toRaw(this.form)
           const params = {
             id: this.resource.id
           }
@@ -276,6 +297,8 @@ export default {
             await this.closeAction()
             this.loading = false
           }
+        }).catch(error => {
+          this.formRef.value.scrollToField(error.errorFields[0].name)
         })
       }
     },
@@ -357,6 +380,8 @@ export default {
           this.updateResourceState(resource.id, 'failed')
           return reject(error)
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     updateResourceState (resource, state, jobId) {

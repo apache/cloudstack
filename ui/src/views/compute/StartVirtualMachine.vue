@@ -19,79 +19,87 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.action.start.instance')" />
+        <template #message>{{ $t('message.action.start.instance') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <div v-if="this.$store.getters.userInfo.roletype === 'Admin'">
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+        <div v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <a-form-item name="podid" ref="podid">
+            <template #label>
+              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            </template>
             <a-select
-              v-decorator="['podid', {}]"
+              v-model:value="form.podid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
               @change="handlePodChange"
-              :autoFocus="this.$store.getters.userInfo.roletype === 'Admin'">
-              <a-select-option v-for="pod in this.pods" :key="pod.id">
+              v-focus="$store.getters.userInfo.roletype === 'Admin'">
+              <a-select-option v-for="pod in pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+          <a-form-item name="clusterid" ref="clusterid">
+            <template #label>
+              <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            </template>
             <a-select
               id="cluster-selection"
-              v-decorator="['clusterid', {}]"
+              v-model:value="form.clusterid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"
               @change="handleClusterChange">
-              <a-select-option v-for="cluster in this.clusters" :key="cluster.id">
+              <a-select-option v-for="cluster in clusters" :key="cluster.id">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
+          <a-form-item name="hostid" ref="hostid">
+            <template #label>
+              <tooltip-label :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
+            </template>
             <a-select
               id="host-selection"
-              v-decorator="['hostid', {}]"
+              v-model:value="form.hostid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="hostsLoading"
               :placeholder="apiParams.hostid.description">
-              <a-select-option v-for="host in this.hosts" :key="host.id">
+              <a-select-option v-for="host in hosts" :key="host.id">
                 {{ host.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
         </div>
 
-        <a-form-item v-if="resource.hypervisor === 'VMware'">
-          <tooltip-label slot="label" :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
-          <a-switch
-            v-decorator="['bootintosetup']">
-          </a-switch>
+        <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
+          <template #label>
+            <tooltip-label :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
+          </template>
+          <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -99,6 +107,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -125,10 +134,10 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
+    this.initForm()
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()
@@ -136,6 +145,11 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchPods () {
       this.pods = []
       this.podsLoading = true
@@ -194,22 +208,20 @@ export default {
       })
     },
     handlePodChange (podid) {
-      this.form.clearField('clusterid')
-      this.form.clearField('hostid')
+      this.form.clusterid = undefined
+      this.form.hostid = undefined
       this.fetchClusters(podid)
       this.fetchHosts(podid)
     },
     handleClusterChange (clusterid) {
-      this.form.clearField('hostid')
+      this.form.hostid = undefined
       this.fetchHosts('', clusterid)
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         const params = {
@@ -237,6 +249,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

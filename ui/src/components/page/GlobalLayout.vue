@@ -65,16 +65,17 @@
         </a-drawer>
       </template>
 
-      <template v-if="isDevelopmentMode || allowSettingTheme">
-        <drawer :visible="showSetting" placement="right">
-          <div slot="handler">
-            <a-button type="primary" size="large">
-              <a-icon :type="showSetting ? 'close' : 'setting'"/>
-            </a-button>
-          </div>
-          <setting slot="drawer" :visible="showSetting" />
-        </drawer>
-      </template>
+      <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
+        <template #handler>
+          <a-button type="primary" size="large">
+            <close-outlined v-if="showSetting" />
+            <setting-outlined v-else />
+          </a-button>
+        </template>
+        <template #drawer>
+          <setting :visible="showSetting" />
+        </template>
+      </drawer>
 
     </a-affix>
 
@@ -118,6 +119,7 @@ import GlobalFooter from '@/components/page/GlobalFooter'
 import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
+import { isAdmin } from '@/role'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
 
@@ -143,6 +145,9 @@ export default {
     ...mapState({
       mainMenu: state => state.permission.addRouters
     }),
+    isAdmin () {
+      return isAdmin()
+    },
     isDevelopmentMode () {
       return process.env.NODE_ENV === 'development'
     },
@@ -190,7 +195,9 @@ export default {
     this.collapsed = !this.sidebarOpened
   },
   mounted () {
-    if (this.$store.getters.darkMode) {
+    const layoutMode = this.$config.theme['@layout-mode'] || 'light'
+    this.$store.dispatch('SetDarkMode', (layoutMode === 'dark'))
+    if (layoutMode === 'dark') {
       document.body.classList.add('dark-mode')
     }
     const userAgent = navigator.userAgent
@@ -202,8 +209,13 @@ export default {
         }, 16)
       })
     }
+    const countNotify = this.$store.getters.countNotify
+    this.showClear = false
+    if (countNotify && countNotify > 0) {
+      this.showClear = true
+    }
   },
-  beforeDestroy () {
+  beforeUnmount () {
     document.body.classList.remove('dark')
   },
   methods: {
@@ -218,7 +230,7 @@ export default {
       if (this.sidebarOpened) {
         left = this.isDesktop() ? '256px' : '80px'
       } else {
-        left = this.isMobile() && '0' || (this.fixSidebar && '80px' || '0')
+        left = this.isMobile() ? '0' : (this.fixSidebar ? '80px' : '0')
       }
       return left
     },

@@ -151,7 +151,7 @@ class NCC:
         }
         res = self.sendCmdToNCC(url, payload)
         return res
-   
+
     def addDevicetoServicePackage(self, devicegroup_id, device_ip):
         url = "http://"+self.nccip+"/admin/v1/devicegroups/"+devicegroup_id+"/devices"
         payload = {"devices":[{"ref":device_ip }]}

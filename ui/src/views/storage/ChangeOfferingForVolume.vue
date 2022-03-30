@@ -18,26 +18,30 @@
 <template>
   <a-form
     class="form"
-    :form="form"
-    @submit="submitChangeOfferingForVolume"
+    :ref="formRef"
+    :model="form"
+    :rules="rules"
+    @finish="submitChangeOfferingForVolume"
     v-ctrl-enter="submitChangeOfferingForVolume"
     layout="vertical">
     <a-form-item>
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.confirm.change.offering.for.volume')" />
+        <template #message>
+          <span v-html="$t('message.confirm.change.offering.for.volume')" />
+        </template>
       </a-alert>
     </a-form-item>
-    <a-form-item>
-      <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+    <a-form-item name="diskofferingid" ref="diskofferingid">
+      <template #label>
+        <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || $t('label.diskofferingid')"/>
+      </template>
       <a-select
-        v-decorator="['diskofferingid', {
-          initialValue: selectedDiskOfferingId,
-          rules: [{ required: true, message: $t('message.error.select') }]}]"
+        v-model:value="form.diskofferingid"
         :loading="loading"
         showSearch
-        optionFilterProp="children"
+        optionFilterProp="label"
         :filterOption="(input, option) => {
-          return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
         }"
         @change="id => onChangeDiskOffering(id)">
         <a-select-option
@@ -49,56 +53,45 @@
       </a-select>
     </a-form-item>
     <span v-if="customDiskOffering">
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+      <a-form-item name="size" ref="size">
+        <template #label>
+          <tooltip-label :title="$t('label.sizegb')" :tooltip="apiParams.size.description"/>
+        </template>
         <a-input
-          v-decorator="['size', {
-            rules: [{ required: true, message: $t('message.error.custom.disk.size') }]}]"
+          v-model:value="form.size"
           :placeholder="$t('label.disksize')"/>
       </a-form-item>
     </span>
     <span v-if="isCustomizedDiskIOps">
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
+      <a-form-item name="miniops" ref="miniops">
+        <template #label>
+          <tooltip-label :title="$t('label.miniops')" :tooltip="apiParams.miniops.description"/>
+        </template>
         <a-input
-          v-decorator="['miniops', {
-            rules: [{
-              validator: (rule, value, callback) => {
-                if (value && (isNaN(value) || value <= 0)) {
-                  callback(this.$t('message.error.number'))
-                }
-                callback()
-              }
-            }]
-          }]"
+          v-model:value="form.miniops"
           :placeholder="this.$t('label.miniops')"/>
       </a-form-item>
-      <a-form-item>
-        <tooltip-label slot="label" :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
+      <a-form-item name="maxiops" ref="maxiops">
+        <template #label>
+          <tooltip-label :title="$t('label.maxiops')" :tooltip="apiParams.maxiops.description"/>
+        </template>
         <a-input
-          v-decorator="['maxiops', {
-            rules: [{
-              validator: (rule, value, callback) => {
-                if (value && (isNaN(value) || value <= 0)) {
-                  callback(this.$t('message.error.number'))
-                }
-                callback()
-              }
-            }]
-          }]"
+          v-model:value="form.maxiops"
           :placeholder="this.$t('label.maxiops')"/>
       </a-form-item>
     </span>
-    <a-form-item :label="$t('label.automigrate.volume')">
-      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+    <a-form-item name="autoMigrate" ref="autoMigrate" :label="$t('label.automigrate.volume')">
+      <template #label>
+        <tooltip-label :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      </template>
       <a-switch
-        v-decorator="['autoMigrate']"
+        v-model:checked="form.autoMigrate"
         :checked="autoMigrate"
         @change="val => { autoMigrate = val }"/>
     </a-form-item>
-    <a-form-item :label="$t('label.shrinkok')">
+    <a-form-item name="shrinkOk" ref="shrinkOk" :label="$t('label.shrinkok')">
       <a-switch
-        v-decorator="['shrinkOk']"
+        v-model:checked="form.shrinkOk"
         :checked="shrinkOk"
         @change="val => { shrinkOk = val }"/>
     </a-form-item>
@@ -115,6 +108,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -143,13 +137,41 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('changeOfferingForVolume')
   },
   created () {
+    this.initForm()
     this.fetchDiskOfferings()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        diskofferingid: this.selectedDiskOfferingId
+      })
+      this.rules = reactive({
+        diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
+        miniops: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }],
+        maxiops: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value <= 0)) {
+              return Promise.reject(this.$t('message.error.number'))
+            }
+            return Promise.resolve()
+          }
+        }]
+      })
+    },
     fetchDiskOfferings () {
       api('listDiskOfferings', {
         volumeid: this.resource.id,
@@ -167,14 +189,12 @@ export default {
       })
     },
     closeModal () {
-      this.$parent.$parent.close()
+      this.$emit('close-action')
     },
     submitChangeOfferingForVolume () {
       if (this.loading) return
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {}
         params.diskofferingid = values.diskofferingid
@@ -212,6 +232,8 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     onChangeDiskOffering (id) {

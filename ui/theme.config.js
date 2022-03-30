@@ -27,6 +27,7 @@ const options = {
   antDir: resolve('./node_modules/ant-design-vue'),
   varFile: resolve('./src/style/vars.less'),
   themeVariables: [
+    '@layout-mode',
     '@logo-background-color',
     '@project-nav-background-color',
     '@project-nav-text-color',

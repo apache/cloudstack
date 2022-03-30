@@ -41,28 +41,28 @@ class Template_Add(unittest.TestCase):
 
     def setUp(self):
 
-        
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
 
 
-    
+
     def test_templateadd(self):
-        
-        
+
+
       driver = self.driver
 
       ## Action part
       #Make sure you are on Dashboard
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
       time.sleep(2)
-      
+
       # Go to Templates
       driver.find_element_by_xpath(Global_Locators.templates_xpath).click()
 
       #Select Template from drop down list
       driver.find_element_by_xpath(Global_Locators.template_xpath).click()
-      
+
       # Add Template
       driver.find_element_by_xpath(Global_Locators.AddTemplate_xpath).click()
 
@@ -82,26 +82,26 @@ class Template_Add(unittest.TestCase):
 
       # Go to Dash Board
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
-      
-      
+
+
       time.sleep(600)
-      
+
       ##Verification will be if this offering shows up into table and we can actually edit it.
 
-      
-      
+
+
     def is_element_present(self, how, what):
 
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
-   
+
 
 
     def tearDown(self):
-      
+
         self.assertEqual([], self.verificationErrors)
-        
+
 
 
 
@@ -113,39 +113,39 @@ class Template_Edit(unittest.TestCase):
 
 
     def setUp(self):
-        
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
-    
-    
-    
+
+
+
     def test_templateedit(self):
-        
+
       driver = self.driver
 
       ## Action part
-      
+
       #Make sure you are on Dashboard
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
       time.sleep(2)
-      
+
       # Go to Templates
       driver.find_element_by_xpath(Global_Locators.templates_xpath).click()
 
       #Select Template from drop down list
       driver.find_element_by_xpath(Global_Locators.template_xpath).click()
-      
-      
+
+
       linkclass = None
-      linkclass = driver.find_elements_by_xpath(Global_Locators.template_table_xpath) # This returns a list 
-    
+      linkclass = driver.find_elements_by_xpath(Global_Locators.template_table_xpath) # This returns a list
+
       for link in linkclass:
-        
+
          if link.text == "Test Template Ubuntu": # We will search for our VM in this table
             link.click()
-    
+
       time.sleep(2)
-    
+
       # Change name
       driver.find_element_by_name("name").clear()
       driver.find_element_by_name("name").send_keys("Test template")
@@ -154,10 +154,10 @@ class Template_Edit(unittest.TestCase):
       # Change Description
       driver.find_element_by_name("displaytext").clear()
       driver.find_element_by_name("displaytext").send_keys("ubuntu")
-      
+
       driver.find_element_by_css_selector(Global_Locators.template_editdone_css).click()
       time.sleep(2)
-      
+
       #Dashboard
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
       time.sleep(10)
@@ -170,30 +170,30 @@ class Template_Edit(unittest.TestCase):
         except NoSuchElementException, e: return False
         return True
 
-   
-      
+
+
     def tearDown(self):
 
         self.assertEqual([], self.verificationErrors)
-        
+
 
 # Now we will find this offering and delete it!!
-        
-        
-        
-        
-        
-        
+
+
+
+
+
+
 class Template_Delete(unittest.TestCase):
-    
+
 
     def setUp(self):
-        
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
 
 
-    
+
     def test_templatedelete(self):
 
       driver = self.driver
@@ -202,41 +202,41 @@ class Template_Delete(unittest.TestCase):
       #Make sure you are on Dashboard
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
       time.sleep(2)
-      
+
       # Go to Templates
       driver.find_element_by_xpath(Global_Locators.templates_xpath).click()
 
       #Select Template from drop down list
       driver.find_element_by_xpath(Global_Locators.template_xpath).click()
-      
+
       linkclass = None
-      linkclass = driver.find_elements_by_xpath(Global_Locators.template_table_xpath) # This returns a list 
-    
+      linkclass = driver.find_elements_by_xpath(Global_Locators.template_table_xpath) # This returns a list
+
       for link in linkclass:
-        
+
          if link.text == "Test Template": # We will search for our VM in this table
             link.click()
-    
+
       time.sleep(2)
-      
+
       driver.find_element_by_css_selector(Gloabl_Locators.template_delete_css).click()
       driver.find_element_by_xpath(Global_Locators.yesconfirmation_xapth).click()
-      
+
       time.sleep(2)
-      
+
       #Dashboard
       driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
 
       time.sleep(20)
-      
 
-        
+
+
     def is_element_present(self, how, what):
 
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
-                 
+
 
 
     def tearDown(self):

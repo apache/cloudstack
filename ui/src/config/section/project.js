@@ -14,12 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'project',
   title: 'label.projects',
-  icon: 'project',
+  icon: 'project-outlined',
   docHelp: 'adminguide/projects.html',
   permission: ['listProjects'],
   resourceType: 'Project',
@@ -29,16 +31,16 @@ export default {
   tabs: [
     {
       name: 'details',
-      component: () => import('@/views/project/ProjectDetailsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/ProjectDetailsTab.vue')))
     },
     {
       name: 'accounts',
-      component: () => import('@/views/project/AccountsTab.vue'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/AccountsTab.vue'))),
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) || record.isCurrentUserProjectAdmin }
     },
     {
       name: 'project.roles',
-      component: () => import('@/views/project/iam/ProjectRoleTab.vue'),
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/iam/ProjectRoleTab.vue'))),
       show: (record, route, user) => {
         return (['Admin', 'DomainAdmin'].includes(user.roletype) || record.isCurrentUserProjectAdmin) &&
         'listProjectRoles' in store.getters.apis
@@ -46,18 +48,18 @@ export default {
     },
     {
       name: 'resources',
-      component: () => import('@/components/view/ResourceCountUsage.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
       name: 'limits',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
-      component: () => import('@/components/view/ResourceLimitTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     }
   ],
   actions: [
     {
       api: 'createProject',
-      icon: 'plus',
+      icon: 'plus-outlined',
       label: 'label.new.project',
       docHelp: 'adminguide/projects.html#creating-a-new-project',
       listView: true,
@@ -65,17 +67,17 @@ export default {
     },
     {
       api: 'updateProjectInvitation',
-      icon: 'key',
+      icon: 'key-outlined',
       label: 'label.enter.token',
       docHelp: 'adminguide/projects.html#accepting-a-membership-invitation',
       listView: true,
       popup: true,
       show: (record, store) => { return store.features.projectinviterequired },
-      component: () => import('@/views/project/InvitationTokenTemplate.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/InvitationTokenTemplate.vue')))
     },
     {
       api: 'listProjectInvitations',
-      icon: 'team',
+      icon: 'team-outlined',
       label: 'label.project.invitation',
       docHelp: 'adminguide/projects.html#accepting-a-membership-invitation',
       listView: true,
@@ -86,11 +88,11 @@ export default {
         state: 'Pending'
       },
       show: (record, store) => { return store.features.projectinviterequired },
-      component: () => import('@/views/project/InvitationsTemplate.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/InvitationsTemplate.vue')))
     },
     {
       api: 'updateProject',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.edit.project.details',
       dataView: true,
       args: ['displaytext'],
@@ -100,7 +102,7 @@ export default {
     },
     {
       api: 'activateProject',
-      icon: 'play-circle',
+      icon: 'play-circle-outlined',
       label: 'label.activate.project',
       message: 'message.activate.project',
       dataView: true,
@@ -113,7 +115,7 @@ export default {
     },
     {
       api: 'suspendProject',
-      icon: 'pause-circle',
+      icon: 'pause-circle-outlined',
       label: 'label.suspend.project',
       message: 'message.suspend.project',
       docHelp: 'adminguide/projects.html#sending-project-membership-invitations',
@@ -128,7 +130,7 @@ export default {
     },
     {
       api: 'addAccountToProject',
-      icon: 'user-add',
+      icon: 'user-add-outlined',
       label: 'label.action.project.add.account',
       docHelp: 'adminguide/projects.html#adding-project-members-from-the-ui',
       dataView: true,
@@ -136,11 +138,11 @@ export default {
       show: (record, store) => {
         return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
       },
-      component: () => import('@/views/project/AddAccountOrUserToProject.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/project/AddAccountOrUserToProject.vue')))
     },
     {
       api: 'deleteProject',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.delete.project',
       message: 'message.delete.project',
       docHelp: 'adminguide/projects.html#suspending-or-deleting-a-project',

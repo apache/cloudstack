@@ -26,16 +26,17 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }" >
 
-      <span slot="name" slot-scope="text, record">
+      <template #name="{ record }">
         <span>{{ record.displaytext || record.name }}</span>
         <div v-if="record.meta">
-          <template v-for="meta in record.meta">
+          <div v-for="meta in record.meta" :key="meta.key">
             <a-tag style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
-          </template>
+          </div>
         </div>
-      </span>
-      <span slot="offering" slot-scope="text, record" style="width: 50%">
+      </template>
+      <template #offering="{ record }">
         <span
+          style="width: 50%"
           v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
           <check-box-select-pair
             v-if="selectedCustomDiskOffering!=null"
@@ -51,19 +52,19 @@
             @change="updateOfferingSelect($event, record.id)"
             :defaultValue="validOfferings[record.id][0].id"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id">
               {{ offering.displaytext }}
             </a-select-option>
           </a-select>
         </span>
-        <span v-else>
+        <span v-else style="width: 50%">
           {{ $t('label.no.matching.offering') }}
         </span>
-      </span>
+      </template>
     </a-table>
   </div>
 </template>
@@ -109,12 +110,12 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.data.disk'),
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           dataIndex: 'offering',
           title: this.$t('label.data.disk.offering'),
-          scopedSlots: { customRender: 'offering' }
+          slots: { customRender: 'offering' }
         }
       ],
       loading: false,
@@ -153,13 +154,15 @@ export default {
     }
   },
   watch: {
-    items (newData, oldData) {
-      this.items = newData
-      this.selectedRowKeys = []
-      this.fetchDiskOfferings()
+    items: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem === oldItem) return
+        this.selectedRowKeys = []
+        this.fetchDiskOfferings()
+      }
     },
     zoneId (newData) {
-      this.zoneId = newData
       this.fetchDiskOfferings()
     }
   },

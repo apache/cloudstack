@@ -26,18 +26,18 @@
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
-        <a-card :title="$t('label.kubeconfig.cluster')" :loading="this.versionLoading">
-          <div v-if="this.clusterConfig !== ''">
-            <a-textarea :value="this.clusterConfig" :rows="5" readonly />
+        <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
+          <div v-if="clusterConfig !== ''">
+            <a-textarea :value="clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
-              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download.kubernetes.cluster.config') }}</a-button>
+              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ $t('label.download.kubernetes.cluster.config') }}</a-button>
             </div>
           </div>
           <div v-else>
             <p>{{ $t('message.kubeconfig.cluster.not.available') }}</p>
           </div>
         </a-card>
-        <a-card :title="$t('label.using.cli')" :loading="this.versionLoading">
+        <a-card :title="$t('label.using.cli')" :loading="versionLoading">
           <a-timeline>
             <a-timeline-item>
               <p v-html="$t('label.download.kubeconfig.cluster')">
@@ -46,9 +46,9 @@
             <a-timeline-item>
               <p v-html="$t('label.download.kubectl')"></p>
               <p>
-                {{ $t('label.linux') }}: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
-                {{ $t('label.macos') }}: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
-                {{ $t('label.windows') }}: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
+                {{ $t('label.linux') }}: <a :href="kubectlLinuxLink">{{ kubectlLinuxLink }}</a><br>
+                {{ $t('label.macos') }}: <a :href="kubectlMacLink">{{ kubectlMacLink }}</a><br>
+                {{ $t('label.windows') }}: <a :href="kubectlWindowsLink">{{ kubectlWindowsLink }}</a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
@@ -101,18 +101,18 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, record">
+          <template #name="{ text, record }" :name="text">
             <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
           </template>
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" displayText />
           </template>
-          <template slot="port" slot-scope="text, record, index">
+          <template #port="{ text, record, index }" :name="text" :record="record">
             {{ cksSshStartingPort + index }}
           </template>
-          <template slot="action" slot-scope="text, record">
+          <template #action="{record}">
             <a-tooltip placement="bottom" >
-              <template slot="title">
+              <template #title>
                 {{ $t('label.action.delete.node') }}
               </template>
               <a-popconfirm
@@ -124,22 +124,23 @@
               >
                 <a-button
                   type="danger"
-                  icon="delete"
                   shape="circle"
-                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled" />
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
+                  <template #icon><delete-outlined /></template>
+                </a-button>
               </a-popconfirm>
             </a-tooltip>
           </template>
         </a-table>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
-        <FirewallRules :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <FirewallRules :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding" v-if="publicIpAddress">
-        <PortForwarding :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <PortForwarding :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
-        <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
@@ -209,12 +210,12 @@ export default {
       {
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.instancename'),
@@ -227,7 +228,7 @@ export default {
       {
         title: this.$t('label.ssh.port'),
         dataIndex: 'port',
-        scopedSlots: { customRender: 'port' }
+        slots: { customRender: 'port' }
       },
       {
         title: this.$t('label.zonename'),
@@ -238,19 +239,26 @@ export default {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
     this.handleFetchData()
+    const self = this
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   watch: {
-    resource (newData, oldData) {
-      if (newData && newData !== oldData) {
-        this.handleFetchData()
-        if (this.resource.ipaddress) {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
-        } else {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        if (newData && newData !== oldData) {
+          this.handleFetchData()
+          if (this.resource.ipaddress) {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
+          } else {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+          }
         }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },
@@ -259,7 +267,7 @@ export default {
       this.vmColumns.push({
         title: this.$t('label.action'),
         dataIndex: 'action',
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
     this.handleFetchData()
@@ -273,7 +281,7 @@ export default {
       this.currentTab = e
       const query = Object.assign({}, this.$route.query)
       query.tab = e
-      history.replaceState(
+      history.pushState(
         {},
         null,
         '#' + this.$route.path + '?' + Object.keys(query).map(key => {

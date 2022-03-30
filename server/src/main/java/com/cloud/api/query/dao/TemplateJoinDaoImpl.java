@@ -220,7 +220,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         // If the user is an 'Admin' or 'the owner of template' or template belongs to a project, add the template download status
         if (view == ResponseView.Full ||
                 template.getAccountId() == CallContext.current().getCallingAccount().getId() ||
-                template.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+                template.getAccountType() == Account.Type.PROJECT) {
             String templateStatus = getTemplateStatus(template);
             if (templateStatus != null) {
                 templateResponse.setStatus(templateStatus);

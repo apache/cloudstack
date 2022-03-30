@@ -23,7 +23,7 @@
           <a-input-search
             style="margin-bottom: 10px"
             :placeholder="$t('label.search')"
-            v-model="searchQuery"
+            v-model:value="searchQuery"
             @search="handleSearch" />
           <a-table
             size="small"
@@ -46,109 +46,104 @@
       <a-col :md="24" :lg="8">
         <a-card :bordered="false">
           <a-form
-            :form="form"
-            @submit="handleSubmit"
-            layout="vertical" >
-            <a-form-item :label="$t('label.filterby')">
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            @finish="handleSubmit"
+            layout="vertical">
+            <a-form-item :label="$t('label.filterby')" name="selectedFilter" ref="selectedFilter">
               <a-select
                 @change="fetchListLdapUsers"
-                v-model="selectedFilter"
-                autoFocus
+                v-model:value="selectedFilter"
+                v-focus="true"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }">
                 <a-select-option v-for="opt in filters" :key="opt.id" >
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('label.domain')">
+            <a-form-item :label="$t('label.domain')" ref="domainid" name="domainid">
               <a-select
-                v-decorator="['domainid', {
-                  rules: [{ required: true, memessage: `${this.$t('message.error.select')}` }]
-                }]"
+                v-model:value="form.domainid"
                 :placeholder="apiParams.domainid.description"
                 :loading="domainLoading"
                 @change="fetchListLdapUsers($event)"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in listDomains" :key="opt.name">
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('label.account')">
+            <a-form-item :label="$t('label.account')" ref="account" name="account">
               <a-input
-                v-decorator="['account']"
+                v-model:value="form.account"
                 :placeholder="apiParams.account.description"
               />
             </a-form-item>
-            <a-form-item :label="$t('label.role')">
+            <a-form-item :label="$t('label.role')" ref="roleid" name="roleid">
               <a-select
-                v-decorator="['roleid', {
-                  rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-                }]"
+                v-model:value="form.roleid"
                 :placeholder="apiParams.roleid.description"
                 :loading="roleLoading"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }">
                 <a-select-option v-for="opt in listRoles" :key="opt.name">
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('label.timezone')">
+            <a-form-item :label="$t('label.timezone')" ref="timezone" name="timezone">
               <a-select
-                v-decorator="['timezone']"
+                v-model:value="form.timezone"
                 :placeholder="apiParams.timezone.description"
                 :loading="timeZoneLoading"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                }" >
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }">
                 <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>
-            <a-form-item :label="$t('label.networkdomain')">
+            <a-form-item :label="$t('label.networkdomain')" ref="networkdomain" name="networkdomain">
               <a-input
-                v-decorator="['networkdomain']"
+                v-model:value="form.networkdomain"
                 :placeholder="apiParams.networkdomain.description"
               />
             </a-form-item>
-            <a-form-item :label="$t('label.ldap.group.name')">
+            <a-form-item :label="$t('label.ldap.group.name')" ref="group" name="group">
               <a-input
-                v-decorator="['group']"
+                v-model:value="form.group"
                 :placeholder="apiParams.group.description"
               />
             </a-form-item>
-            <div v-if="'authorizeSamlSso' in $store.getters.apis">
+            <div v-if="'authorizeSamlSso' in $store.getters.apis" ref="samlEnable" name="samlEnable">
               <a-form-item :label="$t('label.samlenable')">
-                <a-switch v-decorator="['samlEnable']" @change="checked => { this.samlEnable = checked }" />
+                <a-switch v-model:checked="form.samlEnable" @change="handleEntityRule" />
               </a-form-item>
-              <a-form-item v-if="samlEnable" :label="$t('label.samlentity')">
+              <a-form-item v-if="form.samlEnable" :label="$t('label.samlentity')" ref="samlEntity" name="samlEntity">
                 <a-select
-                  v-decorator="['samlEntity', {
-                    initialValue: selectedIdp,
-                    rules: [{ required: samlEnable, message: `${this.$t('message.error.select')}` }]
-                  }]"
+                  v-model:value="form.samlEntity"
                   :placeholder="$t('label.choose.saml.indentity')"
                   :loading="loading"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }" >
+                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }">
                   <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
                     {{ idp.orgName }}
                   </a-select-option>
@@ -168,6 +163,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import store from '@/store'
@@ -184,7 +180,6 @@ export default {
       listRoles: [],
       timeZoneMap: [],
       listIdps: [],
-      selectedIdp: '',
       filters: [],
       selectedFilter: '',
       listLoading: false,
@@ -197,7 +192,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiLdapCreateAccountConfig = this.$store.getters.apis.ldapCreateAccount || {}
     this.apiImportLdapUsersConfig = this.$store.getters.apis.importLdapUsers || {}
     this.apiParams = {}
@@ -221,23 +215,23 @@ export default {
         title: this.$t('label.name'),
         dataIndex: 'name',
         width: 120,
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.username'),
         dataIndex: 'username',
         width: 120,
-        scopedSlots: { customRender: 'username' }
+        slots: { customRender: 'username' }
       },
       {
         title: this.$t('label.email'),
         dataIndex: 'email',
-        scopedSlots: { customRender: 'email' }
+        slots: { customRender: 'email' }
       },
       {
         title: this.$t('label.user.conflict'),
         dataIndex: 'conflictingusersource',
-        scopedSlots: { customRender: 'conflictingusersource' }
+        slots: { customRender: 'conflictingusersource' }
       }
     ]
     this.filters = [
@@ -259,9 +253,18 @@ export default {
       }
     ]
     this.selectedFilter = this.filters[0].id
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        roleid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     async fetchData () {
       this.timeZoneLoading = true
       this.domainLoading = true
@@ -353,7 +356,7 @@ export default {
         api('listIdps').then(json => {
           const listIdps = json.listidpsresponse.idp || []
           if (listIdps.length !== 0) {
-            this.selectedIdp = listIdps[0].id
+            this.form.samlEntity = listIdps[0].id
           }
           resolve(listIdps)
         }).catch(error => {
@@ -364,10 +367,9 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+
         let apiName = 'ldapCreateAccount'
         const domain = this.listDomains.filter(item => item.name === values.domainid)
         const role = this.listRoles.filter(item => item.name === values.roleid)
@@ -431,6 +433,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleSearch () {
@@ -480,6 +484,13 @@ export default {
         return 'light-row'
       }
       return 'dark-row'
+    },
+    handleEntityRule () {
+      if (this.form.samlEnable) {
+        this.rules.push({
+          samlEntity: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        })
+      }
     }
   }
 }
@@ -494,14 +505,6 @@ export default {
   }
 }
 
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-
 .card-footer {
   text-align: right;
 
@@ -509,5 +512,4 @@ export default {
     margin-left: 8px;
   }
 }
-
 </style>

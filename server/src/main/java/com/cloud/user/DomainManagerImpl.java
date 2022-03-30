@@ -220,11 +220,12 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
 
                 CallContext.current().putContextParameter(Domain.class, domain.getUuid());
-                _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
                 return domain;
             }
         });
-
+        if (domain != null) {
+            _messageBus.publish(_name, MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domain.getId());
+        }
         return domain;
     }
 
@@ -547,7 +548,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         List<AccountVO> accounts = _accountDao.search(sc, null);
         for (AccountVO account : accounts) {
-            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() != Account.Type.PROJECT) {
                 s_logger.debug("Deleting account " + account + " as a part of domain id=" + domainId + " cleanup");
                 boolean deleteAccount = _accountMgr.deleteAccount(account, CallContext.current().getCallingUserId(), getCaller());
                 if (!deleteAccount) {
