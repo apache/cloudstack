@@ -138,6 +138,12 @@ export default {
       }
     }
   },
+  provide: function () {
+    return {
+      parentFetchData: null,
+      parentToggleLoading: null
+    }
+  },
   data () {
     return {
       detailLoading: false,
