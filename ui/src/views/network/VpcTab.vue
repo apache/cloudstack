@@ -185,12 +185,13 @@
                   v-model:checked="form.bypassvlanoverlapcheck"
                 ></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.associatednetwork')" ref="associatednetwork" name="associatednetwork">
+              <a-form-item :label="$t('label.associatednetwork')" ref="associatednetworkid" name="associatednetworkid">
                 <a-select
+                  v-model:value="form.associatednetwork"
                   showSearch
-                  optionFilterProp="children"
+                  optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
                   <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
                     <span>
@@ -201,19 +202,19 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.publicip')" :required="true" ref="ipaddress" name="ipaddress">
+              <a-form-item :label="$t('label.publicip')" ref="ipaddress" name="ipaddress">
                 <a-input
                   :placeholder="placeholders.ipaddress"
-                  v-model:value="form.name"
+                  v-model:value="form.ipaddress"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.gateway')" :required="true" ref="gateway" name="gateway">
+              <a-form-item :label="$t('label.gateway')" ref="gateway" name="gateway">
                 <a-input
                   :placeholder="placeholders.gateway"
                   v-model:value="form.gateway"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.netmask')" :required="true" ref="netmask" name="netmask">
+              <a-form-item :label="$t('label.netmask')" ref="netmask" name="netmask">
                 <a-input
                   :placeholder="placeholders.netmask"
                   v-model:value="form.netmask"
@@ -679,7 +680,6 @@ export default {
       switch (e) {
         case 'privateGateways':
           this.rules = {
-            vlan: [{ required: true, message: this.$t('label.required') }],
             ipaddress: [{ required: true, message: this.$t('label.required') }],
             gateway: [{ required: true, message: this.$t('label.required') }],
             netmask: [{ required: true, message: this.$t('label.required') }]
