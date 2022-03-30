@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,7 +28,7 @@ class NoVmFoundException(Exception):
 class ShellExceutedFailedException(Exception):
     stderr = ''
     errCode = -1000
-    
+
     def __init__(self, err, code):
         Exception.__init__(self, "%s, return code:%s"%(err, code))
         self.stderr = err
@@ -40,7 +40,7 @@ errCode = {
        "OvmDispatch.InvaildClass":OvmDispatcherStub+2,
        "OvmDispatch.InvaildFunction":OvmDispatcherStub+3,
        "OvmVm.reboot":OvmDispatcherStub+4,
-        
+
        "OvmHost.registerAsPrimary":OvmHostErrCodeStub+1,
        "OvmHost.registerAsVmServer":OvmHostErrCodeStub+2,
        "OvmHost.ping":OvmHostErrCodeStub+3,
@@ -50,7 +50,7 @@ errCode = {
        "OvmHost.fence":OvmHostErrCodeStub+7,
        "OvmHost.setupHeartBeat":OvmHostErrCodeStub+8,
        "OvmHost.pingAnotherHost":OvmHostErrCodeStub+9,
-       
+
        "OvmVm.create":OvmVmErrCodeStub+1,
        "OvmVm.stop":OvmVmErrCodeStub+2,
        "OvmVm.getDetails":OvmVmErrCodeStub+3,
@@ -59,7 +59,7 @@ errCode = {
        "OvmVm.register":OvmVmErrCodeStub+6,
        "OvmVm.getVncPort":OvmVmErrCodeStub+7,
        "OvmVm.detachOrAttachIso":OvmVmErrCodeStub+8,
-       
+
        "OvmStoragePool.create":OvmStoragePoolErrCodeStub+1,
        "OvmStoragePool.getDetailsByUuid":OvmStoragePoolErrCodeStub+2,
        "OvmStoragePool.downloadTemplate":OvmStoragePoolErrCodeStub+3,
@@ -68,7 +68,7 @@ errCode = {
        "OvmStoragePool._umount":OvmStoragePoolErrCodeStub+6,
        "OvmStoragePool.copyVolume":OvmStoragePoolErrCodeStub+7,
        "OvmStoragePool.delete":OvmStoragePoolErrCodeStub+8,
-       
+
        "OvmNetwork.createBridge":OvmNetworkErrCodeStub+1,
        "OvmNetwork.deleteBridge":OvmNetworkErrCodeStub+2,
        "OvmNetwork.createVlan":OvmNetworkErrCodeStub+3,
@@ -77,11 +77,11 @@ errCode = {
        "OvmNetwork.getBridgeByIp":OvmNetworkErrCodeStub+6,
        "OvmNetwork.createVlanBridge":OvmNetworkErrCodeStub+7,
        "OvmNetwork.deleteVlanBridge":OvmNetworkErrCodeStub+8,
-       
+
        "OvmVolume.createDataDisk":OvmVolumeErrCodeStub+1,
        "OvmVolume.createFromTemplate":OvmVolumeErrCodeStub+2,
        "OvmVolume.destroy":OvmVolumeErrCodeStub+3,
-       
+
        "OvmOCFS2._addNode":OvmOCFS2ErrCodeStub+1,
 }
 

@@ -2900,7 +2900,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
         child_domain.delete(self.apiclient, cleanup=True)
 
         self.debug("Waiting for account.cleanup.interval" +
-                   " to cleanup any remaining resouces")
+                   " to cleanup any remaining resources")
         # Sleep 3*account.gc to ensure that all resources are deleted
         wait_for_cleanup(self.apiclient, ["account.cleanup.interval"] * 3)
 
@@ -3128,7 +3128,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
 
         # Verify all the resources owned by the account are deleted
         self.debug("Waiting for account.cleanup.interval" +
-                   " to cleanup any remaining resouces")
+                   " to cleanup any remaining resources")
         # Sleep 3*account.gc to ensure that all resources are deleted
         wait_for_cleanup(self.apiclient, ["account.cleanup.interval"] * 3)
 

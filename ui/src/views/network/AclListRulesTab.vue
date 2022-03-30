@@ -367,8 +367,8 @@ export default {
     openTagsModal (acl) {
       this.initForm()
       this.rules = {
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       }
       this.selectedAcl = acl
       this.fetchTags(this.selectedAcl)

@@ -169,7 +169,6 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import router from '@/router'
-import RenderIcon from '@/utils/renderIcon'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
@@ -180,8 +179,7 @@ export default {
   components: {
     Breadcrumb,
     ChartCard,
-    TooltipLabel,
-    RenderIcon
+    TooltipLabel
   },
   data () {
     return {
