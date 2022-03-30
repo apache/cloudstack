@@ -108,9 +108,14 @@ public class StoragePoolMonitor implements Listener {
                 List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), HypervisorType.Any);
                 pools.addAll(zoneStoragePoolsByAnyHypervisor);
 
-                // get the disabled pools list if global setting is true.
+                // get the zone wide disabled pools list if global setting is true.
                 if (StorageManager.MountDisabledStoragePool.value()) {
                     pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+                }
+
+                // get the cluster wide disabled pool list
+                if (StorageManager.MountDisabledStoragePool.valueIn(host.getClusterId())) {
+                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER));
                 }
 
                 for (StoragePoolVO pool : pools) {

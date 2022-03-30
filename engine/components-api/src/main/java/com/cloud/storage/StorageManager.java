@@ -159,9 +159,9 @@ public interface StorageManager extends StorageService {
             "mount.disabled.storage.pool",
             "Storage",
             "false",
-            "Mount all disabled storage pools after node reboot",
+            "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
             true,
-            ConfigKey.Scope.Zone,
+            ConfigKey.Scope.Cluster,
             null);
 
     /**
