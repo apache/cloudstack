@@ -385,7 +385,7 @@
           <div class="resource-detail-item__label">{{ $t('label.associatednetwork') }}</div>
           <div class="resource-detail-item__details">
             <wifi-outlined />
-            <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetworkid }} </router-link>
+            <router-link :to="{ path: '/guestnetwork/' + resource.associatednetworkid }">{{ resource.associatednetworkname || resource.associatednetwork || resource.associatednetworkid }} </router-link>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.sourceipaddressnetworkid">
