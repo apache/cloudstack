@@ -34,7 +34,7 @@
                 {{ $t('label.name') }}
               </div>
               <div>
-                <router-link :to="{ path: '/guestnetwork/' + network.id }">{{ network.name }} </router-link>
+                <router-link :to="{ path: '/guestnetwork/' + network.id, query: { tab: 'details' } }">{{ network.name }} </router-link>
                 <a-tag v-if="network.broadcasturi">{{ network.broadcasturi }}</a-tag>
               </div>
             </div>
