@@ -44,11 +44,9 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'UsageDashboardChart',
-  components: { RenderIcon },
   props: {
     stats: {
       type: Array,
