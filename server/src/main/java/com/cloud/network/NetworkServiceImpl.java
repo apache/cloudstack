@@ -1596,7 +1596,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (associatedNetwork.getGuestType() != GuestType.Isolated && associatedNetwork.getGuestType() != GuestType.L2) {
             throw new InvalidParameterValueException("Associated network MUST be an Isolated or L2 network");
         }
-        _accountMgr.checkAccess(caller, null, true, associatedNetwork);
+        _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, associatedNetwork);
         if (accountId != null && associatedNetwork.getAccountId() != accountId) {
             throw new InvalidParameterValueException("The new network and associated network MUST be owned by same account");
         }
