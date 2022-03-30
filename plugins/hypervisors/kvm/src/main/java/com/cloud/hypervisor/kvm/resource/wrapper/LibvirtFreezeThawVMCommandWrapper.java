@@ -32,7 +32,6 @@ import com.cloud.agent.api.FreezeThawVMCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 
 @ResourceWrapper(handles = FreezeThawVMCommand.class)
@@ -79,7 +78,7 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
         } catch (LibvirtException libvirtException) {
             return new FreezeThawVMAnswer(command, false,  String.format("Failed to %s VM - %s due to %s",
                     command.getOption(), vmName, libvirtException.getMessage()));
-        }finally {
+        } finally {
             if (domain != null) {
                 try {
                     domain.free();
@@ -93,11 +92,11 @@ public class LibvirtFreezeThawVMCommandWrapper extends CommandWrapper<FreezeThaw
     private String getResultOfQemuCommand(String cmd, Domain domain) throws LibvirtException {
         String result = null;
         if (cmd.equals(FreezeThawVMCommand.FREEZE)) {
-            result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_FREEZE, null)).toString(), 10, 0);
+            result = domain.qemuAgentCommand(QemuCommand.buildQemuCommand(QemuCommand.AGENT_FREEZE, null), 10, 0);
         } else if (cmd.equals(FreezeThawVMCommand.THAW)) {
-            result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_THAW, null)).toString(), 10, 0);
+            result = domain.qemuAgentCommand(QemuCommand.buildQemuCommand(QemuCommand.AGENT_THAW, null), 10, 0);
         } else if (cmd.equals(FreezeThawVMCommand.STATUS)) {
-            result = domain.qemuAgentCommand(new Gson().toJson(QemuCommand.executeQemuCommand(QemuCommand.AGENT_FREEZE_STATUS, null)).toString(), 10, 0);
+            result = domain.qemuAgentCommand(QemuCommand.buildQemuCommand(QemuCommand.AGENT_FREEZE_STATUS, null), 10, 0);
         }
         return result;
     }

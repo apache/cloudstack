@@ -351,7 +351,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
            }
        }
 
-       if ( SnapshotManager.VMsnapshotKVM.value() && userVm.getHypervisorType() == Hypervisor.HypervisorType.KVM
+       if ( SnapshotManager.VmStorageSnapshotKvm.value() && userVm.getHypervisorType() == Hypervisor.HypervisorType.KVM
                     && vmSnapshot.getType() == VMSnapshot.Type.Disk) {
            return StrategyPriority.HYPERVISOR;
        }
@@ -364,7 +364,7 @@ public class StorageVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         if (vmHasNFSOrLocalVolumes(vmId)) {
             return StrategyPriority.CANT_HANDLE;
         }
-        if (SnapshotManager.VMsnapshotKVM.value() && !snapshotMemory) {
+        if (SnapshotManager.VmStorageSnapshotKvm.value() && !snapshotMemory) {
             UserVmVO vm = userVmDao.findById(vmId);
             if (vm.getState() == VirtualMachine.State.Running) {
                 return StrategyPriority.HYPERVISOR;

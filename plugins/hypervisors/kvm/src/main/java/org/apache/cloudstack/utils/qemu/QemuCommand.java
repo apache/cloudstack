@@ -21,24 +21,31 @@ package org.apache.cloudstack.utils.qemu;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.google.gson.Gson;
+
 public class QemuCommand {
     //Qemu agent commands
     public static final String AGENT_FREEZE = "guest-fsfreeze-freeze";
     public static final String AGENT_THAW = "guest-fsfreeze-thaw";
     public static final String AGENT_FREEZE_STATUS = "guest-fsfreeze-status";
-    //Qemu monitor commands
-    public static final String QEMU_QUERY_BLOCK_JOBS = "query-block-jobs";
-    public static final String QEMU_BLOCK = "query-block";
-    public static final String QEMU_DRIVE_BACKUP = "drive-backup";
 
     public static final String QEMU_CMD = "execute";
 
-    public static Map<String, Object> executeQemuCommand(String command, Map<String, String> args ){
+    /**
+     * Used to build a command for qemu-agent-command/qemu-monitor-command<p>
+     * Examples:<p>
+     *  {"execute": "eject", "arguments": {"device": "ide1-cd0"}}<p>
+     *  {"execute":"guest-fsfreeze-status"}
+     * @param command The command that will be executed with virDomainQemuAgentCommand/virDomainQemuMonitorCommand
+     * @param args The arguments needed for the command
+     * @return String command in a Json format
+     */
+    public static String buildQemuCommand(String command, Map<String, String> args ){
         Map<String, Object> params = new LinkedHashMap<>();
         params.put(QEMU_CMD, command);
         if (args != null) {
             params.put("arguments", args);
         }
-        return params;
+        return new Gson().toJson(params).toString();
     }
 }
