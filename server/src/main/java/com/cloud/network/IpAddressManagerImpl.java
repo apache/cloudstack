@@ -1240,6 +1240,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 s_logger.debug("Associate IP address lock acquired");
             }
 
+            if (ipaddress != null) {
+                IPAddressVO ipAddr = _ipAddressDao.findByAccountIdAndZoneIdAndStateAndIpAddress(ipOwner.getId(), zone.getId(), State.Reserved, ipaddress);
+                if (ipAddr != null) {
+                    return PublicIp.createFromAddrAndVlan(ipAddr, _vlanDao.findById(ipAddr.getVlanId()));
+                }
+            }
+
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
@@ -1402,7 +1409,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         if (ipToAssoc.getAssociatedWithNetworkId() != null) {
-            s_logger.debug("IP " + ipToAssoc + " is already associated with network id" + networkId);
+            s_logger.debug("IP " + ipToAssoc + " is already associated with network id=" + networkId);
             return ipToAssoc;
         }
 
@@ -1460,6 +1467,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         IPAddressVO ip = _ipAddressDao.findById(ipId);
         //update ip address with networkId
+        ip.setState(State.Allocated);
         ip.setAssociatedWithNetworkId(networkId);
         ip.setSourceNat(isSourceNat);
         _ipAddressDao.update(ipId, ip);

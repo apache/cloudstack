@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.network.router;
 
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.network.Network;
 import com.cloud.network.vpc.VpcGateway;

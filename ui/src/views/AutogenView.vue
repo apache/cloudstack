@@ -55,7 +55,8 @@
                     :placeholder="$t('label.filterby')"
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
-                      ? 'all' : ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                      ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated': ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -851,6 +852,9 @@ export default {
           delete params.id
           params.name = this.$route.params.id
         }
+        if (['listPublicIpAddresses'].includes(this.apiName)) {
+          params.allocatedonly = false
+        }
         if (this.$route.path.startsWith('/vmsnapshot/')) {
           params.vmsnapshotid = this.$route.params.id
         } else if (this.$route.path.startsWith('/ldapsetting/')) {
@@ -1494,6 +1498,8 @@ export default {
         } else {
           query.type = filter
         }
+      } else if (this.$route.name === 'publicip') {
+        query.state = filter
       } else if (this.$route.name === 'vm') {
         if (filter === 'self') {
           query.account = this.$store.getters.userInfo.account

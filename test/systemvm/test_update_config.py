@@ -71,7 +71,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
             "allowed":False}
         ],
         "egress_rules":
-        [   
+        [
             {"type":"all",
             "cidr":"0.0.0.0/0",
             "allowed":False}
@@ -105,41 +105,41 @@ class UpdateConfigTestCase(SystemVMTestCase):
     basic_acl_rules = [
         # block range tcp
         {
-            "allowed": False, 
-            "cidr": "1.2.3.0/24", 
-            "first_port": 60, 
-            "last_port": 70, 
+            "allowed": False,
+            "cidr": "1.2.3.0/24",
+            "first_port": 60,
+            "last_port": 70,
             "type": "tcp"
         },
         # block range udp
         {
-            "allowed": False, 
-            "cidr": "1.2.3.0/24", 
-            "first_port": 60, 
-            "last_port": 70, 
+            "allowed": False,
+            "cidr": "1.2.3.0/24",
+            "first_port": 60,
+            "last_port": 70,
             "type": "udp"
         },
         # ipv6
         {
-            "allowed": True, 
-            "cidr": "1.2.3.0/24", 
-            "protocol": 41, 
+            "allowed": True,
+            "cidr": "1.2.3.0/24",
+            "protocol": 41,
             "type": "protocol"
-        }, 
+        },
         # Single port
         {
-            "allowed": True, 
-            "cidr": "1.2.3.0/24", 
-            "first_port": 30, 
-            "last_port": 30, 
+            "allowed": True,
+            "cidr": "1.2.3.0/24",
+            "first_port": 30,
+            "last_port": 30,
             "type": "tcp"
         },
         # Icmp
         {
-            "allowed": True, 
-            "cidr": "10.0.0.0/8", 
-            "icmp_code": -1, 
-            "icmp_type": -1, 
+            "allowed": True,
+            "cidr": "10.0.0.0/8",
+            "icmp_code": -1,
+            "icmp_type": -1,
             "type": "icmp"
         }
     ]

@@ -18,7 +18,14 @@ package com.cloud.hypervisor;
 
 import com.cloud.storage.Storage.ImageFormat;
 
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 public class Hypervisor {
+
+    static Map<String, HypervisorType> hypervisorTypeMap;
+    static Map<HypervisorType, ImageFormat> supportedImageFormatMap;
 
     public static enum HypervisorType {
         None, //for storage hosts
@@ -36,37 +43,32 @@ public class Hypervisor {
 
         Any; /*If you don't care about the hypervisor type*/
 
+        static {
+            hypervisorTypeMap = new HashMap<>();
+            hypervisorTypeMap.put("xenserver", HypervisorType.XenServer);
+            hypervisorTypeMap.put("kvm", HypervisorType.KVM);
+            hypervisorTypeMap.put("vmware", HypervisorType.VMware);
+            hypervisorTypeMap.put("hyperv", HypervisorType.Hyperv);
+            hypervisorTypeMap.put("virtualbox", HypervisorType.VirtualBox);
+            hypervisorTypeMap.put("parallels", HypervisorType.Parralels);
+            hypervisorTypeMap.put("baremetal", HypervisorType.BareMetal);
+            hypervisorTypeMap.put("simulator", HypervisorType.Simulator);
+            hypervisorTypeMap.put("ovm", HypervisorType.Ovm);
+            hypervisorTypeMap.put("lxc", HypervisorType.LXC);
+            hypervisorTypeMap.put("any", HypervisorType.Any);
+            hypervisorTypeMap.put("ovm3", HypervisorType.Ovm3);
+
+            supportedImageFormatMap = new HashMap<>();
+            supportedImageFormatMap.put(HypervisorType.XenServer, ImageFormat.VHD);
+            supportedImageFormatMap.put(HypervisorType.KVM, ImageFormat.QCOW2);
+            supportedImageFormatMap.put(HypervisorType.VMware, ImageFormat.OVA);
+            supportedImageFormatMap.put(HypervisorType.Ovm, ImageFormat.RAW);
+            supportedImageFormatMap.put(HypervisorType.Ovm3, ImageFormat.RAW);
+        }
+
         public static HypervisorType getType(String hypervisor) {
-            if (hypervisor == null) {
-                return HypervisorType.None;
-            }
-            if (hypervisor.equalsIgnoreCase("XenServer")) {
-                return HypervisorType.XenServer;
-            } else if (hypervisor.equalsIgnoreCase("KVM")) {
-                return HypervisorType.KVM;
-            } else if (hypervisor.equalsIgnoreCase("VMware")) {
-                return HypervisorType.VMware;
-            } else if (hypervisor.equalsIgnoreCase("Hyperv")) {
-                return HypervisorType.Hyperv;
-            } else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
-                return HypervisorType.VirtualBox;
-            } else if (hypervisor.equalsIgnoreCase("Parralels")) {
-                return HypervisorType.Parralels;
-            } else if (hypervisor.equalsIgnoreCase("BareMetal")) {
-                return HypervisorType.BareMetal;
-            } else if (hypervisor.equalsIgnoreCase("Simulator")) {
-                return HypervisorType.Simulator;
-            } else if (hypervisor.equalsIgnoreCase("Ovm")) {
-                return HypervisorType.Ovm;
-            } else if (hypervisor.equalsIgnoreCase("LXC")) {
-                return HypervisorType.LXC;
-            } else if (hypervisor.equalsIgnoreCase("Any")) {
-                return HypervisorType.Any;
-            } else if (hypervisor.equalsIgnoreCase("Ovm3")) {
-                return HypervisorType.Ovm3;
-            } else {
-                return HypervisorType.None;
-            }
+            return hypervisor == null ? HypervisorType.None :
+                    hypervisorTypeMap.getOrDefault(hypervisor.toLowerCase(Locale.ROOT), HypervisorType.None);
         }
 
         /**
@@ -76,19 +78,7 @@ public class Hypervisor {
          * @return
          */
         public static ImageFormat getSupportedImageFormat(HypervisorType hyperType) {
-            if (hyperType == HypervisorType.XenServer) {
-                return ImageFormat.VHD;
-            } else if (hyperType == HypervisorType.KVM) {
-                return ImageFormat.QCOW2;
-            } else if (hyperType == HypervisorType.VMware) {
-                return ImageFormat.OVA;
-            } else if (hyperType == HypervisorType.Ovm) {
-                return ImageFormat.RAW;
-            } else if (hyperType == HypervisorType.Ovm3) {
-                return ImageFormat.RAW;
-            } else {
-                return null;
-            }
+            return supportedImageFormatMap.getOrDefault(hyperType, null);
         }
     }
 

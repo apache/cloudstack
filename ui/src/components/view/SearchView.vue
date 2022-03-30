@@ -53,8 +53,7 @@
                   v-for="(field, index) in fields"
                   :key="index"
                   :label="field.name==='keyword' ?
-                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
-                    (field.name==='entitytype' ? $t('label.entity.type') : $t('label.' + field.name))">
+                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
