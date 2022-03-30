@@ -179,4 +179,4 @@ class CsCmdLine(CsDataBag):
         prelenkey = devname + "ip6prelen"
         if ipkey not in self.idata() or prelenkey not in self.idata():
             return False
-        return "%s/%s" % (self.idata()[ipkey], (self.idata()[prelenkey])
+        return "%s/%s" % (self.idata()[ipkey], self.idata()[prelenkey])
