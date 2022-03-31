@@ -19,8 +19,11 @@ package com.cloud.simulator.dao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
 
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 
+@Component
 public class MockConfigurationGroupDaoImpl extends GenericDaoBase<ConfigurationGroupVO, Long> implements ConfigurationGroupDao {
     @Override
     public ConfigurationGroupVO findByName(String name) {
