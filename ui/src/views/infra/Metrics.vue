@@ -65,6 +65,9 @@
               size="middle"
               :rowClassName="getRowClassName"
             />
+            <div>
+              <p>{{ $t('label.usage.explanation') }}</p>
+            </div>
           </a-card>
         </a-col>
       </a-row>
