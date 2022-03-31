@@ -188,7 +188,7 @@
               <a-form-item :label="$t('label.publicip')" :required="true" ref="ipaddress" name="ipaddress">
                 <a-input
                   :placeholder="placeholders.ipaddress"
-                  v-model:value="form.name"
+                  v-model:value="form.ipaddress"
                 ></a-input>
               </a-form-item>
               <a-form-item :label="$t('label.gateway')" :required="true" ref="gateway" name="gateway">
