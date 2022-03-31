@@ -167,6 +167,8 @@ class CsInterface:
         return "%s/%s" % (self.get_gateway(), self.get_size())
 
     def get_gateway6_cidr(self):
+        if not self.get_gateway6() or not self.get_cidr6_size():
+            return False
         return "%s/%s" % (self.get_gateway6(), self.get_cidr6_size())
 
     def get_size(self):

@@ -69,6 +69,7 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -2146,8 +2147,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             buf.append(createRedundantRouterArgs(guestNic, router));
             final Network net = _networkModel.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
-            buf.append(" guestgw6=").append(net.getIp6Gateway());
-            buf.append(" guestcidr6size=").append(NetUtils.getIp6CidrSize(guestNic.getIPv6Cidr()));
+            if (ObjectUtils.allNotNull(net.getIp6Gateway(), guestNic.getIPv6Cidr())) {
+                buf.append(" guestgw6=").append(net.getIp6Gateway());
+                buf.append(" guestcidr6size=").append(NetUtils.getIp6CidrSize(guestNic.getIPv6Cidr()));
+            }
             final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
