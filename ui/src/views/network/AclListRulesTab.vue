@@ -246,7 +246,7 @@
         <a-form-item :label="$t('label.description')" ref="reason" name="reason">
           <a-textarea
             v-model:value="form.reason"
-            :autosize="{ minRows: 2 }"
+            :autoSize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
 
