@@ -48,6 +48,7 @@ public class BackupManagerTest {
         when(offering.getId()).thenReturn(1234l);
         when(offering.getName()).thenCallRealMethod();
         when(offering.getDescription()).thenCallRealMethod();
+        when(offering.isUserDrivenBackupAllowed()).thenCallRealMethod();
 
         BackupOfferingVO offeringUpdate = Mockito.spy(BackupOfferingVO.class);
         when(offeringUpdate.getId()).thenReturn(1234l);
@@ -59,6 +60,7 @@ public class BackupManagerTest {
         when(backupOfferingDao.update(1234l, offeringUpdate)).thenAnswer(answer -> {
             offering.setName("New name");
             offering.setDescription("New description");
+            offering.setUserDrivenBackupAllowed(true);
             return true;
         });
     }
@@ -115,9 +117,11 @@ public class BackupManagerTest {
         when(cmd.getId()).thenReturn(id);
         when(cmd.getName()).thenReturn("New name");
         when(cmd.getDescription()).thenReturn("New description");
+        when(cmd.getAllowUserDrivenBackups()).thenReturn(true);
 
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
         assertEquals("New name", updated.getName());
         assertEquals("New description", updated.getDescription());
+        assertEquals(true, updated.isUserDrivenBackupAllowed());
     }
 }
