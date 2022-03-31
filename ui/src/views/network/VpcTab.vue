@@ -317,8 +317,8 @@
                   :filterOption="(input, option) => {
                     return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in vpnGateways" :key="item.id" :value="item.id">
-                    {{ item.publicip }}
+                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
+                    {{ item.name }}
                   </a-select-option>
                 </a-select>
               </a-form-item>
