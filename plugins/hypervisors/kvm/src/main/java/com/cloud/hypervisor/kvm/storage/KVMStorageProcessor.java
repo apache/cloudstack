@@ -75,6 +75,7 @@ import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
+import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 
 import com.ceph.rados.IoCTX;
@@ -1487,8 +1488,15 @@ public class KVMStorageProcessor implements StorageProcessor {
      * 3rd parameter: absolute path to create the snapshot;<br>
      * 4th parameter: list of disks to avoid on snapshot {@link #TAG_AVOID_DISK_FROM_SNAPSHOT};
      */
-    private static final String XML_CREATE_SNAPSHOT = "<domainsnapshot><name>%s</name><disks><disk name='%s' snapshot='external'><source file='%s'/></disk>%s</disks>"
+    private static final String XML_CREATE_DISK_SNAPSHOT = "<domainsnapshot><name>%s</name><disks><disk name='%s' snapshot='external'><source file='%s'/></disk>%s</disks>"
       + "</domainsnapshot>";
+
+    /**
+     * XML to take full VM snapshot.<br><br>
+     * 1st parameter: snapshot's name;<br>
+     * 2nd parameter: domain's UUID;<br>
+     */
+    private static final String XML_CREATE_FULL_VM_SNAPSHOT = "<domainsnapshot><name>%s</name><domain><uuid>%s</uuid></domain></domainsnapshot>";
 
     /**
      * Tag to avoid disk from snapshot.<br><br>
@@ -1518,6 +1526,11 @@ public class KVMStorageProcessor implements StorageProcessor {
      * security margin.
      */
     private static final double MIN_RATE_BETWEEN_AVAILABLE_POOL_AND_DISK_SIZE_TO_TAKE_DISK_SNAPSHOT = 1.05;
+
+    /**
+     * Message that can occurs when using a QEMU binary that does not support live disk snapshot (e.g. CentOS 7 QEMU binaries).
+     */
+    private static final String LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE = "Operation not supported";
 
     @Override
     public Answer createSnapshot(final CreateObjectCommand cmd) {
@@ -1550,13 +1563,27 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
 
-                String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
-                snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
-                String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
+                try {
+                    snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
 
-                mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
+                    String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
+                    String copyResult = copySnapshotToPrimaryStorageDir(primaryPool, diskPath, snapshotPath, volume);
 
-                validateCopyResult(copyResult, snapshotPath);
+                    mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
+
+                    validateCopyResult(copyResult, snapshotPath);
+                } catch (LibvirtException e) {
+                    if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
+                        throw e;
+                    }
+
+                    s_logger.info(String.format("It was not possible to take live disk snapshot for volume [%s], in VM [%s], due to [%s]. We will take full snapshot of the VM"
+                            + " and extract the disk instead. Consider upgrading your QEMU binary.", volume, vmName, e.getMessage()));
+
+                    takeFullVmSnaphotForBinariesThatDoesNotSupportLiveDiskSnapshot(vm, snapshotName, vmName);
+                    primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+                    extractDiskFromFullVmSnapshot(disk, volume, snapshotPath, snapshotName, vmName, vm);
+                }
 
                 /*
                  * libvirt on RHEL6 doesn't handle resume event emitted from
@@ -1623,6 +1650,42 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.error(errorMsg, ex);
             return new CreateObjectAnswer(errorMsg);
         }
+    }
+
+    protected void deleteFullVmSnapshotAfterConvertingItToExternalDiskSnapshot(Domain vm, String snapshotName, VolumeObjectTO volume, String vmName) throws LibvirtException {
+        s_logger.debug(String.format("Deleting full VM snapshot [%s] of VM [%s] as we already converted it to an external disk snapshot of the volume [%s].", snapshotName, vmName,
+                volume));
+
+        DomainSnapshot domainSnapshot = vm.snapshotLookupByName(snapshotName);
+        domainSnapshot.delete(0);
+    }
+
+    protected void extractDiskFromFullVmSnapshot(KVMPhysicalDisk disk, VolumeObjectTO volume, String snapshotPath, String snapshotName, String vmName, Domain vm)
+            throws LibvirtException {
+        QemuImg qemuImg = new QemuImg(_cmdsTimeout);
+        QemuImgFile srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
+        QemuImgFile destFile = new QemuImgFile(snapshotPath, disk.getFormat());
+
+        try {
+            s_logger.debug(String.format("Converting full VM snapshot [%s] of VM [%s] to external disk snapshot of the volume [%s].", snapshotName, vmName, volume));
+            qemuImg.convert(srcFile, destFile, null, snapshotName, true);
+        } catch (QemuImgException qemuException) {
+            String message = String.format("Could not convert full VM snapshot [%s] of VM [%s] to external disk snapshot of volume [%s] due to [%s].", snapshotName, vmName, volume,
+                    qemuException.getMessage());
+
+            s_logger.error(message, qemuException);
+            throw new CloudRuntimeException(message, qemuException);
+        } finally {
+            deleteFullVmSnapshotAfterConvertingItToExternalDiskSnapshot(vm, snapshotName, volume, vmName);
+        }
+    }
+
+    protected void takeFullVmSnaphotForBinariesThatDoesNotSupportLiveDiskSnapshot(Domain vm, String snapshotName, String vmName) throws LibvirtException {
+        String vmUuid = vm.getUUIDString();
+
+        long start = System.currentTimeMillis();
+        vm.snapshotCreateXML(String.format(XML_CREATE_FULL_VM_SNAPSHOT, snapshotName, vmUuid));
+        s_logger.debug(String.format("Full VM Snapshot [%s] of VM [%s] took [%s] seconds to finish.", snapshotName, vmName, (System.currentTimeMillis() - start)/1000));
     }
 
     protected void validateCopyResult(String copyResult, String snapshotPath) throws CloudRuntimeException, IOException {
@@ -1731,7 +1794,7 @@ public class KVMStorageProcessor implements StorageProcessor {
           .collect(Collectors.joining());
         String snapshotTemporaryPath = getSnapshotTemporaryPath(diskPath, snapshotName);
 
-        String createSnapshotXmlFormated = String.format(XML_CREATE_SNAPSHOT, snapshotName, diskLabelToSnapshot, snapshotTemporaryPath, disksToAvoidsOnSnapshot);
+        String createSnapshotXmlFormated = String.format(XML_CREATE_DISK_SNAPSHOT, snapshotName, diskLabelToSnapshot, snapshotTemporaryPath, disksToAvoidsOnSnapshot);
 
         long start = System.currentTimeMillis();
         vm.snapshotCreateXML(createSnapshotXmlFormated, VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY);

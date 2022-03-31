@@ -277,12 +277,8 @@ public class QemuImg {
         }
 
         if (StringUtils.isNotBlank(snapshotName)) {
-            if (!forceSourceFormat) {
-                script.add("-f");
-                script.add(srcFile.getFormat().toString());
-            }
-            script.add("-s");
-            script.add(snapshotName);
+            script.add("-l");
+            script.add(String.format("snapshot.name=%s", snapshotName));
         }
 
         script.add(srcFile.getFileName());
