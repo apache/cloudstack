@@ -132,20 +132,15 @@ export default {
       var array = []
       for (var key in map) {
         if (key === 'replicas') {
-          map[key].forEach(function (value, i) {
-            var metric = {}
-            var name = 'replica no. ' + (i + 1)
-            metric.name = name
-            metric.value = value
-            array.push(metric)
-          })
+        // we don't display replica's at this stage as usually they are not used,
+        // only some people experimenting with galera use them.
         } else if (key === 'dbloadaverages') {
           map[key].forEach(function (value, i) {
             var metric = {}
             if (i === 0) {
-              metric.name = 'database load over the latest stats collection period (in queries/second)'
+              metric.name = 'queries/second over the latest stats collection period'
             } else {
-              metric.name = 'load-' + (i + 1) + ' (q/s)'
+              metric.name = 'queries/seconds-' + (i + 1)
             }
             metric.value = value
             array.push(metric)
@@ -159,6 +154,11 @@ export default {
           metric = {}
           metric.name = 'uptime in seconds'
           metric.value = map[key]
+          array.push(metric)
+        } else if (key === 'collectiontime' || key === 'lastheartbeat' || key === 'lastsuccesfuljob') {
+          metric = {}
+          metric.name = key
+          metric.value = this.$toLocaleDate(map[key]) // needs a conversion
           array.push(metric)
         } else {
           metric = {}
