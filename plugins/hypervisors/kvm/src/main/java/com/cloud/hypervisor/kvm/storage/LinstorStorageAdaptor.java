@@ -430,18 +430,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(
-        KVMPhysicalDisk snapshot,
-        String snapshotName,
-        String name,
-        KVMStoragePool destPool,
-        int timeout)
-    {
-        s_logger.debug("Linstor: createDiskFromSnapshot");
-        return null;
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool)
     {
         s_logger.debug("Linstor: refresh");

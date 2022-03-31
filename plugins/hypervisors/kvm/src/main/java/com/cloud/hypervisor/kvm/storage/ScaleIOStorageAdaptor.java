@@ -289,11 +289,6 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        return null;
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }

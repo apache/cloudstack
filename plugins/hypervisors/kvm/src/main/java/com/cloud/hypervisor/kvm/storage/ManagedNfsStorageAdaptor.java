@@ -295,11 +295,6 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }
