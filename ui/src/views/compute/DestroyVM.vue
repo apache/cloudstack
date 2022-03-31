@@ -83,43 +83,45 @@
         </div>
         <div v-if="selectedRowKeys.length > 0" class="row-keys">
           <a-divider />
-          <a-table
-            v-if="selectedRowKeys.length > 0"
-            size="middle"
-            :columns="chosenColumns"
-            :dataSource="selectedItems"
-            :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
-            :pagination="true"
-            style="overflow-y: auto"
-          >
-            <template
-              #expandedRowRender="record"
-              style="margin: 0">
-              <a-form-item :label="$t('label.delete.volumes')" v-if="listVolumes[record.id].opts.length > 0">
-                <a-select
-                  mode="multiple"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }"
-                  :loading="listVolumes[record.id].loading"
-                  :placeholder="$t('label.delete.volumes')"
-                  @change="(value) => onChangeVolume(record.id, value)">
-                  <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
-                    {{ item.name || item.description }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-              <span v-else v-html="$t('label.volume.empty')" />
-            </template>
-          </a-table>
-          <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
-            <template #label>
-              <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
-            </template>
-            <a-switch v-model:checked="expunge" v-focus="true" />
-          </a-form-item>
+          <a-form layout="vertical">
+            <a-table
+              v-if="selectedRowKeys.length > 0"
+              size="middle"
+              :columns="chosenColumns"
+              :dataSource="selectedItems"
+              :rowKey="(record, idx) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
+              :pagination="true"
+              style="overflow-y: auto"
+            >
+              <template
+                #expandedRowRender="{ record } "
+                style="margin: 0">
+                <a-form-item :label="$t('label.delete.volumes')" v-if="listVolumes[record.id].opts.length > 0">
+                  <a-select
+                    mode="multiple"
+                    showSearch
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    :loading="listVolumes[record.id].loading"
+                    :placeholder="$t('label.delete.volumes')"
+                    @change="(value) => onChangeVolume(record.id, value)">
+                    <a-select-option v-for="item in listVolumes[record.id].opts" :key="item.id">
+                      {{ item.name || item.description }}
+                    </a-select-option>
+                  </a-select>
+                </a-form-item>
+                <span v-else v-html="$t('label.volume.empty')" />
+              </template>
+            </a-table>
+            <a-form-item v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.allowuserexpungerecovervm">
+              <template #label>
+                <tooltip-label :title="$t('label.expunge')" :tooltip="apiParams.expunge.description"/>
+              </template>
+              <a-switch v-model:checked="expunge" v-focus="true" />
+            </a-form-item>
+          </a-form>
         </div>
 
         <div :span="24" class="action-button">
@@ -214,7 +216,6 @@ export default {
             this.listVolumes[item.id].loading = false
             this.listVolumes[item.id].opts = item.volumes || []
           })
-          this.$forceUpdate()
         })
       }
     },

@@ -209,6 +209,11 @@ export default {
         }, 16)
       })
     }
+    const countNotify = this.$store.getters.countNotify
+    this.showClear = false
+    if (countNotify && countNotify > 0) {
+      this.showClear = true
+    }
   },
   beforeUnmount () {
     document.body.classList.remove('dark')
