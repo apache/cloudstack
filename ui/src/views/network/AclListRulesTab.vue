@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -120,7 +121,7 @@
         <a-form
           :ref="formRef"
           :model="form"
-          :rules="tagRules"
+          :rules="rules"
           class="add-tags"
           v-ctrl-enter="handleAddTag"
          >
