@@ -18,7 +18,7 @@
 """
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources, validateList)
 from marvin.lib.base import (ServiceOffering,
                              NetworkOffering,
                              Network,
@@ -132,13 +132,14 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         cmd.zoneid = self.zone.id
 
         try:
-            self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
+            certs = self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
+            validateList(certs)
+            cert = certs[0]
         except Exception as e:
             self.fail("Valid certificate must be uploaded")
 
         revokecmd = revokeTemplateDirectDownloadCertificate.revokeTemplateDirectDownloadCertificateCmd()
-        revokecmd.hypervisor = self.hypervisor
-        revokecmd.name = cmd.name
+        revokecmd.id = cert.id
         revokecmd.zoneid = self.zone.id
 
         try:
@@ -147,6 +148,7 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
             self.fail("Uploaded certificates should be revoked when needed")
 
         return
+
 
 
 class TestDirectDownloadTemplates(cloudstackTestCase):
