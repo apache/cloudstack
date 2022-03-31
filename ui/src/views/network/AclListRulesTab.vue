@@ -139,7 +139,7 @@
               <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
-          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" :disabled="!(form.key && form.value)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;" />
