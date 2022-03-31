@@ -1129,7 +1129,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                     s_logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 } else {
-                    s_logger.error("Inavlid management server cidr list: " + mgmt_cidr);
+                    s_logger.error("Invalid management server cidr list: " + mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 buf.append(" private.network.device=").append("eth").append(deviceId);
