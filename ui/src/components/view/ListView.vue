@@ -98,7 +98,7 @@
         </span>
 
         <span v-if="record.hasannotations">
-          <span v-if="record.id">
+          <span v-if="record.id && $route.path !== '/ssh'">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.id, query: { tab: 'comments' } }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
@@ -398,7 +398,6 @@ import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'ListView',
@@ -407,8 +406,7 @@ export default {
     Status,
     QuickView,
     TooltipButton,
-    ResourceIcon,
-    RenderIcon
+    ResourceIcon
   },
   props: {
     columns: {
@@ -682,6 +680,9 @@ export default {
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
     generateCommentsPath (record) {
+      if (this.entityTypeToPath(record.entitytype) === 'ssh') {
+        return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityname
+      }
       return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid
     },
     generateHumanReadableEntityType (record) {
