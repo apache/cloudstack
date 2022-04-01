@@ -179,7 +179,7 @@
         <template #label>
           <tooltip-label :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
         </template>
-        <a-switch v-model:checked="form.name"/>
+        <a-switch v-model:checked="form.dpd"/>
       </a-form-item>
       <a-form-item ref="splitconnections" name="splitconnections" v-if="form.ikeversion !== 'ikev1'">
         <template #label>
