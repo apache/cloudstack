@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: megalinter/megalinter@v5
+      - uses: megalinter/megalinter/flavors/python@v5
         env:
           VALIDATE_PYTHON_FLAKE8: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
