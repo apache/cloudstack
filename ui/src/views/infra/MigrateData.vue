@@ -121,7 +121,6 @@ export default {
         this.loading = true
         api('listImageStores').then(json => {
           this.imageStores = json.listimagestoresresponse.imagestore || []
-          console.log(this.imageStores)
           this.form.srcpool = this.imageStores[0].id || ''
           resolve(this.imageStores)
         }).catch((error) => {
