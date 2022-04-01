@@ -280,6 +280,8 @@ class CsRedundant(object):
             CsHelper.execute(cmd2)
             dev = interface.get_device()
 
+        self._remove_ipv6_guest_gateway()
+
         CsHelper.service("conntrackd", "restart")
         CsHelper.service("ipsec", "stop")
         CsHelper.service("xl2tpd", "stop")
@@ -445,6 +447,30 @@ class CsRedundant(object):
         cmd = "ip -6 addr add  %s dev %s" % (ipv6, dev)
         CsHelper.execute(cmd)
 
+    def _remove_ipv6_to_interface(self, interface, ipv6):
+        """
+        Remove an IPv6 to an interface. This is useful for removing,
+        - guest IPv6 gateway for primary VR guest NIC
+        """
+        dev = ''
+        if dev == interface.get_device() or not ipv6 :
+            return
+        dev = interface.get_device()
+        command = "ip -6 address show %s | grep 'inet6 %s'" % (dev, ipv6)
+        ipConfigured = CsHelper.execute(command)
+        if ipConfigured:
+            command = "ip link show %s | grep 'state UP'" % dev
+            devUp = CsHelper.execute(command)
+            if not devUp:
+                logging.error("ERROR setting IPv6 address for device %s as it is not ready" % dev)
+                return
+            logging.info("Device %s is present, let's remove IPv6 address  %s" % (dev, ipv6))
+            cmd = "ip -6 addr delete  %s dev %s" % (ipv6, dev)
+            CsHelper.execute(cmd)
+        else:
+            logging.info("IPv6 address %s not present for %s" % (ipv6, dev))
+            return
+
     def _add_ipv6_guest_gateway(self):
         """
         Configure guest network gateway as IPv6 address for guest interface
@@ -454,3 +480,13 @@ class CsRedundant(object):
             if not interface.is_guest():
                 continue
             self._add_ipv6_to_interface(interface, interface.get_gateway6_cidr())
+
+    def _remove_ipv6_guest_gateway(self):
+        """
+        Remove guest network gateway as IPv6 address for guest interface
+        for redundant backup VR
+        """
+        for interface in self.address.get_interfaces():
+            if not interface.is_guest():
+                continue
+            self._remove_ipv6_to_interface(interface, interface.get_gateway6_cidr())
