@@ -2278,6 +2278,7 @@
 "label.unmanaged.instance": "Unmanaged Instance",
 "label.unmanaged.instances": "Unmanaged Instances",
 "label.untagged": "Untagged",
+"label.updateinsequence": "Update In Sequence",
 "label.update.instance.group": "Update Instance Group",
 "label.update.ip.range": "Update IP range",
 "label.update.network": "Update Network",
