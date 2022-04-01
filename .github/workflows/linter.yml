@@ -21,11 +21,11 @@ on: [pull_request]
 
 jobs:
   build:
-    name: GitHub Super Linter
+    name: MegaLinter
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: github/super-linter@v4
+      - uses: megalinter/megalinter@v5
         env:
           VALIDATE_PYTHON_FLAKE8: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
