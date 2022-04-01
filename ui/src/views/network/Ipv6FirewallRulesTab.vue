@@ -236,8 +236,7 @@ export default {
       protocols: [
         'tcp',
         'udp',
-        'icmp',
-        'all'
+        'icmp'
       ]
     }
   },
@@ -416,7 +415,7 @@ export default {
       this.fetchData()
     },
     handleTrafficTypeChange (trafficType) {
-      if (trafficType === 'egress') {
+      if (trafficType === 'ingress') {
         this.protocols = this.protocols.filter(x => x !== 'all')
       } else {
         if (!this.protocols.includes('all')) {
