@@ -180,3 +180,13 @@ class CsCmdLine(CsDataBag):
         if ipkey not in self.idata() or prelenkey not in self.idata():
             return False
         return "%s/%s" % (self.idata()[ipkey], self.idata()[prelenkey])
+
+    def get_ip6dns1(self):
+        if "ip6dns1" in self.idata():
+            return self.idata()['ip6dns1']
+        return False
+
+    def get_ip6dns2(self):
+        if "ip6dns2" in self.idata():
+            return self.idata()['ip6dns2']
+        return False

@@ -291,7 +291,6 @@ class CsRedundant(object):
             CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).stop()
 
         CsHelper.service("dnsmasq", "stop")
-        CsHelper.service("radvd", "stop")
 
         self.cl.set_primary_state(False)
         self.cl.save()
@@ -355,7 +354,6 @@ class CsRedundant(object):
                 CsPasswdSvc(interface.get_gateway() + "," + interface.get_ip()).restart()
 
         CsHelper.service("dnsmasq", "restart")
-        CsHelper.service("radvd", "restart")
         self.cl.set_primary_state(True)
         self.cl.save()
         self.release_lock()
@@ -471,6 +469,40 @@ class CsRedundant(object):
             logging.info("IPv6 address %s not present for %s" % (ipv6, dev))
             return
 
+    def _enable_radvd(self, dev, ipv6, dns1, dns2):
+        """
+        Setup radvd for primary VR
+        """
+        if dev == '' or not ipv6:
+            return
+        logging.info(CsHelper.execute("cat /etc/radvd.conf"))
+        CsHelper.execute("cp /etc/radvd.conf.tmpl /etc/radvd.conf." + dev)
+        CsHelper.execute("sed -i \"s,{{ GUEST_INTERFACE }}," + dev + ",g\" /etc/radvd.conf." + dev)
+        CsHelper.execute("sed -i \"s,{{ IPV6_CIDR }}," + ipv6 + ",g\" /etc/radvd.conf." + dev)
+        rdnssCfg = ""
+        if dns1:
+            rdnssCfg="    RDNSS " + dns1 + "\\n    {\\n        AdvRDNSSLifetime 30;\\n    };\\n"
+        if dns2:
+            rdnssCfg=rdnssCfg+"    RDNSS " + dns2 + "\\n    {\\n        AdvRDNSSLifetime 30;\\n    };\\n"
+        CsHelper.execute("sed -i \"s,{{ RDNSS_CONFIG }}," + rdnssCfg + ",g\" /etc/radvd.conf." + dev)
+        CsHelper.execute("cat /etc/radvd.conf." + dev + " >> /etc/radvd.conf")
+        CsHelper.service("radvd", "enable")
+        CsHelper.execute("echo \"radvd\" >> /var/cache/cloud/enabled_svcs")
+        CsHelper.service("radvd", "restart")
+
+    def _disable_radvd(self, dev, ipv6):
+        """
+        Disable radvd for non-primary VR
+        """
+        if dev == '' or not ipv6:
+            return
+        CsHelper.execute("rm -f /etc/radvd.conf")
+        CsHelper.execute("rm -f /etc/radvd.conf." + dev)
+        CsHelper.service("radvd", "stop")
+        CsHelper.service("radvd", "disable")
+        CsHelper.execute("sed -i \"s,radvd,,g\" /var/cache/cloud/enabled_svcs")
+        CsHelper.execute("sed -i '/^$/d' /var/cache/cloud/enabled_svcs")
+
     def _add_ipv6_guest_gateway(self):
         """
         Configure guest network gateway as IPv6 address for guest interface
@@ -480,6 +512,7 @@ class CsRedundant(object):
             if not interface.is_guest():
                 continue
             self._add_ipv6_to_interface(interface, interface.get_gateway6_cidr())
+            self._enable_radvd(interface.get_device(), interface.get_gateway6_cidr(), interface.get_ip6dns1(), interface.get_ip6dns2())
 
     def _remove_ipv6_guest_gateway(self):
         """
@@ -490,3 +523,4 @@ class CsRedundant(object):
             if not interface.is_guest():
                 continue
             self._remove_ipv6_to_interface(interface, interface.get_gateway6_cidr())
+            self._disable_radvd(interface.get_device(), interface.get_gateway6_cidr())
