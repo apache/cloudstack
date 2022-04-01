@@ -73,6 +73,8 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     void updateIpv6RoutesForVpcResponse(Vpc vpc, VpcResponse response);
 
+    void checkNetworkIpv6Upgrade(Network network) throws InsufficientAddressCapacityException, ResourceAllocationException;
+
     FirewallRule updateIpv6FirewallRule(UpdateIpv6FirewallRuleCmd updateIpv6FirewallRuleCmd);
 
     Pair<List<? extends FirewallRule>,Integer> listIpv6FirewallRules(ListIpv6FirewallRulesCmd listIpv6FirewallRulesCmd);

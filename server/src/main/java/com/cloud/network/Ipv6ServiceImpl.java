@@ -69,6 +69,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.firewall.FirewallService;
@@ -127,6 +129,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     AccountManager accountManager;
     @Inject
     NetworkModel networkModel;
+    @Inject
+    IPAddressDao ipAddressDao;
     @Inject
     FirewallManager firewallManager;
 
@@ -395,6 +399,28 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         }
         if (CollectionUtils.isNotEmpty(ipv6Routes)) {
             response.setIpv6Routes(ipv6Routes);
+        }
+    }
+
+    @Override
+    public void checkNetworkIpv6Upgrade(Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
+        List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(network.getDataCenterId());
+        if (CollectionUtils.isEmpty(prefixes)) {
+            s_logger.error(String.format("IPv6 prefixes not found for the zone ID: %d", network.getDataCenterId()));
+            throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
+        }
+        List<IPAddressVO> addresses = network.getVpcId() == null ?
+                ipAddressDao.listByAssociatedNetwork(network.getId(), true) :
+                ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
+        for (IPAddressVO address : addresses) {
+            VlanVO vlan = vlanDao.findById(address.getVlanId());
+            final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlan.getVlanTag());
+            if (CollectionUtils.isEmpty(ranges)) {
+                s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlan.getVlanTag()));
+                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
+                ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+                throw ex;
+            }
         }
     }
 

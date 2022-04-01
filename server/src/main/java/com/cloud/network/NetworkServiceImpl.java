@@ -2458,6 +2458,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 if (!canUpgrade(network, oldNetworkOfferingId, networkOfferingId)) {
                     throw new InvalidParameterValueException("Can't upgrade from network offering " + oldNtwkOff.getUuid() + " to " + networkOffering.getUuid() + "; check logs for more information");
                 }
+                boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(oldNetworkOfferingId);
+                boolean isIpv6SupportedNew = _networkOfferingDao.isIpv6Supported(networkOfferingId);
+                if (!isIpv6Supported && isIpv6SupportedNew) {
+                    try {
+                        ipv6Service.checkNetworkIpv6Upgrade(network);
+                    } catch (ResourceAllocationException | InsufficientAddressCapacityException ex) {
+                        throw new CloudRuntimeException(String.format("Failed to upgrade network offering to '%s' as unable to allocate IPv6 network", networkOffering.getDisplayText()), ex);
+                    }
+                }
                 restartNetwork = true;
                 networkOfferingChanged = true;
 
@@ -2785,7 +2794,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 ip6GatewayCidr = ipv6Service.preAllocateIpv6SubnetForNetwork(network.getDataCenterId());
                 ipv6Service.assignIpv6SubnetToNetwork(ip6GatewayCidr.second(), network.getId());
             } catch (ResourceAllocationException ex) {
-                throw new CloudRuntimeException(String.format("Failed to update network: %s", network.getName()), ex);
+                throw new CloudRuntimeException("unable to allocate IPv6 network", ex);
             }
             String ip6Gateway = ip6GatewayCidr.first();
             String ip6Cidr = ip6GatewayCidr.second();
