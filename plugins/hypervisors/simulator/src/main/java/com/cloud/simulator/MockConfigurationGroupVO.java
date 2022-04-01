@@ -14,20 +14,38 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.simulator.dao;
+package com.cloud.simulator;
 
-import org.springframework.stereotype.Component;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-import com.cloud.simulator.MockConfigurationGroupVO;
-import com.cloud.utils.db.GenericDaoBase;
+import org.apache.cloudstack.api.InternalIdentity;
 
-@Component
-public class MockConfigurationGroupDaoImpl extends GenericDaoBase<MockConfigurationGroupVO, Long> implements MockConfigurationGroupDao {
-    public MockConfigurationGroupDaoImpl() {
-    }
+@Entity
+@Table(name = "mockconfigurationgroup")
+public class MockConfigurationGroupVO implements InternalIdentity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
+
+    @Column(name = "name")
+    private String name;
 
     @Override
-    public MockConfigurationGroupVO findByName(String name) {
-        return null;
+    public long getId() {
+        return this.id;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

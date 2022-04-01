@@ -18,34 +18,38 @@ package com.cloud.simulator.dao;
 
 import java.util.List;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
+import org.springframework.stereotype.Component;
 
+import com.cloud.simulator.MockConfigurationSubGroupVO;
 import com.cloud.utils.db.GenericDaoBase;
 
-public class MockConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSubGroupVO, Long> implements ConfigurationSubGroupDao {
+@Component
+public class MockConfigurationSubGroupDaoImpl extends GenericDaoBase<MockConfigurationSubGroupVO, Long> implements MockConfigurationSubGroupDao {
+    public MockConfigurationSubGroupDaoImpl() {
+    }
+
     @Override
-    public ConfigurationSubGroupVO findByName(String name) {
+    public MockConfigurationSubGroupVO findByName(String name) {
         return null;
     }
 
     @Override
-    public ConfigurationSubGroupVO startsWithName(String name) {
+    public MockConfigurationSubGroupVO startsWithName(String name) {
         return null;
     }
 
     @Override
-    public ConfigurationSubGroupVO findByKeyword(String keyword) {
+    public MockConfigurationSubGroupVO findByKeyword(String keyword) {
         return null;
     }
 
     @Override
-    public ConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId) {
+    public MockConfigurationSubGroupVO findByNameAndGroup(String name, Long groupId) {
         return null;
     }
 
     @Override
-    public List<ConfigurationSubGroupVO> findByGroup(Long groupId) {
+    public List<MockConfigurationSubGroupVO> findByGroup(Long groupId) {
         return null;
     }
 }

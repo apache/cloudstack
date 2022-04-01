@@ -19,8 +19,6 @@ package com.cloud.network.security;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
-import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,6 +31,8 @@ import org.springframework.core.type.filter.TypeFilter;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDaoImpl;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDaoImpl;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;

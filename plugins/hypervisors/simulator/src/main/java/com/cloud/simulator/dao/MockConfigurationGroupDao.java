@@ -16,18 +16,9 @@
 // under the License.
 package com.cloud.simulator.dao;
 
-import org.springframework.stereotype.Component;
-
 import com.cloud.simulator.MockConfigurationGroupVO;
-import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericDao;
 
-@Component
-public class MockConfigurationGroupDaoImpl extends GenericDaoBase<MockConfigurationGroupVO, Long> implements MockConfigurationGroupDao {
-    public MockConfigurationGroupDaoImpl() {
-    }
-
-    @Override
-    public MockConfigurationGroupVO findByName(String name) {
-        return null;
-    }
+public interface MockConfigurationGroupDao extends GenericDao<MockConfigurationGroupVO, Long> {
+    MockConfigurationGroupVO findByName(String name);
 }
