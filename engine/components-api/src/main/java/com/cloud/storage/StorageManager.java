@@ -155,6 +155,15 @@ public interface StorageManager extends StorageService {
     ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
             "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
 
+    ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
+            "mount.disabled.storage.pool",
+            "Storage",
+            "false",
+            "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
