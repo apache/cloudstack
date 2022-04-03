@@ -28,7 +28,8 @@ from marvin.lib.base import (ServiceOffering,
 from marvin.lib.common import (get_pod,
                                get_zone)
 from nose.plugins.attrib import attr
-from marvin.cloudstackAPI import (uploadTemplateDirectDownloadCertificate, revokeTemplateDirectDownloadCertificate)
+from marvin.cloudstackAPI import (uploadTemplateDirectDownloadCertificate, revokeTemplateDirectDownloadCertificate,
+                                  listTemplateDirectDownloadCertificates)
 from marvin.lib.decoratorGenerators import skipTestIf
 import uuid
 
@@ -132,11 +133,14 @@ class TestUploadDirectDownloadCertificates(cloudstackTestCase):
         cmd.zoneid = self.zone.id
 
         try:
-            certs = self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
-            validateList(certs)
-            cert = certs[0]
+            self.apiclient.uploadTemplateDirectDownloadCertificate(cmd)
         except Exception as e:
             self.fail("Valid certificate must be uploaded")
+
+        cmd = listTemplateDirectDownloadCertificates.listTemplateDirectDownloadCertificatesCmd()
+        certs = self.apiclient.listTemplateDirectDownloadCertificates(cmd)
+        validateList(certs)
+        cert = certs[0]
 
         revokecmd = revokeTemplateDirectDownloadCertificate.revokeTemplateDirectDownloadCertificateCmd()
         revokecmd.id = cert.id
