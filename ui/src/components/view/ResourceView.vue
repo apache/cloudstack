@@ -127,6 +127,11 @@ export default {
     },
     '$route.fullPath': function () {
       this.setActiveTab()
+    },
+    tabs: {
+      handler () {
+        this.setActiveTab()
+      }
     }
   },
   created () {
