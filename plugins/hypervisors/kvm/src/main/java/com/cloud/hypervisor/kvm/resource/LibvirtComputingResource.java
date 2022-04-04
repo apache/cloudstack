@@ -304,7 +304,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private Duration _timeout;
-    private static final int NUMMEMSTATS =2;
+    private static final int NUMMEMSTATS =13;
 
     private KVMHAMonitor _monitor;
     public static final String SSHKEYSPATH = "/root/.ssh";
@@ -878,9 +878,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmheartbeat.sh");
         }
 
-        _heartBeatPathRbd = Script.findScript(kvmScriptsDir, "kvmheartbeat_rbd.sh");
+        _heartBeatPathRbd = Script.findScript(kvmScriptsDir, "kvmheartbeat_rbd.py");
         if (_heartBeatPathRbd == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat_rbd.sh");
+            throw new ConfigurationException("Unable to find kvmheartbeat_rbd.py");
         }
 
         _createvmPath = Script.findScript(storageScriptsDir, "createvm.sh");
@@ -903,9 +903,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmvmactivity.sh");
         }
 
-        _vmActivityCheckPathRbd = Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.sh");
+        _vmActivityCheckPathRbd = Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.py");
         if (_vmActivityCheckPathRbd == null) {
-            throw new ConfigurationException("Unable to find kvmvmactivity_rbd.sh");
+            throw new ConfigurationException("Unable to find kvmvmactivity_rbd.py");
         }
 
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
@@ -2870,8 +2870,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             We store the secret under the UUID of the pool, that's why
                             we pass the pool's UUID as the authSecret
                      */
-                    disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
-                            pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
+                        disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
+                        pool.getUuid(), devId, diskBusTypeData, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                    }
+                    else {
+                        disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
+                        pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                    }
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                 } else if (pool.getType() == StoragePoolType.Gluster) {
@@ -3039,7 +3045,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean cleanupDisk(final DiskDef disk) {
         final String path = disk.getDiskPath();
 
-        if (path == null) {
+        if (org.apache.commons.lang.StringUtils.isBlank(path)) {
             s_logger.debug("Unable to clean up disk with null path (perhaps empty cdrom drive):" + disk);
             return false;
         }
@@ -3930,6 +3936,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             stats.setMemoryKBs(info.maxMem);
             stats.setTargetMemoryKBs(info.memory);
             stats.setIntFreeMemoryKBs(getMemoryFreeInKBs(dm));
+            stats.setIntUsableMemoryKBs(getMemoryUsableInKBs(dm));
 
             /* get cpu utilization */
             VmStats oldStats = null;
@@ -4038,7 +4045,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (ArrayUtils.isEmpty(mems)) {
             return NumberUtils.LONG_ZERO;
         }
-        return mems[0].getValue();
+        //getMemoryFreeInKBs 메소드는 RSS 값을 출력, 값이 없는 경우 0 출력
+        int length = mems.length;
+        for (int i = 0; i < length; i++) {
+            if (mems[i].getTag() == 7){
+                return mems[i].getValue();
+            }
+        }
+        return NumberUtils.LONG_ZERO;
+    }
+
+    protected long getMemoryUsableInKBs(Domain dm) throws LibvirtException {
+        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
+        if (ArrayUtils.isEmpty(mems)) {
+            return NumberUtils.LONG_ZERO;
+        }
+        //getMemoryFreeInKBs 메소드는 USABLE 값을 출력, 값이 없는 경우 0 출력
+        int length = mems.length;
+        for (int i = 0; i < length; i++) {
+            if (mems[i].getTag() == 8){
+                return mems[i].getValue();
+            }
+        }
+        return NumberUtils.LONG_ZERO;
     }
 
     private boolean canBridgeFirewall(final String prvNic) {

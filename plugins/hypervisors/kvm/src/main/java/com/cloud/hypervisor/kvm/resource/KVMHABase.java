@@ -60,7 +60,7 @@ public class KVMHABase {
 
     public static class RbdStoragePool {
         String _poolUUID;
-        String _poolIp;
+        String _monHost;
         String _poolMountSourcePath;
         String _mountDestPath;
         PoolType _type;
@@ -68,9 +68,9 @@ public class KVMHABase {
         String _poolAuthSecret;
         String _poolSourceHost;
 
-        public RbdStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
+        public RbdStoragePool(String poolUUID, String monHost, String poolSourcePath, String mountDestPath, PoolType type, String poolAuthUserName, String poolAuthSecret, String poolSourceHost) {
             _poolUUID = poolUUID;
-            _poolIp = poolIp;
+            _monHost = monHost;
             _poolMountSourcePath = poolSourcePath;
             _mountDestPath = mountDestPath;
             _type = type;
