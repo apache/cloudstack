@@ -20,7 +20,7 @@
 
 '''
 ############################################################
-# Experimental state of scripts 
+# Experimental state of scripts
 #    * Need to be reviewed
 #    * Only a sandbox
 ############################################################
@@ -52,13 +52,13 @@ def describeResources(config):
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
     z.securitygroupenabled = 'false'
-    
+
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
 
     lbprovider = provider()
     lbprovider.name = 'InternalLbVm'
-    
+
     pn = physical_network()
     pn.name = "z0-pnet"
     pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
@@ -66,7 +66,7 @@ def describeResources(config):
     pn.vlan = config.get('cloudstack', 'z0.guest.vlan')
     pn.providers.append(vpcprovider)
     pn.providers.append(lbprovider)
-    
+
     z.physical_networks.append(pn)
 
     p = pod()
@@ -79,7 +79,7 @@ def describeResources(config):
     v = iprange()
     v.gateway = config.get('cloudstack', 'z0p0.public.gateway')
     v.startip = config.get('cloudstack', 'z0p0.public.vlan.startip')
-    v.endip = config.get('cloudstack', 'z0p0.public.vlan.endip') 
+    v.endip = config.get('cloudstack', 'z0p0.public.vlan.endip')
     v.netmask = config.get('cloudstack', 'z0p0.public.netmask')
     v.vlan = config.get('cloudstack', 'z0p0.public.vlan')
     z.ipranges.append(v)
@@ -130,7 +130,7 @@ def describeResources(config):
     v1 = iprange()
     v1.gateway = config.get('cloudstack', 'z0p1.public.gateway')
     v1.startip = config.get('cloudstack', 'z0p1.public.vlan.startip')
-    v1.endip = config.get('cloudstack', 'z0p1.public.vlan.endip') 
+    v1.endip = config.get('cloudstack', 'z0p1.public.vlan.endip')
     v1.netmask = config.get('cloudstack', 'z0p1.public.netmask')
     v1.vlan = config.get('cloudstack', 'z0p1.public.vlan')
     z.ipranges.append(v1)

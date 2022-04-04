@@ -875,8 +875,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     agentStatusTransitTo(host, Status.Event.Ping, _nodeId);
                     return false;
                 } else if (determinedState == Status.Disconnected) {
-                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
-                    if (currentStatus == Status.Disconnected) {
+                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName() +
+                            '-' + host.getResourceState());
+                    if (currentStatus == Status.Disconnected ||
+                            (currentStatus == Status.Up && host.getResourceState() == ResourceState.PrepareForMaintenance)) {
                         if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
                             s_logger.warn("Host " + host.getId() + " has been disconnected past the wait time it should be disconnected.");
                             event = Status.Event.WaitedTooLong;

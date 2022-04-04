@@ -49,6 +49,13 @@
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
             {{ dataResource[item]? $t('message.egress.rules.allow') : $t('message.egress.rules.deny') }}
           </div>
+          <div v-else-if="item === 'securitygroup'">
+            <div v-if="dataResource[item] && dataResource[item].length > 0">
+              <span v-for="(securityGroup, idx) in dataResource[item]" :key="idx">
+                {{ securityGroup.name }} &nbsp;
+              </span>
+            </div>
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>

@@ -2275,7 +2275,7 @@
 "message.setup.physical.network.during.zone.creation": "N\u00e5r du legger til en avansert sone, m\u00e5 du konfigurere en eller flere fysiske nettverk. Hvert nettverk representerer et NIC p\u00e5 verten. Hvert fysiske nettverk kan inneholde en eller flere typer trafikk, med noen restriksjoner for hvordan de kan kombineres.<br/><br/><strong>Dra og slipp en eller flere nettverkstyper</strong> til hvert fysiske nettverk.",
 "message.setup.physical.network.during.zone.creation.basic": "N\u00e5r du legger til en enkel sone s\u00e5 kan du sette opp ett fysisk nettverk som korrensponderer til et NIC p\u00e5 hypervisor. Nettverket transporterer flere typer trafikk.<br/><br/> Du kan ogs\u00e5 <strong>drag og slippe</strong> andre trafikktyper over til det fysiske nettverket.",
 "message.setup.successful": "Oppsettet av nettskyen er vellykket!",
-"message.specifiy.tag.key.value": "Vennligst bekreft tag n\u00f8kkel og verdi",
+"message.specify.tag.key.value": "Vennligst bekreft tag n\u00f8kkel og verdi",
 "message.specify.url": "Vennligst spesifiser URL",
 "message.step.1.desc": "Vennligst velg en mal for din nye virtuelle instans. Du kan ogs\u00e5 velge en blank mal som du kan installere fra en ISO p\u00e5.",
 "message.step.2.continue": "Velg et resurstilbud for \u00e5 fortsette",

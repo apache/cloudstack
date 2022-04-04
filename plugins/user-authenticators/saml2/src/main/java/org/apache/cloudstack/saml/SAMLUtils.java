@@ -100,8 +100,11 @@ import com.cloud.utils.HttpUtils;
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
+    static final String charset = "abcdefghijklmnopqrstuvwxyz";
+
     public static String generateSecureRandomId() {
-        return new BigInteger(160, new SecureRandom()).toString(32);
+        return new BigInteger(160, new SecureRandom()).toString(32).replaceFirst("^[0-9]",
+                String.valueOf(charset.charAt(new SecureRandom().nextInt(charset.length()))));
     }
 
     public static String getValueFromAttributeStatements(final List<AttributeStatement> attributeStatements, final String attributeKey) {

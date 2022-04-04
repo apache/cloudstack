@@ -1002,12 +1002,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object hostId = null;
         Object storageId = null;
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            pod = cmd.getPodId();
             if (cmd instanceof ListVMsCmdByAdmin) {
-                clusterId = ((ListVMsCmdByAdmin)cmd).getClusterId();
+                pod = ((ListVMsCmdByAdmin) cmd).getPodId();
+                clusterId = ((ListVMsCmdByAdmin) cmd).getClusterId();
+                hostId = ((ListVMsCmdByAdmin) cmd).getHostId();
+                storageId = ((ListVMsCmdByAdmin) cmd).getStorageId();
             }
-            hostId = cmd.getHostId();
-            storageId = cmd.getStorageId();
         }
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
@@ -1193,7 +1193,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (_accountMgr.isRootAdmin(caller.getId())) {
-            if (cmd.getPodId() != null) {
+            if (pod != null) {
                 sc.setParameters("podId", pod);
 
                 if (state == null) {

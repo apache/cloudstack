@@ -201,7 +201,7 @@ class TestVPNService(cloudstackTestCase):
         # IP by using ike-scan
 
         self.create_VPN(self.public_ip)
-        
+
         cmd = ['ike-scan', self.public_ip, '-s', '4534'] # Random port
 
         stdout = subprocess.check_output(cmd)
