@@ -893,17 +893,6 @@ export default {
         this.form[name] = undefined
       })
     }
-    // handleRemoveFields (form) {
-    //   const formResult = {}
-    //   Object.keys(form).forEach(field => {
-    //     if (this.$refs[field] === null || this.$refs[field] === undefined) {
-    //       return true
-    //     }
-    //     formResult[field] = form[field]
-    //   })
-
-    //   return formResult
-    // }
   }
 }
 </script>
