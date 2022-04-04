@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
@@ -499,7 +499,9 @@ public interface ResponseGenerator {
 
     DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate);
 
-    List<DirectDownloadCertificateHostMapResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
+    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
 
-    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status, String objectName);
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status);
+
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result);
 }

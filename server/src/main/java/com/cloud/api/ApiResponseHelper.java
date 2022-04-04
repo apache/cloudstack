@@ -71,7 +71,6 @@ import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -4591,37 +4590,48 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<DirectDownloadCertificateHostMapResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings) {
+    public List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings) {
         if (CollectionUtils.isEmpty(hostMappings)) {
             return new ArrayList<>();
         }
-        List<DirectDownloadCertificateHostMapResponse> responses = new ArrayList<>(hostMappings.size());
+        List<DirectDownloadCertificateHostStatusResponse> responses = new ArrayList<>(hostMappings.size());
         for (DirectDownloadCertificateHostMap map : hostMappings) {
-            DirectDownloadCertificateHostMapResponse response = new DirectDownloadCertificateHostMapResponse();
+            DirectDownloadCertificateHostStatusResponse response = new DirectDownloadCertificateHostStatusResponse();
             HostVO host = ApiDBUtils.findHostById(map.getHostId());
             if (host != null) {
                 response.setHostId(host.getUuid());
                 response.setHostName(host.getName());
             }
-            response.setRevoked(map.isRevoked());
-            response.setObjectName("directdownloadcertificatehostmap");
+            response.setStatus(map.isRevoked() ? CertificateStatus.REVOKED.name() : CertificateStatus.UPLOADED.name());
+            response.setObjectName("directdownloadcertificatehoststatus");
             responses.add(response);
         }
         return responses;
     }
 
-    @Override
-    public DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus hostStatus, String objectName) {
+    private DirectDownloadCertificateHostStatusResponse getDirectDownloadHostStatusResponseInternal(Host host, CertificateStatus status, String details) {
         DirectDownloadCertificateHostStatusResponse response = new DirectDownloadCertificateHostStatusResponse();
-        Host host = hostStatus.getHost();
         if (host != null) {
             response.setHostId(host.getUuid());
             response.setHostName(host.getName());
         }
-        CertificateStatus status = hostStatus.getStatus();
         response.setStatus(status.name());
-        response.setDetails(hostStatus.getDetails());
-        response.setObjectName(objectName);
+        response.setDetails(details);
+        response.setObjectName("directdownloadcertificatehoststatus");
         return response;
+    }
+
+    @Override
+    public DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus hostStatus) {
+        Host host = hostStatus.getHost();
+        CertificateStatus status = hostStatus.getStatus();
+        return getDirectDownloadHostStatusResponseInternal(host, status, hostStatus.getDetails());
+    }
+
+    @Override
+    public DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result) {
+        HostVO host = ApiDBUtils.findHostById(hostId);
+        CertificateStatus status = result != null && result.first() ? CertificateStatus.UPLOADED : CertificateStatus.FAILED;
+        return getDirectDownloadHostStatusResponseInternal(host, status, result != null ? result.second() : "provision certificate failure");
     }
 }

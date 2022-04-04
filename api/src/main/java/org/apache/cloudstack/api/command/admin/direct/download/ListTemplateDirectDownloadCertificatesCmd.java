@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateHostMapResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -81,7 +81,7 @@ public class ListTemplateDirectDownloadCertificatesCmd extends BaseListCmd {
             DirectDownloadCertificateResponse certificateResponse = _responseGenerator.createDirectDownloadCertificateResponse(certificate);
             if (isListHosts()) {
                 List<DirectDownloadCertificateHostMap> hostMappings = directDownloadManager.getCertificateHostsMapping(certificate.getId());
-                List<DirectDownloadCertificateHostMapResponse> hostMapResponses = _responseGenerator.createDirectDownloadCertificateHostMapResponse(hostMappings);
+                List<DirectDownloadCertificateHostStatusResponse> hostMapResponses = _responseGenerator.createDirectDownloadCertificateHostMapResponse(hostMappings);
                 certificateResponse.setHostsMap(hostMapResponses);
             }
             responses.add(certificateResponse);

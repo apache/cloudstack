@@ -27,13 +27,12 @@ import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 
@@ -41,7 +40,7 @@ import javax.inject.Inject;
 
 @APICommand(name = ProvisionTemplateDirectDownloadCertificateCmd.APINAME,
         description = "Provisions a host with a direct download certificate",
-        responseObject = SuccessResponse.class,
+        responseObject = DirectDownloadCertificateHostStatusResponse.class,
         since = "4.17.0",
         authorized = {RoleType.Admin})
 public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
@@ -62,13 +61,9 @@ public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         Pair<Boolean, String> result = directDownloadManager.provisionCertificate(id, hostId);
-        if (result.first()) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setDisplayText(result.second());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to provision certificate: " + result.second());
-        }
+        DirectDownloadCertificateHostStatusResponse response = _responseGenerator.createDirectDownloadCertificateProvisionResponse(id, hostId, result);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 
     @Override

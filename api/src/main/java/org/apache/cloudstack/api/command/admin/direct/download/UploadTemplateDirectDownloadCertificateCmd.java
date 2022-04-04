@@ -77,7 +77,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseListCmd {
                 continue;
             }
             DirectDownloadCertificateHostStatusResponse revokeResponse =
-                    _responseGenerator.createDirectDownloadCertificateHostStatusResponse(status, "uploadtemplatedirectdownloadcertificate");
+                    _responseGenerator.createDirectDownloadCertificateHostStatusResponse(status);
             responses.add(revokeResponse);
         }
         response.setResponses(responses);

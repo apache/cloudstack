@@ -70,7 +70,7 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.HOSTS_MAP)
     @Param(description = "the hosts where the certificate is uploaded to", responseObject = HostResponse.class)
-    private List<DirectDownloadCertificateHostMapResponse> hostsMap;
+    private List<DirectDownloadCertificateHostStatusResponse> hostsMap;
 
     public String getId() {
         return id;
@@ -112,11 +112,11 @@ public class DirectDownloadCertificateResponse extends BaseResponse {
         this.zoneName = zoneName;
     }
 
-    public List<DirectDownloadCertificateHostMapResponse> getHostsMap() {
+    public List<DirectDownloadCertificateHostStatusResponse> getHostsMap() {
         return hostsMap;
     }
 
-    public void setHostsMap(List<DirectDownloadCertificateHostMapResponse> hosts) {
+    public void setHostsMap(List<DirectDownloadCertificateHostStatusResponse> hosts) {
         this.hostsMap = hosts;
     }
 
