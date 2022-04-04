@@ -276,7 +276,11 @@ setup_common() {
   then
       setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
       rm -rf /etc/radvd.conf
-      setup_radvd "0" $ETH0_IP6 $ETH0_IP6_PRELEN
+      setup_radvd "0" $ETH0_IP6 $ETH0_IP6_PRELEN true
+  elif [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+  then
+      rm -rf /etc/radvd.conf
+      setup_radvd "0" $GUEST_GW6 $GUEST_CIDR6_SIZE false
   fi
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
   if [ -n "$ETH2_IP" ]
@@ -372,6 +376,7 @@ setup_radvd() {
   local intfnum=$1
   local ipv6="$2"
   local prelen="$3"
+  local enable="$4"
 
   local intf=eth${intfnum}
   local ip6cidr="$ipv6/$prelen"
@@ -388,8 +393,10 @@ setup_radvd() {
   fi
   sed -i "s,{{ RDNSS_CONFIG }},$RDNSS_CFG,g" /etc/radvd.conf.$intf
   cat /etc/radvd.conf.$intf >> /etc/radvd.conf
-  systemctl enable radvd
-  echo "radvd" >> /var/cache/cloud/enabled_svcs
+  if [ "$enable" = true ] ; then
+    systemctl enable radvd
+    echo "radvd" >> /var/cache/cloud/enabled_svcs
+  fi
 }
 
 setup_dnsmasq() {
@@ -771,6 +778,12 @@ parse_cmd_line() {
             ;;
         guestcidrsize)
             export GUEST_CIDR_SIZE=$VALUE
+            ;;
+        guestgw6)
+            export GUEST_GW6=$VALUE
+            ;;
+        guestcidr6size)
+            export GUEST_CIDR6_SIZE=$VALUE
             ;;
         router_pr)
             export ROUTER_PR=$VALUE

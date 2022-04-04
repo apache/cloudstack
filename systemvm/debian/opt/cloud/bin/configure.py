@@ -1306,6 +1306,9 @@ def main(argv):
                                ("static_routes",       {"process_iptables": False, "executor": [CsStaticRoutes("staticroutes", config)]})
                                ])
 
+    if not config.is_vpc():
+        databag_map.pop("guest_network")
+
     def execDatabag(key, db):
         if key not in db.keys() or 'executor' not in db[key]:
             logging.warn("Unable to find config or executor(s) for the databag type %s" % key)

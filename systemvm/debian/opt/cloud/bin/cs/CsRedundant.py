@@ -469,39 +469,28 @@ class CsRedundant(object):
             logging.info("IPv6 address %s not present for %s" % (ipv6, dev))
             return
 
-    def _enable_radvd(self, dev, ipv6, dns1, dns2):
+    def _enable_radvd(self, dev):
         """
         Setup radvd for primary VR
         """
-        if dev == '' or not ipv6:
+        if dev == '':
             return
-        logging.info(CsHelper.execute("cat /etc/radvd.conf"))
-        CsHelper.execute("cp /etc/radvd.conf.tmpl /etc/radvd.conf." + dev)
-        CsHelper.execute("sed -i \"s,{{ GUEST_INTERFACE }}," + dev + ",g\" /etc/radvd.conf." + dev)
-        CsHelper.execute("sed -i \"s,{{ IPV6_CIDR }}," + ipv6 + ",g\" /etc/radvd.conf." + dev)
-        rdnssCfg = ""
-        if dns1:
-            rdnssCfg="    RDNSS " + dns1 + "\\n    {\\n        AdvRDNSSLifetime 30;\\n    };\\n"
-        if dns2:
-            rdnssCfg=rdnssCfg+"    RDNSS " + dns2 + "\\n    {\\n        AdvRDNSSLifetime 30;\\n    };\\n"
-        CsHelper.execute("sed -i \"s,{{ RDNSS_CONFIG }}," + rdnssCfg + ",g\" /etc/radvd.conf." + dev)
-        CsHelper.execute("cat /etc/radvd.conf." + dev + " >> /etc/radvd.conf")
         CsHelper.service("radvd", "enable")
         CsHelper.execute("echo \"radvd\" >> /var/cache/cloud/enabled_svcs")
-        CsHelper.service("radvd", "restart")
+        CsHelper.start_if_stopped("radvd")
 
-    def _disable_radvd(self, dev, ipv6):
+    def _disable_radvd(self, dev):
         """
         Disable radvd for non-primary VR
         """
-        if dev == '' or not ipv6:
+        if dev == '':
             return
-        CsHelper.execute("rm -f /etc/radvd.conf")
-        CsHelper.execute("rm -f /etc/radvd.conf." + dev)
         CsHelper.service("radvd", "stop")
         CsHelper.service("radvd", "disable")
         CsHelper.execute("sed -i \"s,radvd,,g\" /var/cache/cloud/enabled_svcs")
         CsHelper.execute("sed -i '/^$/d' /var/cache/cloud/enabled_svcs")
+        logging.info(CsHelper.execute("systemctl status radvd"))
+
 
     def _add_ipv6_guest_gateway(self):
         """
@@ -509,10 +498,10 @@ class CsRedundant(object):
         for redundant primary VR
         """
         for interface in self.address.get_interfaces():
-            if not interface.is_guest():
+            if not interface.is_guest() or not interface.get_gateway6_cidr():
                 continue
             self._add_ipv6_to_interface(interface, interface.get_gateway6_cidr())
-            self._enable_radvd(interface.get_device(), interface.get_gateway6_cidr(), interface.get_ip6dns1(), interface.get_ip6dns2())
+            self._enable_radvd(interface.get_device())
 
     def _remove_ipv6_guest_gateway(self):
         """
@@ -520,7 +509,7 @@ class CsRedundant(object):
         for redundant backup VR
         """
         for interface in self.address.get_interfaces():
-            if not interface.is_guest():
+            if not interface.is_guest() or not interface.get_gateway6_cidr():
                 continue
             self._remove_ipv6_to_interface(interface, interface.get_gateway6_cidr())
-            self._disable_radvd(interface.get_device(), interface.get_gateway6_cidr())
+            self._disable_radvd(interface.get_device())

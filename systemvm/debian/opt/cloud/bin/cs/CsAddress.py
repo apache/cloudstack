@@ -224,12 +224,6 @@ class CsInterface:
             return self.address['is_private_gateway']
         return False
 
-    def get_ip6dns1(self):
-        return self.config.cmdline().get_ip6dns1()
-
-    def get_ip6dns2(self):
-        return self.config.cmdline().get_ip6dns2()
-
     def is_added(self):
         return self.get_attr("add")
 
