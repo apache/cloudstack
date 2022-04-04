@@ -166,11 +166,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { axios } from '../../utils/request'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadLocalVolume',
+  mixins: [mixinForm],
   components: {
     ResourceIcon,
     TooltipLabel
@@ -311,7 +313,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         const params = {}
         for (const key in values) {
           const input = values[key]

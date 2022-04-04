@@ -104,9 +104,11 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 
 export default {
   name: 'CreateSSHKeyPair',
+  mixins: [mixinForm],
   props: {},
   data () {
     return {
@@ -177,7 +179,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {
           name: values.name

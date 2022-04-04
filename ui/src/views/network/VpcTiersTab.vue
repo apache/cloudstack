@@ -323,11 +323,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'VpcTiersTab',
+  mixins: [mixinForm],
   components: {
     Status,
     TooltipLabel
@@ -635,7 +637,8 @@ export default {
       this.modalLoading = true
 
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         this.showCreateNetworkModal = false
         var params = {
@@ -679,7 +682,8 @@ export default {
       this.fetchLoading = true
       this.modalLoading = true
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         api('createLoadBalancer', {
           name: values.name,
