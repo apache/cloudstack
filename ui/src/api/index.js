@@ -41,7 +41,9 @@ export function api (command, args = {}, method = 'GET', data = {}) {
 }
 
 export function login (arg) {
-  sourceToken.init()
+  if (!sourceToken.checkExistSource()) {
+    sourceToken.init()
+  }
 
   const params = new URLSearchParams()
   params.append('command', 'login')
