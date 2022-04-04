@@ -371,6 +371,9 @@ export default {
         }]
       })
     },
+    handleWriteCacheTypeChange (val) {
+      this.form.writeCacheType = val
+    },
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()

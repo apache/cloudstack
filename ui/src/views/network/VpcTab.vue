@@ -602,7 +602,7 @@ export default {
         vpcid: this.resource.id,
         listAll: true
       }).then(json => {
-        this.vpnGateways = json.listvpngatewaysresponse.vpngateway ? json.listvpngatewaysresponse.vpngateway : []
+        this.vpnGateways = json?.listvpngatewaysresponse?.vpngateway || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -664,9 +664,9 @@ export default {
     fetchVpnCustomerGateways () {
       this.modals.vpnConnectionLoading = true
       api('listVpnCustomerGateways', { listAll: true }).then(json => {
-        this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway
+        this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway || []
         if (this.modals.vpnConnection === true) {
-          this.form.vpncustomergateway = this.vpncustomergateways[0].id
+          this.form.vpncustomergateway = this.vpncustomergateways[0]?.id
         }
       }).catch(error => {
         this.$notifyError(error)
