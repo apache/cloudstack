@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from CsDatabag import CsCmdLine
+from CsDatabag import CsCmdLine, CsGuestNetwork
 from CsAddress import CsAddress
 import logging
 
@@ -44,8 +44,17 @@ class CsConfig(object):
             cls.cl = CsCmdLine("cmdline")
         return cls.cl
 
+    @classmethod
+    def get_guestnetwork_instance(cls):
+        if cls.gn is None:
+            cls.gn = CsGuestNetwork("guestnetwork")
+        return cls.gn
+
     def cmdline(self):
         return self.get_cmdline_instance()
+
+    def guestnetwork(self):
+        return self.get_guestnetwork_instance()
 
     def address(self):
         return self.ips

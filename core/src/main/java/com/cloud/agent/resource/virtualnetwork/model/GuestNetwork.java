@@ -27,6 +27,7 @@ public class GuestNetwork extends ConfigBase {
     private String routerGuestNetmask;
     private String routerGuestGateway;
     private String cidr;
+    private String cidr6;
     private String dns;
     private String dns6;
     private String domainName;
@@ -110,6 +111,14 @@ public class GuestNetwork extends ConfigBase {
 
     public void setCidr(final String cidr) {
         this.cidr = cidr;
+    }
+
+    public String getCidr6() {
+        return cidr6;
+    }
+
+    public void setCidr6(String cidr6) {
+        this.cidr6 = cidr6;
     }
 
     public String getDns() {

@@ -21,6 +21,8 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
@@ -29,8 +31,6 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.utils.net.NetUtils;
-
-import org.apache.commons.lang3.StringUtils;
 
 public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
 
@@ -70,6 +70,9 @@ public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
         guestNetwork.setRouterGuestIp6(nic.getIp6Address());
         guestNetwork.setRouterGuestIp6Gateway(nic.getIp6Gateway());
         guestNetwork.setRouterGuestIp6Cidr(nic.getIp6Cidr());
+        if (nic.getIp6Cidr() != null) {
+            guestNetwork.setCidr6(String.valueOf(NetUtils.getIp6CidrSize(nic.getIp6Cidr())));
+        }
 
         guestNetwork.setRouterIp6(command.getRouterIpv6());
         guestNetwork.setRouterIp6Gateway(command.getRouterIpv6Gateway());

@@ -180,3 +180,25 @@ class CsCmdLine(CsDataBag):
         if ipkey not in self.idata() or prelenkey not in self.idata():
             return False
         return "%s/%s" % (self.idata()[ipkey], self.idata()[prelenkey])
+
+class CsGuestNetwork(CsDataBag):
+    """ Get guestnetwork config parameters """
+
+    def get_dev_data(self, devname):
+        if devname in self.dbag:
+            return self.dbag[devname][0]
+        return {}
+
+    def get_dev_ip6gateway(self, devname):
+        nw = self.get_dev_data(devname)
+        gatewaykey = "router_guest_ip6_gateway"
+        if gatewaykey not in nw:
+            return False
+        return nw[gatewaykey]
+
+    def get_dev_ip6cidr(self, devname):
+        nw = self.get_dev_data(devname)
+        cidrkey = "cidr6"
+        if cidrkey not in nw:
+            return False
+        return nw[cidrkey]
