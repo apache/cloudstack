@@ -288,6 +288,7 @@ class CsAcl(CsDataBag):
                 r.create()
                 count += 1
 
+            # Prepare IPv6 ACL rules
             chain = "default_ingress_policy"
             if direction == "ingress":
                 chain = "default_egress_policy"

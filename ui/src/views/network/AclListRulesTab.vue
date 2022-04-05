@@ -67,7 +67,7 @@
               </div>
               <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
-                <div>{{ acl.startport }}</div>
+                <div>{{ element.startport }}</div>
               </div>
               <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
@@ -201,10 +201,6 @@
             <a-select-option value="icmp">{{ capitalise($t('label.icmp')) }}</a-select-option>
             <a-select-option value="all">{{ $t('label.all') }}</a-select-option>
             <a-select-option value="protocolnumber">{{ $t('label.protocol.number') }}</a-select-option>
-            <a-select-option value="tcp6">{{ capitalise($t('label.tcp6')) }}</a-select-option>
-            <a-select-option value="udp6">{{ capitalise($t('label.udp6')) }}</a-select-option>
-            <a-select-option value="icmp6">{{ capitalise($t('label.icmp6')) }}</a-select-option>
-            <a-select-option value="all6">{{ $t('label.all.ipv6') }}</a-select-option>
           </a-select>
         </a-form-item>
 
