@@ -89,7 +89,8 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
     /**
      * Revoke direct download certificate from the hosts in the zone or a specific host
      */
-    List<HostCertificateStatus> revokeCertificate(Long certificateId, Long zoneId, Long hostId);
+    List<HostCertificateStatus> revokeCertificate(Long certificateId, String certificateAlias, String hypervisor,
+                                                  Long zoneId, Long hostId);
 
     List<DirectDownloadCertificate> listDirectDownloadCertificates(Long certificateId, Long zoneId);
 

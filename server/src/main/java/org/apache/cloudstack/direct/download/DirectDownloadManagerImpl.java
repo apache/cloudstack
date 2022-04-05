@@ -70,6 +70,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -618,11 +619,20 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public List<HostCertificateStatus> revokeCertificate(Long certificateId, Long zoneId, Long hostId) {
-        DirectDownloadCertificateVO certificateVO = directDownloadCertificateDao.findById(certificateId);
+    public List<HostCertificateStatus> revokeCertificate(Long certificateId, String alias, String hypervisor, Long zoneId, Long hostId) {
+        DirectDownloadCertificateVO certificateVO;
+        if (certificateId != null) {
+            certificateVO = directDownloadCertificateDao.findById(certificateId);
+        } else if (StringUtils.isNotBlank(alias)) {
+            certificateVO = directDownloadCertificateDao.findByAlias(alias, HypervisorType.getType(hypervisor), zoneId);
+        } else {
+            throw new CloudRuntimeException("Please provide a certificate ID or certificate alias");
+        }
+
         if (certificateVO == null) {
             throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
         }
+
         String certificateAlias = certificateVO.getAlias();
         if (!certificateVO.getZoneId().equals(zoneId)) {
             throw new CloudRuntimeException("The certificate with alias " + certificateAlias + " was uploaded " +
