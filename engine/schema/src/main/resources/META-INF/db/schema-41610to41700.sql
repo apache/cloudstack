@@ -221,17 +221,22 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`id`;
 
 
-DELIMITER //
-CREATE PROCEDURE create_external_uuid_in_volumes()
-  BEGIN
-    SELECT count(*) INTO @count FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = 'volumes' AND table_schema='cloud' AND column_name = 'external_uuid';
-    IF @count < 1 THEN ALTER TABLE cloud.volumes ADD COLUMN external_uuid VARCHAR(40) DEFAULT null;
-    END IF;
-  END //
-DELIMITER ;
-CALL create_external_uuid_in_volumes;
-DROP PROCEDURE create_external_uuid_in_volumes;
+--;
+-- Stored procedure to do idempotent column add;
+-- This is copied from schema-41000to41100.sql
+--;
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
 
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200),
+    IN in_column_name VARCHAR(200),
+    IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes','external_uuid', 'VARCHAR(40) DEFAULT null ');
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
@@ -370,7 +375,6 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
             left join
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
-
 
 DROP VIEW IF EXISTS `cloud`.`user_vm_view`;
 CREATE
