@@ -32,7 +32,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     private List<NfsStoragePool> nfsStoragePools;
     private List<RbdStoragePool> rbdStoragePools;
     private String hostIp;
-    private long heartBeatCheckerTimeout = 600000; // 10 minutes
+    private long heartBeatCheckerTimeout = 360000; // 6 minutes
 
     public KVMHAChecker(List<NfsStoragePool> nfspools, List<RbdStoragePool> rbdpools, String host) {
         this.nfsStoragePools = nfspools;
@@ -107,11 +107,11 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
                 e.printStackTrace();
             }
 
-            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", log: \"%s\", pool: \"%s\"}].", processBuilder.command().toString().replace(",", ""), parsedLine,
+            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", log: \"%s\", pool: \"%s\"}].", processBuilder.command().toString(), parsedLine,
             rbdpools._monHost));
 
             if (process != null && parsedLine.contains("DEAD")) {
-                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned. [%s]. It may cause a shutdown of host IP [%s].", processBuilder.command().toString().replace(",", ""),
+                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned. [%s]. It may cause a shutdown of host IP [%s].", processBuilder.command().toString(),
                         parsedLine, hostIp));
             } else {
                 validResult = true;

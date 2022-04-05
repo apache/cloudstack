@@ -87,7 +87,7 @@ public class KVMHAVMActivityChecker extends KVMHABase implements Callable<Boolea
             processBuilder.command().add(hostIp);
             processBuilder.command().add("-u");
             processBuilder.command().add(volumeUuidList);
-            command = processBuilder.command().toString().replace(",", "");
+            command = processBuilder.command().toString();
             Process process = null;
 
             try {
