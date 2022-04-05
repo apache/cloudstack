@@ -2264,6 +2264,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             for (DiskTO vol : sortedDisks) {
+                // group 0 is root controller, therefore we replace it with -1 (volume with no group) for right device number
+                int groupNumber = vol.getGroupNumber() == 0 ? -1 : vol.getGroupNumber();
                 if (vol.getType() == Volume.Type.ISO) {
                     if (deployAsIs) {
                         configureIso(hyperHost, vmMo, vol, deviceConfigSpecArray, ideUnitNumber++, i);
@@ -2294,17 +2296,17 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         }
                     }
                 } else {
-                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(),0))) {
-                        scsiUnitNumberMap.merge(-1, 0, (a,b) -> a + 1);
+                    if (VmwareHelper.isReservedScsiDeviceNumber(scsiUnitNumberMap.getOrDefault(groupNumber,0))) {
+                        scsiUnitNumberMap.merge(groupNumber, 1, (a,b) -> a + b);
                     }
 
-                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0), vol.getGroupNumber());
+                    controllerKey = vmMo.getScsiDiskControllerKeyNoException(diskController, scsiUnitNumberMap.getOrDefault(groupNumber, 0), groupNumber);
                     if (controllerKey == -1) {
                         // This may happen for ROOT legacy VMs which doesn't have recommended disk controller when global configuration parameter 'vmware.root.disk.controller' is set to "osdefault"
                         // Retrieve existing controller and use.
                         Ternary<Integer, Integer, DiskControllerType> vmScsiControllerInfo = vmMo.getScsiControllerInfo();
                         DiskControllerType existingControllerType = vmScsiControllerInfo.third();
-                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumberMap.getOrDefault(vol.getGroupNumber(), 0), vol.getGroupNumber());
+                        controllerKey = vmMo.getScsiDiskControllerKeyNoException(existingControllerType.toString(), scsiUnitNumberMap.getOrDefault(groupNumber, 0), groupNumber);
                     }
                 }
                 if (!hasSnapshot) {
@@ -2362,10 +2364,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         deviceNumber = ideUnitNumber % VmwareHelper.MAX_ALLOWED_DEVICES_IDE_CONTROLLER;
                         ideUnitNumber++;
                     } else {
-                        // group 0 is root controller, therefore we replace it with -1 (volume with no group) for right device number
-                        int groupNumber = vol.getGroupNumber() == 0 ? -1 : vol.getGroupNumber();
                         deviceNumber = scsiUnitNumberMap.getOrDefault(groupNumber, 0) % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER;
-                        scsiUnitNumberMap.merge(groupNumber, 0, (a,b) -> a + 1);
+                        scsiUnitNumberMap.merge(groupNumber, 1, (a,b) -> a + b);
                     }
 
                     VirtualDevice device = VmwareHelper.prepareDiskDevice(vmMo, null, controllerKey, diskChain, volumeDsDetails.first(), deviceNumber, i + 1);
@@ -2395,7 +2395,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     if (controllerKey == vmMo.getIDEControllerKey(ideUnitNumber))
                         ideUnitNumber++;
                     else
-                        scsiUnitNumberMap.merge(vol.getGroupNumber(), 0, (a,b) -> a + 1);
+                        scsiUnitNumberMap.merge(groupNumber, 1, (a,b) -> a + b);
                 }
             }
 

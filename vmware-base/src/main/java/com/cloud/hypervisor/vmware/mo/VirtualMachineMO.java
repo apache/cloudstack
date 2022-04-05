@@ -3185,7 +3185,7 @@ public class VirtualMachineMO extends BaseMO {
         while (true) {
             // Next device number should be the lowest device number on the key that is not in use and is not reserved.
             if (!existingUnitNumbers.contains(Integer.valueOf(deviceNumber))) {
-                if (controllerKey != scsiControllerKey || !VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
+                if (!VmwareHelper.isReservedScsiDeviceNumber(deviceNumber))
                     break;
             }
             ++deviceNumber;
