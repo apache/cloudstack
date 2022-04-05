@@ -281,7 +281,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     private String podName;
 
     @SerializedName(ApiConstants.EXTERNAL_UUID)
-    @Param(description = "volume uuid that is given by virtualisation provider")
+    @Param(description = "volume uuid that is given by virtualisation provider (only for VMware)")
     private String externalUuid;
 
     public String getPath() {
