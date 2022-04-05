@@ -165,7 +165,7 @@ class TestTemplateAccessAcrossDomains(cloudstackTestCase):
             self.update_restrict_template_configuration(self.domain1.id, self.domain1_config)
             self.update_restrict_template_configuration(self.domain2.id, self.domain2_config)
             self.update_restrict_template_configuration(self.sub_domain.id, self.sub_domain_config)
-            cleanup_resources(self.apiclient, self.cleanup)
+            super(TestTemplateAccessAcrossDomains, self).tearDown()
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
