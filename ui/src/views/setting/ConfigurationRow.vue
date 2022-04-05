@@ -16,16 +16,27 @@
 // under the License.
 
 <template>
-    <a-container class="config-row">
-      <a-row :gutter="12">
-          <a-col :md="17">
-            <b> {{configrecord.displaytext }} </b> {{ ' (' + configrecord.name + ')' }} <br/> {{ configrecord.description }}
-          </a-col>
-          <a-col :md="7">
-            <ConfigurationValue :configrecord="configrecord" :loading="loading" />
-          </a-col>
-      </a-row>
-    </a-container>
+    <a-table
+        size="small"
+        :columns="innerColumns"
+        :showHeader="false"
+        :dataSource="configrecords"
+        :pagination="false"
+        :bordered="false"
+        :defaultExpandAllRows="true"
+        :rowKey="record => record.name">
+          <template #name="{ record }">
+            <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+          </template>
+          <template #value="{ record }">
+            <ConfigurationValue :configrecord="record" :loading="loading" />
+          </template>
+          <template #expandedRowRender="{ record }" v-if="configrecord.type==='Boolean'">
+             <!-- Add children ConfigurationRow with parent, v-if record.type == 'Boolean' and record.value == true and config has records with parent as record.name -->
+            {{record.displaytext }}
+            <ConfigurationValue :configrecord="record" :loading="loading" />
+          </template>
+    </a-table>
 </template>
 <script>
 import ConfigurationValue from './ConfigurationValue'
@@ -51,7 +62,22 @@ export default {
   },
   data () {
     return {
-      fetchLoading: false
+      fetchLoading: false,
+      innerColumns: [
+        {
+          title: 'name',
+          dataIndex: 'name',
+          slots: { customRender: 'name' }
+        },
+        {
+          title: 'value',
+          dataIndex: 'value',
+          slots: { customRender: 'value' }
+        }
+      ],
+      configrecords: [
+        this.configrecord
+      ]
     }
   },
   created () {

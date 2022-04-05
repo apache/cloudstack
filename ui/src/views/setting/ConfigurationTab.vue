@@ -17,7 +17,7 @@
 
 <template>
     <a-table
-      size="middle"
+      size="small"
       :showHeader="false"
       :columns="columns"
       :dataSource="this.configdata"
@@ -28,9 +28,10 @@
 
       <!-- Record without parent only on top, v-if record.parent == null -->
       <template #displaytext="{ record }">
-        <ConfigurationRow :config="this.configdata" :configrecord="record" :loading="loading" />
+        <span v-if="!record.parent">
+          <ConfigurationRow :config="this.configdata" :configrecord="record" :loading="loading" />
+        </span>
       </template>
-      <!-- Add children ConfigurationRow with parent, v-if record.type == 'Boolean' and record.value == true and config has records with parent as record.name -->
     </a-table>
 </template>
 
@@ -44,10 +45,6 @@ export default {
     ConfigurationRow
   },
   props: {
-    config: {
-      type: Object,
-      required: true
-    },
     group: {
       type: String,
       required: true

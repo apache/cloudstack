@@ -28,7 +28,7 @@
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
-                  @onClick="fetchConfigurationData({ irefresh: true })">
+                  @click="fetchConfigurationData()">
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
@@ -49,18 +49,28 @@
         </a-row>
       </a-card>
     </a-affix>
-    <a-tabs tabPosition="left">
+    <a-tabs
+      tabPosition="left"
+      :animated="false"
+      @change="handleChangeConfigGroupTab" >
+      <a-tab-pane
+        key=''
+        tab='All Settings' >
+          <AllConfigurationsTab :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane
         v-for="(group) in groups"
         :key="group.name"
         :tab="group.name" >
 
-        <a-tabs >
+        <a-tabs
+          :animated="false"
+          @change="handleChangeConfigSubGroupTab" >
           <a-tab-pane
             v-for="(subgroup) in group.subgroup"
             :key="subgroup.name"
             :tab="subgroup.name" >
-             <ConfigurationTab :config="config" :group="group.name" :subgroup="subgroup.name" :loading="loading" />
+             <ConfigurationTab :group="group.name" :subgroup="subgroup.name" :loading="loading" />
           </a-tab-pane>
         </a-tabs>
       </a-tab-pane>
@@ -80,6 +90,7 @@ import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import SearchView from '@/components/view/SearchView'
 import ConfigurationTab from './ConfigurationTab'
+import AllConfigurationsTab from './AllConfigurationsTab'
 
 export default {
   name: 'GlobalConfiguration',
@@ -93,7 +104,8 @@ export default {
     QuickView,
     TooltipButton,
     SearchView,
-    ConfigurationTab
+    ConfigurationTab,
+    AllConfigurationsTab
   },
   props: {
     loading: {
@@ -107,12 +119,11 @@ export default {
   },
   data () {
     return {
-      groups: [{ id: 1, name: 'Access', subgroup: [{ name: 'Account' }, { name: 'Domain' }, { name: 'Project' }] }, { id: 2, name: 'Storage', subgroup: [{ name: 'Primary Storage' }, { name: 'Template' }, { name: 'Volume' }, { name: 'Snapshot' }] }, { id: 3, name: 'Compute', subgroup: [{ name: 'Kubernetes' }, { name: 'VirtualMachine' }] }, { id: 4, name: 'Others', subgroup: [{ name: 'Misc' }] }],
-      config: [{ category: 'Advanced', group: 'Access', subgroup: 'Account', name: 'account.allow.expose.host.hostname', value: '10000', description: 'If set to true, it allows the hypervisor host name on which the VM is spawned on to be exposed to the VM', isdynamic: true, component: 'VirtualMachineManager', displaytext: 'Account allow expose host hostname', type: 'Number' },
-        { category: 'Storage', group: 'Storage', subgroup: 'Template', name: 'storage.template.cleanup.enabled', value: 'true', description: 'Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled', isdynamic: false, component: 'StorageManager', displaytext: 'Storage template cleanup enabled', type: 'Boolean' }],
+      groups: [],
+      config: [],
       configLoading: false,
-      recordLoading: false,
-      selectedRowKeys: [],
+      configGroup: '',
+      configSubGroup: '',
       dataView: true,
       searchView: true,
       searchFilters: [],
@@ -123,31 +134,10 @@ export default {
   },
   created () {
     this.fetchConfigurationGroups()
-    this.fetchConfigurationData()
   },
   watch: {
   },
   methods: {
-    fetchData (callback) {
-      this.configLoading = true
-      const params = {
-        [this.scopeKey]: this.resource.id,
-        listAll: true
-      }
-      if (this.filter) {
-        params.keyword = this.filter
-      }
-      api('listConfigurations', params).then(response => {
-        this.config = response.listconfigurationsresponse.configuration
-      }).catch(error => {
-        console.error(error)
-        this.$message.error(this.$t('message.error.loading.setting'))
-      }).finally(() => {
-        this.configLoading = false
-        if (!callback) return
-        callback()
-      })
-    },
     fetchConfigurationGroups () {
       this.configLoading = true
       const params = {
@@ -169,6 +159,12 @@ export default {
         listAll: true,
         pagesize: -1
       }
+      if (this.configGroup.length > 0) {
+        params.group = this.configGroup
+      }
+      if (this.configSubGroup.length > 0) {
+        params.subgroup = this.configSubGroup
+      }
       if (this.filter) {
         params.keyword = this.filter
       }
@@ -182,19 +178,94 @@ export default {
         this.configLoading = false
       })
     },
-    setSelection (selection) {
-      this.selectedRowKeys = selection
-      this.$emit('selection-change', this.selectedRowKeys)
+    handleChangeConfigGroupTab (e) {
+      this.configGroup = e
+      if (this.configGroup.length > 0) {
+        for (const groupIndex in this.groups) {
+          if (this.groups[groupIndex].name === this.configGroup) {
+            const group = this.groups[groupIndex]
+            this.configSubGroup = group.subgroup[0].name
+          }
+        }
+      } else {
+        this.configSubGroup = ''
+      }
+      if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
+        const query = Object.assign({}, this.$route.query)
+        query.group = this.configGroup
+        query.subgroup = this.configSubGroup
+        history.pushState(
+          {},
+          null,
+          '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+            return (
+              encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+            )
+          }).join('&')
+        )
+      } else {
+        history.pushState(
+          {},
+          null,
+          '#' + this.$route.path
+        )
+      }
     },
-    resetSelection () {
-      this.setSelection([])
-    },
-    onSelectChange (selectedRowKeys, selectedRows) {
-      this.setSelection(selectedRowKeys)
+    handleChangeConfigSubGroupTab (e) {
+      this.configSubGroup = e
+      if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
+        const query = Object.assign({}, this.$route.query)
+        query.group = this.configGroup
+        query.subgroup = this.configSubGroup
+        history.pushState(
+          {},
+          null,
+          '#' + this.$route.path + '?' + Object.keys(query).map(key => {
+            return (
+              encodeURIComponent(key) + '=' + encodeURIComponent(query[key])
+            )
+          }).join('&')
+        )
+      } else {
+        history.pushState(
+          {},
+          null,
+          '#' + this.$route.path
+        )
+      }
     },
     onSearch (opts) {
+      const query = Object.assign({}, this.$route.query)
+      for (const key in this.searchParams) {
+        delete query[key]
+      }
+      this.searchParams = {}
+      if (opts && Object.keys(opts).length > 0) {
+        this.searchParams = opts
+        if ('searchQuery' in opts) {
+          const value = opts.searchQuery
+          if (value && value.length > 0) {
+            query.name = value
+          }
+          this.searchParams = {}
+        } else {
+          Object.assign(query, opts)
+        }
+      }
+      query.page = '1'
+      query.pagesize = String(this.pageSize)
+      if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
+        this.fetchData(query)
+        return
+      }
+      this.$router.push({ query })
     },
     changeFilter (filter) {
+      const query = Object.assign({}, this.$route.query)
+      query.filter = filter
+      query.page = '1'
+      query.pagesize = this.pageSize.toString()
+      this.$router.push({ query })
     }
   }
 }

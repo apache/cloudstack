@@ -228,7 +228,11 @@ export default {
       } else if (configrecord.type === 'Number' || configrecord.type === 'Decimal') {
         this.editableValue = Number(configrecord.value)
       } else {
-        this.editableValue = String(configrecord.value)
+        if (configrecord.value) {
+          this.editableValue = String(configrecord.value)
+        } else {
+          this.editableValue = ''
+        }
       }
     },
     cancelEditConfigurationValue (configrecord) {
