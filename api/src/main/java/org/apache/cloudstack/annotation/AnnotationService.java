@@ -39,7 +39,7 @@ public interface AnnotationService {
 
     enum EntityType {
         VM(true), VOLUME(true), SNAPSHOT(true),
-        VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true),
+        VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true), USER_DATA(true),
         NETWORK(true), VPC(true), PUBLIC_IP_ADDRESS(true), VPN_CUSTOMER_GATEWAY(true),
         TEMPLATE(true), ISO(true), KUBERNETES_CLUSTER(true),
         SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),

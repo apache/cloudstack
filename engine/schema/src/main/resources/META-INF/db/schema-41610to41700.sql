@@ -932,6 +932,29 @@ CREATE VIEW `cloud`.`event_view` AS
         `cloud`.`projects` ON projects.project_account_id = event.account_id
             LEFT JOIN
         `cloud`.`event` eve ON event.start_id = eve.id;
+-- PR#5984 Update name for global configuration vm.stats.increment.metrics
+Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+CREATE TABLE `cloud`.`user_data` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',
+  `name` varchar(256) NOT NULL COMMENT 'name of the user data',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner, foreign key to account table',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain, foreign key to domain table',
+  `user_data` mediumtext COMMENT 'value of the userdata',
+  `params` mediumtext COMMENT 'value of the comma-separated list of parameters',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_userdata__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_userdata__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_userdata__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`user_vm` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data' AFTER `user_data`;
+ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__user_data_id` FOREIGN KEY `fk_user_vm__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_id` bigint unsigned DEFAULT NULL COMMENT 'id of the user data';
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `user_data_link_policy` varchar(255) DEFAULT NULL COMMENT 'user data link policy with template';
+ALTER TABLE `cloud`.`vm_template` ADD CONSTRAINT `fk_vm_template__user_data_id` FOREIGN KEY `fk_vm_template__user_data_id`(`user_data_id`) REFERENCES `user_data`(`id`) ON DELETE CASCADE;
+
 
 -- Add XenServer 8.2.1 hypervisor capabilities
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) VALUES (UUID(), 'XenServer', '8.2.1', 1000, 253, 64, 1);

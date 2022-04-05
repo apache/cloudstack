@@ -235,6 +235,9 @@ public class EventTypes {
     //registering SSH keypair events
     public static final String EVENT_REGISTER_SSH_KEYPAIR = "REGISTER.SSH.KEYPAIR";
 
+    //registering userdata events
+    public static final String EVENT_REGISTER_USER_DATA = "REGISTER.USER.DATA";
+
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
 

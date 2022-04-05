@@ -14,34 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.uservm;
+package com.cloud.user.dao;
 
-import org.apache.cloudstack.acl.ControlledEntity;
+import com.cloud.user.UserDataVO;
+import com.cloud.utils.db.GenericDao;
 
-import com.cloud.vm.VirtualMachine;
+public interface UserDataDao extends GenericDao<UserDataVO, Long> {
 
-/**
- * This represents one running virtual machine instance.
- */
-public interface UserVm extends VirtualMachine, ControlledEntity {
+    public UserDataVO findByUserData(long accountId, long domainId, String userData);
 
-    Long getIsoId();
+    public UserDataVO findByName(long accountId, long domainId, String name);
 
-    String getDisplayName();
-
-    String getUserData();
-
-    String getPassword();
-
-    void setUserData(String userData);
-
-    void setUserDataId(Long userDataId);
-
-    Long getUserDataId();
-
-    String getDetail(String name);
-
-    void setAccountId(long accountId);
-
-    public boolean isDisplayVm();
 }

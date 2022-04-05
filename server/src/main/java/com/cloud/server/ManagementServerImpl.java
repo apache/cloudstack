@@ -43,6 +43,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
@@ -506,6 +509,10 @@ import org.apache.cloudstack.api.command.user.template.ListTemplatesCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
+import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
+import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.AddIpToVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -936,6 +943,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     DomainRouterDao routerDao;
     @Inject
     public UUIDManager uuidMgr;
+    @Inject
+    protected UserDataDao _userDataDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -3671,6 +3680,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
         cmdList.add(CreateConsoleEndpointCmd.class);
+
+        //user data APIs
+        cmdList.add(RegisterUserDataCmd.class);
+        cmdList.add(DeleteUserDataCmd.class);
+        cmdList.add(ListUserDataCmd.class);
+        cmdList.add(LinkUserDataToTemplateCmd.class);
         return cmdList;
     }
 
@@ -4382,6 +4397,117 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null, owner);
     }
 
+    @Override
+    public boolean deleteUserData(final DeleteUserDataCmd cmd) {
+        final Account caller = getCaller();
+        final String accountName = cmd.getAccountName();
+        final Long domainId = cmd.getDomainId();
+        final Long projectId = cmd.getProjectId();
+
+        Account owner = null;
+        try {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        } catch (InvalidParameterValueException ex) {
+            if (caller.getType() == Account.Type.ADMIN && accountName != null && domainId != null) {
+                owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
+            }
+            if (owner == null) {
+                throw ex;
+            }
+        }
+
+        final UserDataVO userData = _userDataDao.findById(cmd.getId());
+        if (userData == null) {
+            final InvalidParameterValueException ex = new InvalidParameterValueException(
+                    "A key pair with id '" + cmd.getId() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
+            final DomainVO domain = ApiDBUtils.findDomainById(owner.getDomainId());
+            String domainUuid = String.valueOf(owner.getDomainId());
+            if (domain != null) {
+                domainUuid = domain.getUuid();
+            }
+            ex.addProxyObject(domainUuid, "domainId");
+            throw ex;
+        }
+        annotationDao.removeByEntityType(AnnotationService.EntityType.SSH_KEYPAIR.name(), userData.getUuid());
+
+        return _userDataDao.expunge(userData.getId());
+    }
+
+    @Override
+    public Pair<List<? extends UserData>, Integer> listUserDatas(final ListUserDataCmd cmd) {
+        final Long id = cmd.getId();
+        final String name = cmd.getName();
+        final String keyword = cmd.getKeyword();
+
+        final Account caller = getCaller();
+        final List<Long> permittedAccounts = new ArrayList<Long>();
+
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        final Long domainId = domainIdRecursiveListProject.first();
+        final Boolean isRecursive = domainIdRecursiveListProject.second();
+        final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        final SearchBuilder<UserDataVO> sb = _userDataDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        final Filter searchFilter = new Filter(UserDataVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        final SearchCriteria<UserDataVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+
+        if (keyword != null) {
+            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+        }
+
+        final Pair<List<UserDataVO>, Integer> result = _userDataDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<? extends UserData>, Integer>(result.first(), result.second());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_USER_DATA, eventDescription = "registering userdata", async = true)
+    public UserData registerUserData(final RegisterUserDataCmd cmd) {
+        final Account owner = getOwner(cmd);
+        checkForUserDataByName(cmd, owner);
+        checkForUserData(cmd, owner);
+
+        final String name = cmd.getName();
+        final String userdata = cmd.getUserData();
+        final String params = cmd.getParams();
+
+        return createAndSaveUserData(name, userdata, params, owner);
+    }
+
+    /**
+     * @param cmd
+     * @param owner
+     * @throws InvalidParameterValueException
+     */
+    private void checkForUserData(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+        final UserDataVO userData = _userDataDao.findByUserData(owner.getAccountId(), owner.getDomainId(), cmd.getUserData());
+        if (userData != null) {
+            throw new InvalidParameterValueException("A userdata with same content already exists for this account.");
+        }
+    }
+
+    /**
+     * @param cmd
+     * @param owner
+     * @throws InvalidParameterValueException
+     */
+    private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
+        final UserDataVO userData = _userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        if (userData != null) {
+            throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
+        }
+    }
+
     /**
      * @param cmd
      * @param owner
@@ -4441,6 +4567,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     /**
+     * @param cmd
+     * @return
+     */
+    protected Account getOwner(final RegisterUserDataCmd cmd) {
+        final Account caller = getCaller();
+
+        final Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        return owner;
+    }
+
+    /**
      * @return
      */
     protected Account getCaller() {
@@ -4461,6 +4598,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _sshKeyPairDao.persist(newPair);
 
         return newPair;
+    }
+
+    private UserData createAndSaveUserData(final String name, final String userdata, final String params, final Account owner) {
+        final UserDataVO userDataVO = new UserDataVO();
+
+        userDataVO.setAccountId(owner.getAccountId());
+        userDataVO.setDomainId(owner.getDomainId());
+        userDataVO.setName(name);
+        userDataVO.setUserData(userdata);
+        userDataVO.setParams(params);
+
+        _userDataDao.persist(userDataVO);
+
+        return userDataVO;
     }
 
     @Override

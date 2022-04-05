@@ -14,34 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.uservm;
+package com.cloud.user;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.vm.VirtualMachine;
+public interface UserData extends ControlledEntity, InternalIdentity, Identity {
 
-/**
- * This represents one running virtual machine instance.
- */
-public interface UserVm extends VirtualMachine, ControlledEntity {
-
-    Long getIsoId();
-
-    String getDisplayName();
+    public enum UserDataOverridePolicy { allowoverride, append, denyoverride }
 
     String getUserData();
 
-    String getPassword();
-
-    void setUserData(String userData);
-
-    void setUserDataId(Long userDataId);
-
-    Long getUserDataId();
-
-    String getDetail(String name);
-
-    void setAccountId(long accountId);
-
-    public boolean isDisplayVm();
+    String getParams();
 }
