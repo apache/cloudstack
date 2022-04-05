@@ -67,7 +67,7 @@
               </div>
               <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
-                <div>{{ acl.startport }}</div>
+                <div>{{ element.startport }}</div>
               </div>
               <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
