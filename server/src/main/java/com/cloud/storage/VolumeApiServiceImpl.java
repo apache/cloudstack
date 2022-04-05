@@ -3819,7 +3819,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
 
-                    if(answer.getContextParam("vdiskUuid") != null){
+                    if (answer.getContextParam("vdiskUuid") != null) {
                         volumeToAttach = _volsDao.findById(volumeToAttach.getId());
                         volumeToAttach.setExternalUuid(answer.getContextParam("vdiskUuid"));
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
