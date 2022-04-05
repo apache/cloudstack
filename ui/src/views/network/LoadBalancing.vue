@@ -105,8 +105,9 @@
         </a-button>
       </template>
       <template #add="{record}">
-        <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
-          {{ $t('label.add') }}
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+          <template #icon><plus-outlined /></template>
+            {{ $t('label.add') }}
         </a-button>
       </template>
       <template #expandedRowRender="{ record }">
@@ -772,8 +773,8 @@ export default {
     openTagsModal (id) {
       this.initForm()
       this.rules = {
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       }
       this.tagsModalLoading = true
       this.tagsModalVisible = true

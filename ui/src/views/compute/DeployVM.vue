@@ -1648,7 +1648,6 @@ export default {
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
       this.handleSubmit(e.domEvent)
-      this.form.stayonpage = false
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1696,8 +1695,10 @@ export default {
         deployVmData.clusterid = values.clusterid
         deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
-        deployVmData.boottype = values.boottype
-        deployVmData.bootmode = values.bootmode
+        if (!this.template?.deployasis) {
+          deployVmData.boottype = values.boottype
+          deployVmData.bootmode = values.bootmode
+        }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
@@ -1881,6 +1882,9 @@ export default {
           }
         }).catch(error => {
           this.$notifyError(error)
+          this.loading.deploy = false
+        }).finally(() => {
+          this.form.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {

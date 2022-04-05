@@ -80,13 +80,11 @@
 
 <script>
 import { api } from '@/api'
-import RenderIcon from '@/utils/renderIcon'
 import Console from '@/components/widgets/Console'
 
 export default {
   name: 'ActionButton',
   components: {
-    RenderIcon,
     Console
   },
   data () {
@@ -94,7 +92,7 @@ export default {
       actionBadge: {}
     }
   },
-  mounted () {
+  created () {
     this.handleShowBadge()
   },
   props: {

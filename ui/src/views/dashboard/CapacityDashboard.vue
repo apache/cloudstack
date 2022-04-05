@@ -23,7 +23,7 @@
           <a-select
             :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
-            v-model:value="zoneSelected.name"
+            :value="zoneSelected.name"
             @change="changeZone"
             showSearch
             optionFilterProp="label"

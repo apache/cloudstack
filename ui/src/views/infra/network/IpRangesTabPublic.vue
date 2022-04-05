@@ -257,19 +257,19 @@
 
       >
         <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
-          <a-input v-focus="true" v-model:value="form.startip"></a-input>
+          <a-input v-focus="true" v-model:value="formUpdRange.startip"></a-input>
         </a-form-item>
         <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
-          <a-input v-model:value="form.endip"></a-input>
+          <a-input v-model:value="formUpdRange.endip"></a-input>
         </a-form-item>
         <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
-          <a-input v-model:value="form.gateway"></a-input>
+          <a-input v-model:value="formUpdRange.gateway"></a-input>
         </a-form-item>
         <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
-          <a-input v-model:value="form.netmask"></a-input>
+          <a-input v-model:value="formUpdRange.netmask"></a-input>
         </a-form-item>
         <a-form-item name="forsystemvms" ref="forsystemvms" :label="$t('label.system.vms')" class="form__item">
-          <a-switch v-model:checked="form.forsystemvms"></a-switch>
+          <a-switch v-model:checked="formUpdRange.forsystemvms"></a-switch>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -359,6 +359,8 @@ export default {
     }
   },
   created () {
+    this.initFormUpdateRange()
+    this.initAddIpRangeForm()
     if (!this.basicGuestNetwork) {
       this.columns.splice(5, 0,
         {
