@@ -2149,7 +2149,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumePath, dsMo.getName());
                 chainInfo = _gson.toJson(diskInfo);
 
-                answer.setContextParam("vdiskUuid",vmMo.getVirtualDiskUUID(datastoreVolumePath));
+                answer.setContextParam("vdiskUuid",vmMo.getExternalDiskUUID(datastoreVolumePath));
 
                 if (isManaged) {
                     expandVirtualDisk(vmMo, datastoreVolumePath, volumeTO.getSize());

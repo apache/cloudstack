@@ -3649,7 +3649,7 @@ public class VirtualMachineMO extends BaseMO {
         return count;
     }
 
-    public String getVirtualDiskUUID(String datastoreVolumePath) throws Exception{
+    public String getExternalDiskUUID(String datastoreVolumePath) throws Exception{
         List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
         if (CollectionUtils.isEmpty(devices) || datastoreVolumePath == null) {
             return null;
