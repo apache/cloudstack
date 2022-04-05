@@ -244,6 +244,46 @@ class TestAttachVolumeWithGroup(cloudstackTestCase):
                 self.assertEqual(len(result), 0, msg="After delete vm, at least one volume group was not removed")
                 break
 
+    @attr(tags=["advanced", "advancedns", "needle"])
+    def test_controller_pos_seven_with_groups(self):
+        virtual_machine = VirtualMachine.create(
+            self.api_client,
+            self.test_data['virtual_machine'],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(virtual_machine)
+        volume_count = 8
+        volume_list = []
+
+        for i in range(0, volume_count):
+            volume_list.append(Volume.create(
+                self.api_client,
+                self.test_data["volume"],
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=self.disk_offering.id))
+            self.cleanup.append(volume_list[i])
+
+        for i in range(0, 2):
+            for j in range(0, volume_count):
+                virtual_machine.attach_volume(
+                    self.api_client,
+                    volume_list[j],
+                    volumegroup=i)
+
+            virtual_machine.stop(self.api_client)
+            virtual_machine.start(self.api_client)
+
+            for j in range(0, volume_count):
+                virtual_machine.detach_volume(
+                    self.api_client,
+                    volume_list[j])
+
 
     @classmethod
     def tearDownClass(cls):
