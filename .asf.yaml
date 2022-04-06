@@ -44,7 +44,7 @@ github:
     rebase: false
 
   collaborators:
-    - Humbedooh
+    - acs-robot
 
   protected_branches:
     main:
