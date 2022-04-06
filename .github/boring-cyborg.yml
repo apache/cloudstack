@@ -121,6 +121,17 @@ labelPRBasedOnFilePath:
     - plugins/storage/volume/solidfire/*
   "component:ssvm":
     - services/secondary-storage/*
+  "component:storage":
+    - plugins/storage/*
+    - plugins/storage-allocators/*
+    - server/src/main/java/com/cloud/storage/*
+    - server/src/main/java/org/apache/cloudstack/storage/*
+    - engine/api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/*
+    - engine/api/src/main/java/org/apache/cloudstack/storage/*
+    - engine/schema/src/main/java/com/cloud/storage/*
+    - engine/schema/src/main/java/org/apache/cloudstack/storage/*
+    - engine/storage/*
+    - scripts/storage/*
   "component:systemd":
     - packaging/systemd/*
     - systemvm/debian/etc/systemd/*
