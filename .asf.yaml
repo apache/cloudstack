@@ -43,10 +43,10 @@ github:
     squash: true
     rebase: false
 
+  collaborators:
+    - acs-robot
+
   protected_branches:
     main:
       required_pull_request_reviews:
         required_approving_review_count: 2
-
-  collaborators:
-    - acs-robot
