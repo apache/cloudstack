@@ -8,7 +8,7 @@ import rbd
 import rados
 
 def createArgumentParser():
-	parser=argparse.ArgumentParser(description='KVM RBD HA를 위한 인자')
+	parser=argparse.ArgumentParser(description='Argument for KVM RBD HA')
 	parser.add_argument('-i', help='Source Host ip')
 	parser.add_argument('-p', help='rbd pool name')
 	parser.add_argument('-n', help='pool auth username')
@@ -67,9 +67,9 @@ def check_diskActivity():
 
 
 if __name__ == '__main__':
-	# parser 생성
+	# create parser
 	parser = createArgumentParser()
-	# 인자값 파싱
+	# argument parsing
 	args = parser.parse_args()
 
 	create_cephKeyring()

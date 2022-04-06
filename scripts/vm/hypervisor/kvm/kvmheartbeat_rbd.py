@@ -8,7 +8,7 @@ import rados
 import time
 
 def createArgumentParser():
-	parser=argparse.ArgumentParser(description='KVM RBD HA를 위한 인자')
+	parser=argparse.ArgumentParser(description='Argument for KVM RBD HA')
 	parser.add_argument('-i', type=str, help='Source Host ip')
 	parser.add_argument('-p', type=str, help='rbd pool name')
 	parser.add_argument('-n', type=str, help='pool auth username')
@@ -76,9 +76,9 @@ def create_hbWatcher():
 
 
 if __name__ == '__main__':
-	# parser 생성
+	# create parser
 	parser = createArgumentParser()
-	# 인자값 파싱
+	# argument parsing
 	args = parser.parse_args()
 
 	create_cephKeyring()
