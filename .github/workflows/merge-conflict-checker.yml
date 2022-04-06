@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: "PullRequestConflictChecker"
+name: "Check Pull Requests Conflict"
 on:
   push:
     branches:
@@ -29,7 +29,7 @@ jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
-    - name: Check Pull Request Conflict
+    - name: Check Pull Requests Conflict
       uses: eps1lon/actions-label-merge-conflict@v2.0.0
       with:
         repoToken: "${{ secrets.GITHUB_TOKEN  }}"
