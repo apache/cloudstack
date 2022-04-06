@@ -44,7 +44,7 @@ public class PatchSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class,
-            description = "patches systemVM - CPVM/SSVM/Router with the specified ID")
+            description = "patches systemVM - CPVM/SSVM with the specified ID")
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN,
