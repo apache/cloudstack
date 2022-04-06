@@ -2039,6 +2039,7 @@ class TestSharedNetwork(cloudstackTestCase):
         nic_ip_address = self.dbclient.execute(
             "select ip4_address from nics where strategy='Placeholder' and ip4_address = '%s' and removed is NOT NULL;" % routerIp);
 
+
         self.assertNotEqual(
             len(nic_ip_address),
             0,

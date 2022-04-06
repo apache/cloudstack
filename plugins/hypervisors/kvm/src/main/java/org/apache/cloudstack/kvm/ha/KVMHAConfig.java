@@ -43,7 +43,7 @@ public class KVMHAConfig {
     public static final ConfigKey<Long> KvmHARecoverTimeout = new ConfigKey<>("Advanced", Long.class, "kvm.ha.recover.timeout", "60",
             "The maximum length of time, in seconds, expected for a recovery operation to complete.", true, ConfigKey.Scope.Cluster);
 
-    public static final ConfigKey<Long> KvmHARecoverWaitPeriod = new ConfigKey<>("Advanced", Long.class, "kvm.ha.recover.wait.period", "600",
+    public static final ConfigKey<Long> KvmHARecoverWaitPeriod = new ConfigKey<>("Advanced", Long.class, "kvm.ha.recover.wait.period", "6000",
             "The maximum length of time, in seconds, to wait for a resource to recover.", true, ConfigKey.Scope.Cluster);
 
     public static final ConfigKey<Long> KvmHARecoverAttemptThreshold = new ConfigKey<>("Advanced", Long.class, "kvm.ha.recover.failure.threshold", "1",
