@@ -50,7 +50,7 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         ldapCreateAccountCmd = spy(new LdapCreateAccountCmd(ldapManager, accountService));
         ldapCreateAccountCmd.roleService = roleService;
-        setHiddenField(ldapCreateAccountCmd,"accountType", Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        setHiddenField(ldapCreateAccountCmd,"accountType", Account.Type.DOMAIN_ADMIN.ordinal());
     }
 
     @Test(expected = ServerApiException.class)

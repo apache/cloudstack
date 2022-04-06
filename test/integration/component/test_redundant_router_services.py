@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -209,7 +209,7 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         # 1. listNetworks should show the created network in allocated state
         # 2. listRouters returns no running routers
         # 3. VMs should be deployed and in Running state
-        # 4. should list MASTER and BACKUP routers
+        # 4. should list PRIMARY and BACKUP routers
         # 5. listPublicIpAddresses for networkid should show acquired IP addr
         # 6. listRemoteAccessVpns for the network associated should show VPN
         #    created
@@ -299,12 +299,12 @@ class TestEnableVPNOverRvR(cloudstackTestCase):
         self.assertEqual(
                     isinstance(routers, list),
                     True,
-                    "list router should return Master and backup routers"
+                    "list router should return Primary and backup routers"
                     )
         self.assertEqual(
                     len(routers),
                     2,
-                    "Length of the list router should be 2 (Backup & master)"
+                    "Length of the list router should be 2 (Backup & Primary)"
                     )
 
         self.debug("Associating public IP for network: %s" % network.name)

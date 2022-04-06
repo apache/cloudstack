@@ -58,8 +58,8 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         cls.supportedHypervisor = True
 
         if cls.hypervisor.lower() in [
-                "hyperv",
-                "lxc"]:
+            "hyperv",
+            "lxc"]:
             cls.supportedHypervisor = False
             return
 
@@ -83,7 +83,7 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
-        self.exceptionOccured = False
+        self.exceptionOccurred = False
 
         if not self.supportedHypervisor:
             self.skipTest("Snapshot not supported on %s" % self.hypervisor)
@@ -95,8 +95,8 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
                 volumeid
             )
         except Exception as e:
-            self.debug("Exception occured: %s" % e)
-            self.exceptionOccured = True
+            self.debug("Exception occurred: %s" % e)
+            self.exceptionOccurred = True
 
     def tearDown(self):
         try:
@@ -168,14 +168,14 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             name="concurrent.snapshots.threshold.perhost"
         )
         if config[0].value:
-		self.assertEqual(
-				isinstance(
-					config,
-					list),
-				True,
-				"concurrent.snapshots.threshold.perhost should be present\
-				in global config")
-		concurrentSnapshots = int(config[0].value)
+            self.assertEqual(
+                isinstance(
+                    config,
+                    list),
+                True,
+                "concurrent.snapshots.threshold.perhost should be present\
+                in global config")
+            concurrentSnapshots = int(config[0].value)
         self.debug("concurrent Snapshots: %s" % concurrentSnapshots)
 
         threads = []
@@ -228,14 +228,14 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
             name="concurrent.snapshots.threshold.perhost"
         )
         if config[0].value:
-		self.assertEqual(
-				isinstance(
-					config,
-					list),
-				True,
-				"concurrent.snapshots.threshold.perhost should be present\
-				in global config")
-		concurrentSnapshots = int(config[0].value)
+            self.assertEqual(
+                isinstance(
+                    config,
+                    list),
+                True,
+                "concurrent.snapshots.threshold.perhost should be present\
+                in global config")
+            concurrentSnapshots = int(config[0].value)
         else:
             self.skipTest("Skipping tests as the config value \
                     concurrent.snapshots.threshold.perhost is Null")
@@ -293,7 +293,7 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
         for thread in threads:
             thread.join()
 
-        self.assertTrue(self.exceptionOccured, "Concurrent snapshots\
+        self.assertTrue(self.exceptionOccurred, "Concurrent snapshots\
                 more than concurrent.snapshots.threshold.perhost\
                 value successfully created")
         return
@@ -304,9 +304,9 @@ class TestConcurrentSnapshotLimit(cloudstackTestCase):
              concurrent.snapshots.threshold.perhost parameter.
         """
         with self.assertRaises(Exception):
-           Configurations.update(
-             self.apiclient,
-             "concurrent.snapshots.threshold.perhost",
-             "String"
-           )
+            Configurations.update(
+                self.apiclient,
+                "concurrent.snapshots.threshold.perhost",
+                "String"
+            )
         return

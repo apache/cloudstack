@@ -172,13 +172,13 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() +
                     " as it's no longer active");
             }
-        } else if (account.getState() == Account.State.disabled) {
+        } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
 
@@ -223,10 +223,12 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Snapshot from volume [%s] was not found in database.", getVolumeUuid()));
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid());
+            String errorMessage = "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid();
+            s_logger.error(errorMessage, e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);
         }
     }
 

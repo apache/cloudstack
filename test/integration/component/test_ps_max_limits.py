@@ -25,7 +25,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -190,7 +191,7 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
                                    domainid=self.child_do_admin.domainid,
                                    diskofferingid=disk_offering.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         with self.assertRaises(Exception):
             Volume.create(self.apiclient,
@@ -287,7 +288,7 @@ class TestMaxPrimaryStorageLimits(cloudstackTestCase):
                                    projectid=self.project.id,
                                    diskofferingid=disk_offering.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         with self.assertRaises(Exception):
             Volume.create(self.apiclient,

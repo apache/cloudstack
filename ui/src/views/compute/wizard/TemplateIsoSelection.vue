@@ -64,10 +64,6 @@ export default {
       type: String,
       default: ''
     },
-    selected: {
-      type: String,
-      default: ''
-    },
     loading: {
       type: Boolean,
       default: false
@@ -99,15 +95,18 @@ export default {
     }
   },
   watch: {
-    items (items) {
-      const key = this.inputDecorator.slice(0, -2)
-      for (const filter of this.filterOpts) {
-        if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
-          if (!this.pagination) {
-            this.filterType = filter.id
-            this.checkedValue = items[filter.id][key][0].id
+    items: {
+      deep: true,
+      handler (items) {
+        const key = this.inputDecorator.slice(0, -2)
+        for (const filter of this.filterOpts) {
+          if (items[filter.id] && items[filter.id][key] && items[filter.id][key].length > 0) {
+            if (!this.pagination) {
+              this.filterType = filter.id
+              this.checkedValue = items[filter.id][key][0].id
+            }
+            break
           }
-          break
         }
       }
     },
@@ -116,9 +115,6 @@ export default {
         this.filter = ''
       }
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   methods: {
     updateTemplateIso (name, id) {
@@ -169,7 +165,7 @@ export default {
     }
   }
 
-  /deep/.ant-tabs-nav-scroll {
+  :deep(.ant-tabs-nav-scroll) {
     min-height: 45px;
   }
 </style>

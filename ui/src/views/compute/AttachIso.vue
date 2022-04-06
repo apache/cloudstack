@@ -15,36 +15,46 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        layout="vertical">
-        <a-form-item :label="$t('label.iso.name')">
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit">
+        <a-form-item :label="$t('label.iso.name')" ref="id" name="id">
           <a-select
             :loading="loading"
-            v-decorator="['id', {
-              initialValue: this.selectedIso,
-              rules: [{ required: true, message: `${this.$t('label.required')}`}]
-            }]"
-            autoFocus>
+            v-model:value="form.id"
+            v-focus="true"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
             <a-select-option v-for="iso in isos" :key="iso.id">
               {{ iso.displaytext || iso.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.forced')" v-if="resource && resource.hypervisor === 'VMware'">
-          <a-switch v-decorator="['forced']" :auto-focus="true" />
+        <a-form-item
+          :label="$t('label.forced')"
+          v-if="resource && resource.hypervisor === 'VMware'"
+          ref="forced"
+          name="forced">
+          <a-switch v-model:checked="form.forced" :auto-focus="true" />
         </a-form-item>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 
@@ -59,17 +69,21 @@ export default {
   data () {
     return {
       loading: false,
-      selectedIso: '',
       isos: []
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        id: [{ required: true, message: `${this.$t('label.required')}` }]
+      })
+    },
     fetchData () {
       const isoFiters = ['featured', 'community', 'selfexecutable']
       this.loading = true
@@ -80,7 +94,7 @@ export default {
       Promise.all(promises).then(() => {
         this.isos = _.uniqBy(this.isos, 'id')
         if (this.isos.length > 0) {
-          this.selectedIso = this.isos[0].id
+          this.form.id = this.isos[0].id
         }
       }).catch((error) => {
         console.log(error)
@@ -110,10 +124,9 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: values.id,
           virtualmachineid: this.resource.id
@@ -130,7 +143,7 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.id,
               successMessage: `${this.$t('label.action.attach.iso')} ${this.$t('label.success')}`,
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -143,6 +156,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }
@@ -158,12 +173,5 @@ export default {
 
 .form {
   margin: 10px 0;
-}
-
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

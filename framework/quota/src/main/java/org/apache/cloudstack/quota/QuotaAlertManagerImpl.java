@@ -16,24 +16,15 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-import javax.mail.Authenticator;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -55,13 +46,15 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
-import com.google.common.base.Strings;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Component
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
@@ -82,8 +75,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     @Inject
     private QuotaManager _quotaManager;
 
-    private EmailQuotaAlert _emailQuotaAlert;
     private boolean _lockAccountEnforcement = false;
+    private String senderAddress;
+    protected SMTPMailSender mailSender;
 
     boolean _smtpDebug = false;
 
@@ -107,15 +101,15 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             mergeConfigs(configs, params);
         }
 
-        final String smtpHost = configs.get(QuotaConfig.QuotaSmtpHost.key());
-        int smtpPort = NumbersUtil.parseInt(configs.get(QuotaConfig.QuotaSmtpPort.key()), 25);
-        String useAuthStr = configs.get(QuotaConfig.QuotaSmtpAuthType.key());
-        boolean useAuth = ((useAuthStr != null) && Boolean.parseBoolean(useAuthStr));
+        senderAddress = configs.get(QuotaConfig.QuotaSmtpSender.key());
+        _lockAccountEnforcement = BooleanUtils.toBoolean(configs.get(QuotaConfig.QuotaEnableEnforcement.key()));
         String smtpUsername = configs.get(QuotaConfig.QuotaSmtpUser.key());
-        String smtpPassword = configs.get(QuotaConfig.QuotaSmtpPassword.key());
-        String emailSender = configs.get(QuotaConfig.QuotaSmtpSender.key());
-        _lockAccountEnforcement = "true".equalsIgnoreCase(configs.get(QuotaConfig.QuotaEnableEnforcement.key()));
-        _emailQuotaAlert = new EmailQuotaAlert(smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, _smtpDebug);
+
+        String namespace = "quota.usage.smtp";
+        configs.put(String.format("%s.debug", namespace), String.valueOf(_smtpDebug));
+        configs.put(String.format("%s.username", namespace), smtpUsername);
+
+        mailSender = new SMTPMailSender(configs, namespace);
 
         return true;
     }
@@ -229,7 +223,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             final String subject = templateEngine.replace(emailTemplate.getTemplateSubject());
             final String body = templateEngine.replace(emailTemplate.getTemplateBody());
             try {
-                _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
+                sendQuotaAlert(account.getUuid(), emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
                 s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
@@ -254,11 +248,11 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB)) {
             Account account = _accountDao.findById(accountId);
             if (account != null) {
-                if (account.getState() == State.locked) {
+                if (account.getState() == State.LOCKED) {
                     return true; // already locked, no-op
-                } else if (account.getState() == State.enabled) {
+                } else if (account.getState() == State.ENABLED) {
                     AccountVO acctForUpdate = _accountDao.createForUpdate();
-                    acctForUpdate.setState(State.locked);
+                    acctForUpdate.setState(State.LOCKED);
                     success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
                 } else {
                     if (s_logger.isInfoEnabled()) {
@@ -269,7 +263,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 s_logger.warn("Failed to lock account " + accountId + ", account not found.");
             }
         } catch (Exception e) {
-            s_logger.error("Exception occured while locking account by Quota Alert Manager", e);
+            s_logger.error("Exception occurred while locking account by Quota Alert Manager", e);
             throw e;
         } finally {
             TransactionLegacy.open(opendb).close();
@@ -332,89 +326,28 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     };
 
-    static class EmailQuotaAlert {
-        private final Session _smtpSession;
-        private final String _smtpHost;
-        private final int _smtpPort;
-        private final boolean _smtpUseAuth;
-        private final String _smtpUsername;
-        private final String _smtpPassword;
-        private final String _emailSender;
+    protected void sendQuotaAlert(String accountUuid, List<String> emails, String subject, String body) {
+        SMTPMailProperties mailProperties = new SMTPMailProperties();
 
-        public EmailQuotaAlert(String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword, String emailSender, boolean smtpDebug) {
-            _smtpHost = smtpHost;
-            _smtpPort = smtpPort;
-            _smtpUseAuth = smtpUseAuth;
-            _smtpUsername = smtpUsername;
-            _smtpPassword = smtpPassword;
-            _emailSender = emailSender;
+        mailProperties.setSender(new MailAddress(senderAddress));
+        mailProperties.setSubject(subject);
+        mailProperties.setContent(body);
+        mailProperties.setContentType("text/html; charset=utf-8");
 
-            if (!Strings.isNullOrEmpty(_smtpHost)) {
-                Properties smtpProps = new Properties();
-                smtpProps.put("mail.smtp.host", smtpHost);
-                smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
-                if (smtpUsername != null) {
-                    smtpProps.put("mail.smtp.user", smtpUsername);
-                }
-
-                smtpProps.put("mail.smtps.host", smtpHost);
-                smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
-                if (!Strings.isNullOrEmpty(smtpUsername)) {
-                    smtpProps.put("mail.smtps.user", smtpUsername);
-                }
-
-                if (!Strings.isNullOrEmpty(smtpUsername) && !Strings.isNullOrEmpty(smtpPassword)) {
-                    _smtpSession = Session.getInstance(smtpProps, new Authenticator() {
-                        @Override
-                        protected PasswordAuthentication getPasswordAuthentication() {
-                            return new PasswordAuthentication(smtpUsername, smtpPassword);
-                        }
-                    });
-                } else {
-                    _smtpSession = Session.getInstance(smtpProps);
-                }
-                _smtpSession.setDebug(smtpDebug);
-            } else {
-                _smtpSession = null;
-            }
+        if (CollectionUtils.isEmpty(emails)) {
+            s_logger.warn(String.format("Account [%s] does not have users with email registered, "
+                    + "therefore we are unable to send quota alert email with subject [%s] and content [%s].", accountUuid, subject, body));
+            return;
         }
 
-        public void sendQuotaAlert(List<String> emails, String subject, String body) throws MessagingException, UnsupportedEncodingException {
-            if (_smtpSession == null) {
-                s_logger.error("Unable to create smtp session.");
-                return;
-            }
-            SMTPMessage msg = new SMTPMessage(_smtpSession);
-            msg.setSender(new InternetAddress(_emailSender, _emailSender));
-            msg.setFrom(new InternetAddress(_emailSender, _emailSender));
-
-            for (String email : emails) {
-                if (email != null && !email.isEmpty()) {
-                    try {
-                        InternetAddress address = new InternetAddress(email, email);
-                        msg.addRecipient(Message.RecipientType.TO, address);
-                    } catch (Exception pokemon) {
-                        s_logger.error("Exception in creating address for:" + email, pokemon);
-                    }
-                }
-            }
-
-            msg.setSubject(subject);
-            msg.setSentDate(new Date());
-            msg.setContent(body, "text/html; charset=utf-8");
-            msg.saveChanges();
-
-            SMTPTransport smtpTrans = null;
-            if (_smtpUseAuth) {
-                smtpTrans = new SMTPSSLTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-            } else {
-                smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
-            }
-            smtpTrans.connect();
-            smtpTrans.sendMessage(msg, msg.getAllRecipients());
-            smtpTrans.close();
+        Set<MailAddress> addresses = new HashSet<>();
+        for (String email : emails) {
+            addresses.add(new MailAddress(email));
         }
+
+        mailProperties.setRecipients(addresses);
+
+        mailSender.sendMail(mailProperties);
     }
+
 }

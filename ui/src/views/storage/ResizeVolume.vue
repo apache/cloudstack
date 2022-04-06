@@ -16,45 +16,46 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
-    <a-form :form="form" layout="vertical">
-      <a-form-item :label="$t('label.diskoffering')" v-if="resource.type !== 'ROOT'">
-        <a-select
-          v-decorator="['diskofferingid', {
-            initialValue: selectedDiskOfferingId,
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]}]"
-          :loading="loading"
-          :placeholder="$t('label.diskoffering')"
-          @change="id => (customDiskOffering = offerings.filter(x => x.id === id)[0].iscustomized || false)"
-          :autoFocus="resource.type !== 'ROOT'"
-        >
-          <a-select-option
-            v-for="(offering, index) in offerings"
-            :value="offering.id"
-            :key="index"
-          >{{ offering.displaytext || offering.name }}</a-select-option>
-        </a-select>
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      @finish="handleSubmit"
+     >
+      <a-form-item name="size" ref="size" :label="$t('label.sizegb')">
+        <a-input
+          v-model:value="form.size"
+          :placeholder="$t('label.disksize')"/>
       </a-form-item>
-      <div v-if="customDiskOffering || resource.type === 'ROOT'">
-        <a-form-item :label="$t('label.sizegb')">
+      <div v-if="customDiskOfferingIops">
+        <a-form-item name="miniops" ref="miniops" :label="$t('label.miniops')">
           <a-input
-            v-decorator="['size', {
-              rules: [{ required: true, message: $t('message.error.size') }]}]"
-            :placeholder="$t('label.disksize')"
-            :autoFocus="customDiskOffering || resource.type === 'ROOT'"/>
+            v-model:value="form.miniops"
+            :placeholder="$t('label.miniops')"/>
+        </a-form-item>
+        <a-form-item name="maxiops" ref="maxiops" :label="$t('label.maxiops')">
+          <a-input
+            v-model:value="form.maxiops"
+            :placeholder="$t('label.maxiops')"/>
         </a-form-item>
       </div>
-      <a-form-item :label="$t('label.shrinkok')">
-        <a-checkbox v-decorator="['shrinkok']" />
+      <a-form-item name="shrinkOk" ref="shrinkOk" :label="$t('label.shrinkok')" v-if="!['XenServer'].includes(resource.hypervisor)">
+        <a-switch
+          v-model:checked="form.shrinkOk"
+          :checked="shrinkOk"
+          @change="val => { shrinkOk = val }"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -68,18 +69,24 @@ export default {
   data () {
     return {
       offerings: [],
-      selectedDiskOfferingId: '',
       customDiskOffering: false,
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        size: [{ required: true, message: this.$t('message.error.size') }],
+        miniops: [{ required: true, message: this.$t('message.error.number') }],
+        maxiops: [{ required: true, message: this.$t('message.error.number') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listDiskOfferings', {
@@ -87,17 +94,16 @@ export default {
         listall: true
       }).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.selectedDiskOfferingId = this.offerings[0].id || ''
+        this.form.diskofferingid = this.offerings[0].id || ''
         this.customDiskOffering = this.offerings[0].iscustomized || false
       }).finally(() => {
         this.loading = false
       })
     },
     handleSubmit (e) {
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         values.id = this.resource.id
         api('resizeVolume', values).then(response => {
@@ -128,6 +134,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeModal () {
@@ -143,12 +151,6 @@ export default {
 
   @media (min-width: 760px) {
     width: 500px;
-  }
-}
-.action-button {
-  text-align: right;
-  button {
-    margin-right: 5px;
   }
 }
 </style>

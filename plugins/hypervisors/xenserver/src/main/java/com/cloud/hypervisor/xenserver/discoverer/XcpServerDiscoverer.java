@@ -321,9 +321,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 details.put("username", username);
                 params.put("username", username);
                 details.put("password", password);
-                if (isUefiSupported(prodVersion)) {
-                    details.put(com.cloud.host.Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
-                }
                 params.put("password", password);
                 params.put("zone", Long.toString(dcId));
                 params.put("guid", record.uuid);

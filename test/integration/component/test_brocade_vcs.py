@@ -19,7 +19,8 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import (listPhysicalNetworks,
                                   listNetworkServiceProviders,
                                   addNetworkServiceProvider,
@@ -117,7 +118,7 @@ class TestBrocadeVcs(cloudstackTestCase):
             assert cls.brocadeDeviceData["username"], "username of brocade device\
                     not present in config file"
         except Exception as e:
-            raise unittest.SkipTest("Exception occured while reading\
+            raise unittest.SkipTest("Exception occurred while reading\
                     brocade device data from config file: %s" % e)
         try:
 

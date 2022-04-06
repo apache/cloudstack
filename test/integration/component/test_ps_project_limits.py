@@ -25,7 +25,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -104,7 +105,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
             self.initialResourceCount = projects[0].primarystoragetotal
         except Exception as e:
             self.tearDown()
-            self.skipTest("Exception occured in setup: %s" % e)
+            self.skipTest("Exception occurred in setup: %s" % e)
         return
 
     def tearDown(self):
@@ -192,7 +193,7 @@ class TestProjectsVolumeLimits(cloudstackTestCase):
             host = hosts[0]
             self.vm.migrate(self.apiclient, host.id)
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         expectedCount = self.initialResourceCount
         response = matchResourceCount(

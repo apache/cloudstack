@@ -17,7 +17,8 @@
 """Utilities functions
 """
 # All tests inherit from cloudstackTestCase
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 # Import Integration Libraries
 from marvin.codes import FAILED, PASS
 # base - contains all resources as entities and defines create, delete,
@@ -41,7 +42,7 @@ from marvin.lib.common import (get_zone,
                                find_storage_pool_type)
 from nose.plugins.attrib import attr
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import tempfile
 
 
@@ -470,7 +471,7 @@ class TestPathVolume(cloudstackTestCase):
                     self.cluster_volume.id), "volume does not exist %s" %
                 self.cluster_volume.id)
             self.debug(
-                "volume id %s got created successfuly" %
+                "volume id %s got created successfully" %
                 list_cluster_volume[0].id)
             self.virtual_machine_zone_4.attach_volume(self.userapiclient,
                                                       self.cluster_volume
@@ -514,11 +515,11 @@ class TestPathVolume(cloudstackTestCase):
         self.debug("extracted url is%s  :" % self.extract_volume.url)
         try:
 
-            formatted_url = urllib.unquote_plus(self.extract_volume.url)
+            formatted_url = urllib.parse.unquote_plus(self.extract_volume.url)
             self.debug(
                 "Attempting to download volume at url %s" %
                 formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug(
@@ -633,7 +634,7 @@ class TestPathVolume(cloudstackTestCase):
             self.template_from_vm1_root_disk.delete(self.userapiclient
                                                     )
             self.debug(
-                "Template id: %s got deleted successfuly" %
+                "Template id: %s got deleted successfully" %
                 self.template_from_vm1_root_disk.id)
         except Exception as e:
             raise Exception("Template deletion failed with error %s" % e)
@@ -689,7 +690,7 @@ class TestPathVolume(cloudstackTestCase):
             list_volume[0].id, str(
                 self.migrate_volume.id), "volume does not exist %s" %
             self.migrate_volume.id)
-        self.debug("volume id %s got created successfuly" % list_volume[0].id)
+        self.debug("volume id %s got created successfully" % list_volume[0].id)
 
         self.virtual_machine_1.attach_volume(self.userapiclient,
                                              self.migrate_volume
@@ -719,7 +720,7 @@ class TestPathVolume(cloudstackTestCase):
             list_volume[0].id, str(
                 self.migrate_volume.id), "volume does not exist %s" %
             self.migrate_volume.id)
-        self.debug("volume id %s got created successfuly" % list_volume[0].id)
+        self.debug("volume id %s got created successfully" % list_volume[0].id)
         list_pool = StoragePool.list(self.apiclient,
                                      id=list_volume[0].storageid
                                      )
@@ -930,11 +931,11 @@ class TestPathVolume(cloudstackTestCase):
         self.debug("extracted url is%s  :" % self.extract_volume.url)
         try:
 
-            formatted_url = urllib.unquote_plus(self.extract_volume.url)
+            formatted_url = urllib.parse.unquote_plus(self.extract_volume.url)
             self.debug(
                 "Attempting to download volume at url %s" %
                 formatted_url)
-            response = urllib.urlopen(formatted_url)
+            response = urllib.request.urlopen(formatted_url)
             self.debug("response from volume url %s" % response.getcode())
             fd, path = tempfile.mkstemp()
             self.debug(

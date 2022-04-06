@@ -43,6 +43,10 @@ public class NetworkACLResponse extends BaseResponse {
     @Param(description = "Id of the VPC this ACL is associated with")
     private String vpcId;
 
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "Name of the VPC this ACL is associated with")
+    private String vpcName;
+
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is ACL for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
@@ -61,6 +65,10 @@ public class NetworkACLResponse extends BaseResponse {
 
     public void setVpcId(String vpcId) {
         this.vpcId = vpcId;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 
     public void setForDisplay(Boolean forDisplay) {

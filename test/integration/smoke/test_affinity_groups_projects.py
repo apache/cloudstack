@@ -36,7 +36,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.testClient = super(TestDeployVmWithAffinityGroup, cls).getClsTestClient()
         zone_name = cls.testClient.getZoneForTests()
         cls.apiclient = cls.testClient.getApiClient()
-        cls.domain = get_domain(cls.apiclient) 
+        cls.domain = get_domain(cls.apiclient)
         cls.services = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
@@ -47,7 +47,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             cls.zone.id,
             cls.hypervisor
         )
-        
+
         if cls.template == FAILED:
             assert False, "get_test_template() failed to return template"
 
@@ -56,11 +56,14 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.services["template"] = cls.template.id
         cls.services["zoneid"] = cls.zone.id
 
+        cls._cleanup = []
+
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
 
         projectData = {
             "name": "Project",
@@ -73,6 +76,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             account=cls.account.name,
             domainid=cls.account.domainid
         )
+        cls._cleanup.append(cls.project)
 
         # Add user to the project
         cls.project.addAccount(
@@ -84,16 +88,21 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         cls.ag = AffinityGroup.create(cls.apiclient, cls.services["virtual_machine"]["affinity"],projectid=cls.project.id)
+        cls._cleanup.append(cls.ag)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.ag,
-            cls.project,
-            cls.account,
-        ]
         return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        super(TestDeployVmWithAffinityGroup,self).tearDown()
 
     @attr(tags=["basic", "advanced", "multihost"], required_hardware="false")
     def test_DeployVmAntiAffinityGroup_in_project(self):
@@ -112,6 +121,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
+        self.cleanup.append(vm1)
 
         list_vm1 = list_virtual_machines(
             self.apiclient,
@@ -149,6 +159,7 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             affinitygroupnames=[self.ag.name]
         )
+        self.cleanup.append(vm2)
         list_vm2 = list_virtual_machines(
             self.apiclient,
             id=vm2.id
@@ -182,8 +193,4 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestDeployVmWithAffinityGroup,cls).tearDownClass()

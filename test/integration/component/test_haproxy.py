@@ -412,7 +412,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
                     self.virtual_machine_2],
                 services=services)
 
-            for method, params in configs.items():
+            for method, params in list(configs.items()):
                 self.debug("Creating stickiness policy for the LB rule: %s" %
                            lb_rule.id)
                 policies = self.configure_Stickiness_Policy(lb_rule,
@@ -496,7 +496,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
         configs = {"SourceBased": {"tablesize": '100k'}}
         for lb_method in lb_methods:
-            for method, params in configs.items():
+            for method, params in list(configs.items()):
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
                            (self.public_ip.ipaddress.ipaddress, lb_method))
 
@@ -566,7 +566,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         #TODO: Add code to check the AppCookie and LbCookie Stickiness policies
         configs = {"SourceBased": {"tablesize": '100k'}}
         for lb_method in lb_methods:
-            for method, params in configs.items():
+            for method, params in list(configs.items()):
                 self.debug("Creating load balancing rule on IP %s & algo %s" %
                            (self.public_ip.ipaddress.ipaddress, lb_method))
 
@@ -632,7 +632,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         configs = {"SourceBased": {"tablesize": '100k'}}
 
         for lb_method in lb_methods:
-            for method, params in configs.items():
+            for method, params in list(configs.items()):
                 self.debug("Setting up environment - acquire public IP")
                 public_ip = self.acquire_Public_Ip()
 
@@ -858,7 +858,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # * by passing the Invlaid parameter
         # * Invalid method name
         # * required parameter not present
-        # * passing invalid values to valid paramters.
+        # * passing invalid values to valid parameters.
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
         lb_rule = self.create_LB_Rule(

@@ -15,10 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 export default {
   name: 'ilbvm',
   title: 'label.internal.lb',
-  icon: 'share-alt',
+  icon: 'share-alt-outlined',
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
@@ -26,32 +27,43 @@ export default {
   actions: [
     {
       api: 'startInternalLoadBalancerVM',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.router',
       message: 'message.confirm.start.lb.vm',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopInternalLoadBalancerVM',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.router',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag-outlined',
+      label: 'label.action.migrate.router',
+      dataView: true,
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
+      popup: true
     },
     {
       api: 'migrateSystemVm',
       icon: 'drag',
-      label: 'label.action.migrate.router',
+      label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        }
-      }
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
+      popup: true
     }
   ]
 }

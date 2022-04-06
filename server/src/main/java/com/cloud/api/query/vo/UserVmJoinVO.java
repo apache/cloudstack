@@ -34,6 +34,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -66,7 +67,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -108,6 +110,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
+    @Column(name="update_time")
+    private Date lastUpdated;
+
     @Column(name = "instance_name", updatable = true, nullable = false)
     private String instanceName;
 
@@ -138,6 +143,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "private_mac_address", updatable = true, nullable = true)
     private String privateMacAddress;
+
+    @Column(name = "cluster_id", updatable = true, nullable = false)
+    private Long clusterId;
 
     @Column(name = "pod_id", updatable = true, nullable = false)
     private Long podId;
@@ -276,6 +284,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "nic_uuid")
     private String nicUuid;
 
+    @Column(name = "nic_device_id")
+    private Integer nicDeviceId = null;
+
     @Column(name = "is_default_nic")
     private boolean isDefaultNic;
 
@@ -344,8 +355,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "project_name")
     private String projectName;
 
-    @Column(name = "keypair_name")
-    private String keypairName;
+    @Column(name = "keypair_names")
+    private String keypairNames;
 
     @Column(name = "job_id")
     private Long jobId;
@@ -436,7 +447,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -488,6 +499,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return removed;
     }
 
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
     public String getInstanceName() {
         return instanceName;
     }
@@ -518,6 +533,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public Long getLastHostId() {
         return lastHostId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public Long getPodId() {
@@ -612,6 +631,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return backupOfferingUuid;
     }
 
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
+    }
+
     public String getBackupOfferingName() {
         return backupOfferingName;
     }
@@ -666,6 +689,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public long getNicId() {
         return nicId;
+    }
+
+    public Integer getNicDeviceId() {
+        return nicDeviceId;
     }
 
     public boolean isDefaultNic() {
@@ -754,8 +781,8 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return projectName;
     }
 
-    public String getKeypairName() {
-        return keypairName;
+    public String getKeypairNames() {
+        return keypairNames;
     }
 
     public boolean isLimitCpuUse() {

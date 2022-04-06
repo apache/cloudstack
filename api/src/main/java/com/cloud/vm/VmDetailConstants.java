@@ -21,6 +21,7 @@ public interface VmDetailConstants {
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
+    String NAME_ON_HYPERVISOR= "nameonhypervisor";
 
     // VMware specific
     String NIC_ADAPTER = "nicAdapter";
@@ -28,6 +29,7 @@ public interface VmDetailConstants {
     String DATA_DISK_CONTROLLER = "dataDiskController";
     String SVGA_VRAM_SIZE = "svga.vramSize";
     String NESTED_VIRTUALIZATION_FLAG = "nestedVirtualizationFlag";
+    String RAM_RESERVATION = "ramReservation";
 
     // XenServer specific (internal)
     String HYPERVISOR_TOOLS_VERSION = "hypervisortoolsversion";
@@ -37,6 +39,10 @@ public interface VmDetailConstants {
     // KVM specific (internal)
     String KVM_VNC_PORT = "kvm.vnc.port";
     String KVM_VNC_ADDRESS = "kvm.vnc.address";
+
+    // KVM specific, custom virtual GPU hardware
+    String VIDEO_HARDWARE = "video.hardware";
+    String VIDEO_RAM = "video.ram";
 
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
@@ -53,8 +59,11 @@ public interface VmDetailConstants {
     String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
     String DEPLOY_VM = "deployvm";
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
+    String SSH_KEY_PAIR_NAMES = "SSH.KeyPairNames";
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
+
+    String CONFIG_DRIVE_LOCATION = "configDriveLocation";
 
     // VM import with nic, disk and custom params for custom compute offering
     String NIC = "nic";
@@ -65,4 +74,6 @@ public interface VmDetailConstants {
     String DISK_OFFERING = "diskOffering";
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
+    String KEY_PAIR_NAMES = "keypairnames";
+    String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
 }

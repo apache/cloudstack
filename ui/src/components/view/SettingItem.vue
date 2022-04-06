@@ -27,15 +27,11 @@
         <a-col v-for="(item) in items" :key="item.name" :style="colWidth">
           <a-tooltip :title="$t(`label.theme.${item.name}`)" placement="top">
             <div :class="['img-checkbox', item.disabled ? 'disabled' : '']" v-if="item.type==='image-checkbox'">
-              <component
-                :is="item.component"
-                :style="{
-                  height: '56px',
-                  width: '56px'
-                }"/>
+              <light v-if="item.icon==='light'" :style="{ height: '56px', width: '56px' }" />
+              <dark v-if="item.icon==='dark'" :style="{ height: '56px', width: '56px' }"/>
               <div :class="['check-item', item.name === checked ? 'check-item-checked' : '']">
-                <a-radio :value="item.name" :disabled="item.disabled"></a-radio>
-                <a-icon :class="['check-icon', item.name]" type="check" />
+                <a-radio v-model:value="item.name" :disabled="item.disabled"></a-radio>
+                <check-outlined :class="['check-icon', item.name]" />
               </div>
             </div>
 
@@ -43,8 +39,8 @@
               <div
                 :class="['check-color', item.color === checked ? 'check-color-checked' : '']"
                 :style="{ backgroundColor: item.color }">
-                <a-radio :value="item.color"></a-radio>
-                <a-icon class="check-icon" type="check" />
+                <a-radio v-model:value="item.color"></a-radio>
+                <check-outlined class="check-icon" />
               </div>
             </div>
           </a-tooltip>
@@ -55,11 +51,16 @@
 </template>
 
 <script>
-import AddNetscalerLoadBalancer from '@/views/infra/network/providers/AddNetscalerLoadBalancer.vue'
+
+import light from '@/assets/icons/light.svg?inline'
+import dark from '@/assets/icons/dark.svg?inline'
 
 export default {
-  components: { AddNetscalerLoadBalancer },
   name: 'SettingItem',
+  components: {
+    light,
+    dark
+  },
   props: {
     viewType: {
       type: String,
@@ -113,8 +114,8 @@ export default {
     position: absolute;
     top: 0;
     width: 100%;
-    padding-top: 25px;
-    padding-left: 20px;
+    padding-top: 18px;
+    padding-left: 15px;
     height: 100%;
     font-size: 14px;
     font-weight: bold;

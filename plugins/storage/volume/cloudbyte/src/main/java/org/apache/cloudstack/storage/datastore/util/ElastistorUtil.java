@@ -20,20 +20,17 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.http.auth.InvalidCredentialsException;
 import org.apache.log4j.Logger;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientResponse;
 
 import javax.naming.ServiceUnavailableException;
 import javax.net.ssl.HostnameVerifier;
@@ -43,14 +40,18 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
 import java.net.ConnectException;
 import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class ElastistorUtil {
 
@@ -960,10 +961,10 @@ public class ElastistorUtil {
          * Returns null if there are query parameters associated with the
          * command
          */
-        public MultivaluedMap<String, String> getCommandParameters();
+        public List<Pair<String, String>> getCommandParameters();
 
         /*
-         * Adds new key-value pair to the query paramters lists.
+         * Adds new key-value pair to the query parameters lists.
          */
         public void putCommandParameter(String key, String value);
 
@@ -978,7 +979,7 @@ public class ElastistorUtil {
     private static class BaseCommand implements ElastiCenterCommand {
 
         private String commandName = null;
-        private MultivaluedMap<String, String> commandParameters = null;
+        private List<Pair<String, String>> commandParameters = null;
         private Object responseObject = null;
 
         /*
@@ -1003,16 +1004,16 @@ public class ElastistorUtil {
         }
 
         @Override
-        public MultivaluedMap<String, String> getCommandParameters() {
+        public List<Pair<String, String>> getCommandParameters() {
             return commandParameters;
         }
 
         @Override
         public void putCommandParameter(String key, String value) {
             if (null == commandParameters) {
-                commandParameters = new MultivaluedMapImpl();
+                commandParameters = new ArrayList<>();
             }
-            commandParameters.add(key, value);
+            commandParameters.add(new Pair<>(key, value));
         }
 
         @Override
@@ -1134,7 +1135,7 @@ public class ElastistorUtil {
             return executeCommand(cmd.getCommandName(), cmd.getCommandParameters(), cmd.getResponseObject());
         }
 
-        public Object executeCommand(String command, MultivaluedMap<String, String> params, Object responeObj) throws Throwable {
+        public Object executeCommand(String command, List<Pair<String, String>> params, Object responeObj) throws Throwable {
 
             if (!initialized) {
                 throw new IllegalStateException("Error : ElastiCenterClient is not initialized.");
@@ -1145,25 +1146,27 @@ public class ElastistorUtil {
             }
 
             try {
-                ClientConfig config = new DefaultClientConfig();
-                Client client = Client.create(config);
-                WebResource webResource = client.resource(UriBuilder.fromUri(restprotocol + elastiCenterAddress + restpath).build());
-
-                MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
-                queryParams.add(queryparamapikey, apiKey);
-                queryParams.add(queryparamresponse, responseType);
-
-                queryParams.add(queryparamcommand, command);
+                ClientConfig config = new ClientConfig();
+                Client client = ClientBuilder.newClient(config);
+                WebTarget webResource = client.target(UriBuilder.fromUri(restprotocol + elastiCenterAddress + restpath).build())
+                    .queryParam(queryparamapikey, apiKey)
+                    .queryParam(queryparamresponse, responseType)
+                    .queryParam(queryparamcommand, command);
 
                 if (null != params) {
-                    for (String key : params.keySet()) {
-                        queryParams.add(key, params.getFirst(key));
+                    for (Pair<String, String> pair : params) {
+                        webResource = webResource.queryParam(pair.first(), pair.second());
                     }
                 }
                 if (debug) {
-                    System.out.println("Command Sent " + command + " : " + queryParams);
+                    List<Pair<String, String>> qryParams = new ArrayList<>();
+                    qryParams.add(new Pair<>(queryparamapikey, apiKey));
+                    qryParams.add(new Pair<>(queryparamresponse, responseType));
+                    qryParams.add(new Pair<>(queryparamcommand, command));
+                    qryParams.addAll(params);
+                    System.out.println("Command Sent " + command + " : " + params);
                 }
-                ClientResponse response = webResource.queryParams(queryParams).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+                ClientResponse response = webResource.request(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
                 if (response.getStatus() >= 300) {
                     if (debug)
@@ -1178,7 +1181,7 @@ public class ElastistorUtil {
                         throw new ServiceUnavailableException("Internal Error. Please contact your ElastiCenter Administrator.");
                     }
                 } else if (null != responeObj) {
-                    String jsonResponse = response.getEntity(String.class);
+                    String jsonResponse = String.valueOf(response.readEntity(String.class));
                     if (debug) {
                         System.out.println("Command Response : " + jsonResponse);
                     }

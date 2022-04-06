@@ -17,9 +17,14 @@
 
 <template>
   <a-select
-    :value="defaultValue"
+    v-model:value="value"
     @change="handleChange"
-    autoFocus>
+    v-focus="true"
+    showSearch
+    optionFilterProp="label"
+    :filterOption="(input, option) => {
+      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+    }" >
     <a-select-option value="allow">{{ $t('label.allow') }}</a-select-option>
     <a-select-option value="deny">{{ $t('label.deny') }}</a-select-option>
   </a-select>
@@ -33,11 +38,23 @@ export default {
       required: true
     }
   },
+  data () {
+    return {
+      value: ''
+    }
+  },
+  watch: {
+    defaultValue () {
+      this.value = this.defaultValue
+    }
+  },
+  created () {
+    this.value = this.defaultValue
+  },
   methods: {
     handleChange (e) {
-      this.$emit('change', e)
+      this.$emit('onChange', e)
     }
   }
-
 }
 </script>

@@ -41,7 +41,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * A Network goes through the following life cycles through the NetworkGuru.
  *   - When a guest network is created, NetworkGuru is asked to "design" the network.
  *     This means the NetworkGuru checks the parameters such as cidr, gateway,
- *     vlan, etc and returns a network that can work with those paremeters.
+ *     vlan, etc and returns a network that can work with those parameters.
  *     Note that at this point the network is only a virtual network.  It has
  *     not been substantiated with resources, such as vlan, to make the network
  *     functional in the physical environment.  At this stage, the network is in

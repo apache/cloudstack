@@ -16,52 +16,40 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.name') }}
-            <a-tooltip :title="apiParams.name.description">
-              <a-icon type="info-circle" />
-            </a-tooltip>
-          </span>
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+        @finish="handleSubmit">
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="apiParams.name.description"
-            autoFocus />
+            v-focus="true" />
         </a-form-item>
 
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.description') }}
-            <a-tooltip :title="apiParams.description.description">
-              <a-icon type="info-circle" />
-            </a-tooltip>
-          </span>
+        <a-form-item name="description" ref="description">
+          <template #label>
+            <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+          </template>
           <a-input
-            v-decorator="['description']"
+            v-model:value="form.description"
             :placeholder="apiParams.description.description" />
         </a-form-item>
 
-        <a-form-item v-if="'roleid' in apiParams">
-          <span slot="label">
-            {{ $t('label.based.on') }}
-            <a-tooltip :title="$t('label.based.on.role.id.or.type')">
-              <a-icon type="info-circle" />
-            </a-tooltip>
-          </span>
+        <a-form-item name="using" ref="using" v-if="'roleid' in apiParams">
+          <template #label>
+            <tooltip-label :title="$t('label.based.on')" :tooltip="$t('label.based.on.role.id.or.type')"/>
+          </template>
           <a-radio-group
-            v-decorator="['using', {
-              initialValue: this.createRoleUsing
-            }]"
-            buttonStyle="solid"
-            @change="selected => { this.handleChangeCreateRole(selected.target.value) }">
+            v-model:value="form.using"
+            buttonStyle="solid">
             <a-radio-button value="type">
               {{ $t('label.type') }}
             </a-radio-button>
@@ -71,36 +59,36 @@
           </a-radio-group>
         </a-form-item>
 
-        <a-form-item v-if="this.createRoleUsing === 'type'">
-          <span slot="label">
-            {{ $t('label.type') }}
-            <a-tooltip :title="apiParams.type.description">
-              <a-icon type="info-circle" />
-            </a-tooltip>
-          </span>
+        <a-form-item name="type" ref="type" v-if="form.using === 'type'">
+          <template #label>
+            <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          </template>
           <a-select
-            v-decorator="['type', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.type.description">
+            v-model:value="form.type"
+            :placeholder="apiParams.type.description"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="role in defaultRoles" :key="role">
               {{ role }}
             </a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item v-if="this.createRoleUsing === 'role'">
-          <span slot="label">
-            {{ $t('label.role') }}
-            <a-tooltip :title="apiParams.roleid.description">
-              <a-icon type="info-circle" />
-            </a-tooltip>
-          </span>
+        <a-form-item name="roleid" ref="roleid" v-if="form.using === 'role'">
+          <template #label>
+            <tooltip-label :title="$t('label.role')" :tooltip="apiParams.roleid.description"/>
+          </template>
           <a-select
-            v-decorator="['roleid', {
-              rules: [{ required: true, message: $t('message.error.select') }]
-            }]"
-            :placeholder="apiParams.roleid.description">
+            v-model:value="form.roleid"
+            :placeholder="apiParams.roleid.description"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option
               v-for="role in roles"
               :value="role.id"
@@ -111,8 +99,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -120,23 +108,27 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateRole',
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       roles: [],
       defaultRoles: ['Admin', 'DomainAdmin', 'User'],
-      createRoleUsing: 'type',
       loading: false
     }
   },
   created () {
+    this.initForm()
     this.fetchRoles()
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createRole')
   },
   watch: {
@@ -145,19 +137,29 @@ export default {
         this.fetchRoles()
       }
     },
-    '$i18n.locale' (to, from) {
+    '$i18n.global.locale' (to, from) {
       if (to !== from) {
         this.fetchRoles()
       }
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        using: 'type'
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        type: [{ required: true, message: this.$t('message.error.select') }],
+        roleid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           if (key === 'using') {
@@ -173,6 +175,8 @@ export default {
         }
 
         this.createRole(params)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
@@ -205,9 +209,6 @@ export default {
       }).catch(error => {
         console.error(error)
       })
-    },
-    handleChangeCreateRole (value) {
-      this.createRoleUsing = value
     }
   }
 }
@@ -219,14 +220,6 @@ export default {
 
     @media (min-width: 700px) {
       width: 550px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

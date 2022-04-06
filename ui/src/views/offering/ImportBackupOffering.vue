@@ -16,98 +16,95 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
       layout="vertical"
-      :form="form"
-      @submit="handleSubmit">
-      <a-form-item>
-        <span slot="label">
-          {{ $t('label.name') }}
-          <a-tooltip :title="apiParams.name.description">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </span>
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      @finish="handleSubmit"
+     >
+      <a-form-item name="name" ref="name">
+        <template #label>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        </template>
         <a-input
-          autoFocus
-          v-decorator="['name', {
-            rules: [{ required: true, message: $t('message.error.required.input') }]
-          }]"/>
+          v-focus="true"
+          v-model:value="form.name"/>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
-          {{ $t('label.description') }}
-          <a-tooltip :title="apiParams.description.description">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </span>
-        <a-input
-          v-decorator="['description', {
-            rules: [{ required: true, message: $t('message.error.required.input') }]
-          }]"/>
+      <a-form-item name="description" ref="description">
+        <template #label>
+          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
+        </template>
+        <a-input v-model:value="form.description"/>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
-          {{ $t('label.zoneid') }}
-          <a-tooltip :title="apiParams.zoneid.description">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </span>
+      <a-form-item name="zoneid" ref="zoneid">
+        <template #label>
+          <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        </template>
         <a-select
-          showSearch
           allowClear
-          v-decorator="['zoneid', {
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-          }]"
+          v-model:value="form.zoneid"
           :loading="zones.loading"
-          @change="onChangeZone">
-          <a-select-option v-for="zone in zones.opts" :key="zone.name">
-            {{ zone.name }}
+          @change="onChangeZone"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option v-for="zone in zones.opts" :key="zone.name" :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px"/>
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
-          {{ $t('label.externalid') }}
-          <a-tooltip :title="apiParams.externalid.description">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </span>
+      <a-form-item name="externalid" ref="externalid">
+        <template #label>
+          <tooltip-label :title="$t('label.externalid')" :tooltip="apiParams.externalid.description"/>
+        </template>
         <a-select
           allowClear
-          v-decorator="['externalid', {
-            rules: [{ required: true, message: `${this.$t('message.error.select')}` }]
-          }] "
-          :loading="externals.loading">
+          v-model:value="form.externalid"
+          :loading="externals.loading"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option v-for="opt in externals.opts" :key="opt.id">
             {{ opt.name }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item>
-        <span slot="label">
-          {{ $t('label.allowuserdrivenbackups') }}
-          <a-tooltip :title="apiParams.allowuserdrivenbackups.description">
-            <a-icon type="info-circle" />
-          </a-tooltip>
-        </span>
-        <a-switch
-          v-decorator="['allowuserdrivenbackups']"
-          :default-checked="true"/>
+      <a-form-item name="allowuserdrivenbackups" ref="allowuserdrivenbackups">
+        <template #label>
+          <tooltip-label :title="$t('label.allowuserdrivenbackups')" :tooltip="apiParams.allowuserdrivenbackups.description"/>
+        </template>
+        <a-switch v-model:checked="form.allowuserdrivenbackups"/>
       </a-form-item>
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ImportBackupOffering',
+  components: {
+    TooltipLabel,
+    ResourceIcon
+  },
   data () {
     return {
       loading: false,
@@ -122,21 +119,32 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('importBackupOffering')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        allowuserdrivenbackups: true
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.required.input') }],
+        description: [{ required: true, message: this.$t('message.error.required.input') }],
+        zoneid: [{ required: true, message: this.$t('message.error.select') }],
+        externalid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.fetchZone()
     },
     fetchZone () {
       this.zones.loading = true
-      api('listZones', { available: true }).then(json => {
+      api('listZones', { available: true, showicon: true }).then(json => {
         this.zones.opts = json.listzonesresponse.zone || []
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
@@ -151,7 +159,6 @@ export default {
       this.externals.loading = true
       api('listBackupProviderOfferings', { zoneid: zoneId }).then(json => {
         this.externals.opts = json.listbackupproviderofferingsresponse.backupoffering || []
-        this.$forceUpdate()
       }).catch(error => {
         this.$notifyError(error)
       }).finally(f => {
@@ -160,10 +167,9 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]
@@ -173,7 +179,7 @@ export default {
             params[key] = input
           }
         }
-        params.allowuserdrivenbackups = values.allowuserdrivenbackups ? values.allowuserdrivenbackups : true
+        params.allowuserdrivenbackups = values.allowuserdrivenbackups
         this.loading = true
         const title = this.$t('label.import.offering')
         api('importBackupOffering', params).then(json => {
@@ -181,18 +187,21 @@ export default {
           if (jobId) {
             this.$pollJob({
               jobId,
-              title: title,
+              title,
               description: values.name,
               successMethod: result => {
                 this.closeAction()
+                this.loading = false
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${params.name}`,
-              catchMessage: this.$t('error.fetching.async.job.result')
+              catchMessage: this.$t('error.fetching.async.job.result'),
+              catchMethod: () => {
+                this.loading = false
+              }
             })
           }
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(f => {
           this.loading = false
         })
       })
@@ -218,15 +227,6 @@ export default {
 
   @media (min-width: 500px) {
     width: 450px;
-  }
-
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
   }
 }
 </style>

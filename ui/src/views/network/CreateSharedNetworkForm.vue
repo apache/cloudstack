@@ -17,125 +17,98 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form-layout">
+    <div class="form-layout" v-ctrl-enter="handleSubmit">
       <div class="form">
         <a-form
-          :form="form"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical"
-          @submit="handleSubmit">
-          <a-form-item :label="$t('label.name')">
-            <span slot="label">
-              {{ $t('label.name') }}
-              <a-tooltip :title="apiParams.name.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          @finish="handleSubmit"
+         >
+          <a-form-item :label="$t('label.name')" name="name" ref="name">
+            <template #label>
+              <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+            </template>
             <a-input
-              v-decorator="['name', {
-                rules: [{ required: true, message: $t('message.error.name') }]
-              }]"
-              :placeholder="this.$t('label.name')"
-              autoFocus />
+              v-model:value="form.name"
+              :placeholder="apiParams.name.description"
+              v-focus="true" />
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.displaytext') }}
-              <a-tooltip :title="apiParams.displaytext.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="displaytext" ref="displaytext">
+            <template #label>
+              <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
+            </template>
             <a-input
-              v-decorator="['displaytext', {
-                rules: [{ required: true, message: $t('message.error.display.text') }]
-              }]"
-              :placeholder="this.$t('label.display.text')"/>
+              v-model:value="form.displaytext"
+              :placeholder="apiParams.displaytext.description"/>
           </a-form-item>
-          <a-form-item v-if="this.isObjectEmpty(this.zone)">
-            <span slot="label">
-              {{ $t('label.zoneid') }}
-              <a-tooltip :title="apiParams.zoneid.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="isObjectEmpty(zone)" name="zoneid" ref="zoneid">
+            <template #label>
+              <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+            </template>
             <a-select
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              :placeholder="this.$t('label.zoneid')"
-              @change="val => { this.handleZoneChange(this.zones[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex">
-                {{ opt.name || opt.description }}
+              :placeholder="apiParams.zoneid.description"
+              @change="val => { handleZoneChange(zones[val]) }">
+              <a-select-option v-for="(opt, optIndex) in zones" :key="optIndex" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.isObjectEmpty(this.zone)">
-            <span slot="label">
-              {{ $t('label.physicalnetworkid') }}
-              <a-tooltip :title="apiParams.physicalnetworkid.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="isObjectEmpty(zone)" name="physicalnetworkid" ref="physicalnetworkid">
+            <template #label>
+              <tooltip-label :title="$t('label.physicalnetworkid')" :tooltip="apiParams.physicalnetworkid.description"/>
+            </template>
             <a-select
-              v-decorator="['physicalnetworkid', {}]"
+              v-model:value="form.physicalnetworkid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="formPhysicalNetworkLoading"
-              :placeholder="this.$t('label.physicalnetworkid')"
-              @change="val => { this.handlePhysicalNetworkChange(this.formPhysicalNetworks[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.formPhysicalNetworks" :key="optIndex">
+              :placeholder="apiParams.physicalnetworkid.description"
+              @change="val => { handlePhysicalNetworkChange(formPhysicalNetworks[val]) }">
+              <a-select-option v-for="(opt, optIndex) in formPhysicalNetworks" :key="optIndex">
                 {{ opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.vlan') }}
-              <a-tooltip :title="apiParams.vlan.description" v-if="'vlan' in apiParams">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="vlanid" ref="vlanid">
+            <template #label>
+              <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
+            </template>
             <a-input
-              v-decorator="['vlanid', {
-                rules: [{ required: true, message: $t('message.please.enter.value') }]
-              }]"
-              :placeholder="this.$t('label.vlanid')"/>
+              v-model:value="form.vlanid"
+              :placeholder="apiParams.vlan.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.bypassvlanoverlapcheck') }}
-              <a-tooltip :title="apiParams.bypassvlanoverlapcheck.description" v-if="'bypassvlanoverlapcheck' in apiParams">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
-            <a-switch v-decorator="['bypassvlanoverlapcheck']" />
+          <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck">
+            <template #label>
+              <tooltip-label :title="$t('label.bypassvlanoverlapcheck')" :tooltip="apiParams.bypassvlanoverlapcheck.description"/>
+            </template>
+            <a-switch v-model:checked="form.bypassvlanoverlapcheck" />
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan">
-            <span slot="label">
-              {{ $t('label.isolatedpvlantype') }}
-              <a-tooltip :title="apiParams.isolatedpvlantype.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item
+            v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan"
+            name="isolatedpvlantype"
+            ref="isolatedpvlantype">
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlantype')" :tooltip="apiParams.isolatedpvlantype.description"/>
+            </template>
             <a-radio-group
-              v-decorator="['isolatedpvlantype', {
-                initialValue: this.isolatePvlanType
-              }]"
-              buttonStyle="solid"
-              @change="selected => { this.handleIsolatedPvlanTypeChange(selected.target.value) }">
+              v-model:value="form.isolatedpvlantype"
+              buttonStyle="solid">
               <a-radio-button value="none">
                 {{ $t('label.none') }}
               </a-radio-button>
@@ -150,264 +123,210 @@
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item v-if="this.isolatePvlanType=='community' || this.isolatePvlanType=='isolated'">
-            <span slot="label">
-              {{ $t('label.isolatedpvlanid') }}
-              <a-tooltip :title="apiParams.isolatedpvlan.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="form.isolatedpvlantype=='community' || form.isolatedpvlantype=='isolated'" name="isolatedpvlan" ref="isolatedpvlan">
+            <template #label>
+              <tooltip-label :title="$t('label.isolatedpvlanid')" :tooltip="apiParams.isolatedpvlan.description"/>
+            </template>
             <a-input
-              v-decorator="['isolatedpvlan', {}]"
-              :placeholder="this.$t('label.isolatedpvlanid')"/>
+              v-model:value="form.isolatedpvlan"
+              :placeholder="apiParams.isolatedpvlan.description"/>
           </a-form-item>
-          <a-form-item :label="$t('label.scope')">
+          <a-form-item :label="$t('label.scope')" name="scope" ref="scope">
             <a-radio-group
-              v-decorator="['scope', {
-                initialValue: this.scopeType
-              }]"
+              v-model:value="form.scope"
               buttonStyle="solid"
-              @change="selected => { this.handleScopeTypeChange(selected.target.value) }">
+              @change="selected => { handleScopeTypeChange(selected.target.value) }">
               <a-radio-button value="all">
                 {{ $t('label.all') }}
               </a-radio-button>
-              <a-radio-button value="domain" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="domain" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
                 {{ $t('label.domain') }}
               </a-radio-button>
-              <a-radio-button value="account" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="account" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
                 {{ $t('label.account') }}
               </a-radio-button>
-              <a-radio-button value="project" v-if="!this.parseBooleanValueForKey(this.selectedZone, 'securitygroupsenabled')">
+              <a-radio-button value="project" v-if="!parseBooleanValueForKey(selectedZone, 'securitygroupsenabled')">
                 {{ $t('label.project') }}
               </a-radio-button>
             </a-radio-group>
           </a-form-item>
-          <a-form-item v-if="this.scopeType !== 'all'">
-            <span slot="label">
-              {{ $t('label.domain') }}
-              <a-tooltip :title="apiParams.domainid.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="scopeType !== 'all'" name="domainid" ref="domainid">
+            <template #label>
+              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+            </template>
             <a-select
-              v-decorator="['domainid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.domainid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="domainLoading"
-              :placeholder="this.$t('label.domainid')"
-              @change="val => { this.handleDomainChange(this.domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex">
-                {{ opt.path || opt.name || opt.description }}
+              :placeholder="apiParams.domainid.description"
+              @change="val => { handleDomainChange(domains[val]) }">
+              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <block-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
+                  {{ opt.path || opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="this.scopeType === 'domain'">
-            <span slot="label">
-              {{ $t('label.subdomainaccess') }}
-              <a-tooltip :title="apiParams.subdomainaccess.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
-            <a-switch v-decorator="['subdomainaccess']" />
+          <a-form-item v-if="scopeType === 'domain'" name="subdomainaccess" ref="subdomainaccess">
+            <template #label>
+              <tooltip-label :title="$t('label.subdomainaccess')" :tooltip="apiParams.subdomainaccess.description"/>
+            </template>
+            <a-switch v-model:checked="form.subdomainaccess" />
           </a-form-item>
-          <a-form-item v-if="this.scopeType === 'account'">
-            <span slot="label">
-              {{ $t('label.account') }}
-              <a-tooltip :title="apiParams.account.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="scopeType === 'account'" name="account" ref="account">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
             <a-input
-              v-decorator="['account', {}]"
-              :placeholder="this.$t('label.account')"/>
+              v-model:value="form.account"
+              :placeholder="apiParams.account.description"/>
           </a-form-item>
-          <a-form-item v-if="this.scopeType === 'project'">
-            <span slot="label">
-              {{ $t('label.projectid') }}
-              <a-tooltip :title="apiParams.projectid.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="scopeType === 'project'" name="projectid" ref="projectid">
+            <template #label>
+              <tooltip-label :title="$t('label.projectid')" :tooltip="apiParams.projectid.description"/>
+            </template>
             <a-select
-              v-decorator="['projectid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.projectid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="projectLoading"
-              :placeholder="this.$t('label.projectid')"
-              @change="val => { this.handleProjectChange(this.projects[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.projects" :key="optIndex">
-                {{ opt.name || opt.description }}
+              :placeholder="apiParams.projectid.description"
+              @change="val => { handleProjectChange(projects[val]) }">
+              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
+                <span>
+                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  <project-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
+                  {{ opt.name || opt.description }}
+                </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.networkofferingid') }}
-              <a-tooltip :title="apiParams.networkofferingid.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="networkofferingid" ref="networkofferingid">
+            <template #label>
+              <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
+            </template>
             <a-select
-              v-decorator="['networkofferingid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.networkofferingid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="networkOfferingLoading"
-              :placeholder="this.$t('label.networkofferingid')"
-              @change="val => { this.handleNetworkOfferingChange(this.networkOfferings[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.networkOfferings" :key="optIndex">
+              :placeholder="apiParams.networkofferingid.description"
+              @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
+              <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex">
                 {{ opt.displaytext || opt.name || opt.description }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip4gateway') }}
-              <a-tooltip :title="apiParams.gateway.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="ip4gateway" ref="ip4gateway">
+            <template #label>
+              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.netmask.description"/>
+            </template>
             <a-input
-              v-decorator="['ip4gateway', {}]"
-              :placeholder="this.$t('label.ip4gateway')"/>
+              v-model:value="form.ip4gateway"
+              :placeholder="apiParams.netmask.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip4netmask') }}
-              <a-tooltip :title="apiParams.netmask.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="ip4netmask" ref="ip4netmask">
+            <template #label>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+            </template>
             <a-input
-              v-decorator="['netmask', {}]"
-              :placeholder="this.$t('label.netmask')"/>
+              v-model:value="form.netmask"
+              :placeholder="apiParams.netmask.description"/>
           </a-form-item>
-          <a-form-item :label="$t('label.startipv4')">
-            <span slot="label">
-              {{ $t('label.startipv4') }}
-              <a-tooltip :title="apiParams.startip.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="startipv4" ref="startipv4">
+            <template #label>
+              <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+            </template>
             <a-input
-              v-decorator="['startipv4', {}]"
-              :placeholder="this.$t('label.startipv4')"/>
+              v-model:value="form.startipv4"
+              :placeholder="apiParams.startip.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.endipv4') }}
-              <a-tooltip :title="apiParams.endip.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="endipv4" ref="endipv4">
+            <template #label>
+              <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+            </template>
             <a-input
-              v-decorator="['endipv4', {}]"
-              :placeholder="this.$t('label.endipv4')"/>
+              v-model:value="form.endipv4"
+              :placeholder="apiParams.endip.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip6gateway') }}
-              <a-tooltip :title="apiParams.ip6gateway.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="ip6gateway" ref="ip6gateway">
+            <template #label>
+              <tooltip-label :title="$t('label.ip6gateway')" :tooltip="apiParams.ip6gateway.description"/>
+            </template>
             <a-input
-              v-decorator="['ip6gateway', {}]"
-              :placeholder="this.$t('label.ip6gateway')"/>
+              v-model:value="form.ip6gateway"
+              :placeholder="apiParams.ip6gateway.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.ip6cidr') }}
-              <a-tooltip :title="apiParams.ip6cidr.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="ip6cidr" ref="ip6cidr">
+            <template #label>
+              <tooltip-label :title="$t('label.ip6cidr')" :tooltip="apiParams.ip6cidr.description"/>
+            </template>
             <a-input
-              v-decorator="['ip6cidr', {}]"
-              :placeholder="this.$t('label.ip6cidr')"/>
+              v-model:value="form.ip6cidr"
+              :placeholder="apiParams.ip6cidr.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.startipv6') }}
-              <a-tooltip :title="apiParams.startipv6.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="startipv6" ref="startipv6">
+            <template #label>
+              <tooltip-label :title="$t('label.startipv6')" :tooltip="apiParams.startipv6.description"/>
+            </template>
             <a-input
-              v-decorator="['startipv6', {}]"
-              :placeholder="this.$t('label.startipv6')"/>
+              v-model:value="form.startipv6"
+              :placeholder="apiParams.startipv6.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.endipv6') }}
-              <a-tooltip :title="apiParams.endipv6.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="endipv6" ref="endipv6">
+            <template #label>
+              <tooltip-label :title="$t('label.endipv6')" :tooltip="apiParams.endipv6.description"/>
+            </template>
             <a-input
-              v-decorator="['endipv6', {}]"
-              :placeholder="this.$t('label.endipv6')"/>
+              v-model:value="form.endipv6"
+              :placeholder="apiParams.endipv6.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.networkdomain') }}
-              <a-tooltip :title="apiParams.networkdomain.description">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routeripv6" ref="routeripv6">
+            <template #label>
+              <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+            </template>
             <a-input
-              v-decorator="['networkdomain', {}]"
-              :placeholder="this.$t('label.networkdomain')"/>
+              v-model:value="form.routeripv6"
+              :placeholder="apiParams.routeripv6.description"/>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.hideipaddressusage') }}
-              <a-tooltip :title="apiParams.hideipaddressusage.description" v-if="'hideipaddressusage' in apiParams">
-                <a-icon type="info-circle" />
-              </a-tooltip>
-            </span>
-            <a-switch v-decorator="['hideipaddressusage']" />
+          <a-form-item name="networkdomain" ref="networkdomain">
+            <template #label>
+              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            </template>
+            <a-input
+              v-model:value="form.networkdomain"
+              :placeholder="apiParams.networkdomain.description"/>
+          </a-form-item>
+          <a-form-item name="hideipaddressusage" ref="hideipaddressusage">
+            <template #label>
+              <tooltip-label :title="$t('label.hideipaddressusage')" :tooltip="apiParams.hideipaddressusage.description"/>
+            </template>
+            <a-switch v-model:checked="form.hideipaddressusage" />
           </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
               @click="closeAction">
-              {{ this.$t('label.cancel') }}
+              {{ $t('label.cancel') }}
             </a-button>
             <a-button
               :loading="actionLoading"
               type="primary"
+              ref="submit"
               @click="handleSubmit">
-              {{ this.$t('label.ok') }}
+              {{ $t('label.ok') }}
             </a-button>
           </div>
         </a-form>
@@ -417,10 +336,17 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateGuestNetworkForm',
+  components: {
+    TooltipLabel,
+    ResourceIcon
+  },
   props: {
     loading: {
       type: Boolean,
@@ -448,7 +374,6 @@ export default {
       formPhysicalNetworks: [],
       formPhysicalNetworkLoading: false,
       formSelectedPhysicalNetwork: {},
-      isolatePvlanType: 'none',
       scopeType: 'all',
       domains: [],
       domainLoading: false,
@@ -458,34 +383,49 @@ export default {
       selectedNetworkOffering: {},
       projects: [],
       projectLoading: false,
-      selectedProject: {}
+      selectedProject: {},
+      isVirtualRouterForAtLeastOneService: false,
+      selectedServiceProviderMap: {}
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        this.fetchData()
+      }
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        scope: 'all',
+        isolatedpvlantype: 'none'
+      })
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
+        zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        vlanid: [{ required: true, message: this.$t('message.please.enter.value') }],
+        networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
+        domainid: [{ required: true, message: this.$t('message.error.select') }],
+        projectid: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       if (this.isObjectEmpty(this.zone)) {
         this.fetchZoneData()
       } else {
         this.fetchNetworkOfferingData()
       }
-    },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
@@ -500,16 +440,14 @@ export default {
       return this.isValidValueForKey(obj, key) && obj[key] === true
     },
     isValidTextValueForKey (obj, key) {
-      return this.isValidValueForKey(obj, key) && obj[key].length > 0
+      return this.isValidValueForKey(obj, key) && String(obj[key]).length > 0
     },
     fetchZoneData () {
       this.zones = []
       if (this.zone !== null) {
         this.zones.push(this.zone)
         if (this.arrayHasItems(this.zones)) {
-          this.form.setFieldsValue({
-            zoneid: 0
-          })
+          this.form.zoneid = 0
           this.handleZoneChange(this.zones[0])
         }
       } else {
@@ -518,6 +456,7 @@ export default {
           params.id = this.resource.zoneid
         }
         params.listAll = true
+        params.showicon = true
         this.zoneLoading = true
         api('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
@@ -529,9 +468,7 @@ export default {
         }).finally(() => {
           this.zoneLoading = false
           if (this.arrayHasItems(this.zones)) {
-            this.form.setFieldsValue({
-              zoneid: 0
-            })
+            this.form.zoneid = 0
             this.handleZoneChange(this.zones[0])
           }
         })
@@ -579,9 +516,7 @@ export default {
     },
     selectFirstPhysicalNetwork () {
       if (this.arrayHasItems(this.formPhysicalNetworks)) {
-        this.form.setFieldsValue({
-          physicalnetworkid: 0
-        })
+        this.form.physicalnetworkid = 0
         this.handlePhysicalNetworkChange(this.formPhysicalNetworks[0])
       }
     },
@@ -608,9 +543,6 @@ export default {
     handlePhysicalNetworkChange (physicalNet) {
       this.formSelectedPhysicalNetwork = physicalNet
       this.fetchNetworkOfferingData()
-    },
-    handleIsolatedPvlanTypeChange (pvlan) {
-      this.isolatePvlanType = pvlan
     },
     handleScopeTypeChange (scope) {
       this.scopeType = scope
@@ -659,24 +591,41 @@ export default {
       this.networkOfferings = []
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
+        this.handleNetworkOfferingChange(this.networkOfferings[0])
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.networkOfferingLoading = false
         if (this.arrayHasItems(this.networkOfferings)) {
-          this.form.setFieldsValue({
-            networkofferingid: 0
-          })
-          this.handleNetworkOfferingChange(this.networkOfferings[0])
+          this.form.networkofferingid = 0
         } else {
-          this.form.setFieldsValue({
-            networkofferingid: null
-          })
+          this.form.networkofferingid = null
         }
       })
     },
     handleNetworkOfferingChange (networkOffering) {
       this.selectedNetworkOffering = networkOffering
+      if (networkOffering) {
+        this.networkServiceProviderMap(this.selectedNetworkOffering.id)
+      }
+    },
+    networkServiceProviderMap (id) {
+      api('listNetworkOfferings', { id: id }).then(json => {
+        var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
+        const services = networkOffering.service
+        this.selectedServiceProviderMap = {}
+        for (const svc of services) {
+          this.selectedServiceProviderMap[svc.name] = svc.provider[0].name
+        }
+        var providers = Object.values(this.selectedServiceProviderMap)
+        this.isVirtualRouterForAtLeastOneService = false
+        var self = this
+        providers.forEach(function (prvdr, idx) {
+          if (prvdr === 'VirtualRouter') {
+            self.isVirtualRouterForAtLeastOneService = true
+          }
+        })
+      })
     },
     fetchDomainData () {
       const params = {}
@@ -686,15 +635,14 @@ export default {
       } else {
         params.listall = true
       }
+      params.showicon = true
       this.domainLoading = true
       api('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
         this.domainLoading = false
-        this.form.setFieldsValue({
-          domainid: 0
-        })
+        this.form.domainid = 0
         this.handleDomainChange(this.domains[0])
       })
     },
@@ -708,6 +656,7 @@ export default {
       this.projects = []
       const params = {}
       params.listall = true
+      params.showicon = true
       params.details = 'min'
       this.projectLoading = true
       api('listProjects', params).then(json => {
@@ -716,9 +665,7 @@ export default {
       }).finally(() => {
         this.projectLoading = false
         if (this.arrayHasItems(this.projects)) {
-          this.form.setFieldsValue({
-            projectid: 0
-          })
+          this.form.projectid = 0
           this.handleProjectChange(this.projects[0])
         }
       })
@@ -727,10 +674,9 @@ export default {
       this.selectedProject = project
     },
     handleSubmit (e) {
-      this.form.validateFields((error, values) => {
-        if (error) {
-          return
-        }
+      if (this.actionLoading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         if (
           (!this.isValidTextValueForKey(values, 'ip4gateway') && !this.isValidTextValueForKey(values, 'netmask') &&
             !this.isValidTextValueForKey(values, 'startipv4') && !this.isValidTextValueForKey(values, 'endipv4') &&
@@ -797,6 +743,9 @@ export default {
         if (this.isValidTextValueForKey(values, 'ip4gateway')) {
           params.ip6gateway = values.ip6gateway
         }
+        if (this.isValidTextValueForKey(values, 'routerip')) {
+          params.routerip = values.routerip
+        }
         if (this.isValidTextValueForKey(values, 'ip6cidr')) {
           params.ip6cidr = values.ip6cidr
         }
@@ -805,6 +754,9 @@ export default {
         }
         if (this.isValidTextValueForKey(values, 'endipv6')) {
           params.endipv6 = values.endipv6
+        }
+        if (this.isValidTextValueForKey(values, 'routeripv6')) {
+          params.routeripv6 = values.routeripv6
         }
         // IPv6 (end)
 
@@ -828,6 +780,8 @@ export default {
         }).finally(() => {
           this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     showInput () {
@@ -837,8 +791,7 @@ export default {
       })
     },
     resetForm () {
-      this.form.setFieldsValue({
-      })
+      this.formRef.value.resetFields()
       this.tags = []
     },
     closeAction () {
@@ -850,15 +803,20 @@ export default {
 
 <style lang="less" scoped>
 .form-layout {
+  width: 80vw;
+  @media (min-width: 700px) {
+    width: 600px;
+  }
+
   .ant-tag {
     margin-bottom: 10px;
   }
 
-  /deep/.custom-time-select .ant-time-picker {
+  :deep(.custom-time-select) .ant-time-picker {
     width: 100%;
   }
 
-  /deep/.ant-divider-horizontal {
+  :deep(.ant-divider-horizontal) {
     margin-top: 0;
   }
 }
@@ -870,13 +828,5 @@ export default {
 .tagsTitle {
   font-weight: 500;
   margin-bottom: 12px;
-}
-
-.action-button {
-  text-align: right;
-
-  button {
-    margin-right: 5px;
-  }
 }
 </style>

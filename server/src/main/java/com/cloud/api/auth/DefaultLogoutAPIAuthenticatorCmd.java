@@ -38,7 +38,7 @@ import java.net.InetAddress;
 @APICommand(name = "logout", description = "Logs out the user", responseObject = LogoutCmdResponse.class, entityType = {})
 public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
-    public static final Logger s_logger = Logger.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DefaultLogoutAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "logoutresponse";
 
     /////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuth
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

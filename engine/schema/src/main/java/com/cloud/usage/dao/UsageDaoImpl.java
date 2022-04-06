@@ -113,7 +113,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             for (AccountVO acct : accounts) {
                 pstmt.setLong(1, acct.getId());
                 pstmt.setString(2, acct.getAccountName());
-                pstmt.setShort(3, acct.getType());
+                pstmt.setInt(3, acct.getType().ordinal());
 
                 //prevent autoboxing NPE by defaulting to User role
                 if(acct.getRoleId() == null){

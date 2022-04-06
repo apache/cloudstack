@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 from optparse import OptionParser
 import marvin
 from marvin import configGenerator
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     parser.add_option("-c", "--config", action="store", default="xen.cfg",
                       dest="config", help="the path where the server configurations is stored")
     (options, args) = parser.parse_args()
-    
+
     if options.config is None:
         raise
 

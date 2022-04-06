@@ -33,6 +33,7 @@ import com.cloud.dc.Pod;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.StorageAccessException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -74,6 +75,13 @@ public interface VolumeOrchestrationService {
         true
     );
 
+    ConfigKey<Long> MaxVolumeSize = new ConfigKey<Long>("Storage",
+            Long.class,
+            "storage.max.volume.size",
+            "2000",
+            "The maximum size for a volume (in GB).",
+            true);
+
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
@@ -104,6 +112,8 @@ public interface VolumeOrchestrationService {
 
     void release(VirtualMachineProfile profile);
 
+    void release(long vmId, long hostId);
+
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
     void revokeAccess(DataObject dataObject, Host host, DataStore dataStore);
@@ -112,11 +122,11 @@ public interface VolumeOrchestrationService {
 
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
-    boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool) throws StorageUnavailableException;
+    boolean storageMigration(VirtualMachineProfile vm, Map<Volume, StoragePool> volumeToPool) throws StorageUnavailableException;
 
     void prepareForMigration(VirtualMachineProfile vm, DeployDestination dest);
 
-    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
+    void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException;
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
@@ -133,6 +143,8 @@ public interface VolumeOrchestrationService {
     boolean validateVolumeSizeRange(long size);
 
     StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
+
+    List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Set<StoragePool> avoid);
 
     void updateVolumeDiskChain(long volumeId, String path, String chainInfo, String updatedDataStoreUUID);
 

@@ -19,11 +19,19 @@ package com.cloud.user;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+
+import com.cloud.domain.DomainDetailVO;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.dao.AccountDao;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
@@ -31,9 +39,19 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<AccountDetailVO> accountSearch;
+
+    @Inject
+    protected AccountDao _accountDao;
+    @Inject
+    protected DomainDao _domainDao;
+    @Inject
+    protected DomainDetailsDao _domainDetailsDao;
+    @Inject
+    private ConfigurationDao _configDao;
 
     protected AccountDetailsDaoImpl() {
         accountSearch = createSearchBuilder();
@@ -99,7 +117,39 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
 
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
+        // check if account level setting is configured
         AccountDetailVO vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
+        String value = vo == null ? null : vo.getValue();
+        if (value != null) {
+            return value;
+        }
+
+        // if account level setting is not configured then check if
+        // we can take value from domain
+        String enableAccountSettingsForDomain = _configDao.getValue("enable.account.settings.for.domain");
+        if (! Boolean.parseBoolean(enableAccountSettingsForDomain)) {
+            return null;
+        }
+
+        // check if we can traverse till ROOT domain to get the value
+        String enableDomainSettingsForChildDomain = _configDao.getValue("enable.domain.settings.for.child.domain");
+        if (Boolean.parseBoolean(enableDomainSettingsForChildDomain)) {
+            Optional<AccountVO> account = Optional.ofNullable(_accountDao.findById(id));
+            if (account.isPresent()) {
+                DomainVO domain = _domainDao.findById(account.get().getDomainId());
+                while (domain != null) {
+                    DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key.key());
+                    if (domainVO != null) {
+                        value = domainVO.getValue();
+                        break;
+                    } else if (domain.getParent() != null) {
+                        domain = _domainDao.findById(domain.getParent());
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        return value;
     }
 }

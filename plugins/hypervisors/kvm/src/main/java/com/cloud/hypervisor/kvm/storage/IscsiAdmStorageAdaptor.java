@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -31,10 +32,10 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
@@ -103,7 +104,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
         String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
 
-        if (StringUtils.isNotBlank(chapInitiatorUsername) && StringUtils.isNotBlank(chapInitiatorSecret)) {
+        if (StringUtils.isNoneBlank(chapInitiatorUsername, chapInitiatorSecret)) {
             try {
                 // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 --op update -n node.session.auth.authmethod -v CHAP
                 executeChapCommand(volumeUuid, pool, "node.session.auth.authmethod", "CHAP", null);
@@ -414,7 +415,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
         try {
             q.convert(srcFile, destFile);
-        } catch (QemuImgException ex) {
+        } catch (QemuImgException | LibvirtException ex) {
             String msg = "Failed to copy data from " + srcDisk.getPath() + " to " +
                     destDisk.getPath() + ". The error was the following: " + ex.getMessage();
 
@@ -447,7 +448,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, KVMStoragePool destPool, boolean isIso) {
+    public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath, KVMStoragePool destPool, Storage.ImageFormat format, int timeout) {
         return null;
     }
 }

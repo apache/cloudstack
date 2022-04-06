@@ -67,6 +67,11 @@ class TestScaleVm(cloudstackTestCase):
             if cls.template == FAILED:
                 assert False, "get_template() failed to return template\
                         with description %s" % cls.services["ostype"]
+            cls.template = Template.update(
+                cls.template,
+                cls.apiclient,
+                isdynamicallyscalable='true'
+            )
         else:
             cls.template = Template.register(
                        cls.apiclient,
@@ -107,6 +112,18 @@ class TestScaleVm(cloudstackTestCase):
                     value="true"
                 )
 
+        cls.small_offering_dynamic_scaling_disabled = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"],
+            dynamicscalingenabled=False
+        )
+
+        cls.big_offering_dynamic_scaling_disabled = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"],
+            dynamicscalingenabled=False
+        )
+
         # create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -117,8 +134,42 @@ class TestScaleVm(cloudstackTestCase):
             mode=cls.services["mode"]
         )
 
+        # create a virtual machine which cannot be dynamically scalable
+        cls.virtual_machine_with_service_offering_dynamic_scaling_disabled = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.small_offering_dynamic_scaling_disabled.id,
+            mode=cls.services["mode"]
+        )
+
+        # create a virtual machine which cannot be dynamically scalable
+        cls.virtual_machine_not_dynamically_scalable = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.small_offering.id,
+            mode=cls.services["mode"],
+            dynamicscalingenabled=False
+        )
+
+        cls._cleanup = [
+            cls.small_offering,
+            cls.big_offering,
+            cls.small_offering_dynamic_scaling_disabled,
+            cls.big_offering_dynamic_scaling_disabled,
+            cls.account
+        ]
+
     @classmethod
     def tearDownClass(cls):
+        Configurations.update(
+            cls.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="false"
+        )
         super(TestScaleVm,cls).tearDownClass()
         return
 
@@ -132,11 +183,6 @@ class TestScaleVm(cloudstackTestCase):
                     %s" % self.hypervisor)
 
     def tearDown(self):
-        Configurations.update(
-            self.apiclient,
-            name="enable.dynamic.scale.vm",
-            value="false"
-        )
         # Clean up, terminate the created ISOs
         super(TestScaleVm,self).tearDown()
         return
@@ -264,4 +310,174 @@ class TestScaleVm(cloudstackTestCase):
             'Running',
             "Check the state of VM"
         )
+        return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_02_scale_vm(self):
+        """Test scale virtual machine which is created from a service offering for which dynamicscalingenabled is false. Scaling operation should fail.
+        """
+
+        #        VirtualMachine should be updated to tell cloudstack
+        #        it has PV tools
+        #        available and successfully scaled. We will only mock
+        #        that behaviour
+        #        here but it is not expected in production since the VM
+        #        scaling is not
+        #        guaranteed until tools are installed, vm rebooted
+
+        # If hypervisor is Vmware, then check if
+        # the vmware tools are installed and the process is running
+        # Vmware tools are necessary for scale VM operation
+        if self.hypervisor.lower() == "vmware":
+            sshClient = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            self.debug("and result is: %s" % result)
+            if not "running" in result:
+                self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not installed on the VM")
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_vm_response,
+            None,
+            "Check virtual machine is in listVirtualMachines"
+        )
+
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id,
+            "Check virtual machine ID of scaled VM"
+        )
+
+        self.assertEqual(
+            vm_response.isdynamicallyscalable,
+            False,
+            "Check if VM is not dynamically scalable"
+        )
+
+        self.debug("Scaling VM-ID: %s to service offering: %s for which dynamic scaling is disabled and VM state %s" % (
+            self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id,
+            self.big_offering_dynamic_scaling_disabled.id,
+            self.virtual_machine.state
+        ))
+
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.serviceofferingid = self.big_offering_dynamic_scaling_disabled.id
+        cmd.id = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id
+
+        try:
+            self.apiclient.scaleVirtualMachine(cmd)
+        except Exception as e:
+            if "LicenceRestriction" in str(e):
+                self.skipTest("Your XenServer License does not allow scaling")
+            else:
+                pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
+
+        self.debug("Scaling VM-ID: %s to service offering: %s for which dynamic scaling is enabled and VM state %s" % (
+            self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id,
+            self.big_offering.id,
+            self.virtual_machine.state
+        ))
+
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.serviceofferingid = self.big_offering.id
+        cmd.id = self.virtual_machine_with_service_offering_dynamic_scaling_disabled.id
+
+        try:
+            self.apiclient.scaleVirtualMachine(cmd)
+        except Exception as e:
+            if "LicenceRestriction" in str(e):
+                self.skipTest("Your XenServer License does not allow scaling")
+            else:
+                pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
+
+        return
+
+    @attr(tags=["advanced", "basic"], required_hardware="false")
+    def test_03_scale_vm(self):
+        """Test scale virtual machine which is not dynamically scalable to a service offering. Scaling operation should fail.
+        """
+        # Validate the following
+        # Scale up the vm which is not dynamically scalable and see if scaling operation fails
+
+        #        VirtualMachine should be updated to tell cloudstack
+        #        it has PV tools
+        #        available and successfully scaled. We will only mock
+        #        that behaviour
+        #        here but it is not expected in production since the VM
+        #        scaling is not
+        #        guaranteed until tools are installed, vm rebooted
+
+        # If hypervisor is Vmware, then check if
+        # the vmware tools are installed and the process is running
+        # Vmware tools are necessary for scale VM operation
+        if self.hypervisor.lower() == "vmware":
+            sshClient = self.virtual_machine_not_dynamically_scalable.get_ssh_client()
+            result = str(
+                sshClient.execute("service vmware-tools status")).lower()
+            self.debug("and result is: %s" % result)
+            if not "running" in result:
+                self.skipTest("Skipping scale VM operation because\
+                    VMware tools are not installed on the VM")
+
+        list_vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine_not_dynamically_scalable.id
+        )
+        self.assertEqual(
+            isinstance(list_vm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            list_vm_response,
+            None,
+            "Check virtual machine is in listVirtualMachines"
+        )
+        vm_response = list_vm_response[0]
+        self.assertEqual(
+            vm_response.id,
+            self.virtual_machine_not_dynamically_scalable.id,
+            "Check virtual machine ID of scaled VM"
+        )
+        self.assertEqual(
+            vm_response.isdynamicallyscalable,
+            False,
+            "Check if VM is not dynamically scalable"
+        )
+
+        self.debug("Scaling VM-ID: %s to service offering: %s for which dynamic scaling is enabled and VM state %s" % (
+            self.virtual_machine_not_dynamically_scalable.id,
+            self.big_offering.id,
+            self.virtual_machine.state
+        ))
+
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
+        cmd.serviceofferingid = self.big_offering.id
+        cmd.id = self.virtual_machine_not_dynamically_scalable.id
+
+        try:
+            self.apiclient.scaleVirtualMachine(cmd)
+        except Exception as e:
+            if "LicenceRestriction" in str(e):
+                self.skipTest("Your XenServer License does not allow scaling")
+            else:
+                pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
+
         return

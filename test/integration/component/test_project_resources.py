@@ -18,7 +18,8 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (VirtualMachine,
                                          Account,
                                          Project,
@@ -690,7 +691,7 @@ class TestTemplates(cloudstackTestCase):
 
 
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
     @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"], required_hardware="false")
@@ -778,7 +779,7 @@ class TestTemplates(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 

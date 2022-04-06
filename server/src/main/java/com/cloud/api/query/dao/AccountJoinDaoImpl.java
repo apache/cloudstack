@@ -63,13 +63,14 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         AccountResponse accountResponse = new AccountResponse();
         accountResponse.setId(account.getUuid());
         accountResponse.setName(account.getAccountName());
-        accountResponse.setAccountType(account.getType());
+        accountResponse.setAccountType(account.getType().ordinal());
         accountResponse.setDomainId(account.getDomainUuid());
         accountResponse.setDomainName(account.getDomainName());
         StringBuilder domainPath = new StringBuilder("ROOT");
         (domainPath.append(account.getDomainPath())).deleteCharAt(domainPath.length() - 1);
         accountResponse.setDomainPath(domainPath.toString());
         accountResponse.setState(account.getState().toString());
+        accountResponse.setCreated(account.getCreated());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
         accountResponse.setDefaultZone(account.getDataCenterUuid());
         accountResponse.setIsDefault(account.isDefault());

@@ -33,6 +33,8 @@ public interface DataObject {
 
     Long getSize();
 
+    long getPhysicalSize();
+
     DataObjectType getType();
 
     String getUuid();

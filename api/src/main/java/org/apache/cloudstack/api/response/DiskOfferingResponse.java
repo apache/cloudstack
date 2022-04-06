@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.DiskOffering;
@@ -27,7 +27,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = DiskOffering.class)
-public class DiskOfferingResponse extends BaseResponse {
+public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
     @Param(description = "unique ID of the disk offering")
     private String id;
@@ -154,6 +154,10 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("vspherestoragepolicy")
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
+
+    @SerializedName(ApiConstants.DISK_SIZE_STRICTNESS)
+    @Param(description = "To allow or disallow the resize operation on the disks created from this disk offering, if the flag is true then resize is not allowed", since = "4.17")
+    private Boolean diskSizeStrictness;
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -362,5 +366,13 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
         this.vsphereStoragePolicy = vsphereStoragePolicy;
+    }
+
+    public Boolean getDiskSizeStrictness() {
+        return diskSizeStrictness;
+    }
+
+    public void setDiskSizeStrictness(Boolean diskSizeStrictness) {
+        this.diskSizeStrictness = diskSizeStrictness;
     }
 }

@@ -18,7 +18,8 @@
 """
 #Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.cloudstackAPI import deleteVolume
 from marvin.lib.utils import (cleanup_resources, validateList)
 from marvin.lib.base import (Project,
@@ -870,7 +871,7 @@ class TestTemplateUsage(cloudstackTestCase):
 
             time.sleep(self.services["sleep"])
             timeout = timeout - 1
-            
+
         #Verify template response to check whether template added successfully
         self.assertEqual(
                         isinstance(list_template_response, list),
@@ -890,9 +891,9 @@ class TestTemplateUsage(cloudstackTestCase):
                             True,
                             "Template state is not ready, it is %s" % template_response.isready
                         )
-        
+
         self.debug("Created template with ID: %s" % template.id)
-        
+
         # Delete template
         template.delete(self.apiclient)
         self.debug("Deleted template with ID: %s" % template.id)

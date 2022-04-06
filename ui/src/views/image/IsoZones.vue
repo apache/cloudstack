@@ -17,6 +17,15 @@
 
 <template>
   <div>
+    <a-button
+      v-if="(('deleteIso' in $store.getters.apis) && this.selectedItems.length > 0)"
+      type="primary"
+      :danger="true"
+      style="width: 100%; margin-bottom: 15px"
+      @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
+      {{ $t(message.title) }}
+    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -24,17 +33,25 @@
       :columns="columns"
       :dataSource="dataSource"
       :pagination="false"
+      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <div slot="isready" slot-scope="text, record">
+      <template #zonename="{record}">
+        <span v-if="fetchZoneIcon(record.zoneid)">
+          <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+        </span>
+        <global-outlined v-else style="margin-right: 5px" />
+        <span> {{ record.zonename }} </span>
+      </template>
+      <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
-      <template slot="action" slot-scope="text, record">
+      </template>
+      <template #action="{ record }">
         <span style="margin-right: 5px">
           <tooltip-button
             :tooltip="$t('label.action.copy.iso')"
             :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-            icon="copy"
+            icon="copy-outlined"
             :loading="copyLoading"
             @click="showCopyIso(record)" />
         </span>
@@ -50,8 +67,9 @@
           >
             <tooltip-button
               :tooltip="$t('label.action.delete.iso')"
-              type="danger"
-              icon="delete" />
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
           </a-popconfirm>
         </span>
       </template>
@@ -67,7 +85,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -79,56 +97,84 @@
       :visible="showCopyActionForm"
       :closable="true"
       :maskClosable="false"
-      :okText="$t('label.ok')"
-      :cancelText="$t('label.cancel')"
-      @ok="handleCopyIsoSubmit"
-      @cancel="onCloseCopyForm"
+      :footer="null"
       :confirmLoading="copyLoading"
+      @cancel="onCloseCopyForm"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
-          :form="form"
-          @submit="handleCopyIsoSubmit"
-          layout="vertical">
-          <a-form-item :label="$t('label.zoneid')">
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          layout="vertical"
+          @finish="handleCopyIsoSubmit"
+          v-ctrl-enter="handleCopyIsoSubmit">
+          <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
               :placeholder="$t('label.select.zones')"
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              autoFocus>
-              <a-select-option v-for="zone in zones" :key="zone.id">
-                {{ zone.name }}
+              v-focus="true">
+              <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
+                <div>
+                  <span v-if="zone.icon && zone.icon.base64image">
+                    <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+                  </span>
+                  <global-outlined v-else style="margin-right: 5px" />
+                  {{ zone.name }}
+                </div>
               </a-select-option>
             </a-select>
           </a-form-item>
+
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseCopyForm">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="handleCopyIsoSubmit">{{ $t('label.ok') }}</a-button>
+          </div>
         </a-form>
       </a-spin>
     </a-modal>
+    <bulk-action-view
+      v-if="showConfirmationAction || showGroupActionModal"
+      :showConfirmationAction="showConfirmationAction"
+      :showGroupActionModal="showGroupActionModal"
+      :items="dataSource"
+      :selectedRowKeys="selectedRowKeys"
+      :selectedItems="selectedItems"
+      :columns="columns"
+      :selectedColumns="selectedColumns"
+      action="deleteIso"
+      :loading="loading"
+      :message="message"
+      @group-action="deleteIsos"
+      @handle-cancel="handleCancel"
+      @close-modal="closeModal" />
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import OsLogo from '@/components/widgets/OsLogo'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import BulkActionView from '@/components/view/BulkActionView'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'IsoZones',
   components: {
-    TooltipButton
+    TooltipButton,
+    OsLogo,
+    ResourceIcon,
+    BulkActionView
   },
   props: {
     resource: {
@@ -153,18 +199,30 @@ export default {
       zones: [],
       zoneLoading: false,
       copyLoading: false,
-      deleteLoading: false
+      deleteLoading: false,
+      selectedRowKeys: [],
+      showGroupActionModal: false,
+      selectedItems: [],
+      selectedColumns: [],
+      filterColumns: ['Status', 'Ready'],
+      showConfirmationAction: false,
+      message: {
+        title: this.$t('label.action.bulk.delete.isos'),
+        confirmMessage: this.$t('label.confirm.delete.isos')
+      },
+      modalWidth: '30vw'
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('copyIso')
   },
   created () {
+    this.initForm()
     this.columns = [
       {
         title: this.$t('label.zonename'),
-        dataIndex: 'zonename'
+        dataIndex: 'zonename',
+        slots: { customRender: 'zonename' }
       },
       {
         title: this.$t('label.status'),
@@ -173,7 +231,7 @@ export default {
       {
         title: this.$t('label.isready'),
         dataIndex: 'isready',
-        scopedSlots: { customRender: 'isready' }
+        slots: { customRender: 'isready' }
       }
     ]
     if (this.isActionPermitted()) {
@@ -182,7 +240,7 @@ export default {
         dataIndex: 'action',
         fixed: 'right',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
 
@@ -201,6 +259,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       const params = {}
       params.id = this.resource.id
@@ -220,6 +285,15 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.fetchZoneData()
+    },
+    fetchZoneIcon (zoneid) {
+      const zoneItem = this.zones.filter(zone => zone.id === zoneid)
+      if (zoneItem?.[0]?.icon?.base64image) {
+        this.zoneIcon = zoneItem[0].icon.base64image
+        return true
+      }
+      return false
     },
     handleChangePage (page, pageSize) {
       this.page = page
@@ -238,6 +312,56 @@ export default {
         (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Iso is ready or downloaded
         this.resource.account !== 'system'
     },
+    setSelection (selection) {
+      this.selectedRowKeys = selection
+      this.$emit('selection-change', this.selectedRowKeys)
+      this.selectedItems = (this.dataSource.filter(function (item) {
+        return selection.indexOf(item.zoneid) !== -1
+      }))
+    },
+    resetSelection () {
+      this.setSelection([])
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.setSelection(selectedRowKeys)
+    },
+    bulkActionConfirmation () {
+      this.showConfirmationAction = true
+      this.selectedColumns = this.columns.filter(column => {
+        return !this.filterColumns.includes(column.title)
+      })
+      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
+    },
+    handleCancel () {
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
+      this.showGroupActionModal = false
+      this.selectedItems = []
+      this.selectedColumns = []
+      this.selectedRowKeys = []
+      this.fetchData()
+      if (this.dataSource.length === 0) {
+        this.$router.go(-1)
+      }
+    },
+    deleteIsos (e) {
+      this.showConfirmationAction = false
+      this.selectedColumns.splice(0, 0, {
+        dataIndex: 'status',
+        title: this.$t('label.operation.status'),
+        slots: { customRender: 'status' },
+        filters: [
+          { text: 'In Progress', value: 'InProgress' },
+          { text: 'Success', value: 'success' },
+          { text: 'Failed', value: 'failed' }
+        ]
+      })
+      if (this.selectedRowKeys.length > 0) {
+        this.showGroupActionModal = true
+      }
+      for (const iso of this.selectedItems) {
+        this.deleteIso(iso)
+      }
+    },
     deleteIso (record) {
       const params = {
         id: record.id,
@@ -246,6 +370,7 @@ export default {
       this.deleteLoading = true
       api('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
@@ -253,14 +378,30 @@ export default {
           description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
-              this.$router.go(-1)
+              if (this.selectedItems.length === 0) {
+                this.$router.go(-1)
+              }
             } else {
-              this.fetchData()
+              if (this.selectedItems.length === 0) {
+                this.fetchData()
+              }
+            }
+            if (this.selectedItems.length > 0) {
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
             }
           },
-          errorMethod: () => this.fetchData(),
+          errorMethod: () => {
+            if (this.selectedItems.length === 0) {
+              this.fetchData()
+            }
+            if (this.selectedItems.length > 0) {
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'failed' })
+            }
+          },
+          showLoading: !(this.selectedItems.length > 0 && this.showGroupActionModal),
           loadingMessage: `${this.$t('label.deleting.iso')} ${this.resource.name} ${this.$t('label.in.progress')}`,
-          catchMessage: this.$t('error.fetching.async.job.result')
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          bulkAction: this.selectedItems.length > 0 && this.showGroupActionModal
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -272,7 +413,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { listall: true }).then(json => {
+      api('listZones', { listall: true, showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {
@@ -281,9 +422,7 @@ export default {
     },
     showCopyIso (record) {
       this.currentRecord = record
-      this.form.setFieldsValue({
-        zoneid: []
-      })
+      this.form.zoneid = []
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
@@ -293,10 +432,9 @@ export default {
     },
     handleCopyIsoSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.copyLoading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
@@ -305,6 +443,7 @@ export default {
         this.copyLoading = true
         api('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
+          eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
             jobId,
             title: this.$t('label.action.copy.iso'),
@@ -327,7 +466,12 @@ export default {
           this.onCloseCopyForm()
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
+    },
+    closeModal () {
+      this.showConfirmationAction = false
     }
   }
 }

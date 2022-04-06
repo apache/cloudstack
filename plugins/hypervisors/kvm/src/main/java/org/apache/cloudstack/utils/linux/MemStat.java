@@ -35,6 +35,7 @@ public class MemStat {
     protected final static String FREE_KEY = "MemFree";
     protected final static String CACHE_KEY = "Cached";
     protected final static String TOTAL_KEY = "MemTotal";
+    protected final static String BUFFER_KEY = "Buffers";
     long reservedMemory;
     long overCommitMemory;
 
@@ -47,7 +48,9 @@ public class MemStat {
     public MemStat(long reservedMemory, long overCommitMemory) {
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
-        this.refresh();
+        if (System.getProperty("os.name").equals("Linux")) {
+            this.refresh();
+        }
     }
 
     public long getTotal() {
@@ -55,7 +58,7 @@ public class MemStat {
     }
 
     public long getAvailable() {
-        return getFree() + getCache();
+        return getFree() + getCache() + getBuffer();
     }
 
     public long getFree() {
@@ -64,6 +67,10 @@ public class MemStat {
 
     public long getCache() {
         return _memStats.get(CACHE_KEY);
+    }
+
+    public long getBuffer() {
+        return _memStats.get(BUFFER_KEY);
     }
 
     public void refresh() {

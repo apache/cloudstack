@@ -264,7 +264,7 @@ public class SyncLink implements Link {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    s_logger.info("[ignored] interupted during pull", e);
+                    s_logger.info("[ignored] interrupted during pull", e);
                 }
             }
 

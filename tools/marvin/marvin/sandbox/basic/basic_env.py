@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,20 +18,20 @@
 
 '''
 ############################################################
-# Experimental state of scripts 
+# Experimental state of scripts
 #    * Need to be reviewed
 #    * Only a sandbox
 ############################################################
 '''
 import random
 import marvin
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from optparse import OptionParser
 from marvin.configGenerator import *
 
 
 def getGlobalSettings(config):
-   for k, v in dict(config.items('globals')).iteritems():
+   for k, v in dict(config.items('globals')).items():
         cfg = configuration()
         cfg.name = k
         cfg.value = v
@@ -47,17 +47,17 @@ def describeResources(config):
     z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Basic'
     z.securitygroupenabled = 'true'
-    
+
     sgprovider = provider()
     sgprovider.broadcastdomainrange = 'Pod'
     sgprovider.name = 'SecurityGroupProvider'
-    
+
     pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
     pn.traffictypes = [trafficType("Guest"), trafficType("Management")]
     pn.isolationmethods = ["L3"]
     pn.providers.append(sgprovider)
-    
+
     z.physical_networks.append(pn)
 
     p = pod()
@@ -70,7 +70,7 @@ def describeResources(config):
     v = iprange()
     v.gateway = config.get('cloudstack', 'public.gateway')
     v.startip = config.get('cloudstack', 'public.vlan.startip')
-    v.endip = config.get('cloudstack', 'public.vlan.endip') 
+    v.endip = config.get('cloudstack', 'public.vlan.endip')
     v.netmask = config.get('cloudstack', 'public.netmask')
     p.guestIpRanges.append(v)
 

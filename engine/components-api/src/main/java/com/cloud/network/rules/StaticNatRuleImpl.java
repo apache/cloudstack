@@ -158,4 +158,9 @@ public class StaticNatRuleImpl implements StaticNatRule {
     public Class<?> getEntityType() {
         return FirewallRule.class;
     }
+
+    @Override
+    public String getName() {
+        return null;
+    }
 }

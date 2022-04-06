@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
@@ -25,7 +24,7 @@ import java.util.Collection;
 import java.util.Map;
 
 public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(BaseUpdateTemplateOrIsoCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -34,7 +33,7 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if image is bootable, false otherwise; available only for updateIso API")
     private Boolean bootable;
 
-    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise; available only for updateTemplate API")
+    @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requires HVM, false otherwise; available only for updateTemplate API")
     private Boolean requiresHvm;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the image", length = 4096)

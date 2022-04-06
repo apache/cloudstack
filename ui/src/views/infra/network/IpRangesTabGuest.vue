@@ -18,11 +18,11 @@
 <template>
   <a-spin :spinning="componentLoading">
     <a-button
-      :disabled="!('createNetwork' in this.$store.getters.apis)"
+      :disabled="!('createNetwork' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="margin-bottom: 20px; width: 100%"
       @click="handleOpenShowCreateForm">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.guest.network') }}
     </a-button>
 
@@ -34,8 +34,10 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template slot="name" slot-scope="text, item">
-        <router-link :to="{ path: '/guestnetwork/' + item.id }">
+      <template #name="{ text, record }">
+        <resource-icon v-if="record.icon" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+        <apartment-outlined v-else style="margin-right: 5px"/>
+        <router-link :to="{ path: '/guestnetwork/' + record.id }">
           {{ text }}
         </router-link>
       </template>
@@ -52,19 +54,19 @@
       @change="changePage"
       @showSizeChange="changePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
-      v-model="showCreateForm"
+      v-if="showCreateForm"
+      :visible="showCreateForm"
       :title="$t('label.add.guest.network')"
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      :cancelText="$t('label.cancel')"
-      @cancel="closeAction"
+      @cancel="showCreateForm = false"
       centered
       width="auto">
       <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>
@@ -76,11 +78,13 @@
 <script>
 import { api } from '@/api'
 import CreateNetwork from '@/views/network/CreateNetwork'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'IpRangesTabGuest',
   components: {
-    CreateNetwork
+    CreateNetwork,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -104,7 +108,7 @@ export default {
         {
           title: this.$t('label.name'),
           dataIndex: 'name',
-          scopedSlots: { customRender: 'name' }
+          slots: { customRender: 'name' }
         },
         {
           title: this.$t('label.type'),
@@ -133,7 +137,7 @@ export default {
     this.fetchData()
   },
   watch: {
-    network (newItem, oldItem) {
+    resource (newItem, oldItem) {
       if (!newItem || !newItem.id) {
         return
       }
@@ -146,6 +150,7 @@ export default {
       api('listNetworks', {
         zoneid: this.resource.zoneid,
         physicalnetworkid: this.resource.id,
+        showicon: true,
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {

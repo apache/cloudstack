@@ -48,7 +48,7 @@ public class HostTagsDaoImpl extends GenericDaoBase<HostTagVO, Long> implements 
     }
 
     @Override
-    public List<String> gethostTags(long hostId) {
+    public List<String> getHostTags(long hostId) {
         SearchCriteria<HostTagVO> sc = HostSearch.create();
         sc.setParameters("hostId", hostId);
 

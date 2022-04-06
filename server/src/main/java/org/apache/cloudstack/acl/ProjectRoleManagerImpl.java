@@ -56,7 +56,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
 
 public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleService, PluggableService {
     @Inject
@@ -130,10 +129,10 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     public ProjectRole updateProjectRole(ProjectRole role, Long projectId, String name, String description) {
         checkAccess(projectId);
         ProjectRoleVO projectRoleVO = (ProjectRoleVO) role;
-        if (!Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isNotEmpty(name)) {
             projectRoleVO.setName(name);
         }
-        if (!Strings.isNullOrEmpty(description)) {
+        if (StringUtils.isNotEmpty(description)) {
             projectRoleVO.setDescription(description);
         }
         projRoleDao.update(role.getId(), projectRoleVO);
@@ -170,12 +169,12 @@ public class ProjectRoleManagerImpl extends ManagerBase implements ProjectRoleSe
     }
 
     @Override
-    public List<ProjectRole> findProjectRoles(Long projectId) {
+    public List<ProjectRole> findProjectRoles(Long projectId, String keyword) {
         if (projectId == null || projectId < 1L || projectDao.findById(projectId) == null) {
             LOGGER.warn("Invalid project ID provided");
             return null;
         }
-        return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId));
+        return ListUtils.toListOfInterface(projRoleDao.findAllRoles(projectId, keyword));
     }
 
     @Override

@@ -18,8 +18,17 @@
 #
 # This scripts before ssh.service but after cloud-early-config
 
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_msg "$@"
+}
+
 # Eject cdrom if any
-eject || true
+CMDLINE=/var/cache/cloud/cmdline
+export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+if [ "$TYPE" != "cksnode" ]; then
+  eject || true
+fi
 
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald
@@ -31,6 +40,10 @@ then
   then
     /opt/cloud/bin/update_config.py cmd_line.json || true
   fi
+fi
+
+if [ "$TYPE" == "cksnode" ]; then
+  pkill -9 dhclient
 fi
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs

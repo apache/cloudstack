@@ -27,14 +27,13 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.List;
 
 public class OVFHelperTest {
 
     private String ovfFileProductSection =
-        "<ProductSection>" +
+        "<ProductSection xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" +
             "<Info>VM Arguments</Info>" +
             "<Property ovf:key=\"va-ssh-public-key\" ovf:type=\"string\" ovf:userConfigurable=\"true\" ovf:value=\"\">" +
                 "<Label>Set the SSH public key allowed to access the appliance</Label>" +
@@ -47,7 +46,7 @@ public class OVFHelperTest {
         "</ProductSection>";
 
     private String ovfFileDeploymentOptionsSection =
-            "<DeploymentOptionSection>\n" +
+            "<DeploymentOptionSection xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                     "    <Info>Deployment Configuration information</Info>\n" +
                     "    <Configuration ovf:id=\"ASAv5\">\n" +
                     "      <Label>100 Mbps (ASAv5)</Label>\n" +
@@ -61,10 +60,10 @@ public class OVFHelperTest {
                     "      <Label>2 Gbps (ASAv30)</Label>\n" +
                     "      <Description>Use this option to deploy an ASAv with a maximum throughput of 2 Gbps (uses 4 vCPUs and 8 GB of memory).</Description>\n" +
                     "    </Configuration>\n" +
-                    "  </DeploymentOptionSection>";
+            "  </DeploymentOptionSection>";
 
     private String ovfFileVirtualHardwareSection =
-            "<VirtualSystem>\n" +
+            "<VirtualSystem xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "<OperatingSystemSection ovf:id=\"100\" vmw:osType=\"other26xLinux64Guest\">\n" +
             "      <Info>The kind of installed guest operating system</Info>\n" +
             "      <Description>Other 2.6x Linux (64-bit)</Description>\n" +
@@ -270,7 +269,7 @@ public class OVFHelperTest {
             "</VirtualSystem>";
 
     private String eulaSections =
-            "<VirtualSystem>\n" +
+            "<VirtualSystem xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "<EulaSection>\n" +
             "      <Info>end-user license agreement</Info>\n" +
             "      <License>END USER LICENSE AGREEMENT\n" +
@@ -395,7 +394,7 @@ public class OVFHelperTest {
             "</VirtualSystem>";
 
     private String productSectionWithCategories =
-            "<VirtualSystem ovf:id=\"VMware-vCenter-Server-Appliance\">\n" +
+            "<VirtualSystem ovf:id=\"VMware-vCenter-Server-Appliance\" xmlns=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:cim=\"http://schemas.dmtf.org/wbem/wscim/1/common\" xmlns:ovf=\"http://schemas.dmtf.org/ovf/envelope/1\" xmlns:rasd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData\" xmlns:vmw=\"http://www.vmware.com/schema/ovf\" xmlns:vssd=\"http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "<ProductSection ovf:required=\"false\">\n" +
             "      <Info>Appliance ISV branding information</Info>\n" +
             "      <Product>VMware vCenter Server Appliance</Product>\n" +
@@ -704,49 +703,49 @@ public class OVFHelperTest {
     private OVFHelper ovfHelper = new OVFHelper();
 
     @Test
-    public void testGetOVFPropertiesValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesValidOVF() throws IOException, SAXException {
         List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection);
         Assert.assertEquals(2, props.size());
     }
 
     @Test(expected = SAXParseException.class)
-    public void testGetOVFPropertiesInvalidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesInvalidOVF() throws IOException, SAXException {
         ovfHelper.getOVFPropertiesFromXmlString(ovfFileProductSection + "xxxxxxxxxxxxxxxxx");
     }
 
     @Test
-    public void testGetOVFDeploymentOptionsValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFDeploymentOptionsValidOVF() throws IOException, SAXException {
         List<OVFConfigurationTO> options = ovfHelper.getOVFDeploymentOptionsFromXmlString(ovfFileDeploymentOptionsSection);
         Assert.assertEquals(3, options.size());
     }
 
     @Test
-    public void testGetOVFVirtualHardwareSectionValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFVirtualHardwareSectionValidOVF() throws IOException, SAXException {
         List<OVFVirtualHardwareItemTO> items = ovfHelper.getOVFVirtualHardwareSectionFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals(20, items.size());
     }
 
     @Test
-    public void testGetOVFEulaSectionValidOVF() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFEulaSectionValidOVF() throws IOException, SAXException {
         List<OVFEulaSectionTO> eulas = ovfHelper.getOVFEulaSectionFromXmlString(eulaSections);
         Assert.assertEquals(2, eulas.size());
     }
 
     @Test
-    public void testGetOVFPropertiesWithCategories() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOVFPropertiesWithCategories() throws IOException, SAXException {
         List<OVFPropertyTO> props = ovfHelper.getOVFPropertiesFromXmlString(productSectionWithCategories);
         Assert.assertEquals(18, props.size());
     }
 
     @Test
-    public void testGetOperatingSystemInfo() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetOperatingSystemInfo() throws IOException, SAXException {
         Pair<String, String> guestOsPair = ovfHelper.getOperatingSystemInfoFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals("other26xLinux64Guest", guestOsPair.first());
         Assert.assertEquals("Other 2.6x Linux (64-bit)", guestOsPair.second());
     }
 
     @Test
-    public void testGetMinimumHardwareVersion() throws IOException, SAXException, ParserConfigurationException {
+    public void testGetMinimumHardwareVersion() throws IOException, SAXException {
         OVFVirtualHardwareSectionTO hardwareSection = ovfHelper.getVirtualHardwareSectionFromXmlString(ovfFileVirtualHardwareSection);
         Assert.assertEquals("vmx-08", hardwareSection.getMinimiumHardwareVersion());
     }

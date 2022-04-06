@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -29,7 +30,7 @@ import com.cloud.serializer.Param;
 import com.cloud.user.User;
 
 @EntityReference(value = User.class)
-public class UserResponse extends BaseResponse {
+public class UserResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName("id")
     @Param(description = "the user ID")
     private String id;
@@ -64,7 +65,7 @@ public class UserResponse extends BaseResponse {
 
     @SerializedName("accounttype")
     @Param(description = "the account type of the user")
-    private Short accountType;
+    private Integer accountType;
 
     @SerializedName("usersource")
     @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
@@ -114,6 +115,10 @@ public class UserResponse extends BaseResponse {
     @SerializedName(ApiConstants.IS_DEFAULT)
     @Param(description = "true if user is default, false otherwise", since = "4.2.0")
     private Boolean isDefault;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
 
     @Override
     public String getObjectId() {
@@ -184,12 +189,12 @@ public class UserResponse extends BaseResponse {
         this.accountName = accountName;
     }
 
-    public Short getAccountType() {
+    public Integer getAccountType() {
         return accountType;
     }
 
-    public void setAccountType(Short accountType) {
-        this.accountType = accountType;
+    public void setAccountType(Account.Type accountType) {
+        this.accountType = accountType.ordinal();
     }
 
     public void setRoleId(String roleId) {
@@ -274,5 +279,10 @@ public class UserResponse extends BaseResponse {
         if (this.userSource.equals(User.Source.UNKNOWN.toString().toLowerCase())) {
             this.userSource = User.Source.NATIVE.toString().toLowerCase();
         }
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
     }
 }

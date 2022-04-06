@@ -58,7 +58,12 @@ class internalError(Exception):
 
 def GetDetailExceptionInfo(e):
     if e is not None:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
+        if type(e) is str:
+            return e
+        elif type(e) is tuple:
+            (exc_type, exc_value, exc_traceback) = e
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
         return str(repr(traceback.format_exception(
             exc_type, exc_value, exc_traceback)))
     else:
@@ -68,7 +73,7 @@ class CloudstackAclException():
 
     NO_PERMISSION_TO_OPERATE_DOMAIN = "does not have permission to operate within domain"
     UNABLE_TO_USE_NETWORK = "Unable to use network"
-    NO_PERMISSION_TO_OPERATE_ACCOUNT = "does not have permission to operate with resource Acct"
+    NO_PERMISSION_TO_OPERATE_ACCOUNT = "does not have permission to operate with resource"
     UNABLE_TO_LIST_NETWORK_ACCOUNT = "Can't create/list resources for account"
     NO_PERMISSION_TO_ACCESS_ACCOUNT = "does not have permission to access resource Acct"
     NOT_AVAILABLE_IN_DOMAIN = "not available in domain"

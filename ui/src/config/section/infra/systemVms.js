@@ -15,43 +15,66 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'systemvm',
   title: 'label.system.vms',
-  icon: 'thunderbolt',
+  icon: 'thunderbolt-outlined',
   docHelp: 'adminguide/systemvm.html',
   permission: ['listSystemVms'],
   columns: ['name', 'state', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'hostname', 'zonename'],
-  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions'],
+  details: ['name', 'id', 'agentstate', 'systemvmtype', 'publicip', 'privateip', 'linklocalip', 'gateway', 'hostname', 'zonename', 'created', 'activeviewersessions', 'isdynamicallyscalable'],
+  resourceType: 'SystemVm',
+  tabs: [
+    {
+      name: 'details',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'comments',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+    }
+  ],
   actions: [
     {
       api: 'startSystemVm',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.systemvm',
       message: 'message.action.start.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopSystemVm',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.systemvm',
       message: 'message.action.stop.systemvm',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
-      args: ['forced']
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootSystemVm',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.action.reboot.systemvm',
       message: 'message.action.reboot.systemvm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
-      icon: 'arrows-alt',
+      icon: 'arrows-alt-outlined',
       label: 'label.change.service.offering',
       message: 'message.confirm.scale.up.system.vm',
       dataView: true,
@@ -66,25 +89,26 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.systemvm',
       message: 'message.migrate.systemvm.confirm',
       dataView: true,
-      show: (record) => { return record.state === 'Running' },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        },
-        hostid: {
-          api: 'findHostsForMigration',
-          params: (record) => { return { virtualmachineid: record.id } }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
+      popup: true
     },
     {
       api: 'runDiagnostics',
-      icon: 'reconciliation',
+      icon: 'reconciliation-outlined',
       label: 'label.action.run.diagnostics',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
@@ -101,7 +125,7 @@ export default {
     },
     {
       api: 'getDiagnosticsData',
-      icon: 'download',
+      icon: 'download-outlined',
       label: 'label.action.get.diagnostics',
       dataView: true,
       show: (record) => { return record.state === 'Running' },
@@ -115,11 +139,14 @@ export default {
     },
     {
       api: 'destroySystemVm',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.destroy.systemvm',
       message: 'message.action.destroy.systemvm',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

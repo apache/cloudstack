@@ -23,12 +23,12 @@
       ],
       "boot_wait": "5s",
       "disk_interface": "virtio",
-      "disk_size": "2500M",
+      "disk_size": "4000M",
       "format": "qcow2",
       "headless": true,
       "http_directory": "http",
-      "iso_checksum": "sha512:87b4c9dd135718304a1b3e68423fe1b03ed52eb67f60563ad14a846aeaaecf53c064dae0f128b2633041992bbc8124b68b6767b529d80487754959b38558e637",
-      "iso_url": "https://cdimage.debian.org/debian-cd/10.10.0/amd64/iso-cd/debian-10.10.0-amd64-netinst.iso",
+      "iso_checksum": "sha512:c685b85cf9f248633ba3cd2b9f9e781fa03225587e0c332aef2063f6877a1f0622f56d44cf0690087b0ca36883147ecb5593e3da6f965968402cdbdf12f6dd74",
+      "iso_url": "https://cdimage.debian.org/debian-cd/11.2.0/amd64/iso-cd/debian-11.2.0-amd64-netinst.iso",
       "net_device": "virtio-net",
       "output_directory": "../dist",
       "qemuargs": [
@@ -73,4 +73,3 @@
     }
   ]
 }
-

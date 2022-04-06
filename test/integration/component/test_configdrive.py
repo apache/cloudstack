@@ -19,47 +19,47 @@
     and password reset functionality with
     ConfigDrive
 """
+
+# Import Local Modules
+from marvin.cloudstackAPI import (restartVPC)
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.base import (
+    Account,
+    createVlanIpRange,
+    Configurations,
+    FireWallRule,
+    Host,
+    listVlanIpRanges,
+    Network,
+    NetworkACL,
+    NetworkACLList,
+    NetworkOffering,
+    NetworkServiceProvider,
+    PublicIPAddress,
+    Router,
+    ServiceOffering,
+    createSSHKeyPair,
+    deleteSSHKeyPair,
+    StaticNATRule,
+    VirtualMachine,
+    VPC,
+    VpcOffering,
+    Hypervisor, Template)
+from marvin.lib.common import (
+    get_domain,
+    get_zone, get_test_template,
+    is_config_suitable)
+from marvin.lib.utils import random_gen
+
+# Import System Modules
 import base64
 import os
 import socket
-# Import Local Modules
 import subprocess
 import tempfile
-from contextlib import contextmanager
-
 import time
-from marvin.cloudstackAPI import (restartVPC)
-from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.lib.base import (Account,
-                             createVlanIpRange,
-                             Configurations,
-                             FireWallRule,
-                             Host,
-                             listVlanIpRanges,
-                             Network,
-                             NetworkACL,
-                             NetworkACLList,
-                             NetworkOffering,
-                             NetworkServiceProvider,
-                             PublicIPAddress,
-                             Router,
-                             ServiceOffering,
-                             createSSHKeyPair,
-                             deleteSSHKeyPair,
-                             StaticNATRule,
-                             VirtualMachine,
-                             VPC,
-                             VpcOffering,
-                             Hypervisor, Template)
-from marvin.lib.common import (get_domain,
-                               get_template,
-                               get_zone,
-                               get_test_template,
-                               is_config_suitable)
-from marvin.lib.utils import random_gen
-# Import System Modules
+from contextlib import contextmanager
 from nose.plugins.attrib import attr
-from retry import retry
 
 VPC_SERVICES = 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns'
 ISO_SERVICES = 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns'
@@ -635,7 +635,7 @@ class ConfigDriveUtils:
         """
         ssh.execute("umount -d %s" % mount_path)
         # Give the VM time to unlock the iso device
-        time.sleep(2)
+        time.sleep(0.5)
         # Verify umount
         result = ssh.execute("ls %s" % mount_path)
         self.assertTrue(len(result) == 0,
@@ -1001,7 +1001,7 @@ class ConfigDriveUtils:
         :rtype: str
         """
         self.debug("Updating userdata for VM - %s" % vm.name)
-        updated_user_data = base64.b64encode(new_user_data)
+        updated_user_data = base64.encodestring(new_user_data.encode()).decode()
         with self.stopped_vm(vm):
             vm.update(self.api_client, userdata=updated_user_data)
 
@@ -1089,10 +1089,8 @@ class ConfigDriveUtils:
 
         vm.details = vm_new_ssh.details
 
-        # reset SSH key also resets the password.
-        self._decrypt_password(vm)
-
-        vm.password_test = ConfigDriveUtils.PasswordTest(vm=vm)
+        # reset SSH key also removes the password (see https://github.com/apache/cloudstack/pull/4819)
+        vm.password_test = ConfigDriveUtils.PasswordTest(expect_pw=False)
         vm.key_pair = self.keypair
 
         if public_ip:
@@ -1119,7 +1117,7 @@ class ConfigDriveUtils:
                     cipher = PKCS1_v1_5.new(key)
                 new_password = cipher.decrypt(b64decode(password_), None)
                 if new_password:
-                    vm.password = new_password
+                    vm.password = new_password.decode()
                 else:
                     self.fail("Failed to decrypt new password")
             except ImportError:
@@ -1186,7 +1184,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
     """
 
     def __init__(self, methodName='runTest'):
-        super(cloudstackTestCase, self).__init__(methodName)
+        super(TestConfigDrive, self).__init__(methodName)
         ConfigDriveUtils.__init__(self)
 
     @classmethod
@@ -1199,6 +1197,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         cls.db_client = test_client.getDbConnection()
         cls.test_data = test_client.getParsedTestDataConfig()
         cls.test_data.update(Services().services)
+        cls._cleanup = []
 
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client)
@@ -1216,7 +1215,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.test_data["service_offering"])
-        cls._cleanup = [cls.service_offering]
+        cls._cleanup.append(cls.service_offering)
 
         hypervisors = Hypervisor.list(cls.api_client, zoneid=cls.zone.id)
         cls.isSimulator = any(h.name == "Simulator" for h in hypervisors)
@@ -1224,50 +1223,27 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
 
     def setUp(self):
         # Create an account
+        self.cleanup = []
         self.account = Account.create(self.api_client,
                                       self.test_data["account"],
                                       admin=True,
                                       domainid=self.domain.id
                                       )
+        self.cleanup.append(self.account)
         self.tmp_files = []
-        self.cleanup = [self.account]
         self.generate_ssh_keys()
         return
 
     @classmethod
     def tearDownClass(cls):
-        # Cleanup resources used
-        cls.debug("Cleaning up the resources")
-        for obj in reversed(cls._cleanup):
-            try:
-                if isinstance(obj, VirtualMachine):
-                    obj.delete(cls.api_client, expunge=True)
-                else:
-                    obj.delete(cls.api_client)
-            except Exception as e:
-                cls.error("Failed to cleanup %s, got %s" % (obj, e))
-        # cleanup_resources(cls.api_client, cls._cleanup)
-        cls._cleanup = []
-        cls.debug("Cleanup complete!")
-        return
+        super(TestConfigDrive, cls).tearDownClass()
 
     def tearDown(self):
-        # Cleanup resources used
-        self.debug("Cleaning up the resources")
-        for obj in reversed(self.cleanup):
-            try:
-                if isinstance(obj, VirtualMachine):
-                    obj.delete(self.api_client, expunge=True)
-                else:
-                    obj.delete(self.api_client)
-            except Exception as e:
-                self.error("Failed to cleanup %s, got %s" % (obj, e))
-        # cleanup_resources(self.api_client, self.cleanup)
-        self.cleanup = []
+        super(TestConfigDrive,self).tearDown()
+
         for tmp_file in self.tmp_files:
             os.remove(tmp_file)
         self.debug("Cleanup complete!")
-        return
 
     # create_StaticNatRule_For_VM - Creates Static NAT rule on the given
     # public IP for the given VM in the given network
@@ -1533,7 +1509,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         tries = 1 if negative_test else 3
         private_key_file_location = keypair.private_key_file if keypair else None
 
-        @retry(tries=tries)
         def retry_ssh():
             ssh_client = vm.get_ssh_client(
                 ipaddress=public_ip.ipaddress.ipaddress,
@@ -2378,7 +2353,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
             vm1, public_ip_1,
             metadata=True)
 
-
         # =====================================================================
         # Network restart tests
         # =====================================================================
@@ -2522,6 +2496,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         # =====================================================================
         self.debug("+++ Scenario: "
                    "validate updated userdata after migrate")
+        time.sleep(30)
         host = self.migrate_VM(vm)
         vm.hostname = host.name
         self.then_config_drive_is_as_expected(vm, public_ip_1, metadata=True)

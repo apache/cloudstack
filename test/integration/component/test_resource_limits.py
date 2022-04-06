@@ -379,16 +379,6 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Public IP state is allocated or not"
                         )
 
-        # Exception should be raised for second instance (account_1)
-        with self.assertRaises(Exception):
-            PublicIPAddress.create(
-                                   self.apiclient,
-                                   virtual_machine_1.account,
-                                   virtual_machine_1.zoneid,
-                                   virtual_machine_1.domainid,
-                                   self.services["server"]
-                                   )
-
         self.debug(
             "Associating public IP for account: %s" %
                                         virtual_machine_2.account)
@@ -844,7 +834,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         # Exception should be raised for second snapshot (account_1)
         with self.assertRaises(Exception):
             Template.create(
@@ -908,7 +898,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
         return
 
 
@@ -1110,16 +1100,6 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             True,
                             "Check Public IP state is allocated or not"
                         )
-
-        # Exception should be raised for second Public IP
-        with self.assertRaises(Exception):
-            PublicIPAddress.create(
-                                   self.apiclient,
-                                   virtual_machine_1.account,
-                                   virtual_machine_1.zoneid,
-                                   virtual_machine_1.domainid,
-                                   self.services["server"]
-                                   )
         return
 
     @attr(speed="slow")
@@ -1362,7 +1342,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
                             "Check Template is in ready state or not"
                         )
         except Exception as e:
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         # Exception should be raised for second template
         with self.assertRaises(Exception):

@@ -34,10 +34,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         Inactive, Active,
     }
 
-    enum Type {
-        Disk, Service
-    };
-
     State getState();
 
     enum DiskCacheMode {
@@ -60,8 +56,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     boolean isUseLocalStorage();
 
     String getName();
-
-    boolean isSystemUse();
 
     String getDisplayText();
 
@@ -152,5 +146,7 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     void setCacheMode(DiskCacheMode cacheMode);
 
-    Type getType();
+    boolean isComputeOnly();
+
+    boolean getDiskSizeStrictness();
 }

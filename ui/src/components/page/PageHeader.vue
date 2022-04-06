@@ -24,7 +24,7 @@
             v-if="item.name"
             :to="{ path: item.path === '' ? '/' : item.path }"
           >
-            <a-icon v-if="index == 0" :type="item.meta.icon" />
+            <render-icon v-if="index == 0" :icon="item.meta.icon" />
             {{ item.meta.title }}
           </router-link>
           <span v-else-if="$route.params.id">{{ $route.params.id }}</span>
@@ -51,13 +51,9 @@
 </template>
 
 <script>
-import Breadcrumb from '@/components/widgets/Breadcrumb'
 
 export default {
   name: 'PageHeader',
-  components: {
-    's-breadcrumb': Breadcrumb
-  },
   props: {
     title: {
       type: String,
@@ -101,7 +97,7 @@ export default {
     }
   },
   watch: {
-    $route () {
+    '$route.fullPath' () {
       this.getBreadcrumb()
     }
   }

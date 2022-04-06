@@ -133,6 +133,7 @@ public class EventTypes {
     // Network Events
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
+    public static final String EVENT_NET_IP_RESERVE = "NET.IPRESERVE";
     public static final String EVENT_NET_IP_UPDATE = "NET.IPUPDATE";
     public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
     public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";
@@ -258,6 +259,7 @@ public class EventTypes {
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
     public static final String EVENT_VOLUME_DESTROY = "VOLUME.DESTROY";
     public static final String EVENT_VOLUME_RECOVER = "VOLUME.RECOVER";
+    public static final String EVENT_VOLUME_CHANGE_DISK_OFFERING = "VOLUME.CHANGE.DISK.OFFERING";
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -324,9 +326,11 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
+    public static final String EVENT_VLAN_IP_RANGE_UPDATE = "VLAN.IP.RANGE.UPDATE";
 
     public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_UPDATE = "MANAGEMENT.IP.RANGE.UPDATE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
@@ -350,6 +354,10 @@ public class EventTypes {
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";
+
+    // Host on Degraded ResourceState
+    public static final String EVENT_DECLARE_HOST_DEGRADED = "HOST.DECLARE.DEGRADED";
+    public static final String EVENT_CANCEL_HOST_DEGRADED = "HOST.CANCEL.DEGRADED";
 
     // Host Out-of-band management
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ENABLE = "HOST.OOBM.ENABLE";
@@ -489,6 +497,10 @@ public class EventTypes {
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
 
+    // resource icon related events
+    public static final String EVENT_RESOURCE_ICON_UPLOAD = "UPLOAD.RESOURCE.ICON";
+    public static final String EVENT_RESOURCE_ICON_DELETE = "DELETE.RESOURCE.ICON";
+
     // meta data related events
     public static final String EVENT_RESOURCE_DETAILS_CREATE = "CREATE_RESOURCE_DETAILS";
     public static final String EVENT_RESOURCE_DETAILS_DELETE = "DELETE_RESOURCE_DETAILS";
@@ -511,6 +523,7 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";
     public static final String EVENT_VM_BACKUP_SCHEDULE_DELETE = "BACKUP.SCHEDULE.DELETE";
     public static final String EVENT_VM_BACKUP_USAGE_METRIC = "BACKUP.USAGE.METRIC";
+    public static final String EVENT_VM_BACKUP_EDIT = "BACKUP.OFFERING.EDIT";
 
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
@@ -757,6 +770,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VOLUME_RESIZE, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_DESTROY, Volume.class);
         entityEventDetails.put(EVENT_VOLUME_RECOVER, Volume.class);
+        entityEventDetails.put(EVENT_VOLUME_CHANGE_DISK_OFFERING, Volume.class);
 
         // Domains
         entityEventDetails.put(EVENT_DOMAIN_CREATE, Domain.class);

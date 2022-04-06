@@ -66,14 +66,14 @@ public class LdapContextFactory {
         return createInitialDirContext(principal, password, false, domainId);
     }
 
-    private void enableSSL(final Hashtable<String, String> environment) {
-        final boolean sslStatus = _ldapConfiguration.getSSLStatus();
+    private void enableSSL(final Hashtable<String, String> environment, Long domainId) {
+        final boolean sslStatus = _ldapConfiguration.getSSLStatus(domainId);
 
         if (sslStatus) {
             s_logger.info("LDAP SSL enabled.");
             environment.put(Context.SECURITY_PROTOCOL, "ssl");
-            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore());
-            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword());
+            System.setProperty("javax.net.ssl.trustStore", _ldapConfiguration.getTrustStore(domainId));
+            System.setProperty("javax.net.ssl.trustStorePassword", _ldapConfiguration.getTrustStorePassword(domainId));
         }
     }
 
@@ -92,7 +92,7 @@ public class LdapContextFactory {
         environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout(domainId).toString());
         environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
-        enableSSL(environment);
+        enableSSL(environment, domainId);
         setAuthentication(environment, isSystemContext, domainId);
 
         if (principal != null) {

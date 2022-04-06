@@ -90,7 +90,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * state. If a Investigator finds the VM is dead, then HA process is started on the VM, skipping step 2. 2. If the list of
  * Investigators can not determine if the VM is dead or alive. The list of FenceBuilders is invoked to fence off the VM so that
  * it won't do any damage to the storage and network. 3. The VM is marked as stopped. 4. The VM is started again via the normal
- * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM himself. 5. VMs that
+ * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM explicitly. 5. VMs that
  * have re-started more than the configured number of times are marked as in Error state and the user is not allowed to restart
  * the VM.
  *
@@ -276,7 +276,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         for (VMInstanceVO vm : reorderedVMList) {
             ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-            if (vmOffering.isUseLocalStorage()) {
+            if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (s_logger.isDebugEnabled()){
                     s_logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }
@@ -608,7 +608,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
-                s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
+                String message = String.format("HA starting VM: %s (%s)", started.getHostName(), started.getInstanceName());
+                HostVO hostVmHasStarted = _hostDao.findById(started.getHostId());
+                s_logger.info(String.format("HA is now restarting %s on %s", started, hostVmHasStarted));
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), message, message);
                 return null;
             }
 

@@ -25,6 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -46,7 +47,8 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     private String accountName = null;
 
     @Column(name = "type")
-    private short type;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type type;
 
     @Column(name = "role_id")
     private Long roleId;
@@ -54,6 +56,9 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private State state;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -201,7 +206,7 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return accountName;
     }
 
-    public short getType() {
+    public Account.Type getType() {
         return type;
     }
 
@@ -211,6 +216,10 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public State getState() {
         return state;
+    }
+
+    public Date getCreated() {
+        return created;
     }
 
     public Date getRemoved() {

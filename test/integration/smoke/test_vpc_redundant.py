@@ -271,7 +271,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
-        
+
         self.cleanup = [self.vpc, self.vpc_off, self.account]
         return
 
@@ -300,11 +300,11 @@ class TestVPCRedundancy(cloudstackTestCase):
             "Check that %s routers were indeed created" % count)
 
     def wait_for_vrrp(self):
-        # Wait until 3*advert_int+skew time to get one of the routers as MASTER
+        # Wait until 3*advert_int+skew time to get one of the routers as PRIMARY
         time.sleep(3 * self.advert_int + 5)
 
-    def check_routers_state(self,count=2, status_to_check="MASTER", expected_count=1, showall=False):
-        vals = ["MASTER", "BACKUP", "UNKNOWN", "FAULT"]
+    def check_routers_state(self,count=2, status_to_check="PRIMARY", expected_count=1, showall=False):
+        vals = ["PRIMARY", "BACKUP", "UNKNOWN", "FAULT"]
         cnts = [0, 0, 0, 0]
 
         self.wait_for_vrrp()
@@ -354,7 +354,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                         self.skipTest(
                             "Marvin configuration has no host credentials to\
                                     check router services")
-            
+
                 if result.count(status_to_check) == 1:
                     cnts[vals.index(status_to_check)] += 1
 
@@ -437,7 +437,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             )
 
             self.logger.debug("Created network with ID: %s" % obj_network.id)
-        except Exception, e:
+        except Exception as e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
 
@@ -508,7 +508,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             traffictype='Ingress'
         )
         self.logger.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
-        
+
         return nat_rule
 
     def check_ssh_into_vm(self, vm, public_ip, expectFail=False, retries=5):
@@ -542,8 +542,8 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
-        
-        self.stop_router_by_type("MASTER")
+
+        self.stop_router_by_type("PRIMARY")
         self.check_routers_state(1)
         self.do_vpc_test(False)
 
@@ -567,7 +567,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_default_routes_test()
-    
+
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers(self):
         """ Create a redundant VPC with two networks with two VMs in each network """
@@ -577,12 +577,12 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
-        
-        self.reboot_router_by_type("MASTER")
+
+        self.reboot_router_by_type("PRIMARY")
         self.check_routers_state()
         self.do_vpc_test(False)
 
-        self.reboot_router_by_type("MASTER")
+        self.reboot_router_by_type("PRIMARY")
         self.check_routers_state()
         self.do_vpc_test(False)
 
@@ -615,7 +615,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         # Router will be in FAULT state, i.e. keepalived is stopped
         self.check_routers_state(status_to_check="FAULT", expected_count=2)
         self.start_vm()
-        self.check_routers_state(status_to_check="MASTER")
+        self.check_routers_state(status_to_check="PRIMARY")
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):
@@ -627,7 +627,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.networks.append(network)
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1", nr_vms=1))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.3.1", nr_vms=1))
-        
+
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
@@ -635,8 +635,8 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.destroy_vm(network)
         network.get_net().delete(self.apiclient)
         self.networks.remove(network)
-        
-        self.check_routers_state(status_to_check="MASTER")
+
+        self.check_routers_state(status_to_check="PRIMARY")
         self.do_vpc_test(False)
 
     def destroy_vm(self, network):
@@ -700,9 +700,9 @@ class TestVPCRedundancy(cloudstackTestCase):
                     vm = vmObj.get_vm()
                     public_ip = vmObj.get_ip()
                     self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
-                    
+
                     ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-        
+
                     self.logger.debug("Ping to google.com from VM")
                     result = ssh.execute(ssh_command)
 

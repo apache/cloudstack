@@ -26,8 +26,6 @@ import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -43,6 +41,8 @@ import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElement
 import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
@@ -411,12 +411,13 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         if (canHandle(network, Service.Vpn)) {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't " + "exist in the network " + network.getId());
+                s_logger.debug(String.format("There is no virtual router in network [uuid: %s, name: %s], it is not necessary to stop the VPN on backend.",
+                        network.getUuid(), network.getName()));
                 return true;
             }
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
         } else {
-            s_logger.debug("Element " + getName() + " doesn't handle removeVpn command");
+            s_logger.debug(String.format("Element %s doesn't handle removeVpn command", getName()));
             return false;
         }
     }
@@ -617,7 +618,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         }
         NetworkDetailVO updateInSequence=_networkDetailsDao.findDetail(network.getId(), Network.updatingInSequence);
         if(network.isRedundant() && updateInSequence!=null && "true".equalsIgnoreCase(updateInSequence.getValue())){
-            List<DomainRouterVO> masterRouters=new ArrayList<DomainRouterVO>();
+            List<DomainRouterVO> primaryRouters=new ArrayList<DomainRouterVO>();
             int noOfrouters=routers.size();
             while (noOfrouters>0){
                 DomainRouterVO router = routers.get(0);
@@ -632,16 +633,16 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                     continue;
                 }
                 if(router.getRedundantState()!=VirtualRouter.RedundantState.BACKUP) {
-                    masterRouters.add(router);
+                    primaryRouters.add(router);
                     routers.remove(router);
                 }
                 noOfrouters--;
             }
-            if(routers.size()==0 && masterRouters.size()==0){
+            if(routers.size()==0 && primaryRouters.size()==0){
                 return null;
             }
-            if(routers.size()==0 && masterRouters.size()!=0){
-                routers=masterRouters;
+            if(routers.size()==0 && primaryRouters.size()!=0){
+                routers=primaryRouters;
             }
             routers=routers.subList(0,1);
             routers.get(0).setUpdateState(VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);

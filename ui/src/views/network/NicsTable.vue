@@ -23,7 +23,7 @@
     :rowKey="item => item.id"
     :pagination="false"
   >
-    <p slot="expandedRowRender" slot-scope="record">
+    <template #expandedRowRender="{ record }">
       <slot name="actions" :nic="record" />
       <a-descriptions style="margin-top: 10px" layout="vertical" :column="1" :bordered="false" size="small">
         <a-descriptions-item :label="$t('label.id')">
@@ -59,13 +59,14 @@
           </a-descriptions-item>
         </template>
       </a-descriptions>
-    </p>
-    <template slot="networkname" slot-scope="text, item">
-      <a-icon type="apartment" />
-      <router-link :to="{ path: '/guestnetwork/' + item.networkid }">
+    </template>
+    <template #networkname="{ text, record }">
+      <resource-icon v-if="!networkIconLoading && networkicon[record.id]" :image="networkicon[record.id]" size="1x" style="margin-right: 5px"/>
+      <apartment-outlined v-else style="margin-right: 5px" />
+      <router-link :to="{ path: '/guestnetwork/' + record.networkid }">
         {{ text }}
       </router-link>
-      <a-tag v-if="item.isdefault">
+      <a-tag v-if="record.isdefault">
         {{ $t('label.default') }}
       </a-tag>
     </template>
@@ -73,6 +74,8 @@
 </template>
 
 <script>
+import { api } from '@/api'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'NicsTable',
@@ -86,14 +89,22 @@ export default {
       default: false
     }
   },
+  components: {
+    ResourceIcon
+  },
   inject: ['parentFetchData'],
   data () {
     return {
       nicColumns: [
         {
+          title: this.$t('label.deviceid'),
+          dataIndex: 'deviceid',
+          slots: { customRender: 'deviceid' }
+        },
+        {
           title: this.$t('label.networkname'),
           dataIndex: 'networkname',
-          scopedSlots: { customRender: 'networkname' }
+          slots: { customRender: 'networkname' }
         },
         {
           title: this.$t('label.macaddress'),
@@ -111,12 +122,58 @@ export default {
           title: this.$t('label.gateway'),
           dataIndex: 'gateway'
         }
-      ]
+      ],
+      networkicon: {},
+      networkIconLoading: false
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.resource = newItem
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (newItem && (!oldItem || (newItem.id !== oldItem.id))) {
+          this.fetchNetworks()
+        }
+      }
+    }
+  },
+  created () {
+    this.fetchNetworks()
+  },
+  methods: {
+    fetchNetworks () {
+      if (!this.resource || !this.resource.nic) return
+      this.networkIconLoading = true
+      this.networkicon = {}
+      const promises = []
+      this.resource.nic.forEach((item, index) => {
+        promises.push(this.fetchNetworkIcon(item.id, item.networkid))
+      })
+      Promise.all(promises).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.networkIconLoading = false
+      })
+    },
+    fetchNetworkIcon (id, networkid) {
+      return new Promise((resolve, reject) => {
+        this.networkicon[id] = null
+        api('listNetworks', {
+          id: networkid,
+          showicon: true
+        }).then(json => {
+          const network = json.listnetworksresponse?.network || []
+          if (network?.[0]?.icon) {
+            this.networkicon[id] = network[0]?.icon?.base64image
+            resolve(this.networkicon)
+          } else {
+            this.networkicon[id] = ''
+            resolve(this.networkicon)
+          }
+        }).catch(error => {
+          reject(error)
+        })
+      })
     }
   }
 }

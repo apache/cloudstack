@@ -22,7 +22,8 @@
       banner
       :message="$t('message.action.router.health.checks.disabled.warning')" />
     <div v-else>
-      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" icon="play-circle" style="width: 100%; margin-bottom: 15px" @click="showGetHelathCheck">
+      <a-button :disabled="!('getRouterHealthCheckResults' in $store.getters.apis)" type="primary" style="width: 100%; margin-bottom: 15px" @click="showGetHelathCheck">
+        <template #icon><play-circle-outlined /></template>
         {{ $t('label.action.router.health.checks') }}
       </a-button>
       <a-table
@@ -32,40 +33,43 @@
         :pagination="false"
         :rowKey="record => record.checkname"
         size="large">
-        <template slot="status" slot-scope="record">
+        <template #status="{record}">
           <status class="status" :text="record.success === true ? 'True' : 'False'" displayText />
         </template>
       </a-table>
 
       <a-modal
-        v-if="'getRouterHealthCheckResults' in $store.getters.apis"
+        v-if="'getRouterHealthCheckResults' in $store.getters.apis && showGetHealthChecksForm"
         style="top: 20px;"
         :title="$t('label.action.router.health.checks')"
         :visible="showGetHealthChecksForm"
         :closable="true"
         :maskClosable="false"
-        :okText="$t('label.ok')"
-        :cancelText="$t('label.cancel')"
-        @ok="handleGetHealthChecksSubmit"
+        :footer="null"
         @cancel="onCloseGetHealthChecksForm"
         centered>
-        <a-spin :spinning="loading">
+        <a-spin :spinning="loading" v-ctrl-enter="handleGetHealthChecksSubmit">
           <a-form
-            :form="form"
-            @submit="handleGetHealthChecksSubmit"
-            layout="vertical">
-            <a-form-item>
-              <span slot="label">
-                {{ $t('label.perform.fresh.checks') }}
-                <a-tooltip :title="apiParams.performfreshchecks.description">
-                  <a-icon type="info-circle" />
-                </a-tooltip>
-              </span>
+            :ref="formRef"
+            :model="form"
+            :rules="rules"
+            @finish="handleGetHealthChecksSubmit"
+            layout="vertical"
+           >
+            <a-form-item name="performfreshchecks" ref="performfreshchecks">
+              <template #label>
+                <tooltip-label :title="$t('label.perform.fresh.checks')" :tooltip="apiParams.performfreshchecks.description"/>
+              </template>
               <a-switch
-                v-decorator="[$t('performfreshchecks')]"
+                v-model:checked="form.performfreshchecks"
                 :placeholder="apiParams.performfreshchecks.description"
-                autoFocus/>
+                v-focus="true"/>
             </a-form-item>
+
+            <div :span="24" class="action-button">
+              <a-button @click="onCloseGetHealthChecksForm">{{ $t('label.cancel') }}</a-button>
+              <a-button ref="submit" type="primary" @click="handleGetHealthChecksSubmit">{{ $t('label.ok') }}</a-button>
+            </div>
           </a-form>
         </a-spin>
       </a-modal>
@@ -74,13 +78,16 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'RouterHealthCheck',
   components: {
-    Status
+    Status,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -104,7 +111,7 @@ export default {
         },
         {
           title: this.$t('label.router.health.check.success'),
-          scopedSlots: { customRender: 'status' }
+          slots: { customRender: 'status' }
         },
         {
           title: this.$t('label.router.health.check.last.updated'),
@@ -119,23 +126,30 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('getRouterHealthCheckResults')
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.updateResource(newItem)
+    resource: {
+      deep: true,
+      handler (newItem) {
+        this.updateResource(newItem)
+      }
     }
   },
   created () {
+    this.initForm()
     this.updateResource(this.resource)
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     updateResource (resource) {
       if (!resource) {
         return
       }
-      this.resource = resource
       if (!resource.id) {
         return
       }
@@ -149,12 +163,13 @@ export default {
     },
     handleGetHealthChecksSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.onCloseGetHealthChecksForm()
         this.checkConfigurationAndGetHealthChecks(values.performfreshchecks)
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     checkConfigurationAndGetHealthChecks (performFreshChecks) {

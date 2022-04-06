@@ -24,7 +24,8 @@
 """
 # Import Local Modules
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+import unittest
 from marvin.lib.base import (Account,
                              ServiceOffering,
                              VirtualMachine,
@@ -227,16 +228,14 @@ class TestResizeVolume(cloudstackTestCase):
             listall='True'
         )
         rootvolume = list_volume_response[0]
-        if vm.state == "Running" and \
-                (vm.hypervisor.lower() == "xenserver" or \
-                             vm.hypervisor.lower() == "vmware"):
+        if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
             self.virtual_machine.stop(apiclient)
             time.sleep(self.services["sleep"])
-            if vm.hypervisor.lower() == "vmware":
-                rootdiskcontroller = self.getDiskController(vm)
-                if rootdiskcontroller!="scsi":
-                    raise Exception("root volume resize only supported on scsi disk ,"
-                                    "please check rootdiskcontroller type")
+        if vm.hypervisor.lower() == "vmware":
+            rootdiskcontroller = self.getDiskController(vm)
+            if rootdiskcontroller!="scsi":
+                raise Exception("root volume resize only supported on scsi disk ,"
+                                "please check rootdiskcontroller type")
 
         rootvolobj = Volume(rootvolume.__dict__)
         newsize = (rootvolume.size >> 30) + 2
@@ -244,8 +243,7 @@ class TestResizeVolume(cloudstackTestCase):
         if rootvolume is not None:
             try:
                 rootvolobj.resize(apiclient, size=newsize)
-                if vm.hypervisor.lower() == "xenserver" or \
-                                vm.hypervisor.lower() == "vmware":
+                if vm.hypervisor.lower() == "xenserver":
                     self.virtual_machine.start(apiclient)
                     time.sleep(self.services["sleep"])
                 ssh = SshClient(self.virtual_machine.ssh_ip, 22,
@@ -570,7 +568,8 @@ class TestResizeVolume(cloudstackTestCase):
 
         return
 
-    @attr(tags=["advanced"], required_hardware="true")
+    # @attr(tags=["advanced"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_03_vmsnapshot__on_resized_rootvolume_vm(self):
         """Test vmsnapshot on resized root volume
 
@@ -641,7 +640,7 @@ class TestResizeVolume(cloudstackTestCase):
                         list(self.apiclient,
                              vmsnapshotid=virtualmachine_snapshot.id)
                     status = validateList(virtulmachine_snapshot_list)
-                    self.assertEquals(
+                    self.assertEqual(
                         PASS,
                         status[0],
                         "Listing of configuration failed")
@@ -852,7 +851,7 @@ class TestResizeVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during"
                             " VM deployment with new"
-                            "  rootdisk paramter : %s" % e)
+                            "  rootdisk parameter : %s" % e)
 
 
     @attr(tags=["advanced"], required_hardware="true")
@@ -915,9 +914,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and (
-                            vm.hypervisor.lower() == "xenserver" or
-                            vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
 
@@ -940,7 +937,8 @@ class TestResizeVolume(cloudstackTestCase):
             if rootvol is not None and 'kvm' or 'xenserver' in vm.hypervisor.lower():
                 rootvol.resize(self.apiclient, size=newsize)
 
-    @attr(tags=["advanced"], required_hrdware="true")
+    # @attr(tags=["advanced"], required_hrdware="true")
+    @attr(tags=["TODO"], required_hrdware="true")
     def test_7_usage_events_after_rootvolume_resized_(self):
         """Test check usage events after root volume resize
 
@@ -997,9 +995,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and (
-                            vm.hypervisor.lower() == "xenserver" or
-                            vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
             rootvolume = list_volume_response[0]
@@ -1030,7 +1026,7 @@ class TestResizeVolume(cloudstackTestCase):
                     self.assertNotEqual(res[2], INVALID_INPUT, "Check DB Query result set")
                     qresult = int(qresultsize[0][0])
                     self.debug("Query result: %s" % qresult)
-                    self.assertEquals(
+                    self.assertEqual(
                         qresult,
                         (newsize * 1024 * 1024 * 1024),
                         "Usage event not logged properly with right volume"
@@ -1114,9 +1110,7 @@ class TestResizeVolume(cloudstackTestCase):
             )
             res = validateList(list_volume_response)
             self.assertNotEqual(res[2], INVALID_INPUT, "listVolumes returned invalid object in response")
-            if vm.state == "Running" and \
-                    (vm.hypervisor.lower() == "xenserver" or
-                             vm.hypervisor.lower() == "vmware"):
+            if vm.state == "Running" and vm.hypervisor.lower() == "xenserver":
                 self.virtual_machine.stop(self.apiclient)
                 time.sleep(self.services["sleep"])
             rootvolume = list_volume_response[0]

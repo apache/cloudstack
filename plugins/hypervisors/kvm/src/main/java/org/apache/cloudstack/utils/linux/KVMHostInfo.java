@@ -18,6 +18,8 @@ package org.apache.cloudstack.utils.linux;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.script.Script;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -42,7 +44,10 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
-    public KVMHostInfo(long reservedMemory, long overCommitMemory) {
+    private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
+
+    public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed) {
+        this.cpuSpeed = manualSpeed;
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
         this.getHostInfoFromLibvirt();
@@ -78,12 +83,45 @@ public class KVMHostInfo {
     }
 
     protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (final Reader reader = new FileReader(
-                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
-            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
+        long speed = 0L;
+        speed = getCpuSpeedFromCommandLscpu();
+        if(speed > 0L) {
+            return speed;
+        }
+
+        speed = getCpuSpeedFromFile();
+        if(speed > 0L) {
+            return speed;
+        }
+
+        LOGGER.info(String.format("Using the value [%s] provided by Libvirt.", nodeInfo.mhz));
+        speed = nodeInfo.mhz;
+        return speed;
+    }
+
+    private static long getCpuSpeedFromCommandLscpu() {
+        try {
+            LOGGER.info("Fetching CPU speed from command \"lscpu\".");
+            String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            String result = Script.runSimpleBashScript(command);
+            long speed = (long) (Float.parseFloat(result) * 1000);
+            LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));
+            return speed;
+        } catch (NullPointerException | NumberFormatException e) {
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from lscpu."), e);
+            return 0L;
+        }
+    }
+
+    private static long getCpuSpeedFromFile() {
+        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
+        try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
+            Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
+            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
+            return cpuInfoFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.info("Could not read cpuinfo_max_freq, falling back on libvirt");
-            return nodeInfo.mhz;
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
+            return 0L;
         }
     }
 
@@ -91,7 +129,11 @@ public class KVMHostInfo {
         try {
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
-            this.cpuSpeed = getCpuSpeed(hosts);
+            if (this.cpuSpeed == 0) {
+                this.cpuSpeed = getCpuSpeed(hosts);
+            } else {
+                LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
+            }
 
             /*
              * Some CPUs report a single socket and multiple NUMA cells.

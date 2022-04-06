@@ -18,7 +18,6 @@ package org.apache.cloudstack.api.command.user.resource;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -26,7 +25,7 @@ import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.server.ResourceTag;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = ListDetailOptionsCmd.APINAME,
         description = "Lists all possible details and their options for a resource type such as a VM or a template",
@@ -43,9 +42,7 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
-            description = "the resource type such as UserVm, Template etc.",
-            validations = {ApiArgValidator.NotNullOrEmpty}
-    )
+            description = "the resource type such as UserVm, Template etc.")
     private String resourceType;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING,
@@ -57,12 +54,12 @@ public class ListDetailOptionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     public ResourceTag.ResourceObjectType getResourceType() {
-        return _taggedResourceService.getResourceType(resourceType);
+        return resourceManagerUtil.getResourceType(resourceType);
     }
 
     public String getResourceId() {
-        if (!Strings.isNullOrEmpty(resourceId)) {
-            return _taggedResourceService.getUuid(resourceId, getResourceType());
+        if (StringUtils.isNotEmpty(resourceId)) {
+            return resourceManagerUtil.getUuid(resourceId, getResourceType());
         }
         return null;
     }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
@@ -72,17 +73,17 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     VMTemplateVO findRoutingTemplate(HypervisorType type, String templateName);
 
-    List<Long> listPrivateTemplatesByHost(Long hostId);
+    VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, Storage.TemplateType type);
 
     public Long countTemplatesForAccount(long accountId);
 
     public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states);
-
-    List<VMTemplateVO> findTemplatesToSyncToS3();
 
     void loadDetails(VMTemplateVO tmpl);
 
     void saveDetails(VMTemplateVO tmpl);
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
+
+    VMTemplateVO findLatestTemplateByName(String name);
 }

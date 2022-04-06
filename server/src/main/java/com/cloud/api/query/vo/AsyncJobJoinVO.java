@@ -25,13 +25,14 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="async_job_view")
+@Table(name = "async_job_view")
 public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity { //InternalIdentity, Identity {
     @Id
     @Column(name = "id")
@@ -50,7 +51,8 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -130,7 +132,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -205,6 +207,11 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Override
     public Class<?> getEntityType() {
         return AsyncJob.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 
     @Override

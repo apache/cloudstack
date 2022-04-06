@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.15.1
+CLOUDSTACK_RELEASE=4.16.1
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -41,7 +41,7 @@ function configure_issue() {
 
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
- (___(_)   Debian GNU/Linux 10 \n \l
+ (___(_)   Debian GNU/Linux 11 \n \l
 
 EOF
 }
@@ -50,9 +50,12 @@ function configure_cacerts() {
   CDIR=$(pwd)
   cd /tmp
   # Add LetsEncrypt ca-cert
-  wget https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.der
-  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx3cross -file lets-encrypt-x3-cross-signed.der
-  rm -f lets-encrypt-x3-cross-signed.der
+  wget https://letsencrypt.org/certs/lets-encrypt-r3.der
+  wget https://letsencrypt.org/certs/isrgrootx1.der
+
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityr3 -file lets-encrypt-r3.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx1 -file isrgrootx1.der
+  rm -f lets-encrypt-r3.der isrgrootx1.der
   cd $CDIR
 }
 
@@ -65,7 +68,7 @@ function install_cloud_scripts() {
     /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
   chmod +x /root/health_checks/*
-  chmod -x /etc/systemd/system/*
+  chmod -x /etc/systemd/system/* || true
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
@@ -108,7 +111,7 @@ function configure_services() {
   systemctl disable haproxy
   systemctl disable keepalived
   systemctl disable radvd
-  systemctl disable strongswan
+  systemctl disable strongswan-starter
   systemctl disable x11-common
   systemctl disable xl2tpd
   systemctl disable vgauth
@@ -123,6 +126,22 @@ function configure_services() {
   systemctl disable hyperv-daemons.hv-kvp-daemon.service
   systemctl disable hyperv-daemons.hv-vss-daemon.service
   systemctl disable qemu-guest-agent
+
+  # Disable container services
+  systemctl disable containerd
+
+  # Disable cloud init by default
+cat <<EOF > /etc/cloud/cloud.cfg.d/cloudstack.cfg
+datasource_list: ['CloudStack']
+datasource:
+  CloudStack:
+    max_wait: 120
+    timeout: 50
+EOF
+
+  touch /etc/cloud/cloud-init.disabled
+  systemctl stop cloud-init
+  systemctl disable cloud-init
 
   configure_apache2
   configure_strongswan

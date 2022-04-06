@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.log4j.Logger;
@@ -34,14 +37,12 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IsoVmResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -65,9 +66,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.GROUP_ID, type = CommandType.UUID, entityType = InstanceGroupResponse.class, description = "the group ID")
     private Long groupId;
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the host ID")
-    private Long hostId;
-
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine")
     private Long id;
 
@@ -76,9 +74,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the virtual machine (a substring match is made against the parameter value, data for all matching VMs will be returned)")
     private String name;
-
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the pod ID")
-    private Long podId;
 
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine. Possible values are: Running, Stopped, Present, Destroyed, Expunged. Present is used for the state equal not destroyed.")
     private String state;
@@ -96,12 +91,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the target hypervisor for the template")
     private String hypervisor;
-
-    @Parameter(name = ApiConstants.STORAGE_ID,
-               type = CommandType.UUID,
-               entityType = StoragePoolResponse.class,
-               description = "the storage ID where vm's volumes belong to")
-    private Long storageId;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
@@ -129,6 +118,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "list by the service offering", since = "4.4")
     private Long serviceOffId;
 
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID, type = CommandType.UUID, entityType = BackupOfferingResponse.class, description = "list by the backup offering", since = "4.17")
+    private Long backupOffId;
+
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "list resources by display flag; only ROOT admin is eligible to pass this parameter", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
@@ -140,6 +132,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.HA_ENABLE, type = CommandType.BOOLEAN, description = "list by the High Availability offering; true if filtering VMs with HA enabled; false for VMs with HA disabled", since = "4.15")
     private Boolean haEnabled;
+
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for VMs", since = "4.16.0.0")
+    private Boolean showIcon;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -171,6 +167,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     public Long getServiceOfferingId() {
         return serviceOffId;
+    }
+
+    public Long getBackupOfferingId() {
+        return backupOffId;
     }
 
     public Long getZoneId() {
@@ -207,18 +207,6 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return keypair;
     }
 
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public Long getPodId() {
-        return podId;
-    }
-
-    public Long getStorageId() {
-        return storageId;
-    }
-
     public Long getSecurityGroupId() {
         return securityGroupId;
     }
@@ -252,6 +240,11 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         }
         return super.getDisplay();
     }
+
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -268,7 +261,30 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Override
     public void execute() {
         ListResponse<UserVmResponse> response = _queryService.searchForUserVMs(this);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateVMResponse(response.getResponses());
+        }
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    protected void updateVMResponse(List<UserVmResponse> response) {
+        for (UserVmResponse vmResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.UserVm, vmResponse.getId());
+            if (resourceIcon == null) {
+                ResourceTag.ResourceObjectType type = ResourceTag.ResourceObjectType.Template;
+                String uuid = vmResponse.getTemplateId();
+                if (vmResponse.getIsoId() != null) {
+                    uuid = vmResponse.getIsoId();
+                    type = ResourceTag.ResourceObjectType.ISO;
+                }
+                resourceIcon = resourceIconManager.getByResourceTypeAndUuid(type, uuid);
+                if (resourceIcon == null) {
+                    continue;
+                }
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            vmResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }

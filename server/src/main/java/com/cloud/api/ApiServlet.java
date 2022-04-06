@@ -62,7 +62,7 @@ import com.cloud.utils.net.NetUtils;
 @SuppressWarnings("serial")
 public class ApiServlet extends HttpServlet {
     public static final Logger s_logger = Logger.getLogger(ApiServlet.class.getName());
-    private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServer.class.getName());
+    private static final Logger s_accessLogger = Logger.getLogger("apiserver." + ApiServlet.class.getName());
     private final static List<String> s_clientAddressHeaders = Collections
             .unmodifiableList(Arrays.asList("X-Forwarded-For",
                     "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
@@ -136,6 +136,17 @@ public class ApiServlet extends HttpServlet {
         });
     }
 
+    private void checkSingleQueryParameterValue(Map<String, String[]> params) {
+        params.forEach((k, v) -> {
+            if (v.length > 1) {
+                String message = String.format("Query parameter '%s' has multiple values %s. Only the last value will be respected." +
+                    "It is advised to pass only a single parameter", k, Arrays.toString(v));
+                s_logger.warn(message);
+            }
+        });
+
+    }
+
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
         InetAddress remoteAddress = null;
         try {
@@ -156,7 +167,9 @@ public class ApiServlet extends HttpServlet {
         // get the response format since we'll need it in a couple of places
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
-        params.putAll(req.getParameterMap());
+        Map<String, String[]> reqParams = req.getParameterMap();
+        checkSingleQueryParameterValue(reqParams);
+        params.putAll(reqParams);
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
         // to unwrap URL encoded content from ISO-9959-1.

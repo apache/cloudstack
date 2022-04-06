@@ -29,6 +29,11 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 public interface Volume extends ControlledEntity, Identity, InternalIdentity, BasedOn, StateObject<Volume.State>, Displayable {
+
+    // Managed storage volume parameters (specified in the compute/disk offering for PowerFlex)
+    String BANDWIDTH_LIMIT_IN_MBPS = "bandwidthLimitInMbps";
+    String IOPS_LIMIT = "iopsLimit";
+
     enum Type {
         UNKNOWN, ROOT, SWAP, DATADISK, ISO
     };
@@ -42,8 +47,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         RevertSnapshotting("There is a snapshot created on this volume, the volume is being reverting from snapshot"),
         Resizing("The volume is being resized"),
         Expunging("The volume is being expunging"),
-        Expunged("The volume has been expunged"),
-        Destroy("The volume is destroyed, and can't be recovered."),
+        Expunged("The volume has been expunged, and can no longer be recovered"),
+        Destroy("The volume is destroyed, and can be recovered."),
         Destroying("The volume is destroying, and can't be recovered."),
         UploadOp("The volume upload operation is in progress or in short the volume is on secondary storage"),
         Copying("Volume is copying from image store to primary, in case it's an uploaded volume"),
@@ -79,6 +84,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.OperationSucceeded, Ready, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Creating, Event.CreateRequested, Creating, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.CreateRequested, Creating, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.ResizeRequested, Resizing, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationSucceeded, Ready, Arrays.asList(new StateMachine2.Transition.Impact[]{StateMachine2.Transition.Impact.USAGE})));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Resizing, Event.OperationFailed, Ready, null));

@@ -286,7 +286,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     protected AgentAttache createAttacheForDirectConnect(final Host host, final ServerResource resource) {
-        s_logger.debug("create ClusteredDirectAgentAttache for " + host.getId());
+        s_logger.debug(String.format("Create ClusteredDirectAgentAttache for %s.", host));
         final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getName(), _nodeId, resource, host.isInMaintenanceStates());
         AgentAttache old = null;
         synchronized (_agents) {
@@ -716,11 +716,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     }
                 }
             } catch (final ClassNotFoundException e) {
-                final String message = String.format("ClassNotFoundException occured when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("ClassNotFoundException occurred when executing taks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } catch (final UnsupportedVersionException e) {
-                final String message = String.format("UnsupportedVersionException occured when executing taks! Error '%s'", e.getMessage());
+                final String message = String.format("UnsupportedVersionException occurred when executing taks! Error '%s'", e.getMessage());
                 s_logger.error(message);
                 throw new TaskExecutionException(message, e);
             } finally {

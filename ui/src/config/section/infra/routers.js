@@ -15,26 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'router',
   title: 'label.virtual.routers',
-  icon: 'fork',
+  icon: 'fork-outlined',
   docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },
   columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
-    component: () => import('@/components/view/DetailsTab.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
     name: 'nics',
-    component: () => import('@/views/network/NicsTable.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@/views/network/NicsTable.vue')))
   }, {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
-    component: () => import('@views/infra/routers/RouterHealthCheck.vue')
+    component: shallowRef(defineAsyncComponent(() => import('@views/infra/routers/RouterHealthCheck.vue')))
+  }, {
+    name: 'comments',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
   }],
   related: [{
     name: 'vm',
@@ -45,32 +51,42 @@ export default {
   actions: [
     {
       api: 'startRouter',
-      icon: 'caret-right',
+      icon: 'caret-right-outlined',
       label: 'label.action.start.router',
       message: 'message.action.start.router',
       dataView: true,
-      show: (record) => { return record.state === 'Stopped' }
+      show: (record) => { return record.state === 'Stopped' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'stopRouter',
-      icon: 'poweroff',
+      icon: 'poweroff-outlined',
       label: 'label.action.stop.router',
       message: 'message.action.stop.router',
       dataView: true,
       args: ['forced'],
-      show: (record) => { return record.state === 'Running' }
+      show: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'rebootRouter',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.action.reboot.router',
       message: 'message.action.reboot.router',
       dataView: true,
-      hidden: (record) => { return record.state === 'Running' }
+      args: ['forced'],
+      hidden: (record) => { return record.state === 'Running' },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
       api: 'scaleSystemVm',
-      icon: 'arrows-alt',
+      icon: 'arrows-alt-outlined',
       label: 'label.change.service.offering',
       message: 'message.confirm.scale.up.router.vm',
       dataView: true,
@@ -91,7 +107,7 @@ export default {
     },
     {
       api: 'upgradeRouterTemplate',
-      icon: 'fullscreen',
+      icon: 'fullscreen-outlined',
       label: 'label.upgrade.router.newer.template',
       message: 'message.confirm.upgrade.router.newer.template',
       docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
@@ -101,25 +117,26 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.router',
       message: 'message.migrate.router.confirm',
       dataView: true,
-      show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
-      args: ['virtualmachineid', 'hostid'],
-      mapping: {
-        virtualmachineid: {
-          value: (record) => { return record.id }
-        },
-        hostid: {
-          api: 'findHostsForMigration',
-          params: (record) => { return { virtualmachineid: record.id } }
-        }
-      }
+      show: (record, store) => { return record.state === 'Running' && ['Admin'].includes(store.userInfo.roletype) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateWizard'))),
+      popup: true
+    },
+    {
+      api: 'migrateSystemVm',
+      icon: 'drag',
+      label: 'label.action.migrate.systemvm.to.ps',
+      dataView: true,
+      show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
+      component: shallowRef(defineAsyncComponent(() => import('@/views/compute/MigrateVMStorage'))),
+      popup: true
     },
     {
       api: 'runDiagnostics',
-      icon: 'reconciliation',
+      icon: 'reconciliation-outlined',
       label: 'label.action.run.diagnostics',
       dataView: true,
       show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
@@ -136,7 +153,7 @@ export default {
     },
     {
       api: 'getDiagnosticsData',
-      icon: 'download',
+      icon: 'download-outlined',
       label: 'label.action.get.diagnostics',
       dataView: true,
       show: (record, store) => { return ['Running'].includes(record.state) && ['Admin'].includes(store.userInfo.roletype) },
@@ -150,11 +167,14 @@ export default {
     },
     {
       api: 'destroyRouter',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.destroy.router',
       message: 'message.confirm.destroy.router',
       dataView: true,
-      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) }
+      show: (record) => { return ['Running', 'Error', 'Stopped'].includes(record.state) },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     }
   ]
 }

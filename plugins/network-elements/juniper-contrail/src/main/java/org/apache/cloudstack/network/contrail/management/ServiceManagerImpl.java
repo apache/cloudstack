@@ -79,7 +79,7 @@ public class ServiceManagerImpl implements ServiceManager {
     ContrailManager _manager;
 
     /**
-     * In the case of service instance the master object is in the contrail API server. This object stores the
+     * In the case of service instance the primary object is in the contrail API server. This object stores the
      * service instance parameters in the database.
      *
      * @param owner     Used to determine the project.
@@ -239,7 +239,7 @@ public class ServiceManagerImpl implements ServiceManager {
         response.setId(vm.getUuid());
         Account owner = _accountService.getAccount(vm.getAccountId());
 
-        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (owner.getType() == Account.Type.PROJECT) {
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(owner.getAccountId());
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());

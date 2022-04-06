@@ -16,18 +16,18 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="loading || loading">
+  <a-spin :spinning="loading || loading" v-ctrl-enter="handleSubmit">
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatesubject')">
-          <a-textarea v-model="formModel.templatesubject" />
+          <a-textarea v-model:value="formModel.templatesubject" />
         </a-form-item>
       </a-col>
     </a-row>
     <a-row :gutter="12">
       <a-col :md="24" :lg="24">
         <a-form-item :label="$t('label.templatebody')">
-          <a-textarea v-model="formModel.templatebody" />
+          <a-textarea v-model:value="formModel.templatebody" />
         </a-form-item>
       </a-col>
     </a-row>
@@ -45,6 +45,7 @@
           :disabled="!('quotaEmailTemplateUpdate' in $store.getters.apis)"
           :loading="loading"
           type="primary"
+          ref="submit"
           @click="handleSubmit">{{ $t('label.apply') }}</a-button>
         <a-button
           style="float: right;"
@@ -62,9 +63,6 @@ import { api } from '@/api'
 
 export default {
   name: 'EmailTemplateDetails',
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   data () {
     return {
       resource: {},
@@ -100,6 +98,7 @@ export default {
       this.formModel.templatebody = this.resource.templatebody || null
     },
     handleSubmit () {
+      if (this.loading) return
       const params = {}
       params.templatesubject = this.formModel.templatesubject
       params.templatebody = this.formModel.templatebody

@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div>
+    <div v-ctrl-enter="handleSubmit">
       <div class="vm-modal__header">
         <span style="min-width: 200px;">{{ $t('label.name') }}</span>
         <span>{{ $t('label.state') }}</span>
@@ -35,13 +35,17 @@
             <span>
               {{ vm.name }}
             </span>
-            <a-icon v-if="addVmModalNicLoading" type="loading"></a-icon>
+            <loading-outlined v-if="addVmModalNicLoading"  />
             <a-select
-              :autoFocus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
+              v-focus="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id && index === 0"
               v-else-if="!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id"
               mode="multiple"
-              v-model="iLb.vmguestip[index]"
-            >
+              v-model:value="iLb.vmguestip[index]"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
                 {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
@@ -54,7 +58,7 @@
           <span>{{ vm.account }}</span>
           <span>{{ vm.zonename }}</span>
           <a-checkbox
-            :autoFocus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
+            v-focus="!(!addVmModalNicLoading && iLb.virtualmachineid[index] === vm.id) && index === 0"
             :value="vm.id"
             @change="e => fetchNics(e, index)" />
         </div>
@@ -70,7 +74,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -80,7 +84,7 @@
       <a-button @click="closeModal">
         {{ $t('label.cancel') }}
       </a-button>
-      <a-button type="primary" @click="handleSubmit">
+      <a-button type="primary" ref="submit" @click="handleSubmit">
         {{ $t('label.ok') }}
       </a-button>
     </div>
@@ -195,6 +199,9 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit () {
+      if (this.fetchLoading) {
+        return
+      }
       var j = 0
       this.params = {}
       for (var i = 0; i < this.iLb.virtualmachineid.length; i++) {

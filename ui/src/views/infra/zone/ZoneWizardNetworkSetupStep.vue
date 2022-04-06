@@ -83,7 +83,7 @@
         @submitLaunchZone="submitLaunchZone"
         :fields="guestTrafficFields"
         :prefillContent="prefillContent"
-        :description="guestTrafficDescription[this.zoneType.toLowerCase()]"
+        :description="guestTrafficDescription[zoneType.toLowerCase()]"
         :isFixError="isFixError"
       />
     </div>
@@ -95,7 +95,7 @@
         @fieldsChanged="fieldsChanged"
         @submitLaunchZone="submitLaunchZone"
         :prefillContent="prefillContent"
-        :description="guestTrafficDescription[this.zoneType.toLowerCase()]"
+        :description="guestTrafficDescription[zoneType.toLowerCase()]"
         :isFixError="isFixError"
       />
     </div>
@@ -115,6 +115,7 @@
 </template>
 
 <script>
+import { nextTick } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import ZoneWizardPhysicalNetworkSetupStep from '@views/infra/zone/ZoneWizardPhysicalNetworkSetupStep'
@@ -148,13 +149,13 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType ? this.prefillContent.zoneType.value : null
+      return this.prefillContent?.zoneType || null
     },
     sgEnabled () {
-      return this.prefillContent.securityGroupsEnabled ? this.prefillContent.securityGroupsEnabled.value : false
+      return this.prefillContent?.securityGroupsEnabled || false
     },
     havingNetscaler () {
-      return this.prefillContent.networkOfferingSelected ? this.prefillContent.networkOfferingSelected.havingNetscaler : false
+      return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
     guestTrafficRangeMode () {
       return this.zoneType === 'Basic' ||
@@ -372,7 +373,7 @@ export default {
   created () {
     this.physicalNetworks = this.prefillContent.physicalNetworks
     this.steps = this.filteredSteps()
-    this.currentStep = this.prefillContent.networkStep ? this.prefillContent.networkStep : 0
+    this.currentStep = this.prefillContent?.networkStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.formKey === this.stepChild)
     }
@@ -402,7 +403,6 @@ export default {
         description: 'NetScaler SDX LoadBalancer'
       })
       this.netscalerType = items
-      this.$forceUpdate()
     },
     nextPressed () {
       if (this.currentStep === this.steps.length - 1) {
@@ -426,7 +426,7 @@ export default {
       if (!this.isMobile()) {
         return
       }
-      this.$nextTick(() => {
+      nextTick().then(() => {
         if (!this.$refs.zoneNetStep) {
           return
         }

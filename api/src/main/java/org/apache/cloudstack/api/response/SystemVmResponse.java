@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.host.Status;
@@ -29,7 +29,7 @@ import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
-public class SystemVmResponse extends BaseResponse {
+public class SystemVmResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the ID of the system VM")
     private String id;
@@ -169,6 +169,10 @@ public class SystemVmResponse extends BaseResponse {
     @SerializedName("version")
     @Param(description = "the systemvm agent version", since = "4.13.1")
     private String version;
+
+    @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
+    @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
+    private Boolean isDynamicallyScalable;
 
     @Override
     public String getObjectId() {
@@ -441,5 +445,13 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public Boolean getDynamicallyScalable() {
+        return isDynamicallyScalable;
+    }
+
+    public void setDynamicallyScalable(Boolean dynamicallyScalable) {
+        isDynamicallyScalable = dynamicallyScalable;
     }
 }

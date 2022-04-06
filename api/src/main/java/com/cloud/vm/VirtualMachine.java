@@ -323,8 +323,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     long getServiceOfferingId();
 
-    Long getDiskOfferingId();
-
     Long getBackupOfferingId();
 
     String getBackupExternalId();
@@ -341,5 +339,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, 
 
     @Override
     boolean isDisplay();
+
+    boolean isDynamicallyScalable();
 
 }

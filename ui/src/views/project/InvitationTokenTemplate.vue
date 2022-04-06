@@ -16,33 +16,31 @@
 // under the License.
 
 <template>
-  <div class="row-project-invitation">
+  <div class="row-project-invitation" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
-        <a-form-item :label="$t('label.projectid')">
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        layout="vertical"
+       >
+        <a-form-item ref="projectid" name="projectid" :label="$t('label.projectid')">
           <a-input
-            v-decorator="['projectid', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]"
+            v-model:value="form.projectid"
             :placeholder="apiParams.projectid.description"
-            autoFocus
+            v-focus="true"
           />
         </a-form-item>
-        <a-form-item :label="$t('label.token')">
+        <a-form-item ref="token" name="token" :label="$t('label.token')">
           <a-input
-            v-decorator="['token', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]"
+            v-model:value="form.token"
             :placeholder="apiParams.token.description"
           />
         </a-form-item>
-        <div class="card-footer">
-          <!-- ToDo extract as component -->
-          <a-button @click="() => $emit('close-action')">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+
+        <div :span="24" class="action-button">
+          <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -50,12 +48,12 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
   name: 'InvitationTokenTemplate',
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('updateProjectInvitation')
   },
   data () {
@@ -63,14 +61,20 @@ export default {
       loading: false
     }
   },
+  created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({
+      projectid: [{ required: true, message: this.$t('message.error.required.input') }],
+      token: [{ required: true, message: this.$t('message.error.required.input') }]
+    })
+  },
   methods: {
     handleSubmit (e) {
       e.preventDefault()
-
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const title = this.$t('label.accept.project.invitation')
         const description = this.$t('label.projectid') + ' ' + values.projectid
@@ -88,6 +92,8 @@ export default {
           this.loading = false
           setTimeout(loading, 1000)
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     checkForAddAsyncJob (json, title, description) {
@@ -100,9 +106,9 @@ export default {
               hasJobId = true
               const jobId = json[obj][res]
               this.$pollJob({
-                title: title,
-                jobid: jobId,
-                description: description,
+                title,
+                jobId,
+                description,
                 showLoading: false
               })
             }
@@ -119,13 +125,5 @@ export default {
 <style lang="less" scoped>
 .row-project-invitation {
   min-width: 450px;
-}
-
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
-  }
 }
 </style>

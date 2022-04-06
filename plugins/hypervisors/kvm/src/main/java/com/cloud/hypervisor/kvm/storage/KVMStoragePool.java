@@ -19,9 +19,9 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
@@ -70,4 +70,6 @@ public interface KVMStoragePool {
     PhysicalDiskFormat getDefaultFormat();
 
     public boolean createFolder(String path);
+
+    public boolean supportsConfigDriveIso();
 }

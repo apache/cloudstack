@@ -76,6 +76,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account);
         accounts = Account.list(cls.apiclient, id=cls.account.id)
         cls.expectedCount = int(accounts[0].primarystoragetotal)
         cls.volumeTotal = int(accounts[0].volumetotal)
@@ -88,6 +89,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 cls.apiclient,
                 cls.services["shared_network_offering"]
             )
+            cls._cleanup.append(cls.network_offering)
             cls.network_offering.update(cls.apiclient, state='Enabled')
 
             cls.account_network = Network.create(
@@ -98,11 +100,13 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 accountid=cls.account.name,
                 domainid=cls.account.domainid
             )
+            cls._cleanup.append(cls.account_network)
         else:
             cls.network_offering = NetworkOffering.create(
                 cls.apiclient,
                 cls.services["isolated_network_offering"],
             )
+            cls._cleanup.append(cls.network_offering)
             # Enable Network offering
             cls.network_offering.update(cls.apiclient, state='Enabled')
 
@@ -115,31 +119,25 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 cls.account.name,
                 cls.account.domainid
             )
+            cls._cleanup.append(cls.account_network)
 
         # Create small service offering
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"]
         )
+        cls._cleanup.append(cls.service_offering)
 
         # Create disk offering
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.services["disk_offering"],
         )
-
         cls._cleanup.append(cls.disk_offering)
-        cls._cleanup.append(cls.service_offering)
-        cls._cleanup.append(cls.account);
-        cls._cleanup.append(cls.network_offering)
 
     @classmethod
-    def tearDownClass(self):
-        try:
-            cleanup_resources(self.apiclient, self._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+    def tearDownClass(cls):
+        super(TestVolumeDestroyRecover, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -147,11 +145,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVolumeDestroyRecover, self).tearDown()
 
     def verify_resource_count_primary_storage(self, expectedCount, volumeTotal):
         response = matchResourceCount(
@@ -200,6 +194,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
             )
+            self.cleanup.append(virtual_machine_1)
         except Exception as e:
             self.fail("Exception while deploying virtual machine: %s" % e)
 
@@ -229,6 +224,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
         # destroy vm
         virtual_machine_1.delete(self.apiclient, expunge=False)
+        self.cleanup.remove(virtual_machine_1)
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal)
 
         # expunge vm
@@ -261,6 +257,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             zoneid=self.zone.id, account=self.account.name,
             domainid=self.account.domainid, diskofferingid=self.disk_offering.id
         )
+        self.cleanup.append(volume)
         self.expectedCount = self.expectedCount + self.disk_offering.disksize
         self.volumeTotal = self.volumeTotal + 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -271,6 +268,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
         # Destroy volume (expunge=True)
         volume.destroy(self.apiclient, expunge=True)
+        self.cleanup.remove(volume)
 
         self.expectedCount = self.expectedCount - self.disk_offering.disksize
         self.volumeTotal = self.volumeTotal - 1
@@ -300,6 +298,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
             )
+            self.cleanup.append(virtual_machine_2)
         except Exception as e:
             self.fail("Exception while deploying virtual machine: %s" % e)
 
@@ -313,6 +312,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             zoneid=self.zone.id, account=self.account.name,
             domainid=self.account.domainid, diskofferingid=self.disk_offering.id
         )
+        self.cleanup.append(volume)
         self.expectedCount = self.expectedCount + self.disk_offering.disksize
         self.volumeTotal = self.volumeTotal + 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -322,11 +322,16 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
 
         # Detach volume from vm
+        virtual_machine_2.stop(self.apiclient)
         virtual_machine_2.detach_volume(self.apiclient, volume)
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
 
+        # save id for later recovery and expunge
+        volumeUuid = volume.id
+
         # Destroy volume (expunge=False)
-        volume.destroy(self.apiclient)
+        volume.destroy(self.apiclient, expunge=False)
+        self.cleanup.remove(volume)
         self.expectedCount = self.expectedCount - self.disk_offering.disksize
         self.volumeTotal = self.volumeTotal - 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -337,6 +342,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
         # Destroy VM (expunge=True)
         virtual_machine_2.delete(self.apiclient, expunge=True)
+        self.cleanup.remove(virtual_machine_2)
         self.expectedCount = self.expectedCount - self.templatesize
         self.volumeTotal = self.volumeTotal - 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -347,13 +353,13 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
             Steps:
             # 1. create vm without data disk, resource count increases.
-            # 2. restore vm. resource count no changes. 
+            # 2. restore vm. resource count no changes.
             # 3. check old root disk , should be Destroy state
             # 4. recover old root disk. resource count increases.
             # 5. delete old root disk . resource count decreases.
             # 6. destroy vm (expunge=True). resource count decreased with size of root disk
         """
-        
+
         # Create vm
         try:
             virtual_machine_3 = VirtualMachine.create(
@@ -365,6 +371,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
             )
+            self.cleanup.append(virtual_machine_3)
         except Exception as e:
             self.fail("Exception while deploying virtual machine: %s" % e)
 
@@ -372,7 +379,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
         self.volumeTotal = self.volumeTotal + 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
 
-        # Get id of root disk 
+        # Get id of root disk
         root_volumes_list = Volume.list(
             self.apiclient,
             virtualmachineid=virtual_machine_3.id,
@@ -416,6 +423,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
         # Destroy VM (expunge=True)
         virtual_machine_3.delete(self.apiclient, expunge=True)
+        self.cleanup.remove(virtual_machine_3)
         self.expectedCount = self.expectedCount - self.templatesize
         self.volumeTotal = self.volumeTotal - 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -432,7 +440,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             # 5. destroy volume (expunge = false), Exception happened. resource count no changes
             # 6. destroy volume (expunge = true). volume is not found. resource count no changes.
         """
-        
+
         # Create vm
         try:
             virtual_machine_4 = VirtualMachine.create(
@@ -444,6 +452,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
                 templateid=self.template.id,
                 zoneid=self.zone.id
             )
+            self.cleanup.append(virtual_machine_4)
         except Exception as e:
             self.fail("Exception while deploying virtual machine: %s" % e)
 
@@ -474,6 +483,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
         # Destroy VM (expunge=True)
         virtual_machine_4.delete(self.apiclient, expunge=True)
+        self.cleanup.remove(virtual_machine_4)
         self.expectedCount = self.expectedCount - self.templatesize
         self.volumeTotal = self.volumeTotal - 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
@@ -504,4 +514,5 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             # 2. resource count should not be changed
         """
         self.account_network.delete(self.apiclient)
+        self._cleanup.remove(self.account_network)
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal)

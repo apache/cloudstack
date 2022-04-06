@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.rmi.RemoteException;
 import java.time.Duration;
 import java.time.Instant;
@@ -60,6 +61,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -96,6 +98,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -147,6 +150,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -161,7 +165,6 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -249,7 +252,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private String _recycleHungWorker = "false";
     private int _additionalPortRangeStart;
     private int _additionalPortRangeSize;
-    private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
     private String _rootDiskController = DiskControllerType.ide.toString();
 
@@ -293,7 +295,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -369,8 +371,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
-
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
@@ -469,6 +469,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOldestExistentHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = hostDao.findOldestExistentHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -521,6 +544,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOldestExistentHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
@@ -1038,11 +1066,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public int getRouterExtraPublicNics() {
-        return _routerExtraPublicNics;
-    }
-
-    @Override
     public Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId) {
         CiscoNexusVSMDeviceVO nexusVSM = null;
         ClusterVSMMapVO vsmMapVO = null;
@@ -1242,16 +1265,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         final String oldVCenterHost = vmwareDc.getVcenterHost();
 
-        if (!Strings.isNullOrEmpty(userName)) {
+        if (StringUtils.isNotEmpty(userName)) {
             vmwareDc.setUser(userName);
         }
-        if (!Strings.isNullOrEmpty(password)) {
+        if (StringUtils.isNotEmpty(password)) {
             vmwareDc.setPassword(password);
         }
-        if (!Strings.isNullOrEmpty(vCenterHost)) {
+        if (StringUtils.isNotEmpty(vCenterHost)) {
             vmwareDc.setVcenterHost(vCenterHost);
         }
-        if (!Strings.isNullOrEmpty(vmwareDcName)) {
+        if (StringUtils.isNotEmpty(vmwareDcName)) {
             vmwareDc.setVmwareDatacenterName(vmwareDcName);
         }
         vmwareDc.setGuid(String.format("%s@%s", vmwareDc.getVmwareDatacenterName(), vmwareDc.getVcenterHost()));
@@ -1266,7 +1289,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             clusterDetails.put("username", vmwareDc.getUser());
                             clusterDetails.put("password", vmwareDc.getPassword());
                             final String clusterUrl = clusterDetails.get("url");
-                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && !Strings.isNullOrEmpty(clusterUrl)) {
+                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && StringUtils.isNotEmpty(clusterUrl)) {
                                 clusterDetails.put("url", clusterUrl.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             clusterDetailsDao.persist(cluster.getId(), clusterDetails);
@@ -1276,7 +1299,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             hostDetails.put("username", vmwareDc.getUser());
                             hostDetails.put("password", vmwareDc.getPassword());
                             final String hostGuid = hostDetails.get("guid");
-                            if (!Strings.isNullOrEmpty(hostGuid)) {
+                            if (StringUtils.isNotEmpty(hostGuid)) {
                                 hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             hostDetailsDao.persist(host.getId(), hostDetails);

@@ -167,6 +167,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException {
+        return null;
+    }
+
+    @Override
+    public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        return false;
+    }
+
+    @Override
     public IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
         InsufficientAddressCapacityException, ConcurrentOperationException {
         return null;
@@ -646,7 +656,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain,
                                       Account owner, Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String gatewayv6,
-                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
+                                      String cidrv6, Boolean displayNetworkEnabled, String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId, String routerIp, String routerIpv6) throws ConcurrentOperationException, InsufficientCapacityException,
         ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
