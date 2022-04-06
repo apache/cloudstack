@@ -17,10 +17,13 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
+import com.cloud.user.UserData;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.EntityReference;
 
+@EntityReference(value = UserData.class)
 public class UserDataResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.ID)

@@ -68,7 +68,7 @@ public class RegisterUserDataCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Name of the keypair")
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, required = true, description = "list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
     private String params;
 
 

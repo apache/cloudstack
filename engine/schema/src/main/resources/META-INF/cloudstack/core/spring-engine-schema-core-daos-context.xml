@@ -183,6 +183,7 @@
   <bean id="resourceTagsDaoImpl" class="com.cloud.tags.dao.ResourceTagsDaoImpl" />
   <bean id="routerNetworkDaoImpl" class="com.cloud.network.dao.RouterNetworkDaoImpl" />
   <bean id="sSHKeyPairDaoImpl" class="com.cloud.user.dao.SSHKeyPairDaoImpl" />
+  <bean id="userDataDaoImpl" class="com.cloud.user.dao.UserDataDaoImpl" />
   <bean id="secondaryStorageVmDaoImpl" class="com.cloud.vm.dao.SecondaryStorageVmDaoImpl" />
   <bean id="securityGroupDaoImpl" class="com.cloud.network.security.dao.SecurityGroupDaoImpl" />
   <bean id="securityGroupJoinDaoImpl" class="com.cloud.api.query.dao.SecurityGroupJoinDaoImpl" />

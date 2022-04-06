@@ -25,6 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -85,7 +86,12 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        VirtualMachineTemplate result = _templateService.linkUserDataToTemplate(this);
+        VirtualMachineTemplate result = null;
+        try {
+            result = _templateService.linkUserDataToTemplate(this);
+        } catch (CloudRuntimeException e) {
+            throw new CloudRuntimeException(String.format("Failed to link userdata to template, due to: %s", e.getLocalizedMessage()), e);
+        }
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(getResponseView(), result);
             response.setObjectName("template");
@@ -93,9 +99,8 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to link userdata to template");
         }
-
     }
 
     @Override
