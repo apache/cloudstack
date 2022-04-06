@@ -853,7 +853,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             VDI.Record vdir;
             vdir = vdi.getRecord(conn);
-            s_logger.debug("Succesfully created VDI: Uuid = " + vdir.uuid);
+            s_logger.debug("Successfully created VDI: Uuid = " + vdir.uuid);
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setName(vdir.nameLabel);

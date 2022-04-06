@@ -211,6 +211,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.guru.VMwareGuru;
@@ -1158,7 +1159,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 Thread.currentThread();
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get mac.");
+                s_logger.debug("[ignored] interrupted while trying to get mac.");
             }
         }
 
@@ -3930,8 +3931,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            Map<String, String> hostDetails = new HashMap<String, String>();
+            ManagedObjectReference morHost = hyperHost.getMor();
+            HostMO hostMo = new HostMO(context, morHost);
+            boolean uefiLegacySupported = hostMo.isUefiLegacySupported();
+            if (uefiLegacySupported) {
+                hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
+
             if (hyperHost.isHyperHostConnected()) {
-                return new ReadyAnswer(cmd);
+                return new ReadyAnswer(cmd, hostDetails);
             } else {
                 return new ReadyAnswer(cmd, "Host is not in connect state");
             }
@@ -6496,7 +6506,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException ex) {
-                        s_logger.debug("[ignored] interupted while waiting to retry connect after failure.", e);
+                        s_logger.debug("[ignored] interrupted while waiting to retry connect after failure.", e);
                     }
                 }
             }
@@ -6504,7 +6514,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
-                s_logger.debug("[ignored] interupted while waiting to retry connect.");
+                s_logger.debug("[ignored] interrupted while waiting to retry connect.");
             }
         }
 

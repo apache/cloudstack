@@ -213,10 +213,23 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control node configuration file", e);
         }
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-        controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
-                hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        List<String> keypairs = new ArrayList<String>();
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
+        if (zone.isSecurityGroupEnabled()) {
+            List<Long> securityGroupIds = new ArrayList<>();
+            securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
+            controlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
+            hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, keypairs,
+                    requestedIps, addrs, null, null, null, customParameterMap, null, null, null,
+                    null, true, null, UserVmManager.CKS_NODE);
+        } else {
+            controlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
+                    hostName, hostName, null, null, null,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                    requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        }
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }
@@ -272,11 +285,26 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes control configuration file", e);
         }
+
         String base64UserData = Base64.encodeBase64String(k8sControlNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-        additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
-                hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        List<String> keypairs = new ArrayList<String>();
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
+        if (zone.isSecurityGroupEnabled()) {
+            List<Long> securityGroupIds = new ArrayList<>();
+            securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
+            additionalControlVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
+                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, keypairs,
+                    null, addrs, null, null, null, customParameterMap, null, null, null,
+                    null, true, null, UserVmManager.CKS_NODE);
+        } else {
+            additionalControlVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
+                    hostName, hostName, null, null, null,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                    null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        }
+
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", additionalControlVm.getUuid(), hostName, kubernetesCluster.getName()));
         }

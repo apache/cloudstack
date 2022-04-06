@@ -17,8 +17,8 @@
       "label.keypair": "keypair-en",
       "label.filterby": "filterby-en",
       "label.refresh": "refresh-en",
-      "message.error.required.input": "required-en",
-      "message.error.select": "select-en",
+      "message.error.required.input": "required-input",
+      "message.error.select": "required-select",
       "label.search": "search-en",
       "label.quota.configuration": "quota-configuration-en",
       "label.quota.value": "quota-value-en",
@@ -35,10 +35,12 @@
       "error.fetching.async.job.result": "Error encountered while fetching async job result",
       "label.cancel": "cancel",
       "label.ok": "ok",
-      "label.close": "close",
-      "label.success": "close",
-      "state.failed": "state.failed",
-      "state.inprogress": "state.inprogress",
+      "label.title": "title",
+      "label.copyid": "label.copyid",
+      "label.templatename": "label.templatename",
+      "message.validate.equalto": "message validate password",
+      "message.validate.number": "required-number",
+      "message.switch.to": "message.switch.to",
       "label.state": "label.state",
       "label.hostname": "label.hostname",
       "label.hostid": "label.hostid",
@@ -53,7 +55,13 @@
       "label.sizegb": "label.sizegb",
       "label.current": "label.current",
       "label.created": "label.created",
-      "label.order": "label.order"
+      "label.order": "label.order",
+      "label.operation.status": "label.operation.status",
+      "label.success": "label.success",
+      "state.failed": "state.failed",
+      "state.inprogress": "state.inprogress",
+      "label.close": "label.close",
+      "label.columns": "label.columns"
     },
     "de": {
       "labelname": "test-name-de",
@@ -90,25 +98,8 @@
       "error.fetching.async.job.result": "Error encountered while fetching async job result",
       "label.cancel": "cancel",
       "label.ok": "ok",
-      "label.close": "close",
-      "label.success": "close",
-      "state.failed": "state.failed",
-      "state.inprogress": "state.inprogress",
-      "label.state": "label.state",
-      "label.hostname": "label.hostname",
-      "label.hostid": "label.hostid",
-      "label.zonename": "label.zonename",
-      "label.zone": "label.zone",
-      "label.zoneid": "label.zoneid",
-      "label.ip": "label.ip",
-      "label.ipaddress": "label.ipaddress",
-      "label.privateip": "label.privateip",
-      "label.linklocalip": "label.linklocalip",
-      "label.size": "label.size",
-      "label.sizegb": "label.sizegb",
-      "label.current": "label.current",
-      "label.created": "label.created",
-      "label.order": "label.order"
+      "label.title": "title",
+      "label.columns": "label.columns"
     }
   },
   "apis": {
@@ -195,56 +186,6 @@
       ],
       "response": []
     },
-    "testApiNameCase7": {
-      "params": [
-        {
-          "name": "column2",
-          "type": "string"
-        },
-        {
-          "name": "column1",
-          "type": "string"
-        },
-        {
-          "name": "column3",
-          "type": "string"
-        },
-        {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "id",
-          "type": "string"
-        }
-      ],
-      "response": []
-    },
-    "testApiNameCase8": {
-      "params": [
-        {
-          "name": "column2",
-          "type": "string"
-        },
-        {
-          "name": "column1",
-          "type": "string"
-        },
-        {
-          "name": "column3",
-          "type": "string"
-        },
-        {
-          "name": "name",
-          "type": "string"
-        },
-        {
-          "name": "id",
-          "type": "string"
-        }
-      ],
-      "response": []
-    },
     "listTemplates": {
       "params": {},
       "response": []
@@ -276,6 +217,14 @@
     "quotaEmailTemplateList": {
       "params": {},
       "response": []
+    },
+    "archiveEvents": {
+      "params": {},
+      "response": []
+    },
+    "listProjects": {
+      "params": {},
+      "response": []
     }
   },
   "info": {
@@ -283,6 +232,414 @@
     "account": "test-account",
     "domainid": "test-domain-id"
   },
-  "headerNotices": [],
-  "asyncJobIds": []
+  "routes": [
+    {
+      "name": "deployVirtualMachine",
+      "path": "/deployVirtualMachine",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "template",
+      "path": "/template",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "iso",
+      "path": "/iso",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "account",
+      "path": "/account",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "guestnetwork",
+      "path": "/guestnetwork",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "vm",
+      "path": "/vm",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "role",
+      "path": "/role",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "quotaemailtemplate",
+      "path": "/quotaemailtemplate",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "globalsetting",
+      "path": "/globalsetting",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter1",
+      "path": "/test-router-1",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter2",
+      "path": "/test-router-2",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter3",
+      "path": "/test-router-3",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter4",
+      "path": "/test-router-4",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "path": "/test-router-5",
+      "meta": {
+        "name": "testRouter5",
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter6",
+      "path": "/test-router-6/:id",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter7",
+      "path": "/test-router-7",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"],
+        "columns": ["column1", "column2", "column3"],
+        "actions": [
+          {
+            "label": "labelname",
+            "api": "testApiNameCase1",
+            "icon": "plus-outlined",
+            "listView": true
+          }
+        ]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter8",
+      "path": "/test-router-8",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase4"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter9",
+      "path": "/test-router-9",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"],
+        "columns": [{ "name": "string" }]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter10",
+      "path": "/test-router-10",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase2"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter11",
+      "path": "/test-router-11",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase3"],
+        "params": { "key": "test-value" }
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter12",
+      "path": "/ssh/:id",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter13",
+      "path": "/ldapsetting/:id",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter14",
+      "path": "/templates",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {},
+      "children": [{
+        "name": "testRouter14-1",
+        "path": "/template/:id",
+        "meta": {
+          "title": "label.title",
+          "icon": "play-circle-outlined"
+        },
+        "component": {}
+      }]
+    },
+    {
+      "name": "testRouter16",
+      "path": "/ssh",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter17",
+      "path": "/ldapsetting",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter18",
+      "path": "/test-router-18",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter19",
+      "path": "/test-router-19",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter20",
+      "path": "/test-router-20",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter21",
+      "path": "/test-router-21",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter22",
+      "path": "/test-router-22",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter23",
+      "path": "/test-router-23",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined",
+        "permission": ["testApiNameCase1"]
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter24",
+      "path": "/test-router-24",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter25",
+      "path": "/test-router-25",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter26",
+      "path": "/test-router-26",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter27",
+      "path": "/test-router-27",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter28",
+      "path": "/test-router-28",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter29",
+      "path": "/test-router-29",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter30",
+      "path": "/test-router-30",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter31",
+      "path": "/test-router-31",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter32",
+      "path": "/test-router-32",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter33",
+      "path": "/test-router-33",
+      "meta": {
+        "title": "label.title",
+        "icon": "play-circle-outlined"
+      },
+      "component": {}
+    }
+  ]
 }

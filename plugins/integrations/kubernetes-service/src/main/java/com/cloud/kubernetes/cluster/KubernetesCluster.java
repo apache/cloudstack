@@ -136,4 +136,5 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     boolean getAutoscalingEnabled();
     Long getMinSize();
     Long getMaxSize();
+    Long getSecurityGroupId();
 }

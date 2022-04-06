@@ -858,7 +858,7 @@ class TestHAProxyStickyness(cloudstackTestCase):
         # * by passing the Invlaid parameter
         # * Invalid method name
         # * required parameter not present
-        # * passing invalid values to valid paramters.
+        # * passing invalid values to valid parameters.
 
         self.debug("Creating LB rule for account: %s" % self.account.name)
         lb_rule = self.create_LB_Rule(

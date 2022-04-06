@@ -238,7 +238,7 @@
         class="com.cloud.network.router.NicProfileHelperImpl" />
         
     <bean id="routerDeploymentDefinitionBuilder"
-        class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder" />
+        class="org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder" />
 
     <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
         <property name="name" value="ApiAsyncJobDispatcher" />

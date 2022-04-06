@@ -27,33 +27,25 @@
     :visible="showAction"
     :footer="null"
     @cancel="onClose"
-    v-ctrl-enter="submitTariff"
   >
     <a-form
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       layout="vertical"
-      @submit="submitTariff">
-      <a-form-item :label="$t('label.quota.value')">
+      @finish="submitTariff"
+      v-ctrl-enter="submitTariff"
+     >
+      <a-form-item name="value" ref="value" :label="$t('label.quota.value')">
         <a-input
-          autoFocus
-          v-decorator="['value', {
-            rules: [{
-              required: true,
-              message: `${$t('message.error.required.input')}`
-            }]
-          }]"></a-input>
+          v-focus="true"
+          v-model:value="form.value"></a-input>
       </a-form-item>
-      <a-form-item :label="$t('label.quota.tariff.effectivedate')">
+      <a-form-item name="startdate" ref="startdate" :label="$t('label.quota.tariff.effectivedate')">
         <a-date-picker
           :disabledDate="disabledDate"
           style="width: 100%"
-          v-decorator="['startdate', {
-            rules: [{
-              type: 'object',
-              required: true,
-              message: `${$t('message.error.date')}`
-            }]
-          }]"></a-date-picker>
+          v-model:value="form.startdate"></a-date-picker>
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -65,6 +57,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import moment from 'moment'
 
@@ -87,23 +80,28 @@ export default {
     }
   },
   inject: ['parentFetchData'],
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  mounted () {
-    this.form.getFieldDecorator('value', {
-      initialValue: this.resource.tariffValue
-    })
+  created () {
+    this.initForm()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        value: this.resource.tariffValue
+      })
+      this.rules = reactive({
+        value: [{ required: true, message: this.$t('message.error.required.input') }],
+        startdate: [{ type: 'object', required: true, message: this.$t('message.error.date') }]
+      })
+    },
     onClose () {
       this.$emit('edit-tariff-action', false)
     },
     submitTariff (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((error, values) => {
-        if (error) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         const params = {}
         params.usageType = this.resource.usageType
@@ -132,6 +130,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     disabledDate (current) {

@@ -31,51 +31,55 @@
       :ok-button-props="{props: { type: 'default' } }"
       :cancel-button-props="{props: { type: 'primary' } }"
       centered>
-      <span slot="title">
+      <template #title>
         {{ $t(message.title) }}
-      </span>
+      </template>
       <span>
         <a-alert
           v-if="isDestructiveAction()"
           type="error">
-          <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-          <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t(message.confirmMessage)" />
+          <template #message>
+            <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+            <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+            <span v-html="$t(message.confirmMessage)" />
+          </template>
         </a-alert>
         <a-alert v-else type="warning">
-          <span v-if="selectedRowKeys.length > 0" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t(message.confirmMessage)" />
+          <template #message>
+            <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+            <span v-html="$t(message.confirmMessage)" />
+          </template>
         </a-alert>
         <a-divider />
         <a-table
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => this.$route.path.includes('/iso/') ? record.zoneid : record.id"
+          :rowKey="(record, idx) => $route.path.includes('/iso/') ? record.zoneid : record.id"
           :pagination="true"
           style="overflow-y: auto">
-          <template slot="algorithm" slot-scope="record">
+          <template #algorithm="{record}">
             {{ returnAlgorithmName(record.algorithm) }}
           </template>
-          <template v-for="(column, index) in selectedColumns" :slot="column" slot-scope="text" >
-            <span :key="index"> {{ text }} ==== {{ column }} </span>
+          <template #column="{ text }">
+            <span v-for="(column, index) in selectedColumns" :key="index"> {{ text }} ==== {{ column }}</span>
           </template>
-          <template slot="privateport" slot-scope="record">
+          <template #privateport="{record}">
             {{ record.privateport }} - {{ record.privateendport }}
           </template>
-          <template slot="publicport" slot-scope="record">
+          <template #publicport="{record}">
             {{ record.publicport }} - {{ record.publicendport }}
           </template>
-          <template slot="protocol" slot-scope="record">
-            {{ record.protocol | capitalise }}
+          <template #protocol="{record}">
+            {{ capitalise(record.protocol) }}
           </template>
-          <template slot="vm" slot-scope="record">
-            <div><a-icon type="desktop"/> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
+          <template #vm="{record}">
+            <div><desktop-outlined /> {{ record.virtualmachinename }} ({{ record.vmguestip }})</div>
           </template>
-          <template slot="startport" slot-scope="record">
+          <template #startport="{record}">
             {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
           </template>
-          <template slot="endport" slot-scope="record">
+          <template #endport="{record}">
             {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
           </template>
         </a-table>
