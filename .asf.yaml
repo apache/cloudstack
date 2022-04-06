@@ -46,7 +46,7 @@ github:
   collaborators:
     - acs-robot
 
-  protected_branches:
-    main:
-      required_pull_request_reviews:
-        required_approving_review_count: 2
+  #protected_branches:
+  #  main:
+  #    required_pull_request_reviews:
+  #      required_approving_review_count: 2
