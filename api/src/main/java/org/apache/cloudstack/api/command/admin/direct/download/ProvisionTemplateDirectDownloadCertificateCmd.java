@@ -45,7 +45,7 @@ import javax.inject.Inject;
         authorized = {RoleType.Admin})
 public class ProvisionTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
-    public static final String APINAME = "provisionTemplateDirectDownloadCertificates";
+    public static final String APINAME = "provisionTemplateDirectDownloadCertificate";
 
     @Inject
     DirectDownloadManager directDownloadManager;

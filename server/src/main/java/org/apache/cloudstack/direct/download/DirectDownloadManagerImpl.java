@@ -599,18 +599,18 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return syncCertificatesResult;
     }
 
-    private List<DirectDownloadCertificateHostMapVO> getCertificateHostMappings(DirectDownloadCertificateVO certificateVO, Long hostId) {
+    private List<DirectDownloadCertificateHostMapVO> getCertificateHostMappings(DirectDownloadCertificate certificate, Long hostId) {
         List<DirectDownloadCertificateHostMapVO> maps;
         if (hostId == null) {
-            maps = directDownloadCertificateHostMapDao.listByCertificateIdAndRevoked(certificateVO.getId(), false);
+            maps = directDownloadCertificateHostMapDao.listByCertificateIdAndRevoked(certificate.getId(), false);
         } else {
-            DirectDownloadCertificateHostMapVO hostMap = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificateVO.getId(), hostId);
+            DirectDownloadCertificateHostMapVO hostMap = directDownloadCertificateHostMapDao.findByCertificateAndHost(certificate.getId(), hostId);
             if (hostMap == null) {
-                String msg = "Certificate " + certificateVO.getAlias() + " cannot be revoked from host " + hostId + " as it is not available on the host";
+                String msg = "Certificate " + certificate.getAlias() + " cannot be revoked from host " + hostId + " as it is not available on the host";
                 s_logger.error(msg);
                 throw new CloudRuntimeException(msg);
             } else if (hostMap.isRevoked()) {
-                s_logger.debug("Certificate " + certificateVO.getAlias() + " was already revoked from host " + hostId + " skipping it");
+                s_logger.debug("Certificate " + certificate.getAlias() + " was already revoked from host " + hostId + " skipping it");
                 return new LinkedList<>();
             }
             maps = Collections.singletonList(hostMap);
@@ -619,28 +619,32 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public List<HostCertificateStatus> revokeCertificate(Long certificateId, String alias, String hypervisor, Long zoneId, Long hostId) {
+    public DirectDownloadCertificate findDirectDownloadCertificateByIdOrHypervisorAndAlias(Long id, String alias, String hypervisor, Long zoneId) {
         DirectDownloadCertificateVO certificateVO;
-        if (certificateId != null) {
-            certificateVO = directDownloadCertificateDao.findById(certificateId);
-        } else if (StringUtils.isNotBlank(alias)) {
+        if (id != null) {
+            certificateVO = directDownloadCertificateDao.findById(id);
+        } else if (StringUtils.isNotBlank(alias) && StringUtils.isNotBlank(hypervisor)) {
             certificateVO = directDownloadCertificateDao.findByAlias(alias, HypervisorType.getType(hypervisor), zoneId);
         } else {
-            throw new CloudRuntimeException("Please provide a certificate ID or certificate alias");
+            throw new CloudRuntimeException("Please provide a hypervisor and certificate alias or certificate ID");
         }
-
         if (certificateVO == null) {
-            throw new CloudRuntimeException("Certificate with ID " + certificateId + " does not exist");
+            throw new CloudRuntimeException("Could not find certificate " +
+                    (id != null ? "with ID " + id : "with alias " + alias + " and hypervisor " + hypervisor));
         }
+        return certificateVO;
+    }
 
-        String certificateAlias = certificateVO.getAlias();
-        if (!certificateVO.getZoneId().equals(zoneId)) {
+    @Override
+    public List<HostCertificateStatus> revokeCertificate(DirectDownloadCertificate certificate, Long zoneId, Long hostId) {
+        String certificateAlias = certificate.getAlias();
+        if (!certificate.getZoneId().equals(zoneId)) {
             throw new CloudRuntimeException("The certificate with alias " + certificateAlias + " was uploaded " +
-                    " to the zone with ID=" + certificateVO.getZoneId() + " instead of the zone with ID=" + zoneId);
+                    " to the zone with ID=" + certificate.getZoneId() + " instead of the zone with ID=" + zoneId);
         }
 
         List<HostCertificateStatus> hostsList = new ArrayList<>();
-        List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificateVO, hostId);
+        List<DirectDownloadCertificateHostMapVO> maps = getCertificateHostMappings(certificate, hostId);
         if (CollectionUtils.isEmpty(maps)) {
             return hostsList;
         }

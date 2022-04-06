@@ -36,8 +36,11 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
@@ -57,7 +60,7 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private static final Logger LOG = Logger.getLogger(RevokeTemplateDirectDownloadCertificateCmd.class);
     public static final String APINAME = "revokeTemplateDirectDownloadCertificate";
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = DirectDownloadCertificateResponse.class,
             description = "id of the certificate")
     private Long certificateId;
@@ -94,14 +97,23 @@ public class RevokeTemplateDirectDownloadCertificateCmd extends BaseCmd {
         setResponseObject(response);
     }
 
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        if (!hypervisor.equalsIgnoreCase("kvm")) {
+    private void validateParameters() {
+        if (ObjectUtils.allNull(certificateId, certificateAlias, hypervisor) ||
+                certificateId == null && !ObjectUtils.allNotNull(certificateAlias, hypervisor)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please specify the hypervisor and the" +
+                    "certificate name to revoke or the certificate ID");
+        }
+        if (StringUtils.isNotBlank(hypervisor) && !hypervisor.equalsIgnoreCase("kvm")) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Currently supporting KVM hosts only");
         }
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        validateParameters();
         try {
-            List<HostCertificateStatus> hostsResult = directDownloadManager.revokeCertificate(certificateId,
-                    certificateAlias, hypervisor, zoneId, hostId);
+            DirectDownloadCertificate certificate = directDownloadManager.findDirectDownloadCertificateByIdOrHypervisorAndAlias(certificateId, certificateAlias, hypervisor, zoneId);
+            List<HostCertificateStatus> hostsResult = directDownloadManager.revokeCertificate(certificate, zoneId, hostId);
             createResponse(hostsResult);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed revoking certificate: " + e.getMessage());
