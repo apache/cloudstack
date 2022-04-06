@@ -198,6 +198,8 @@ firstPRWelcomeComment: >
 
   Mailing List: dev@cloudstack.apache.org (https://cloudstack.apache.org/mailing-lists.html)
 
+  Slack: https://apachecloudstack.slack.com/
+
 firstPRMergeComment: >
   Awesome work, congrats on your first merged pull request!
 
