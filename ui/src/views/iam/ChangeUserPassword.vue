@@ -111,7 +111,7 @@ export default {
       } else if (rule.field === 'confirmpassword') {
         const form = this.form
         const messageConfirm = this.$t('message.validate.equalto')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = form.password
         if (passwordVal && passwordVal !== value) {
           return Promise.reject(messageConfirm)
         } else {

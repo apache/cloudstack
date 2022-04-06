@@ -59,6 +59,10 @@ public interface NetworkService {
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,
         ConcurrentOperationException;
 
+    IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException;
+
+    boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
+
     boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
     IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,

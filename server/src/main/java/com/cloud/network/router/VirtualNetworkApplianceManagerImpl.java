@@ -63,13 +63,13 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -1215,7 +1215,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return;
         }
 
-        String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
+        String alertMessage = String.format("Health checks failed: %d failing checks on router %s / %s", failingChecks.size(), router.getName(), router.getUuid());
         _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
                 alertMessage, alertMessage);
         s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
@@ -1227,6 +1227,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String failedCheck = failingChecks.get(i);
             if (i == 0) {
                 failingChecksEvent.append("Router ")
+                        .append(router.getName())
+                        .append(" / ")
                         .append(router.getUuid())
                         .append(" has failing checks: ");
             }

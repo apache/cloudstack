@@ -133,6 +133,7 @@ public class EventTypes {
     // Network Events
     public static final String EVENT_NET_IP_ASSIGN = "NET.IPASSIGN";
     public static final String EVENT_NET_IP_RELEASE = "NET.IPRELEASE";
+    public static final String EVENT_NET_IP_RESERVE = "NET.IPRESERVE";
     public static final String EVENT_NET_IP_UPDATE = "NET.IPUPDATE";
     public static final String EVENT_PORTABLE_IP_ASSIGN = "PORTABLE.IPASSIGN";
     public static final String EVENT_PORTABLE_IP_RELEASE = "PORTABLE.IPRELEASE";

@@ -54,14 +54,11 @@
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
-
 import PageHeader from './PageHeader'
 
 export default {
   name: 'LayoutContent',
   components: {
-    RenderIcon,
     PageHeader
   },
   // ['desc', 'logo', 'title', 'avatar', 'linkList', 'extraImage']

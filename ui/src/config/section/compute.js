@@ -67,7 +67,15 @@ export default {
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
-      details: ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename'],
+      details: () => {
+        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename']
+        const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
+        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
+          return fields
+        }
+        fields.push('securitygroup')
+        return fields
+      },
       tabs: [{
         component: shallowRef(defineAsyncComponent(() => import('@/views/compute/InstanceTab.vue')))
       }],

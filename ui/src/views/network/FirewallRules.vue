@@ -295,8 +295,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       })
     },
     fetchData () {

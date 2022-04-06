@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
             2. Removes a created DataCenter by providing
             the input configuration file and data center settings file
               EX: python deployDataCenter.py -i <inp-cfg-file>
-              -r <dc_exported_entries> [-l <directory with logs and output data location>] 
+              -r <dc_exported_entries> [-l <directory with logs and output data location>]
     '''
     parser = OptionParser()
     parser.add_option("-i", "--input", action="store", default=None, dest="input",
