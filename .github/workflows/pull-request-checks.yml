@@ -35,8 +35,8 @@ jobs:
 
       - name: Install nonoss jar dependencies
         run: |
-          git clone https://github.com/shapeblue/cloudstack-nonoss.git deps
-          cd deps && bash -x install-non-oss.sh && cd ..
+          git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
+          cd nonoss && bash -x install-non-oss.sh && cd ..
 
       - name: Run Tests with JaCoCo
         run: mvn -P developer,systemvm,quality -Dsimulator -Dnoredist clean test
