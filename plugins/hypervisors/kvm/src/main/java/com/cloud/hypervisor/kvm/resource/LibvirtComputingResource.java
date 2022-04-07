@@ -457,7 +457,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             details = parser.getLines();
         }
 
-        s_logger.debug("Executing script in VR: " + script);
+        s_logger.debug("Dummy string change Executing script in VR: " + script);
 
         return new ExecutionResult(command.getExitValue() == 0, details);
     }

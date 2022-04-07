@@ -966,7 +966,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 tmpBackupScheduleVO.setAsyncJobId(jobId);
                 backupScheduleDao.update(backupScheduleId, tmpBackupScheduleVO);
             } catch (Exception e) {
-                LOG.error(String.format("Scheduling backup failed due to: [%s].", e.getMessage()), e);
+                LOG.error(String.format("Scheduling backup has failed due to: [%s].", e.getMessage()), e);
             } finally {
                 if (tmpBackupScheduleVO != null) {
                     backupScheduleDao.releaseFromLockTable(backupScheduleId);
@@ -1113,7 +1113,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         BackupOfferingVO response = backupOfferingDao.findById(id);
-        CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
+        CallContext.current().setEventDetails(String.format("Backup Offering dummy change updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
     }
