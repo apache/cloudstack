@@ -39,7 +39,7 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
 
       - name: Run Build and Tests with Coverage
-        run: mvn -B -P quality -Dsimulator -Dnoredist clean install -T 1C
+        run: mvn -P quality -Dsimulator -Dnoredist clean install
 
       - name: Generate JaCoCo Report
         uses: Madrapps/jacoco-report@fd4800e8a81e21bdf373438e5918b975df041d15
