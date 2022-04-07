@@ -1251,6 +1251,9 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${cs.jacoco-plugin.version}</version>
+                        <configuration>
+                            <propertyName>jacoco.agent.argLine</propertyName>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.openclover</groupId>
