@@ -38,19 +38,18 @@ jobs:
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
 
-      - name: Run Tests with JaCoCo
+      - name: Run Build and Tests with Coverage
         run: mvn -P quality -Dsimulator -Dnoredist clean install
 
-      #- name: Generate JaCoCo Report
-      #  id: jacoco
-      #  uses: Madrapps/jacoco-report@v1.2
-      #  with:
-      #    paths: ${{ github.workspace }}/**/jacoco.xml
-      #    token: ${{ secrets.GITHUB_TOKEN }}
-      #    min-coverage-overall: 0
-      #    min-coverage-changed-files: 80
-      #    title: PR Code Coverage
-      #    debug-mode: true
+      - name: Generate JaCoCo Report
+        uses: Madrapps/jacoco-report@v1.2
+        with:
+          paths: ${{ github.workspace }}/client/target/site/jacoco-aggregate/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 0
+          min-coverage-changed-files: 80
+          title: PR Code Coverage
+          debug-mode: true
 
       - name: SuperLinter Lint Checks
         uses: github/super-linter@v4
