@@ -338,11 +338,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateGuestNetworkForm',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -676,7 +678,8 @@ export default {
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         if (
           (!this.isValidTextValueForKey(values, 'ip4gateway') && !this.isValidTextValueForKey(values, 'netmask') &&
             !this.isValidTextValueForKey(values, 'startipv4') && !this.isValidTextValueForKey(values, 'endipv4') &&

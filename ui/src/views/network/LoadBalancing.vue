@@ -495,6 +495,7 @@
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -502,6 +503,7 @@ import eventBus from '@/config/eventBus'
 
 export default {
   name: 'LoadBalancing',
+  mixins: [mixinForm],
   components: {
     Status,
     TooltipButton,
@@ -798,7 +800,8 @@ export default {
 
       e.preventDefault()
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -962,7 +965,8 @@ export default {
       this.stickinessModalLoading = true
       e.preventDefault()
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         if (values.methodname === 'none') {
           this.handleDeleteStickinessPolicy()
           return

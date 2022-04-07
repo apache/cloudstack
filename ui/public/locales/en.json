@@ -948,6 +948,7 @@
 "label.expunge": "Expunge",
 "label.expunged": "Expunged",
 "label.expunging": "Expunging",
+"label.export.rules": "Export Rules",
 "label.external.link": "External link",
 "label.externalid": "External Id",
 "label.externalloadbalanceripaddress": "External load balancer IP address",
