@@ -15,21 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: "PR Merge Conflict Check"
-on:
-  push:
-  pull_request_target:
-    types: [synchronize]
+name: Lint Code Base
+
+on: [pull_request]
 
 jobs:
-  triage:
+  build:
+    name: SuperLinter Check
     runs-on: ubuntu-latest
     steps:
-    - name: Conflict Check
-      uses: eps1lon/actions-label-merge-conflict@v2.0.0
-      with:
-        repoToken: "${{ secrets.GITHUB_TOKEN  }}"
-        dirtyLabel: "status:has-conflicts"
-        removeOnDirtyLabel: "status:ready-for-review"
-        continueOnMissingPermissions: true
-        commentOnDirty: "Hi @${{ github.actor }}, your pull request has merge conflicts. Can you fix the conflicts and sync your branch with the base branch?"
+      - uses: actions/checkout@v3
+      - name: SuperLinter
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_PYTHON_FLAKE8: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
