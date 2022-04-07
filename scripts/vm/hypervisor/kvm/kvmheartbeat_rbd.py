@@ -18,7 +18,6 @@ def createArgumentParser():
 
 	return parser
 
-confFile='/etc/ceph/ceph.conf'
 keyringFolder='/run/cloudstack/agent'
 keyringFile='keyring'
 
@@ -39,7 +38,7 @@ def delete_cephKeyring():
 
 def watcher_list():
 	# HB RBD Image List
-	cluster = rados.Rados(conffile=confFile)
+	cluster = rados.Rados(conf={'mon_host': args.i, 'keyring': keyringFolder+"/"+keyringFile})
 	try:
 		cluster.connect()
 		ioctx = cluster.open_ioctx(args.p)
@@ -61,7 +60,7 @@ def watcher_list():
 
 def create_rbdImage():
 	# Create HB RBD Image
-	with rados.Rados(conffile=confFile) as cluster:
+	with rados.Rados(conf={'mon_host': args.i, 'keyring': keyringFolder+"/"+keyringFile}) as cluster:
 		with cluster.open_ioctx(args.p) as ioctx:
 			rbd_inst = rbd.RBD()
 			size = 1 * 1024**3  # 1 GiB
