@@ -21,7 +21,7 @@ on: [pull_request]
 
 jobs:
   build:
-    name: Pull Request Checks
+    name: Check Pull Request
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
