@@ -382,7 +382,7 @@ export default {
           }
         },
         {
-          title: 'label.LUN.number',
+          title: 'label.lun.number',
           key: 'primaryStorageLUN',
           placeHolder: 'message.error.lun',
           required: true,

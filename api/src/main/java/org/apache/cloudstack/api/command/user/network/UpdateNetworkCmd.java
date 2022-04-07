@@ -72,7 +72,7 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for guest VMs, CloudStack allocates IPs to guest VMs only from this CIDR")
     private String guestVmCidr;
 
-    @Parameter(name =ApiConstants.Update_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
+    @Parameter(name =ApiConstants.UPDATE_IN_SEQUENCE, type=CommandType.BOOLEAN, description = "if true, we will update the routers one after the other. applicable only for redundant router based networks using virtual router as provider")
     private Boolean updateInSequence;
 
     @Parameter(name = ApiConstants.DISPLAY_NETWORK,

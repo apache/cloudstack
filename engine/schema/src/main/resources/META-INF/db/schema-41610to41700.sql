@@ -652,3 +652,6 @@ INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
         INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
         WHERE ssh_keypairs.account_id = vm_instance.account_id;
 
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `security_group_id` bigint unsigned DEFAULT NULL,
+ADD CONSTRAINT `fk_kubernetes_cluster__security_group_id` FOREIGN KEY `fk_kubernetes_cluster__security_group_id`(`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE;
+

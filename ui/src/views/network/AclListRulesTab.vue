@@ -67,7 +67,7 @@
               </div>
               <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
-                <div>{{ acl.startport }}</div>
+                <div>{{ element.startport }}</div>
               </div>
               <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
@@ -120,7 +120,7 @@
         <a-form
           :ref="formRef"
           :model="form"
-          :rules="tagRules"
+          :rules="rules"
           class="add-tags"
           v-ctrl-enter="handleAddTag"
          >
@@ -138,7 +138,7 @@
               <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
-          <a-button ref="submit" type="primary" @click="handleAddTag">{{ $t('label.add') }}</a-button>
+          <a-button ref="submit" type="primary" :disabled="!(form.key && form.value)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
         <a-divider style="margin-top: 0;" />
@@ -245,7 +245,7 @@
         <a-form-item :label="$t('label.description')" ref="reason" name="reason">
           <a-textarea
             v-model:value="form.reason"
-            :autosize="{ minRows: 2 }"
+            :autoSize="{ minRows: 2 }"
             :placeholder="$t('label.acl.reason.description')" />
         </a-form-item>
 
