@@ -39,7 +39,7 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
 
       - name: Run Tests with JaCoCo
-        run: mvn -P developer,systemvm,quality -Dsimulator -Dnoredist clean test
+        run: mvn -B -P developer,systemvm,quality -Dsimulator -Dnoredist clean install -T4
 
       #- name: Generate JaCoCo Report
       #  id: jacoco

@@ -1152,7 +1152,6 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify ${jacoco.agent.argLine}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1251,9 +1250,6 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${cs.jacoco-plugin.version}</version>
-                        <configuration>
-                            <propertyName>jacoco.agent.argLine</propertyName>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.openclover</groupId>
@@ -1313,9 +1309,6 @@
                             <groupId>org.jacoco</groupId>
                             <artifactId>jacoco-maven-plugin</artifactId>
                             <version>${cs.jacoco-plugin.version}</version>
-                            <configuration>
-                                <propertyName>jacoco.agent.argLine</propertyName>
-                            </configuration>
                             <executions>
                                 <execution>
                                     <id>prepare-coverage-agent</id>
