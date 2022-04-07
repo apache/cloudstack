@@ -46,14 +46,14 @@ jobs:
       - name: Run Tests with JaCoCo
         run: mvn -P developer,systemvm,quality -Dsimulator -Dnoredist clean test
 
-      - name: Generate JaCoCo Report
-        id: jacoco
-        uses: Madrapps/jacoco-report@v1.2
-        with:
-          paths: ${{ github.workspace }}/**/jacoco.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 0
-          min-coverage-changed-files: 80
-          title: PR Code Coverage
-          debug-mode: true
+      #- name: Generate JaCoCo Report
+      #  id: jacoco
+      #  uses: Madrapps/jacoco-report@v1.2
+      #  with:
+      #    paths: ${{ github.workspace }}/**/jacoco.xml
+      #    token: ${{ secrets.GITHUB_TOKEN }}
+      #    min-coverage-overall: 0
+      #    min-coverage-changed-files: 80
+      #    title: PR Code Coverage
+      #    debug-mode: true
 
