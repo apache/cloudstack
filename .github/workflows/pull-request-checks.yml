@@ -42,7 +42,7 @@ jobs:
         run: mvn -P quality -Dsimulator -Dnoredist clean install
 
       - name: Generate JaCoCo Report
-        uses: Madrapps/jacoco-report@v1.2
+        uses: Madrapps/jacoco-report@fd4800e8a81e21bdf373438e5918b975df041d15
         with:
           paths: ${{ github.workspace }}/client/target/site/jacoco-aggregate/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
