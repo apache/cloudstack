@@ -15,17 +15,44 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Lint Code Base
+name: Check Pull Request
 
 on: [pull_request]
 
 jobs:
   build:
-    name: GitHub Super Linter
+    name: Check Pull Request
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: github/super-linter@v4
+
+      - name: Set up JDK11
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'maven'
+
+      - name: Install nonoss jar dependencies
+        run: |
+          git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
+          cd nonoss && bash -x install-non-oss.sh && cd ..
+
+      - name: Run Build and Tests with Coverage
+        run: mvn -P quality -Dsimulator -Dnoredist clean install
+
+      - name: Generate JaCoCo Report
+        uses: Madrapps/jacoco-report@v1.2
+        with:
+          paths: ${{ github.workspace }}/client/target/site/jacoco-aggregate/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 0
+          min-coverage-changed-files: 80
+          title: PR Code Coverage
+          debug-mode: true
+
+      - name: SuperLinter Lint Checks
+        uses: github/super-linter@v4
         env:
           VALIDATE_PYTHON_FLAKE8: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
