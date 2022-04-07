@@ -55,6 +55,7 @@
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
