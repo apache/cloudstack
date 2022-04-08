@@ -74,9 +74,13 @@ jobs:
           result=""
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
-            coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv |  cut -f3-9 -d"," | sed 's/,/|/g')
+            line=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv)
+            if [ -z "$line" ]; then
+              continue
+            fi
+            coverage=$(echo $line | cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
-            result="|$coverage|\n$result"
+            result=$(echo "|$coverage|\n$result")
           done
           echo "::set-output name=COVERAGE::$result"
 
@@ -89,4 +93,4 @@ jobs:
             ## PR Coverage Report
             |**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|
             |-----|-----|-----|-----|-----|-----|-----|
-            "${{ steps.coverage.outputs.COVERAGE }}"
+            ${{ steps.coverage.outputs.COVERAGE }}
