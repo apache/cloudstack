@@ -291,7 +291,6 @@ CREATE VIEW `cloud`.`volume_view` AS
         disk_offering.display_text disk_offering_display_text,
         disk_offering.use_local_storage,
         service_offering.system_use,
-        disk_offering.system_use,
         disk_offering.bytes_read_rate,
         disk_offering.bytes_write_rate,
         disk_offering.iops_read_rate,
