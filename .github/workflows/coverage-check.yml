@@ -72,7 +72,7 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P quality -Dsimulator -Dnoredist clean install
 
-          echo "# Coverage Report"
+          echo "Coverage Report"
           echo "CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED"
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
