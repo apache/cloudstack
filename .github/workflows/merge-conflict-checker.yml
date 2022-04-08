@@ -27,9 +27,11 @@ jobs:
     steps:
     - name: Conflict Check
       uses: eps1lon/actions-label-merge-conflict@v2.0.0
+      env:
+        AUTHOR: ${{ github.event.pull_request.user.login }}
       with:
-        repoToken: "${{ secrets.GITHUB_TOKEN  }}"
+        repoToken: "${{ secrets.GITHUB_TOKEN }}"
         dirtyLabel: "status:has-conflicts"
         removeOnDirtyLabel: "status:ready-for-review"
         continueOnMissingPermissions: true
-        commentOnDirty: "Hi @${{ ${{ github.event.pull_request.user.login }} }}, your pull request has merge conflicts. Can you fix the conflicts and sync your branch with the base branch?"
+        commentOnDirty: "Hi @$AUTHOR, your pull request has merge conflicts. Can you fix the conflicts and sync your branch with the base branch?"
