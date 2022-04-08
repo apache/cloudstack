@@ -1001,5 +1001,31 @@
                 </dependency>
             </dependencies>
         </profile>
+        <profile>
+            <id>quality</id>
+            <activation>
+                <property>
+                    <name>quality</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                  <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${cs.jacoco-plugin.version}</version>
+                    <executions>
+                      <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                          <goal>report-aggregate</goal>
+                        </goals>
+                      </execution>
+                    </executions>
+                  </plugin>
+                </plugins>
+              </build>
+        </profile>
     </profiles>
 </project>

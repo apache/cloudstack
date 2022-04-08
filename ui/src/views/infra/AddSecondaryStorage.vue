@@ -170,10 +170,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'AddSecondryStorage',
+  mixins: [mixinForm],
   props: {
     resource: {
       type: Object,
@@ -264,7 +266,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(async () => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         var data = {
           name: values.name

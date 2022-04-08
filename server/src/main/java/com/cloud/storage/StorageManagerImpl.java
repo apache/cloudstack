@@ -359,7 +359,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
-    // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _serverId;
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
@@ -2500,8 +2499,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
+            s_logger.debug("Found storage pool " + pool.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
 

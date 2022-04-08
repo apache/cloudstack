@@ -21,7 +21,7 @@
     <div style="width: 100%; display: flex; margin-bottom: 10px">
       <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
         <template #icon><download-outlined /></template>
-        Export Rules
+        {{ $t('label.export.rules') }}
       </a-button>
     </div>
     <div v-if="updateTable" class="loading-overlay">

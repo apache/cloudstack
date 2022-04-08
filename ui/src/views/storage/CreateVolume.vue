@@ -123,11 +123,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
+  mixins: [mixinForm],
   components: {
     ResourceIcon,
     TooltipLabel
@@ -202,7 +204,8 @@ export default {
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         api('createVolume', values).then(response => {
           this.$pollJob({
