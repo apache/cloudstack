@@ -28,7 +28,7 @@ jobs:
     - name: Conflict Check
       uses: eps1lon/actions-label-merge-conflict@v2.0.0
       env:
-        AUTHOR: ${{ github.event.pull_request.user.login }}
+        AUTHOR: "${{ github.event.pull_request.user.login }}"
       with:
         repoToken: "${{ secrets.GITHUB_TOKEN }}"
         dirtyLabel: "status:has-conflicts"
