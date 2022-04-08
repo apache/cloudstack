@@ -354,9 +354,9 @@ export default {
         },
         {
           api: 'releaseIpAddress',
-          icon: 'delete-outlined',
-          label: 'label.action.release.ip',
-          message: 'message.action.release.ip',
+          icon: 'usergroup-delete-outlined',
+          label: 'label.action.release.reserved.ip',
+          message: 'message.action.release.reserved.ip',
           dataView: true,
           show: (record) => { return record.state === 'Reserved' },
           groupAction: true,

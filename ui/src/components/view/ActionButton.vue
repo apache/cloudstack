@@ -42,9 +42,9 @@
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
-          :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
+          :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
           :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
-          :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
+          :danger="dangerIconList.includes(action.icon)"
           style="margin-left: 5px"
           :size="size"
           @click="execAction(action)">
@@ -62,8 +62,8 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
-        :type="(['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined'].includes(action.icon) ? 'primary' : 'default')"
-        :danger="['DeleteOutlined', 'delete-outlined'].includes(action.icon)"
+        :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
+        :danger="dangerIconList.includes(action.icon)"
         :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
@@ -142,6 +142,14 @@ export default {
         }
         this.handleShowBadge()
       }
+    }
+  },
+  computed: {
+    primaryIconList () {
+      return ['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
+    },
+    dangerIconList () {
+      return ['DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
     }
   },
   methods: {
