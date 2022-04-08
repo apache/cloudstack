@@ -20,7 +20,7 @@
   <div class="account-center-team" v-if="annotationType && 'listAnnotations' in $store.getters.apis">
     <a-spin :spinning="loadingAnnotations">
       <div class="title">
-        {{ $t('label.comments') }} ({{ this.itemCount }})
+        {{ $t('label.comments') }} ({{ itemCount }})
       </div>
       <a-divider :dashed="true" />
       <a-list
@@ -29,48 +29,47 @@
         itemLayout="horizontal"
         :pagination="false"
         size="small" >
-        <a-list-item slot="renderItem" slot-scope="item">
-          <a-comment
-            class="comment"
-            :content="item.annotation"
-            :datetime="$toLocaleDate(item.created)"
-            :author="item.username" >
-            <a-avatar
-              slot="avatar"
-              icon="message" />
-            <a-popconfirm
-              :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.annotation.admins.only')) + ' ?'"
-              v-if="['Admin'].includes($store.getters.userInfo.roletype)"
-              slot="actions"
-              key="visibility"
-              @confirm="updateVisibility(item)"
-              :okText="$t('label.yes')"
-              :cancelText="$t('label.no')" >
-              <a-icon
-                type="eye"
-                :style="[{
-                  color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
-                }]" />
-              <span>
-                {{ item.adminsonly ? $t('label.annotation.admins.only') : $t('label.annotation.everyone') }}
-              </span>
-            </a-popconfirm>
-          </a-comment>
-          <a-popconfirm
-            :title="$t('label.remove.annotation')"
-            v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
-            slot="actions"
-            key="visibility"
-            @confirm="deleteNote(item)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')" >
-            <a-icon
-              type="delete"
-              shape="circle"
-              theme="twoTone"
-              two-tone-color="#eb2f96" />
-          </a-popconfirm>
-        </a-list-item>
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <a-comment
+              class="comment"
+              :content="item.annotation"
+              :datetime="$toLocaleDate(item.created)"
+              :author="item.username" >
+              <template #avatar>
+                <a-avatar><template #icon><message-outlined /></template></a-avatar>
+              </template>
+              <template #actions>
+                <a-popconfirm
+                  :title="$t('label.make') + ' ' + (item.adminsonly ? $t('label.annotation.everyone') : $t('label.adminsonly')) + ' ?'"
+                  v-if="['Admin'].includes($store.getters.userInfo.roletype)"
+                  key="visibility"
+                  @confirm="updateVisibility(item)"
+                  :okText="$t('label.yes')"
+                  :cancelText="$t('label.no')" >
+                  <eye-outlined
+                    :style="[{
+                      color: item.adminsonly ? $config.theme['@primary-color'] : $config.theme['@disabled-color']
+                    }]" />
+                  <span>
+                    {{ item.adminsonly ? $t('label.adminsonly') : $t('label.annotation.everyone') }}
+                  </span>
+                </a-popconfirm>
+              </template>
+            </a-comment>
+            <template #actions>
+              <a-popconfirm
+                :title="$t('label.remove.annotation')"
+                v-if="'removeAnnotation' in $store.getters.apis && isAdminOrAnnotationOwner(item)"
+                key="visibility"
+                @confirm="deleteNote(item)"
+                :okText="$t('label.yes')"
+                :cancelText="$t('label.no')" >
+                <delete-two-tone shape="circle" two-tone-color="#eb2f96" />
+              </a-popconfirm>
+            </template>
+          </a-list-item>
+        </template>
       </a-list>
       <a-pagination
         class="row-element"
@@ -82,33 +81,37 @@
         :pageSizeOptions="['10']"
         @change="changePage"
         showQuickJumper>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
 
       <a-divider :dashed="true" />
       <a-comment v-if="'addAnnotation' in $store.getters.apis">
-        <a-avatar
-          slot="avatar"
-          icon="edit"
-          @click="showNotesInput = true" />
-        <div slot="content" v-ctrl-enter="saveNote">
-          <a-textarea
-            rows="4"
-            @change="handleNoteChange"
-            :value="annotation"
-            :placeholder="$t('label.add.note')" />
-          <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes(this.$store.getters.userInfo.roletype)" style="margin-top: 10px">
-            {{ $t('label.annotation.admins.only') }}
-          </a-checkbox>
-          <a-button
-            style="margin-top: 10px; float: right"
-            @click="saveNote"
-            type="primary" >
-            {{ $t('label.submit') }}
-          </a-button>
-        </div>
+        <template #avatar>
+          <a-avatar @click="showNotesInput = true">
+            <template #icon><edit-outlined /></template>
+          </a-avatar>
+        </template>
+        <template #content>
+          <div v-ctrl-enter="saveNote">
+            <a-textarea
+              rows="4"
+              @change="handleNoteChange"
+              v-model:value="annotation"
+              :placeholder="$t('label.add.note')" />
+            <a-checkbox @change="toggleNoteVisibility" v-if="['Admin'].includes($store.getters.userInfo.roletype)" style="margin-top: 10px">
+              {{ $t('label.adminsonly') }}
+            </a-checkbox>
+            <a-button
+              style="margin-top: 10px; float: right"
+              @click="saveNote"
+              type="primary"
+              ref="submit">
+              {{ $t('label.submit') }}
+            </a-button>
+          </div>
+        </template>
       </a-comment>
     </a-spin>
   </div>
@@ -145,12 +148,14 @@ export default {
     }
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      this.resource = newItem
-      this.resourceType = this.$route.meta.resourceType
-      this.annotationType = this.generateAnnotationType()
-      if (this.annotationType) {
-        this.getAnnotations()
+    resource: {
+      deep: true,
+      handler () {
+        this.resourceType = this.$route.meta.resourceType
+        this.annotationType = this.generateAnnotationType()
+        if (this.annotationType) {
+          this.getAnnotations()
+        }
       }
     }
   },

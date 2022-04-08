@@ -30,7 +30,7 @@ import java.util.List;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;

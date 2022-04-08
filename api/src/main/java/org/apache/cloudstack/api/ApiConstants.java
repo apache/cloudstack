@@ -394,7 +394,7 @@ public class ApiConstants {
     public static final String USER_CONFIGURABLE = "userconfigurable";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
-    public static final String Update_IN_SEQUENCE = "updateinsequence";
+    public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
@@ -441,6 +441,7 @@ public class ApiConstants {
     public static final String NETWORKRATE = "networkrate";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
+    public static final String SSH_KEYPAIRS = "keypairs";
     public static final String HTTPMETHOD = "httpmethod";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
     public static final String HOST_CPU_NUM = "hostcpunum";

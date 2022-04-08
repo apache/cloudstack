@@ -109,7 +109,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void disableAccountDisabled() throws ConcurrentOperationException, ResourceUnavailableException {
         AccountVO disabledAccount = new AccountVO();
-        disabledAccount.setState(State.disabled);
+        disabledAccount.setState(State.DISABLED);
         Mockito.when(_accountDao.findById(42l)).thenReturn(disabledAccount);
         Assert.assertTrue(accountManagerImpl.disableAccount(42));
     }
@@ -117,7 +117,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void disableAccount() throws ConcurrentOperationException, ResourceUnavailableException {
         AccountVO account = new AccountVO();
-        account.setState(State.enabled);
+        account.setState(State.ENABLED);
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.when(_accountDao.createForUpdate()).thenReturn(new AccountVO());
         Mockito.when(_accountDao.update(Mockito.eq(42l), Mockito.any(AccountVO.class))).thenReturn(true);
@@ -178,7 +178,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         UserAccountVO userAccountVO = new UserAccountVO();
         userAccountVO.setSource(User.Source.UNKNOWN);
-        userAccountVO.setState(Account.State.disabled.toString());
+        userAccountVO.setState(Account.State.DISABLED.toString());
         Mockito.when(userAccountDaoMock.getUserAccount("test", 1L)).thenReturn(userAccountVO);
         Mockito.when(userAuthenticator.authenticate("test", "fail", 1L, null)).thenReturn(failureAuthenticationPair);
         Mockito.lenient().when(userAuthenticator.authenticate("test", null, 1L, null)).thenReturn(successAuthenticationPair);
@@ -356,7 +356,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     @Test
     public void retrieveAndValidateAccountTestAccountTypeEqualsProjectType() {
         Mockito.doReturn(accountMockId).when(userVoMock).getAccountId();
-        Mockito.lenient().doReturn(Account.ACCOUNT_TYPE_PROJECT).when(accountMock).getType();
+        Mockito.lenient().doReturn(Account.Type.PROJECT).when(accountMock).getType();
         Mockito.doReturn(callingAccount).when(_accountDao).findById(accountMockId);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.any(AccessType.class), Mockito.anyBoolean(), Mockito.any(Account.class));
 

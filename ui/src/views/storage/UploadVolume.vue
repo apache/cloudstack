@@ -18,91 +18,79 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <span v-if="uploadPercentage > 0">
-      <a-icon type="loading" />
+      <loading-outlined />
       {{ $t('message.upload.file.processing') }}
       <a-progress :percent="uploadPercentage" />
     </span>
     <a-spin :spinning="loading" v-else>
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item :label="$t('label.url')">
+        <a-form-item name="url" ref="url" :label="$t('label.url')">
           <a-input
-            v-decorator="['url', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]"
+            v-model:value="form.url"
             :placeholder="apiParams.url.description"/>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input
-            v-decorator="['name', {
-              rules: [{ required: true, message: $t('message.error.volume.name') }]
-            }]"
+            v-model:value="form.name"
             :placeholder="$t('label.volumename')"
             autoFocus />
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+        <a-form-item name="zoneId" ref="zoneId">
+          <template #label>
+            <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
+          </template>
           <a-select
-            v-decorator="['zoneId', {
-              initialValue: zoneSelected,
-              rules: [
-                {
-                  required: true,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]"
+            v-model:value="form.zoneId"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option :value="zone.id" v-for="zone in zones" :key="zone.id" :label="zone.name || zone.description">
               <span>
                 <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="global" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px"/>
                 {{ zone.name || zone.description }}
               </span>
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+        <a-form-item name="format" ref="format">
+          <template #label>
+            <tooltip-label :title="$t('label.format')" :tooltip="apiParams.format.description"/>
+          </template>
           <a-select
-            v-decorator="['format', {
-              initialValue: formats[0],
-              rules: [
-                {
-                  required: true,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ]
-            }]"
+            v-model:value="form.format"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
+        <a-form-item name="diskofferingid" ref="diskofferingid">
+          <template #label>
+            <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || $t('label.diskoffering')"/>
+          </template>
           <a-select
-            v-decorator="['diskofferingid', {
-              initialValue: selectedDiskOfferingId,
-              rules: [{ required: false, message: $t('message.error.select') }]}]"
+            v-model:value="form.diskofferingid"
             :loading="loading"
             @change="id => onChangeDiskOffering(id)"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="(offering, index) in offerings"
@@ -112,49 +100,55 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
+        <a-form-item name="checksum" ref="checksum">
+          <template #label>
+            <tooltip-label :title="$t('label.volumechecksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
           <a-input
-            v-decorator="['checksum']"
+            v-model:value="form.checksum"
             :placeholder="$t('label.volumechecksum.description')"
           />
         </a-form-item>
-        <a-form-item v-if="'listDomains' in $store.getters.apis">
-          <tooltip-label slot="label" :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
+        <a-form-item name="domainid" ref="domainid" v-if="'listDomains' in $store.getters.apis">
+          <template #label>
+            <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domainid.description"/>
+          </template>
           <a-select
-            v-decorator="['domainid', {}]"
+            v-model:value="form.domainid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.$t('label.domainid')"
-            @change="val => { this.handleDomainChange(this.domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in this.domainList" :key="optIndex">
+            :placeholder="$t('label.domainid')"
+            @change="val => { handleDomainChange(domainList[val].id) }">
+            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="'listDomains' in $store.getters.apis">
-          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+        <a-form-item name="account" ref="account" v-if="'listDomains' in $store.getters.apis">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
           <a-select
-            v-decorator="['account', {}]"
+            v-model:value="form.account"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="'Account'"
-            @change="val => { this.handleAccountChange(val) }">
+            :placeholder="$t('label.account')"
+            @change="val => { handleAccountChange(val) }">
             <a-select-option v-for="(acc, index) in accountList" :value="acc.name" :key="index">
               {{ acc.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -162,12 +156,15 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UploadVolume',
+  mixins: [mixinForm],
   components: {
     ResourceIcon,
     TooltipLabel
@@ -190,13 +187,25 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('uploadVolume')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        format: this.formats[0]
+      })
+      this.rules = reactive({
+        url: [{ required: true, message: this.$t('message.error.required.input') }],
+        name: [{ required: true, message: this.$t('message.error.volume.name') }],
+        zoneId: [{ required: true, message: this.$t('message.error.select') }],
+        format: [{ required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       this.loading = true
       api('listZones', { showicon: true }).then(json => {
@@ -271,12 +280,10 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-        const params = {
-        }
+      this.formRef.value.validate().then(() => {
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
+        const params = {}
         for (const key in values) {
           const input = values[key]
           if (input === undefined) {
@@ -298,6 +305,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {

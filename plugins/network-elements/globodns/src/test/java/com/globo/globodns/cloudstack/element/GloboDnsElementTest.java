@@ -111,7 +111,7 @@ public class GloboDnsElementTest {
         ComponentContext.initComponentsLifeCycle();
 
         acct = new AccountVO(200L);
-        acct.setType(Account.ACCOUNT_TYPE_NORMAL);
+        acct.setType(Account.Type.NORMAL);
         acct.setAccountName("user");
         acct.setDomainId(domainId);
 

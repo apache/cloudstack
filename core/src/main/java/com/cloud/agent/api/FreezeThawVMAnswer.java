@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,37 +15,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-import Vue from 'vue'
-import VueStorage from 'vue-ls'
-import config from '@/config/settings'
+package com.cloud.agent.api;
 
-// base library
-import Antd from 'ant-design-vue'
-import Viser from 'viser-vue'
-import VueCropper from 'vue-cropper'
-import 'ant-design-vue/dist/antd.less'
-import '@/style/vars.less'
+public class FreezeThawVMAnswer extends Answer {
 
-// ext library
-import VueClipboard from 'vue-clipboard2'
-import PermissionHelper from '@/utils/helper/permission'
-// import '@/components/use'
+    public FreezeThawVMAnswer() {
+        super();
+    }
 
-// customisation
-import Spin from 'ant-design-vue/es/spin/Spin'
+    public FreezeThawVMAnswer(FreezeThawVMCommand command, boolean success, String details) {
+        super(command, success, details);
+    }
 
-VueClipboard.config.autoSetContainer = true
+    public FreezeThawVMAnswer(FreezeThawVMCommand command, Exception e) {
+        super(command, e);
+    }
 
-Vue.use(Antd)
-Vue.use(Viser)
-Vue.use(VueStorage, config.storageOptions)
-Vue.use(VueClipboard)
-Vue.use(PermissionHelper)
-Vue.use(VueCropper)
-
-Spin.setDefaultIndicator({
-  indicator: (h) => {
-    return <a-icon type="loading" style="font-size: 30px" spin />
-  }
-})
+    public FreezeThawVMAnswer(FreezeThawVMCommand command) {
+        super(command);
+    }
+}

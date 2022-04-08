@@ -214,8 +214,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Override
     public Map<? extends ServerResource, Map<String, String>>
         find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
-        boolean isUefiSupported = false;
-
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != getHypervisorType()) {
             if (s_logger.isInfoEnabled())
@@ -273,13 +271,11 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             }
 
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "ls /dev/kvm")) {
-                s_logger.debug("It's not a KVM enabled machine");
-                return null;
-            }
-
-            if (SSHCmdHelper.sshExecuteCmd(sshConnection, "rpm -qa | grep -i ovmf", 3)) {
-                s_logger.debug("It's UEFI enabled KVM machine");
-                isUefiSupported = true;
+                String errorMsg = "This machine does not have KVM enabled.";
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(errorMsg);
+                }
+                throw new DiscoveredWithErrorException(errorMsg);
             }
 
             List<PhysicalNetworkSetupInfo> netInfos = _networkMgr.getPhysicalNetworkInfo(dcId, getHypervisorType());
@@ -335,9 +331,10 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 setupAgentCommand = "sudo cloudstack-setup-agent ";
             }
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, setupAgentCommand + parameters)) {
-                s_logger.info("cloudstack agent setup command failed: "
-                        + setupAgentCommand + parameters);
-                return null;
+                String errorMsg = String.format("CloudStack Agent setup through command [%s] with parameters [%s] failed.",
+                        setupAgentCommand, parameters);
+                s_logger.info(errorMsg);
+                throw new DiscoveredWithErrorException(errorMsg);
             }
 
             KvmDummyResourceBase kvmResource = new KvmDummyResourceBase();
@@ -364,7 +361,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             Map<String, String> hostDetails = connectedHost.getDetails();
             hostDetails.put("password", password);
             hostDetails.put("username", username);
-            hostDetails.put(Host.HOST_UEFI_ENABLE, isUefiSupported == true ? Boolean.toString(true) : Boolean.toString(false));
             _hostDao.saveDetails(connectedHost);
             return resources;
         } catch (DiscoveredWithErrorException e) {
@@ -373,12 +369,14 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
             s_logger.warn(msg);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(msg, e);
+            }
+            throw new DiscoveredWithErrorException(msg, e);
         } finally {
             if (sshConnection != null)
                 sshConnection.close();
         }
-
-        return null;
     }
 
     private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {

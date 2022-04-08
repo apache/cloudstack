@@ -608,7 +608,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
-                s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
+                String message = String.format("HA starting VM: %s (%s)", started.getHostName(), started.getInstanceName());
+                HostVO hostVmHasStarted = _hostDao.findById(started.getHostId());
+                s_logger.info(String.format("HA is now restarting %s on %s", started, hostVmHasStarted));
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), message, message);
                 return null;
             }
 

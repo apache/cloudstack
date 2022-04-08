@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,43 +15,42 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-<template>
-  <div>
-    TODO: upload template from local file component
+package com.cloud.agent.api;
 
-    <a-upload
-      name="avatar"
-      listType="picture-card"
-      class="avatar-uploader"
-      :showUploadList="false"
-      action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-      :beforeUpload="beforeUpload"
-      @change="handleChange"
-    >
-      <img v-if="imageUrl" :src="imageUrl" alt="avatar" />
-      <div v-else>
-        <a-icon :type="loading ? 'loading' : 'plus'" />
-        <div class="ant-upload-text">{{ $t('label.upload') }}</div>
-      </div>
-    </a-upload>
-  </div>
-</template>
+public class FreezeThawVMCommand extends Command{
 
-<script>
+    public static final String FREEZE = "frozen";
+    public static final String THAW = "thawed";
+    public static final String STATUS = "status";
 
-export default {
-  name: '',
-  components: {
-  },
-  data () {
-    return {
+    private String vmName;
+    private String option;
+
+    public FreezeThawVMCommand(String vmName) {
+        this.vmName = vmName;
     }
-  },
-  methods: {
-  }
-}
-</script>
 
-<style scoped>
-</style>
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
+
+    public String getOption() {
+        return option;
+    }
+
+    public void setOption(String option) {
+        this.option = option;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
+}

@@ -159,7 +159,7 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         // valid sessionkey, invalid useraccount type (non-saml) value test
         UserAccountVO mockedUserAccount = new UserAccountVO();
         mockedUserAccount.setId(2L);
-        mockedUserAccount.setAccountState(Account.State.enabled.toString());
+        mockedUserAccount.setAccountState(Account.State.ENABLED.toString());
         mockedUserAccount.setUsername("someUsername");
         mockedUserAccount.setExternalEntity("some IDP ID");
         mockedUserAccount.setDomainId(0L);

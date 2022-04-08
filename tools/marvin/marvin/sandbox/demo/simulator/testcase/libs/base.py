@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -177,9 +177,9 @@ class VirtualMachine:
                     domainid=None, networkids=None, serviceofferingid=None,
                     securitygroupids=None, mode='basic'):
         """Create the instance"""
-        
+
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
-        
+
         if serviceofferingid:
             cmd.serviceofferingid = serviceofferingid
         elif "serviceoffering" in services:
@@ -210,18 +210,18 @@ class VirtualMachine:
 
         if "diskoffering" in services:
             cmd.diskofferingid = services["diskoffering"]
-        
+
         if securitygroupids:
             cmd.securitygroupids = [str(sg_id) for sg_id in securitygroupids]
-        
+
         if "userdata" in services:
             cmd.userdata = base64.b64encode(services["userdata"])
-        
+
         virtual_machine = apiclient.deployVirtualMachine(cmd)
-        
+
         # VM should be in Running state after deploy
         timeout = 10
-        while True:    
+        while True:
             vm_status = VirtualMachine.list(
                                             apiclient,
                                             id=virtual_machine.id
@@ -231,9 +231,9 @@ class VirtualMachine:
                     break
                 elif timeout == 0:
                     raise Exception(
-                            "TimeOutException: Failed to start VM (ID: %s)" % 
+                            "TimeOutException: Failed to start VM (ID: %s)" %
                                                         virtual_machine.id)
-            
+
             time.sleep(10)
             timeout = timeout -1
 
@@ -329,17 +329,17 @@ class Volume:
         cmd.diskofferingid = services["customdiskofferingid"]
         cmd.size = services["customdisksize"]
         cmd.zoneid = services["zoneid"]
-        
+
         if account:
             cmd.account = account
         else:
             cmd.account = services["account"]
-        
+
         if domainid:
             cmd.domainid = domainid
         else:
             cmd.domainid = services["domainid"]
-            
+
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
@@ -428,7 +428,7 @@ class Template:
         cmd.ispublic = services["ispublic"] if "ispublic" in services else False
         cmd.isextractable = services["isextractable"] if "isextractable" in services else False
         cmd.passwordenabled = services["passwordenabled"] if "passwordenabled" in services else False
-        
+
         if volumeid:
             cmd.volumeid = volumeid
 
@@ -443,7 +443,7 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None, account=None, domainid=None):
         """Create template from URL"""
-        
+
         #Create template from Virtual machine and Volume ID
         cmd = registerTemplate.registerTemplateCmd()
         cmd.displaytext = services["displaytext"]
@@ -452,7 +452,7 @@ class Template:
         cmd.hypervisor = services["hypervisor"]
         cmd.ostypeid = services["ostypeid"]
         cmd.url = services["url"]
-        
+
         if zoneid:
             cmd.zoneid = zoneid
         else:
@@ -467,10 +467,10 @@ class Template:
 
         if domainid:
             cmd.domainid = domainid
-        
+
         # Register Template
         template = apiclient.registerTemplate(cmd)
-    
+
         if isinstance(template, list):
             return Template(template[0].__dict__)
 
@@ -481,7 +481,7 @@ class Template:
         cmd = createTemplate.createTemplateCmd()
         cmd.displaytext = services["displaytext"]
         cmd.name = "-".join([
-                             services["name"], 
+                             services["name"],
                              random_gen()
                             ]) if random_name else services["name"]
         cmd.ostypeid = services["ostypeid"]
@@ -490,7 +490,7 @@ class Template:
 
     def delete(self, apiclient):
         """Delete Template"""
-        
+
         cmd = deleteTemplate.deleteTemplateCmd()
         cmd.id = self.id
         apiclient.deleteTemplate(cmd)
@@ -499,7 +499,7 @@ class Template:
         """Download Template"""
         #Sleep to ensure template is in proper state before download
         time.sleep(interval)
-        
+
         while True:
             template_response = Template.list(
                                     apiclient,
@@ -508,15 +508,15 @@ class Template:
                                     templatefilter='self'
                                     )
             if isinstance(template_response, list):
-                
+
                 template = template_response[0]
                 # If template is ready,
                 # template.status = Download Complete
                 # Downloading - x% Downloaded
-                # Error - Any other string 
+                # Error - Any other string
                 if template.status == 'Download Complete':
                     break
-                
+
                 elif 'Downloaded' in template.status:
                     time.sleep(interval)
 
@@ -525,12 +525,12 @@ class Template:
 
             elif timeout == 0:
                 break
-            
+
             else:
                 time.sleep(interval)
                 timeout = timeout - 1
         return
-                
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all templates matching criteria"""
@@ -556,7 +556,7 @@ class Iso:
         cmd.ostypeid = services["ostypeid"]
         cmd.url = services["url"]
         cmd.zoneid = services["zoneid"]
-        
+
         if "isextractable" in services:
             cmd.isextractable = services["isextractable"]
         if "isfeatured" in services:
@@ -570,7 +570,7 @@ class Iso:
             cmd.domainid = domainid
         # Register ISO
         iso = apiclient.registerIso(cmd)
-        
+
         if iso:
             return Iso(iso[0].__dict__)
 
@@ -590,8 +590,8 @@ class Iso:
             cmd = listIsos.listIsosCmd()
             cmd.id = self.id
             iso_response = apiclient.listIsos(cmd)
-            
-            if isinstance(iso_response, list):     
+
+            if isinstance(iso_response, list):
                 response = iso_response[0]
                 # Again initialize timeout to avoid listISO failure
                 timeout = 5
@@ -677,7 +677,7 @@ class NATRule:
         cmd.publicport = services["publicport"]
         cmd.protocol = services["protocol"]
         cmd.virtualmachineid = virtual_machine.id
-        
+
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -694,7 +694,7 @@ class NATRule:
         cmd = listPortForwardingRules.listPortForwardingRulesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listPortForwardingRules(cmd))
-    
+
 
 class StaticNATRule:
     """Manage Static NAT rule"""
@@ -705,22 +705,22 @@ class StaticNATRule:
     @classmethod
     def create(cls, apiclient, services, ipaddressid=None):
         """Creates static ip forwarding rule"""
-        
+
         cmd = createIpForwardingRule.createIpForwardingRuleCmd()
         cmd.protocol = services["protocol"]
         cmd.startport = services["startport"]
-        
+
         if "endport" in services:
             cmd.endport = services["endport"]
-            
+
         if "cidrlist" in services:
             cmd.cidrlist = services["cidrlist"]
-        
+
         if ipaddressid:
             cmd.ipaddressid = ipaddressid
         elif "ipaddressid" in services:
             cmd.ipaddressid = services["ipaddressid"]
-            
+
         return StaticNATRule(apiclient.createIpForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -737,26 +737,26 @@ class StaticNATRule:
         cmd = listIpForwardingRules.listIpForwardingRulesCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return(apiclient.listIpForwardingRules(cmd))
-    
+
     @classmethod
     def enable(cls, apiclient, ipaddressid, virtualmachineid):
         """Enables Static NAT rule"""
-        
+
         cmd = enableStaticNat.enableStaticNatCmd()
         cmd.ipaddressid = ipaddressid
         cmd.virtualmachineid = virtualmachineid
         apiclient.enableStaticNat(cmd)
         return
-        
+
     @classmethod
     def disable(cls, apiclient, ipaddressid, virtualmachineid):
         """Disables Static NAT rule"""
-        
+
         cmd = disableStaticNat.disableStaticNatCmd()
         cmd.ipaddressid = ipaddressid
         apiclient.disableStaticNat(cmd)
         return
-    
+
 
 class FireWallRule:
     """Manage Firewall rule"""
@@ -963,12 +963,12 @@ class Cluster:
         cmd = addCluster.addClusterCmd()
         cmd.clustertype = services["clustertype"]
         cmd.hypervisor = services["hypervisor"]
-        
+
         if zoneid:
             cmd.zoneid = zoneid
         else:
             cmd.zoneid = services["zoneid"]
-        
+
         if podid:
             cmd.podid = podid
         else:
@@ -1010,17 +1010,17 @@ class Host:
     @classmethod
     def create(cls, apiclient, cluster, services, zoneid=None, podid=None):
         """Create Host in cluster"""
-        
+
         cmd = addHost.addHostCmd()
         cmd.hypervisor = services["hypervisor"]
         cmd.url = services["url"]
         cmd.clusterid = cluster.id
-        
+
         if zoneid:
             cmd.zoneid = zoneid
         else:
             cmd.zoneid = services["zoneid"]
-        
+
         if podid:
             cmd.podid = podid
         else:
@@ -1032,10 +1032,10 @@ class Host:
             cmd.username = services["username"]
         if "password" in services:
             cmd.password = services["password"]
-        
+
         # Add host
         host = apiclient.addHost(cmd)
-        
+
         if isinstance(host, list):
             return Host(host[0].__dict__)
 
@@ -1080,18 +1080,18 @@ class StoragePool:
 
         cmd = createStoragePool.createStoragePoolCmd()
         cmd.name = services["name"]
-        
+
         if podid:
             cmd.podid = podid
         else:
             cmd.podid = services["podid"]
-            
+
         cmd.url = services["url"]
         if clusterid:
             cmd.clusterid = clusterid
         elif "clusterid" in services:
             cmd.clusterid = services["clusterid"]
-        
+
         if zoneid:
             cmd.zoneid = zoneid
         else:
@@ -1254,13 +1254,13 @@ class Zone:
 
     def update(self, apiclient, **kwargs):
         """Update the zone"""
-        
+
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return apiclient.updateZone(cmd)
-        
-        
+
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all Zones matching criteria"""
@@ -1314,7 +1314,7 @@ class PublicIpRange:
     @classmethod
     def create(cls, apiclient, services):
         """Create VlanIpRange"""
-        
+
         cmd = createVlanIpRange.createVlanIpRangeCmd()
         cmd.gateway = services["gateway"]
         cmd.netmask = services["netmask"]
@@ -1365,7 +1365,7 @@ class SecondaryStorage:
         cmd = deleteHost.deleteHostCmd()
         cmd.id = self.id
         apiclient.deleteHost(cmd)
-        
+
 
 class SecurityGroup:
     """Manage Security Groups"""
@@ -1386,7 +1386,7 @@ class SecurityGroup:
             cmd.domainid=domainid
         if description:
             cmd.description=description
-            
+
         return SecurityGroup(apiclient.createSecurityGroup(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1395,38 +1395,38 @@ class SecurityGroup:
         cmd = deleteSecurityGroup.deleteSecurityGroupCmd()
         cmd.id = self.id
         apiclient.deleteSecurityGroup(cmd)
-        
+
     def authorize(self, apiclient, services,
                   account=None, domainid=None):
         """Authorize Ingress Rule"""
-        
+
         cmd=authorizeSecurityGroupIngress.authorizeSecurityGroupIngressCmd()
-        
+
         if domainid:
             cmd.domainid = domainid
         if account:
             cmd.account = account
-                
+
         cmd.securitygroupid=self.id
         cmd.protocol=services["protocol"]
-        
+
         if services["protocol"] == 'ICMP':
             cmd.icmptype = -1
             cmd.icmpcode = -1
         else:
             cmd.startport = services["startport"]
             cmd.endport = services["endport"]
-        
+
         cmd.cidrlist = services["cidrlist"]
         return (apiclient.authorizeSecurityGroupIngress(cmd).__dict__)
-    
+
     def revoke(self, apiclient, id):
         """Revoke ingress rule"""
-        
+
         cmd=revokeSecurityGroupIngress.revokeSecurityGroupIngressCmd()
         cmd.id=id
         return apiclient.revokeSecurityGroupIngress(cmd)
-    
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists all security groups."""

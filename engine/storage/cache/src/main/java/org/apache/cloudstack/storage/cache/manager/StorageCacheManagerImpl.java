@@ -275,7 +275,7 @@ public class StorageCacheManagerImpl implements StorageCacheManager, Manager {
                     try {
                         lock.wait(miliSeconds);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while waiting for cache copy completion.");
+                        s_logger.debug("[ignored] interrupted while waiting for cache copy completion.");
                     }
                     s_logger.debug("waken up");
 

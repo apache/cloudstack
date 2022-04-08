@@ -2,11 +2,11 @@
   "messages": {
     "en": {
       "label.action": "action-en",
-      "label.view.console": "view console"
+      "label.view.console": "Console-en"
     },
     "de": {
       "label.action": "action-de",
-      "label.view.console": "view console"
+      "label.view.console": "Console-de"
     }
   },
   "apis": {

@@ -73,10 +73,10 @@
                         </goals>
                         <configuration>
                             <source>
-                                def projectVersion = project.version
+                                def projectVersion = project.properties['project.systemvm.template.version']
                                 String[] versionParts =  projectVersion.tokenize('.')
-                                pom.properties['cs.version'] = "4.16"
-                                pom.properties['patch.version'] = "0"
+                                pom.properties['cs.version'] = versionParts[0] + "." + versionParts[1]
+                                pom.properties['patch.version'] = versionParts[2]
                             </source>
                         </configuration>
                     </execution>
@@ -146,7 +146,7 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>templateConfig.sh</argument>
-                                <armument>${project.version}</armument>
+                                <argument>${project.systemvm.template.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -156,10 +156,10 @@
     </build>
     <profiles>
         <profile>
-            <id>template-create</id>
+            <id>download-kvm-systemvm-template</id>
             <activation>
                 <property>
-                    <name>noredist</name>
+                    <name>systemvm-kvm</name>
                 </property>
             </activation>
             <build>
@@ -186,6 +186,30 @@
                                     <md5>${kvm.checksum}</md5>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-vmware-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-vmware</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
                             <execution>
                                 <id>download-vmware-template</id>
                                 <goals>
@@ -198,6 +222,30 @@
                                     <md5>${vmware.checksum}</md5>
                                 </configuration>
                             </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-xenserver-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-xen</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
                             <execution>
                                 <id>download-xenserver-template</id>
                                 <goals>
@@ -208,6 +256,78 @@
                                     <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-xen.vhd.bz2</url>
                                     <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
                                     <md5>${xen.checksum}</md5>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-ovm-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-ovm</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-ovm-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-ovm.raw.bz2</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${ovm.checksum}</md5>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>download-hyperv-systemvm-template</id>
+            <activation>
+                <property>
+                    <name>systemvm-hyperv</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${cs.resources-plugin.version}</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>download-hyperv-template</id>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <checkSignature>true</checkSignature>
+                                    <url>https://download.cloudstack.org/systemvm/${cs.version}/systemvmtemplate-${cs.version}.${patch.version}-hyperv.vhd.zip</url>
+                                    <outputDirectory>${basedir}/dist/systemvm-templates/</outputDirectory>
+                                    <md5>${hyperv.checksum}</md5>
                                 </configuration>
                             </execution>
                         </executions>

@@ -277,7 +277,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                 "Snapshot was not found on NFS")
         except Exception as e:
             self._cleanup.append(self.account)
-            self.fail("Exception occured: %s" % e)
+            self.fail("Exception occurred: %s" % e)
 
         self.debug("Deleting account: %s" % self.account.name)
         # Delete account

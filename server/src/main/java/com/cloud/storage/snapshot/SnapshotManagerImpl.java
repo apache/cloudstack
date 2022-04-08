@@ -60,6 +60,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -225,7 +226,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                BackupSnapshotAfterTakingSnapshot};
+                BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm};
     }
 
     @Override
@@ -258,7 +259,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 Thread.sleep(_pauseInterval * 1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while retry cmd.");
+                s_logger.debug("[ignored] interrupted while retry cmd.");
             }
 
             s_logger.debug("Retrying...");
@@ -289,6 +290,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("No such snapshot");
         }
 
+        if (Type.GROUP.name().equals(snapshot.getTypeDescription())) {
+            throw new InvalidParameterValueException(String.format("The snapshot [%s] is part of a [%s] snapshots and cannot be reverted separately", snapshotId, snapshot.getTypeDescription()));
+        }
         VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
         if (volume.getState() != Volume.State.Ready) {
             throw new InvalidParameterValueException("The volume is not in Ready state.");
@@ -305,7 +309,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             // If target VM has associated VM snapshots then don't allow to revert from snapshot
             List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(instanceId);
-            if (vmSnapshots.size() > 0) {
+            if (vmSnapshots.size() > 0 && !Type.GROUP.name().equals(snapshot.getTypeDescription())) {
                 throw new InvalidParameterValueException("Unable to revert snapshot for VM, please remove VM snapshots before reverting VM from snapshot");
             }
         }
@@ -576,6 +580,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
         }
 
+        if (Type.GROUP.name().equals(snapshotCheck.getTypeDescription())) {
+            throw new InvalidParameterValueException(String.format("The snapshot [%s] is part of a [%s] snapshots and cannot be deleted separately", snapshotId, snapshotCheck.getTypeDescription()));
+        }
+
         if (snapshotCheck.getState() == Snapshot.State.Destroyed) {
             throw new InvalidParameterValueException("Snapshot with id: " + snapshotId + " is already destroyed");
         }
@@ -672,11 +680,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         sb.and("statusNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.IN);
-        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NEQ);
+        sb.and("snapshotTypeNEQ", sb.entity().getSnapshotType(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
 
         if (tags != null && !tags.isEmpty()) {
@@ -717,7 +725,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         setIdsListToSearchCriteria(sc, ids);
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         if (id != null) {
@@ -748,7 +756,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             sc.setParameters("snapshotTypeEQ", type.ordinal());
         } else {
             // Show only MANUAL and RECURRING snapshot types
-            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
+            sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal(), Snapshot.Type.GROUP.ordinal());
         }
 
         Pair<List<SnapshotVO>, Integer> result = _snapshotDao.searchAndCount(sc, searchFilter);
@@ -910,7 +918,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             long domainLimit = _resourceLimitMgr.findCorrectResourceLimitForDomain(_domainMgr.getDomain(owner.getDomainId()), ResourceType.snapshot);
             if (!_accountMgr.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxSnaps > accountLimit) || (domainLimit != -1 && maxSnaps > domainLimit))) {
                 String message = "domain/account";
-                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (owner.getType() == Account.Type.PROJECT) {
                     message = "domain/project";
                 }
 
@@ -1515,5 +1523,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
+    }
+
+    @Override
+    public void markVolumeSnapshotsAsDestroyed(Volume volume) {
+        List<SnapshotVO> snapshots = _snapshotDao.listByVolumeId(volume.getId());
+        for (SnapshotVO snapshot: snapshots) {
+            List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshot.getId());
+            if (CollectionUtils.isEmpty(snapshotDataStoreVOs)) {
+                snapshot.setState(Snapshot.State.Destroyed);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            }
+        }
     }
 }

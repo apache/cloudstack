@@ -641,7 +641,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicResponse.setMacAddress(rs.getString("nics.mac_address"));
 
             int account_type = rs.getInt("account.type");
-            if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+            if (account_type == Account.Type.ADMIN.ordinal()) {
                 nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
                 nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
             }

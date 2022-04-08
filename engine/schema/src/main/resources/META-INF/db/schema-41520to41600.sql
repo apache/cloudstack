@@ -741,26 +741,26 @@ CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
     IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
     IN guest_os_hypervisor_guest_os_name VARCHAR(255)
 )
-BEGIN	
-	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created) 
+BEGIN
+	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created)
 	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
 	FROM    DUAL
-	WHERE 	not exists( SELECT  1 
+	WHERE 	not exists( SELECT  1
 	                    FROM    cloud.guest_os
 	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
-	                    AND     cloud.guest_os.display_name = guest_os_display_name)	
-						
-;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created) 
+	                    AND     cloud.guest_os.display_name = guest_os_display_name)
+
+;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created)
 	SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
 	FROM 	cloud.guest_os
 	WHERE 	guest_os.category_id = guest_os_category_id
 	AND 	guest_os.display_name = guest_os_display_name
-	AND	NOT EXISTS (SELECT  1 
+	AND	NOT EXISTS (SELECT  1
 	                    FROM    cloud.guest_os_hypervisor as hypervisor
-	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type			
+	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type
 	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
 	                    AND     hypervisor.guest_os_id = guest_os.id
-	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)    
+	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)
 ;END;
 
 -- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.

@@ -342,10 +342,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
                 Answer answer = null;
                 try {
-
-                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd);
+                    final long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(host.getId(), cmd, host.getHypervisorType());
                     answer = easySend(targetHostId, cmd);
                 } catch (final Exception e) {
+                    String errorMsg = String.format("Error sending command %s to host %s, due to %s", cmd.getClass().getName(),
+                            host.getUuid(), e.getLocalizedMessage());
+                    s_logger.error(errorMsg);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug(errorMsg, e);
+                    }
                 }
                 if (answer != null) {
                     return answer;
@@ -594,6 +599,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             // make it as disconnected, wait for secondary storage VM to be up
             // return the attache instead of null, even it is disconnectede
             handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
+        }
+        if (answer instanceof ReadyAnswer) {
+            ReadyAnswer readyAnswer = (ReadyAnswer)answer;
+            Map<String, String> detailsMap = readyAnswer.getDetailsMap();
+            if (detailsMap != null) {
+                String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
+                s_logger.debug(String.format("Got HOST_UEFI_ENABLE [%s] for hostId [%s]:", uefiEnabled, host.getUuid()));
+                if (uefiEnabled != null) {
+                    _hostDao.loadDetails(host);
+                    if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                        host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
+                        _hostDao.saveDetails(host);
+                    }
+                }
+            }
         }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
@@ -870,8 +890,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     agentStatusTransitTo(host, Status.Event.Ping, _nodeId);
                     return false;
                 } else if (determinedState == Status.Disconnected) {
-                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
-                    if (currentStatus == Status.Disconnected) {
+                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName() +
+                            '-' + host.getResourceState());
+                    if (currentStatus == Status.Disconnected ||
+                            (currentStatus == Status.Up && host.getResourceState() == ResourceState.PrepareForMaintenance)) {
                         if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
                             s_logger.warn("Host " + host.getId() + " has been disconnected past the wait time it should be disconnected.");
                             event = Status.Event.WaitedTooLong;
@@ -1381,7 +1403,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         s_logger.warn(e.getMessage());
                         // upgradeAgent(task.getLink(), data, e.getReason());
                     } catch (final ClassNotFoundException e) {
-                        final String message = String.format("Exception occured when executing taks! Error '%s'", e.getMessage());
+                        final String message = String.format("Exception occurred when executing taks! Error '%s'", e.getMessage());
                         s_logger.error(message);
                         throw new TaskExecutionException(message, e);
                     }

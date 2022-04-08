@@ -303,7 +303,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
                 try {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting to retry running script.");
+                    s_logger.debug("[ignored] interrupted while waiting to retry running script.");
                 }
                 continue;
             } else if (res == null) {

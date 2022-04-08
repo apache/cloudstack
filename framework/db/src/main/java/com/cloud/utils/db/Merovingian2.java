@@ -144,7 +144,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
                 }
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while aquiring " + key);
+                s_logger.debug("[ignored] interrupted while aquiring " + key);
             }
         }
         String msg = "Timed out on acquiring lock " + key + " .  Waited for " + ((InaccurateClock.getTime() - startTime)/1000) +  "seconds";
