@@ -29,6 +29,7 @@ class CsConfig(object):
     __LOG_LEVEL = "INFO"
     __LOG_FORMAT = "%(asctime)s %(levelname)-8s %(message)s"
     cl = None
+    gn = None
 
     def __init__(self):
         self.fw = []
