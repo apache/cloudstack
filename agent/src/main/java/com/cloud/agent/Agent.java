@@ -177,6 +177,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
         final String value = _shell.getPersistentProperty(getResourceName(), "id");
         _id = value != null ? Long.parseLong(value) : null;
+
         s_logger.info("id is " + (_id != null ? _id : ""));
 
         final Map<String, Object> params = PropertiesUtil.toMap(_shell.getProperties());

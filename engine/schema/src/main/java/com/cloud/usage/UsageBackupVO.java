@@ -166,6 +166,7 @@ public class UsageBackupVO implements InternalIdentity {
         return removed;
     }
 
+
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
