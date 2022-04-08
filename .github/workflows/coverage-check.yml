@@ -31,7 +31,7 @@ jobs:
         uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
           files: |
-            *.java
+            **/*.java
 
       - name: Changed UI Files
         id: ui-changes
@@ -53,7 +53,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: 'github-actions[bot]'
           body: |
-            UI changes detected, kicking UI build
+            Detected UI changes, kicking a new UI QA build
             @blueorangutan ui
 
       - name: Set up JDK11
