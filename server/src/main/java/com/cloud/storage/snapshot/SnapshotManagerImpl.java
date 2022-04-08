@@ -1541,6 +1541,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
         }
+        CallContext.current().putContextParameter(Snapshot.class, snapshot.getUuid());
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;

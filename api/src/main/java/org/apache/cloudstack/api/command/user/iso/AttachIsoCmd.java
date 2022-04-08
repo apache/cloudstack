@@ -106,12 +106,12 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
 
     @Override
     public Long getApiResourceId() {
-        return id;
+        return virtualMachineId;
     }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.Iso;
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

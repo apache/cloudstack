@@ -17,6 +17,8 @@
 
 package com.cloud.event;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,6 +49,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -310,7 +313,45 @@ public class ActionEventUtils {
         return null;
     }
 
+    private static Ternary<Long, String, String> updateParentResourceCases(Ternary<Long, String, String> details) {
+        if (!ObjectUtils.allNotNull(details, details.first(), details.second(), details.third())) {
+            return details;
+        }
+        HashMap<String, Pair<ApiCommandResourceType, String>> typeParentMethodMap = new HashMap<>();
+        typeParentMethodMap.put(ApiCommandResourceType.Snapshot.toString(), new Pair<>(ApiCommandResourceType.Volume, "getVolumeId"));
+        typeParentMethodMap.put(ApiCommandResourceType.VmSnapshot.toString(), new Pair<>(ApiCommandResourceType.VirtualMachine, "getVmId"));
+        if (!typeParentMethodMap.containsKey(details.third())) {
+            return details;
+        }
+        ApiCommandResourceType type = ApiCommandResourceType.fromString(details.third());
+        if (type == null || !s_entityMgr.validEntityType(type.getAssociatedClass())) {
+            return details;
+        }
+        Object objVO = s_entityMgr.findByIdIncludingRemoved(type.getAssociatedClass(), details.first());
+        if (objVO == null) {
+            return details;
+        }
+        String methodName = typeParentMethodMap.get(type.toString()).second();
+        try {
+            Method m = objVO.getClass().getMethod(methodName);
+            Long id = (Long)m.invoke(objVO);
+            if (id == null) {
+                return details;
+            }
+            type = typeParentMethodMap.get(type.toString()).first();
+            objVO = s_entityMgr.findByIdIncludingRemoved(type.getAssociatedClass(), id);
+            if (objVO == null) {
+                return details;
+            }
+            return new Ternary<>(id, ((Identity)objVO).getUuid(), type.toString());
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            s_logger.debug(String.format("Parent resource for resource ID: %d, type: %s can not be found using method %s", details.first(), type, methodName));
+        }
+        return details;
+    }
+
     private static Ternary<Long, String, String> getResourceDetails(Long resourceId, String resourceType, String eventType) {
+        Ternary<Long, String, String> details;
         Class<?> clazz = null;
         ApiCommandResourceType type = null;
         if (StringUtils.isNotEmpty(resourceType)) {
@@ -321,9 +362,11 @@ public class ActionEventUtils {
         }
         if (ObjectUtils.allNotNull(resourceId, clazz)) {
             String uuid = getEntityUuid(clazz, resourceId);
-            return new Ternary<>(resourceId, uuid, resourceType);
+            details = new Ternary<>(resourceId, uuid, resourceType);
+        } else {
+            details = getResourceDetailsUsingEventTypeAndContext(type, eventType);
         }
-        return getResourceDetailsUsingEventTypeAndContext(type, eventType);
+        return updateParentResourceCases(details);
     }
 
     private static long getDomainId(long accountId) {

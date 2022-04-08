@@ -19,6 +19,7 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -230,7 +231,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
                 EventTypes.EVENT_ZONE_VLAN_ASSIGN,
                 "Assigned Zone Vlan: " + vnet + " Network Id: "
                     + network.getId(),
-                null, null, 0);
+                network.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
