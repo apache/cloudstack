@@ -23,6 +23,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.host.HostVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -563,6 +564,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         LOG.debug("Deleting config drive ISO for vm: " + vm.getInstanceName() + " on host: " + hostId);
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, null, false, true, false);
+        HostVO hostVO = _hostDao.findById(hostId);
+        if (hostVO == null) {
+            LOG.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
+            return false;
+        }
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
         if (answer == null) {
