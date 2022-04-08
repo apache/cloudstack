@@ -37,7 +37,6 @@ export default {
   },
   created () {
     window.less.modifyVars(this.$config.theme)
-    console.log('config and theme applied')
   }
 }
 </script>

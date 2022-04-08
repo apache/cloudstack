@@ -61,6 +61,7 @@ fetch('config.json').then(response => response.json()).then(config => {
 
   vueProps.axios.defaults.baseURL = basUrl
 
+
   loadLanguageAsync().then(() => {
     vueApp.use(store)
       .use(router)
