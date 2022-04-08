@@ -28,14 +28,14 @@ jobs:
 
       - name: Changed Java Files
         id: java-changes
-        uses: tj-actions/changed-files@a59f800
+        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
           files: |
             *.java
 
       - name: Changed UI Files
         id: ui-changes
-        uses: tj-actions/changed-files@a59f800
+        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
           files: |
             ui/*
@@ -47,7 +47,7 @@ jobs:
           done
 
       - name: Kick UI Build
-        uses: peter-evans/create-or-update-comment@c9fcb64
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
         if: steps.ui-changes.outputs.any_changed == 'true'
         with:
           issue-number: ${{ github.event.pull_request.number }}
