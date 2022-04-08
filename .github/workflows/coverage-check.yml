@@ -72,10 +72,22 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P quality -Dsimulator -Dnoredist clean install
 
-          echo "Coverage Report"
-          echo "CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED"
+          result=""
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
-            coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv |  cut -f3-13 -d",")
+            coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv |  cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
+            result="$result\n$coverage|"
           done
+          echo "::set-output name=COVERAGE::$result"
+
+      - name: Comment PR Coverage Report
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
+        if: steps.java-changes.outputs.any_changed == 'true'
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body: |
+            ## PR Coverage Report
+            **CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|
+            -----|-----|-----|-----|-----|-----|-----|${{ steps.coverage.outputs.COVERAGE }}
