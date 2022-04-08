@@ -17,9 +17,7 @@
 
 name: PR Quality Check
 
-on:
-  pull_request_target:
-    types: [synchronize]
+on: [pull_request]
 
 jobs:
   build:
@@ -53,7 +51,6 @@ jobs:
         if: steps.ui-changes.outputs.any_changed == 'true'
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
           body: |
             Detected UI changes, kicking a new UI QA build
             @blueorangutan ui
@@ -88,7 +85,6 @@ jobs:
         if: steps.java-changes.outputs.any_changed == 'true'
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
           body: |
             ## PR Coverage Report
             **CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|
