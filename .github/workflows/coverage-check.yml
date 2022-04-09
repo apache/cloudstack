@@ -17,10 +17,7 @@
 
 name: PR Quality Check
 
-on:
-  pull_request_target:
-    types:
-      - synchronize
+on: [pull_request]
 
 jobs:
   build:
@@ -48,6 +45,16 @@ jobs:
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             echo "$file was changed"
           done
+
+      - uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ github.event.number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Kicked coverage tests.'
+            })
 
       - name: Kick UI Build
         uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
