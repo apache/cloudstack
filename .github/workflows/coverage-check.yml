@@ -81,13 +81,13 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P quality -Dsimulator -Dnoredist clean install
 
-          result=""
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
             coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv | cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
-            result=$(echo -e "|$coverage|\n$result")
+            echo -e "|$coverage|\n$result" >> result.log
           done
+          result=$(cat result.log)
           echo "::set-output name=COVERAGE::$result"
 
       - name: Comment PR Coverage Report
