@@ -275,7 +275,7 @@ class TestPersistentNetworks(cloudstackTestCase):
 
         return ssh_client
 
-    @attr(tags=["advanced"], required_hardware="false")
+    @attr(tags=["advanced", "xx"], required_hardware="false")
     def test_newly_added_host_for_persistent_network_resources(self):
         # steps
         # 1. identify hosts in the zone, and remove the first
@@ -286,6 +286,10 @@ class TestPersistentNetworks(cloudstackTestCase):
         # 1. Persistent network state should be implemented before adding the host
         # 2. Host should be added back in successfully
         # 3. Host should have the persistent networks resources after being added
+
+        if self.hypervisor.lower() == 'simulator':
+            raise self.skipTest("Skipping test case for Simulator hypervisor")
+
         l2_persistent_network_offering = self.createNetworkOffering("nw_off_L2_persistent")
         hosts = list_hosts(self.apiclient, clusterid=self.cluster.id)
         host = hosts[0]
