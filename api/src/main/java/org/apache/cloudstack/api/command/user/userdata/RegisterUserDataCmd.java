@@ -34,11 +34,6 @@ import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 @APICommand(name = "registerUserData",
         description = "Register a new userdata.",
         since = "4.18",

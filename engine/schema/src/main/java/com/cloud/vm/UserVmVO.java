@@ -164,4 +164,14 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public String getDisplayNameOrHostName() {
         return StringUtils.isNotBlank(displayName) ? displayName : getHostName();
     }
+
+    @Override
+    public String getUserDataDetails() {
+        return userDataDetails;
+    }
+
+    @Override
+    public void setUserDataDetails(String userDataDetails) {
+        this.userDataDetails = userDataDetails;
+    }
 }

@@ -2549,7 +2549,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    public List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                          String vmName, String vmHostName, long vmId, String vmUuid,
                                          String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname) {
 
@@ -2566,12 +2566,23 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         if (userData != null) {
             vmData.add(new String[]{USERDATA_DIR, USERDATA_FILE, userData});
-            vmData.add(new String[]{USERDATA_DIR, "test-data", userData});
         }
         vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
+
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                String key = entry[0].trim();
+                String value = entry[1].trim();
+                vmData.add(new String[]{METATDATA_DIR, key, StringUtils.unicodeEscape(value)});
+            }
+        }
 
         String publicIpAddress = guestIpAddress;
         String publicHostName = StringUtils.unicodeEscape(vmHostName);

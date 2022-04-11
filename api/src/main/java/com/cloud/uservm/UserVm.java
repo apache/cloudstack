@@ -39,6 +39,10 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
 
     Long getUserDataId();
 
+    void setUserDataDetails(String userDataDetails);
+
+    String getUserDataDetails();
+
     String getDetail(String name);
 
     void setAccountId(long accountId);

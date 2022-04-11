@@ -325,7 +325,7 @@ public interface NetworkModel {
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
-    List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+    List<String[]> generateVmData(String userData, String userDataDetails, String serviceOffering, long datacenterId,
                                   String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows, String hostname);
 
     String getValidNetworkCidr(Network guestNetwork);
