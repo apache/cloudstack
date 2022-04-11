@@ -4463,6 +4463,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setObjectName("networkacllist");
         return response;

@@ -19,31 +19,21 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
+public class FreezeThawVMAnswer extends Answer {
 
-public class ReadyAnswer extends Answer {
-
-    private Map<String, String> detailsMap;
-
-    protected ReadyAnswer() {
+    public FreezeThawVMAnswer() {
+        super();
     }
 
-    public ReadyAnswer(ReadyCommand cmd) {
-        super(cmd, true, null);
+    public FreezeThawVMAnswer(FreezeThawVMCommand command, boolean success, String details) {
+        super(command, success, details);
     }
 
-    public ReadyAnswer(ReadyCommand cmd, String details) {
-        super(cmd, false, details);
+    public FreezeThawVMAnswer(FreezeThawVMCommand command, Exception e) {
+        super(command, e);
     }
 
-    public ReadyAnswer(ReadyCommand cmd, Map<String, String> detailsMap) {
-        super(cmd, true, null);
-        this.detailsMap = detailsMap;
+    public FreezeThawVMAnswer(FreezeThawVMCommand command) {
+        super(command);
     }
-
-    public Map<String, String> getDetailsMap() {
-        return detailsMap;
-    }
-
-
 }

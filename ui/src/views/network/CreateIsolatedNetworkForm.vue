@@ -214,11 +214,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -427,7 +429,8 @@ export default {
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,

@@ -15,18 +15,35 @@
 # specific language governing permissions and limitations
 # under the License.
 
-name: Lint Code Base
+# https://cwiki.apache.org/confluence/display/INFRA/git+-+.asf.yaml+features
+---
+github:
+  description: "Apache CloudStack is an opensource Infrastructure as a Service (IaaS) cloud computing platform"
+  homepage: https://cloudstack.apache.org/
+  labels:
+    - iaas
+    - cloud
+    - cloudstack
+    - infrastructure
+    - java
+    - python
+    - hosting
+    - kvm
+    - vsphere
+    - xenserver
+    - xcp-ng
 
-on: [pull_request]
+  features:
+    wiki: true
+    issues: true
+    projects: true
 
-jobs:
-  build:
-    name: SuperLinter Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: SuperLinter
-        uses: github/super-linter@v4
-        env:
-          VALIDATE_PYTHON_FLAKE8: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  enabled_merge_buttons:
+    merge: false
+    squash: true
+    rebase: false
+
+  collaborators:
+    - acs-robot
+
+  protected_branches: ~

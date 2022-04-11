@@ -67,7 +67,7 @@
               </div>
               <div class="list__col" v-if="element.startport">
                 <div class="list__label">{{ $t('label.startport') }}</div>
-                <div>{{ acl.startport }}</div>
+                <div>{{ element.startport }}</div>
               </div>
               <div class="list__col" v-if="element.endport">
                 <div class="list__label">{{ $t('label.endport') }}</div>
@@ -262,10 +262,12 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import draggable from 'vuedraggable'
+import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'AclListRulesTab',
+  mixins: [mixinForm],
   components: {
     draggable,
     TooltipButton
@@ -499,7 +501,8 @@ export default {
     },
     handleEditRule () {
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
@@ -588,7 +591,8 @@ export default {
     },
     handleAddRule (e) {
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.fetchLoading = true
         this.ruleModalVisible = false
 
