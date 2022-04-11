@@ -185,7 +185,7 @@ class CsGuestNetwork(CsDataBag):
     """ Get guestnetwork config parameters """
 
     def get_dev_data(self, devname):
-        if devname in self.dbag:
+        if devname in self.dbag and type(self.dbag[devname]) == list and len(self.dbag[devname]) > 0:
             return self.dbag[devname][0]
         return {}
 
