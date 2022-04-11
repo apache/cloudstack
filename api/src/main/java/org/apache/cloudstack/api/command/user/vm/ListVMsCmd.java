@@ -137,6 +137,11 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             description = "flag to display the resource icon for VMs", since = "4.16.0.0")
     private Boolean showIcon;
 
+    @Parameter(name = ApiConstants.ACCUMULATE, type = CommandType.BOOLEAN,
+            description = "Accumulates the VM metrics data instead of returning only the most recent data collected. The default behavior is set by the global configuration vm.stats.increment.metrics.",
+            since = "4.17.0")
+    private Boolean accumulate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -243,6 +248,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd implements UserCmd {
 
     public Boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
+    }
+
+    public Boolean getAccumulate() {
+        return accumulate;
     }
 
     /////////////////////////////////////////////////////

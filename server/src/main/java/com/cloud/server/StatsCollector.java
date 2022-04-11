@@ -47,10 +47,12 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.influxdb.BatchOptions;
@@ -70,6 +72,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -142,9 +145,12 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VmStatsDao;
+import com.google.gson.Gson;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import org.apache.commons.io.FileUtils;
@@ -222,11 +228,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
             true);
-    private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
-            "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
+    protected static ConfigKey<Boolean> vmStatsIncrementMetrics = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics", "true",
+            "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed before being returned."
             + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
+    protected static ConfigKey<Integer> vmStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.stats.max.retention.time", "1",
+            "The maximum time (in minutes) for keeping VM stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
 
     private static StatsCollector s_instance = null;
+
+    private static Gson gson = new Gson();
 
     private ScheduledExecutorService _executor = null;
     @Inject
@@ -239,6 +249,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ClusterDao _clusterDao;
     @Inject
     protected UserVmDao _userVmDao;
+    @Inject
+    protected VmStatsDao vmStatsDao;
     @Inject
     private VolumeDao _volsDao;
     @Inject
@@ -289,6 +301,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private HostGpuGroupsDao _hostGpuGroupsDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     private ConcurrentHashMap<Long, HostStats> _hostStats = new ConcurrentHashMap<Long, HostStats>();
     protected ConcurrentHashMap<Long, VmStats> _VmStats = new ConcurrentHashMap<Long, VmStats>();
@@ -296,8 +310,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<Long, StorageStats>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
+    private static final long DEFAULT_INITIAL_DELAY = 15000L;
+
     private long hostStatsInterval = -1L;
-    private long hostAndVmStatsInterval = -1L;
+    private long vmStatsInterval = -1L;
     private long storageStatsInterval = -1L;
     private long volumeStatsInterval = -1L;
     private long autoScaleStatsInterval = -1L;
@@ -315,8 +331,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private boolean _dailyOrHourly = false;
-
-    //private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
+    protected long managementServerNodeId = ManagementServerNode.getManagementServerId();
+    protected long msId = managementServerNodeId;
 
     public static StatsCollector getInstance() {
         return s_instance;
@@ -341,7 +357,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         _executor = Executors.newScheduledThreadPool(6, new NamedThreadFactory("StatsCollector"));
 
         hostStatsInterval = NumbersUtil.parseLong(configs.get("host.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-        hostAndVmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        vmStatsInterval = NumbersUtil.parseLong(configs.get("vm.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         storageStatsInterval = NumbersUtil.parseLong(configs.get("storage.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         volumeStatsInterval = NumbersUtil.parseLong(configs.get("volume.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
         autoScaleStatsInterval = NumbersUtil.parseLong(configs.get("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
@@ -383,19 +399,23 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         if (hostStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new HostCollector(), 15000L, hostStatsInterval, TimeUnit.MILLISECONDS);
+            _executor.scheduleWithFixedDelay(new HostCollector(), DEFAULT_INITIAL_DELAY, hostStatsInterval, TimeUnit.MILLISECONDS);
         }
 
-        if (hostAndVmStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
+        if (vmStatsInterval > 0) {
+            _executor.scheduleWithFixedDelay(new VmStatsCollector(), DEFAULT_INITIAL_DELAY, vmStatsInterval, TimeUnit.MILLISECONDS);
+        } else {
+            s_logger.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
         }
+
+        _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
         if (storageStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new StorageCollector(), 15000L, storageStatsInterval, TimeUnit.MILLISECONDS);
+            _executor.scheduleWithFixedDelay(new StorageCollector(), DEFAULT_INITIAL_DELAY, storageStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         if (autoScaleStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new AutoScaleMonitor(), 15000L, autoScaleStatsInterval, TimeUnit.MILLISECONDS);
+            _executor.scheduleWithFixedDelay(new AutoScaleMonitor(), DEFAULT_INITIAL_DELAY, autoScaleStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         if (vmDiskStatsInterval.value() > 0) {
@@ -423,7 +443,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         if (volumeStatsInterval > 0) {
-            _executor.scheduleAtFixedRate(new VolumeStatsTask(), 15000L, volumeStatsInterval, TimeUnit.MILLISECONDS);
+            _executor.scheduleAtFixedRate(new VolumeStatsTask(), DEFAULT_INITIAL_DELAY, volumeStatsInterval, TimeUnit.MILLISECONDS);
         }
 
         //Schedule disk stats update task
@@ -467,6 +487,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
         long period = _usageAggregationRange * ONE_MINUTE_IN_MILLISCONDS;
         _diskStatsUpdateExecutor.scheduleAtFixedRate(new VmDiskStatsUpdaterTask(), (endDate - System.currentTimeMillis()), period, TimeUnit.MILLISECONDS);
+
+        ManagementServerHostVO mgmtServerVo = managementServerHostDao.findByMsid(managementServerNodeId);
+        if (mgmtServerVo != null) {
+            msId = mgmtServerVo.getId();
+        } else {
+            s_logger.warn(String.format("Cannot find management server with msid [%s]. "
+                    + "Therefore, VM stats will be recorded with the management server MAC address converted as a long in the mgmt_server_id column.", managementServerNodeId));
+        }
     }
 
     /**
@@ -568,7 +596,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         @Override
         protected void runInContext() {
             try {
-                s_logger.trace("VmStatsCollector is running...");
+                s_logger.debug("VmStatsCollector is running...");
 
                 SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
@@ -577,6 +605,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
                 for (HostVO host : hosts) {
                     List<UserVmVO> vms = _userVmDao.listRunningByHostId(host.getId());
+                    Date timestamp = new Date();
+
                     List<Long> vmIds = new ArrayList<Long>();
 
                     for (UserVmVO vm : vms) {
@@ -594,7 +624,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 UserVmVO userVmVo = _userVmDao.findById(vmId);
                                 statsForCurrentIteration.setUserVmVO(userVmVo);
 
-                                storeVirtualMachineStatsInMemory(statsForCurrentIteration);
+                                persistVirtualMachineStats(statsForCurrentIteration, timestamp);
 
                                 if (externalStatsType == ExternalStatsProtocol.GRAPHITE) {
                                     prepareVmMetricsForGraphite(metrics, statsForCurrentIteration);
@@ -619,8 +649,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     }
                 }
 
-                cleanUpVirtualMachineStats();
-
             } catch (Throwable t) {
                 s_logger.error("Error trying to retrieve VM stats", t);
             }
@@ -632,8 +660,90 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    public VmStats getVmStats(long id) {
-        return _VmStats.get(id);
+    /**
+     * <p>Previously, the VM stats cleanup process was triggered during the data collection process.
+     * So, when data collection was disabled, the cleaning process was also disabled.</p>
+     *
+     * <p>With the introduction of persistence of VM stats, as well as the provision of historical data,
+     * we created this class to allow that both the collection process and the data cleaning process
+     * can be enabled/disabled independently.</p>
+     */
+    class VmStatsCleaner extends ManagedContextRunnable{
+        protected void runInContext() {
+            cleanUpVirtualMachineStats();
+        }
+    }
+
+    /**
+     * Gets the latest or the accumulation of the stats collected from a given VM.
+     *
+     * @param vmId the specific VM.
+     * @param accumulate whether or not the stats data should be accumulated.
+     * @return the latest or the accumulation of the stats for the specified VM.
+     */
+    public VmStats getVmStats(long vmId, Boolean accumulate) {
+        List<VmStatsVO> vmStatsVOList = vmStatsDao.findByVmIdOrderByTimestampDesc(vmId);
+
+        if (CollectionUtils.isEmpty(vmStatsVOList)) {
+            return null;
+        }
+
+        if (accumulate != null) {
+            return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, accumulate.booleanValue());
+        }
+        return getLatestOrAccumulatedVmMetricsStats(vmStatsVOList, BooleanUtils.toBoolean(vmStatsIncrementMetrics.value()));
+    }
+
+    /**
+     * Gets the latest or the accumulation of a list of VM stats.<br>
+     * It extracts the stats data from the VmStatsVO.
+     *
+     * @param vmStatsVOList the list of VM stats.
+     * @param accumulate {@code true} if the data should be accumulated, {@code false} otherwise.
+     * @return the {@link VmStatsEntry} containing the latest or the accumulated stats.
+     */
+    protected VmStatsEntry getLatestOrAccumulatedVmMetricsStats (List<VmStatsVO> vmStatsVOList, boolean accumulate) {
+        if (accumulate) {
+            return accumulateVmMetricsStats(vmStatsVOList);
+        }
+        return gson.fromJson(vmStatsVOList.get(0).getVmStatsData(), VmStatsEntry.class);
+    }
+
+    /**
+     * Accumulates (I/O) stats for a given VM.
+     *
+     * @param vmStatsVOList the list of stats for a given VM.
+     * @return the {@link VmStatsEntry} containing the accumulated (I/O) stats.
+     */
+    protected VmStatsEntry accumulateVmMetricsStats(List<VmStatsVO> vmStatsVOList) {
+        VmStatsEntry latestVmStats = gson.fromJson(vmStatsVOList.remove(0).getVmStatsData(), VmStatsEntry.class);
+
+        VmStatsEntry vmStatsEntry = new VmStatsEntry();
+        vmStatsEntry.setEntityType(latestVmStats.getEntityType());
+        vmStatsEntry.setVmId(latestVmStats.getVmId());
+        vmStatsEntry.setCPUUtilization(latestVmStats.getCPUUtilization());
+        vmStatsEntry.setNumCPUs(latestVmStats.getNumCPUs());
+        vmStatsEntry.setMemoryKBs(latestVmStats.getMemoryKBs());
+        vmStatsEntry.setIntFreeMemoryKBs(latestVmStats.getIntFreeMemoryKBs());
+        vmStatsEntry.setTargetMemoryKBs(latestVmStats.getTargetMemoryKBs());
+        vmStatsEntry.setNetworkReadKBs(latestVmStats.getNetworkReadKBs());
+        vmStatsEntry.setNetworkWriteKBs(latestVmStats.getNetworkWriteKBs());
+        vmStatsEntry.setDiskWriteKBs(latestVmStats.getDiskWriteKBs());
+        vmStatsEntry.setDiskReadIOs(latestVmStats.getDiskReadIOs());
+        vmStatsEntry.setDiskWriteIOs(latestVmStats.getDiskWriteIOs());
+        vmStatsEntry.setDiskReadKBs(latestVmStats.getDiskReadKBs());
+
+        for (VmStatsVO vmStatsVO : vmStatsVOList) {
+            VmStatsEntry currentVmStatsEntry = gson.fromJson(vmStatsVO.getVmStatsData(), VmStatsEntry.class);
+
+            vmStatsEntry.setNetworkReadKBs(vmStatsEntry.getNetworkReadKBs() + currentVmStatsEntry.getNetworkReadKBs());
+            vmStatsEntry.setNetworkWriteKBs(vmStatsEntry.getNetworkWriteKBs() + currentVmStatsEntry.getNetworkWriteKBs());
+            vmStatsEntry.setDiskReadKBs(vmStatsEntry.getDiskReadKBs() + currentVmStatsEntry.getDiskReadKBs());
+            vmStatsEntry.setDiskWriteKBs(vmStatsEntry.getDiskWriteKBs() + currentVmStatsEntry.getDiskWriteKBs());
+            vmStatsEntry.setDiskReadIOs(vmStatsEntry.getDiskReadIOs() + currentVmStatsEntry.getDiskReadIOs());
+            vmStatsEntry.setDiskWriteIOs(vmStatsEntry.getDiskWriteIOs() + currentVmStatsEntry.getDiskWriteIOs());
+        }
+        return vmStatsEntry;
     }
 
     class VmDiskStatsUpdaterTask extends ManagedContextRunnable {
@@ -1460,57 +1570,36 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     /**
-     * Stores virtual machine stats in memory (map of {@link VmStatsEntry}).
+     * Persists VM stats in the database.
+     * @param statsForCurrentIteration the metrics stats data to persist.
+     * @param timestamp the time that will be stamped.
      */
-    private void storeVirtualMachineStatsInMemory(VmStatsEntry statsForCurrentIteration) {
-        VmStatsEntry statsInMemory = (VmStatsEntry)_VmStats.get(statsForCurrentIteration.getVmId());
-
-        boolean vmStatsIncrementMetrics = BooleanUtils.toBoolean(VM_STATS_INCREMENT_METRICS_IN_MEMORY.value());
-        if (statsInMemory == null || !vmStatsIncrementMetrics) {
-            _VmStats.put(statsForCurrentIteration.getVmId(), statsForCurrentIteration);
-        } else {
-            s_logger.debug(String.format("Increment saved values of NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs, DiskWriteIOs, with current metrics for VM with ID [%s]. "
-                    + "To change this process, check value of 'vm.stats.increment.metrics.in.memory' configuration.", statsForCurrentIteration.getVmId()));
-            statsInMemory.setCPUUtilization(statsForCurrentIteration.getCPUUtilization());
-            statsInMemory.setNumCPUs(statsForCurrentIteration.getNumCPUs());
-            statsInMemory.setNetworkReadKBs(statsInMemory.getNetworkReadKBs() + statsForCurrentIteration.getNetworkReadKBs());
-            statsInMemory.setNetworkWriteKBs(statsInMemory.getNetworkWriteKBs() + statsForCurrentIteration.getNetworkWriteKBs());
-            statsInMemory.setDiskWriteKBs(statsInMemory.getDiskWriteKBs() + statsForCurrentIteration.getDiskWriteKBs());
-            statsInMemory.setDiskReadIOs(statsInMemory.getDiskReadIOs() + statsForCurrentIteration.getDiskReadIOs());
-            statsInMemory.setDiskWriteIOs(statsInMemory.getDiskWriteIOs() + statsForCurrentIteration.getDiskWriteIOs());
-            statsInMemory.setDiskReadKBs(statsInMemory.getDiskReadKBs() + statsForCurrentIteration.getDiskReadKBs());
-            statsInMemory.setMemoryKBs(statsForCurrentIteration.getMemoryKBs());
-            statsInMemory.setIntFreeMemoryKBs(statsForCurrentIteration.getIntFreeMemoryKBs());
-            statsInMemory.setTargetMemoryKBs(statsForCurrentIteration.getTargetMemoryKBs());
-
-            _VmStats.put(statsForCurrentIteration.getVmId(), statsInMemory);
-        }
+    protected void persistVirtualMachineStats(VmStatsEntry statsForCurrentIteration, Date timestamp) {
+        VmStatsEntryBase vmStats = new VmStatsEntryBase(statsForCurrentIteration.getVmId(), statsForCurrentIteration.getMemoryKBs(), statsForCurrentIteration.getIntFreeMemoryKBs(),
+                statsForCurrentIteration.getTargetMemoryKBs(), statsForCurrentIteration.getCPUUtilization(), statsForCurrentIteration.getNetworkReadKBs(),
+                statsForCurrentIteration.getNetworkWriteKBs(), statsForCurrentIteration.getNumCPUs(), statsForCurrentIteration.getDiskReadKBs(),
+                statsForCurrentIteration.getDiskWriteKBs(), statsForCurrentIteration.getDiskReadIOs(), statsForCurrentIteration.getDiskWriteIOs(),
+                statsForCurrentIteration.getEntityType());
+        VmStatsVO vmStatsVO = new VmStatsVO(statsForCurrentIteration.getVmId(), msId, timestamp, gson.toJson(vmStats));
+        s_logger.trace(String.format("Recording VM stats: [%s].", vmStatsVO.toString()));
+        vmStatsDao.persist(vmStatsVO);
     }
 
     /**
-     * Removes stats for a given virtual machine.
-     * @param vmId ID of the virtual machine to remove stats.
-     */
-    public void removeVirtualMachineStats(Long vmId) {
-        s_logger.debug(String.format("Removing stats from VM with ID: %s .",vmId));
-        _VmStats.remove(vmId);
-    }
-
-    /**
-     * Removes stats of virtual machines that are not running from memory.
+     * Removes the oldest VM stats records according to the global
+     * parameter {@code vm.stats.max.retention.time}.
      */
     protected void cleanUpVirtualMachineStats() {
-        List<Long> allRunningVmIds = new ArrayList<Long>();
-        for (UserVmVO vm : _userVmDao.listAllRunning()) {
-            allRunningVmIds.add(vm.getId());
+        Integer maxRetentionTime = vmStatsMaxRetentionTime.value();
+        if (maxRetentionTime <= 0) {
+            s_logger.debug(String.format("Skipping VM stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
+                    vmStatsMaxRetentionTime.scope(), vmStatsMaxRetentionTime.toString()));
+            return;
         }
-
-        List<Long> vmIdsToRemoveStats = new ArrayList<Long>(_VmStats.keySet());
-        vmIdsToRemoveStats.removeAll(allRunningVmIds);
-
-        for (Long vmId : vmIdsToRemoveStats) {
-            removeVirtualMachineStats(vmId);
-        }
+        s_logger.trace("Removing older VM stats records.");
+        Date now = new Date();
+        Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
+        vmStatsDao.removeAllByTimestampLessThan(limit);
     }
 
     /**
@@ -1657,7 +1746,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri, VM_STATS_INCREMENT_METRICS_IN_MEMORY};
+        return new ConfigKey<?>[] {vmDiskStatsInterval, vmDiskStatsIntervalMin, vmNetworkStatsInterval, vmNetworkStatsIntervalMin, StatsTimeout, statsOutputUri,
+            vmStatsIncrementMetrics, vmStatsMaxRetentionTime};
     }
 
     public double getImageStoreCapacityThreshold() {
