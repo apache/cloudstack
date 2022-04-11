@@ -89,7 +89,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
         VirtualMachineTemplate result = null;
         try {
             result = _templateService.linkUserDataToTemplate(this);
-        } catch (CloudRuntimeException e) {
+        } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to link userdata to template, due to: %s", e.getLocalizedMessage()), e);
         }
         if (result != null) {

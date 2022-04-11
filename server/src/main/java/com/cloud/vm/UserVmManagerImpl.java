@@ -5690,7 +5690,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
-        if (StringUtils.isEmpty(userData) || userDataId == null || template.getUserDataId() == null) {
+        if (StringUtils.isEmpty(userData) && userDataId == null && template.getUserDataId() == null) {
             return null;
         }
         if (template.getUserDataId() != null) {
@@ -5728,9 +5728,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             s_logger.info("Both userdata and userdata ID are provided, precedence goes to userdata ID");
                         }
                         UserData apiUserDataVO = _userDataDao.findById(userDataId);
-                        return templateUserDataVO.getUserData().concat(apiUserDataVO.getUserData());
+                        return doConcateUserDatas(templateUserDataVO.getUserData(), apiUserDataVO.getUserData());
                     } else if (userData != null) {
-                        return templateUserDataVO.getUserData().concat(userData);
+                        return doConcateUserDatas(templateUserDataVO.getUserData(), userData);
                     } else {
                         return templateUserDataVO.getUserData();
                     }
@@ -5749,6 +5749,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return null;
+    }
+
+    private String doConcateUserDatas(String userdata1, String userdata2) {
+        byte[] userdata1Bytes = Base64.decodeBase64(userdata1.getBytes());
+        byte[] userdata2Bytes = Base64.decodeBase64(userdata2.getBytes());
+        byte[] finalUserDataBytes = new byte[userdata1Bytes.length + userdata2Bytes.length];
+        System.arraycopy(userdata1Bytes, 0, finalUserDataBytes, 0, userdata1Bytes.length);
+        System.arraycopy(userdata2Bytes, 0, finalUserDataBytes, userdata1Bytes.length, userdata2Bytes.length);
+
+        String finalUserData = Base64.encodeBase64String(finalUserDataBytes);
+        return finalUserData;
     }
 
     @Override
