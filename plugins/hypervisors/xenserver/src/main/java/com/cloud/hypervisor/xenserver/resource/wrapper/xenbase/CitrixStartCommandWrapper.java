@@ -182,31 +182,33 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             state = VmPowerState.RUNNING;
 
-            String controlIp = null;
-            for (final NicTO nic : vmSpec.getNics()) {
-                if (nic.getType() == Networks.TrafficType.Control) {
-                    controlIp = nic.getIp();
-                    break;
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
+                String controlIp = null;
+                for (final NicTO nic : vmSpec.getNics()) {
+                    if (nic.getType() == Networks.TrafficType.Control) {
+                        controlIp = nic.getIp();
+                        break;
+                    }
                 }
-            }
 
-            String result2 = citrixResourceBase.connect(conn, vmName, controlIp, 1000);
-            if (StringUtils.isEmpty(result2)) {
-                s_logger.info(String.format("Connected to SystemVM: %s", vmName));
-            }
-
-            try {
-                citrixResourceBase.copyPatchFilesToVR(controlIp, "/tmp/");
-                VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
-                if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
-                    String errMsg = "Failed to patch systemVM";
-                    s_logger.error(errMsg);
-                    return new StartAnswer(command, errMsg);
+                String result2 = citrixResourceBase.connect(conn, vmName, controlIp, 1000);
+                if (StringUtils.isEmpty(result2)) {
+                    s_logger.info(String.format("Connected to SystemVM: %s", vmName));
                 }
-            } catch (Exception e) {
-                String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
-                s_logger.error(errMsg, e);
-                return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
+
+                try {
+                    citrixResourceBase.copyPatchFilesToVR(controlIp, "/tmp/");
+                    VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
+                    if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
+                        String errMsg = "Failed to patch systemVM";
+                        s_logger.error(errMsg);
+                        return new StartAnswer(command, errMsg);
+                    }
+                } catch (Exception e) {
+                    String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                    s_logger.error(errMsg, e);
+                    return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
+                }
             }
 
             final StartAnswer startAnswer = new StartAnswer(command);
