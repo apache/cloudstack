@@ -3801,7 +3801,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (StoragePoolVO storagePoolVO : pools) {
                     List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
                     if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
-                        throw new InvalidParameterValueException(String.format("There are active volumes using offering [%s], and the pools [%s] don't have the new tags", diskOffering.getId(), pools));
+                                                String offeringUuid = _diskOfferingDao.findById(diskOffering.getId()).getUuid();
+                        List<VolumeVO> volumes = _volumeDao.findByDiskOfferingId(diskOffering.getId());
+                        List<String> listOfVolumesNamesAndUuid = new ArrayList<>();
+                        for (VolumeVO volumeVO : volumes) {
+                            listOfVolumesNamesAndUuid.add(String.format("Name: %s, UUID: %s",volumeVO.getName(), volumeVO.getUuid()));
+                        }
+                        throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering [Name: %s, UUID: %s], and the pool [Name: %s, UUID: %s] doesn't have the new tags. " +
+                                "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them to the disk offering.",
+                                diskOffering.getName(), offeringUuid, storagePoolVO.getName(), storagePoolVO.getUuid(), listOfVolumesNamesAndUuid));
                     }
                 }
             }
