@@ -46,6 +46,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "user_data_id", nullable = true, length = 17)
     private Long userDataId = null;
 
+    @Column(name = "user_data_details", updatable = true)
+    private String userDataDetails;
+
     @Column(name = "display_name", updatable = true, nullable = true)
     private String displayName;
 
@@ -77,10 +80,11 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
 
     public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled,
-                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, Long userDataId, String name) {
+                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, Long userDataId, String userDataDetails, String name) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse);
         this.userData = userData;
         this.userDataId = userDataId;
+        this.userDataDetails = userDataDetails;
         this.displayName = displayName;
         this.details = new HashMap<String, String>();
     }

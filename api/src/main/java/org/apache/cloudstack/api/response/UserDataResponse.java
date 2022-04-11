@@ -46,10 +46,10 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the userdata owner")
     private String domain;
 
-    @SerializedName(ApiConstants.USER_DATA) @Param(description="the domain name of the userdata owner")
+    @SerializedName(ApiConstants.USER_DATA) @Param(description="the userdata content")
     private String userData;
 
-    @SerializedName(ApiConstants.PARAMS) @Param(description="the domain name of the userdata owner")
+    @SerializedName(ApiConstants.PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
     private String params;
 
     public UserDataResponse() {
