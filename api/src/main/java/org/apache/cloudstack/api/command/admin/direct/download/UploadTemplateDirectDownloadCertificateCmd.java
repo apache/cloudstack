@@ -72,12 +72,11 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
     private Long hostId;
 
     private void createResponse(DirectDownloadCertificate certificate, final List<HostCertificateStatus> hostStatusList) {
-        final DirectDownloadCertificateResponse response = new DirectDownloadCertificateResponse();
         final List<DirectDownloadCertificateHostStatusResponse> hostMapsResponse = new ArrayList<>();
         if (certificate == null) {
             throw new CloudRuntimeException("Unable to upload certificate");
         }
-        DirectDownloadCertificateResponse certificateResponse = _responseGenerator.createDirectDownloadCertificateResponse(certificate);
+        DirectDownloadCertificateResponse response = _responseGenerator.createDirectDownloadCertificateResponse(certificate);
         for (final HostCertificateStatus status : hostStatusList) {
             if (status == null) {
                 continue;
@@ -86,7 +85,7 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
                     _responseGenerator.createDirectDownloadCertificateHostStatusResponse(status);
             hostMapsResponse.add(uploadResponse);
         }
-        certificateResponse.setHostsMap(hostMapsResponse);
+        response.setHostsMap(hostMapsResponse);
         response.setResponseName(getCommandName());
         response.setObjectName("uploadtemplatedirectdownloadcertificate");
         setResponseObject(response);
