@@ -62,10 +62,10 @@ public class RegisterUserDataCmd extends BaseCmd {
             description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Name of the keypair")
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Name of the userdata")
     private String userData;
 
     @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")

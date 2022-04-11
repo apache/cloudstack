@@ -634,6 +634,77 @@ export default {
       ]
     },
     {
+      name: 'userdata',
+      title: 'label.user.data',
+      icon: 'key-outlined',
+      docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
+      permission: ['listUserData'],
+      columns: () => {
+        var fields = ['name', 'userdata']
+        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
+          fields.push('account')
+        }
+        return fields
+      },
+      resourceType: 'UserData',
+      details: ['id', 'name', 'userdata', 'account', 'domain'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'userdata'
+      }],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'registerUserData',
+          icon: 'plus-outlined',
+          label: 'label.register.user.data',
+          docHelp: 'adminguide/virtual_machines.html#creating-the-ssh-keypair',
+          listView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/RegisterUserData.vue')))
+        },
+        {
+          api: 'deleteUserData',
+          icon: 'delete-outlined',
+          label: 'label.remove.user.data',
+          message: 'message.please.confirm.remove.user.data',
+          dataView: true,
+          args: ['id', 'account', 'domainid'],
+          mapping: {
+            id: {
+              value: (record, params) => { return record.id }
+            },
+            account: {
+              value: (record, params) => { return record.account }
+            },
+            domainid: {
+              value: (record, params) => { return record.domainid }
+            }
+          },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x, account: data[0].account, domainid: data[0].domainid
+              }
+            })
+          }
+        }
+      ]
+    },
+    {
       name: 'affinitygroup',
       title: 'label.affinity.groups',
       icon: 'swap-outlined',

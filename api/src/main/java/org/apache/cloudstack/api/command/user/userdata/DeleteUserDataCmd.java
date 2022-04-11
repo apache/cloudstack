@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.user.Account;
+import com.cloud.user.UserData;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.log4j.Logger;
 
@@ -29,9 +30,8 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.user.SSHKeyPair;
 
-@APICommand(name = "deleteUserData", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {SSHKeyPair.class},
+@APICommand(name = "deleteUserData", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {UserData.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18")
 public class DeleteUserDataCmd extends BaseCmd {
 

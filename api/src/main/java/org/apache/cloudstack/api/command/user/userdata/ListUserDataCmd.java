@@ -29,10 +29,9 @@ import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import com.cloud.user.SSHKeyPair;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listUserData", description = "List registered userdatas", responseObject = UserDataResponse.class, entityType = {SSHKeyPair.class},
+@APICommand(name = "listUserData", description = "List registered userdatas", responseObject = UserDataResponse.class, entityType = {UserData.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18")
 public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUserDataCmd.class.getName());
