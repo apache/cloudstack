@@ -26,20 +26,8 @@ export default {
       title: 'label.global.settings',
       icon: 'setting-outlined',
       permission: ['listConfigurations'],
-      columns: ['name', 'description', 'category', 'value', 'actions']
-    },
-    {
-      name: 'preferences',
-      title: 'label.preferences',
-      // icon: 'setting',
-      // permission: ['listConfigurations'],
-      // columns: ['name', 'description', 'category', 'value', 'actions']
-      label: 'label.preferences',
-      api: 'listConfigurations',
-      icon: 'setting-outlined',
       listView: true,
       popup: true,
-      // component: () => import('@/views/setting/GlobalSettingsTab.vue')
       component: () => import('@/views/setting/GlobalConfiguration.vue')
     },
     {

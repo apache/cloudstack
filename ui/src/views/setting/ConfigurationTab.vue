@@ -22,7 +22,7 @@
       :columns="columns"
       :dataSource="this.configdata"
       :rowKey="record => record.name"
-      :pagination="false"
+      :pagination="true"
       :rowClassName="getRowClassName"
       style="overflow-y: auto; margin-left: 10px" >
 
@@ -77,18 +77,46 @@ export default {
     }
   },
   created () {
-    this.fetchConfigurationDataByGroup()
+    this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
   },
   watch: {
+    group: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem) {
+          return
+        }
+        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
+      }
+    },
+    subgroup: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem) {
+          return
+        }
+        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
+      }
+    },
+    '$route' (to, from) {
+      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
+        if ('name' in to.query) {
+          this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup, name: to.query.name })
+        } else {
+          this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
+        }
+      }
+    },
+    '$i18n.locale' (to, from) {
+      if (to !== from) {
+        this.fetchConfigurationDataByGroup({ group: this.group, subgroup: this.subgroup })
+      }
+    }
   },
   methods: {
-    fetchConfigurationDataByGroup () {
+    fetchConfigurationDataByGroup (params = {}) {
       this.tabLoading = true
-      const params = {
-        group: this.group,
-        subgroup: this.subgroup,
-        pagesize: -1
-      }
+      params.pagesize = -1
       console.log('group name: ' + this.group)
       api('listConfigurations', params).then(response => {
         this.configdata = response.listconfigurationsresponse.configuration

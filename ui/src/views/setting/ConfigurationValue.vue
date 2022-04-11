@@ -50,8 +50,9 @@
       </span>
       <span v-else-if="configrecord.type ==='Range'">
         <a-row :gutter="12">
-          <a-col :md="10" :lg="10">
+          <a-col :md="10" :lg="11">
             <a-slider
+              class="config-slider-value"
               :defaultValue="configrecord.value * 100"
               :min="0"
               :max="100"
@@ -64,6 +65,7 @@
           </a-col>
           <a-col :md="4" :lg="4">
             <a-input-number
+              class="config-slider-text"
               :defaultValue="configrecord.value * 100"
               :disabled=true
               v-model:value="editableValue"
@@ -113,6 +115,7 @@
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
           @onClick="resetConfigurationValue(configrecord)"
+          v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
       </span>
@@ -167,10 +170,15 @@ export default {
       console.log(this.editableValue)
       this.fetchLoading = true
       this.editableValueKey = null
-      api('updateConfiguration', {
+      var newValue = this.editableValue
+      if (configrecord.type === 'Range') {
+        newValue = newValue / 100
+      }
+      const params = {
         name: configrecord.name,
-        value: this.editableValue
-      }).then(json => {
+        value: newValue
+      }
+      api('updateConfiguration', params).then(json => {
         this.$store.dispatch('RefreshFeatures')
         this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
         if (json.updateconfigurationresponse &&
@@ -186,6 +194,10 @@ export default {
         this.editableValue = configrecord.value
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.save.setting')
+        })
       }).finally(() => {
         this.fetchLoading = false
         this.$emit('refresh')
@@ -197,8 +209,13 @@ export default {
       api('resetConfiguration', {
         name: configrecord.name
       }).then(json => {
+        if (configrecord.type === 'Range') {
+          this.editableValue = Number(json.resetconfigurationresponse.configuration.value) * 100
+        } else {
+          this.editableValue = json.resetconfigurationresponse.configuration.value
+        }
         this.$store.dispatch('RefreshFeatures')
-        this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
+        this.$message.success(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`)
         if (json.resetconfigurationresponse &&
           json.resetconfigurationresponse.configuration &&
           !json.resetconfigurationresponse.configuration.isdynamic &&
@@ -209,8 +226,13 @@ export default {
           })
         }
       }).catch(error => {
+        this.editableValue = configrecord.value
         console.error(error)
-        this.$message.error(this.$t('message.error.save.setting'))
+        this.$message.error(this.$t('message.error.reset.config'))
+        this.$notification.error({
+          message: this.$t('label.error'),
+          description: this.$t('message.error.reset.config')
+        })
       }).finally(() => {
         this.fetchLoading = false
         this.$emit('refresh')
@@ -226,7 +248,11 @@ export default {
           this.editableValue = false
         }
       } else if (configrecord.type === 'Number' || configrecord.type === 'Decimal') {
-        this.editableValue = Number(configrecord.value)
+        if (configrecord.value) {
+          this.editableValue = Number(configrecord.value)
+        } else {
+          this.editableValue = Number(configrecord.defaultvalue)
+        }
       } else {
         if (configrecord.value) {
           this.editableValue = String(configrecord.value)
@@ -263,6 +289,14 @@ export default {
       margin-top: 0;
       margin-left: 0;
     }
+}
 
-  }
+.config-slider-value {
+  width: 70px;
+}
+
+.config-slider-text {
+  width: 50px;
+  margin-left: 10px;
+}
 </style>

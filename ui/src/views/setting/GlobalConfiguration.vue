@@ -21,14 +21,14 @@
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px">
-            <breadcrumb :resource="resource">
+            <breadcrumb>
               <template #end>
                 <a-button
                   :loading="loading"
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
-                  @click="fetchConfigurationData()">
+                  @click="refreshConfigurationData()">
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
@@ -80,6 +80,7 @@
 
 <script>
 import { api } from '@/api'
+import { mixin, mixinDevice } from '@/utils/mixin.js'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
@@ -107,6 +108,7 @@ export default {
     ConfigurationTab,
     AllConfigurationsTab
   },
+  mixins: [mixin, mixinDevice],
   props: {
     loading: {
       type: Boolean,
@@ -136,6 +138,34 @@ export default {
     this.fetchConfigurationGroups()
   },
   watch: {
+  //   configGroup: {
+  //     deep: true,
+  //     handler (newItem, oldItem) {
+  //       if (!newItem) {
+  //         return
+  //       }
+  //       if (this.configGroup.length > 0) {
+  //         const query = Object.assign({}, this.$route.query)
+  //         delete query.page
+  //         delete query.pagesize
+  //         this.$router.push({ query })
+  //       }
+  //     }
+  //   },
+  //   configSubGroup: {
+  //     deep: true,
+  //     handler (newItem, oldItem) {
+  //       if (!newItem) {
+  //         return
+  //       }
+  //       if (this.configSubGroup.length > 0) {
+  //         const query = Object.assign({}, this.$route.query)
+  //         delete query.page
+  //         delete query.pagesize
+  //         this.$router.push({ query })
+  //       }
+  //     }
+  //   }
   },
   methods: {
     fetchConfigurationGroups () {
@@ -192,6 +222,8 @@ export default {
       }
       if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
         const query = Object.assign({}, this.$route.query)
+        delete query.page
+        delete query.pagesize
         query.group = this.configGroup
         query.subgroup = this.configSubGroup
         history.pushState(
@@ -215,6 +247,8 @@ export default {
       this.configSubGroup = e
       if (this.configGroup.length > 0 && this.configSubGroup.length > 0) {
         const query = Object.assign({}, this.$route.query)
+        delete query.page
+        delete query.pagesize
         query.group = this.configGroup
         query.subgroup = this.configSubGroup
         history.pushState(
@@ -234,11 +268,20 @@ export default {
         )
       }
     },
+    refreshConfigurationData () {
+      // this.fetchConfigurationGroups()
+      // const query = Object.assign({}, this.$route.query)
+      // this.$router.push({ query })
+      // this.$router.push('/globalsetting')
+      this.onSearch({})
+    },
     onSearch (opts) {
       const query = Object.assign({}, this.$route.query)
       for (const key in this.searchParams) {
         delete query[key]
       }
+      delete query.name
+      delete query.q
       this.searchParams = {}
       if (opts && Object.keys(opts).length > 0) {
         this.searchParams = opts
@@ -246,25 +289,27 @@ export default {
           const value = opts.searchQuery
           if (value && value.length > 0) {
             query.name = value
+            query.q = value
           }
           this.searchParams = {}
         } else {
           Object.assign(query, opts)
         }
       }
-      query.page = '1'
-      query.pagesize = String(this.pageSize)
-      if (JSON.stringify(query) === JSON.stringify(this.$route.query)) {
-        this.fetchData(query)
-        return
+      if (this.configGroup.length > 0) {
+        query.group = this.configGroup
+      }
+      if (this.configSubGroup.length > 0) {
+        query.subgroup = this.configSubGroup
+      }
+      if (this.filter) {
+        query.keyword = this.filter
       }
       this.$router.push({ query })
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
       query.filter = filter
-      query.page = '1'
-      query.pagesize = this.pageSize.toString()
       this.$router.push({ query })
     }
   }

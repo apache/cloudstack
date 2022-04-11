@@ -1576,8 +1576,6 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
-            } else if (this.$route.name === 'preferences') {
-              query.name = value
             } else {
               query.keyword = value
             }

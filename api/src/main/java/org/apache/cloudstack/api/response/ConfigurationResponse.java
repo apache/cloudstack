@@ -44,6 +44,10 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "the value of the configuration")
     private String value;
 
+    @SerializedName(ApiConstants.DEFAULT_VALUE)
+    @Param(description = "the default value of the configuration", since = "4.17.0")
+    private String defaultValue;
+
     @SerializedName(ApiConstants.SCOPE)
     @Param(description = "scope(zone/cluster/pool/account) of the parameter that needs to be updated")
     private String scope;
@@ -64,7 +68,7 @@ public class ConfigurationResponse extends BaseResponse {
     @Param(description = "the component of the configuration", since = "4.17.0")
     private String component;
 
-    @SerializedName("parent")
+    @SerializedName(ApiConstants.PARENT)
     @Param(description = "the name of the parent configuration", since = "4.17.0")
     private String parent;
 
@@ -114,6 +118,14 @@ public class ConfigurationResponse extends BaseResponse {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public String getDescription() {

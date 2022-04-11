@@ -7489,7 +7489,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public String getConfigurationType(final String configName) {
         final ConfigurationVO cfg = _configDao.findByName(configName);
         if (cfg == null) {
-            s_logger.error("Configuration " + configName + " not found");
+            s_logger.warn("Configuration " + configName + " not found");
             return Configuration.ValueType.String.name();
         }
 
@@ -7504,7 +7504,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final ConfigKey<?> configKey = _configDepot.get(configName);
             if (configKey == null) {
                 s_logger.warn("Couldn't find configuration " + configName + " in ConfigDepot too.");
-                return null;
+                return Configuration.ValueType.String.name();
             }
             type = configKey.type();
         } else {
@@ -7527,8 +7527,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return Configuration.ValueType.Decimal.name();
         } else if (type == Boolean.class) {
             return Configuration.ValueType.Boolean.name();
-        //} else if (type == Date.class) {
-        //    return Configuration.InputType.Date.name();
         } else {
             return Configuration.ValueType.String.name();
         }

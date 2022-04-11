@@ -31,14 +31,29 @@
           <template #value="{ record }">
             <ConfigurationValue :configrecord="record" :loading="loading" />
           </template>
-          <template #expandedRowRender="{ record }" v-if="configrecord.type==='Boolean'">
-             <!-- Add children ConfigurationRow with parent, v-if record.type == 'Boolean' and record.value == true and config has records with parent as record.name -->
-            {{record.displaytext }}
-            <ConfigurationValue :configrecord="record" :loading="loading" />
+          <template #expandedRowRender="{}" v-if="parentConfigData.length > 0">
+            <p style="margin: 0">
+              <!-- Add children ConfigurationRow with parent, v-if record.type == 'Boolean' and record.value == true and config has records with parent as record.name -->
+              <a-table
+                size="small"
+                :showHeader="false"
+                :columns="parentColumns"
+                :dataSource="this.parentConfigData"
+                :rowKey="record => record.name"
+                :pagination="false"
+                :rowClassName="getRowClassName"
+                style="overflow-y: auto; margin-left: 10px" >
+
+                <template #displaytext="{ record }">
+                  <ConfigurationRow :config="this.parentConfigData" :configrecord="record" :loading="loading" />
+                </template>
+              </a-table>
+            </p>
           </template>
     </a-table>
 </template>
 <script>
+import { api } from '@/api'
 import ConfigurationValue from './ConfigurationValue'
 
 export default {
@@ -72,22 +87,54 @@ export default {
         {
           title: 'value',
           dataIndex: 'value',
-          slots: { customRender: 'value' }
+          slots: { customRender: 'value' },
+          width: '29%'
         }
       ],
+      parentColumns: [
+        {
+          title: 'Display Text',
+          dataIndex: 'displaytext',
+          slots: { customRender: 'displaytext' }
+        }
+      ],
+      parentConfigData: [],
       configrecords: [
         this.configrecord
       ]
     }
   },
   created () {
-    this.fetchData()
+    this.fetchParentConfigData()
   },
   watch: {
   },
   methods: {
-    fetchData () {
-      this.fetchLoading = false
+    fetchParentConfigData () {
+      if (!this.isBooleanValue()) {
+        return
+      }
+      this.fetchLoading = true
+      const params = {
+        parent: this.configrecord.name,
+        listAll: true
+      }
+      api('listConfigurations', params).then(response => {
+        this.parentConfigData = response.listconfigurationsresponse.configuration
+        if (!this.parentConfigData || this.parentConfigData.length === 0) {
+          this.parentConfigData = []
+        } else {
+          console.log(this.parentConfigData)
+        }
+      }).catch(error => {
+        console.error(error)
+        this.$message.error(this.$t('message.error.loading.setting'))
+      }).finally(() => {
+        this.fetchLoading = false
+      })
+    },
+    isBooleanValue () {
+      return (this.configrecord.type === 'Boolean')
     },
     getRowClassName (record, index) {
       if (index % 2 === 0) {

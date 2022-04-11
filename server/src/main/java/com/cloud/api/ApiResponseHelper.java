@@ -563,9 +563,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConfigurationResponse createConfigurationResponse(Configuration cfg) {
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
         cfgResponse.setCategory(cfg.getCategory());
-        Pair<String, String> category = _configMgr.getConfigurationGroupAndSubGroup(cfg.getName());
-        cfgResponse.setGroup(category.first());
-        cfgResponse.setSubGroup(category.second());
+        Pair<String, String> configGroupAndSubGroup = _configMgr.getConfigurationGroupAndSubGroup(cfg.getName());
+        cfgResponse.setGroup(configGroupAndSubGroup.first());
+        cfgResponse.setSubGroup(configGroupAndSubGroup.second());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
         if (cfg.isEncrypted()) {
@@ -573,6 +573,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             cfgResponse.setValue(cfg.getValue());
         }
+        cfgResponse.setDefaultValue(cfg.getDefaultValue());
         cfgResponse.setIsDynamic(cfg.isDynamic());
         cfgResponse.setComponent(cfg.getComponent());
         if (cfg.getParent() != null) {
@@ -599,7 +600,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             cfgSubGroupResponses.add(cfgSubGroupResponse);
         }
         cfgGroupResponse.setSubGroups(cfgSubGroupResponses);
-        cfgGroupResponse.setObjectName("group");
+        cfgGroupResponse.setObjectName("configurationgroup");
         return cfgGroupResponse;
     }
 

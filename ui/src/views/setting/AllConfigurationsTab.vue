@@ -17,9 +17,11 @@
 
 <template>
   <div>
-    <div class="row-element">
+    <div class="config-row-element">
       <a-table
-        class="list-view"
+        class="config-list-view"
+        size="small"
+        style="max-height: 700px; overflow-y: auto"
         :loading="loading || tabLoading"
         :columns="columns"
         :items="items"
@@ -27,12 +29,15 @@
         :columnKeys="columnKeys"
         :rowKey="record => record.name"
         @refresh="this.fetchData">
+         <template #description="{ record }">
+          {{ record.description }}
+        </template>
         <template #value="{ record }">
            <ConfigurationValue :configrecord="record" :loading="loading" />
         </template>
       </a-table>
       <a-pagination
-        class="row-element"
+        class="config-row-element"
         style="margin-top: 10px"
         size="small"
         :current="page"
@@ -86,7 +91,8 @@ export default {
           title: 'Description',
           dataIndex: 'description',
           slots: { customRender: 'description' },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
+          width: '35%'
         },
         {
           title: 'Category',
@@ -260,8 +266,15 @@ export default {
 
   }
 
-  .row-element {
+  .config-row-element {
   margin-bottom: 10px;
+  }
+
+  .config-list-view {
+    overflow-y: auto;
+    display: block;
+    width: 100%;
+    margin-top: 20px;
   }
 
 </style>

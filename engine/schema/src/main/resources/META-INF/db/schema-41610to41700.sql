@@ -1020,13 +1020,14 @@ INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, 
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Kubernetes', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('HighAvailability', 'ha', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Primary Storage', 'pool,primary', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Secondary Storage', 'image,secstorage', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Volume', 'disk', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Snapshot', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Template', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('ISO', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VM Snapshot', 'vmsnapshot', 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Storage', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Primary Storage', 'pool,primary', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Secondary Storage', 'image,secstorage', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Volume', 'disk', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Snapshot', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Template', NULL, 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('ISO', NULL, 7, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VM Snapshot', 'vmsnapshot', 8, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
 
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Network', 'firewall,vlan,dns,dhcp,externaldhcp,ipaddress,cidr', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VPC', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));

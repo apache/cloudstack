@@ -28,8 +28,6 @@
                       >
 
     <bean id="mockConfigurationDaoImpl" class="com.cloud.simulator.dao.MockConfigurationDaoImpl" />
-    <bean id="mockConfigurationGroupDaoImpl" class="com.cloud.simulator.dao.MockConfigurationGroupDaoImpl" />
-    <bean id="mockConfigurationSubGroupDaoImpl" class="com.cloud.simulator.dao.MockConfigurationSubGroupDaoImpl" />
     <bean id="mockHostDaoImpl" class="com.cloud.simulator.dao.MockHostDaoImpl" />
     <bean id="mockSecStorageDaoImpl" class="com.cloud.simulator.dao.MockSecStorageDaoImpl" />
     <bean id="mockSecurityRulesDaoImpl" class="com.cloud.simulator.dao.MockSecurityRulesDaoImpl" />

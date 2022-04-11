@@ -69,7 +69,6 @@ public class ListCfgGroupsByCmd extends BaseListCmd {
         List<ConfigurationGroupResponse> configGroupResponses = new ArrayList<ConfigurationGroupResponse>();
         for (ConfigurationGroup cfgGroup : result.first()) {
             ConfigurationGroupResponse cfgGroupResponse = _responseGenerator.createConfigurationGroupResponse(cfgGroup);
-            cfgGroupResponse.setObjectName("configurationgroup");
             configGroupResponses.add(cfgGroupResponse);
         }
 
