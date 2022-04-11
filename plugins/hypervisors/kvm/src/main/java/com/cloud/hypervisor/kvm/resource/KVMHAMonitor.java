@@ -25,6 +25,9 @@ import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -61,98 +64,69 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     }
 
     public void addStoragePool(NfsStoragePool pool) {
-        synchronized (nfsstoragePool) {
-            nfsstoragePool.put(pool._poolUUID, pool);
-        }
+        nfsstoragePool.put(pool._poolUUID, pool);
     }
 
     public void addStoragePool(RbdStoragePool pool) {
-        synchronized (rbdstoragePool) {
-            rbdstoragePool.put(pool._poolUUID, pool);
-        }
+        rbdstoragePool.put(pool._poolUUID, pool);
     }
 
     public void removeStoragePool(String uuid) {
-        synchronized (nfsstoragePool) {
-            NfsStoragePool pool = nfsstoragePool.get(uuid);
-            if (pool != null) {
-                Script.runSimpleBashScript("umount " + pool._mountDestPath);
-                nfsstoragePool.remove(uuid);
-            }
+        NfsStoragePool pool = nfsstoragePool.get(uuid);
+        if (pool != null) {
+            Script.runSimpleBashScript("umount " + pool._mountDestPath);
+            nfsstoragePool.remove(uuid);
         }
     }
 
     public void removeRbdStoragePool(String uuid) {
-        synchronized (rbdstoragePool) {
-            RbdStoragePool pool = rbdstoragePool.get(uuid);
-            if (pool != null) {
-                Script.runSimpleBashScript("umount " + pool._mountDestPath);
-                rbdstoragePool.remove(uuid);
-            }
+        RbdStoragePool pool = rbdstoragePool.get(uuid);
+        if (pool != null) {
+            Script.runSimpleBashScript("umount " + pool._mountDestPath);
+            rbdstoragePool.remove(uuid);
         }
     }
 
     public List<NfsStoragePool> getStoragePools() {
-        synchronized (nfsstoragePool) {
-            return new ArrayList<>(nfsstoragePool.values());
-        }
+        return new ArrayList<>(nfsstoragePool.values());
     }
 
     public List<RbdStoragePool> getRbdStoragePools() {
-        synchronized (rbdstoragePool) {
-            return new ArrayList<>(rbdstoragePool.values());
-        }
+        return new ArrayList<>(rbdstoragePool.values());
     }
 
     public NfsStoragePool getStoragePool(String uuid) {
-        synchronized (nfsstoragePool) {
-            return nfsstoragePool.get(uuid);
-        }
+        return nfsstoragePool.get(uuid);
     }
 
     public RbdStoragePool getRbdStoragePool(String uuid) {
-        synchronized (rbdstoragePool) {
-            return rbdstoragePool.get(uuid);
-        }
+        return rbdstoragePool.get(uuid);
     }
 
     protected void runHeartBeat() {
+        Set<String> removedPools = new HashSet<>();
         if (nfsstoragePool != null && !nfsstoragePool.isEmpty()) {
-            synchronized (nfsstoragePool) {
-                Set<String> removedPools = new HashSet<>();
-                for (String uuid : nfsstoragePool.keySet()) {
-                    NfsStoragePool nfsStoragePool = nfsstoragePool.get(uuid);
-                    runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
-                    continue;
-                }
-
-                if (!removedPools.isEmpty()) {
-                    for (String uuid : removedPools) {
-                        removeStoragePool(uuid);
-                    }
-                }
+            for (String uuid : nfsstoragePool.keySet()) {
+                NfsStoragePool nfsStoragePool = nfsstoragePool.get(uuid);
+                runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
             }
         }
 
         if (rbdstoragePool != null && !rbdstoragePool.isEmpty()) {
-            synchronized (rbdstoragePool) {
-                Set<String> removedPools = new HashSet<>();
-                for (String uuid : rbdstoragePool.keySet()) {
-                    RbdStoragePool rbdStoragePool = rbdstoragePool.get(uuid);
-                    runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
-                    continue;
-                }
+            for (String uuid : rbdstoragePool.keySet()) {
+                RbdStoragePool rbdStoragePool = rbdstoragePool.get(uuid);
+                runHeartbeatToPool(nfsStoragePool, rbdStoragePool, uuid, removedPools);
+            }
+        }
 
-                if (!removedPools.isEmpty()) {
-                    for (String uuid : removedPools) {
-                        removeRbdStoragePool(uuid);
-                    }
-                }
+        if (!removedPools.isEmpty()) {
+            for (String uuid : removedPools) {
+                removeStoragePool(uuid);
             }
         }
     }
 
-    private Set<String> runHeartbeatToPool(NfsStoragePool nfsStoragePool, RbdStoragePool rbdStoragePool, String uuid, Set<String> removedPools) {
+    private void runHeartbeatToPool(NfsStoragePool nfsStoragePool, RbdStoragePool rbdStoragePool, String uuid, Set<String> removedPools) {
         StoragePool storage;
         try {
             Connect conn = LibvirtConnection.getConnection();
@@ -161,7 +135,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                 if (storage == null) {
                     s_logger.debug(String.format("Libvirt storage pool [%s] not found, removing from HA list.", uuid));
                 } else {
-                    s_logger.debug(String.format("Libvirt storage pool [%s] was found, but it is not running, removing it from HA list.", uuid));
+                    s_logger.debug(String.format("Libvirt storage pool [%s] was found, but it is not running, removing it from the HA list.", uuid));
                 }
 
                 removedPools.add(uuid);
@@ -180,18 +154,23 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         }
 
         String result = null;
+        Process process = null;
         for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
-            Script cmd;
             if (nfsStoragePool != null) {
-                cmd = createHeartBeatCommand(nfsStoragePool, hostPrivateIp, true);
+                Script cmd = createHeartBeatCommand(nfsStoragePool, hostPrivateIp, true);
                 result = cmd.execute();
                 s_logger.debug(String.format("The command [%s], to the pool [%s], had the result [%s].", cmd.toString(), uuid, result));
             } else if (rbdStoragePool != null) {
-                cmd = createRbdHeartBeatCommand(rbdStoragePool, hostPrivateIp, true);
-                result = cmd.execute();
-                s_logger.debug(String.format("The command [%s], to the pool [%s], had the result [%s].", cmd.toString(), uuid, result));
+                ProcessBuilder processBuilder = createRbdHeartBeatCommand(rbdStoragePool, hostPrivateIp, true);
+                try {
+                    process = processBuilder.start();
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    result = bfr.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                s_logger.debug(String.format("The command [%s], to the pool [%s], had the result [%s].", processBuilder.command().toString(), uuid, result));
             }
-
             if (result != null) {
                 s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; try: %s of %s.", uuid, result, i, _heartBeatUpdateMaxTries));
                 try {
@@ -207,17 +186,20 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
         if (result != null && rebootHostAndAlertManagementOnHeartbeatTimeout) {
             s_logger.warn(String.format("Write heartbeat for pool [%s] failed: %s; stopping cloudstack-agent.", uuid, result));
-            Script cmd;
             if (nfsStoragePool != null) {
-                cmd = createHeartBeatCommand(nfsStoragePool, null, false);
+                Script cmd = createHeartBeatCommand(nfsStoragePool, null, false);
                 result = cmd.execute();
             } else if (rbdStoragePool != null) {
-                cmd = createRbdHeartBeatCommand(rbdStoragePool, null, false);
-                result = cmd.execute();
+                ProcessBuilder processBuilder = createRbdHeartBeatCommand(rbdStoragePool, null, false);
+                try {
+                    process = processBuilder.start();
+                    BufferedReader bfr = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    result = bfr.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
-        return removedPools;
     }
 
     private Script createHeartBeatCommand(NfsStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
@@ -237,22 +219,25 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
         return cmd;
     }
 
-    private Script createRbdHeartBeatCommand(RbdStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
-        Script cmd = new Script(s_heartBeatPathRbd, _heartBeatUpdateTimeout, s_logger);
-        cmd.add("-i", primaryStoragePool._poolSourceHost);
-        cmd.add("-p", primaryStoragePool._poolMountSourcePath);
-        cmd.add("-n", primaryStoragePool._poolAuthUserName);
-        cmd.add("-s", primaryStoragePool._poolAuthSecret);
+    private ProcessBuilder createRbdHeartBeatCommand(RbdStoragePool primaryStoragePool, String hostPrivateIp, boolean hostValidation) {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command().add("python3");
+        processBuilder.command().add(s_heartBeatPathRbd);
+        processBuilder.command().add("-i");
+        processBuilder.command().add(primaryStoragePool._poolSourceHost);
+        processBuilder.command().add("-p");
+        processBuilder.command().add(primaryStoragePool._poolMountSourcePath);
+        processBuilder.command().add("-n");
+        processBuilder.command().add(primaryStoragePool._poolAuthUserName);
+        processBuilder.command().add("-s");
+        processBuilder.command().add(primaryStoragePool._poolAuthSecret);
 
         if (hostValidation) {
-            cmd.add("-h", hostPrivateIp);
+            processBuilder.command().add("-v");
+            processBuilder.command().add(hostPrivateIp);
         }
 
-        if (!hostValidation) {
-            cmd.add("-c");
-        }
-
-        return cmd;
+        return processBuilder;
     }
 
     @Override

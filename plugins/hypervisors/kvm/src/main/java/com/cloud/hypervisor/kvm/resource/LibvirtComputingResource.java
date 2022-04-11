@@ -878,9 +878,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmheartbeat.sh");
         }
 
-        _heartBeatPathRbd = Script.findScript(kvmScriptsDir, "kvmheartbeat_rbd.sh");
+        _heartBeatPathRbd = Script.findScript(kvmScriptsDir, "kvmheartbeat_rbd.py");
         if (_heartBeatPathRbd == null) {
-            throw new ConfigurationException("Unable to find kvmheartbeat_rbd.sh");
+            throw new ConfigurationException("Unable to find kvmheartbeat_rbd.py");
         }
 
         _createvmPath = Script.findScript(storageScriptsDir, "createvm.sh");
@@ -903,9 +903,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find kvmvmactivity.sh");
         }
 
-        _vmActivityCheckPathRbd = Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.sh");
+        _vmActivityCheckPathRbd = Script.findScript(kvmScriptsDir, "kvmvmactivity_rbd.py");
         if (_vmActivityCheckPathRbd == null) {
-            throw new ConfigurationException("Unable to find kvmvmactivity_rbd.sh");
+            throw new ConfigurationException("Unable to find kvmvmactivity_rbd.py");
         }
 
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
@@ -2871,7 +2871,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             we pass the pool's UUID as the authSecret
                      */
                     disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(), pool.getAuthUserName(),
-                            pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
+                    pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                 } else if (pool.getType() == StoragePoolType.Gluster) {

@@ -19,7 +19,9 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.script.OutputInterpreter;
@@ -46,15 +48,18 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
     public Boolean checkingHeartBeat() {
         boolean validResult = false;
 
-        String hostAndPools = String.format("host IP [%s] in pools [%s]", hostIp, nfsStoragePools.stream().map(pool -> pool._poolIp).collect(Collectors.joining(", ")));
+        String hostAndPools = "";
 
         s_logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
 
-        for (NfsStoragePool pool : nfsStoragePools) {
+        for (NfsStoragePool nfspools : nfsStoragePools) {
+            hostAndPools = String.format("host IP [%s] in pools [%s]", hostIp, nfsStoragePools.stream().map(pool -> pool._poolIp).collect(Collectors.joining(", ")));
+            s_logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
+
             Script cmd = new Script(s_heartBeatPath, heartBeatCheckerTimeout, s_logger);
-            cmd.add("-i", pool._poolIp);
-            cmd.add("-p", pool._poolMountSourcePath);
-            cmd.add("-m", pool._mountDestPath);
+            cmd.add("-i", nfspools._poolIp);
+            cmd.add("-p", nfspools._poolMountSourcePath);
+            cmd.add("-m", nfspools._mountDestPath);
             cmd.add("-h", hostIp);
             cmd.add("-r");
             cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
@@ -63,7 +68,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             String parsedLine = parser.getLine();
 
             s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine,
-                    pool._poolIp));
+            nfspools._poolIp));
 
             if (result == null && parsedLine.contains("DEAD")) {
                 s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned [%s]. [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(),
@@ -73,24 +78,41 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             }
         }
 
-        for (RbdStoragePool pool : rbdStoragePools) {
-            Script cmd = new Script(s_heartBeatPathRbd, heartBeatCheckerTimeout, s_logger);
-            cmd.add("-i", pool._poolSourceHost);
-            cmd.add("-p", pool._poolMountSourcePath);
-            cmd.add("-n", pool._poolAuthUserName);
-            cmd.add("-s", pool._poolAuthSecret);
-            cmd.add("-h", hostIp);
-            cmd.add("-r");
-            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-            String result = cmd.execute(parser);
-            String parsedLine = parser.getLine();
+        for (RbdStoragePool rbdpools : rbdStoragePools) {
+            hostAndPools = String.format("host IP [%s] in pools [%s]", hostIp, rbdStoragePools.stream().map(pool -> pool._monHost).collect(Collectors.joining(", ")));
+            s_logger.debug(String.format("Checking heart beat with KVMHAChecker for %s", hostAndPools));
 
-            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", result: \"%s\", log: \"%s\", pool: \"%s\"}].", cmd.toString(), result, parsedLine,
-                    pool._poolIp));
+            ProcessBuilder processBuilder = new ProcessBuilder();
+            processBuilder.command().add("python3");
+            processBuilder.command().add(s_heartBeatPathRbd);
+            processBuilder.command().add("-i");
+            processBuilder.command().add(rbdpools._poolSourceHost);
+            processBuilder.command().add("-p");
+            processBuilder.command().add(rbdpools._poolMountSourcePath);
+            processBuilder.command().add("-n");
+            processBuilder.command().add(rbdpools._poolAuthUserName);
+            processBuilder.command().add("-s");
+            processBuilder.command().add(rbdpools._poolAuthSecret);
+            processBuilder.command().add("-v");
+            processBuilder.command().add(hostIp);
+            processBuilder.command().add("-r");
+            processBuilder.command().add("r");
+            Process process = null;
+            String parsedLine = "";
+            try {
+                process = processBuilder.start();
+                BufferedReader bfr = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                parsedLine = bfr.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            if (result == null && parsedLine.contains("DEAD")) {
-                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned [%s]. [%s]. It may cause a shutdown of host IP [%s].", cmd.toString(),
-                        result, parsedLine, hostIp));
+            s_logger.debug(String.format("Checking heart beat with KVMHAChecker [{command=\"%s\", log: \"%s\", pool: \"%s\"}].", processBuilder.command().toString(), parsedLine,
+            rbdpools._monHost));
+
+            if (process != null && parsedLine.contains("DEAD")) {
+                s_logger.warn(String.format("Checking heart beat with KVMHAChecker command [%s] returned. [%s]. It may cause a shutdown of host IP [%s].", processBuilder.command().toString(),
+                        parsedLine, hostIp));
             } else {
                 validResult = true;
             }
