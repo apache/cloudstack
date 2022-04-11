@@ -395,6 +395,8 @@ export default {
     }
   },
   created () {
+    this.initFormUpdateRange()
+    this.initAddIpRangeForm()
     if (!this.basicGuestNetwork) {
       this.columns.splice(6, 0,
         {

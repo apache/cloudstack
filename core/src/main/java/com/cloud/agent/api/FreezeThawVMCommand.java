@@ -19,31 +19,38 @@
 
 package com.cloud.agent.api;
 
-import java.util.Map;
+public class FreezeThawVMCommand extends Command{
 
-public class ReadyAnswer extends Answer {
+    public static final String FREEZE = "frozen";
+    public static final String THAW = "thawed";
+    public static final String STATUS = "status";
 
-    private Map<String, String> detailsMap;
+    private String vmName;
+    private String option;
 
-    protected ReadyAnswer() {
+    public FreezeThawVMCommand(String vmName) {
+        this.vmName = vmName;
     }
 
-    public ReadyAnswer(ReadyCommand cmd) {
-        super(cmd, true, null);
+    public String getVmName() {
+        return vmName;
     }
 
-    public ReadyAnswer(ReadyCommand cmd, String details) {
-        super(cmd, false, details);
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
     }
 
-    public ReadyAnswer(ReadyCommand cmd, Map<String, String> detailsMap) {
-        super(cmd, true, null);
-        this.detailsMap = detailsMap;
+    public String getOption() {
+        return option;
     }
 
-    public Map<String, String> getDetailsMap() {
-        return detailsMap;
+    public void setOption(String option) {
+        this.option = option;
     }
 
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 
 }

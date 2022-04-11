@@ -2228,10 +2228,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, null, null);
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
-        Boolean isRecursive = null;
+        Boolean isRecursive = cmd.isRecursive();
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
+        Boolean isAllocatedOrReserved = false;
+        if (isAllocated || IpAddress.State.Reserved.name().equalsIgnoreCase(state)) {
+            isAllocatedOrReserved = true;
+        }
+        if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
                     null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
@@ -2246,7 +2250,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         SearchCriteria<IPAddressVO> sc = sb.create();
         setParameters(sc, cmd, vlanType, isAllocated);
 
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
+        if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
@@ -2263,9 +2267,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Free IP addresses in system IP ranges
         List<Long> freeAddrIds = new ArrayList<>();
-        if (!(isAllocated || vlanType == VlanType.DirectAttached)) {
+        if (!(isAllocatedOrReserved || vlanType == VlanType.DirectAttached)) {
             Long zoneId = zone;
-            Account owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+            Account owner;
+            if (cmd.getProjectId() != null && cmd.getProjectId() != -1) {
+                owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+            } else {
+                owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), null);
+            }
             if (associatedNetworkId != null) {
                 NetworkVO guestNetwork = _networkDao.findById(associatedNetworkId);
                 if (zoneId == null) {
