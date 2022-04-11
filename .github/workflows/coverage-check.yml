@@ -89,7 +89,6 @@ jobs:
           done
           result=$(cat result.log)
           echo -e "::set-output name=COVERAGE::$result"
-        shell: bash
 
       - name: Comment PR Coverage Report
         uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
