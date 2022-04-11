@@ -88,8 +88,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
-import org.apache.commons.lang3.StringUtils;
-import com.google.common.base.Strings;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -100,6 +98,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 
