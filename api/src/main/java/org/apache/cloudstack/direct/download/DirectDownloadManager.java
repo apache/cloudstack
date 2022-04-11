@@ -18,6 +18,7 @@
 package org.apache.cloudstack.direct.download;
 
 import com.cloud.host.Host;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -101,5 +102,5 @@ public interface DirectDownloadManager extends DirectDownloadService, PluggableS
      * Upload client certificate to each running host
      * @return
      */
-    List<HostCertificateStatus> uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
+    Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId, Long hostId);
 }

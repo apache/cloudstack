@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.direct.download;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -23,11 +25,12 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus;
 import org.apache.log4j.Logger;
@@ -38,7 +41,7 @@ import java.util.List;
 
 @APICommand(name = UploadTemplateDirectDownloadCertificateCmd.APINAME,
         description = "Upload a certificate for HTTPS direct template download on KVM hosts",
-        responseObject = DirectDownloadCertificateHostStatusResponse.class,
+        responseObject = DirectDownloadCertificateResponse.class,
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
@@ -68,19 +71,24 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
             description = "(optional) the host ID to upload certificate")
     private Long hostId;
 
-    private void createResponse(final List<HostCertificateStatus> hostStatusList) {
-        final ListResponse<DirectDownloadCertificateHostStatusResponse> response = new ListResponse<>();
-        final List<DirectDownloadCertificateHostStatusResponse> responses = new ArrayList<>();
+    private void createResponse(DirectDownloadCertificate certificate, final List<HostCertificateStatus> hostStatusList) {
+        final DirectDownloadCertificateResponse response = new DirectDownloadCertificateResponse();
+        final List<DirectDownloadCertificateHostStatusResponse> hostMapsResponse = new ArrayList<>();
+        if (certificate == null) {
+            throw new CloudRuntimeException("Unable to upload certificate");
+        }
+        DirectDownloadCertificateResponse certificateResponse = _responseGenerator.createDirectDownloadCertificateResponse(certificate);
         for (final HostCertificateStatus status : hostStatusList) {
             if (status == null) {
                 continue;
             }
-            DirectDownloadCertificateHostStatusResponse revokeResponse =
+            DirectDownloadCertificateHostStatusResponse uploadResponse =
                     _responseGenerator.createDirectDownloadCertificateHostStatusResponse(status);
-            responses.add(revokeResponse);
+            hostMapsResponse.add(uploadResponse);
         }
-        response.setResponses(responses);
+        certificateResponse.setHostsMap(hostMapsResponse);
         response.setResponseName(getCommandName());
+        response.setObjectName("uploadtemplatedirectdownloadcertificate");
         setResponseObject(response);
     }
 
@@ -92,8 +100,11 @@ public class UploadTemplateDirectDownloadCertificateCmd extends BaseCmd {
 
         try {
             LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
-            List<HostCertificateStatus> hostStatus = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
-            createResponse(hostStatus);
+            Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadStatus =
+                    directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor, zoneId, hostId);
+            DirectDownloadCertificate certificate = uploadStatus.first();
+            List<HostCertificateStatus> hostStatus = uploadStatus.second();
+            createResponse(certificate, hostStatus);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

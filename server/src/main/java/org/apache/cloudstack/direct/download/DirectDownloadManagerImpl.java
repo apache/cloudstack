@@ -453,7 +453,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     @Override
-    public List<HostCertificateStatus> uploadCertificateToHosts(String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
+    public Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadCertificateToHosts(
+            String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
         if (alias != null && (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca"))) {
             throw new CloudRuntimeException("Please provide a different alias name for the certificate");
         }
@@ -484,7 +485,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             certificateVO = directDownloadCertificateDao.findByAlias(alias, hypervisorType, zoneId);
             if (certificateVO == null) {
                 s_logger.info("Certificate must be uploaded on zone " + zoneId);
-                return new ArrayList<>();
+                return new Pair<>(certificateVO, new ArrayList<>());
             }
         }
 
@@ -512,7 +513,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             }
         }
         s_logger.info("Certificate was successfully uploaded to " + success + " hosts, " + failed + " failed");
-        return results;
+        return new Pair<>(certificateVO, results);
     }
 
     private Pair<Boolean, String> setupCertificateOnHost(DirectDownloadCertificate certificate, long hostId) {
