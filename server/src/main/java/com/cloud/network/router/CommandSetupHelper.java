@@ -1198,6 +1198,7 @@ public class CommandSetupHelper {
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
         cmd.addVmData("userdata", "user-data", userData);
+        cmd.addVmData("userdata", "test-data", userData);
         cmd.addVmData("metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering));
         cmd.addVmData("metadata", "availability-zone", StringUtils.unicodeEscape(zoneName));
         cmd.addVmData("metadata", "local-ipv4", vmPrivateIpAddress);

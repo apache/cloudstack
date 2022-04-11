@@ -2566,6 +2566,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         if (userData != null) {
             vmData.add(new String[]{USERDATA_DIR, USERDATA_FILE, userData});
+            vmData.add(new String[]{USERDATA_DIR, "test-data", userData});
         }
         vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});

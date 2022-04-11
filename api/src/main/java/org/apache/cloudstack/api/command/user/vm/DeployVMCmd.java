@@ -157,10 +157,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the ssh keypair", since = "4.18")
     private Long userdataId;
 
-    @Parameter(name = ApiConstants.USER_DATA_POLICY,
-            description = "the ID of the template for the virtual machine", since = "4.18")
-    private String userdataPolicy;
-
     @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details", since = "4.18")
     private Map userdataDetails;
 
@@ -431,16 +427,23 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return userData;
     }
 
-    public String getUserdataPolicy() {
-        return userdataPolicy;
-    }
-
     public Long getUserdataId() {
         return userdataId;
     }
 
-    public Map getUserdataDetails() {
-        return userdataDetails;
+    public Map<String, String> getUserdataDetails() {
+        Map<String, String> userdataDetailsMap = new HashMap<String, String>();
+        if (userdataDetails != null && userdataDetails.size() != 0) {
+            Collection parameterCollection = userdataDetails.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
+                for (Map.Entry<String,String> entry: value.entrySet()) {
+                    userdataDetailsMap.put(entry.getKey(),entry.getValue());
+                }
+            }
+        }
+        return userdataDetailsMap;
     }
 
     public Long getZoneId() {

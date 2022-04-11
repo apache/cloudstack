@@ -653,6 +653,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.deployAsIs = deployAsIs;
     }
 
+    @Override
     public Long getUserDataId() {
         return userDataId;
     }
@@ -661,7 +662,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.userDataId = userDataId;
     }
 
-    public UserData.UserDataOverridePolicy getUserDataLinkPolicy() {
+    @Override
+    public UserData.UserDataOverridePolicy getUserDataOverridePolicy() {
         return userDataLinkPolicy;
     }
 
