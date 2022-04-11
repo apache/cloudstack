@@ -48,12 +48,6 @@ import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
-import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
-import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
-import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
-import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
-import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
@@ -61,6 +55,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.StringUtils;
@@ -95,7 +90,7 @@ public class ParamProcessWorker implements DispatchWorker {
 
     private void validateNonEmptyString(final Object param, final String argName) {
         if (param == null || StringUtils.isEmpty(param.toString())) {
-            throw new InvalidParameterValueException(String.format("Empty or null value provided for API arg: %s", argName));
+            throwInvalidParameterValueException(argName);
         }
     }
 
@@ -107,8 +102,20 @@ public class ParamProcessWorker implements DispatchWorker {
             value = Long.valueOf(param.toString());
         }
         if (value == null || value < 1L) {
-            throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s", argName));
+            throwInvalidParameterValueException(argName);
         }
+    }
+
+    private void validateUuidString(final Object param, final String argName) {
+        String value = String.valueOf(param);
+
+        if (!UuidUtils.validateUUID(value)) {
+            throwInvalidParameterValueException(argName);
+        }
+    }
+
+    protected void throwInvalidParameterValueException(String argName) {
+        throw new InvalidParameterValueException(String.format("Invalid value provided for API arg: %s", argName));
     }
 
     private void validateField(final Object paramObj, final Parameter annotation) throws ServerApiException {
@@ -135,6 +142,13 @@ public class ParamProcessWorker implements DispatchWorker {
                         case INTEGER:
                         case LONG:
                             validateNaturalNumber(paramObj, argName);
+                            break;
+                    }
+                    break;
+                case UuidString:
+                    switch (annotation.type()) {
+                        case STRING:
+                            validateUuidString(paramObj, argName);
                             break;
                     }
                     break;
@@ -321,31 +335,22 @@ public class ParamProcessWorker implements DispatchWorker {
             case DATE:
                 // This piece of code is for maintaining backward compatibility
                 // and support both the date formats(Bug 9724)
-                if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd ||
-                        cmdObj instanceof ArchiveAlertsCmd || cmdObj instanceof DeleteAlertsCmd || cmdObj instanceof ListUsageRecordsCmd) {
-                    final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
-                    if (isObjInNewDateFormat) {
-                        final DateFormat newFormat = newInputFormat;
-                        synchronized (newFormat) {
-                            field.set(cmdObj, newFormat.parse(paramObj.toString()));
-                        }
-                    } else {
-                        final DateFormat format = inputFormat;
-                        synchronized (format) {
-                            Date date = format.parse(paramObj.toString());
-                            if (field.getName().equals("startDate")) {
-                                date = messageDate(date, 0, 0, 0);
-                            } else if (field.getName().equals("endDate")) {
-                                date = messageDate(date, 23, 59, 59);
-                            }
-                            field.set(cmdObj, date);
-                        }
+                final boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
+                if (isObjInNewDateFormat) {
+                    final DateFormat newFormat = newInputFormat;
+                    synchronized (newFormat) {
+                        field.set(cmdObj, newFormat.parse(paramObj.toString()));
                     }
                 } else {
                     final DateFormat format = inputFormat;
                     synchronized (format) {
-                        format.setLenient(false);
-                        field.set(cmdObj, format.parse(paramObj.toString()));
+                        Date date = format.parse(paramObj.toString());
+                        if (field.getName().equals("startDate")) {
+                            date = messageDate(date, 0, 0, 0);
+                        } else if (field.getName().equals("endDate")) {
+                            date = messageDate(date, 23, 59, 59);
+                        }
+                        field.set(cmdObj, date);
                     }
                 }
                 break;
@@ -462,7 +467,7 @@ public class ParamProcessWorker implements DispatchWorker {
         // If annotation's empty, the cmd existed before 3.x try conversion to long
         final boolean isPre3x = annotation.since().isEmpty();
         // Match against Java's UUID regex to check if input is uuid string
-        final boolean isUuid = uuid.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
+        final boolean isUuid = UuidUtils.validateUUID(uuid);
         // Enforce that it's uuid for newly added apis from version 3.x
         if (!isPre3x && !isUuid)
             return null;

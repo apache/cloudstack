@@ -160,6 +160,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import store from '@/store'
 import { mapActions } from 'vuex'
+import { sourceToken } from '@/utils/request'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
 
@@ -186,7 +187,12 @@ export default {
       this.server = this.$localStorage.get(SERVER_MANAGER) || this.$config.servers[0]
     }
     this.initForm()
-    this.fetchData()
+    if (store.getters.logoutFlag) {
+      sourceToken.init()
+      this.fetchData()
+    } else {
+      this.fetchData()
+    }
   },
   methods: {
     ...mapActions(['Login', 'Logout']),
@@ -195,8 +201,12 @@ export default {
       this.form = reactive({
         server: (this.server.apiHost || '') + this.server.apiBase
       })
-      this.rules = reactive({
-        username: [
+      this.rules = reactive({})
+      this.setRules()
+    },
+    setRules () {
+      if (this.customActiveKey === 'cs') {
+        this.rules.username = [
           {
             required: true,
             message: this.$t('message.error.username'),
@@ -206,15 +216,18 @@ export default {
             validator: this.handleUsernameOrEmail,
             trigger: 'change'
           }
-        ],
-        password: [
+        ]
+        this.rules.password = [
           {
             required: true,
             message: this.$t('message.error.password'),
             trigger: 'change'
           }
         ]
-      })
+      } else {
+        this.rules.username = []
+        this.rules.password = []
+      }
     },
     fetchData () {
       api('listIdps').then(response => {
@@ -242,6 +255,7 @@ export default {
     },
     handleTabClick (key) {
       this.customActiveKey = key
+      this.setRules()
     },
     handleSubmit (e) {
       e.preventDefault()
