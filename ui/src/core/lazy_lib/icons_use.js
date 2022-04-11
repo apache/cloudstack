@@ -148,6 +148,7 @@ import {
   UndoOutlined,
   UsbOutlined,
   UserAddOutlined,
+  UsergroupDeleteOutlined,
   UserOutlined,
   UploadOutlined,
   WifiOutlined
@@ -288,6 +289,7 @@ export default {
     app.component('UndoOutlined', UndoOutlined)
     app.component('UsbOutlined', UsbOutlined)
     app.component('UserAddOutlined', UserAddOutlined)
+    app.component('UsergroupDeleteOutlined', UsergroupDeleteOutlined)
     app.component('UserOutlined', UserOutlined)
     app.component('UploadOutlined', UploadOutlined)
     app.component('WifiOutlined', WifiOutlined)
