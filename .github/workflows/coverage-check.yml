@@ -19,7 +19,7 @@ name: PR Quality Check
 
 on: [pull_request]
 
-permissions: read-all|write-all
+permissions: write-all
 
 jobs:
   build:
