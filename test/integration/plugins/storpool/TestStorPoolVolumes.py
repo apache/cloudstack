@@ -892,7 +892,7 @@ class TestStoragePool(cloudstackTestCase):
                 if flag == False:
                     raise Exception("Could not find snapshot in snapshot details")
         except Exception as err:
-            raise Exception(err)  
+            raise Exception(err)
 
         template = self.create_template_from_snapshot(self.apiclient, self.services, snapshotid = snapshot.id)
 
@@ -1000,7 +1000,7 @@ class TestStoragePool(cloudstackTestCase):
 
         backup_config = Configurations.update(self.apiclient,
             name = "sp.bypass.secondary.storage",
-            value = "false")  
+            value = "false")
 
         vm = VirtualMachine.create(
             self.apiclient,
@@ -1780,7 +1780,7 @@ class TestStoragePool(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_22_snapshot_root_disk(self):
-        ''' Test ROOT Disk Snapshot 
+        ''' Test ROOT Disk Snapshot
         '''
         vm = VirtualMachine.create(self.apiclient,
             {"name":"StorPool-%s" % uuid.uuid4() },
@@ -2094,7 +2094,7 @@ class TestStoragePool(cloudstackTestCase):
     def list_hosts_by_cluster_id(cls, clusterid):
         """List all Hosts matching criteria"""
         cmd = listHosts.listHostsCmd()
-        cmd.clusterid = clusterid  
+        cmd.clusterid = clusterid
         return(cls.apiclient.listHosts(cmd))
 
 

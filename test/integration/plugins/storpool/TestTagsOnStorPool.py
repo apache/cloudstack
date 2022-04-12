@@ -537,7 +537,7 @@ class TestStoragePool(cloudstackTestCase):
         self.vc_policy_tags(volume, vm_tags, vm)
 
         snapshot = Snapshot.create(
-            self.apiclient, 
+            self.apiclient,
             volume[0].id,
             account=self.account.name,
            domainid=self.account.domainid

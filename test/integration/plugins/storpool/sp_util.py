@@ -606,7 +606,7 @@ class StorPoolHelper():
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
-    def create_vm_custom(cls, apiclient, services, templateid=None, zoneid=None, 
+    def create_vm_custom(cls, apiclient, services, templateid=None, zoneid=None,
                serviceofferingid=None, method='GET', hypervisor=None,
                cpuNumber=None, cpuSpeed=None, memory=None, minIops=None,
                maxIops=None, hostid=None, rootdisksize=None, account=None, domainid=None
