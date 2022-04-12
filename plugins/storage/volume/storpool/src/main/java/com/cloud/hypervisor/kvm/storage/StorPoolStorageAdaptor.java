@@ -380,4 +380,9 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             KVMStoragePool destPool, ImageFormat format, int timeout) {
         return null;
     }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
+        return false;
+    }
 }
