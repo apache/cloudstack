@@ -93,7 +93,8 @@ jobs:
           result="${result//'%'/'%25'}"
           result="${result//$'\n'/'%0A'}"
           result="${result//$'\r'/'%0D'}"
-          echo "::set-output name=COVERAGE::$(echo -e $result)"
+          echo $result
+          echo "::set-output name=COVERAGE::$result"
 
       - name: Comment PR Coverage Report
         uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
