@@ -514,7 +514,9 @@ export default {
       } else {
         this.protocols = ['nfs']
       }
-      this.form.protocol = this.protocols[0]
+      if (!value) {
+        this.form.protocol = this.protocols[0]
+      }
     },
     nfsURL (server, path) {
       var url
@@ -642,7 +644,7 @@ export default {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
       } else {
-        this.fetchHypervisor(null)
+        this.fetchHypervisor(value)
       }
     },
     closeModal () {

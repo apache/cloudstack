@@ -37,6 +37,7 @@ export default {
   },
   created () {
     this.dataResource = this.resource
+    this.determineOwner()
   },
   watch: {
     resource: {

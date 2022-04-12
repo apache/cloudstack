@@ -36,6 +36,8 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -1835,6 +1837,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String url = cmd.getUrl();
         if (url != null) {
             _storageMgr.updateSecondaryStorage(cmd.getId(), cmd.getUrl());
+        }
+        try {
+            _storageMgr.enableHost(hostId);
+        } catch (StorageUnavailableException | StorageConflictException e) {
+            s_logger.error(String.format("Failed to setup host %s when enabled", host));
         }
 
         final HostVO updatedHost = _hostDao.findById(hostId);
