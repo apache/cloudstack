@@ -19,18 +19,15 @@ package org.apache.cloudstack.metrics;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import javax.inject.Inject;
 
-import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.server.DbStatsCollection;
 import com.cloud.server.StatsCollector;
 import com.cloud.usage.UsageJobVO;
@@ -79,7 +76,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.VmStatsEntryBase;
 import com.cloud.alert.AlertManager;
@@ -92,6 +88,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -129,7 +126,7 @@ import org.apache.log4j.Logger;
 
 import static com.cloud.utils.NumbersUtil.toReadableSize;
 
-public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
+public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
     private static final Logger LOGGER = Logger.getLogger(MetricsServiceImpl.class);
 
     @Inject
@@ -166,7 +163,6 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private UsageJobDao usageJobDao;
 
     private static Gson gson = new Gson();
-
 
     protected MetricsServiceImpl() {
         super();
@@ -781,12 +777,12 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     }
 
     /**
-    TODO
+    Some TODOs left here
           ◦ State (Up / Down) , makes no sense (no db no cloudstack)
           ◦ Average Queries Per Second
           ◦ Buffer Pool Utilization (buffer pool is used to cache the table data in memory and is accessed repeatedly by queries without requiring any disk I/O).
           ◦ any other relevant stats (if useful) to the response from the sql status variables.
-     * @return
+     * @return the {@see DbMetricsResponse} containing the state of the DB
      */
     @Override
     public DbMetricsResponse listDbMetrics() {

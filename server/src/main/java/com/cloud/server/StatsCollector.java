@@ -172,10 +172,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
-import com.google.gson.Gson;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import org.apache.commons.io.FileUtils;
 
 import com.codahale.metrics.JvmAttributeGaugeSet;
 import com.codahale.metrics.Metric;
@@ -295,6 +291,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             true);
     protected static ConfigKey<Boolean> vmStatsIncrementMetrics = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics", "true",
             "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed before being returned."
+            + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
     private static final ConfigKey<Boolean> VM_STATS_INCREMENT_METRICS_IN_MEMORY = new ConfigKey<>("Advanced", Boolean.class, "vm.stats.increment.metrics.in.memory", "true",
             "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed and stored in memory. "
             + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
@@ -308,8 +305,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ScheduledExecutorService _executor = null;
     @Inject
     private AgentManager _agentMgr;
-    @Inject
-    private ManagementServerHostDao managementServerHostDao;
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
@@ -336,8 +331,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private EndPointSelector _epSelector;
     @Inject
     private VmDiskStatisticsDao _vmDiskStatsDao;
-    @Inject
-    private ManagementServerHostDao _msHostDao;
     @Inject
     private UserStatisticsDao _userStatsDao;
     @Inject
@@ -509,17 +502,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (vmStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new VmStatsCollector(), DEFAULT_INITIAL_DELAY, vmStatsInterval, TimeUnit.MILLISECONDS);
         } else {
-            s_logger.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
+            LOGGER.info("Skipping collect VM stats. The global parameter vm.stats.interval is set to 0 or less than 0.");
         }
 
         _executor.scheduleWithFixedDelay(new VmStatsCleaner(), DEFAULT_INITIAL_DELAY, 60000L, TimeUnit.MILLISECONDS);
 
         scheduleCollection(MANAGEMENT_SERVER_STATUS_COLLECTION_INTERVAL, new ManagementServerCollector(), 1L);
         scheduleCollection(DATABASE_SERVER_STATUS_COLLECTION_INTERVAL, new DbCollector(), 0L);
-
-        if (hostAndVmStatsInterval > 0) {
-            _executor.scheduleWithFixedDelay(new VmStatsCollector(), 15000L, hostAndVmStatsInterval, TimeUnit.MILLISECONDS);
-        }
 
         if (storageStatsInterval > 0) {
             _executor.scheduleWithFixedDelay(new StorageCollector(), DEFAULT_INITIAL_DELAY, storageStatsInterval, TimeUnit.MILLISECONDS);
@@ -603,7 +592,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (mgmtServerVo != null) {
             msId = mgmtServerVo.getId();
         } else {
-            s_logger.warn(String.format("Cannot find management server with msid [%s]. "
+            LOGGER.warn(String.format("Cannot find management server with msid [%s]. "
                     + "Therefore, VM stats will be recorded with the management server MAC address converted as a long in the mgmt_server_id column.", managementServerNodeId));
         }
     }
@@ -757,8 +746,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
              return null;
          }
      }
-
-    Gson gson;
 
     class ManagementServerCollector extends AbstractStatsCollector {
         @Override
@@ -1359,7 +1346,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     //Check for ownership
                     //msHost in UP state with min id should run the job
-                    ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                    ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
                     if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
                         LOGGER.debug("Skipping aggregate disk stats update");
                         scanLock.unlock();
@@ -1403,7 +1390,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void runInContext() {
             //Check for ownership
             //msHost in UP state with min id should run the job
-            ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+            ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
             if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
                 LOGGER.debug("Skipping collect vm disk stats from hosts");
                 return;
@@ -1530,7 +1517,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         protected void runInContext() {
             //Check for ownership
             //msHost in UP state with min id should run the job
-            ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+            ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
             if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
                 LOGGER.debug("Skipping collect vm network stats from hosts");
                 return;
@@ -2185,7 +2172,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 statsForCurrentIteration.getDiskWriteKBs(), statsForCurrentIteration.getDiskReadIOs(), statsForCurrentIteration.getDiskWriteIOs(),
                 statsForCurrentIteration.getEntityType());
         VmStatsVO vmStatsVO = new VmStatsVO(statsForCurrentIteration.getVmId(), msId, timestamp, gson.toJson(vmStats));
-        s_logger.trace(String.format("Recording VM stats: [%s].", vmStatsVO.toString()));
+        LOGGER.trace(String.format("Recording VM stats: [%s].", vmStatsVO.toString()));
         vmStatsDao.persist(vmStatsVO);
     }
 
@@ -2196,11 +2183,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     protected void cleanUpVirtualMachineStats() {
         Integer maxRetentionTime = vmStatsMaxRetentionTime.value();
         if (maxRetentionTime <= 0) {
-            s_logger.debug(String.format("Skipping VM stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
+            LOGGER.debug(String.format("Skipping VM stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
                     vmStatsMaxRetentionTime.scope(), vmStatsMaxRetentionTime.toString()));
             return;
         }
-        s_logger.trace("Removing older VM stats records.");
+        LOGGER.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
         vmStatsDao.removeAllByTimestampLessThan(limit);
