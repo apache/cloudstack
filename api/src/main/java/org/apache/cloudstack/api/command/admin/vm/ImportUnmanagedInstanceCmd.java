@@ -158,6 +158,11 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             description = "VM is imported despite some of its NIC's MAC addresses are already present")
     private Boolean forced;
 
+    @Parameter(name = ApiConstants.USE_CONTROLLER_CONFIGURATION,
+            type = CommandType.BOOLEAN,
+            description = "volumes automatically get volume groups based on their current controller connections")
+    private Boolean useControllerConfiguration;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -264,8 +269,10 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
         if (MapUtils.isNotEmpty(dataDiskToDiskOfferingList)) {
             for (Map<String, String> entry : (Collection<Map<String, String>>)dataDiskToDiskOfferingList.values()) {
                 String disk = entry.get(VmDetailConstants.DISK);
-                Integer volumeGroup = Integer.parseInt(entry.get(VmDetailConstants.VOLUME_GROUP));
-                dataDiskVolumeGroups.put(disk, volumeGroup);
+                if(entry.get(VmDetailConstants.VOLUME_GROUP) != null){
+                    Integer volumeGroup = Integer.parseInt(entry.get(VmDetailConstants.VOLUME_GROUP));
+                    dataDiskVolumeGroups.put(disk, volumeGroup);
+                }
             }
         }
         return dataDiskVolumeGroups;
@@ -327,5 +334,9 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
             }
         }
         return accountId;
+    }
+
+    public Boolean isUseControllerConfiguration() {
+        return BooleanUtils.isTrue(this.useControllerConfiguration);
     }
 }

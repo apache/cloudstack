@@ -450,6 +450,7 @@ public class ApiConstants {
     public static final String VOLUME_ID = "volumeid";
     public static final String VOLUMES = "volumes";
     public static final String VOLUME_GROUP = "volumegroup";
+    public static final String USE_CONTROLLER_CONFIGURATION = "usecontrollerconfiguration";
     public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
