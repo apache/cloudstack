@@ -49,6 +49,7 @@
               {{ $t('message.update.ssl') }}
             </p>
             <a-form
+              layout="vertical"
               :ref="formRef"
               :model="form"
               :rules="rules"
