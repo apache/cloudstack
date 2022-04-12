@@ -19,6 +19,8 @@ name: PR Quality Check
 
 on: [pull_request]
 
+permissions: read-all|write-all
+
 jobs:
   build:
     name: JaCoCo Coverage
