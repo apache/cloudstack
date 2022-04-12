@@ -134,15 +134,14 @@
                   v-model:value="form.dns"
                 ></a-input>
               </a-form-item>
-
-              <a-form-item class="controls">
+              <div :span="24" class="action-button">
                 <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
                 <a-button type="primary" ref="submit" :loading="sslFormSubmitting" @click="handleSslFormSubmit">
                   {{ $t('label.submit' ) }}
                 </a-button>
-              </a-form-item>
+              </div>
             </a-form>
           </a-modal>
         </a-col>
