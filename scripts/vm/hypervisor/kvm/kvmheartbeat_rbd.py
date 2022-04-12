@@ -1,5 +1,19 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
 import argparse
 import os
@@ -23,7 +37,7 @@ keyringFile='keyring'
 
 def create_cephKeyring():
 	# Create Ceph keyring for executing rbd commands
-	if not os.path.exists(keyringFolder):	
+	if not os.path.exists(keyringFolder):
 		os.makedirs(keyringFolder)
 
 	if not os.path.isfile(keyringFolder+'/'+keyringFile):
@@ -70,7 +84,7 @@ def create_rbdImage():
 				image.write(data, 0)
 
 def create_hbWatcher():
-	# Watch HB RBD Image 
+	# Watch HB RBD Image
 	os.popen('setsid sh -c \"exec rbd watch hb-'+args.v+' --pool '+args.p+' -m '+args.i+' -k '+keyringFolder+'/'+keyringFile+' <> /dev/tty20 >&0 2>&1\"')
 
 
@@ -83,11 +97,11 @@ if __name__ == '__main__':
 	create_cephKeyring()
 
 	# Monitoring
-	if(args.r is None):	
+	if(args.r is None):
 		rs = watcher_list()
 		if rs == 1:
 			create_hbWatcher()
-		# Wait for watcher creation time 
+		# Wait for watcher creation time
 		time.sleep(1)
 
 	# Checker
