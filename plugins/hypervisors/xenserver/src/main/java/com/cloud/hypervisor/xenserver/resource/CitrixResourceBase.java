@@ -3446,7 +3446,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final HashMap<String, VmStatsEntry> vmResponseMap = new HashMap<String, VmStatsEntry>();
 
         for (final String vmUUID : vmUUIDs) {
-            vmResponseMap.put(vmUUID, new VmStatsEntry(0, 0, 0, 0, 0, 0, 0, "vm"));
+            vmResponseMap.put(vmUUID, new VmStatsEntry(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "vm"));
         }
 
         final Object[] rrdData = getRRDData(conn, 2); // call rrddata with 2 for

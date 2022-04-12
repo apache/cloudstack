@@ -22,12 +22,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
@@ -36,6 +37,8 @@ import org.influxdb.dto.Point;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -45,12 +48,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VmStats;
-import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.VmStatsVO;
+import com.cloud.vm.dao.VmStatsDao;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
@@ -70,16 +74,25 @@ public class StatsCollectorTest {
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
 
     @Mock
-    ConcurrentHashMap<Long, VmStats> vmStatsMock;
+    VmStatsDao vmStatsDaoMock;
 
     @Mock
-    VmStats singleVmStatsMock;
+    VmStatsEntry statsForCurrentIterationMock;
+
+    @Captor
+    ArgumentCaptor<VmStatsVO> vmStatsVOCaptor;
+
+    @Captor
+    ArgumentCaptor<Boolean> booleanCaptor;
 
     @Mock
-    UserVmDao userVmDaoMock;
+    Boolean accumulateMock;
 
     @Mock
-    UserVmVO userVmVOMock;
+    VmStatsVO vmStatsVoMock1, vmStatsVoMock2;
+
+    @Mock
+    VmStatsEntry vmStatsEntryMock;
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -240,47 +253,127 @@ public class StatsCollectorTest {
         Assert.assertEquals(expected, result);
     }
 
-    @Test
-    public void removeVirtualMachineStatsTestRemoveOneVmStats() {
-        Mockito.doReturn(new Object()).when(vmStatsMock).remove(Mockito.anyLong());
+    private void setVmStatsIncrementMetrics(String value) {
+        StatsCollector.vmStatsIncrementMetrics = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.stats.increment.metrics", value,
+                "When set to 'true', VM metrics(NetworkReadKBs, NetworkWriteKBs, DiskWriteKBs, DiskReadKBs, DiskReadIOs and DiskWriteIOs) that are collected from the hypervisor are summed before being returned. "
+                        + "On the other hand, when set to 'false', the VM metrics API will just display the latest metrics collected.", true);
+    }
 
-        statsCollector.removeVirtualMachineStats(1l);
-
-        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
+    private void setVmStatsMaxRetentionTimeValue(String value) {
+        StatsCollector.vmStatsMaxRetentionTime = new ConfigKey<Integer>("Advanced", Integer.class, "vm.stats.max.retention.time", value,
+                "The maximum time (in minutes) for keeping VM stats records in the database. The VM stats cleanup process will be disabled if this is set to 0 or less than 0.", true);
     }
 
     @Test
-    public void cleanUpVirtualMachineStatsTestDoNothing() {
-        Mockito.doReturn(new ArrayList<>()).when(userVmDaoMock).listAllRunning();
-        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(new HashMap<>()).keySet())
-        .when(vmStatsMock).keySet();
+    public void cleanUpVirtualMachineStatsTestIsDisabled() {
+        setVmStatsMaxRetentionTimeValue("0");
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(statsCollector, Mockito.never()).removeVirtualMachineStats(Mockito.anyLong());
+        Mockito.verify(vmStatsDaoMock, Mockito.never()).removeAllByTimestampLessThan(Mockito.any());
     }
 
     @Test
-    public void cleanUpVirtualMachineStatsTestRemoveOneVmStats() {
-        Mockito.doReturn(new ArrayList<>()).when(userVmDaoMock).listAllRunning();
-        Mockito.doReturn(1l).when(userVmVOMock).getId();
-        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(Map.of(1l, singleVmStatsMock)).keySet())
-        .when(vmStatsMock).keySet();
+    public void cleanUpVirtualMachineStatsTestIsEnabled() {
+        setVmStatsMaxRetentionTimeValue("1");
 
         statsCollector.cleanUpVirtualMachineStats();
 
-        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
+        Mockito.verify(vmStatsDaoMock).removeAllByTimestampLessThan(Mockito.any());
     }
 
     @Test
-    public void cleanUpVirtualMachineStatsTestRemoveOnlyOneVmStats() {
-        Mockito.doReturn(1l).when(userVmVOMock).getId();
-        Mockito.doReturn(Arrays.asList(userVmVOMock)).when(userVmDaoMock).listAllRunning();
-        Mockito.doReturn(new ConcurrentHashMap<Long, VmStats>(Map.of(1l, singleVmStatsMock, 2l, singleVmStatsMock)).keySet())
-        .when(vmStatsMock).keySet();
+    public void persistVirtualMachineStatsTestPersistsSuccessfully() {
+        statsCollector.msId = 1L;
+        Date timestamp = new Date();
+        VmStatsEntry statsForCurrentIteration = new VmStatsEntry(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "vm");
+        Mockito.doReturn(new VmStatsVO()).when(vmStatsDaoMock).persist(Mockito.any());
+        String expectedVmStatsStr = "{\"vmId\":2,\"cpuUtilization\":6.0,\"networkReadKBs\":7.0,\"networkWriteKBs\":8.0,\"diskReadIOs\":12.0,\"diskWriteIOs\":13.0,\"diskReadKBs\":10.0"
+                + ",\"diskWriteKBs\":11.0,\"memoryKBs\":3.0,\"intFreeMemoryKBs\":4.0,\"targetMemoryKBs\":5.0,\"numCPUs\":9,\"entityType\":\"vm\"}";
 
-        statsCollector.cleanUpVirtualMachineStats();
+        statsCollector.persistVirtualMachineStats(statsForCurrentIteration, timestamp);
 
-        Mockito.verify(vmStatsMock, Mockito.times(1)).remove(Mockito.anyLong());
+        Mockito.verify(vmStatsDaoMock).persist(vmStatsVOCaptor.capture());
+        VmStatsVO actual = vmStatsVOCaptor.getAllValues().get(0);
+        Assert.assertEquals(Long.valueOf(2L), actual.getVmId());
+        Assert.assertEquals(Long.valueOf(1L), actual.getMgmtServerId());
+        Assert.assertEquals(expectedVmStatsStr, actual.getVmStatsData());
+        Assert.assertEquals(timestamp, actual.getTimestamp());
     }
+
+    @Test
+    public void getVmStatsTestWithAccumulateNotNull() {
+        Mockito.doReturn(Arrays.asList(vmStatsVoMock1)).when(vmStatsDaoMock).findByVmIdOrderByTimestampDesc(Mockito.anyLong());
+        Mockito.doReturn(true).when(accumulateMock).booleanValue();
+        Mockito.doReturn(vmStatsEntryMock).when(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), Mockito.anyBoolean());
+
+        VmStats result = statsCollector.getVmStats(1L, accumulateMock);
+
+        Mockito.verify(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), booleanCaptor.capture());
+        boolean actualArg = booleanCaptor.getValue().booleanValue();
+        Assert.assertEquals(false, actualArg);
+        Assert.assertEquals(vmStatsEntryMock, result);
+    }
+
+    @Test
+    public void getVmStatsTestWithNullAccumulate() {
+        setVmStatsIncrementMetrics("true");
+        Mockito.doReturn(Arrays.asList(vmStatsVoMock1)).when(vmStatsDaoMock).findByVmIdOrderByTimestampDesc(Mockito.anyLong());
+        Mockito.doReturn(vmStatsEntryMock).when(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), Mockito.anyBoolean());
+
+        VmStats result = statsCollector.getVmStats(1L, null);
+
+        Mockito.verify(statsCollector).getLatestOrAccumulatedVmMetricsStats(Mockito.anyList(), booleanCaptor.capture());
+        boolean actualArg = booleanCaptor.getValue().booleanValue();
+        Assert.assertEquals(true, actualArg);
+        Assert.assertEquals(vmStatsEntryMock, result);
+    }
+
+    @Test
+    public void getLatestOrAccumulatedVmMetricsStatsTestAccumulate() {
+        Mockito.doReturn(null).when(statsCollector).accumulateVmMetricsStats(Mockito.anyList());
+
+        statsCollector.getLatestOrAccumulatedVmMetricsStats(Arrays.asList(vmStatsVoMock1), true);
+
+        Mockito.verify(statsCollector).accumulateVmMetricsStats(Mockito.anyList());
+    }
+
+    @Test
+    public void getLatestOrAccumulatedVmMetricsStatsTestLatest() {
+        statsCollector.getLatestOrAccumulatedVmMetricsStats(Arrays.asList(vmStatsVoMock1), false);
+
+        Mockito.verify(statsCollector, Mockito.never()).accumulateVmMetricsStats(Mockito.anyList());
+    }
+
+    @Test
+    public void accumulateVmMetricsStatsTest() {
+        String fakeStatsData1 = "{\"vmId\":1,\"cpuUtilization\":1.0,\"networkReadKBs\":1.0,"
+                + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
+                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
+                + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
+        String fakeStatsData2 = "{\"vmId\":1,\"cpuUtilization\":10.0,\"networkReadKBs\":1.0,"
+                + "\"networkWriteKBs\":1.1,\"diskReadIOs\":3.0,\"diskWriteIOs\":3.1,\"diskReadKBs\":2.0,"
+                + "\"diskWriteKBs\":2.1,\"memoryKBs\":1.0,\"intFreeMemoryKBs\":1.0,"
+                + "\"targetMemoryKBs\":1.0,\"numCPUs\":1,\"entityType\":\"vm\"}";
+        Mockito.doReturn(fakeStatsData1).when(vmStatsVoMock1).getVmStatsData();
+        Mockito.doReturn(fakeStatsData2).when(vmStatsVoMock2).getVmStatsData();
+
+        VmStatsEntry result = statsCollector.accumulateVmMetricsStats(new ArrayList<VmStatsVO>(
+                Arrays.asList(vmStatsVoMock1, vmStatsVoMock2)));
+
+        Assert.assertEquals("vm", result.getEntityType());
+        Assert.assertEquals(1, result.getVmId());
+        Assert.assertEquals(1.0, result.getCPUUtilization(), 0);
+        Assert.assertEquals(1, result.getNumCPUs());
+        Assert.assertEquals(1.0, result.getMemoryKBs(), 0);
+        Assert.assertEquals(1.0, result.getIntFreeMemoryKBs(), 0);
+        Assert.assertEquals(1.0, result.getTargetMemoryKBs(), 0);
+        Assert.assertEquals(2.0, result.getNetworkReadKBs(), 0);
+        Assert.assertEquals(2.2, result.getNetworkWriteKBs(), 0);
+        Assert.assertEquals(4.0, result.getDiskReadKBs(), 0);
+        Assert.assertEquals(4.2, result.getDiskWriteKBs(), 0);
+        Assert.assertEquals(6.0, result.getDiskReadIOs(), 0);
+        Assert.assertEquals(6.2, result.getDiskWriteIOs(), 0);
+    }
+
 }

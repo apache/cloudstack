@@ -134,14 +134,16 @@ public class ViewResponseHelper {
         return respList;
     }
 
-
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVmJoinVO... userVms) {
-        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), userVms);
+        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), null, userVms);
     }
 
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
-        Account caller = CallContext.current().getCallingAccount();
+        return createUserVmResponse(view, objectName, details, null, userVms);
+    }
 
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, UserVmJoinVO... userVms) {
+        Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
         // Initialise the vmdatalist with the input data
 
@@ -149,7 +151,7 @@ public class ViewResponseHelper {
             UserVmResponse userVmData = vmDataList.get(userVm.getId());
             if (userVmData == null) {
                 // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, caller);
+                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
             } else{
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);

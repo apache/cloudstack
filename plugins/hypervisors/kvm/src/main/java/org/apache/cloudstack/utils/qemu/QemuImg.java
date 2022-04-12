@@ -25,10 +25,13 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.commons.lang.NotImplementedException;
 import org.libvirt.LibvirtException;
 
 public class QemuImg {
+    private Logger logger = Logger.getLogger(this.getClass());
+
     public final static String BACKING_FILE = "backing_file";
     public final static String BACKING_FILE_FORMAT = "backing_file_format";
     public final static String CLUSTER_SIZE = "cluster_size";
@@ -276,14 +279,7 @@ public class QemuImg {
             script.add(optionsStr);
         }
 
-        if (StringUtils.isNotBlank(snapshotName)) {
-            if (!forceSourceFormat) {
-                script.add("-f");
-                script.add(srcFile.getFormat().toString());
-            }
-            script.add("-s");
-            script.add(snapshotName);
-        }
+        addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
 
         script.add(srcFile.getFileName());
         script.add(destFile.getFileName());
@@ -296,6 +292,39 @@ public class QemuImg {
         if (srcFile.getSize() < destFile.getSize()) {
             this.resize(destFile, destFile.getSize());
         }
+    }
+
+    /**
+     * Qemu version 2.0.0 added (via commit <a href="https://github.com/qemu/qemu/commit/ef80654d0dc1edf2dd2a51feff8cc3e1102a6583">ef80654d0dc1edf2dd2a51feff8cc3e1102a6583</a>) the
+     * flag "-l" to inform the snapshot name or ID
+     */
+    private static final int QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT = 2000000;
+
+    /**
+     * Adds a flag to inform snapshot name or ID on conversion. If the QEMU version is less than {@link QemuImg#QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT), adds the
+     * flag "-s", otherwise, adds the flag "-l".
+     */
+    protected void addSnapshotToConvertCommand(String srcFormat, String snapshotName, boolean forceSourceFormat, Script script, Long qemuVersion) {
+        if (StringUtils.isBlank(snapshotName)) {
+            return;
+        }
+
+        if (qemuVersion >= QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT) {
+            script.add("-l");
+            script.add(String.format("snapshot.name=%s", snapshotName));
+            return;
+        }
+
+        logger.debug(String.format("Current QEMU version [%s] does not support flag \"-l\" (added on version >= 2.0.0) to inform the snapshot name or ID on conversion."
+                + " Adding the old flag \"-s\" instead.", qemuVersion));
+
+        if (!forceSourceFormat) {
+            script.add("-f");
+            script.add(srcFormat);
+        }
+
+        script.add("-s");
+        script.add(snapshotName);
     }
 
     /**

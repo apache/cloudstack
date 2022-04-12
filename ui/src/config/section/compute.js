@@ -31,6 +31,13 @@ export default {
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
+      params: () => {
+        var params = {}
+        if (store.getters.metrics) {
+          params = { state: 'running' }
+        }
+        return params
+      },
       filters: () => {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {

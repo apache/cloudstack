@@ -79,6 +79,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -1116,6 +1117,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
         listener.hostDisconnected(hostId, pool.getId());
+    }
+
+    @Override
+    public void enableHost(long hostId) {
+        List<DataStoreProvider> providers = _dataStoreProviderMgr.getProviders();
+        if (providers != null) {
+            for (DataStoreProvider provider : providers) {
+                if (provider instanceof PrimaryDataStoreProvider) {
+                    try {
+                        HypervisorHostListener hypervisorHostListener = provider.getHostListener();
+                        if (hypervisorHostListener != null) {
+                            hypervisorHostListener.hostEnabled(hostId);
+                        }
+                    }
+                    catch (Exception ex) {
+                        s_logger.error("hostEnabled(long) failed for storage provider " + provider.getName(), ex);
+                    }
+                }
+            }
+        }
     }
 
     @Override
