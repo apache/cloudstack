@@ -45,7 +45,7 @@
               <info-circle-outlined style="color: rgba(0,0,0,.45)" />
             </a-tooltip>
           </template>
-          <a-input
+          <a-textarea
             v-model:value="form.userdata"
             :placeholder="apiParams.userdata.description"/>
         </a-form-item>

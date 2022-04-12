@@ -29,6 +29,8 @@ import javax.inject.Inject;
 import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.user.UserDataVO;
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -90,6 +92,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private UserDataDao userDataDao;
 
     private final SearchBuilder<TemplateJoinVO> tmpltIdPairSearch;
 
@@ -290,6 +294,14 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
             templateResponse.setChildTemplates(childTemplatesSet);
         }
 
+        if (template.getUserDataId() != null) {
+            UserDataVO userDataVO = userDataDao.findById(template.getUserDataId());
+            if (userDataVO != null) {
+                templateResponse.setUserDataId(userDataVO.getUuid());
+                templateResponse.setUserDataParams(userDataVO.getParams());
+                templateResponse.setUserDataPolicy(template.getUserDataPolicy());
+            }
+        }
         templateResponse.setObjectName("template");
         return templateResponse;
     }
