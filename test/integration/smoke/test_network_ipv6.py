@@ -301,7 +301,7 @@ class TestIpv6PublicIpRange(cloudstackTestCase):
             "smoke"],
         required_hardware="false")
     def test_01_create_ipv6_public_ip_range(self):
-        """Test to create network offering
+        """Test to add IPv6 public IP range
 
         # Validate the following:
         # 1. createVlanIpRange should return valid info for new public range
@@ -346,6 +346,43 @@ class TestIpv6PublicIpRange(cloudstackTestCase):
         )
         return
 
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_02_create_ipv6_public_ip_range_fail(self):
+        """Test to add IPv6 public IP range failure
+
+        # Validate the following:
+        # 1. createVlanIpRange should return valid info for new public range
+        # 2. The Cloud Database contains the valid information
+        """
+        ipv6_publiciprange_service = self.services["publicip6range"]
+        cidr = ipv6_publiciprange_service["ip6cidr"]
+        x = cidr.split("/")
+        x[1] = "72"
+        cidr = "/".join(x)
+        ipv6_publiciprange_service["ip6cidr"] = cidr
+        ipv6_publiciprange_service["zoneid"] = self.zone.id
+        try:
+            ipv6_publiciprange = PublicIpRange.create(
+                self.apiclient,
+                ipv6_publiciprange_service
+            )
+        except Exception as e:
+            self.debug("IPv6 public range creation failed as expected %s " % e)
+            ipv6_publiciprange = None
+        if ipv6_publiciprange != None:
+            self.debug("Created IPv6 public range with ID: %s. Deleting it before failure" % ipv6_publiciprange.id)
+            self.cleanup.append(ipv6_publiciprange)
+            self.fail("IPv6 guest prefix created despite CIDR size greater than 64")
+        return
+
 class TestIpv6GuestPrefix(cloudstackTestCase):
 
     def setUp(self):
@@ -387,7 +424,7 @@ class TestIpv6GuestPrefix(cloudstackTestCase):
             "smoke"],
         required_hardware="false")
     def test_01_create_ipv6_guest_prefix(self):
-        """Test to create network offering
+        """Test to add IPv6 guest prefix
 
         # Validate the following:
         # 1. createGuestNetworkIpv6Prefix should return valid info for new IPv6 prefix
@@ -430,6 +467,42 @@ class TestIpv6GuestPrefix(cloudstackTestCase):
         cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
         cmd.id = ipv6_guestprefix.id
         self.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_02_create_ipv6_guest_prefix_fail(self):
+        """Test to add IPv6 guest prefix failure
+
+        # Validate the following:
+        # 1. createGuestNetworkIpv6Prefix should fail
+        """
+        ipv6_guestprefix_service = self.services["guestip6prefix"]
+        cmd = createGuestNetworkIpv6Prefix.createGuestNetworkIpv6PrefixCmd()
+        cmd.zoneid = self.zone.id
+        prefix = ipv6_guestprefix_service["prefix"]
+        x = prefix.split("/")
+        x[1] = "72"
+        prefix = "/".join(x)
+        cmd.prefix = prefix
+        try:
+            ipv6_guestprefix = self.apiclient.createGuestNetworkIpv6Prefix(cmd)
+        except Exception as e:
+            self.debug("IPv6 guest prefix creation failed as expected %s " % e)
+            ipv6_guestprefix = None
+        if ipv6_guestprefix != None:
+            self.debug("Created IPv6 guest prefix with ID: %s. Deleting it before failure" % ipv6_guestprefix.id)
+            cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
+            cmd.id = ipv6_guestprefix.id
+            self.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+            self.fail("IPv6 guest prefix created despite CIDR size greater than 64")
         return
 
 class TestIpv6Network(cloudstackTestCase):
