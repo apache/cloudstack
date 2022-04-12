@@ -48,14 +48,19 @@ class CsVpcGuestNetwork(CsDataBag):
             logging.debug("CsVpcGuestNetwork:: will restart radvd !")
             CsHelper.service("radvd", "restart")
 
+    def __disable_dad(self, device):
+        CsHelper.execute("sysctl net.ipv6.conf." + device + ".accept_dad=0")
+        CsHelper.execute("sysctl net.ipv6.conf." + device + ".use_tempaddr=0")
+
     def add_address_route(self, entry):
         if 'router_guest_ip6' in entry.keys() and entry['router_guest_ip6']:
-            self.enable_ipv6()
+            self.enable_ipv6(entry['device'])
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
             if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (entry['device'], full_addr)):
                 CsHelper.execute("ip -6 addr add %s dev %s" % (full_addr, entry['device']))
             if 'router_ip6' in entry.keys() and entry['router_ip6']:
+                self.__disable_dad(VPC_PUBLIC_INTERFACE)
                 full_public_addr = entry['router_ip6'] + "/" + cidr_size
                 if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (VPC_PUBLIC_INTERFACE, full_public_addr)):
                     CsHelper.execute("ip -6 addr add %s dev %s" % (full_public_addr, VPC_PUBLIC_INTERFACE))
@@ -75,7 +80,7 @@ class CsVpcGuestNetwork(CsDataBag):
         else:
             return
 
-    def enable_ipv6(self):
+    def enable_ipv6(self, device):
         logging.debug("Enabling IPv6 in this router")
         CsHelper.execute("sysctl net.ipv6.conf.all.disable_ipv6=0")
         CsHelper.execute("sysctl net.ipv6.conf.all.forwarding=1")
@@ -86,6 +91,7 @@ class CsVpcGuestNetwork(CsDataBag):
         CsHelper.execute("sysctl net.ipv6.conf.default.accept_dad=0")
         CsHelper.execute("sysctl net.ipv6.conf.all.use_tempaddr=0")
         CsHelper.execute("sysctl net.ipv6.conf.default.use_tempaddr=0")
+        self.__disable_dad(device)
 
     def add_radvd_conf(self, entry):
         if 'router_guest_ip6' in entry.keys() and entry['router_guest_ip6']:
