@@ -14,25 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.direct.download;
 
-package org.apache.cloudstack.framework.agent.direct.download;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.Pair;
+public interface DirectDownloadCertificateHostMap extends InternalIdentity {
 
-public interface DirectDownloadService {
-
-    /**
-     * Download template/ISO into poolId bypassing secondary storage. Download performed by hostId
-     */
-    void downloadTemplate(long templateId, long poolId, long hostId);
-
-    /**
-     * Upload a stored certificate on database with id 'certificateId' to host with id 'hostId'
-     */
-    Pair<Boolean, String> provisionCertificate(long certificateId, long hostId);
-
-    /**
-     * Sync the stored certificates to host with id 'hostId'
-     */
-    boolean syncCertificatesToHost(long hostId, long zoneId);
+    long getCertificateId();
+    long getHostId();
+    boolean isRevoked();
 }
