@@ -330,7 +330,12 @@ class CsRedundant(object):
                 except Exception:
                     logging.error("ERROR getting gateway from device %s" % dev)
                 if dev == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
-                    self._add_ipv6_to_interface(interface, interface.get_ip6())
+                    try:
+                        self._add_ipv6_to_interface(interface, interface.get_ip6())
+                        if interface.get_gateway6():
+                            route.add_defaultroute_v6(interface.get_gateway6())
+                    except Exception as e:
+                        logging.error("ERROR adding IPv6, getting IPv6 gateway from device %s: %s" % (dev, e))
             else:
                 logging.error("Device %s was not ready could not bring it up" % dev)
 

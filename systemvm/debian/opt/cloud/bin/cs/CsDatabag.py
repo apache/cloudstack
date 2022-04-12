@@ -65,12 +65,12 @@ class CsCmdLine(CsDataBag):
             return self.idata()['guestgw']
         return False
 
-    def get_guest_gw6(self):
+    def get_guest_ip6gateway(self):
         if "guestgw6" in self.idata():
             return self.idata()['guestgw6']
         return False
 
-    def get_guest_cidr6_size(self):
+    def get_guest_ip6cidr_size(self):
         if "guestcidr6size" in self.idata():
             return self.idata()['guestcidr6size']
         return False
@@ -202,3 +202,40 @@ class CsGuestNetwork(CsDataBag):
         if cidrkey not in nw:
             return False
         return nw[cidrkey]
+
+    def __get_device_router_ip6prelen(self, devname):
+        nw = self.get_dev_data(devname)
+        ip6key = "router_ip6"
+        ip6cidrkey = "router_ip6_cidr"
+        if ip6key not in nw or ip6cidrkey not in nw:
+            return False
+        ip6 = nw[ip6key]
+        ip6prelen = nw[ip6cidrkey].split("/")[1]
+        return "%s/%s" % (ip6, ip6prelen)
+
+    def get_router_ip6prelen(self, devname=None):
+        if devname:
+            return self.__get_device_router_ip6prelen(devname)
+        else:
+            for key in self.dbag.keys():
+                ip6prelen = self.__get_device_router_ip6prelen(key)
+                if ip6prelen:
+                    return ip6prelen
+        return False
+
+    def __get_device_router_ip6gateway(self, devname):
+        nw = self.get_dev_data(devname)
+        ip6gatewaykey = "router_ip6_gateway"
+        if ip6gatewaykey not in nw:
+            return False
+        return nw[ip6gatewaykey]
+
+    def get_router_ip6gateway(self, devname=None):
+        if devname:
+            return self.__get_device_router_ip6gateway(devname)
+        else:
+            for key in self.dbag.keys():
+                ip6gateway = self.__get_device_router_ip6gateway(key)
+                if ip6gateway:
+                    return ip6gateway
+        return False

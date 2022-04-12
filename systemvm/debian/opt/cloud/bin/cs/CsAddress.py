@@ -136,9 +136,13 @@ class CsInterface:
         return self.get_attr("public_ip")
 
     def get_ip6(self):
-        if not self.is_public() and not self.is_guest():
-            return self.get_attr("public_ip6")
-        return self.config.cmdline().get_dev_ip6prelen(self.get_device())
+        if not self.config.is_vpc():
+            return self.config.cmdline().get_dev_ip6prelen(self.get_device())
+        if self.is_public():
+            return self.config.guestnetwork().get_router_ip6prelen()
+        elif self.is_guest():
+            return self.config.guestnetwork().get_dev_ip6prelen(self.get_device())
+        return self.get_attr("public_ip6")
 
     def get_network(self):
         return self.get_attr("network")
@@ -153,10 +157,16 @@ class CsInterface:
             return self.config.cmdline().get_guest_gw()
 
     def get_gateway6(self):
-        if self.config.is_vpc() and self.is_guest():
-            return self.config.guestnetwork().get_dev_ip6gateway(self.get_device())
-        elif not self.config.is_vpc() and self.is_guest():
-            return self.config.cmdline().get_guest_gw6()
+        if self.config.is_vpc():
+            if self.is_public():
+                return self.config.guestnetwork().get_router_ip6gateway()
+            elif self.is_guest():
+                return self.config.guestnetwork().get_dev_ip6gateway(self.get_device())
+        else:
+            if self.is_public():
+                return self.config.cmdline().get_ip6gateway()
+            elif self.is_guest():
+                return self.config.cmdline().get_guest_ip6gateway()
         return self.get_attr("gateway6")
 
     def ip_in_subnet(self, ip):
@@ -182,7 +192,7 @@ class CsInterface:
         if self.config.is_vpc() and self.is_guest():
             return self.config.guestnetwork().get_dev_ip6cidr(self.get_device())
         elif not self.config.is_vpc() and self.is_guest():
-            return self.config.cmdline().get_guest_cidr6_size()
+            return self.config.cmdline().get_guest_ip6cidr_size()
         return self.get_attr("size6")
 
     def get_device(self):
