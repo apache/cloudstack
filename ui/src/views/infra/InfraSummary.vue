@@ -109,7 +109,7 @@
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item name="pkcsKey" ref="pkcsKey" :required="true">
+              <a-form-item name="pkcs" ref="pkcs" :required="true">
                 <template #label>
                   <tooltip-label :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
                 </template>
@@ -138,7 +138,7 @@
                 <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" ref="submit" :loading="sslFormSubmitting">
+                <a-button type="primary" ref="submit" :loading="sslFormSubmitting" @click="handleSslFormSubmit">
                   {{ $t('label.submit' ) }}
                 </a-button>
               </a-form-item>
