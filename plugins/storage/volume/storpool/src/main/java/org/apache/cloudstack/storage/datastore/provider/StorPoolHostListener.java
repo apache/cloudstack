@@ -226,4 +226,9 @@ public class StorPoolHostListener implements HypervisorHostListener {
             log.warn(String.format(err, e.getMessage()));
         }
     }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
+        return true;
+    }
 }
