@@ -356,6 +356,7 @@ import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.VmStatsDao;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -548,6 +549,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private BackupManager backupManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private VmStatsDao vmStatsDao;
     @Inject
     protected CommandSetupHelper commandSetupHelper;
     @Autowired
@@ -5061,8 +5064,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        statsCollector.removeVirtualMachineStats(vmId);
-
         _userDao.findById(userId);
         boolean status = false;
         try {
@@ -5375,7 +5376,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
-        statsCollector.removeVirtualMachineStats(vmId);
+        vmStatsDao.removeAllByVmId(vmId);
 
         boolean status;
         State vmState = vm.getState();

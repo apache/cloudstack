@@ -28,7 +28,7 @@
         <a-form-item name="name" ref="name" :label="$t('label.name')">
           <a-input v-model:value="form.name" v-focus="true" />
         </a-form-item>
-        <a-form-item name="" ref="" :label="$t('label.providername')">
+        <a-form-item name="provider" ref="provider" :label="$t('label.providername')">
           <a-select
             v-model:value="form.provider"
             @change="val => { form.provider = val }"

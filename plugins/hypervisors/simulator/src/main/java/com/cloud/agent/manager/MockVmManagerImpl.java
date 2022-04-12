@@ -319,7 +319,7 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
         final HashMap<String, VmStatsEntry> vmStatsNameMap = new HashMap<String, VmStatsEntry>();
         final List<String> vmNames = cmd.getVmNames();
         for (final String vmName : vmNames) {
-            final VmStatsEntry entry = new VmStatsEntry(0, 0, 0, 0, 0, 0, 0, "vm");
+            final VmStatsEntry entry = new VmStatsEntry(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "vm");
             entry.setNetworkReadKBs(32768); // default values 256 KBps
             entry.setNetworkWriteKBs(16384);
             entry.setCPUUtilization(10);

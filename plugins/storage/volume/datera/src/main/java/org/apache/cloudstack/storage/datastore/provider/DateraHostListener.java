@@ -178,6 +178,11 @@ public class DateraHostListener implements HypervisorHostListener {
         return true;
     }
 
+    @Override
+    public boolean hostEnabled(long hostId) {
+        return true;
+    }
+
     private void handleXenServer(long clusterId, long hostId, long storagePoolId) {
         List<String> storagePaths = getStoragePaths(clusterId, storagePoolId);
 
