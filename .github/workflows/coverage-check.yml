@@ -83,22 +83,18 @@ jobs:
           cd nonoss && bash -x install-non-oss.sh && cd ..
           mvn -P quality -Dsimulator -Dnoredist clean install
 
-          result=""
+          echo "COVERAGE<<EOF" >> $GITHUB_ENV
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
             coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv | cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
-            result="|$coverage|\n$result"
+            echo "|$coverage|" >> $GITHUB_ENV
           done
-          result="${result//'%'/'%25'}"
-          result="${result//$'\n'/'%0A'}"
-          result="${result//$'\r'/'%0D'}"
-          echo $result
-          echo "::set-output name=COVERAGE::$result"
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Comment PR Coverage Report
         uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
         if: steps.java-changes.outputs.any_changed == 'true'
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: "## PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ steps.coverage.outputs.COVERAGE }}"
+          body: "## PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"
