@@ -1031,12 +1031,13 @@ class VirtualMachine:
     def importUnmanagedVM(cls, apiclient, clusterid, name, serviceofferingid, displayname=None,
                                      diskofferinglist=None, nicnetworklist=None, nicipaddresslist=None,
                                      datadiskofferinglist=None, details=None, projectid=None, hostname=None,
-                                     migrateallowed=None, domainid=None, account=None, templateid=None
-                                     ):
+                                     migrateallowed=None, domainid=None, account=None, templateid=None,
+                                     useControllerConfiguration=None):
         cmd = importUnmanagedInstance.importUnmanagedInstanceCmd()
         cmd.clusterid = clusterid
         cmd.name = name
         cmd.serviceofferingid = serviceofferingid
+        cmd.useControllerConfiguration = useControllerConfiguration
 
         if displayname:
             cmd.displayname = displayname
