@@ -36,7 +36,7 @@ public class VmMetricsResponse extends UserVmResponse {
     private String cpuTotal;
 
     @SerializedName("memorytotal")
-    @Param(description = "the total memory capacity in GB")
+    @Param(description = "the total memory capacity in GiB")
     private String memTotal;
 
     @SerializedName("networkread")
@@ -73,7 +73,7 @@ public class VmMetricsResponse extends UserVmResponse {
 
     public void setMemTotal(final Integer memory) {
         if (memory != null) {
-            this.memTotal = String.format("%.2f GB", memory / 1024.0);
+            this.memTotal = String.format("%.2f GiB", memory / 1024.0);
         }
     }
 
