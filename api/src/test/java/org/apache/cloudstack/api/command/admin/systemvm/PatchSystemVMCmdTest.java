@@ -17,16 +17,28 @@
 package org.apache.cloudstack.api.command.admin.systemvm;
 
 import com.cloud.server.ManagementService;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Optional;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(CallContext.class)
+@PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
 public class PatchSystemVMCmdTest {
 
     @Mock
@@ -62,5 +74,21 @@ public class PatchSystemVMCmdTest {
         } catch (Exception e) {
             Assert.assertEquals(failureResponse.second(), e.getMessage());
         }
+    }
+
+    @Test
+    public void validateArgsForPatchSystemVMApi() {
+        PowerMockito.mockStatic(CallContext.class);
+        CallContext callContextMock = PowerMockito.mock(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Account accountMock = PowerMockito.mock(Account.class);
+        PowerMockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        Mockito.when(accountMock.getId()).thenReturn(2L);
+        ReflectionTestUtils.setField(cmd, "id", 1L);
+        Assert.assertEquals((long)cmd.getId(), 1L);
+        Assert.assertFalse(cmd.isForced());
+        Assert.assertEquals(cmd.getEntityOwnerId(), 2L);
+
+
     }
 }
