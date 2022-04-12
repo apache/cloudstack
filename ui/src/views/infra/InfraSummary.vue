@@ -207,7 +207,7 @@ export default {
       this.rules = reactive({
         root: [{ required: true, message: this.$t('label.required') }],
         server: [{ required: true, message: this.$t('label.required') }],
-        pkcsKey: [{ required: true, message: this.$t('label.required') }],
+        pkcs: [{ required: true, message: this.$t('label.required') }],
         dns: [{ required: true, message: this.$t('label.required') }]
       })
     },
