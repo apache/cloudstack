@@ -32,4 +32,4 @@ jobs:
         dirtyLabel: "status:has-conflicts"
         removeOnDirtyLabel: "status:ready-for-review"
         continueOnMissingPermissions: true
-        commentOnDirty: "Hi @${{ github.event.pull_request.user.login }}, your pull request has merge conflicts. Can you fix the conflicts and sync your branch with the base branch?"
+        commentOnDirty: "This pull request has merge conflicts. Dear author, please fix the conflicts and sync your branch with the base branch."
