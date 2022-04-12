@@ -34,8 +34,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
-
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CallContext.class)
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*", "org.xml.*"})
