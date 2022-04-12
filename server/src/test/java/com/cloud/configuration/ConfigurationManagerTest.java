@@ -1046,7 +1046,7 @@ public class ConfigurationManagerTest {
 
         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
     }
-    
+
     @Test
     public void updateDiskOfferingTagsWithPrimaryStorageWithCorrectTagsTestSuccess(){
         String tags = "tag1,tag2";

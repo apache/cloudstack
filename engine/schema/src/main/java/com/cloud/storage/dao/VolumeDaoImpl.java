@@ -271,7 +271,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         return listBy(sc);
     }
 
-
     @Override
     public boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId) {
         SearchCriteria<Long> sc = ActiveTemplateSearch.create();
