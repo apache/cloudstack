@@ -23,4 +23,5 @@ import java.util.List;
 public interface DirectDownloadCertificateHostMapDao extends GenericDao<DirectDownloadCertificateHostMapVO, Long> {
     DirectDownloadCertificateHostMapVO findByCertificateAndHost(long certificateId, long hostId);
     List<DirectDownloadCertificateHostMapVO> listByCertificateId(long certificateId);
+    List<DirectDownloadCertificateHostMapVO> listByCertificateIdAndRevoked(long certificateId, boolean revoked);
 }
