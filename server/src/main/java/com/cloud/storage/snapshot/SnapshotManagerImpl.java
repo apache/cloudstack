@@ -38,7 +38,6 @@ import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 import org.apache.cloudstack.api.command.user.snapshot.UpdateSnapshotPolicyCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -56,6 +55,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -101,7 +101,6 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
@@ -210,6 +209,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Inject
     private AnnotationDao annotationDao;
 
+    @Inject
+    protected SnapshotHelper snapshotHelper;
+
     private int _totalRetries;
     private int _pauseInterval;
     private int snapshotBackupRetries, snapshotBackupRetryInterval;
@@ -312,7 +314,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+        DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
 
         SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
 
@@ -596,7 +598,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
-        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck);
+        DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshotCheck);
 
         SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
 
@@ -1247,7 +1249,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
 
-                DataStoreRole dataStoreRole = getDataStoreRole(snapshot);
+                DataStoreRole dataStoreRole = snapshotHelper.getDataStoreRole(snapshot);
 
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
                 if (snapshotStoreRef == null) {
@@ -1335,37 +1337,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } else {
             payload.setLocationType(null);
         }
-    }
-
-    private DataStoreRole getDataStoreRole(Snapshot snapshot) {
-        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Primary);
-
-        if (snapshotStore == null) {
-            return DataStoreRole.Image;
-        }
-
-        long storagePoolId = snapshotStore.getDataStoreId();
-        DataStore dataStore = dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
-
-        Map<String, String> mapCapabilities = dataStore.getDriver().getCapabilities();
-
-        if (mapCapabilities != null) {
-            String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
-            Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
-
-            if (supportsStorageSystemSnapshots) {
-                return DataStoreRole.Primary;
-            }
-        }
-
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
-        if (storagePoolVO.getPoolType() == StoragePoolType.RBD) {
-            return DataStoreRole.Primary;
-        } else if (snapshot.getSnapshotType() == Type.GROUP.ordinal()) {
-            return DataStoreRole.Primary;
-        }
-
-        return DataStoreRole.Image;
     }
 
     @Override
