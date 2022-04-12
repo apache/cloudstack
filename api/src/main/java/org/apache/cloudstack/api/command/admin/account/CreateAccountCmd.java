@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.account;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -56,9 +56,9 @@ public class CreateAccountCmd extends BaseCmd {
     private String accountName;
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-               type = CommandType.SHORT,
+               type = CommandType.INTEGER,
                description = "Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
-    private Short accountType;
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "Creates the account under the specified role.")
     private Long roleId;
@@ -109,12 +109,12 @@ public class CreateAccountCmd extends BaseCmd {
         return accountName;
     }
 
-    public Short getAccountType() {
-        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), accountType);
+    public Account.Type getAccountType() {
+        return RoleType.getAccountTypeByRole(roleService.findRole(roleId), Account.Type.getFromValue(accountType));
     }
 
     public Long getRoleId() {
-        return RoleType.getRoleByAccountType(roleId, accountType);
+        return RoleType.getRoleByAccountType(roleId, getAccountType());
     }
 
     public Long getDomainId() {

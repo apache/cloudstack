@@ -15,8 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-/* eslint-disable */
-import Vue from 'vue'
 import {
   ConfigProvider,
   Layout,
@@ -34,7 +32,6 @@ import {
   Modal,
   Table,
   Tabs,
-  Icon,
   Badge,
   Popover,
   Dropdown,
@@ -57,7 +54,6 @@ import {
   Popconfirm,
   Descriptions,
   message,
-  notification,
   Affix,
   Timeline,
   Pagination,
@@ -68,61 +64,66 @@ import {
   AutoComplete,
   Collapse
 } from 'ant-design-vue'
+import VueClipboard from 'vue3-clipboard'
 import VueCropper from 'vue-cropper'
 
-Vue.use(ConfigProvider)
-Vue.use(Layout)
-Vue.use(Input)
-Vue.use(InputNumber)
-Vue.use(Button)
-Vue.use(Switch)
-Vue.use(Radio)
-Vue.use(Checkbox)
-Vue.use(Select)
-Vue.use(Card)
-Vue.use(Form)
-Vue.use(Row)
-Vue.use(Col)
-Vue.use(Modal)
-Vue.use(Table)
-Vue.use(Tabs)
-Vue.use(Icon)
-Vue.use(Badge)
-Vue.use(Popover)
-Vue.use(Dropdown)
-Vue.use(Descriptions)
-Vue.use(List)
-Vue.use(Avatar)
-Vue.use(Breadcrumb)
-Vue.use(Steps)
-Vue.use(Spin)
-Vue.use(Menu)
-Vue.use(Drawer)
-Vue.use(Tooltip)
-Vue.use(Alert)
-Vue.use(Tag)
-Vue.use(Divider)
-Vue.use(DatePicker)
-Vue.use(TimePicker)
-Vue.use(Upload)
-Vue.use(Progress)
-Vue.use(Skeleton)
-Vue.use(Popconfirm)
-Vue.use(notification)
-Vue.use(Affix)
-Vue.use(Timeline)
-Vue.use(Pagination)
-Vue.use(Comment)
-Vue.use(Tree)
-Vue.use(Calendar)
-Vue.use(Slider)
-Vue.use(AutoComplete)
-Vue.use(Collapse)
-Vue.use(VueCropper)
+export default {
+  install: (app) => {
+    app.config.globalProperties.$confirm = Modal.confirm
+    app.config.globalProperties.$message = message
+    app.config.globalProperties.$info = Modal.info
+    app.config.globalProperties.$success = Modal.success
+    app.config.globalProperties.$error = Modal.error
+    app.config.globalProperties.$warning = Modal.warning
 
-Vue.prototype.$confirm = Modal.confirm
-Vue.prototype.$message = message
-Vue.prototype.$info = Modal.info
-Vue.prototype.$success = Modal.success
-Vue.prototype.$error = Modal.error
-Vue.prototype.$warning = Modal.warning
+    app.use(VueClipboard, { autoSetContainer: true })
+    app.use(VueCropper)
+    app.use(ConfigProvider)
+    app.use(Layout)
+    app.use(Input)
+    app.use(InputNumber)
+    app.use(Button)
+    app.use(Switch)
+    app.use(Radio)
+    app.use(Checkbox)
+    app.use(Select)
+    app.use(Card)
+    app.use(Form)
+    app.use(Row)
+    app.use(Col)
+    app.use(Modal)
+    app.use(Table)
+    app.use(Tabs)
+    app.use(Badge)
+    app.use(Popover)
+    app.use(Dropdown)
+    app.use(List)
+    app.use(Avatar)
+    app.use(Breadcrumb)
+    app.use(Steps)
+    app.use(Spin)
+    app.use(Menu)
+    app.use(Drawer)
+    app.use(Tooltip)
+    app.use(Alert)
+    app.use(Tag)
+    app.use(Divider)
+    app.use(DatePicker)
+    app.use(TimePicker)
+    app.use(Upload)
+    app.use(Progress)
+    app.use(Skeleton)
+    app.use(Popconfirm)
+    // app.use(Notification)
+    app.use(Affix)
+    app.use(Timeline)
+    app.use(Pagination)
+    app.use(Comment)
+    app.use(Tree)
+    app.use(Calendar)
+    app.use(Slider)
+    app.use(AutoComplete)
+    app.use(Collapse)
+    app.use(Descriptions)
+  }
+}

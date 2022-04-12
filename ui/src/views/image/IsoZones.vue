@@ -19,10 +19,11 @@
   <div>
     <a-button
       v-if="(('deleteIso' in $store.getters.apis) && this.selectedItems.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      :danger="true"
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t(message.title) }}
     </a-button>
     <a-table
@@ -34,23 +35,23 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <div slot="zonename" slot-scope="text, record">
+      <template #zonename="{record}">
         <span v-if="fetchZoneIcon(record.zoneid)">
           <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
         </span>
-        <a-icon v-else type="global" style="margin-right: 5px" />
+        <global-outlined v-else style="margin-right: 5px" />
         <span> {{ record.zonename }} </span>
-      </div>
-      <div slot="isready" slot-scope="text, record">
+      </template>
+      <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
-      <template slot="action" slot-scope="text, record">
+      </template>
+      <template #action="{ record }">
         <span style="margin-right: 5px">
           <tooltip-button
             :tooltip="$t('label.action.copy.iso')"
             :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-            icon="copy"
+            icon="copy-outlined"
             :loading="copyLoading"
             @click="showCopyIso(record)" />
         </span>
@@ -66,8 +67,9 @@
           >
             <tooltip-button
               :tooltip="$t('label.action.delete.iso')"
-              type="danger"
-              icon="delete" />
+              type="primary"
+              :danger="true"
+              icon="delete-outlined" />
           </a-popconfirm>
         </span>
       </template>
@@ -83,7 +85,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -98,39 +100,34 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseCopyForm"
-      v-ctrl-enter="handleCopyIsoSubmit"
       centered>
       <a-spin :spinning="copyLoading">
         <a-form
-          :form="form"
-          @submit="handleCopyIsoSubmit"
-          layout="vertical">
-          <a-form-item :label="$t('label.zoneid')">
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          layout="vertical"
+          @finish="handleCopyIsoSubmit"
+          v-ctrl-enter="handleCopyIsoSubmit">
+          <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
               :placeholder="$t('label.select.zones')"
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              autoFocus>
+              v-focus="true">
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
                     <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                   </span>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
                 </div>
               </a-select-option>
@@ -163,6 +160,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import OsLogo from '@/components/widgets/OsLogo'
@@ -216,15 +214,15 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('copyIso')
   },
   created () {
+    this.initForm()
     this.columns = [
       {
         title: this.$t('label.zonename'),
         dataIndex: 'zonename',
-        scopedSlots: { customRender: 'zonename' }
+        slots: { customRender: 'zonename' }
       },
       {
         title: this.$t('label.status'),
@@ -233,7 +231,7 @@ export default {
       {
         title: this.$t('label.isready'),
         dataIndex: 'isready',
-        scopedSlots: { customRender: 'isready' }
+        slots: { customRender: 'isready' }
       }
     ]
     if (this.isActionPermitted()) {
@@ -242,7 +240,7 @@ export default {
         dataIndex: 'action',
         fixed: 'right',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
 
@@ -261,6 +259,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       const params = {}
       params.id = this.resource.id
@@ -328,7 +333,7 @@ export default {
       this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -343,7 +348,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -365,7 +370,7 @@ export default {
       this.deleteLoading = true
       api('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
@@ -382,7 +387,7 @@ export default {
               }
             }
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, record.zoneid, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
             }
           },
           errorMethod: () => {
@@ -390,7 +395,7 @@ export default {
               this.fetchData()
             }
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, record.zoneid, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'failed' })
             }
           },
           showLoading: !(this.selectedItems.length > 0 && this.showGroupActionModal),
@@ -417,9 +422,7 @@ export default {
     },
     showCopyIso (record) {
       this.currentRecord = record
-      this.form.setFieldsValue({
-        zoneid: []
-      })
+      this.form.zoneid = []
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
@@ -430,10 +433,8 @@ export default {
     handleCopyIsoSubmit (e) {
       e.preventDefault()
       if (this.copyLoading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
@@ -442,7 +443,7 @@ export default {
         this.copyLoading = true
         api('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          eventBus.$emit('update-job-details', jobId, null)
+          eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
             jobId,
             title: this.$t('label.action.copy.iso'),
@@ -465,6 +466,8 @@ export default {
           this.onCloseCopyForm()
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeModal () {

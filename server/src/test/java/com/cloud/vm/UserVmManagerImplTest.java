@@ -66,7 +66,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -96,9 +95,6 @@ public class UserVmManagerImplTest {
 
     @Mock
     private DiskOfferingDao diskOfferingDao;
-
-    @Mock
-    private ServiceOfferingVO serviceOfferingVO;
 
     @Mock
     private DataCenterDao _dcDao;
@@ -177,7 +173,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
 
-        Mockito.when(callerAccount.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+        Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");
@@ -227,8 +223,9 @@ public class UserVmManagerImplTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, false, null,
                 false);
+        serviceOffering.setDiskOfferingId(1l);
         return serviceOffering;
     }
 
@@ -475,17 +472,14 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         Mockito.when(template.getId()).thenReturn(1l);
         Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(offering.getId()).thenReturn(1l);
         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(template);
 
         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);
-        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskfferingVo);
 
         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
 
         Mockito.when(volumeApiService.validateVolumeSizeInBytes(Mockito.anyLong())).thenReturn(true);
-        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, offering);
+        long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);
         Mockito.verify(userVmManagerImpl, Mockito.times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());

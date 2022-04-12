@@ -242,7 +242,7 @@ class TestVPCNics(cloudstackTestCase):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
-        
+
         self.cleanup = [self.vpc, self.vpc_off, self.account]
         return
 
@@ -309,7 +309,7 @@ class TestVPCNics(cloudstackTestCase):
         except Exception as e:
             self.fail('Unable to create a Network with offering=%s because of %s ' % (net_offerring, e))
         o = networkO(obj_network)
-        
+
         vm1 = self.deployvm_in_network(obj_network)
 
         self.cleanup.insert(1, obj_network)
@@ -395,7 +395,7 @@ class TestVPCNics(cloudstackTestCase):
 
         net1.add_vm(self.deployvm_in_network(net1.get_net()))
         self.query_routers()
-        
+
         self.add_nat_rules()
         self.check_ssh_into_vm()
 
@@ -459,9 +459,9 @@ class TestVPCNics(cloudstackTestCase):
                     vm = vmObj.get_vm()
                     public_ip = vmObj.get_ip()
                     self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
-                    
+
                     ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-        
+
                     self.logger.debug("Ping to google.com from VM")
                     result = ssh.execute(ssh_command)
 

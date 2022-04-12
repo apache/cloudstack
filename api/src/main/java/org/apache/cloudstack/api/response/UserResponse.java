@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -64,7 +65,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
 
     @SerializedName("accounttype")
     @Param(description = "the account type of the user")
-    private Short accountType;
+    private Integer accountType;
 
     @SerializedName("usersource")
     @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
@@ -188,12 +189,12 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
         this.accountName = accountName;
     }
 
-    public Short getAccountType() {
+    public Integer getAccountType() {
         return accountType;
     }
 
-    public void setAccountType(Short accountType) {
-        this.accountType = accountType;
+    public void setAccountType(Account.Type accountType) {
+        this.accountType = accountType.ordinal();
     }
 
     public void setRoleId(String roleId) {

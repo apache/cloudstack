@@ -16,6 +16,7 @@
 // under the License.
 
 module.exports = {
+  preset: '@vue/cli-plugin-unit-jest',
   testURL: 'http://localhost/',
   setupFiles: ['<rootDir>/tests/setup.js'],
   moduleFileExtensions: [
@@ -41,7 +42,7 @@ module.exports = {
     '**/tests/unit/**/*.spec.(js|jsx|ts|tsx)|**/__tests__/*.(js|jsx|ts|tsx)'
   ],
   transformIgnorePatterns: [
-    '<rootDir>/node_modules/(?!ant-design-vue|vue)'
+    '<rootDir>/node_modules/(?!ant-design-vue|vue|@babel/runtime|lodash-es|@ant-design)'
   ],
   collectCoverage: true,
   collectCoverageFrom: [

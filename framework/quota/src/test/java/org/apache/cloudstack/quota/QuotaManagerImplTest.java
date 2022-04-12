@@ -113,7 +113,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
         List<AccountVO> accountVOList = new ArrayList<>();
         accountVOList.add(accountVO);
         Mockito.when(accountDao.listAll()).thenReturn(accountVOList);
@@ -140,7 +140,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
 
         UsageVO usageVO = new UsageVO();
         usageVO.setQuotaCalculated(0);
@@ -189,7 +189,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
 
         QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
         quotaUsageVO.setAccountId(2L);
@@ -206,37 +206,37 @@ public class QuotaManagerImplTest extends TestCase {
 
     @Test
     public void testAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_ADMIN);
+        accountVO.setType(Account.Type.ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testNormalLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
         assertTrue(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void tesDomainAdmingLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        accountVO.setType(Account.Type.DOMAIN_ADMIN);
         assertTrue(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testReadOnlyAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_READ_ONLY_ADMIN);
+        accountVO.setType(Account.Type.READ_ONLY_ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testResourceDomainAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+        accountVO.setType(Account.Type.RESOURCE_DOMAIN_ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testProjectLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_PROJECT);
+        accountVO.setType(Account.Type.PROJECT);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 

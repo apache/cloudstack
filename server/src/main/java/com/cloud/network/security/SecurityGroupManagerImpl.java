@@ -51,7 +51,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -612,7 +612,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         return authorizeSecurityGroupRule(securityGroupId, protocol, startPort, endPort, icmpType, icmpCode, cidrList, groupList, SecurityRuleType.IngressRule);
     }
 
-    private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort, Integer endPort, Integer icmpType,
+    public List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort, Integer endPort, Integer icmpType,
             Integer icmpCode, final List<String> cidrList, Map groupList, final SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;

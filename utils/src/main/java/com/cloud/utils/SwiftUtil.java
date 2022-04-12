@@ -249,7 +249,7 @@ public class SwiftUtil {
 
     protected static String getSwiftObjectCmd(SwiftClientCfg cfg, String swiftCliPath, String operation,String container, String objectName) {
         String cmd = getSwiftCmd(cfg,swiftCliPath, operation)  +" "+ container+" "+objectName;
-        if(StringUtils.isNotBlank(cfg.getStoragePolicy()) && supportsStoragePolicies(operation)){
+        if(org.apache.commons.lang3.StringUtils.isNotBlank(cfg.getStoragePolicy()) && supportsStoragePolicies(operation)){
             return cmd + String.format(WITH_STORAGE_POLICY, cfg.getStoragePolicy());
         }
         return cmd;

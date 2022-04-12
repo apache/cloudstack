@@ -21,10 +21,12 @@ public class ApiConstants {
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
+    public static final String ACCUMULATE = "accumulate";
     public static final String ACTIVITY = "activity";
     public static final String ADAPTER_TYPE = "adaptertype";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
+    public static final String ALIAS = "alias";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
@@ -57,6 +59,10 @@ public class ApiConstants {
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String CERTIFICATE_ISSUER = "issuer";
+    public static final String CERTIFICATE_SERIALNUM = "serialnum";
+    public static final String CERTIFICATE_SUBJECT = "subject";
+    public static final String CERTIFICATE_VALIDITY = "validity";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
@@ -112,12 +118,15 @@ public class ApiConstants {
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String NEW_DISK_OFFERING_ID = "newdiskofferingid";
+    public static final String OVERRIDE_DISK_OFFERING_ID = "overridediskofferingid";
     public static final String DISK_KBS_READ = "diskkbsread";
     public static final String DISK_KBS_WRITE = "diskkbswrite";
     public static final String DISK_IO_READ = "diskioread";
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
+    public static final String DISK_SIZE_STRICTNESS = "disksizestrictness";
+    public static final String DISK_OFFERING_STRICTNESS = "diskofferingstrictness";
     public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
@@ -184,6 +193,7 @@ public class ApiConstants {
     public static final String HOST_ID = "hostid";
     public static final String HOST_IDS = "hostids";
     public static final String HOST_NAME = "hostname";
+    public static final String HOSTS_MAP = "hostsmap";
     public static final String HYPERVISOR = "hypervisor";
     public static final String INLINE = "inline";
     public static final String INSTANCE = "instance";
@@ -233,6 +243,7 @@ public class ApiConstants {
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
+    public static final String LIST_HOSTS = "listhosts";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
@@ -318,6 +329,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
     public static final String RESPONSE = "response";
     public static final String REVERTABLE = "revertable";
+    public static final String REVOKED = "revoked";
     public static final String REGISTERED = "registered";
     public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
@@ -438,6 +450,7 @@ public class ApiConstants {
     public static final String NETWORKRATE = "networkrate";
     public static final String HOST_TAGS = "hosttags";
     public static final String SSH_KEYPAIR = "keypair";
+    public static final String SSH_KEYPAIRS = "keypairs";
     public static final String HTTPMETHOD = "httpmethod";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
     public static final String HOST_CPU_NUM = "hostcpunum";
@@ -589,6 +602,7 @@ public class ApiConstants {
     public static final String LIVE_MIGRATE = "livemigrate";
     public static final String MIGRATE_ALLOWED = "migrateallowed";
     public static final String MIGRATE_TO = "migrateto";
+    public static final String AUTO_MIGRATE = "automigrate";
     public static final String GUID = "guid";
     public static final String VM_SNAPSHOT_ENABELD = "vmsnapshotenabled";
     public static final String VSWITCH_TYPE_GUEST_TRAFFIC = "guestvswitchtype";

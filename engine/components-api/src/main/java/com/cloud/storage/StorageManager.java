@@ -155,6 +155,15 @@ public interface StorageManager extends StorageService {
     ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
             "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
 
+    ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
+            "mount.disabled.storage.pool",
+            "Storage",
+            "false",
+            "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
@@ -231,9 +240,9 @@ public interface StorageManager extends StorageService {
 
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
-    boolean storagePoolHasEnoughIops(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
     /**
      * This comment is relevant to managed storage only.
@@ -257,19 +266,21 @@ public interface StorageManager extends StorageService {
      *
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volume, StoragePool pool, Long clusterId);
 
     boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
 
     boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
-    boolean isStoragePoolCompliantWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
+    boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 

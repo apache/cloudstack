@@ -105,7 +105,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+        if (caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                 || _accountMgr.isRootAdmin(caller.getId())) {
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());

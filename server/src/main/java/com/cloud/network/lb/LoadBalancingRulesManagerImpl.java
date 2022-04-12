@@ -339,7 +339,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
@@ -2338,7 +2338,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
@@ -2379,7 +2379,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         if (id != null) {

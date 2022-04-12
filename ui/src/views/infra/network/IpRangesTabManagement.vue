@@ -20,9 +20,9 @@
     <a-button
       :disabled="!('createManagementNetworkIpRange' in $store.getters.apis)"
       type="dashed"
-      icon="plus"
       style="margin-bottom: 20px; width: 100%"
       @click="handleOpenAddIpRangeModal">
+      <template #icon><plus-outlined /></template>
       {{ $t('label.add.ip.range') }}
     </a-button>
 
@@ -34,18 +34,19 @@
       :rowKey="record => record.id + record.startip"
       :pagination="false"
     >
-      <template slot="forsystemvms" slot-scope="text, record">
-        <a-checkbox :checked="record.forsystemvms" />
+      <template #forsystemvms="{ record }">
+        <a-checkbox v-model:checked="record.forsystemvms" />
       </template>
-      <template slot="actions" slot-scope="record">
+      <template #actions="{ record }">
         <div class="actions">
           <tooltip-button
             tooltipPlacement="bottom"
             :tooltip="$t('label.remove.ip.range')"
             :disabled="!('deleteManagementNetworkIpRange' in $store.getters.apis)"
-            icon="delete"
-            type="danger"
-            @click="handleDeleteIpRange(record)" />
+            icon="delete-outlined"
+            type="primary"
+            :danger="true"
+            @onClick="handleDeleteIpRange(record)" />
         </div>
       </template>
     </a-table>
@@ -61,65 +62,59 @@
       @change="changePage"
       @showSizeChange="changePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
 
     <a-modal
-      v-model="addIpRangeModal"
+      :visible="addIpRangeModal"
       :title="$t('label.add.ip.range')"
+      :closable="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="addIpRangeModal = false"
-      v-ctrl-enter="handleAddIpRange">
+      @cancel="addIpRangeModal = false">
       <a-form
-        :form="form"
-        @submit="handleAddIpRange"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical"
         class="form"
+        @finish="handleAddIpRange"
+        v-ctrl-enter="handleAddIpRange"
+
       >
-        <a-form-item :label="$t('label.podid')" class="form__item">
+        <a-form-item name="pod" ref="pod" :label="$t('label.podid')" class="form__item">
           <a-select
-            autoFocus
-            v-decorator="['pod', {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+            v-focus="true"
+            v-model:value="form.pod"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="item in pods" :key="item.id" :value="item.id">{{ item.name }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('label.gateway')" class="form__item">
+        <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">
+          <a-input v-model:value="form.gateway" />
+        </a-form-item>
+        <a-form-item name="netmask" ref="netmask" :label="$t('label.netmask')" class="form__item">
+          <a-input v-model:value="form.netmask" />
+        </a-form-item>
+        <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item">
+          <a-input v-model:value="form.vlan" />
+        </a-form-item>
+        <a-form-item name="startip" ref="startip" :label="$t('label.startip')" class="form__item">
+          <a-input v-model:value="form.startip" />
+        </a-form-item>
+        <a-form-item name="endip" ref="endip" :label="$t('label.endip')" class="form__item">
           <a-input
-            v-decorator="['gateway', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
+            v-model:value="form.endip">
           </a-input>
         </a-form-item>
-        <a-form-item :label="$t('label.netmask')" class="form__item">
-          <a-input
-            v-decorator="['netmask', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.vlan')" class="form__item">
-          <a-input
-            v-decorator="['vlan']">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.startip')" class="form__item">
-          <a-input
-            v-decorator="['startip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.endip')" class="form__item">
-          <a-input
-            v-decorator="['endip', { rules: [{ required: true, message: `${$t('label.required')}` }] }]">
-          </a-input>
-        </a-form-item>
-        <a-form-item :label="$t('label.system.vms')" class="form__item">
-          <a-checkbox v-decorator="['vms']"></a-checkbox>
+        <a-form-item name="vms" ref="vms" :label="$t('label.system.vms')" class="form__item">
+          <a-checkbox v-model:checked="form.vms"></a-checkbox>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -128,11 +123,11 @@
         </div>
       </a-form>
     </a-modal>
-
   </a-spin>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
@@ -160,7 +155,6 @@ export default {
       domains: [],
       domainsLoading: false,
       addIpRangeModal: false,
-      defaultSelectedPod: null,
       page: 1,
       pageSize: 10,
       columns: [
@@ -179,45 +173,56 @@ export default {
         {
           title: this.$t('label.vlan'),
           dataIndex: 'vlanid',
-          scopedSlots: { customRender: 'vlan' }
+          slots: { customRender: 'vlan' }
         },
         {
           title: this.$t('label.startip'),
           dataIndex: 'startip',
-          scopedSlots: { customRender: 'startip' }
+          slots: { customRender: 'startip' }
         },
         {
           title: this.$t('label.endip'),
           dataIndex: 'endip',
-          scopedSlots: { customRender: 'endip' }
+          slots: { customRender: 'endip' }
         },
         {
           title: this.$t('label.system.vms'),
           dataIndex: 'forsystemvms',
-          scopedSlots: { customRender: 'forsystemvms' }
+          slots: { customRender: 'forsystemvms' }
         },
         {
           title: this.$t('label.action'),
-          scopedSlots: { customRender: 'actions' }
+          slots: { customRender: 'actions' }
         }
       ]
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     this.fetchData()
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.fetchData()
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        pod: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }],
+        startip: [{ required: true, message: this.$t('label.required') }],
+        endip: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.componentLoading = true
       api('listPods', {
@@ -252,14 +257,17 @@ export default {
       })
     },
     handleOpenAddIpRangeModal () {
+      this.initForm()
       this.addIpRangeModal = true
       setTimeout(() => {
         if (this.items.length > 0) {
-          this.form.setFieldsValue({
-            pod: this.items[0].id
-          })
+          this.form.pod = this.items[0].id
         }
       }, 200)
+    },
+    closeAction () {
+      this.formRef.value.resetFields()
+      this.addIpRangeModal = false
     },
     handleDeleteIpRange (record) {
       this.componentLoading = true
@@ -298,9 +306,8 @@ export default {
     },
     handleAddIpRange (e) {
       if (this.componentLoading) return
-      this.form.validateFieldsAndScroll((error, values) => {
-        if (error) return
-
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.componentLoading = true
         this.addIpRangeModal = false
         api('createManagementNetworkIpRange', {
@@ -339,6 +346,8 @@ export default {
           this.componentLoading = false
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     changePage (page, pageSize) {

@@ -347,7 +347,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
     }
 
-    //Intermediate funciton used in detectRulesConflict to check for the conflicting cidrs in the rules already applied and the newRule being applied.
+    //Intermediate function used in detectRulesConflict to check for the conflicting cidrs in the rules already applied and the newRule being applied.
     boolean detectConflictingCidrs(List<String> cidrList1, List<String> cidrList2){
         if(cidrList1.isEmpty() && cidrList2.isEmpty()){
             return true;
@@ -802,7 +802,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
         }
 
-        if (rule.getType() == FirewallRuleType.System && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (rule.getType() == FirewallRuleType.System && caller.getType() != Account.Type.ADMIN) {
             throw new InvalidParameterValueException("Only root admin can update the system wide firewall rule");
         }
 

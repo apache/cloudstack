@@ -31,7 +31,7 @@ import initialize
 
 class login(unittest.TestCase):
 
-    
+
     def setUp(self):
 
         MS_URL = initialize.getMSip()
@@ -41,32 +41,32 @@ class login(unittest.TestCase):
 
 
     def test_login(self):
-        
+
         # Here we will clear the test box for Username and Password and fill them with actual login data.
         # After that we will click Login (Submit button)
         driver = self.driver
         driver.maximize_window()
         driver.get(self.base_url + "client/")
-        driver.find_element_by_css_selector(Global_Locators.login_username_css).clear() 
+        driver.find_element_by_css_selector(Global_Locators.login_username_css).clear()
         driver.find_element_by_css_selector(Global_Locators.login_username_css).send_keys("admin")
-        driver.find_element_by_css_selector(Global_Locators.login_password_css).clear() 
+        driver.find_element_by_css_selector(Global_Locators.login_password_css).clear()
         driver.find_element_by_css_selector(Global_Locators.login_password_css).send_keys("password")
         driver.find_element_by_css_selector(Global_Locators.login_submit_css).click()
         time.sleep(5)
-    
+
 
 
 
     def is_element_present(self, how, what):
-        
+
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
 
-    
-    
+
+
     def tearDown(self):
-        
+
         self.assertEqual([], self.verificationErrors)
 
 
@@ -77,18 +77,18 @@ class login(unittest.TestCase):
 
 class logout(unittest.TestCase):
 
-    
-    
+
+
     def setUp(self):
-    
+
         self.driver = initialize.getOrCreateWebdriver()
         self.driver.implicitly_wait(100)
         self.verificationErrors = []
 
-        
-         
+
+
     def test_logout(self):
-        
+
         # Here we will clear the test box for Username and Password and fill them with actual login data.
         # After that we will click Login (Submit button)
         driver = self.driver
@@ -98,17 +98,17 @@ class logout(unittest.TestCase):
 
 
 
-    
+
     def is_element_present(self, how, what):
 
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
 
-    
-    
+
+
     def tearDown(self):
-        
+
         self.assertEqual([], self.verificationErrors)
 
 
@@ -120,40 +120,40 @@ class logout(unittest.TestCase):
 class login_test(unittest.TestCase):
 
 
-    
+
     def setUp(self):
-    
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
 
-         
+
     def test_logintest(self):
-        
+
         # Here we will clear the test box for Username and Password and fill them with actual login data.
         # After that we will click Login (Submit button)
         driver = self.driver
-        driver.find_element_by_css_selector(Global_Locators.login_username_css).clear() 
+        driver.find_element_by_css_selector(Global_Locators.login_username_css).clear()
         driver.find_element_by_css_selector(Global_Locators.login_username_css).send_keys("test")
-        driver.find_element_by_css_selector(Global_Locators.login_password_css).clear() 
+        driver.find_element_by_css_selector(Global_Locators.login_password_css).clear()
         driver.find_element_by_css_selector(Global_Locators.login_password_css).send_keys("password")
         driver.find_element_by_css_selector(Global_Locators.login_submit_css).click()
         time.sleep(5)
-    
-    
-    
+
+
+
     def is_element_present(self, how, what):
-    
+
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
-    
-    
-    
+
+
+
     def tearDown(self):
-        
+
         self.assertEqual([], self.verificationErrors)
-    
-        
+
+
 ################################################################################################################################################
 
 
@@ -161,14 +161,14 @@ class createAcc(unittest.TestCase):
 
 
     def setUp(self):
-        
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
-        
-        
-    
+
+
+
     def test_createacc(self):
-        
+
         driver = self.driver
         self.driver.implicitly_wait(100)
         driver.find_element_by_xpath("//div[@id='navigation']/ul/li[8]/span[2]").click()
@@ -189,27 +189,27 @@ class createAcc(unittest.TestCase):
         Select(driver.find_element_by_id("label_type")).select_by_visible_text("Admin")
         Select(driver.find_element_by_id("label_timezone")).select_by_visible_text("[UTC-08:00] Pacific Standard Time")
         driver.find_element_by_xpath("//button[@type='button']").click()
-   
+
         # Go to Dashboard
-        driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()     
+        driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
         time.sleep(30)
-   
-   
-   
+
+
+
     def is_element_present(self, how, what):
 
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
-   
-    
-   
+
+
+
     def tearDown(self):
-        
+
         self.assertEqual([], self.verificationErrors)
-   
-   
-    
+
+
+
 ################################################################################################################################################
 
 
@@ -217,38 +217,38 @@ class tearAcc(unittest.TestCase):
 
 
     def setUp(self):
-        
+
         self.driver = initialize.getOrCreateWebdriver()
         self.verificationErrors = []
-   
-        
-    
+
+
+
     def test_tearacc(self):
-        
+
         driver = self.driver
         driver.find_element_by_css_selector("li.navigation-item.accounts").click()
         driver.find_element_by_css_selector("tr.odd > td.name.first").click()
         driver.find_element_by_css_selector("a[alt=\"Delete account\"] > span.icon").click()
         driver.find_element_by_xpath("(//button[@type='button'])[2]").click()
-        
+
         # Go to Dashboard
         driver.find_element_by_xpath(Global_Locators.dashboard_xpath).click()
         time.sleep(30)
-   
-   
-   
+
+
+
     def is_element_present(self, how, what):
 
         try: self.driver.find_element(by=how, value=what)
         except NoSuchElementException, e: return False
         return True
-   
-   
+
+
     def tearDown(self):
-        
+
         self.driver.quit()
         self.assertEqual([], self.verificationErrors)
-        
-        
-        
+
+
+
 ################################################################################################################################################

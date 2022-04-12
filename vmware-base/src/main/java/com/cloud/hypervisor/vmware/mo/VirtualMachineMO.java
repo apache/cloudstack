@@ -44,7 +44,7 @@ import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.VirtualMachineTicket;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
@@ -127,6 +127,7 @@ import com.vmware.vim25.VirtualSCSISharing;
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
+    private static final Gson GSON = new Gson();
 
     public static final String ANSWER_YES = "0";
     public static final String ANSWER_NO = "1";
@@ -274,7 +275,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while dealing with vm questions.");
+                        s_logger.debug("[ignored] interrupted while dealing with vm questions.");
                     }
                 }
                 s_logger.info("VM Question monitor stopped");
@@ -543,7 +544,7 @@ public class VirtualMachineMO extends BaseMO {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for snapshot to be done.");
+                    s_logger.debug("[ignored] interrupted while waiting for snapshot to be done.");
                 }
             }
 
@@ -1313,7 +1314,7 @@ public class VirtualMachineMO extends BaseMO {
         deviceConfigSpec.setDevice(newDisk);
         deviceConfigSpec.setFileOperation(VirtualDeviceConfigSpecFileOperation.CREATE);
         deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-        if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
+        if (StringUtils.isNotEmpty(vSphereStoragePolicyId)) {
             PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
             VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
             deviceConfigSpec.getProfile().add(diskProfileSpec);
@@ -1402,7 +1403,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if(s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: "
-                            + new Gson().toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
+                            + GSON.toJson(vmdkDatastorePathChain) + ", datastore: " + morDs.getValue());
         int controllerKey = 0;
         int unitNumber = 0;
 
@@ -1439,7 +1440,7 @@ public class VirtualMachineMO extends BaseMO {
 
             deviceConfigSpec.setDevice(newDisk);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-            if (!StringUtils.isEmpty(vSphereStoragePolicyId)) {
+            if (StringUtils.isNotEmpty(vSphereStoragePolicyId)) {
                 PbmProfileManagerMO profMgrMo = new PbmProfileManagerMO(getContext());
                 VirtualMachineDefinedProfileSpec diskProfileSpec = profMgrMo.getProfileSpec(vSphereStoragePolicyId);
                 deviceConfigSpec.getProfile().add(diskProfileSpec);
@@ -1650,7 +1651,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while handling vm question about iso detach.");
+                        s_logger.debug("[ignored] interrupted while handling vm question about iso detach.");
                     }
                 }
                 s_logger.info("VM Question monitor stopped");
@@ -1800,7 +1801,7 @@ public class VirtualMachineMO extends BaseMO {
         Pair<VmdkFileDescriptor, byte[]> result = new Pair<VmdkFileDescriptor, byte[]>(descriptor, content);
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("vCenter API trace - getVmdkFileInfo() done");
-            s_logger.trace("VMDK file descriptor: " + new Gson().toJson(result.first()));
+            s_logger.trace("VMDK file descriptor: " + GSON.toJson(result.first()));
         }
         return result;
     }
@@ -3366,7 +3367,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while handling vm question about umount tools install.");
+                        s_logger.debug("[ignored] interrupted while handling vm question about umount tools install.");
                     }
                 }
 

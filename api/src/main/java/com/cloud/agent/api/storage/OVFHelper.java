@@ -46,7 +46,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -208,7 +208,7 @@ public class OVFHelper {
     }
 
     public List<DatadiskTO> getOVFVolumeInfoFromFile(String ovfFilePath, Document doc, String configurationId) throws InternalErrorException {
-        if (org.apache.commons.lang.StringUtils.isBlank(ovfFilePath)) {
+        if (StringUtils.isBlank(ovfFilePath)) {
             return null;
         }
 
@@ -635,7 +635,7 @@ public class OVFHelper {
     }
 
     private boolean hardwareItemContainsConfiguration(OVFVirtualHardwareItemTO item, String configurationId) {
-        if (StringUtils.isBlank(configurationId) || StringUtils.isBlank(item.getConfigurationIds())) {
+        if (StringUtils.isAnyBlank(configurationId, item.getConfigurationIds())) {
             return true;
         }
         String configurationIds = item.getConfigurationIds();

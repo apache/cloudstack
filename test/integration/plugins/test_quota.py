@@ -79,7 +79,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaTariffList.quotaTariffListCmd()
         response = self.apiclient.quotaTariffList(cmd)
 
@@ -105,7 +105,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         response = self.apiclient.quotaTariffList(cmd)
@@ -125,7 +125,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         cmd.usagetype='10'
@@ -149,7 +149,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaTariffList.quotaTariffListCmd()
         cmd.startdate='2015-07-06'
         cmd.usagetype='10'
@@ -205,7 +205,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaCredits.quotaCreditsCmd()
         cmd.domainid = self.account.domainid
         cmd.account = self.account.name
@@ -227,7 +227,7 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
         cmd.domainid = self.account.domainid
@@ -248,13 +248,13 @@ class TestQuota(cloudstackTestCase):
                 name='quota.enable.service',
                  value='true'):
              self.skipTest('quota.enable.service should be true. skipping')
-             
+
         cmd = quotaBalance.quotaBalanceCmd()
         today = datetime.date.today()
         cmd.domainid = self.account.domainid
         cmd.account = self.account.name
         cmd.startdate = today - datetime.timedelta(days=2)
-        cmd.enddate = today 
+        cmd.enddate = today
         response = self.apiclient.quotaBalance(cmd)
 
         self.debug("Quota Balance: {response.balance}")

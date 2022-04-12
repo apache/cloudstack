@@ -195,7 +195,7 @@ public class UnmanagedVMsManagerImplTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
@@ -266,13 +266,13 @@ public class UnmanagedVMsManagerImplTest {
         when(templateDao.findByName(Mockito.anyString())).thenReturn(template);
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getId()).thenReturn(1L);
-        when(serviceOffering.getTags()).thenReturn("");
         when(serviceOffering.isDynamic()).thenReturn(false);
         when(serviceOffering.getCpu()).thenReturn(instance.getCpuCores());
         when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
         when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
         when(serviceOfferingDao.findById(Mockito.anyLong())).thenReturn(serviceOffering);
         DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingVO.getTags()).thenReturn("");
         when(diskOfferingVO.isCustomized()).thenReturn(false);
         when(diskOfferingVO.getDiskSize()).thenReturn(Long.MAX_VALUE);
         when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskOfferingVO);
@@ -359,7 +359,7 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = PermissionDeniedException.class)
     public void listUnmanagedInstancesInvalidCallerTest() {
         CallContext.unregister();
-        AccountVO account = new AccountVO("user", 1L, "", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);

@@ -29,6 +29,7 @@ public class DirectDownloadCertificateHostMapDaoImpl extends GenericDaoBase<Dire
         mapSearchBuilder = createSearchBuilder();
         mapSearchBuilder.and("certificate_id", mapSearchBuilder.entity().getCertificateId(), SearchCriteria.Op.EQ);
         mapSearchBuilder.and("host_id", mapSearchBuilder.entity().getHostId(), SearchCriteria.Op.EQ);
+        mapSearchBuilder.and("revoked", mapSearchBuilder.entity().isRevoked(), SearchCriteria.Op.EQ);
         mapSearchBuilder.done();
     }
     @Override
@@ -43,6 +44,14 @@ public class DirectDownloadCertificateHostMapDaoImpl extends GenericDaoBase<Dire
     public List<DirectDownloadCertificateHostMapVO> listByCertificateId(long certificateId) {
         SearchCriteria<DirectDownloadCertificateHostMapVO> sc = mapSearchBuilder.create();
         sc.setParameters("certificate_id", certificateId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<DirectDownloadCertificateHostMapVO> listByCertificateIdAndRevoked(long certificateId, boolean revoked) {
+        SearchCriteria<DirectDownloadCertificateHostMapVO> sc = mapSearchBuilder.create();
+        sc.setParameters("certificate_id", certificateId);
+        sc.setParameters("revoked", revoked);
         return listBy(sc);
     }
 }

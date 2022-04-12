@@ -74,6 +74,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
+import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.BDDMockito;
@@ -4836,7 +4837,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = true;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4889,7 +4890,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4929,7 +4930,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -4947,7 +4948,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = true;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -4976,7 +4977,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -5024,7 +5025,7 @@ public class LibvirtComputingResourceTest {
         final boolean shrinkOk = false;
         final String vmInstance = "Test";
 
-        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance);
+        final ResizeVolumeCommand command = new ResizeVolumeCommand(path, pool, currentSize, newSize, shrinkOk, vmInstance, null);
 
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
@@ -5557,6 +5558,9 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testMemoryFreeInKBsDomainReturningOfSomeMemoryStatistics() throws LibvirtException {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
 
         MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
@@ -5784,4 +5788,93 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
         return diskDef;
     }
+
+    private SchedUlongParameter[] createSchedParametersWithCpuSharesOf2000 () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "cpu_shares";
+        params[0].value = 2000;
+
+        return params;
+    }
+
+    private SchedUlongParameter[] createSchedParametersWithoutCpuShares () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "weight";
+        params[0].value = 200;
+
+        return params;
+    }
+
+    @Test
+    public void getCpuSharesTestReturnCpuSharesIfFound() throws LibvirtException {
+        SchedUlongParameter[] cpuSharesOf2000 = createSchedParametersWithCpuSharesOf2000();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(cpuSharesOf2000);
+        int cpuShares = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(2000, cpuShares);
+    }
+
+    @Test
+    public void getCpuSharesTestReturnZeroIfCpuSharesNotFound() throws LibvirtException {
+        SchedUlongParameter[] withoutCpuShares = createSchedParametersWithoutCpuShares();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(withoutCpuShares);
+        int actualValue = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(0, actualValue);
+    }
+
+    @Test
+    public void setCpuSharesTestSuccessfullySetCpuShares() throws LibvirtException {
+        LibvirtComputingResource.setCpuShares(domainMock, 2000);
+        Mockito.verify(domainMock, times(1)).setSchedulerParameters(Mockito.argThat(schedParameters -> {
+            if (schedParameters == null || schedParameters.length > 1 || !(schedParameters[0] instanceof SchedUlongParameter)) {
+                return false;
+            }
+            SchedUlongParameter param = (SchedUlongParameter) schedParameters[0];
+            if (param.field != "cpu_shares" || param.value != 2000) {
+                return false;
+            }
+            return true;
+        }));
+    }
+
+    private void configLocalStorageTests(Map<String, Object> params) throws ConfigurationException {
+        LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
+        libvirtComputingResourceSpy.configureLocalStorage(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithEmptyParams() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        configLocalStorageTests(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithMultiplePaths() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString() + "," + UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithDifferentLength() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithInvalidUUID() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, "111111");
+        configLocalStorageTests(params);
+    }
+
 }

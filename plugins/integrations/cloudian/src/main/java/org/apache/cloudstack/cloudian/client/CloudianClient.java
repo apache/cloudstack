@@ -60,7 +60,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class CloudianClient {
     private static final Logger LOG = Logger.getLogger(CloudianClient.class);
@@ -190,7 +190,7 @@ public class CloudianClient {
     }
 
     public CloudianUser listUser(final String userId, final String groupId) {
-        if (Strings.isNullOrEmpty(userId) || Strings.isNullOrEmpty(groupId)) {
+        if (StringUtils.isAnyEmpty(userId, groupId)) {
             return null;
         }
         LOG.debug("Trying to find Cloudian user with id=" + userId + " and group id=" + groupId);
@@ -210,7 +210,7 @@ public class CloudianClient {
     }
 
     public List<CloudianUser> listUsers(final String groupId) {
-        if (Strings.isNullOrEmpty(groupId)) {
+        if (StringUtils.isEmpty(groupId)) {
             return new ArrayList<>();
         }
         LOG.debug("Trying to list Cloudian users in group id=" + groupId);
@@ -245,7 +245,7 @@ public class CloudianClient {
     }
 
     public boolean removeUser(final String userId, final String groupId) {
-        if (Strings.isNullOrEmpty(userId) || Strings.isNullOrEmpty(groupId)) {
+        if (StringUtils.isAnyEmpty(userId, groupId)) {
             return false;
         }
         LOG.debug("Removing Cloudian user with user id=" + userId + " in group id=" + groupId);
@@ -279,7 +279,7 @@ public class CloudianClient {
     }
 
     public CloudianGroup listGroup(final String groupId) {
-        if (Strings.isNullOrEmpty(groupId)) {
+        if (StringUtils.isEmpty(groupId)) {
             return null;
         }
         LOG.debug("Trying to find Cloudian group with id=" + groupId);
@@ -331,7 +331,7 @@ public class CloudianClient {
     }
 
     public boolean removeGroup(final String groupId) {
-        if (Strings.isNullOrEmpty(groupId)) {
+        if (StringUtils.isEmpty(groupId)) {
             return false;
         }
         LOG.debug("Removing Cloudian group id=" + groupId);

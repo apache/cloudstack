@@ -1664,7 +1664,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
                     ", network does not have an owner");
-            if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (owner.getType() != Account.Type.PROJECT && networkOwner.getType() == Account.Type.PROJECT) {
                 User user = CallContext.current().getCallingUser();
                 Project project = projectDao.findByProjectAccountId(network.getAccountId());
                 if (project == null) {
@@ -2217,7 +2217,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
 
-        if (StringUtils.isBlank(ip6Gateway) || StringUtils.isBlank(ip6Cidr)) {
+        if (org.apache.commons.lang3.StringUtils.isAnyBlank(ip6Gateway, ip6Cidr)) {
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined for an IPv6 network work properly");
         }
 
@@ -2232,7 +2232,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway is not in ip6cidr indicated network!");
         }
 
-        if (StringUtils.isNotBlank(startIPv6)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(startIPv6)) {
             if (!NetUtils.isValidIp6(startIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
             }
@@ -2241,7 +2241,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         }
 
-        if (StringUtils.isNotBlank(endIPv6)) {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(endIPv6)) {
             if (!NetUtils.isValidIp6(endIPv6)) {
                 throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
             }

@@ -29,4 +29,6 @@ public interface VmwareHostService {
     VmwareHypervisorHost getHyperHost(VmwareContext context, Command cmd);
 
     String getWorkerName(VmwareContext context, Command cmd, int workerSequence, DatastoreMO dsMo) throws Exception;
+
+    String createLogMessageException(Throwable e, Command command);
 }

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,17 +42,17 @@ def describeResources(config):
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
     z.securitygroupenabled = 'false'
-    
+
     vpcprovider = provider()
     vpcprovider.name = 'VpcVirtualRouter'
-    
+
     pn = physicalNetwork()
     pn.name = "Sandbox-pnet"
     pn.traffictypes = [trafficType("Guest"), trafficType("Management"), trafficType("Public")]
     pn.isolationmethods = ["VLAN"]
     pn.providers.append(vpcprovider)
     pn.vlan = config.get('cloudstack', 'zone.vlan')
-    
+
     z.physical_networks.append(pn)
 
     p = pod()
@@ -65,7 +65,7 @@ def describeResources(config):
     v = iprange()
     v.gateway = config.get('cloudstack', 'public.gateway')
     v.startip = config.get('cloudstack', 'public.vlan.startip')
-    v.endip = config.get('cloudstack', 'public.vlan.endip') 
+    v.endip = config.get('cloudstack', 'public.vlan.endip')
     v.netmask = '255.255.255.0'
     v.vlan = config.get('cloudstack', 'public.vlan')
     z.ipranges.append(v)
@@ -80,7 +80,7 @@ def describeResources(config):
     h.password = 'password'
     h.url = 'http://%s'%(config.get('cloudstack', 'host'))
     c.hosts.append(h)
-    
+
     h = host()
     h.username = 'root'
     h.password = 'password'

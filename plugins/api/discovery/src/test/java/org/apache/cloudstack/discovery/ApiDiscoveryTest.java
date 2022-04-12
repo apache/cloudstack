@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

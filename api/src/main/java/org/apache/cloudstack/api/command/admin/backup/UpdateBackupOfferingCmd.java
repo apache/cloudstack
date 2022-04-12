@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -55,6 +56,9 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "The name of the Backup Offering to be updated")
     private String name;
 
+    @Parameter(name = ApiConstants.ALLOW_USER_DRIVEN_BACKUPS, type = CommandType.BOOLEAN, description = "Whether to allow user driven backups or not")
+    private Boolean allowUserDrivenBackups;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,20 +74,26 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
         return description;
     }
 
+    public Boolean getAllowUserDrivenBackups() {
+        return allowUserDrivenBackups;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
     public void execute() {
         try {
-            if (StringUtils.isAllEmpty(name, description)) {
-                throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there is no change in name or description.", id));
+            if (StringUtils.isAllEmpty(getName(), getDescription()) && getAllowUserDrivenBackups() == null) {
+                throw new InvalidParameterValueException(String.format("Can't update Backup Offering [id: %s] because there are no parameters to be updated, at least one of the",
+                        "following should be informed: name, description or allowUserDrivenBackups.", id));
             }
 
             BackupOffering result = backupManager.updateBackupOffering(this);
 
             if (result == null) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to update backup offering [id: %s, name: %s, description: %s].", id, name, description));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to update backup offering %s.",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "description", "allowUserDrivenBackups")));
             }
             BackupOfferingResponse response = _responseGenerator.createBackupOfferingResponse(result);
             response.setResponseName(getCommandName());

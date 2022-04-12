@@ -151,7 +151,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.google.common.base.Strings;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -709,11 +708,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Remove offerings that are not associated with caller's domain
         // TODO: Better approach
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+        if (caller.getType() != Account.Type.ADMIN && CollectionUtils.isNotEmpty(offerings)) {
             ListIterator<VpcOfferingJoinVO> it = offerings.listIterator();
             while (it.hasNext()) {
                 VpcOfferingJoinVO offering = it.next();
-                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                if(org.apache.commons.lang3.StringUtils.isNotEmpty(offering.getDomainId())) {
                     boolean toRemove = true;
                     String[] domainIdsArray = offering.getDomainId().split(",");
                     for (String domainIdString : domainIdsArray) {
@@ -1142,7 +1141,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // update the instance with removed flag only when the cleanup is
         // executed successfully
         if (_vpcDao.remove(vpc.getId())) {
-            s_logger.debug("Vpc " + vpc + " is destroyed succesfully");
+            s_logger.debug("Vpc " + vpc + " is destroyed successfully");
             return true;
         } else {
             s_logger.warn("Vpc " + vpc + " failed to destroy");
@@ -1434,7 +1433,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         for (final VpcProvider element : getVpcElements()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (element.shutdownVpc(vpc, context)) {
-                    s_logger.debug("Vpc " + vpc + " has been shutdown succesfully");
+                    s_logger.debug("Vpc " + vpc + " has been shutdown successfully");
                 } else {
                     s_logger.warn("Vpc " + vpc + " failed to shutdown");
                     success = false;
@@ -1962,7 +1961,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 }
             }
             if (success) {
-                s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                s_logger.debug("Private gateway " + gateway + " was applied successfully on the backend");
                 if (vo.getState() != VpcGateway.State.Ready) {
                     vo.setState(VpcGateway.State.Ready);
                     _vpcGatewayDao.update(vo.getId(), vo);
@@ -2030,7 +2029,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             for (final VpcProvider provider : getVpcElements()) {
                 if (providersToImplement.contains(provider.getProvider())) {
                     if (provider.deletePrivateGateway(gateway)) {
-                        s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                        s_logger.debug("Private gateway " + gateway + " was applied successfully on the backend");
                     } else {
                         s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
                         gatewayVO.setState(VpcGateway.State.Ready);

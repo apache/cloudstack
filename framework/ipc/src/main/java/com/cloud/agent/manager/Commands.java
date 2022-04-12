@@ -24,6 +24,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.Command.OnError;
 import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.stream.Collectors;
 
 public class Commands implements Iterable<Command> {
     OnError _handler;
@@ -150,4 +151,10 @@ public class Commands implements Iterable<Command> {
     public Iterator<Command> iterator() {
         return _cmds.iterator();
     }
+
+    @Override
+    public String toString() {
+        return _cmds.stream().map(cmd -> cmd.toString()).collect(Collectors.joining(", "));
+    }
+
 }

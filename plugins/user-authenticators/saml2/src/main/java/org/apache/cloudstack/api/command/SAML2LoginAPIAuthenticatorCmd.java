@@ -46,7 +46,7 @@ import org.apache.cloudstack.saml.SAMLPluginConstants;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLTokenVO;
 import org.apache.cloudstack.saml.SAMLUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Assertion;
@@ -122,7 +122,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override
@@ -303,7 +303,7 @@ public class SAML2LoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthent
                     // Log into the first enabled user account
                     // Users can switch to other allowed accounts later
                     for (UserAccountVO possibleUserAccount : possibleUserAccounts) {
-                        if (possibleUserAccount.getAccountState().equals(Account.State.enabled.toString())) {
+                        if (possibleUserAccount.getAccountState().equals(Account.State.ENABLED.toString())) {
                             userAccount = possibleUserAccount;
                             break;
                         }

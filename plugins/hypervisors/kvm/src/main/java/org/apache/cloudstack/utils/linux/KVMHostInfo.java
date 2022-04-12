@@ -44,9 +44,10 @@ public class KVMHostInfo {
     private long overCommitMemory;
     private List<String> capabilities = new ArrayList<>();
 
-    private static String cpuInfoMaxFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq";
+    private static String cpuInfoFreqFileName = "/sys/devices/system/cpu/cpu0/cpufreq/base_frequency";
 
-    public KVMHostInfo(long reservedMemory, long overCommitMemory) {
+    public KVMHostInfo(long reservedMemory, long overCommitMemory, long manualSpeed) {
+        this.cpuSpeed = manualSpeed;
         this.reservedMemory = reservedMemory;
         this.overCommitMemory = overCommitMemory;
         this.getHostInfoFromLibvirt();
@@ -113,13 +114,13 @@ public class KVMHostInfo {
     }
 
     private static long getCpuSpeedFromFile() {
-        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoMaxFreqFileName));
-        try (Reader reader = new FileReader(cpuInfoMaxFreqFileName)) {
-            Long cpuInfoMaxFreq = Long.parseLong(IOUtils.toString(reader).trim());
-            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoMaxFreq, cpuInfoMaxFreqFileName, cpuInfoMaxFreq / 1000));
-            return cpuInfoMaxFreq / 1000;
+        LOGGER.info(String.format("Fetching CPU speed from file [%s].", cpuInfoFreqFileName));
+        try (Reader reader = new FileReader(cpuInfoFreqFileName)) {
+            Long cpuInfoFreq = Long.parseLong(IOUtils.toString(reader).trim());
+            LOGGER.info(String.format("Retrieved value [%s] from file [%s]. This corresponds to a CPU speed of [%s] MHz.", cpuInfoFreq, cpuInfoFreqFileName, cpuInfoFreq / 1000));
+            return cpuInfoFreq / 1000;
         } catch (IOException | NumberFormatException e) {
-            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoMaxFreqFileName), e);
+            LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
             return 0L;
         }
     }
@@ -128,7 +129,11 @@ public class KVMHostInfo {
         try {
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
-            this.cpuSpeed = getCpuSpeed(hosts);
+            if (this.cpuSpeed == 0) {
+                this.cpuSpeed = getCpuSpeed(hosts);
+            } else {
+                LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
+            }
 
             /*
              * Some CPUs report a single socket and multiple NUMA cells.

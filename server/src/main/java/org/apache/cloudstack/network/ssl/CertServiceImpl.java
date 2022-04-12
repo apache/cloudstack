@@ -88,7 +88,7 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.security.CertificateHelper;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class CertServiceImpl implements CertService {
 
@@ -134,7 +134,7 @@ public class CertServiceImpl implements CertService {
         final Account caller = ctx.getCallingAccount();
 
         Account owner = null;
-        if (!Strings.isNullOrEmpty(certCmd.getAccountName()) && certCmd.getDomainId() != null || certCmd.getProjectId() != null) {
+        if (StringUtils.isNotEmpty(certCmd.getAccountName()) && certCmd.getDomainId() != null || certCmd.getProjectId() != null) {
             owner = _accountMgr.finalizeOwner(caller, certCmd.getAccountName(), certCmd.getDomainId(), certCmd.getProjectId());
         } else {
             owner = caller;
@@ -304,7 +304,7 @@ public class CertServiceImpl implements CertService {
 
         final SslCertResponse response = new SslCertResponse();
         final Account account = _accountDao.findByIdIncludingRemoved(cert.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             // find the project
             final Project project = _projectMgr.findByProjectAccountIdIncludingRemoved(account.getId());
             if (project != null)
@@ -423,7 +423,7 @@ public class CertServiceImpl implements CertService {
     }
 
     public PrivateKey parsePrivateKey(final String key) throws IOException {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(key));
+        Preconditions.checkArgument(StringUtils.isNotEmpty(key));
         try (final PemReader pemReader = new PemReader(new StringReader(key));) {
             final PemObject pemObject = pemReader.readPemObject();
             final byte[] content = pemObject.getContent();
@@ -439,7 +439,7 @@ public class CertServiceImpl implements CertService {
 
     @Override
     public Certificate parseCertificate(final String cert) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(cert));
+        Preconditions.checkArgument(StringUtils.isNotEmpty(cert));
         final PemReader certPem = new PemReader(new StringReader(cert));
         try {
             return readCertificateFromPemObject(certPem.readPemObject());

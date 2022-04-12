@@ -26,7 +26,7 @@ import java.util.Date;
 
 public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
     public enum Type {
-        MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY;
+        MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY, GROUP;
         private int max = 8;
 
         public void setMax(int max) {
@@ -92,7 +92,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     boolean isRecursive();
 
-    short getsnapshotType();
+    short getSnapshotType();
 
     LocationType getLocationType(); // This type is in reference to the location where the snapshot resides (ex. primary storage, archive on secondary storage, etc.)
 }

@@ -37,6 +37,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
+                             Network,
                              ServiceOffering,
                              Account,
                              StoragePool,
@@ -76,11 +77,11 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.kubernetes_version_ids = []
 
         if cls.hypervisorNotSupported == False:
-            cls.endpoint_url = Configurations.list(cls.apiclient, name="endpointe.url")[0].value
+            cls.endpoint_url = Configurations.list(cls.apiclient, name="endpoint.url")[0].value
             if "localhost" in cls.endpoint_url:
                 endpoint_url = "http://%s:%d/client/api " %(cls.mgtSvrDetails["mgtSvrIp"], cls.mgtSvrDetails["port"])
-                cls.debug("Setting endpointe.url to %s" %(endpoint_url))
-                Configurations.update(cls.apiclient, "endpointe.url", endpoint_url)
+                cls.debug("Setting endpoint.url to %s" %(endpoint_url))
+                Configurations.update(cls.apiclient, "endpoint.url", endpoint_url)
             cls.initial_configuration_cks_enabled = Configurations.list(cls.apiclient, name="cloud.kubernetes.service.enabled")[0].value
             if cls.initial_configuration_cks_enabled not in ["true", True]:
                 cls.debug("Enabling CloudStack Kubernetes Service plugin and restarting management server")
@@ -123,6 +124,15 @@ class TestKubernetesCluster(cloudstackTestCase):
                     domainid=cls.domain.id
                 )
                 cls._cleanup.append(cls.account)
+
+        cls.default_network = None
+        if str(cls.zone.securitygroupsenabled) == "True":
+            networks = Network.list(
+                cls.apiclient,
+                listall=True
+            )
+            cls.default_network = networks[0]
+
         return
 
     @classmethod
@@ -514,6 +524,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
@@ -529,6 +541,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         time.sleep(self.services["sleep"])
@@ -554,6 +568,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
@@ -572,6 +588,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
+        if self.default_network:
+            createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
         if not clusterResponse:
             self.cleanup.append(clusterResponse)

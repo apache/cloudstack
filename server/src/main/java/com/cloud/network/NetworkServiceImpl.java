@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.isNotBlank;
-
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -31,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,20 +62,26 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
+import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
@@ -86,6 +90,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -172,7 +177,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -305,6 +309,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     DataCenterVnetDao _datacneterVnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    AccountVlanMapDao _accountVlanMapDao;
+    @Inject
+    DomainVlanMapDao _domainVlanMapDao;
     @Inject
     VpcDao _vpcDao;
     @Inject
@@ -734,10 +742,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String ip6addr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
         if (network.getGuestType() == Network.GuestType.Isolated) {
-            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && isBlank(ipv6Address))) {
+            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && StringUtils.isBlank(ipv6Address))) {
                 ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
             }
-            if (isNotBlank(ipv6Address)) {
+            if (StringUtils.isNotBlank(ipv6Address)) {
                 ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
@@ -771,7 +779,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return null;
         }
 
-        if (isNotBlank(ipaddr) || isNotBlank(ip6addr)) {
+        if (!StringUtils.isAllBlank(ipaddr, ip6addr)) {
             // we got the ip addr so up the nics table and secodary ip
             final String ip4AddrFinal = ipaddr;
             final String ip6AddrFinal = ip6addr;
@@ -919,6 +927,98 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RESERVE, eventDescription = "reserving Ip", async = false)
+    public IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException {
+        IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address by ID=" + ipAddressId);
+        }
+        // verify permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, account);
+
+        VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
+        if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
+            throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be reserved.");
+        }
+        if (ipVO.isPortable()) {
+            throw new InvalidParameterValueException("Unable to reserve a portable IP.");
+        }
+        if (State.Reserved.equals(ipVO.getState())) {
+            if (account.getId() == ipVO.getAccountId()) {
+                s_logger.info(String.format("IP address %s has already been reserved for account %s", ipVO.getAddress(), account));
+                return ipVO;
+            }
+            throw new InvalidParameterValueException("Unable to reserve a IP because it has already been reserved for another account.");
+        }
+        if (!State.Free.equals(ipVO.getState())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP in " + ipVO.getState() + " state.");
+        }
+        Long ipDedicatedDomainId = getIpDedicatedDomainId(ipVO.getVlanId());
+        if (ipDedicatedDomainId != null && !ipDedicatedDomainId.equals(account.getDomainId())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another domain.");
+        }
+        Long ipDedicatedAccountId = getIpDedicatedAccountId(ipVO.getVlanId());
+        if (ipDedicatedAccountId != null && !ipDedicatedAccountId.equals(account.getAccountId())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another account.");
+        }
+        if (ipDedicatedAccountId == null) {
+            // Check that the maximum number of public IPs for the given accountId will not be exceeded
+            try {
+                _resourceLimitMgr.checkResourceLimit(account, Resource.ResourceType.public_ip);
+            } catch (ResourceAllocationException ex) {
+                s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
+                throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+            }
+        }
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+        ipVO.setAllocatedTime(new Date());
+        ipVO.setAllocatedToAccountId(account.getAccountId());
+        ipVO.setAllocatedInDomainId(account.getDomainId());
+        ipVO.setState(State.Reserved);
+        if (displayIp != null) {
+            ipVO.setDisplay(displayIp);
+        }
+        ipVO = _ipAddressDao.persist(ipVO);
+        if (ipDedicatedAccountId == null) {
+            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+        }
+        return ipVO;
+    }
+
+    private Long getIpDedicatedAccountId(Long vlanId) {
+        List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
+        if (CollectionUtils.isNotEmpty(accountVlanMaps)) {
+            return accountVlanMaps.get(0).getAccountId();
+        }
+        return null;
+    }
+
+    private Long getIpDedicatedDomainId(Long vlanId) {
+        List<DomainVlanMapVO> domainVlanMaps = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanId);
+        if (CollectionUtils.isNotEmpty(domainVlanMaps)) {
+            return domainVlanMaps.get(0).getDomainId();
+        }
+        return null;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "releasing Reserved Ip", async = false)
+    public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address by ID=" + ipAddressId);
+        }
+        if (ipVO.isPortable()) {
+            throw new InvalidParameterValueException("Unable to release a portable IP, please use disassociateIpAddress instead");
+        }
+        if (State.Allocated.equals(ipVO.getState())) {
+            throw new InvalidParameterValueException("Unable to release a public IP in Allocated state, please use disassociateIpAddress instead");
+        }
+        return releaseIpAddressInternal(ipAddressId);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         return releaseIpAddressInternal(ipAddressId);
@@ -962,6 +1062,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // don't allow releasing system ip address
         if (ipVO.getSystem()) {
             throwInvalidIdException("Can't release system IP address with specified id", ipVO.getUuid(), "systemIpAddrId");
+        }
+
+        if (State.Reserved.equals(ipVO.getState())) {
+            _ipAddressDao.unassignIpAddress(ipVO.getId());
+            Long ipDedicatedAccountId = getIpDedicatedAccountId(ipVO.getVlanId());
+            if (ipDedicatedAccountId == null) {
+                _resourceLimitMgr.decrementResourceCount(ipVO.getAccountId(), Resource.ResourceType.public_ip);
+            }
+            return true;
         }
 
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
@@ -1039,14 +1148,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String gateway,
                                    String netmask, String startIpv6, String endIpv6, String ip6Cidr) {
-        if (isNotBlank(routerIp)) {
+        if (StringUtils.isNotBlank(routerIp)) {
             if (startIp != null && endIp == null) {
                 endIp = startIp;
             }
             if (!NetUtils.isValidIp4(routerIp)) {
                 throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
             }
-            if (isNotBlank(startIp) && isNotBlank(endIp)) {
+            if (StringUtils.isNoneBlank(startIp, endIp)) {
                 if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
                     throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
                 }
@@ -1057,14 +1166,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
         }
-        if (isNotBlank(routerIpv6)) {
+        if (StringUtils.isNotBlank(routerIpv6)) {
             if (startIpv6 != null && endIpv6 == null) {
                 endIpv6 = startIpv6;
             }
             if (!NetUtils.isValidIp6(routerIpv6)) {
                 throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
             }
-            if (isNotBlank(startIpv6) && isNotBlank(endIpv6)) {
+            if (StringUtils.isNoneBlank(startIpv6, endIpv6)) {
                 String ipv6Range = startIpv6 + "-" + endIpv6;
                 if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
                     throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
@@ -1202,12 +1311,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
         }
 
-        if (ntwkOff.getGuestType() != GuestType.Shared && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+        if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
             throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
-                && (isNotBlank(routerIp) || isNotBlank(routerIpv6))) {
+                && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
             throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
@@ -1256,7 +1365,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (org.apache.commons.lang3.StringUtils.isNoneBlank(gateway, netmask)) {
             ipv4 = true;
         }
-        if (isNotBlank(ip6Cidr) && isNotBlank(ip6Gateway)) {
+        if (StringUtils.isNoneBlank(ip6Cidr, ip6Gateway)) {
             ipv6 = true;
         }
 
@@ -1331,7 +1440,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
             }
 
-            if(isBlank(zone.getIp6Dns1()) && isBlank(zone.getIp6Dns2())) {
+            if(StringUtils.isAllBlank(zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
 
@@ -1342,11 +1451,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
 
-        if (isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
+        if (StringUtils.isNotBlank(isolatedPvlan) && (zone.getNetworkType() != NetworkType.Advanced || ntwkOff.getGuestType() == GuestType.Isolated)) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with advanced shared or L2 network!");
         }
 
-        if (isNotBlank(isolatedPvlan) && ipv6) {
+        if (StringUtils.isNotBlank(isolatedPvlan) && ipv6) {
             throw new InvalidParameterValueException("Can only support create Private VLAN network with IPv4!");
         }
 
@@ -1354,7 +1463,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String secondaryVlanId = pvlanPair.first();
         PVlanType privateVlanType = pvlanPair.second();
 
-        if ((isNotBlank(secondaryVlanId) || privateVlanType != null) && isBlank(vlanId)) {
+        if ((StringUtils.isNotBlank(secondaryVlanId) || privateVlanType != null) && StringUtils.isBlank(vlanId)) {
             throw new InvalidParameterValueException("VLAN ID has to be set in order to configure a Private VLAN");
         }
 
@@ -1387,7 +1496,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throw new InvalidParameterValueException("Cannot support IPv6 on network offering with external devices!");
         }
 
-        if (isNotBlank(secondaryVlanId) && providersConfiguredForExternalNetworking(ntwkProviders)) {
+        if (StringUtils.isNotBlank(secondaryVlanId) && providersConfiguredForExternalNetworking(ntwkProviders)) {
             throw new InvalidParameterValueException("Cannot support private vlan on network offering with external devices!");
         }
 
@@ -1473,19 +1582,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String secondaryVlanId = pvlanId;
         PVlanType type = null;
 
-        if (isNotBlank(pvlanTypeStr)) {
+        if (StringUtils.isNotBlank(pvlanTypeStr)) {
             PVlanType providedType = PVlanType.fromValue(pvlanTypeStr);
             type = providedType;
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId)) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId)) {
             // Preserve the existing functionality
             type = vlanId.equals(secondaryVlanId) ? PVlanType.Promiscuous : PVlanType.Isolated;
         }
 
-        if (isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
+        if (StringUtils.isBlank(secondaryVlanId) && type == PVlanType.Promiscuous) {
             secondaryVlanId = vlanId;
         }
 
-        if (isNotBlank(secondaryVlanId)) {
+        if (StringUtils.isNotBlank(secondaryVlanId)) {
             try {
                 Integer.parseInt(secondaryVlanId);
             } catch (NumberFormatException e) {
@@ -1500,11 +1609,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
      * Basic checks for setting up private VLANs, considering the VLAN ID, secondary VLAN ID and private VLAN type
      */
     protected void performBasicPrivateVlanChecks(String vlanId, String secondaryVlanId, PVlanType privateVlanType) {
-        if (isNotBlank(vlanId) && isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
+        if (StringUtils.isNotBlank(vlanId) && StringUtils.isBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous) {
             throw new InvalidParameterValueException("Private VLAN ID has not been set, therefore Promiscuous type is expected");
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId) && !vlanId.equalsIgnoreCase(secondaryVlanId) && privateVlanType == PVlanType.Promiscuous) {
             throw new InvalidParameterValueException("Private VLAN type is set to Promiscuous, but VLAN ID and Secondary VLAN ID differ");
-        } else if (isNotBlank(vlanId) && isNotBlank(secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
+        } else if (StringUtils.isNoneBlank(vlanId, secondaryVlanId) && privateVlanType != null && privateVlanType != PVlanType.Promiscuous && vlanId.equalsIgnoreCase(secondaryVlanId)) {
             throw new InvalidParameterValueException("Private VLAN type is set to " + privateVlanType + ", but VLAN ID and Secondary VLAN ID are equal");
         }
     }
@@ -1812,7 +1921,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         //Now apply pagination
-        List<? extends Network> wPagination = StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
+        List<? extends Network> wPagination = com.cloud.utils.StringUtils.applyPagination(networksToReturn, cmd.getStartIndex(), cmd.getPageSizeVal());
         if (wPagination != null) {
             Pair<List<? extends Network>, Integer> listWPagination = new Pair<List<? extends Network>, Integer>(wPagination, networksToReturn.size());
             return listWPagination;
@@ -1867,9 +1976,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (skipProjectNetworks) {
-            sc.setJoinParameters("accountSearch", "typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
         } else {
-            sc.setJoinParameters("accountSearch", "typeEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeEQ", Account.Type.PROJECT);
         }
 
         if (restartRequired != null) {
@@ -2871,7 +2980,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         for (Network tier : migratedTiers) {
             String tierNetworkOfferingUuid = networkToOffering.get(tier.getUuid());
 
-            if (!isNotBlank(tierNetworkOfferingUuid)) {
+            if (StringUtils.isBlank(tierNetworkOfferingUuid)) {
                 throwInvalidIdException("Failed to resume migrating VPC as the specified tierNetworkOfferings is not complete", String.valueOf(tier.getUuid()), "networkUuid");
             }
 
@@ -3026,7 +3135,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 return false;
             }
 
-            if (!StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
+            if (!com.cloud.utils.StringUtils.areTagsEqual(oldNetworkOffering.getTags(), newNetworkOffering.getTags())) {
                 s_logger.debug("Network offerings " + newNetworkOffering.getUuid() + " and " + oldNetworkOffering.getUuid() + " have different tags, can't upgrade");
                 return false;
             }
@@ -4662,7 +4771,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkId = cmd.getNetworkId();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4678,7 +4787,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String keyword = cmd.getKeyword();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4707,7 +4816,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, true, ipVO);
-        } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        } else if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException("Only Root admin can update non-allocated ip addresses");
         }
 

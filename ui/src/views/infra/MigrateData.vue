@@ -18,119 +18,126 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" @submit="handleSubmit" layout="vertical">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
+        layout="vertical"
+       >
         <a-form-item
+          name="srcpool"
+          ref="srcpool"
           :label="$t('migrate.from')">
           <a-select
-            v-decorator="['srcpool', {
-              initialValue: selectedStore,
-              rules: [
-                {
-                  required: true,
-                  message: $t('message.error.select'),
-                }]
-            }]"
+            v-model:value="form.srcpool"
+            @change="filterStores"
             :loading="loading"
-            @change="val => { selectedStore = val }"
-            autoFocus
+            v-focus="true"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="store in imageStores"
-              :key="store.id"
-            >{{ store.name || opt.url }}</a-select-option>
+              :key="store.id"> {{ store.name || opt.url }}
+            </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item
+          name="destpools"
+          ref="destpools"
           :label="$t('migrate.to')">
           <a-select
-            v-decorator="['destpools', {
-              rules: [
-                {
-                  required: true,
-                  message: $t('message.select.destination.image.stores'),
-                }]
-            }]"
+            v-model:value="form.destpools"
             mode="multiple"
             :loading="loading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
-              v-for="store in imageStores"
-              v-if="store.id !== selectedStore"
-              :key="store.id"
-            >{{ store.name || opt.url }}</a-select-option>
+              v-for="store in destStores"
+              :key="store.id"> {{ store.name || opt.url }}
+            </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item :label="$t('migrationPolicy')">
+        <a-form-item name="migrationtype" ref="migrationtype" :label="$t('migrationPolicy')">
           <a-select
-            v-decorator="['migrationtype', {
-              initialValue: 'Complete',
-              rules: [
-                {
-                  required: true,
-                  message: $t('message.select.migration.policy'),
-                }]
-            }]"
+            v-model:value="form.migrationtype"
             :loading="loading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="Complete">{{ $t('label.complete') }}</a-select-option>
             <a-select-option value="Balance">{{ $t('label.balance') }}</a-select-option>
           </a-select>
         </a-form-item>
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'MigrateData',
   inject: ['parentFetchData'],
   data () {
     return {
       imageStores: [],
-      loading: false,
-      selectedStore: ''
+      destStores: [],
+      loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
-  created () {
-    this.fetchImageStores()
+  async created () {
+    this.initForm()
+    await this.fetchImageStores()
+    this.filterStores()
   },
   methods: {
-    fetchImageStores () {
-      this.loading = true
-      api('listImageStores').then(json => {
-        this.imageStores = json.listimagestoresresponse.imagestore || []
-        this.selectedStore = this.imageStores[0].id || ''
-      }).finally(() => {
-        this.loading = false
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        migrationtype: 'Complete'
       })
+      this.rules = reactive({
+        srcpool: [{ required: true, message: this.$t('message.error.select') }],
+        destpools: [{ type: 'array', required: true, message: this.$t('message.select.destination.image.stores') }],
+        migrationtype: [{ required: true, message: this.$t('message.select.migration.policy') }]
+      })
+    },
+    fetchImageStores () {
+      return new Promise((resolve, reject) => {
+        this.loading = true
+        api('listImageStores').then(json => {
+          this.imageStores = json.listimagestoresresponse.imagestore || []
+          this.form.srcpool = this.imageStores[0].id || ''
+          resolve(this.imageStores)
+        }).catch((error) => {
+          reject(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    filterStores () {
+      this.destStores = this.imageStores.filter(store => { return store.id !== this.form.srcpool })
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {}
         for (const key in values) {
           const input = values[key]
@@ -174,6 +181,8 @@ export default {
           setTimeout(loadingJob)
           this.closeAction()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     migrateData (args, title) {

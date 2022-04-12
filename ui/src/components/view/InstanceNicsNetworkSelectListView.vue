@@ -25,22 +25,22 @@
       :dataSource="nics"
       :pagination="false"
       :rowKey="record => record.InstanceID">
-      <template slot="displaytext" slot-scope="record">
+      <template #displaytext="{record}">
         <span>{{ record.elementName + ' - ' + record.name }}
           <a-tooltip :title="record.nicDescription" placement="top">
-            <a-icon type="info-circle" class="table-tooltip-icon" />
+            <info-circle-outlined class="table-tooltip-icon" />
           </a-tooltip>
         </span>
       </template>
-      <div slot="size" slot-scope="record">
+      <template #size="{record}">
         <span v-if="record.size">
           {{ $bytesToHumanReadableSize(record.size) }}
         </span>
-      </div>
-      <template slot="selectednetwork" slot-scope="record">
+      </template>
+      <template #selectednetwork="{record}">
         <span>{{ record.selectednetworkname || '' }}</span>
       </template>
-      <template slot="select" slot-scope="record">
+      <template #select="{record}">
         <div style="display: flex; justify-content: flex-end;"><a-button @click="openNicNetworkSelector(record)">{{ record.selectednetworkid ? $t('label.change') : $t('label.select') }}</a-button></div>
       </template>
     </a-table>
@@ -88,31 +88,21 @@ export default {
       nicColumns: [
         {
           title: this.$t('label.nic'),
-          scopedSlots: { customRender: 'displaytext' }
+          slots: { customRender: 'displaytext' }
         },
         {
           title: this.$t('label.network'),
-          scopedSlots: { customRender: 'selectednetwork' }
+          slots: { customRender: 'selectednetwork' }
         },
         {
           title: '',
-          scopedSlots: { customRender: 'select' }
+          slots: { customRender: 'select' }
         }
       ],
       selectedNicForNetworkSelection: {}
     }
   },
   methods: {
-    resetSelection () {
-      var nics = this.nics
-      this.nics = []
-      for (var nic of nics) {
-        nic.selectednetworkid = null
-        nic.selectednetworkname = ''
-      }
-      this.nics = nics
-      this.updateNicToNetworkSelection()
-    },
     openNicNetworkSelector (nic) {
       this.selectedNicForNetworkSelection = nic
     },

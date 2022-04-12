@@ -80,6 +80,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataTO;
@@ -134,7 +135,6 @@ import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -362,6 +362,36 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
         return null;
+    }
+
+    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+        Long podId = null;
+        if (pod != null) {
+            podId = pod.getId();
+        } else if (clusterId != null) {
+            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
+            if (cluster != null) {
+                podId = cluster.getPodId();
+            }
+        }
+
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        List<StoragePool> suitablePools = new ArrayList<>();
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+
+            ExcludeList avoidList = new ExcludeList();
+            for (StoragePool pool : avoid) {
+                avoidList.addPool(pool.getId());
+            }
+            DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), podId, clusterId, hostId, null, null);
+
+            final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
+            if (CollectionUtils.isEmpty(poolList)) {
+                continue;
+            }
+            suitablePools.addAll(poolList);
+        }
+        return suitablePools;
     }
 
     @Override
@@ -633,7 +663,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
-            dskCh = createDiskCharacteristics(volume, template, dc, offering);
+            dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
             storageMgr.setDiskProfileThrottling(dskCh, offering, diskOffering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
@@ -892,7 +922,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             Long offeringId = null;
 
-            if (offering.getType() == DiskOffering.Type.Disk) {
+            if (!offering.isComputeOnly()) {
                 offeringId = offering.getId();
             }
 
@@ -1023,7 +1053,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException {
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
-        Pod pod = _entityMgr.findById(Pod.class, storagePool.getPodId());
+        Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
+        Pod pod = _entityMgr.findById(Pod.class, podId);
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());

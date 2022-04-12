@@ -71,7 +71,6 @@ import com.cloud.utils.db.SearchCriteria.SelectType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.google.common.base.Strings;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
@@ -2010,7 +2009,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     public Integer getDistinctCountIncludingRemoved(SearchCriteria<T> sc, String[] distinctColumns) {
         String clause = sc != null ? sc.getWhereClause() : null;
-        if (Strings.isNullOrEmpty(clause)) {
+        if (StringUtils.isEmpty(clause)) {
             clause = null;
         }
 

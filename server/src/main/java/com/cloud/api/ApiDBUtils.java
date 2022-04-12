@@ -249,7 +249,6 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -329,6 +328,7 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -994,8 +994,8 @@ public class ApiDBUtils {
         return s_statsCollector.getStoragePoolStats(id);
     }
 
-    public static VmStats getVmStatistics(long hostId) {
-        return s_statsCollector.getVmStats(hostId);
+    public static VmStats getVmStatistics(long vmId, Boolean accumulate) {
+        return s_statsCollector.getVmStats(vmId, accumulate);
     }
 
     public static VolumeStats getVolumeStatistics(String volumeUuid) {
@@ -1043,14 +1043,26 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findComputeOnlyDiskOfferingById(Long diskOfferingId) {
         DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
-        if (off.getType() == DiskOfferingVO.Type.Disk) {
+        if (off.isComputeOnly()) {
             return off;
         }
         return null;
     }
 
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (!off.isComputeOnly()) {
+            return off;
+        }
+        return null;
+    }
+
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+        return off;
+    }
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
     }
@@ -1238,7 +1250,7 @@ public class ApiDBUtils {
             // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
-            // rather than RBD. This block of code can (hopefuly) by checking to
+            // rather than RBD. This block of code can (hopefully) by checking to
             // see if the pool is using either RBD or NFS. However, it isn't
             // quite clear what to do if both storage types are used. If the image
             // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
@@ -1793,7 +1805,11 @@ public class ApiDBUtils {
     }
 
     public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, caller);
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, caller);
+    }
+
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
     }
 
     public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {

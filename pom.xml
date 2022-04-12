@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.16.2.0-SNAPSHOT</version>
+    <version>4.17.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -55,12 +55,13 @@
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.3</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -122,7 +123,7 @@
         <cs.aspectjrt.version>1.9.6</cs.aspectjrt.version>
         <cs.aws.sdk.version>1.11.940</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
-        <cs.axis.version>1.4</cs.axis.version>
+        <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
         <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
@@ -166,7 +167,7 @@
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
-        <cs.tomcat-embed-core.version>8.5.61</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>10.0.2</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
@@ -456,14 +457,14 @@
                 <version>${cs.ehcache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis-jaxrpc</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2-jaxws</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1152,7 +1153,6 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
