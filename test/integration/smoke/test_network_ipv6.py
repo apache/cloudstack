@@ -19,8 +19,7 @@
 #Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (listNetworkOfferings,
-                                  createGuestNetworkIpv6Prefix,
+from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listGuestNetworkIpv6Prefixes,
                                   deleteGuestNetworkIpv6Prefix)
 from marvin.lib.utils import (isAlmostEqual,
@@ -29,6 +28,7 @@ from marvin.lib.utils import (isAlmostEqual,
 from marvin.lib.base import (Configurations,
                              Domain,
                              NetworkOffering,
+                             VpcOffering,
                              Account,
                              PublicIpRange,
                              Network,
@@ -52,19 +52,16 @@ _multiprocess_shared_ = True
 
 ipv6_offering_config_name = "ipv6.offering.enabled"
 
-class TestCreateIpv6NetworkOffering(cloudstackTestCase):
+class TestCreateIpv6NetworkVpcOffering(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        testClient = super(TestCreateIpv6NetworkOffering, cls).getClsTestClient()
+        testClient = super(TestCreateIpv6NetworkVpcOffering, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.initial_ipv6_offering_enabled = Configurations.list(
             cls.apiclient,
             name=ipv6_offering_config_name)[0].value
-        Configurations.update(cls.apiclient,
-            ipv6_offering_config_name,
-            "true")
         cls._cleanup = []
         return
 
@@ -74,7 +71,7 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
             Configurations.update(cls.apiclient,
                 ipv6_offering_config_name,
                 cls.initial_ipv6_offering_enabled)
-        super(TestCreateIpv6NetworkOffering, cls).tearDownClass()
+        super(TestCreateIpv6NetworkVpcOffering, cls).tearDownClass()
 
     def setUp(self):
         self.services = self.testClient.getParsedTestDataConfig()
@@ -105,9 +102,12 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
         """Test to create network offering
 
         # Validate the following:
-        # 1. createNetworkOfferings should return valid info for new offering
+        # 1. createNetworkOffering should return valid info for new offering
         # 2. The Cloud Database contains the valid information
         """
+        Configurations.update(self.apiclient,
+            ipv6_offering_config_name,
+            "true")
         ipv6_service = self.services["network_offering"]
         ipv6_service["internetprotocol"] = "dualstack"
         network_offering = NetworkOffering.create(
@@ -118,9 +118,8 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
 
         self.debug("Created Network offering with ID: %s" % network_offering.id)
 
-        cmd = listNetworkOfferings.listNetworkOfferingsCmd()
-        cmd.id = network_offering.id
-        list_network_off_response = self.apiclient.listNetworkOfferings(cmd)
+        list_network_off_response = NetworkOffering.list(self.apiclient,
+            id=network_offering.id)
         self.assertEqual(
             isinstance(list_network_off_response, list),
             True,
@@ -136,13 +135,129 @@ class TestCreateIpv6NetworkOffering(cloudstackTestCase):
         self.assertEqual(
             network_off_response.id,
             network_offering.id,
-            "Check server id in createNetworkOffering"
+            "Check server id in listNetworkOfferings"
         )
         self.assertEqual(
-            network_off_response.details.internetProtocol.lower(),
+            network_off_response.internetprotocol.lower(),
             ipv6_service["internetprotocol"].lower(),
-            "Check internetprotocol in createNetworkOffering"
+            "Check internetprotocol in listNetworkOfferings"
         )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_02_create_ipv6_network_offering_fail(self):
+        """Test to create network offering
+
+        # Validate the following:
+        # 1. createNetworkOffering should fail
+        """
+        Configurations.update(self.apiclient,
+            ipv6_offering_config_name,
+            "false")
+        ipv6_service = self.services["network_offering"]
+        ipv6_service["internetprotocol"] = "dualstack"
+        try:
+            network_offering = NetworkOffering.create(
+                self.apiclient,
+                ipv6_service
+            )
+            self.cleanup.append(network_offering)
+            self.fail("Network offering created despite gloabal setting - %s set to false" % ipv6_offering_config_name)
+        except CloudstackAPIException as e:
+            self.debug("Network offering creation failed as expected %s " % e)
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_03_create_ipv6_vpc_offering(self):
+        """Test to create network offering
+
+        # Validate the following:
+        # 1. createVpcOffering should return valid info for new offering
+        # 2. The Cloud Database contains the valid information
+        """
+        Configurations.update(self.apiclient,
+            ipv6_offering_config_name,
+            "true")
+        ipv6_service = self.services["vpc_offering"]
+        ipv6_service["internetprotocol"] = "dualstack"
+        vpc_offering = VpcOffering.create(
+            self.apiclient,
+            ipv6_service
+        )
+        self.cleanup.append(vpc_offering)
+
+        self.debug("Created VPC offering with ID: %s" % vpc_offering.id)
+
+        list_vpc_off_response = VpcOffering.list(self.apiclient,
+            id=vpc_offering.id)
+        self.assertEqual(
+            isinstance(list_vpc_off_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vpc_off_response),
+            0,
+            "Check VPC offering is created"
+        )
+        vpc_off_response = list_vpc_off_response[0]
+        self.assertEqual(
+            vpc_off_response.id,
+            vpc_offering.id,
+            "Check server id in listVpcOfferings"
+        )
+        self.assertEqual(
+            vpc_off_response.internetprotocol.lower(),
+            ipv6_service["internetprotocol"].lower(),
+            "Check internetprotocol in listVpcOfferings"
+        )
+        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    def test_04_create_ipv6_vpc_offering_fail(self):
+        """Test to create VPC offering failure
+
+        # Validate the following:
+        # 1. createVpcOffering should fail
+        """
+        Configurations.update(self.apiclient,
+            ipv6_offering_config_name,
+            "false")
+        ipv6_service = self.services["vpc_offering"]
+        ipv6_service["internetprotocol"] = "dualstack"
+        try:
+            vpc_offering = VpcOffering.create(
+                self.apiclient,
+                ipv6_service
+            )
+            self.cleanup.append(vpc_offering)
+            self.fail("VPC offering created despite global setting - %s set to false" % ipv6_offering_config_name)
+        except CloudstackAPIException as e:
+            self.debug("VPC offering creation failed as expected %s " % e)
         return
 
 class TestIpv6PublicIpRange(cloudstackTestCase):

@@ -4623,6 +4623,8 @@ class VpcOffering:
                         'capabilitytype': ctype,
                         'capabilityvalue': value
                     })
+        if "internetprotocol" in services:
+            cmd.internetprotocol = services["internetprotocol"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
