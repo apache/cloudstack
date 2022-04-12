@@ -90,4 +90,20 @@ const AppDeviceEnquire = {
   }
 }
 
-export { mixin, AppDeviceEnquire, mixinDevice }
+const mixinForm = {
+  methods: {
+    handleRemoveFields (form) {
+      const formResult = {}
+      Object.keys(form).forEach(field => {
+        if (field in this.$refs && this.$refs[field] === null || this.$refs[field] === undefined) {
+          return true
+        }
+        formResult[field] = form[field]
+      })
+
+      return formResult
+    }
+  }
+}
+
+export { mixin, AppDeviceEnquire, mixinDevice, mixinForm }

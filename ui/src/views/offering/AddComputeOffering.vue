@@ -601,11 +601,13 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddServiceOffering',
+  mixins: [mixinForm],
   components: {
     AddDiskOffering,
     ResourceIcon,
@@ -916,7 +918,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           issystem: this.isSystem,
           name: values.name,
