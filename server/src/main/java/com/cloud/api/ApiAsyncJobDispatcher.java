@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -100,13 +99,6 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             if(contextDetails != null){
                 Type objectMapType = new TypeToken<Map<Object, Object>>() {}.getType();
                 ctx.putContextParameters((Map<Object, Object>) gson.fromJson(contextDetails, objectMapType));
-            }
-            if (cmdObj.getApiResourceId() != null) {
-                ctx.setEventResourceId(cmdObj.getApiResourceId());
-            }
-            final ApiCommandResourceType resourceType = cmdObj.getApiResourceType();
-            if (resourceType != null && !ApiCommandResourceType.None.equals(resourceType)) {
-                ctx.setEventResourceType(resourceType);
             }
 
             try {

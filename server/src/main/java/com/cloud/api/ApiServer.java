@@ -57,7 +57,6 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -688,14 +687,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final CallContext ctx = CallContext.current();
         final Long callerUserId = ctx.getCallingUserId();
         final Account caller = ctx.getCallingAccount();
-
-        if (cmdObj.getApiResourceId() != null) {
-            ctx.setEventResourceId(cmdObj.getApiResourceId());
-        }
-        final ApiCommandResourceType resourceType = cmdObj.getApiResourceType();
-        if (resourceType != null && !ApiCommandResourceType.None.equals(resourceType)) {
-            ctx.setEventResourceType(resourceType);
-        }
 
         // Queue command based on Cmd super class:
         // BaseCmd: cmd is dispatched to ApiDispatcher, executed, serialized and returned.
