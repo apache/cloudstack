@@ -52,7 +52,7 @@
       <template #actions="{record}">
         <div class="actions">
           <tooltip-button
-            v-if="record.account === 'system' && !basicGuestNetwork"
+            v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
             tooltipPlacement="bottom"
             :tooltip="$t('label.add.account')"
             icon="user-add-outlined"
@@ -189,8 +189,7 @@
         <a-form-item name="iptype" ref="iptype" :label="$t('label.ip.range.type')" class="form__item">
           <a-radio-group
             v-model:value="form.iptype"
-            buttonStyle="solid"
-            @change="selected => { addFormIpType = selected.target.value }">
+            buttonStyle="solid">
             <a-radio-button value="">
               {{ $t('label.ip.v4') }}
             </a-radio-button>
@@ -214,7 +213,7 @@
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
           <a-input v-model:value="form.vlan" />
         </a-form-item>
-        <div v-if="addFormIpType==='ip6'">
+        <div v-if="form.iptype==='ip6'">
           <a-form-item name="ip6gateway" ref="ip6gateway" :label="$t('label.gateway')" class="form__item">
             <a-input v-model:value="form.ip6gateway" />
           </a-form-item>
@@ -236,7 +235,7 @@
             <a-input v-model:value="form.endip" />
           </a-form-item>
         </div>
-        <div class="form__item" v-if="!basicGuestNetwork && addFormIpType != 'ip6'">
+        <div class="form__item" v-if="!basicGuestNetwork && form.iptype != 'ip6'">
           <div style="color: black;">{{ $t('label.set.reservation') }}</div>
           <a-switch @change="handleShowAccountFields" />
         </div>
@@ -390,8 +389,7 @@ export default {
           title: this.$t('label.action'),
           slots: { customRender: 'actions' }
         }
-      ],
-      addFormIpType: ''
+      ]
     }
   },
   created () {
