@@ -432,6 +432,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -4677,7 +4679,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String ipv6Range = null;
         if (ipv6) {
             ipv6Range = startIPv6;
-            if (endIPv6 != null) {
+            if (StringUtils.isNotEmpty(ipv6Range) && StringUtils.isNotEmpty(endIPv6)) {
                 ipv6Range += "-" + endIPv6;
             }
 
@@ -4686,23 +4688,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (vlan.getIp6Gateway() == null) {
                     continue;
                 }
-                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag())) {
-                    if (StringUtils.isNotEmpty(ipv6Range) &&
-                            StringUtils.isNotEmpty(vlan.getIp6Range()) &&
-                            NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
-                        throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range. Please specify a different start IP/end IP.",
-                                vlan.getVlanTag()));
-                    }
-                    if ((StringUtils.isEmpty(ipv6Range) ||
-                            StringUtils.isEmpty(vlan.getIp6Range())) &&
-                            NetUtils.ipv6NetworksOverlap(IPv6Network.fromString(vlanIp6Cidr), IPv6Network.fromString(vlan.getIp6Cidr()))) {
+                if ((StringUtils.isAllEmpty(ipv6Range, vlan.getIp6Range())) &&
+                        NetUtils.ipv6NetworksOverlap(IPv6Network.fromString(vlanIp6Cidr), IPv6Network.fromString(vlan.getIp6Cidr()))) {
+                    throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range.",
+                            vlan.getVlanTag()));
+                }
+                if (!StringUtils.isAllEmpty(ipv6Range, vlan.getIp6Range())) {
+                    String r1 = StringUtils.isEmpty(ipv6Range) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : ipv6Range;
+                    String r2 = StringUtils.isEmpty(vlan.getIp6Range()) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : vlan.getIp6Range();
+                    if(NetUtils.isIp6RangeOverlap(r1, r2)) {
                         throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range.",
                                 vlan.getVlanTag()));
                     }
-                    if (!vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
-                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + vlan.getIp6Gateway()
-                                + ". Please specify a different tag.");
-                    }
+                }
+                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag()) && !vlanIp6Gateway.equals(vlan.getIp6Gateway())) {
+                    throw new InvalidParameterValueException(String.format("The IP range with tag: %s has already been added with gateway %s. Please specify a different tag.",
+                            vlan.getVlanTag(), vlan.getIp6Gateway()));
                 }
             }
         }
@@ -5116,6 +5117,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (allocIpCount > 0) {
                 throw new InvalidParameterValueException(allocIpCount + "  Ips are in use. Cannot delete this vlan");
             }
+        }
+        List<String> ipAddresses = ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange);
+        if (CollectionUtils.isNotEmpty(ipAddresses)) {
+            throw new InvalidParameterValueException(String.format("%d IPv6 addresses are in use. Cannot delete this vlan", ipAddresses.size()));
         }
 
         Transaction.execute(new TransactionCallbackNoReturn() {

@@ -1702,6 +1702,14 @@ public class NetUtils {
         return isIpv4;
     }
 
+    public static String getIpv6RangeFromCidr(String ipv6Cidr) {
+        if (StringUtils.isEmpty(ipv6Cidr)) {
+            return null;
+        }
+        IPv6Network network = IPv6Network.fromString(ipv6Cidr);
+        return String.format("%s-%s", network.getFirst().toString(), network.getLast().toString());
+    }
+
     public static boolean ipv6NetworksOverlap(IPv6Network n1, IPv6Network n2) {
         IPv6Network higher = n1;
         IPv6Network lower = n2;

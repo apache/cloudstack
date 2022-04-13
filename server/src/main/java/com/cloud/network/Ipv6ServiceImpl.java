@@ -47,6 +47,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -308,6 +309,18 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         if (ipv6GuestPrefixSubnetNetworkMapVO != null) {
             releaseIpv6Subnet(ipv6GuestPrefixSubnetNetworkMapVO.getId());
         }
+    }
+
+    @Override
+    public List<String> getAllocatedIpv6FromVlanRange(Vlan vlan) {
+        if (ObjectUtils.allNull(vlan.getIp6Cidr(), vlan.getIp6Gateway())) {
+            return null;
+        }
+        List<NicVO> nics = nicDao.findNicsByIpv6GatewayIpv6CidrAndReserver(vlan.getIp6Gateway(), vlan.getIp6Cidr(), PublicNetworkGuru.class.getSimpleName());
+        if (CollectionUtils.isNotEmpty(nics)) {
+            return nics.stream().map(NicVO::getIPv6Address).collect(Collectors.toList());
+        }
+        return null;
     }
 
     @Override
