@@ -1156,4 +1156,49 @@ public class VolumeApiServiceImplTest {
         boolean result = volumeApiServiceImpl.isNotPossibleToResize(volume, diskOffering);
         Assert.assertEquals(expectedIsNotPossibleToResize, result);
     }
+
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferings() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, false, false, false);
+    }
+
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferingsCustom() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, true, false, false);
+    }
+
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsCustom() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, true, false, true);
+    }
+
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsNotCustom() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, false, false, false);
+    }
+
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestDifferentOfferingsAndNullOffering() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 2l, true, true, false);
+    }
+    @Test
+    public void isNewDiskOfferingTheSameAndCustomServiceOfferingTestSameOfferingsNullOffering() {
+        prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(1l, 1l, false, true, false);
+    }
+
+    private void prepareAndRunIsNewDiskOfferingTheSameAndCustomServiceOffering(long existingDiskOfferingId, long newDiskOfferingId, boolean isCustomized,
+            boolean isNullServiceOffering, boolean expectedResult) {
+        DiskOfferingVO existingDiskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(existingDiskOffering.getId()).thenReturn(existingDiskOfferingId);
+        DiskOfferingVO newDiskOffering = Mockito.mock(DiskOfferingVO.class);
+        when(newDiskOffering.getId()).thenReturn(newDiskOfferingId);
+        ServiceOfferingVO serviceOfferingVO = null;
+        if(!isNullServiceOffering) {
+            serviceOfferingVO = Mockito.mock(ServiceOfferingVO.class);
+            when(serviceOfferingVO.isCustomized()).thenReturn(isCustomized);
+            when(serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(anyLong())).thenReturn(serviceOfferingVO);
+        }
+        boolean result = volumeApiServiceImpl.isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering);
+        Assert.assertEquals(expectedResult, result);
+    }
 }
