@@ -135,7 +135,7 @@
           <template #label>
             <tooltip-label :title="$t('label.haenable')" :tooltip="apiParams.haenable?.description || ''"/>
           </template>
-          <a-switch v-model:cheked="form.haenable" />
+          <a-switch v-model:checked="form.haenable" />
         </a-form-item>
         <a-form-item v-if="form.haenable">
           <template #label>
@@ -226,11 +226,13 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateKubernetesCluster',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -446,7 +448,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {
           name: values.name,
@@ -459,7 +462,8 @@ export default {
         if (this.isValidValueForKey(values, 'noderootdisksize') && values.noderootdisksize > 0) {
           params.noderootdisksize = values.noderootdisksize
         }
-        if (this.isValidValueForKey(values, 'controlnodes') && values.controlnodes > 0) {
+        if (this.isValidValueForKey(values, 'haenable') && values.haenable &&
+          this.isValidValueForKey(values, 'controlnodes') && values.controlnodes > 0) {
           params.controlnodes = values.controlnodes
         }
         if (this.isValidValueForKey(values, 'externalloadbalanceripaddress') && values.externalloadbalanceripaddress !== '') {

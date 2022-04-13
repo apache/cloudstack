@@ -20,47 +20,46 @@
     <template #title v-if="tooltip">
       {{ tooltip }}
     </template>
-    <a-button
-      style="margin-left: -5px"
-      v-if="copyResource"
-      shape="circle"
-      :size="size"
-      :type="type"
-      :danger="danger"
-      :disabled="disabled"
-      :class="buttonClass"
-      :loading="loading"
-      @click="handleClicked()"
-      v-clipboard:copy="copyResource" >
-      <template #icon v-if="icon"><render-icon :icon="icon" /></template>
-      <template v-if="iconType && iconTwoToneColor">
-        <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
-      </template>
-    </a-button>
-    <a-button
-      v-else
-      shape="circle"
-      :size="size"
-      :type="type"
-      :danger="danger"
-      :disabled="disabled"
-      :class="buttonClass"
-      :loading="loading"
-      @click="handleClicked()" >
-      <template #icon v-if="icon"><render-icon :icon="icon" /></template>
-      <template v-if="iconType && iconTwoToneColor">
-        <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
-      </template>
-    </a-button>
+    <span style="margin-right: 5px">
+      <a-button
+        v-if="copyResource"
+        shape="circle"
+        :size="size"
+        :type="type"
+        :danger="danger"
+        :disabled="disabled"
+        :class="buttonClass"
+        :loading="loading"
+        @click="handleClicked()"
+        v-clipboard:copy="copyResource" >
+        <template #icon v-if="icon"><render-icon :icon="icon" /></template>
+        <template v-if="iconType && iconTwoToneColor">
+          <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
+        </template>
+      </a-button>
+      <a-button
+        v-else
+        shape="circle"
+        :size="size"
+        :type="type"
+        :danger="danger"
+        :disabled="disabled"
+        :class="buttonClass"
+        :loading="loading"
+        @click="handleClicked()" >
+        <template #icon v-if="icon"><render-icon :icon="icon" /></template>
+        <template v-if="iconType && iconTwoToneColor">
+          <render-icon :icon="iconType" :props="{ theme: 'twoTone', twoToneColor: iconTwoToneColor }" />
+        </template>
+      </a-button>
+    </span>
   </a-tooltip>
 </template>
 
 <script>
-import RenderIcon from '@/utils/renderIcon'
 
 export default {
   name: 'TooltipButton',
-  components: { RenderIcon },
   props: {
     tooltip: {
       type: String,

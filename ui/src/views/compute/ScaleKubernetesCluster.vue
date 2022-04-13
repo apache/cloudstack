@@ -93,10 +93,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleKubernetesCluster',
+  mixins: [mixinForm],
   components: {
     TooltipLabel
   },
@@ -124,7 +126,6 @@ export default {
   },
   created () {
     this.originalSize = !this.isObjectEmpty(this.resource) ? this.resource.size : 1
-    this.form.size = this.originalSize
     if (!this.isObjectEmpty(this.resource)) {
       this.originalSize = this.resource.size
       if (this.apiParams.autoscalingenabled) {
@@ -207,7 +208,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {
           id: this.resource.id

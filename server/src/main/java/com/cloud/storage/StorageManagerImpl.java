@@ -79,6 +79,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -359,7 +360,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
-    // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _serverId;
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
@@ -1117,6 +1117,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
         listener.hostDisconnected(hostId, pool.getId());
+    }
+
+    @Override
+    public void enableHost(long hostId) {
+        List<DataStoreProvider> providers = _dataStoreProviderMgr.getProviders();
+        if (providers != null) {
+            for (DataStoreProvider provider : providers) {
+                if (provider instanceof PrimaryDataStoreProvider) {
+                    try {
+                        HypervisorHostListener hypervisorHostListener = provider.getHostListener();
+                        if (hypervisorHostListener != null) {
+                            hypervisorHostListener.hostEnabled(hostId);
+                        }
+                    }
+                    catch (Exception ex) {
+                        s_logger.error("hostEnabled(long) failed for storage provider " + provider.getName(), ex);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -2500,8 +2520,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
+            s_logger.debug("Found storage pool " + pool.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
 
@@ -3340,7 +3360,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
                 PreferredStoragePool,
-                SecStorageVMAutoScaleDown
+                SecStorageVMAutoScaleDown,
+                MountDisabledStoragePool
         };
     }
 

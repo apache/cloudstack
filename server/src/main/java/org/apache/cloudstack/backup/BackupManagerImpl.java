@@ -1081,14 +1081,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Long id = updateBackupOfferingCmd.getId();
         String name = updateBackupOfferingCmd.getName();
         String description = updateBackupOfferingCmd.getDescription();
+        Boolean allowUserDrivenBackups = updateBackupOfferingCmd.getAllowUserDrivenBackups();
 
         BackupOfferingVO backupOfferingVO = backupOfferingDao.findById(id);
         if (backupOfferingVO == null) {
             throw new InvalidParameterValueException(String.format("Unable to find Backup Offering with id: [%s].", id));
         }
-
-        LOG.debug(String.format("Trying to update Backup Offering [id: %s, name: %s, description: %s] to [name: %s, description: %s].",
-                backupOfferingVO.getUuid(), backupOfferingVO.getName(), backupOfferingVO.getDescription(), name, description));
+        LOG.debug(String.format("Trying to update Backup Offering %s to %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backupOfferingVO,"uuid", "name",
+                        "description", "userDrivenBackupAllowed"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this,"name", "description", "allowUserDrivenBackups")));
 
         BackupOfferingVO offering = backupOfferingDao.createForUpdate(id);
         List<String> fields = new ArrayList<>();
@@ -1102,13 +1102,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             fields.add("description: " + description);
         }
 
+
+        if (allowUserDrivenBackups != null){
+            offering.setUserDrivenBackupAllowed(allowUserDrivenBackups);
+            fields.add("allowUserDrivenBackups: " + allowUserDrivenBackups);
+        }
+
         if (!backupOfferingDao.update(id, offering)) {
             LOG.warn(String.format("Couldn't update Backup offering [id: %s] with [%s].", id, String.join(", ", fields)));
         }
 
         BackupOfferingVO response = backupOfferingDao.findById(id);
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "externalId")));
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
     }
 

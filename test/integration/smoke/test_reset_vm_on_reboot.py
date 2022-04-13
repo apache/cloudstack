@@ -33,7 +33,7 @@ class TestResetVmOnReboot(cloudstackTestCase):
     def setUpClass(cls):
         testClient = super(TestResetVmOnReboot, cls).getClsTestClient()
         cls.apiclient = testClient.getApiClient()
-        cls.services = testClient.getParsedTestDataConfig()        
+        cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)

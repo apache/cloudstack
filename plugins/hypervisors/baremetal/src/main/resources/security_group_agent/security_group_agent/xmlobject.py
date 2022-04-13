@@ -28,23 +28,23 @@ import types
 class XmlObject(object):
     def __init__(self, tag):
         self.__tag_name__ = tag
-    
+
     def put_attr(self, name, val):
         val = val.strip().strip('\t')
         setattr(self, name + '_', val)
-    
+
     def put_text(self, val):
         val = val.strip().strip('\n').strip('\t')
         if val == "":
             setattr(self, 'text_', None)
         else:
             setattr(self, 'text_', val)
-    
+
     def put_node(self, name, val):
         if not hasattr(self, name):
             setattr(self, name, val)
             return
-            
+
         nodes = getattr(self, name)
         if not isinstance(nodes, types.ListType):
             nodes = []
@@ -55,7 +55,7 @@ class XmlObject(object):
         else:
             nodes.append(val)
             setattr(self, name, nodes)
-    
+
     def get(self, name, default=None):
         if hasattr(self, name):
             val = getattr(self, name)
@@ -65,7 +65,7 @@ class XmlObject(object):
                 return val.text_
         else:
             return default
-    
+
     def __getattr__(self, name):
         if name.endswith('__'):
             n = name[:-1]
@@ -78,7 +78,7 @@ class XmlObject(object):
             setattr(e, 'missing_attrib', name)
             setattr(e, 'tag_name', self.__tag_name__)
             raise e
-            
+
 
 def _loads(node):
     xo = XmlObject(node.tag)
@@ -90,7 +90,7 @@ def _loads(node):
         sub_xo = _loads(n)
         xo.put_node(n.tag, sub_xo)
     return xo
-    
+
 def loads(xmlstr):
     xmlstr = re.sub(r'xmlns=".*"', '', xmlstr)
     root = etree.fromstring(xmlstr)

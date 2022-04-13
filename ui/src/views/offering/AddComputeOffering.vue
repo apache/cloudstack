@@ -62,6 +62,7 @@
         <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
           <a-radio-group
             v-model:value="form.offeringtype"
+            @change="selected => { handleComputeOfferingTypeChange(selected.target.value) }"
             buttonStyle="solid">
             <a-radio-button value="fixed">
               {{ $t('label.fixed') }}
@@ -227,18 +228,6 @@
               {{ opt }}
             </a-select-option>
           </a-select>
-        </a-form-item>
-        <a-form-item name="limitcpuuse" ref="limitcpuuse">
-          <template #label>
-            <tooltip-label :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
-          </template>
-          <a-switch v-model:checked="form.limitcpuuse" />
-        </a-form-item>
-        <a-form-item name="isvolatile" ref="isvolatile" v-if="!isSystem">
-          <template #label>
-            <tooltip-label :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
-          </template>
-          <a-switch v-model:checked="form.isvolatile" />
         </a-form-item>
         <a-form-item name="deploymentplanner" ref="deploymentplanner" v-if="!isSystem && isAdmin()">
           <template #label>
@@ -612,11 +601,13 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddServiceOffering',
+  mixins: [mixinForm],
   components: {
     AddDiskOffering,
     ResourceIcon,
@@ -927,7 +918,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           issystem: this.isSystem,
           name: values.name,

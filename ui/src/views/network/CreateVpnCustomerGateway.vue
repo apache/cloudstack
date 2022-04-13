@@ -179,7 +179,7 @@
         <template #label>
           <tooltip-label :title="$t('label.dpd')" :tooltip="apiParams.dpd.description"/>
         </template>
-        <a-switch v-model:checked="form.name"/>
+        <a-switch v-model:checked="form.dpd"/>
       </a-form-item>
       <a-form-item ref="splitconnections" name="splitconnections" v-if="form.ikeversion !== 'ikev1'">
         <template #label>
@@ -197,7 +197,7 @@
         <a-button @click="closeModal">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button type="primary" html-type="submit">
+        <a-button type="primary" @click="handleSubmit" html-type="submit">
           {{ $t('label.ok') }}
         </a-button>
       </div>
@@ -207,10 +207,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVpnCustomerGateway',
+  mixins: [mixinForm],
   components: {
     TooltipLabel
   },
@@ -292,7 +294,8 @@ export default {
       e.preventDefault()
       if (this.isSubmitted) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         let ikepolicy = values.ikeEncryption + '-' + values.ikeHash + ';'
         ikepolicy += (values.ikeDh !== this.ikeDhGroupInitialValue) ? values.ikeDh : (values.ikeDh.split('(')[1]).split(')')[0]
         let esppolicy = values.espEncryption + '-' + values.espHash

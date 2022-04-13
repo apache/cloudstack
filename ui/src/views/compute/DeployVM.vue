@@ -655,7 +655,7 @@
                 {{ $t('label.launch.vm') }}
                 <template #icon><down-outlined /></template>
                 <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark">
+                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
                     <a-menu-item type="primary" key="1">
                       <rocket-outlined />
                       {{ $t('label.launch.vm.and.stay') }}
@@ -1645,10 +1645,9 @@ export default {
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
-    handleSubmitAndStay () {
+    handleSubmitAndStay (e) {
       this.form.stayonpage = true
-      this.handleSubmit()
-      this.form.stayonpage = false
+      this.handleSubmit(e.domEvent)
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1696,8 +1695,10 @@ export default {
         deployVmData.clusterid = values.clusterid
         deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
-        deployVmData.boottype = values.boottype
-        deployVmData.bootmode = values.bootmode
+        if (!this.template?.deployasis) {
+          deployVmData.boottype = values.boottype
+          deployVmData.bootmode = values.bootmode
+        }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
@@ -1881,6 +1882,9 @@ export default {
           }
         }).catch(error => {
           this.$notifyError(error)
+          this.loading.deploy = false
+        }).finally(() => {
+          this.form.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {
@@ -2395,5 +2399,13 @@ export default {
 
   .form-item-hidden {
     display: none;
+  }
+
+  .btn-stay-on-page {
+    &.ant-dropdown-menu-dark {
+      .ant-dropdown-menu-item:hover {
+        background: transparent !important;
+      }
+    }
   }
 </style>

@@ -211,6 +211,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.guru.VMwareGuru;
@@ -3930,8 +3931,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            Map<String, String> hostDetails = new HashMap<String, String>();
+            ManagedObjectReference morHost = hyperHost.getMor();
+            HostMO hostMo = new HostMO(context, morHost);
+            boolean uefiLegacySupported = hostMo.isUefiLegacySupported();
+            if (uefiLegacySupported) {
+                hostDetails.put(Host.HOST_UEFI_ENABLE, Boolean.TRUE.toString());
+            }
+
             if (hyperHost.isHyperHostConnected()) {
-                return new ReadyAnswer(cmd);
+                return new ReadyAnswer(cmd, hostDetails);
             } else {
                 return new ReadyAnswer(cmd, "Host is not in connect state");
             }
@@ -6414,12 +6424,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                     }
 
-                    final VmStatsEntry vmStats = new VmStatsEntry(NumberUtils.toDouble(memkb) * 1024, NumberUtils.toDouble(guestMemusage) * 1024, NumberUtils.toDouble(memlimit) * 1024,
-                            maxCpuUsage, networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), "vm");
-                    vmStats.setDiskReadIOs(diskReadIops);
-                    vmStats.setDiskWriteIOs(diskWriteIops);
-                    vmStats.setDiskReadKBs(diskReadKbs);
-                    vmStats.setDiskWriteKBs(diskWriteKbs);
+                    final VmStatsEntry vmStats = new VmStatsEntry(0, NumberUtils.toDouble(memkb) * 1024, NumberUtils.toDouble(guestMemusage) * 1024, NumberUtils.toDouble(memlimit) * 1024,
+                            maxCpuUsage, networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), diskReadKbs, diskWriteKbs, diskReadIops, diskWriteIops, "vm");
                     vmResponseMap.put(name, vmStats);
 
                 }

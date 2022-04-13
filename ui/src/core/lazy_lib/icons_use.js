@@ -148,10 +148,13 @@ import {
   UndoOutlined,
   UsbOutlined,
   UserAddOutlined,
+  UserDeleteOutlined,
+  UsergroupDeleteOutlined,
   UserOutlined,
   UploadOutlined,
   WifiOutlined
 } from '@ant-design/icons-vue'
+import renderIcon from '@/utils/renderIcon'
 
 export default {
   install: (app) => {
@@ -287,8 +290,11 @@ export default {
     app.component('UndoOutlined', UndoOutlined)
     app.component('UsbOutlined', UsbOutlined)
     app.component('UserAddOutlined', UserAddOutlined)
+    app.component('UserDeleteOutlined', UserDeleteOutlined)
+    app.component('UsergroupDeleteOutlined', UsergroupDeleteOutlined)
     app.component('UserOutlined', UserOutlined)
     app.component('UploadOutlined', UploadOutlined)
     app.component('WifiOutlined', WifiOutlined)
+    app.component('renderIcon', renderIcon)
   }
 }

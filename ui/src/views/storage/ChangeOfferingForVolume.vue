@@ -110,10 +110,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ChangeOfferingForVolume',
+  mixins: [mixinForm],
   props: {
     resource: {
       type: Object,
@@ -194,7 +196,8 @@ export default {
     submitChangeOfferingForVolume () {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.loading = true
         const params = {}
         params.diskofferingid = values.diskofferingid

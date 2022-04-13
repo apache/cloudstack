@@ -927,15 +927,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long accountId = cmd.getAccountId();
         final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        ConfigKey<?> configKey = null;
         Optional optionalValue;
-        final ConfigKey<?> configKey = _configDepot.get(name);
-        if (configKey == null) {
-            s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
-            throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+        String defaultValue;
+        String category;
+        String configScope;
+        final ConfigurationVO config = _configDao.findByName(name);
+        if (config == null) {
+            configKey = _configDepot.get(name);
+            if (configKey == null) {
+                s_logger.warn("Probably the component manager where configuration variable " + name + " is defined needs to implement Configurable interface");
+                throw new InvalidParameterValueException("Config parameter with name " + name + " doesn't exist");
+            }
+            defaultValue = configKey.defaultValue();
+            category = configKey.category();
+            configScope = configKey.scope().toString();
+        } else {
+            defaultValue = config.getDefaultValue();
+            category = config.getCategory();
+            configScope = config.getScope();
         }
-        String defaultValue = configKey.defaultValue();
-        String category = configKey.category();
-        String configScope = configKey.scope().toString();
 
         String scope = "";
         Map<String, Long> scopeMap = new LinkedHashMap<>();
@@ -971,7 +982,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find zone by id " + id);
                 }
                 _dcDetailsDao.removeDetail(id, name);
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id): config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -981,13 +992,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find cluster by id " + id);
                 }
                 ClusterDetailsVO clusterDetailsVO = _clusterDetailsDao.findDetail(id, name);
-                newValue = configKey.value().toString();
+                newValue = configKey != null ? configKey.value().toString() : config.getValue();
                 if (name.equalsIgnoreCase("cpu.overprovisioning.factor") || name.equalsIgnoreCase("mem.overprovisioning.factor")) {
                     _clusterDetailsDao.persist(id, name, newValue);
                 } else if (clusterDetailsVO != null) {
                     _clusterDetailsDao.remove(clusterDetailsVO.getId());
                 }
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id): config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -997,7 +1008,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("unable to find storage pool by id " + id);
                 }
                 _storagePoolDetailsDao.removeDetail(id, name);
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -1010,7 +1021,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (domainDetailVO != null) {
                     _domainDetailsDao.remove(domainDetailVO.getId());
                 }
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -1023,7 +1034,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (accountDetailVO != null) {
                     _accountDetailsDao.remove(accountDetailVO.getId());
                 }
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -1036,7 +1047,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (imageStoreDetailVO != null) {
                     _imageStoreDetailsDao.remove(imageStoreDetailVO.getId());
                 }
-                optionalValue = Optional.ofNullable(configKey.valueIn(id));
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.valueIn(id) : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
                 break;
 
@@ -1045,7 +1056,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
                     throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
                 }
-                optionalValue = Optional.ofNullable(configKey.value());
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : config.getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
@@ -1117,8 +1128,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         value = value.trim();
         try {
-            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) < 1f) {
-                final String msg = name + " should be greater than or equal to 1";
+            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) <= 0f) {
+                final String msg = name + " should be greater than 0";
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }

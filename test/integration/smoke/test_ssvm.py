@@ -1244,7 +1244,7 @@ class TestSSVMs(cloudstackTestCase):
         # 2) Get id and url from mounted nfs store
         # 3) Update NFS version for previous image store
         # 4) Stop SSVM
-        # 5) Check NFS version of mounted nfs store after SSVM starts 
+        # 5) Check NFS version of mounted nfs store after SSVM starts
 
         nfs_version = self.config.nfsVersion
         if nfs_version == None:

@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,7 +18,7 @@
 
 
 
- 
+
 
 import web
 import socket, struct
@@ -52,11 +52,11 @@ class dhcp:
  		start_ip_num = self.ipToNum(dhcp_start);
 		end_ip_num =  self.ipToNum(dhcp_end)
 		print(start_ip_num, end_ip_num)
-	
+
 		for ip in range(start_ip_num, end_ip_num + 1):
-			self.availIP.append(ip)	
-		print(self.availIP[0], self.availIP[len(self.availIP) - 1])	
-		
+			self.availIP.append(ip)
+		print(self.availIP[0], self.availIP[len(self.availIP) - 1])
+
 		#load the ip already allocated
 		self.reloadAllocatedIP()
 
@@ -69,7 +69,7 @@ class dhcp:
 	def getFreeIP(self):
 		if len(self.availIP) > 0:
 			ip = self.numToIp(self.availIP[0])
-			self.availIP.remove(self.availIP[0])	
+			self.availIP.remove(self.availIP[0])
 			return ip
 		else:
 			return None
@@ -88,13 +88,13 @@ class dhcp:
 
 	def reloadAllocatedIP(self):
 		dhcp_hosts = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.decode('utf-8').strip().splitlines()
-		
+
 		for host in dhcp_hosts:
 			if host.find("dhcp-host") != -1:
 				allocatedIP = self.ipToNum(host.split("=")[1].strip().split(",")[1])
-				if allocatedIP in self.availIP:	
+				if allocatedIP in self.availIP:
 					self.availIP.remove(allocatedIP)
-		
+
 	def allocateIP(self, mac):
 		newIP = self.getFreeIP()
 		dhcp_host = augtool.match("/files/etc/dnsmasq.conf/dhcp-host").stdout.decode('utf-8').strip()
@@ -112,7 +112,7 @@ class dhcp:
 		for host in dhcp_host.splitlines():
 			if host.find(ip) != -1:
 				path = host.split("=")[0].strip()
-				
+
 		if path == None:
 			print("Can't find " + str(ip) + " in conf file")
 			return None
@@ -121,9 +121,9 @@ class dhcp:
 		script = """rm %s
 			    save"""%(path)
 		augtool < script
-		
+
 		self.availIP.remove(ip)
-		
+
 		#reset dnsmasq
 		service("dnsmasq", "restart", stdout=None, stderr=None)
 
@@ -145,7 +145,7 @@ class ipallocator:
 				if not freeIP:
 					return "0,0,0"
 				print("Find an available IP: " + freeIP)
-		
+
 				return freeIP + "," + dhcpInit.getNetmask() + "," + dhcpInit.getRouter()
 			elif command == "releaseIpAddr":
 				ip = user_data.ip

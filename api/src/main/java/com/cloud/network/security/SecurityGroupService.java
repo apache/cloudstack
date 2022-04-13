@@ -17,6 +17,7 @@
 package com.cloud.network.security;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -47,6 +48,9 @@ public interface SecurityGroupService {
     SecurityGroup updateSecurityGroup(UpdateSecurityGroupCmd cmd);
 
     public List<? extends SecurityRule> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd);
+
+    List<? extends SecurityRule> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort,
+        Integer endPort, Integer icmpType, Integer icmpCode, final List<String> cidrList, Map groupList, final SecurityRule.SecurityRuleType ruleType);
 
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 

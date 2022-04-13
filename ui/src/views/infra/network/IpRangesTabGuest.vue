@@ -34,10 +34,10 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #name="{ text }">
-        <resource-icon v-if="item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
+      <template #name="{ text, record }">
+        <resource-icon v-if="record.icon" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
         <apartment-outlined v-else style="margin-right: 5px"/>
-        <router-link :to="{ path: '/guestnetwork/' + item.id }">
+        <router-link :to="{ path: '/guestnetwork/' + record.id }">
           {{ text }}
         </router-link>
       </template>
@@ -137,7 +137,7 @@ export default {
     this.fetchData()
   },
   watch: {
-    network (newItem, oldItem) {
+    resource (newItem, oldItem) {
       if (!newItem || !newItem.id) {
         return
       }

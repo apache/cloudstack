@@ -452,12 +452,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddNetworkOffering',
+  mixins: [mixinForm],
   components: {
     CheckBoxSelectPair,
     ResourceIcon,
@@ -522,6 +524,7 @@ export default {
         promiscuousmode: '',
         macaddresschanges: '',
         forgedtransmits: '',
+        maclearning: this.macLearningValue,
         sourcenattype: 'peraccount',
         inlinemode: 'false',
         isolation: 'dedicated',
@@ -799,7 +802,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {}
 
         var keys = Object.keys(values)
@@ -935,6 +939,10 @@ export default {
           if (!('supportedservices' in params)) {
             params.supportedservices = ''
           }
+        }
+
+        if (values.guestiptype === 'l2' && values.userdatal2 === true) {
+          params.supportedservices = 'UserData'
         }
 
         if ('egressdefaultpolicy' in values && values.egressdefaultpolicy !== 'allow') {
