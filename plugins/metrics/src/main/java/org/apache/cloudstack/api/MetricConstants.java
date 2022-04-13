@@ -28,7 +28,7 @@ public interface MetricConstants {
     String HEAP_MEMORY_USED = "heapmemoryused";
     String HEAP_MEMORY_TOTAL = "heapmemorytotal";
     String LAST_HEARTBEAT = "lastheartbeat";
-    String LAST_SUCCESFUL_JOB = "lastsuccesfuljob";
+    String LAST_SUCCESSFUL_JOB = "lastsuccessfuljob";
     String LOG_INFO = "loginfo";
     String REPLICAS = "replicas";
     String SESSIONS = "sessions";

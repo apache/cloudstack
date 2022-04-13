@@ -42,7 +42,7 @@ public class UsageServerMetricsResponse  extends BaseResponse {
     @Param(description = "the last time this Usage Server checked for jobs")
     private Date lastHeartbeat;
 
-    @SerializedName(MetricConstants.LAST_SUCCESFUL_JOB)
+    @SerializedName(MetricConstants.LAST_SUCCESSFUL_JOB)
     @Param(description = "the last time a usage job successfully completed")
     private Date lastSuccessfulJob;
 

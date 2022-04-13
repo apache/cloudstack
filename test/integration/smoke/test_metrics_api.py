@@ -266,8 +266,6 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(isinstance(metrics.systemmemorytotal, str))
         self.assertTrue(hasattr(metrics, 'systemmemoryfree'))
         self.assertTrue(isinstance(metrics.systemmemoryfree, str))
-        self.assertTrue(hasattr(metrics, 'systemmemoryused'))
-        self.assertTrue(isinstance(metrics.systemmemoryused, str))
         self.assertTrue(hasattr(metrics, 'systemmemoryvirtualsize'))
         self.assertTrue(isinstance(metrics.systemmemoryvirtualsize, str))
 
@@ -327,9 +325,9 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(metrics, 'lastheartbeat'))
         self.assertTrue(isinstance(metrics.lastheartbeat, str))
         self.assertTrue(self.valid_date(metrics.lastheartbeat))
-        self.assertTrue(hasattr(metrics, 'lastsuccesfuljob'))
-        self.assertTrue(isinstance(metrics.lastsuccesfuljob, str))
-        self.assertTrue(self.valid_date(metrics.lastsuccesfuljob))
+        self.assertTrue(hasattr(metrics, 'lastsuccessfuljob'))
+        self.assertTrue(isinstance(metrics.lastsuccessfuljob, str))
+        self.assertTrue(self.valid_date(metrics.lastsuccessfuljob))
         self.assertTrue(hasattr(metrics, 'state'))
         self.assertTrue(metrics.state == 'Up' or metrics.state == 'Down')
 

@@ -685,7 +685,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setThreadsWaitingCount(status.getThreadsWaitingCount());
         metricsResponse.setSystemMemoryTotal(toReadableSize(status.getSystemMemoryTotal()));
         metricsResponse.setSystemMemoryFree(toReadableSize(status.getSystemMemoryFree()));
-        metricsResponse.setSystemMemoryUsed(toReadableSize(status.getSystemMemoryUsed()));
+// we are not adding metricsResponse.setSystemMemoryUsed(toReadableSize(status.getSystemMemoryUsed())); as the value is confusing and arguably wrong
         metricsResponse.setSystemMemoryVirtualSize(toReadableSize(status.getSystemMemoryVirtualSize()));
         metricsResponse.setLogInfo(status.getLogInfo());
         metricsResponse.setSystemTotalCpuCycles(status.getSystemTotalCpuCycles());
