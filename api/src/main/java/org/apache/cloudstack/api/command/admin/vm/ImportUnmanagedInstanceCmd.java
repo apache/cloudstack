@@ -160,7 +160,8 @@ public class ImportUnmanagedInstanceCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.USE_CONTROLLER_CONFIGURATION,
             type = CommandType.BOOLEAN,
-            description = "volumes automatically get volume groups based on their current controller connections")
+            description = "volumes automatically get volume groups based on their current controller connections",
+            since="4.17.0")
     private Boolean useControllerConfiguration;
 
     /////////////////////////////////////////////////////
