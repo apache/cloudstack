@@ -152,6 +152,8 @@ class TestEventsResource(cloudstackTestCase):
         virtual_machine.stop(self.apiclient)
         account_network.restart(self.apiclient, cleanup=False)
         time.sleep(self.services["sleep"])
+        virtual_machine.restore(self.apiclient)
+        time.sleep(self.services["sleep"])
         virtual_machine.detach_volume(self.apiclient, volume)
         volume.delete(self.apiclient)
         ts = str(time.time())
