@@ -17,9 +17,7 @@
 
 name: PR Quality Check
 
-on:
-  pull_request_target:
-    types: [synchronize]
+on: [pull_request]
 
 jobs:
   build:
