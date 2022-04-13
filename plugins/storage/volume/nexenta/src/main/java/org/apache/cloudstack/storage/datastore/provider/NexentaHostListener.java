@@ -59,4 +59,9 @@ public class NexentaHostListener implements HypervisorHostListener {
 
         return true;
     }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
+        return true;
+    }
 }

@@ -37,6 +37,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
+                             Network,
                              ServiceOffering,
                              Account,
                              StoragePool,
@@ -123,6 +124,15 @@ class TestKubernetesCluster(cloudstackTestCase):
                     domainid=cls.domain.id
                 )
                 cls._cleanup.append(cls.account)
+
+        cls.default_network = None
+        if str(cls.zone.securitygroupsenabled) == "True":
+            networks = Network.list(
+                cls.apiclient,
+                listall=True
+            )
+            cls.default_network = networks[0]
+
         return
 
     @classmethod
@@ -514,6 +524,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
@@ -529,6 +541,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         time.sleep(self.services["sleep"])
@@ -554,6 +568,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
@@ -572,6 +588,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
+        if self.default_network:
+            createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
         if not clusterResponse:
             self.cleanup.append(clusterResponse)

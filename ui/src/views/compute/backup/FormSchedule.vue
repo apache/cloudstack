@@ -144,10 +144,12 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
+import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
 
 export default {
   name: 'FormSchedule',
+  mixins: [mixinForm],
   props: {
     loading: {
       type: Boolean,
@@ -242,7 +244,8 @@ export default {
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         const params = {}
         params.virtualmachineid = this.resource.id
         params.intervaltype = values.intervaltype

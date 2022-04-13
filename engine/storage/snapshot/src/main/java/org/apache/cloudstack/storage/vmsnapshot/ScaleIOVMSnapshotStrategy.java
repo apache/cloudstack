@@ -37,6 +37,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VMSnapshotTO;
@@ -47,6 +48,7 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.server.ManagementServerImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -105,6 +107,13 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             throw new CloudRuntimeException("Failed to get the volumes for the vm snapshot: " + vmSnapshot.getUuid());
         }
 
+        if (!VMSnapshot.State.Allocated.equals(vmSnapshot.getState())) {
+            List<VMSnapshotDetailsVO> vmDetails = vmSnapshotDetailsDao.findDetails(vmSnapshot.getId(), "SnapshotGroupId" );
+            if (CollectionUtils.isEmpty(vmDetails)) {
+                return StrategyPriority.CANT_HANDLE;
+            }
+        }
+
         if (volumeTOs != null && !volumeTOs.isEmpty()) {
             for (VolumeObjectTO volumeTO: volumeTOs) {
                 Long poolId  = volumeTO.getPoolId();
@@ -112,6 +121,27 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
                 if (poolType != Storage.StoragePoolType.PowerFlex) {
                     return StrategyPriority.CANT_HANDLE;
                 }
+            }
+        }
+
+        return StrategyPriority.HIGHEST;
+    }
+
+    @Override
+    public StrategyPriority canHandle(Long vmId, Long rootPoolId, boolean snapshotMemory) {
+        if (snapshotMemory) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmId);
+        if (volumeTOs == null || volumeTOs.isEmpty()) {
+            return StrategyPriority.CANT_HANDLE;
+        }
+
+        for (VolumeObjectTO volumeTO : volumeTOs) {
+            Long poolId = volumeTO.getPoolId();
+            Storage.StoragePoolType poolType = vmSnapshotHelper.getStoragePoolType(poolId);
+            if (poolType != Storage.StoragePoolType.PowerFlex || volumeTO.getFormat() != ImageFormat.RAW || poolId != rootPoolId) {
+                return StrategyPriority.CANT_HANDLE;
             }
         }
 

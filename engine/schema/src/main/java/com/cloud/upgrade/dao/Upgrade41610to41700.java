@@ -70,7 +70,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
     }
 
     private void initSystemVmTemplateRegistration() {
-        systemVmTemplateRegistration = new SystemVmTemplateRegistration("4.16.0");
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
     }
 
     @Override

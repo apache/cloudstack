@@ -84,13 +84,15 @@ import { api } from '@/api'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleVM',
   components: {
     ComputeOfferingSelection,
     ComputeSelection,
-    DiskSizeSelection
+    DiskSizeSelection,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -147,7 +149,7 @@ export default {
         if (this.total === 0) {
           return
         }
-        this.offerings = response.listserviceofferingsresponse.serviceoffering
+        this.offerings = response.listserviceofferingsresponse.serviceoffering || []
         if (this.resource.state === 'Running' && this.resource.hypervisor === 'KVM') {
           this.offerings = this.offerings.filter(offering => offering.id === this.resource.serviceofferingid)
           this.currentOffer = this.offerings[0]

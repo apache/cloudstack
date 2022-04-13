@@ -1128,8 +1128,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         value = value.trim();
         try {
-            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) < 1f) {
-                final String msg = name + " should be greater than or equal to 1";
+            if (overprovisioningFactorsForValidation.contains(name) && Float.parseFloat(value) <= 0f) {
+                final String msg = name + " should be greater than 0";
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }

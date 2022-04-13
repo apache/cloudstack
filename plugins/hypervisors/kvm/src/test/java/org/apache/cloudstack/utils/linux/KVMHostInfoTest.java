@@ -39,6 +39,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 public class KVMHostInfoTest {
     @Test
     public void getCpuSpeed() {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
         nodeInfo.mhz = 1000;
@@ -47,6 +50,9 @@ public class KVMHostInfoTest {
 
     @Test
     public void manualCpuSpeedTest() throws Exception {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         PowerMockito.mockStatic(LibvirtConnection.class);
         Connect conn = Mockito.mock(Connect.class);
         NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
