@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-spin :spinning="false" style="background-color: #fff;">
+  <a-spin :spinning="configLoading" style="background-color: #fff;">
     <a-affix :offsetTop="78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
@@ -24,7 +24,7 @@
             <breadcrumb>
               <template #end>
                 <a-button
-                  :loading="loading"
+                  :loading="configLoading"
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
@@ -56,7 +56,7 @@
       <a-tab-pane
         key=''
         tab='All Settings' >
-          <AllConfigurationsTab :loading="loading" />
+          <AllConfigurationsTab :loading="configLoading" />
       </a-tab-pane>
       <a-tab-pane
         v-for="(group) in groups"
@@ -70,7 +70,7 @@
             v-for="(subgroup) in group.subgroup"
             :key="subgroup.name"
             :tab="subgroup.name" >
-             <ConfigurationTab :group="group.name" :subgroup="subgroup.name" :loading="loading" />
+             <ConfigurationTab :group="group.name" :subgroup="subgroup.name" :loading="configLoading" />
           </a-tab-pane>
         </a-tabs>
       </a-tab-pane>
@@ -123,7 +123,7 @@ export default {
     return {
       groups: [],
       config: [],
-      configLoading: false,
+      configLoading: this.loading,
       configGroup: '',
       configSubGroup: '',
       dataView: true,
@@ -276,6 +276,7 @@ export default {
       this.onSearch({})
     },
     onSearch (opts) {
+      this.configLoading = true
       const query = Object.assign({}, this.$route.query)
       for (const key in this.searchParams) {
         delete query[key]
@@ -306,6 +307,7 @@ export default {
         query.keyword = this.filter
       }
       this.$router.push({ query })
+      this.configLoading = false
     },
     changeFilter (filter) {
       const query = Object.assign({}, this.$route.query)
@@ -317,28 +319,18 @@ export default {
 
 </script>
 
-<style scoped>
-/deep/ .ant-table-thead {
-  background-color: #f9f9f9;
-}
-
-/deep/ .ant-table-small > .ant-table-content > .ant-table-body {
-  margin: 0;
-}
-
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-</style>
-
 <style scoped lang="scss">
+  .breadcrumb-card {
+    margin-left: -24px;
+    margin-right: -24px;
+    margin-top: -16px;
+    margin-bottom: 12px;
+  }
+
   .shift-btns {
     display: flex;
   }
+
   .shift-btn {
     display: flex;
     align-items: center;

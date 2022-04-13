@@ -16,6 +16,7 @@
 // under the License.
 
 <template>
+  <a-spin :spinning="rowLoading">
     <a-table
         size="small"
         :columns="innerColumns"
@@ -28,29 +29,29 @@
           <template #name="{ record }">
             <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
           </template>
-          <template #value="{ record }">
-            <ConfigurationValue :configrecord="record" :loading="loading" />
-          </template>
-          <template #expandedRowRender="{}" v-if="parentConfigData.length > 0">
-            <p style="margin: 0">
-              <!-- Add children ConfigurationRow with parent, v-if record.type == 'Boolean' and record.value == true and config has records with parent as record.name -->
-              <a-table
-                size="small"
-                :showHeader="false"
-                :columns="parentColumns"
-                :dataSource="this.parentConfigData"
-                :rowKey="record => record.name"
-                :pagination="false"
-                :rowClassName="getRowClassName"
-                style="overflow-y: auto; margin-left: 10px" >
 
-                <template #displaytext="{ record }">
-                  <ConfigurationRow :config="this.parentConfigData" :configrecord="record" :loading="loading" />
-                </template>
-              </a-table>
-            </p>
+          <template #value="{ record }">
+            <ConfigurationValue :configrecord="record" :loading="rowLoading" :configDisabled="configDisabled" @change-config="onChangeConfig" />
+          </template>
+
+          <template #expandedRowRender="{}" v-if="childrenConfigData.length > 0">
+            <a-table
+              size="small"
+              :showHeader="false"
+              :columns="childrenColumns"
+              :dataSource="this.childrenConfigData"
+              :rowKey="record => record.name"
+              :pagination="false"
+              :rowClassName="getRowClassName"
+              style="overflow-y: auto; margin-left: 10px" >
+
+              <template #displaytext="{ record }">
+                <ConfigurationRow :config="this.childrenConfigData" :configrecord="record" :loading="rowLoading" :configDisabled="!childrenConfigEnabled" />
+              </template>
+            </a-table>
           </template>
     </a-table>
+  </a-spin>
 </template>
 <script>
 import { api } from '@/api'
@@ -73,11 +74,15 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    configDisabled: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
-      fetchLoading: false,
+      rowLoading: this.loading,
       innerColumns: [
         {
           title: 'name',
@@ -91,50 +96,62 @@ export default {
           width: '29%'
         }
       ],
-      parentColumns: [
+      childrenColumns: [
         {
           title: 'Display Text',
           dataIndex: 'displaytext',
           slots: { customRender: 'displaytext' }
         }
       ],
-      parentConfigData: [],
+      childrenConfigData: [],
+      childrenConfigEnabled: true,
       configrecords: [
         this.configrecord
       ]
     }
   },
   created () {
-    this.fetchParentConfigData()
+    this.fetchChildrenConfigData()
   },
   watch: {
   },
   methods: {
-    fetchParentConfigData () {
+    fetchChildrenConfigData () {
       if (!this.isBooleanValue()) {
+        this.rowLoading = false
         return
       }
-      this.fetchLoading = true
+      this.rowLoading = true
+      this.childrenConfigEnabled = (this.configrecord.value === 'true')
       const params = {
         parent: this.configrecord.name,
         listAll: true
       }
       api('listConfigurations', params).then(response => {
-        this.parentConfigData = response.listconfigurationsresponse.configuration
-        if (!this.parentConfigData || this.parentConfigData.length === 0) {
-          this.parentConfigData = []
+        this.childrenConfigData = response.listconfigurationsresponse.configuration
+        if (!this.childrenConfigData || this.childrenConfigData.length === 0) {
+          this.childrenConfigData = []
         } else {
-          console.log(this.parentConfigData)
+          console.log(this.childrenConfigData)
         }
       }).catch(error => {
         console.error(error)
         this.$message.error(this.$t('message.error.loading.setting'))
       }).finally(() => {
-        this.fetchLoading = false
+        this.rowLoading = false
       })
     },
     isBooleanValue () {
       return (this.configrecord.type === 'Boolean')
+    },
+    onChangeConfig (opts) {
+      console.log('onChangeConfig')
+      console.log(opts)
+      if (this.isBooleanValue() && opts && Object.keys(opts).length > 0) {
+        if ('value' in opts) {
+          this.childrenConfigEnabled = opts.value
+        }
+      }
     },
     getRowClassName (record, index) {
       if (index % 2 === 0) {

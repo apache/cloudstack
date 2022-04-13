@@ -249,6 +249,16 @@ public class ConfigurationVO implements Configuration {
 
     @Override
     public String getDisplayText() {
+        if (StringUtils.isNotBlank(displayText)) {
+            return displayText;
+        }
+
+        String displayText = "";
+        String name = getName();
+        if (StringUtils.isNotBlank(name)) {
+            name = name.replace(".", " ");
+            displayText = name.substring(0, 1).toUpperCase() + name.substring(1);
+        }
         return displayText;
     }
 

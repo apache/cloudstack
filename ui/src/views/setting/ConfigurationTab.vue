@@ -16,23 +16,22 @@
 // under the License.
 
 <template>
+  <a-spin :spinning="tabLoading">
     <a-table
       size="small"
       :showHeader="false"
       :columns="columns"
-      :dataSource="this.configdata"
+      :dataSource="this.configdata.filter(config => !config.parent)"
       :rowKey="record => record.name"
       :pagination="true"
       :rowClassName="getRowClassName"
       style="overflow-y: auto; margin-left: 10px" >
 
-      <!-- Record without parent only on top, v-if record.parent == null -->
       <template #displaytext="{ record }">
-        <span v-if="!record.parent">
-          <ConfigurationRow :config="this.configdata" :configrecord="record" :loading="loading" />
-        </span>
+        <ConfigurationRow :config="this.configdata" :configrecord="record" :loading="tabLoading" />
       </template>
     </a-table>
+  </a-spin>
 </template>
 
 <script>
@@ -64,7 +63,7 @@ export default {
   },
   data () {
     return {
-      tabLoading: false,
+      tabLoading: this.loading,
       columns: [
         {
           title: 'Display Text',
@@ -120,6 +119,9 @@ export default {
       console.log('group name: ' + this.group)
       api('listConfigurations', params).then(response => {
         this.configdata = response.listconfigurationsresponse.configuration
+        if (!this.configdata || this.configdata.length === 0) {
+          this.configdata = []
+        }
         console.log(this.configdata)
       }).catch(error => {
         console.error(error)
@@ -130,10 +132,22 @@ export default {
     },
     getRowClassName (record, index) {
       if (index % 2 === 0) {
-        return 'light-row'
+        return 'config-light-row'
       }
-      return 'dark-row'
+      return 'config-dark-row'
     }
   }
 }
 </script>
+
+<style scoped lang="scss">
+
+  .config-light-row {
+    background-color: #fff;
+  }
+
+  .config-dark-row {
+    background-color: #f9f9f9;
+  }
+
+</style>

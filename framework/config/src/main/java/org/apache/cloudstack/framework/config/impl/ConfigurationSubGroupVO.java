@@ -31,7 +31,7 @@ public class ConfigurationSubGroupVO implements ConfigurationSubGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private long id = 1;
 
     @Column(name = "name")
     private String name;

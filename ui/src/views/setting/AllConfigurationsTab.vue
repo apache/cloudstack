@@ -21,19 +21,17 @@
       <a-table
         class="config-list-view"
         size="small"
-        style="max-height: 700px; overflow-y: auto"
-        :loading="loading || tabLoading"
+        :pagination="false"
+        :loading="tabLoading"
         :columns="columns"
         :items="items"
         :dataSource="items"
         :columnKeys="columnKeys"
         :rowKey="record => record.name"
-        @refresh="this.fetchData">
-         <template #description="{ record }">
-          {{ record.description }}
-        </template>
+        :rowClassName="getRowClassName"
+        @refresh="this.fetchConfigData">
         <template #value="{ record }">
-           <ConfigurationValue :configrecord="record" :loading="loading" />
+           <ConfigurationValue :configrecord="record" :loading="tabLoading" />
         </template>
       </a-table>
       <a-pagination
@@ -92,7 +90,7 @@ export default {
           dataIndex: 'description',
           slots: { customRender: 'description' },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
-          width: '35%'
+          width: '30%'
         },
         {
           title: 'Category',
@@ -113,12 +111,12 @@ export default {
       pageSize: this.$store.getters.defaultListViewPageSize,
       editableValueKey: null,
       editableValue: '',
-      tabLoading: false,
+      tabLoading: this.loading,
       filter: ''
     }
   },
   created () {
-    this.fetchData()
+    this.fetchConfigData()
   },
   watch: {
     '$route' (to, from) {
@@ -130,12 +128,12 @@ export default {
           this.page = 1
         }
         this.itemCount = 0
-        this.fetchData()
+        this.fetchConfigData()
       }
     },
     '$i18n.locale' (to, from) {
       if (to !== from) {
-        this.fetchData()
+        this.fetchConfigData()
       }
     }
   },
@@ -148,7 +146,7 @@ export default {
     }
   },
   methods: {
-    fetchData (callback) {
+    fetchConfigData (callback) {
       this.tabLoading = true
       const params = {
         listAll: true
@@ -203,6 +201,12 @@ export default {
       query.page = currentPage
       query.pagesize = pageSize
       this.$router.push({ query })
+    },
+    getRowClassName (record, index) {
+      if (index % 2 === 0) {
+        return 'config-light-row'
+      }
+      return 'config-dark-row'
     }
   }
 }
@@ -266,8 +270,16 @@ export default {
 
   }
 
+  .config-light-row {
+    background-color: #fff;
+  }
+
+  .config-dark-row {
+    background-color: #f9f9f9;
+  }
+
   .config-row-element {
-  margin-bottom: 10px;
+    margin-bottom: 10px;
   }
 
   .config-list-view {

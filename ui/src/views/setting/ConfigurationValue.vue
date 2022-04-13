@@ -19,85 +19,105 @@
   <a-list>
     <a-list-item>
       <span v-if="configrecord.type ==='Boolean'">
-        <a-switch
-          :defaultChecked="configrecord.value==='true'?true:false"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
-          v-model:checked="editableValue"
-          @keydown.esc="editableValueKey = null"
-          @pressEnter="updateConfigurationValue(configrecord)"
-          @change="value => setConfigurationEditable(configrecord, value)"
-        />
+        <a-tooltip :title="editableValue?'true':'false'">
+          <a-switch
+            :defaultChecked="configrecord.value==='true'?true:false"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:checked="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)"
+          />
+         </a-tooltip>
       </span>
       <span v-else-if="configrecord.type ==='Number'">
-        <a-input-number
-          :defaultValue="configrecord.value"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
-          v-model:value="editableValue"
-          @keydown.esc="editableValueKey = null"
-          @pressEnter="updateConfigurationValue(configrecord)"
-          @change="value => setConfigurationEditable(configrecord, value)"
-        />
+        <a-tooltip :title="editableValue">
+          <a-input-number
+            :defaultValue="configrecord.value"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)"
+          />
+        </a-tooltip>
       </span>
       <span v-else-if="configrecord.type ==='Decimal'">
-        <a-input-number
-          :defaultValue="configrecord.value"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
-          v-model:value="editableValue"
-          @keydown.esc="editableValueKey = null"
-          @pressEnter="updateConfigurationValue(configrecord)"
-          @change="value => setConfigurationEditable(configrecord, value)"
-        />
+        <a-tooltip :title="editableValue">
+          <a-input-number
+            :defaultValue="configrecord.value"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)"
+          />
+        </a-tooltip>
       </span>
       <span v-else-if="configrecord.type ==='Range'">
         <a-row :gutter="12">
           <a-col :md="10" :lg="11">
-            <a-slider
-              class="config-slider-value"
-              :defaultValue="configrecord.value * 100"
-              :min="0"
-              :max="100"
-              :disabled="!('updateConfiguration' in $store.getters.apis)"
-              v-model:value="editableValue"
-              @keydown.esc="editableValueKey = null"
-              @pressEnter="updateConfigurationValue(configrecord)"
-              @change="value => setConfigurationEditable(configrecord, value)"
-            />
+            <a-tooltip :title="editableValue">
+              <a-slider
+                class="config-slider-value"
+                :defaultValue="configrecord.value * 100"
+                :min="0"
+                :max="100"
+                :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+                v-model:value="editableValue"
+                @keydown.esc="editableValueKey = null"
+                @pressEnter="updateConfigurationValue(configrecord)"
+                @change="value => setConfigurationEditable(configrecord, value)"
+              />
+            </a-tooltip>
           </a-col>
           <a-col :md="4" :lg="4">
-            <a-input-number
-              class="config-slider-text"
-              :defaultValue="configrecord.value * 100"
-              :disabled=true
-              v-model:value="editableValue"
-            />
+            <a-tooltip :title="editableValue">
+              <a-input-number
+                class="config-slider-text"
+                :defaultValue="configrecord.value * 100"
+                :min="0"
+                :max="100"
+                :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+                v-model:value="editableValue"
+                @keydown.esc="editableValueKey = null"
+                @pressEnter="updateConfigurationValue(configrecord)"
+                @change="value => setConfigurationEditable(configrecord, value)"
+              />
+            </a-tooltip>
           </a-col>
         </a-row>
       </span>
       <span v-else-if="configrecord.type ==='List'">
-        <a-select
-          :defaultValue="configrecord.value"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
-          v-model:value="editableValue"
-          @keydown.esc="editableValueKey = null"
-          @pressEnter="updateConfigurationValue(configrecord)"
-          @change="value => setConfigurationEditable(configrecord, value)">
-          <a-select-option
-            v-for="value in configrecord.values"
-            :key="value.val">
-            {{ value.text }}
-          </a-select-option>
-        </a-select>
+        <a-tooltip :title="editableValue">
+          <a-select
+            :defaultValue="configrecord.value"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)">
+            <a-select-option
+              v-for="value in configrecord.values"
+              :key="value.val">
+              {{ value.text }}
+            </a-select-option>
+          </a-select>
+        </a-tooltip>
       </span>
       <span v-else>
-        <a-input
-          style="width: 13vw;float: right;margin-bottom: 10px; z-index: 8;"
-          :defaultValue="configrecord.value"
-          :disabled="!('updateConfiguration' in $store.getters.apis)"
-          v-model:value="editableValue"
-          @keydown.esc="editableValueKey = null"
-          @pressEnter="updateConfigurationValue(configrecord)"
-          @change="value => setConfigurationEditable(configrecord, value)"
-        />
+        <a-tooltip :title="editableValue">
+          <a-textarea
+            autoSize="true"
+            style="width: 200px; word-break: break-all"
+            :defaultValue="configrecord.value"
+            :disabled="(!('updateConfiguration' in $store.getters.apis) || configDisabled)"
+            v-model:value="editableValue"
+            @keydown.esc="editableValueKey = null"
+            @pressEnter="updateConfigurationValue(configrecord)"
+            @change="value => setConfigurationEditable(configrecord, value)"
+          />
+        </a-tooltip>
       </span>
       <span class="actions">
         <tooltip-button
@@ -105,19 +125,21 @@
           @onClick="cancelEditConfigurationValue(configrecord)"
           v-if="editableValueKey !== null"
           iconType="CloseCircleTwoTone"
-          iconTwoToneColor="#f5222d" />
+          iconTwoToneColor="#f5222d"
+          :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.ok')"
           @onClick="updateConfigurationValue(configrecord)"
           v-if="editableValueKey !== null"
           iconType="CheckCircleTwoTone"
-          iconTwoToneColor="#52c41a" />
+          iconTwoToneColor="#52c41a"
+          :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
           @onClick="resetConfigurationValue(configrecord)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
-          :disabled="!('updateConfiguration' in $store.getters.apis)" />
+          :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
       </span>
     </a-list-item>
   </a-list>
@@ -140,6 +162,10 @@ export default {
       type: Boolean,
       default: false
     },
+    configDisabled: {
+      type: Boolean,
+      default: false
+    },
     actions: {
       type: Array,
       default: () => []
@@ -147,20 +173,20 @@ export default {
   },
   data () {
     return {
-      fetchLoading: false,
+      valueLoading: this.loading,
       actualValue: null,
       editableValue: null,
       editableValueKey: null
     }
   },
   created () {
-    this.setData()
+    this.setConfigData()
   },
   watch: {
   },
   methods: {
-    setData () {
-      this.fetchLoading = false
+    setConfigData () {
+      this.valueLoading = false
       this.setEditableValue(this.configrecord)
       this.actualValue = this.editableValue
       this.editableValueKey = null
@@ -168,7 +194,7 @@ export default {
     updateConfigurationValue (configrecord) {
       console.log(configrecord)
       console.log(this.editableValue)
-      this.fetchLoading = true
+      this.valueLoading = true
       this.editableValueKey = null
       var newValue = this.editableValue
       if (configrecord.type === 'Range') {
@@ -179,6 +205,8 @@ export default {
         value: newValue
       }
       api('updateConfiguration', params).then(json => {
+        this.actualValue = this.editableValue
+        this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$message.success(`${this.$t('message.setting.updated')} ${configrecord.name}`)
         if (json.updateconfigurationresponse &&
@@ -191,7 +219,7 @@ export default {
           })
         }
       }).catch(error => {
-        this.editableValue = configrecord.value
+        this.editableValue = this.actualValue
         console.error(error)
         this.$message.error(this.$t('message.error.save.setting'))
         this.$notification.error({
@@ -199,21 +227,23 @@ export default {
           description: this.$t('message.error.save.setting')
         })
       }).finally(() => {
-        this.fetchLoading = false
+        this.valueLoading = false
         this.$emit('refresh')
       })
     },
     resetConfigurationValue (configrecord) {
-      this.fetchLoading = true
+      this.valueLoading = true
       this.editableValueKey = null
       api('resetConfiguration', {
         name: configrecord.name
       }).then(json => {
+        this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration.value)
+        this.actualValue = this.editableValue
+        var newValue = this.editableValue
         if (configrecord.type === 'Range') {
-          this.editableValue = Number(json.resetconfigurationresponse.configuration.value) * 100
-        } else {
-          this.editableValue = json.resetconfigurationresponse.configuration.value
+          newValue = newValue / 100
         }
+        this.$emit('change-config', { value: newValue })
         this.$store.dispatch('RefreshFeatures')
         this.$message.success(`${this.$t('label.setting')} ${configrecord.name} ${this.$t('label.reset.config.value')}`)
         if (json.resetconfigurationresponse &&
@@ -226,7 +256,7 @@ export default {
           })
         }
       }).catch(error => {
-        this.editableValue = configrecord.value
+        this.editableValue = this.actualValue
         console.error(error)
         this.$message.error(this.$t('message.error.reset.config'))
         this.$notification.error({
@@ -234,7 +264,7 @@ export default {
           description: this.$t('message.error.reset.config')
         })
       }).finally(() => {
-        this.fetchLoading = false
+        this.valueLoading = false
         this.$emit('refresh')
       })
     },
@@ -250,14 +280,35 @@ export default {
       } else if (configrecord.type === 'Number' || configrecord.type === 'Decimal') {
         if (configrecord.value) {
           this.editableValue = Number(configrecord.value)
-        } else {
+        } else if (configrecord.defaultvalue) {
           this.editableValue = Number(configrecord.defaultvalue)
         }
       } else {
         if (configrecord.value) {
           this.editableValue = String(configrecord.value)
+        } else if (configrecord.defaultvalue) {
+          this.editableValue = String(configrecord.defaultvalue)
         } else {
           this.editableValue = ''
+        }
+      }
+    },
+    getEditableValue (strValue) {
+      if (this.configrecord.type === 'Range') {
+        return Number(strValue) * 100
+      } else if (this.configrecord.type === 'Boolean') {
+        if (strValue === 'true') {
+          return true
+        } else {
+          return false
+        }
+      } else if (this.configrecord.type === 'Number' || this.configrecord.type === 'Decimal') {
+        return Number(strValue)
+      } else {
+        if (strValue) {
+          return String(strValue)
+        } else {
+          return ''
         }
       }
     },
@@ -296,7 +347,7 @@ export default {
 }
 
 .config-slider-text {
-  width: 50px;
+  width: 65px;
   margin-left: 10px;
 }
 </style>

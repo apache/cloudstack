@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import junit.framework.TestCase;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,11 +38,15 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 
 public class ConfigDepotAdminTest extends TestCase {
     private final static ConfigKey<Integer> DynamicIntCK = new ConfigKey<Integer>(Integer.class, "dynIntKey", "Advance", "10", "Test Key", true);
     private final static ConfigKey<Integer> StaticIntCK = new ConfigKey<Integer>(Integer.class, "statIntKey", "Advance", "10", "Test Key", false);
+    private final static ConfigKey<Integer> TestCK = new ConfigKey<Integer>(Integer.class, "testKey", "Advance", "30", "Test Key", false,
+            ConfigKey.Scope.Global, null, "Test Display Text", null, new Ternary<String, String, Long>("TestGroup", "Test Group", 3L), new Pair<String, Long>("Test SubGroup", 1L));
 
     @Mock
     Configurable _configurable;
@@ -58,6 +63,9 @@ public class ConfigDepotAdminTest extends TestCase {
     ConfigurationDao _configDao;
 
     @Mock
+    ConfigurationGroupDao _configGroupDao;
+
+    @Mock
     ConfigurationSubGroupDao _configSubGroupDao;
 
     @Mock
@@ -72,6 +80,7 @@ public class ConfigDepotAdminTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         _depotAdmin = new ConfigDepotImpl();
         _depotAdmin._configDao = _configDao;
+        _depotAdmin._configGroupDao = _configGroupDao;
         _depotAdmin._configSubGroupDao = _configSubGroupDao;
         _depotAdmin._configurables = new ArrayList<Configurable>();
         _depotAdmin._configurables.add(_configurable);
@@ -85,25 +94,37 @@ public class ConfigDepotAdminTest extends TestCase {
         dynamicIntCV.setValue("100");
         ConfigurationVO staticIntCV = new ConfigurationVO("UnitTestComponent", StaticIntCK);
         dynamicIntCV.setValue("200");
+        ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
+        ConfigurationGroupVO testGroup = new ConfigurationGroupVO("TestGroup", "Test Group", 3L);
         ConfigurationSubGroupVO testSubGroup = new ConfigurationSubGroupVO("TestSubGroup", null, 1L);
         testSubGroup.setGroupId(9L);
 
         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
-        when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK});
+        when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
         when(_configDao.findById(StaticIntCK.key())).thenReturn(null);
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+        when(_configDao.findById(TestCK.key())).thenReturn(testCV);
         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
-        when(_configSubGroupDao.findByName("statIntKey")).thenReturn(testSubGroup);
+        when(_configSubGroupDao.findByName(StaticIntCK.key())).thenReturn(testSubGroup);
+        when(_configGroupDao.findByName(TestCK.group().first())).thenReturn(null);
+        when(_configSubGroupDao.findByNameAndGroup(TestCK.subGroup().first(), TestCK.subGroup().second())).thenReturn(null);
+        when(_configGroupDao.persist(any(ConfigurationGroupVO.class))).thenReturn(testGroup);
+        when(_configSubGroupDao.persist(any(ConfigurationSubGroupVO.class))).thenReturn(testSubGroup);
 
         _depotAdmin.populateConfigurations();
 
         // This is once because DynamicIntCK is returned.
         verify(_configDao, times(1)).persist(any(ConfigurationVO.class));
+        verify(_configGroupDao, times(1)).persist(any(ConfigurationGroupVO.class));
+        verify(_configSubGroupDao, times(1)).persist(any(ConfigurationSubGroupVO.class));
 
         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+        when(_configDao.findById(TestCK.key())).thenReturn(null);
         _depotAdmin._configured.clear();
         _depotAdmin.populateConfigurations();
-        // This is two because DynamicIntCK also returns null.
-        verify(_configDao, times(2)).persist(any(ConfigurationVO.class));
+        // This is three because DynamicIntCK, TestCK also returns null.
+        verify(_configDao, times(3)).persist(any(ConfigurationVO.class));
+        verify(_configGroupDao, times(2)).persist(any(ConfigurationGroupVO.class));
+        verify(_configSubGroupDao, times(2)).persist(any(ConfigurationSubGroupVO.class));
     }
 }
