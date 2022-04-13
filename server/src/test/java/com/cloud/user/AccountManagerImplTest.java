@@ -710,4 +710,31 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.verify(authenticatorMock2, Mockito.times(1)).authenticate(username, currentPassword, domainId, null);
     }
 
+    @Test
+    public void testUpdateLoginAttemptsDisableMechanism() {
+        accountManagerImpl.updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccountVO, true, 0);
+        Mockito.verify(accountManagerImpl, Mockito.never()).updateLoginAttempts(Mockito.anyLong(), Mockito.anyInt(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void testUpdateLoginAttemptsEnableMechanismAttemptsLeft() {
+        int attempts = 2;
+        int allowedAttempts = 5;
+        Long accountId = 1L;
+        Mockito.when(userAccountVO.getLoginAttempts()).thenReturn(attempts);
+        Mockito.when(userAccountVO.getId()).thenReturn(accountId);
+        accountManagerImpl.updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccountVO, true, allowedAttempts);
+        Mockito.verify(accountManagerImpl).updateLoginAttempts(Mockito.eq(accountId), Mockito.eq(attempts + 1), Mockito.eq(false));
+    }
+
+    @Test
+    public void testUpdateLoginAttemptsEnableMechanismNoAttemptsLeft() {
+        int attempts = 5;
+        int allowedAttempts = 5;
+        Long accountId = 1L;
+        Mockito.when(userAccountVO.getLoginAttempts()).thenReturn(attempts);
+        Mockito.when(userAccountVO.getId()).thenReturn(accountId);
+        accountManagerImpl.updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccountVO, true, allowedAttempts);
+        Mockito.verify(accountManagerImpl).updateLoginAttempts(Mockito.eq(accountId), Mockito.eq(allowedAttempts), Mockito.eq(true));
+    }
 }
