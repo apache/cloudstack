@@ -2383,7 +2383,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
+    protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
@@ -2455,7 +2455,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("state", IpAddress.State.Allocated);
         }
 
-        if (sourceNetworkId == null && IpAddressManagerImpl.SystemVmPublicIpReservationModeStrictness.value()) {
+        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() || isAllocated) {
             sc.setParameters("forsystemvms", false);
         }
     }
