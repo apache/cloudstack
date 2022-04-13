@@ -2559,16 +2559,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     protected void updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(UserAccount account, boolean updateIncorrectLoginCount,
                                                                       int allowedLoginAttempts) {
         int attemptsMade = account.getLoginAttempts() + 1;
-        if (allowedLoginAttempts > 0 && updateIncorrectLoginCount) {
-            if (attemptsMade < allowedLoginAttempts) {
-                updateLoginAttempts(account.getId(), attemptsMade, false);
-                s_logger.warn("Login attempt failed. You have " +
-                        (allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
-            } else {
-                updateLoginAttempts(account.getId(), allowedLoginAttempts, true);
-                s_logger.warn("User " + account.getUsername() +
-                        " has been disabled due to multiple failed login attempts." + " Please contact admin.");
-            }
+        if (allowedLoginAttempts <= 0 || !updateIncorrectLoginCount) {
+            return;
+        }
+        if (attemptsMade < allowedLoginAttempts) {
+            updateLoginAttempts(account.getId(), attemptsMade, false);
+            s_logger.warn("Login attempt failed. You have " +
+                    (allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
+        } else {
+            updateLoginAttempts(account.getId(), allowedLoginAttempts, true);
+            s_logger.warn("User " + account.getUsername() +
+                    " has been disabled due to multiple failed login attempts." + " Please contact admin.");
         }
     }
 
