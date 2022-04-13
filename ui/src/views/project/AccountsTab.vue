@@ -33,7 +33,7 @@
             <span v-if="record.projectroleid">{{ getProjectRole(record) }}</span>
           </template>
           <template #action="{ record }">
-            <div v-if="record.projectroleid">
+            <div>
               <span v-if="imProjectAdmin && dataSource.length > 1" class="account-button-action">
                 <tooltip-button
                   tooltipPlacement="top"
