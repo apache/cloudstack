@@ -17,19 +17,7 @@
 
 name: PR Quality Check
 
-on: [pull_request]
-
-permissions:
-  actions: write
-  checks: write
-  contents: write
-  deployments: write
-  issues: write
-  packages: write
-  pull-requests: write
-  repository-projects: write
-  security-events: write
-  statuses: write
+on: [pull_request, pull_request_target]
 
 jobs:
   build:
@@ -52,29 +40,13 @@ jobs:
           files: |
             ui/*
 
-      - name: List all java files changed
-        run: |
-          for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
-            echo "$file was changed"
-          done
-
-      - uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: ${{ github.event.number }},
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Kicked coverage tests.'
-            })
-
       - name: Kick UI Build
         uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
         if: steps.ui-changes.outputs.any_changed == 'true'
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            Detected UI changes, kicking a new UI QA build
+            Detected UI changes, kicking a new QA UI build
             @blueorangutan ui
 
       - name: Set up JDK11

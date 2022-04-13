@@ -40,7 +40,7 @@ public interface Alert extends Identity, InternalIdentity {
 
     boolean getArchived();
 
-    String getContent();
-
     String getName();
+
+    String getContent();
 }
