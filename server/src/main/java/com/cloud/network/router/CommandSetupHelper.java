@@ -469,7 +469,8 @@ public class CommandSetupHelper {
                 }
             }
             for (final FirewallRule rule : rules) {
-                _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType trafficType = rule.getTrafficType();
                 if (trafficType == FirewallRule.TrafficType.Ingress) {
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, trafficType);
@@ -554,17 +555,17 @@ public class CommandSetupHelper {
                 }
             }
             for (final FirewallRule rule : rules) {
-                _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Firewall, traffictype);
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     final NetworkVO network = _networkDao.findById(guestNetworkId);
                     final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
                     defaultEgressPolicy = offering.isEgressDefaultPolicy();
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Firewall, traffictype, defaultEgressPolicy);
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
             }
