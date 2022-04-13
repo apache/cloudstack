@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.netty.handler.codec.DecoderException;
 import org.apache.cloudstack.storage.template.UploadEntity;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +58,6 @@ import io.netty.handler.codec.http.multipart.FileUpload;
 import io.netty.handler.codec.http.multipart.HttpDataFactory;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.ErrorDataDecoderException;
-import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder.IncompatibleDataDecoderException;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData.HttpDataType;
 import io.netty.util.CharsetUtil;
@@ -113,6 +113,9 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
     @Override
     public void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         if (msg instanceof HttpRequest) {
+            if (logger.isTraceEnabled()) {
+                logger.trace(String.format("HTTP request: %s", msg));
+            }
             HttpRequest request = this.request = (HttpRequest) msg;
             responseContent.setLength(0);
 
@@ -181,7 +184,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 try {
                     //initialize the decoder
                     decoder = new HttpPostRequestDecoder(factory, request);
-                } catch (ErrorDataDecoderException | IncompatibleDataDecoderException e) {
+                } catch (DecoderException e) {
                     logger.error("exception while initialising the decoder", e);
                     responseContent.append(e.getMessage());
                     writeResponse(ctx.channel(), HttpResponseStatus.INTERNAL_SERVER_ERROR);

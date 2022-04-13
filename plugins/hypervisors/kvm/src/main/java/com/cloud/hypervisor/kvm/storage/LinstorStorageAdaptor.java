@@ -288,8 +288,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect)
     {
-        s_logger.debug("Linstor: disconnectPhysicalDisk map");
-        return true;
+        return false;
     }
 
     private Optional<ResourceWithVolumes> getResourceByPath(final List<ResourceWithVolumes> resources, String path) {
@@ -309,10 +308,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath)
     {
-        s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
         // get first storage pool from the map, as we don't know any better:
         if (!MapStorageUuidToStoragePool.isEmpty())
         {
+            s_logger.debug("Linstor: disconnectPhysicalDiskByPath " + localPath);
             String firstKey = MapStorageUuidToStoragePool.keySet().stream().findFirst().get();
             final KVMStoragePool pool = MapStorageUuidToStoragePool.get(firstKey);
 
@@ -430,18 +429,6 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(
-        KVMPhysicalDisk snapshot,
-        String snapshotName,
-        String name,
-        KVMStoragePool destPool,
-        int timeout)
-    {
-        s_logger.debug("Linstor: createDiskFromSnapshot");
-        return null;
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool)
     {
         s_logger.debug("Linstor: refresh");
@@ -449,8 +436,12 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean createFolder(String uuid, String path)
-    {
+    public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 

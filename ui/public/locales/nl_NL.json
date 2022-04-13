@@ -2276,7 +2276,7 @@
 "message.setup.physical.network.during.zone.creation": "Wanneer u een geavanceerde zone toevoegt, dient u meerdere fysiek netwerken te configureren. Een netwerk correspondeert met een netwerkkaart op de hypervisor. Elk fysiek netwerk kan een of meerdere traffic types bevatten, met bepaald geldende restricties hoe deze gecombineerd mogen worden.  Drag & Drop een of meerdere verkeerstypen op het fysieke netwerk.",
 "message.setup.physical.network.during.zone.creation.basic": "Wanneer u een basis zone toevoegt bevat deze een fysiek netwerk welke correspondeert met de netwerkkaart op de hypervisor. Op dit netwerk zullen meerdere verkeerstypen gebruikt worden. <br/><br/> U kunt via drag & drop andere verkeerstypen toevoegen aan het fysieke netwerk.",
 "message.setup.successful": "Cloud installatie is succesvol verlopen!",
-"message.specifiy.tag.key.value": "Gelieve een tag sleutel en waarde te specificeren",
+"message.specify.tag.key.value": "Gelieve een tag sleutel en waarde te specificeren",
 "message.specify.url": "Gelieve een URL te specificeren",
 "message.step.1.desc": "Selecteer een template voor uw nieuwe instantie. U kunt ook een blanco template selecteren op welke een ISO bestand geinstalleerd kan worden.",
 "message.step.2.continue": "Selecteer een service aanbieding om verder te gaan.",

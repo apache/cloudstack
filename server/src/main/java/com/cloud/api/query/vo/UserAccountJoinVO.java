@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.db.Encrypt;
@@ -95,7 +96,8 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "account_role_id")
     private Long accountRoleId;
@@ -153,7 +155,7 @@ public class UserAccountJoinVO extends BaseViewVO implements InternalIdentity, I
         return accountName;
     }
 
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

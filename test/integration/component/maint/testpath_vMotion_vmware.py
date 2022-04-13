@@ -2488,7 +2488,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
 
         """
         4. Deploy a windows VM, set vmware.vcenter.session.timeout to a low value
-           and do migration, migration should fail 
+           and do migration, migration should fail
         """
 
         vm = "virtual_machine3"
@@ -2498,7 +2498,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
         # list cluster for that host
         vm_cluster = list_clusters(self.apiclient, id=vm_host.clusterid, listall=True)[0]
         #list all hosts in the cluster
-        host_list = list_hosts(self.apiclient, clusterid=vm_cluster.id, listall=True) 
+        host_list = list_hosts(self.apiclient, clusterid=vm_cluster.id, listall=True)
         Configurations.update(
                               self.apiclient,
                               "vmware.vcenter.session.timeout",
@@ -2611,7 +2611,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                                  self.apiclient,
                                  "Running"
                                  )
-        # Create 2 data disks 
+        # Create 2 data disks
         data_disk_1 = Volume.create(
                                     self.apiclient,
                                     self.testdata["volume"],
@@ -2677,7 +2677,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                          self.apiclient,
                          ssvm.id,
                          "Running"
-                         ) 
+                         )
 
         # Try vMotion on virtual_machine_1 to the host which is in maintenance
         destinationHost, destinationPools, vol_list = get_destination_pools_hosts(self, list_vm_1, storage_scope, storage_type)
@@ -2825,7 +2825,7 @@ class TestStorageLiveMigrationVmware(cloudstackTestCase):
                                  self.apiclient,
                                  "Running"
                                  )
-        # Create 2 data disks 
+        # Create 2 data disks
         data_disk_1 = Volume.create(
                                     self.apiclient,
                                     self.testdata["volume"],

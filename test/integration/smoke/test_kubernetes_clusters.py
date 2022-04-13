@@ -37,6 +37,7 @@ from marvin.cloudstackAPI import (listInfrastructure,
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
+                             Network,
                              ServiceOffering,
                              Account,
                              StoragePool,
@@ -101,12 +102,12 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"]["1.20.9"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.20.9"]["url"], e))
             if cls.setup_failed == False:
                 try:
-                    cls.kubernetes_version_1_21_3 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.21.3"])
-                    cls.kubernetes_version_ids.append(cls.kubernetes_version_1_21_3.id)
+                    cls.kubernetes_version_1_21_5 = cls.addKubernetesSupportedVersion(cls.services["cks_kubernetes_versions"]["1.21.5"])
+                    cls.kubernetes_version_ids.append(cls.kubernetes_version_1_21_5.id)
                 except Exception as e:
                     cls.setup_failed = True
                     cls.debug("Failed to get Kubernetes version ISO in ready state, version=%s, url=%s, %s" %
-                        (cls.services["cks_kubernetes_versions"]["1.21.3"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.21.3"]["url"], e))
+                        (cls.services["cks_kubernetes_versions"]["1.21.5"]["semanticversion"], cls.services["cks_kubernetes_versions"]["1.21.5"]["url"], e))
 
             if cls.setup_failed == False:
                 cks_offering_data = cls.services["cks_service_offering"]
@@ -123,6 +124,15 @@ class TestKubernetesCluster(cloudstackTestCase):
                     domainid=cls.domain.id
                 )
                 cls._cleanup.append(cls.account)
+
+        cls.default_network = None
+        if str(cls.zone.securitygroupsenabled) == "True":
+            networks = Network.list(
+                cls.apiclient,
+                listall=True
+            )
+            cls.default_network = networks[0]
+
         return
 
     @classmethod
@@ -349,7 +359,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.setup_failed == True:
             self.fail("Setup incomplete")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_1_21_3)
+        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_1_21_5)
 
         self.debug("Downgrading Kubernetes cluster with ID: %s to a lower version. This should fail!" % k8s_cluster.id)
 
@@ -362,7 +372,7 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.debug("Upgrading Kubernetes cluster with invalid Kubernetes supported version check successful, API failure: %s" % e)
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
 
-        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_3.id)
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_5.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -381,12 +391,12 @@ class TestKubernetesCluster(cloudstackTestCase):
         time.sleep(self.services["sleep"])
         self.debug("Upgrading Kubernetes cluster with ID: %s" % k8s_cluster.id)
         try:
-            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1_21_3.id)
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1_21_5.id)
         except Exception as e:
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to upgrade Kubernetes cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_3.id)
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_5.id)
         return
 
     @attr(tags=["advanced", "smoke"], required_hardware="true")
@@ -434,7 +444,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         if self.setup_failed == True:
             self.fail("Setup incomplete")
         global k8s_cluster
-        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_1_21_3)
+        k8s_cluster = self.getValidKubernetesCluster(version=self.kubernetes_version_1_21_5)
 
         self.debug("Autoscaling Kubernetes cluster with ID: %s" % k8s_cluster.id)
         try:
@@ -514,6 +524,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         self.debug("HA Kubernetes cluster with ID: %s successfully deployed" % k8s_cluster.id)
@@ -529,18 +541,20 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
         time.sleep(self.services["sleep"])
 
         self.debug("Upgrading HA Kubernetes cluster with ID: %s" % k8s_cluster.id)
         try:
-            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1_21_3.id)
+            k8s_cluster = self.upgradeKubernetesCluster(k8s_cluster.id, self.kubernetes_version_1_21_5.id)
         except Exception as e:
             self.deleteKubernetesClusterAndVerify(k8s_cluster.id, False, True)
             self.fail("Failed to upgrade Kubernetes HA cluster due to: %s" % e)
 
-        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_3.id)
+        self.verifyKubernetesClusterUpgrade(k8s_cluster, self.kubernetes_version_1_21_5.id)
         self.debug("Kubernetes cluster with ID: %s successfully upgraded" % k8s_cluster.id)
         return
 
@@ -554,6 +568,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
+        if self.default_network:
+            self.skipTest("HA cluster on shared network requires external ip address, skipping it")
         global k8s_cluster
         k8s_cluster = self.getValidKubernetesCluster(1, 2)
 
@@ -572,6 +588,8 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.noderootdisksize = 10
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
+        if self.default_network:
+            createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
         if not clusterResponse:
             self.cleanup.append(clusterResponse)

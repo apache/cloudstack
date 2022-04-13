@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -61,6 +62,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -68,14 +70,18 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource;
+import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
+import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
@@ -84,6 +90,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -302,6 +309,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     DataCenterVnetDao _datacneterVnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
+    @Inject
+    AccountVlanMapDao _accountVlanMapDao;
+    @Inject
+    DomainVlanMapDao _domainVlanMapDao;
     @Inject
     VpcDao _vpcDao;
     @Inject
@@ -916,6 +927,98 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RESERVE, eventDescription = "reserving Ip", async = false)
+    public IpAddress reserveIpAddress(Account account, Boolean displayIp, Long ipAddressId) throws ResourceAllocationException {
+        IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address by ID=" + ipAddressId);
+        }
+        // verify permissions
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, account);
+
+        VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
+        if (!vlan.getVlanType().equals(VlanType.VirtualNetwork)) {
+            throw new IllegalArgumentException("only ip addresses that belong to a virtual network may be reserved.");
+        }
+        if (ipVO.isPortable()) {
+            throw new InvalidParameterValueException("Unable to reserve a portable IP.");
+        }
+        if (State.Reserved.equals(ipVO.getState())) {
+            if (account.getId() == ipVO.getAccountId()) {
+                s_logger.info(String.format("IP address %s has already been reserved for account %s", ipVO.getAddress(), account));
+                return ipVO;
+            }
+            throw new InvalidParameterValueException("Unable to reserve a IP because it has already been reserved for another account.");
+        }
+        if (!State.Free.equals(ipVO.getState())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP in " + ipVO.getState() + " state.");
+        }
+        Long ipDedicatedDomainId = getIpDedicatedDomainId(ipVO.getVlanId());
+        if (ipDedicatedDomainId != null && !ipDedicatedDomainId.equals(account.getDomainId())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another domain.");
+        }
+        Long ipDedicatedAccountId = getIpDedicatedAccountId(ipVO.getVlanId());
+        if (ipDedicatedAccountId != null && !ipDedicatedAccountId.equals(account.getAccountId())) {
+            throw new InvalidParameterValueException("Unable to reserve a IP because it is dedicated to another account.");
+        }
+        if (ipDedicatedAccountId == null) {
+            // Check that the maximum number of public IPs for the given accountId will not be exceeded
+            try {
+                _resourceLimitMgr.checkResourceLimit(account, Resource.ResourceType.public_ip);
+            } catch (ResourceAllocationException ex) {
+                s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + account);
+                throw new AccountLimitException("Maximum number of public IP addresses for account: " + account.getAccountName() + " has been exceeded.");
+            }
+        }
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(ipVO.getVlanId());
+        ipVO.setAllocatedTime(new Date());
+        ipVO.setAllocatedToAccountId(account.getAccountId());
+        ipVO.setAllocatedInDomainId(account.getDomainId());
+        ipVO.setState(State.Reserved);
+        if (displayIp != null) {
+            ipVO.setDisplay(displayIp);
+        }
+        ipVO = _ipAddressDao.persist(ipVO);
+        if (ipDedicatedAccountId == null) {
+            _resourceLimitMgr.incrementResourceCount(account.getId(), Resource.ResourceType.public_ip);
+        }
+        return ipVO;
+    }
+
+    private Long getIpDedicatedAccountId(Long vlanId) {
+        List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
+        if (CollectionUtils.isNotEmpty(accountVlanMaps)) {
+            return accountVlanMaps.get(0).getAccountId();
+        }
+        return null;
+    }
+
+    private Long getIpDedicatedDomainId(Long vlanId) {
+        List<DomainVlanMapVO> domainVlanMaps = _domainVlanMapDao.listDomainVlanMapsByVlan(vlanId);
+        if (CollectionUtils.isNotEmpty(domainVlanMaps)) {
+            return domainVlanMaps.get(0).getDomainId();
+        }
+        return null;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "releasing Reserved Ip", async = false)
+    public boolean releaseReservedIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
+        IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException("Unable to find IP address by ID=" + ipAddressId);
+        }
+        if (ipVO.isPortable()) {
+            throw new InvalidParameterValueException("Unable to release a portable IP, please use disassociateIpAddress instead");
+        }
+        if (State.Allocated.equals(ipVO.getState())) {
+            throw new InvalidParameterValueException("Unable to release a public IP in Allocated state, please use disassociateIpAddress instead");
+        }
+        return releaseIpAddressInternal(ipAddressId);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_RELEASE, eventDescription = "disassociating Ip", async = true)
     public boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException {
         return releaseIpAddressInternal(ipAddressId);
@@ -959,6 +1062,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // don't allow releasing system ip address
         if (ipVO.getSystem()) {
             throwInvalidIdException("Can't release system IP address with specified id", ipVO.getUuid(), "systemIpAddrId");
+        }
+
+        if (State.Reserved.equals(ipVO.getState())) {
+            _ipAddressDao.unassignIpAddress(ipVO.getId());
+            Long ipDedicatedAccountId = getIpDedicatedAccountId(ipVO.getVlanId());
+            if (ipDedicatedAccountId == null) {
+                _resourceLimitMgr.decrementResourceCount(ipVO.getAccountId(), Resource.ResourceType.public_ip);
+            }
+            return true;
         }
 
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
@@ -1864,9 +1976,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (skipProjectNetworks) {
-            sc.setJoinParameters("accountSearch", "typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeNEQ", Account.Type.PROJECT);
         } else {
-            sc.setJoinParameters("accountSearch", "typeEQ", Account.ACCOUNT_TYPE_PROJECT);
+            sc.setJoinParameters("accountSearch", "typeEQ", Account.Type.PROJECT);
         }
 
         if (restartRequired != null) {
@@ -4659,7 +4771,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Long networkId = cmd.getNetworkId();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4675,7 +4787,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String keyword = cmd.getKeyword();
         UserVmVO userVm = _userVmDao.findById(vmId);
 
-        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.ACCOUNT_TYPE_NORMAL)) {
+        if (userVm == null || (!userVm.isDisplayVm() && caller.getType() == Account.Type.NORMAL)) {
             throwInvalidIdException("Virtual machine id does not exist", Long.valueOf(vmId).toString(), "vmId");
         }
 
@@ -4704,7 +4816,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, true, ipVO);
-        } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        } else if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException("Only Root admin can update non-allocated ip addresses");
         }
 

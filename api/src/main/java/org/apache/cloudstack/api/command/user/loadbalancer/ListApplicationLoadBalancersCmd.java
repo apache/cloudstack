@@ -35,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancers", description = "Lists load balancers", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
+@APICommand(name = "listLoadBalancers", description = "Lists internal load balancers", responseObject = ApplicationLoadBalancerResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListApplicationLoadBalancersCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListApplicationLoadBalancersCmd.class.getName());

@@ -36,6 +36,7 @@ Optional arguments:
    -s, --simulator string                  Build package for Simulator ("default"|"DEFAULT"|"simulator"|"SIMULATOR") (default "default")
    -b, --brand string                      Set branding to be used in package name (it will override any branding string in POM version)
    -T, --use-timestamp                     Use epoch timestamp instead of SNAPSHOT in the package name (if not provided, use "SNAPSHOT")
+   -t --templates                          Passes necessary flag to package the required templates. Comma separated string - kvm,xen,vmware,ovm,hyperv
 
 Other arguments:
    -h, --help                              Display this help message and exit
@@ -44,6 +45,7 @@ Examples:
    package.sh --distribution centos7
    package.sh --distribution centos7 --pack oss
    package.sh --distribution centos7 --pack noredist
+   package.sh --distribution centos7 --pack noredist -t "kvm,xen"
    package.sh --distribution centos7 --release 42
    package.sh --distribution centos7 --pack noredist --release 42
 
@@ -143,6 +145,16 @@ function packaging() {
         fi
     fi
 
+    DEFTEMP="-D_temp ''"
+    if [ "$TEMPLATES" != "" ]; then
+      if [[ ",$TEMPLATES," = *",all,"* ]]; then
+        DEFTEMP="-D_temp '-Dsystemvm-kvm -Dsystemvm-xen -Dsystemvm-vmware'"
+      else
+        TEMP=-Dsystemvm-"${TEMPLATES//,/" -Dsystemvm-"}"
+        DEFTEMP="-D_temp ${TEMP}"
+      fi
+    fi
+
     DEFFULLVER="-D_fullver $VERSION"
     DEFVER="-D_ver $REALVER"
 
@@ -161,7 +173,7 @@ function packaging() {
     echo ". executing rpmbuild"
     cp "$PWD/$DISTRO/cloud.spec" "$RPMDIR/SPECS"
 
-    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFFULLVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
+    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFFULLVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} ${DEFTEMP+"$DEFTEMP"} -bb SPECS/cloud.spec)
     if [ $? -ne 0 ]; then
         if [ "$USE_TIMESTAMP" == "true" ]; then
             (cd $PWD/../; git reset --hard)
@@ -243,6 +255,11 @@ while [ -n "$1" ]; do
 
         -T | --use-timestamp)
             USE_TIMESTAMP="true"
+            shift 1
+            ;;
+
+        -t | --templates)
+            TEMPLATES=$2
             shift 1
             ;;
 

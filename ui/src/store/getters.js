@@ -40,9 +40,10 @@ const getters = {
   server: state => state.app.server,
   domainStore: state => state.user.domainStore,
   darkMode: state => state.user.darkMode,
-  themeSetting: state => state.user.themeSetting,
   defaultListViewPageSize: state => state.user.defaultListViewPageSize,
-  countNotify: state => state.user.countNotify
+  countNotify: state => state.user.countNotify,
+  customColumns: state => state.user.customColumns,
+  logoutFlag: state => state.user.logoutFlag
 }
 
 export default getters

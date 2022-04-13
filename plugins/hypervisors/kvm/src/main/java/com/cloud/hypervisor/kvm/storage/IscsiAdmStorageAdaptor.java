@@ -331,12 +331,6 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
-        String poolType = volumeToDisconnect.get(DiskTO.PROTOCOL_TYPE);
-        // Unsupported pool types
-        if (poolType != null && poolType.equalsIgnoreCase(StoragePoolType.PowerFlex.toString())) {
-            return false;
-        }
-
         String host = volumeToDisconnect.get(DiskTO.STORAGE_HOST);
         String port = volumeToDisconnect.get(DiskTO.STORAGE_PORT);
         String path = volumeToDisconnect.get(DiskTO.IQN);
@@ -434,17 +428,17 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 

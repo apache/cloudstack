@@ -143,6 +143,9 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
             "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<Boolean>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
+            "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
+
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
     ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
@@ -151,6 +154,15 @@ public interface StorageManager extends StorageService {
             true, ConfigKey.Scope.Zone);
     ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
             "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
+
+    ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
+            "mount.disabled.storage.pool",
+            "Storage",
+            "false",
+            "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
@@ -267,6 +279,8 @@ public interface StorageManager extends StorageService {
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 

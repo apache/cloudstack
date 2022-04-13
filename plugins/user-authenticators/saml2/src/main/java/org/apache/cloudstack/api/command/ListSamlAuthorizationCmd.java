@@ -77,7 +77,7 @@ public class ListSamlAuthorizationCmd extends BaseListCmd {
                 _accountService.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.ListEntry, true, account);
                 users.add(user);
             }
-        } else if (CallContext.current().getCallingAccount().getType() == Account.ACCOUNT_TYPE_ADMIN) {
+        } else if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
             users = _userDao.listAll();
         }
 

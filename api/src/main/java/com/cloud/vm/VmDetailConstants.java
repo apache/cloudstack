@@ -59,6 +59,7 @@ public interface VmDetailConstants {
     String MESSAGE_RESERVED_CAPACITY_FREED_FLAG = "Message.ReservedCapacityFreed.Flag";
     String DEPLOY_VM = "deployvm";
     String SSH_PUBLIC_KEY = "SSH.PublicKey";
+    String SSH_KEY_PAIR_NAMES = "SSH.KeyPairNames";
     String PASSWORD = "password";
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
@@ -73,4 +74,6 @@ public interface VmDetailConstants {
     String DISK_OFFERING = "diskOffering";
 
     String DEPLOY_AS_IS_CONFIGURATION = "configurationId";
+    String KEY_PAIR_NAMES = "keypairnames";
+    String CKS_CONTROL_NODE_LOGIN_USER = "controlNodeLoginUser";
 }

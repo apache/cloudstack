@@ -61,9 +61,7 @@ setup_k8s_node() {
 
     log_it "Starting cloud-init services"
     systemctl enable --now --no-block containerd
-    systemctl enable --now --no-block docker.socket
-    systemctl enable --now --no-block docker.service
-    if [ -f /home/core/success ]; then
+    if [ -f /home/cloud/success ]; then
       systemctl stop cloud-init cloud-config cloud-final
       systemctl disable cloud-init cloud-config cloud-final
     else

@@ -51,7 +51,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
-    private Short accountType;
+    private Integer accountType;
 
     @SerializedName(ApiConstants.USER_ID)
     @Param(description = "Id of the user")
@@ -96,7 +96,7 @@ public class ProjectAccountResponse extends BaseResponse implements ControlledVi
         this.accountName = accountName;
     }
 
-    public void setAccountType(Short accountType) {
+    public void setAccountType(Integer accountType) {
         this.accountType = accountType;
     }
 

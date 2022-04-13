@@ -568,7 +568,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             return;
         }
 
-        s_logger.info("Proccess agent startup answer, agent id = " + startup.getHostId());
+        s_logger.info("Process agent startup answer, agent id = " + startup.getHostId());
 
         setId(startup.getHostId());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.

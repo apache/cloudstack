@@ -612,7 +612,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
         return authorizeSecurityGroupRule(securityGroupId, protocol, startPort, endPort, icmpType, icmpCode, cidrList, groupList, SecurityRuleType.IngressRule);
     }
 
-    private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort, Integer endPort, Integer icmpType,
+    public List<SecurityGroupRuleVO> authorizeSecurityGroupRule(final Long securityGroupId, String protocol, Integer startPort, Integer endPort, Integer icmpType,
             Integer icmpCode, final List<String> cidrList, Map groupList, final SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;

@@ -22,27 +22,32 @@
       <p>{{ $t('message.enabled.vpn.ip.sec') }} <strong>{{ remoteAccessVpn.presharedkey }}</strong></p>
       <a-divider/>
       <a-button><router-link :to="{ path: '/vpnuser'}">{{ $t('label.manage.vpn.user') }}</router-link></a-button>
-      <a-button style="margin-left: 10px" type="danger" @click="disableVpn = true" :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
+      <a-button
+        style="margin-left: 10px"
+        type="primary"
+        danger
+        @click="disableVpn = true"
+        :disabled="!('deleteRemoteAccessVpn' in $store.getters.apis)">
         {{ $t('label.disable.vpn') }}
       </a-button>
     </div>
 
     <a-modal
-      v-model="disableVpn"
+      :visible="disableVpn"
       :footer="null"
-      oncancel="disableVpn = false"
       :title="$t('label.disable.vpn')"
       :closable="true"
       :maskClosable="false"
-      @cancel="disableVpn = false"
-      v-ctrl-enter="handleDisableVpn">
-      <p>{{ $t('message.disable.vpn') }}</p>
+      @cancel="disableVpn = false">
+      <div v-ctrl-enter="handleDisableVpn">
+        <p>{{ $t('message.disable.vpn') }}</p>
 
-      <a-divider></a-divider>
+        <a-divider />
 
-      <div class="actions">
-        <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
+        <div class="actions">
+          <a-button @click="() => disableVpn = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="handleDisableVpn">{{ $t('label.yes') }}</a-button>
+        </div>
       </div>
     </a-modal>
 
@@ -53,21 +58,21 @@
     </a-button>
 
     <a-modal
-      v-model="enableVpn"
+      :visible="enableVpn"
       :footer="null"
-      onCancel="enableVpn = false"
       :title="$t('label.enable.vpn')"
       :maskClosable="false"
       :closable="true"
-      @cancel="enableVpn = false"
-      v-ctrl-enter="handleCreateVpn">
-      <p>{{ $t('message.enable.vpn') }}</p>
+      @cancel="enableVpn = false">
+      <div v-ctrl-enter="handleCreateVpn">
+        <p>{{ $t('message.enable.vpn') }}</p>
 
-      <a-divider></a-divider>
+        <a-divider />
 
-      <div class="actions">
-        <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+        <div class="actions">
+          <a-button @click="() => enableVpn = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleCreateVpn">{{ $t('label.yes') }}</a-button>
+        </div>
       </div>
     </a-modal>
 
@@ -97,12 +102,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource: function (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.fetchData()
       }
-      this.resource = newItem
-      this.fetchData()
     }
   },
   methods: {

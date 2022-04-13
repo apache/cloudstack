@@ -50,6 +50,7 @@ import com.cloud.agent.api.GetStoragePoolCapabilitiesCommand;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.StatsCollector;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.google.common.collect.Sets;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -78,6 +79,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -358,7 +360,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
-    // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _serverId;
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
@@ -775,9 +776,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC
-                    && hypervisorType != HypervisorType.Any) {
-                throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
+
+            Set<HypervisorType> supportedHypervisorTypes = Sets.newHashSet(HypervisorType.KVM, HypervisorType.VMware,
+                    HypervisorType.Hyperv, HypervisorType.LXC, HypervisorType.Any, HypervisorType.Simulator);
+            if (!supportedHypervisorTypes.contains(hypervisorType)) {
+                throw new InvalidParameterValueException("Zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         } else {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
@@ -1114,6 +1117,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
         listener.hostDisconnected(hostId, pool.getId());
+    }
+
+    @Override
+    public void enableHost(long hostId) {
+        List<DataStoreProvider> providers = _dataStoreProviderMgr.getProviders();
+        if (providers != null) {
+            for (DataStoreProvider provider : providers) {
+                if (provider instanceof PrimaryDataStoreProvider) {
+                    try {
+                        HypervisorHostListener hypervisorHostListener = provider.getHostListener();
+                        if (hypervisorHostListener != null) {
+                            hypervisorHostListener.hostEnabled(hostId);
+                        }
+                    }
+                    catch (Exception ex) {
+                        s_logger.error("hostEnabled(long) failed for storage provider " + provider.getName(), ex);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -2497,8 +2520,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
+            s_logger.debug("Found storage pool " + pool.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
 
@@ -3336,7 +3359,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 SecStorageMaxMigrateSessions,
                 MaxDataMigrationWaitTime,
                 DiskProvisioningStrictness,
-                PreferredStoragePool
+                PreferredStoragePool,
+                SecStorageVMAutoScaleDown,
+                MountDisabledStoragePool
         };
     }
 

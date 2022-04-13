@@ -104,7 +104,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
-        if (caller.getState() != Account.State.enabled) {
+        if (caller.getState() != Account.State.ENABLED) {
             throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
         }
 
@@ -147,7 +147,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     return true;
                 }
                 //special handling for the project case
-                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
+                if (owner.getType() == Account.Type.PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
                     return true;
                 }
 
@@ -163,7 +163,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 if (accessType != null && accessType == AccessType.OperateEntry) {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
-                        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
+                        if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
                         }
                     }
@@ -179,7 +179,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
                 String errorMessage = String.format("%s does not have permission to operate with resource", caller);
-                if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (account != null && account.getType() == Account.Type.PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
@@ -272,9 +272,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> doDomainIds = diskOfferingDetailsDao.findDomainIds(dof.getId());
                 if (doDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -310,9 +310,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for service offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
                 if (soDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -348,9 +348,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> noDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
                 if (noDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -386,9 +386,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> voDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
                 if (voDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -421,7 +421,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
             //if account is normal user
             //check if account's domain is a child of zone's domain
-            else if (_accountService.isNormalUser(account.getId()) || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            else if (_accountService.isNormalUser(account.getId()) || account.getType() == Account.Type.PROJECT) {
                 // if zone is dedicated to an account check that the accountId
                 // matches.
                 DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
@@ -496,19 +496,19 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             throws PermissionDeniedException {
 
         if (action != null && ("SystemCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 return true;
             } else {
                 return false;
             }
         } else if (action != null && ("DomainCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.DOMAIN_ADMIN) {
                 return true;
             } else {
                 return false;
             }
         } else if (action != null && ("DomainResourceCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                 return true;
             } else {
                 return false;

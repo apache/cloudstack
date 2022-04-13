@@ -16,13 +16,15 @@
 // under the License.
 
 import Cookies from 'js-cookie'
-import Vue from 'vue'
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
+
+import { vueProps } from '@/vue-app'
 import router from '@/router'
 import store from '@/store'
 import { login, logout, api } from '@/api'
 import { i18n } from '@/locales'
+
 import {
   ACCESS_TOKEN,
   CURRENT_PROJECT,
@@ -34,7 +36,7 @@ import {
   HEADER_NOTICES,
   DOMAIN_STORE,
   DARK_MODE,
-  THEME_SETTING
+  CUSTOM_COLUMNS
 } from '@/store/mutation-types'
 
 const user = {
@@ -54,9 +56,9 @@ const user = {
     usebrowsertimezone: false,
     domainStore: {},
     darkMode: false,
-    themeSetting: {},
     defaultListViewPageSize: 20,
-    countNotify: 0
+    countNotify: 0,
+    logoutFlag: false
   },
 
   mutations: {
@@ -64,15 +66,15 @@ const user = {
       state.token = token
     },
     SET_TIMEZONE_OFFSET: (state, timezoneoffset) => {
-      Vue.ls.set(TIMEZONE_OFFSET, timezoneoffset)
+      vueProps.$localStorage.set(TIMEZONE_OFFSET, timezoneoffset)
       state.timezoneoffset = timezoneoffset
     },
     SET_USE_BROWSER_TIMEZONE: (state, bool) => {
-      Vue.ls.set(USE_BROWSER_TIMEZONE, bool)
+      vueProps.$localStorage.set(USE_BROWSER_TIMEZONE, bool)
       state.usebrowsertimezone = bool
     },
     SET_PROJECT: (state, project = {}) => {
-      Vue.ls.set(CURRENT_PROJECT, project)
+      vueProps.$localStorage.set(CURRENT_PROJECT, project)
       state.project = project
     },
     SET_NAME: (state, name) => {
@@ -86,13 +88,13 @@ const user = {
     },
     SET_APIS: (state, apis) => {
       state.apis = apis
-      Vue.ls.set(APIS, apis)
+      vueProps.$localStorage.set(APIS, apis)
     },
     SET_FEATURES: (state, features) => {
       state.features = features
     },
     SET_HEADER_NOTICES: (state, noticeJsonArray) => {
-      Vue.ls.set(HEADER_NOTICES, noticeJsonArray)
+      vueProps.$localStorage.set(HEADER_NOTICES, noticeJsonArray)
       state.headerNotices = noticeJsonArray
     },
     SET_LDAP: (state, isLdapEnabled) => {
@@ -102,29 +104,32 @@ const user = {
       state.cloudian = cloudian
     },
     RESET_THEME: (state) => {
-      Vue.ls.set(DEFAULT_THEME, 'light')
+      vueProps.$localStorage.set(DEFAULT_THEME, 'light')
     },
     SET_ZONES: (state, zones) => {
       state.zones = zones
-      Vue.ls.set(ZONES, zones)
+      vueProps.$localStorage.set(ZONES, zones)
     },
     SET_DOMAIN_STORE (state, domainStore) {
       state.domainStore = domainStore
-      Vue.ls.set(DOMAIN_STORE, domainStore)
+      vueProps.$localStorage.set(DOMAIN_STORE, domainStore)
     },
     SET_DARK_MODE (state, darkMode) {
       state.darkMode = darkMode
-      Vue.ls.set(DARK_MODE, darkMode)
-    },
-    SET_THEME_SETTING (state, setting) {
-      state.themeSetting = setting
-      Vue.ls.set(THEME_SETTING, setting)
+      vueProps.$localStorage.set(DARK_MODE, darkMode)
     },
     SET_DEFAULT_LISTVIEW_PAGE_SIZE: (state, defaultListViewPageSize) => {
       state.defaultListViewPageSize = defaultListViewPageSize
     },
     SET_COUNT_NOTIFY (state, number) {
       state.countNotify = number
+    },
+    SET_CUSTOM_COLUMNS: (state, customColumns) => {
+      vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
+      state.customColumns = customColumns
+    },
+    SET_LOGOUT_FLAG: (state, flag) => {
+      state.logoutFlag = flag
     }
   },
 
@@ -144,16 +149,16 @@ const user = {
           Cookies.set('userfullname', result.firstname + ' ' + result.lastname, { expires: 1 })
           Cookies.set('userid', result.userid, { expires: 1 })
           Cookies.set('username', result.username, { expires: 1 })
-          Vue.ls.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
+          vueProps.$localStorage.set(ACCESS_TOKEN, result.sessionkey, 24 * 60 * 60 * 1000)
           commit('SET_TOKEN', result.sessionkey)
           commit('SET_TIMEZONE_OFFSET', result.timezoneoffset)
 
-          const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
+          const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
-          const darkMode = Vue.ls.get(DARK_MODE, false)
+          const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
           commit('SET_DARK_MODE', darkMode)
-          const themeSetting = Vue.ls.get(THEME_SETTING, {})
-          commit('SET_THEME_SETTING', themeSetting)
+          const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           commit('SET_APIS', {})
           commit('SET_NAME', '')
@@ -165,6 +170,7 @@ const user = {
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
+          commit('SET_LOGOUT_FLAG', false)
 
           notification.destroy()
 
@@ -177,24 +183,24 @@ const user = {
 
     GetInfo ({ commit }, switchDomain) {
       return new Promise((resolve, reject) => {
-        const cachedApis = switchDomain ? {} : Vue.ls.get(APIS, {})
-        const cachedZones = Vue.ls.get(ZONES, [])
-        const cachedTimezoneOffset = Vue.ls.get(TIMEZONE_OFFSET, 0.0)
-        const cachedUseBrowserTimezone = Vue.ls.get(USE_BROWSER_TIMEZONE, false)
-        const domainStore = Vue.ls.get(DOMAIN_STORE, {})
-        const darkMode = Vue.ls.get(DARK_MODE, false)
-        const themeSetting = Vue.ls.get(THEME_SETTING, {})
+        const cachedApis = switchDomain ? {} : vueProps.$localStorage.get(APIS, {})
+        const cachedZones = vueProps.$localStorage.get(ZONES, [])
+        const cachedTimezoneOffset = vueProps.$localStorage.get(TIMEZONE_OFFSET, 0.0)
+        const cachedUseBrowserTimezone = vueProps.$localStorage.get(USE_BROWSER_TIMEZONE, false)
+        const cachedCustomColumns = vueProps.$localStorage.get(CUSTOM_COLUMNS, {})
+        const domainStore = vueProps.$localStorage.get(DOMAIN_STORE, {})
+        const darkMode = vueProps.$localStorage.get(DARK_MODE, false)
         const hasAuth = Object.keys(cachedApis).length > 0
 
         commit('SET_DOMAIN_STORE', domainStore)
         commit('SET_DARK_MODE', darkMode)
-        commit('SET_THEME_SETTING', themeSetting)
         if (hasAuth) {
           console.log('Login detected, using cached APIs')
           commit('SET_ZONES', cachedZones)
           commit('SET_APIS', cachedApis)
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
+          commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
           api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
@@ -206,7 +212,7 @@ const user = {
             reject(error)
           })
         } else {
-          const hide = message.loading(i18n.t('message.discovering.feature'), 0)
+          const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
           api('listZones', { listall: true }).then(json => {
             const zones = json.listzonesresponse.zone || []
             commit('SET_ZONES', zones)
@@ -227,10 +233,12 @@ const user = {
             commit('SET_APIS', apis)
             resolve(apis)
             store.dispatch('GenerateRoutes', { apis }).then(() => {
-              router.addRoutes(store.getters.addRouters)
+              store.getters.addRouters.map(route => {
+                router.addRoute(route)
+              })
             })
             hide()
-            message.success(i18n.t('message.sussess.discovering.feature'))
+            message.success(i18n.global.t('message.sussess.discovering.feature'))
           }).catch(error => {
             reject(error)
           })
@@ -290,9 +298,10 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
-        Vue.ls.remove(CURRENT_PROJECT)
-        Vue.ls.remove(ACCESS_TOKEN)
-        Vue.ls.remove(HEADER_NOTICES)
+        commit('SET_LOGOUT_FLAG', true)
+        vueProps.$localStorage.remove(CURRENT_PROJECT)
+        vueProps.$localStorage.remove(ACCESS_TOKEN)
+        vueProps.$localStorage.remove(HEADER_NOTICES)
 
         logout(state.token).then(() => {
           message.destroy()
@@ -310,7 +319,7 @@ const user = {
       if (!noticeJson || !noticeJson.title) {
         return
       }
-      const noticeArray = Vue.ls.get(HEADER_NOTICES, [])
+      const noticeArray = vueProps.$localStorage.get(HEADER_NOTICES, [])
       const noticeIdx = noticeArray.findIndex(notice => notice.key === noticeJson.key)
       if (noticeIdx === -1) {
         noticeArray.push(noticeJson)
@@ -336,7 +345,9 @@ const user = {
           commit('SET_APIS', apis)
           resolve(apis)
           store.dispatch('GenerateRoutes', { apis }).then(() => {
-            router.addRoutes(store.getters.addRouters)
+            store.getters.addRouters.map(route => {
+              router.addRoute(route)
+            })
           })
         }).catch(error => {
           reject(error)
@@ -369,9 +380,6 @@ const user = {
     },
     SetDarkMode ({ commit }, darkMode) {
       commit('SET_DARK_MODE', darkMode)
-    },
-    SetThemeSetting ({ commit }, setting) {
-      commit('SET_THEME_SETTING', setting)
     }
   }
 }

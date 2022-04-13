@@ -23,8 +23,10 @@ function getTemplateVersion() {
   subversion1="$(cut -d'.' -f1 <<<"$version")"
   subversion2="$(cut -d'.' -f2 <<<"$version")"
   minorversion="$(cut -d'.' -f3 <<<"$version")"
+  securityversion="$(cut -d'.' -f4 <<<"$version")"
   export CS_VERSION="${subversion1}"."${subversion2}"
   export CS_MINOR_VERSION="${minorversion}"
+  export VERSION="${CS_VERSION}.${CS_MINOR_VERSION}"
 }
 
 function getGenericName() {
@@ -52,27 +54,28 @@ function getChecksum() {
 
 function createMetadataFile() {
   local fileData=$(cat $SOURCEFILE)
-  for i in "${!templates[@]}"
+  echo -e "["default"]\nversion = $VERSION.${securityversion}\n" >> $METADATAFILE
+  for template in "${templates[@]}"
   do
-    section="$i"
-    hvName=$(getGenericName $i)
-    templatename="systemvm-${i}-${CS_VERSION}.${CS_MINOR_VERSION}"
-    checksum=$(getChecksum "$fileData" $hvName)
-    downloadurl="${templates[$i]}"
+    section="${template%%:*}"
+    hvName=$(getGenericName $section)
+
+    templatename="systemvm-${section}-${VERSION}"
+    checksum=$(getChecksum "$fileData" "$VERSION-$hvName")
+    downloadurl="${template#*:}"
     filename=$(echo ${downloadurl##*'/'})
     echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\n" >> $METADATAFILE
   done
 }
 
-declare -A templates
+declare -a templates
 getTemplateVersion $1
-templates=( ["kvm"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-kvm.qcow2.bz2"
-            ["vmware"]="https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-${CS_VERSION}.${CS_MINOR_VERSION}-vmware.ova"
-            ["xenserver"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-xen.vhd.bz2"
-            ["hyperv"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-hyperv.vhd.zip"
-            ["lxc"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-kvm.qcow2.bz2"
-            ["ovm3"]="https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$CS_VERSION.$CS_MINOR_VERSION-ovm.raw.bz2" )
-
+templates=( "kvm:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
+            "vmware:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-vmware.ova"
+            "xenserver:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-xen.vhd.bz2"
+            "hyperv:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-hyperv.vhd.zip"
+            "lxc:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-kvm.qcow2.bz2"
+            "ovm3:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-ovm.raw.bz2" )
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
 mkdir -p $PARENTPATH

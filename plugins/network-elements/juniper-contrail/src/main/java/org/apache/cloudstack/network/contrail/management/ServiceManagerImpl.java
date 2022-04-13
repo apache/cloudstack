@@ -239,7 +239,7 @@ public class ServiceManagerImpl implements ServiceManager {
         response.setId(vm.getUuid());
         Account owner = _accountService.getAccount(vm.getAccountId());
 
-        if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (owner.getType() == Account.Type.PROJECT) {
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(owner.getAccountId());
             response.setProjectId(project.getUuid());
             response.setProjectName(project.getName());

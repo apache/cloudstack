@@ -16,9 +16,9 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom" :title="$t(getTooltip(text))">
+  <a-tooltip placement="bottom" :title="getTooltip(text)">
     <a-badge
-      style="display: inline-flex"
+      :style="getStyle()"
       :title="text"
       :color="getStatusColor(text)"
       :status="getBadgeStatus(text)"
@@ -38,6 +38,10 @@ export default {
     displayText: {
       type: Boolean,
       default: false
+    },
+    styles: {
+      type: Object,
+      default: () => {}
     }
   },
   methods: {
@@ -142,6 +146,7 @@ export default {
         case 'maintenance':
         case 'pending':
         case 'unsecure':
+        case 'warning':
           status = 'warning'
           break
       }
@@ -151,40 +156,58 @@ export default {
       switch (state.toLowerCase()) {
         case 'scheduled':
           return 'blue'
+        case 'reserved':
+          return 'orange'
         default:
           return null
       }
     },
     getTooltip (state) {
       if (!(state && this.displayText)) {
-        return
+        return ''
       }
       if (this.$route.path === '/vmsnapshot' || this.$route.path.includes('/vmsnapshot/')) {
-        return 'message.vmsnapshot.state.' + state.toLowerCase()
+        return this.$t('message.vmsnapshot.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
-        return 'message.vm.state.' + state.toLowerCase()
+        return this.$t('message.vm.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
-        return 'message.volume.state.' + state.toLowerCase()
+        return this.$t('message.volume.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-        return 'message.guestnetwork.state.' + state.toLowerCase()
+        return this.$t('message.guestnetwork.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
-        return 'message.publicip.state.' + state.toLowerCase()
+        return this.$t('message.publicip.state.' + state.toLowerCase())
       }
       // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
-      return state
+      return this.$t(state)
+    },
+    getStyle () {
+      let styles = { display: 'inline-flex' }
+      if (this.styles && typeof this.styles === 'object') {
+        styles = Object.assign({}, styles, this.styles)
+      }
+
+      return styles
     }
   }
 }
 </script>
 
-<style scoped>
-/deep/ .ant-badge-status-dot {
+<style scoped lang="less">
+:deep(.ant-badge-status-dot) {
   width: 12px;
   height: 12px;
   margin-top: 5px;
+}
+
+.status {
+  margin-top: -5px;
+
+  &--end {
+    margin-left: 5px;
+  }
 }
 </style>

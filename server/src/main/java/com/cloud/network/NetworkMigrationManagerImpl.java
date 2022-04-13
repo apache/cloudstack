@@ -239,7 +239,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         assignRouterNicsToNewNetwork(network.getId(), networkCopyId);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Succesfully created a copy of network  " + originalNetwork.getName() + "(" + originalNetwork.getUuid() + ") id is " + originalNetwork.getId() + " for migration. The network copy has uuid " + network.getUuid() + " and id " + network.getId());
+            s_logger.debug("Successfully created a copy of network  " + originalNetwork.getName() + "(" + originalNetwork.getUuid() + ") id is " + originalNetwork.getId() + " for migration. The network copy has uuid " + network.getUuid() + " and id " + network.getId());
         }
         return networkCopyId;
     }
@@ -311,7 +311,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             reassignGatewayToNewVpc(vpcId, copyOfVpcId);
             copyVpcResourceTagsToNewVpc(vpcId, copyOfVpcId);
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Succesfully created a copy of network  " + vpc.getName() + "(" + vpc.getUuid() + ") id is " + vpc.getId() + " for migration. The network copy has uuid " + copyVpcVO.getUuid() + " and id " + copyOfVpc.getId());
+                s_logger.debug("Successfully created a copy of network  " + vpc.getName() + "(" + vpc.getUuid() + ") id is " + vpc.getId() + " for migration. The network copy has uuid " + copyVpcVO.getUuid() + " and id " + copyOfVpc.getId());
             }
         } catch (ResourceAllocationException e) {
             throw new CloudRuntimeException(e.getMessage());

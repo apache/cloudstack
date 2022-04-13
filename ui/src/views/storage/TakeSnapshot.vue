@@ -19,41 +19,46 @@
   <div class="take-snapshot" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading || actionLoading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('label.header.volume.take.snapshot')" />
+        <template #message>
+          <div v-html="$t('label.header.volume.take.snapshot')" />
+        </template>
       </a-alert>
       <a-form
         class="form"
-        :form="form"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
         layout="vertical"
-        @submit="handleSubmit">
+        @finish="handleSubmit"
+       >
         <a-row :gutter="12">
           <a-col :md="24" :lg="24">
-            <a-form-item :label="$t('label.name')">
+            <a-form-item :label="$t('label.name')" name="name" ref="name">
               <a-input
-                v-decorator="['name']"
+                v-model:value="form.name"
                 :placeholder="apiParams.name.description"
-                autoFocus />
+                v-focus="true" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="24" v-if="!supportsStorageSnapshot">
-            <a-form-item :label="$t('label.asyncbackup')">
-              <a-switch v-decorator="['asyncbackup']" />
+            <a-form-item :label="$t('label.asyncbackup')" name="asyncbackup" ref="asyncbackup">
+              <a-switch v-model:checked="form.asyncbackup" />
             </a-form-item>
           </a-col>
-          <a-col :md="24" :lg="24" v-if="quiescevm">
+          <a-col :md="24" :lg="24" v-if="quiescevm" name="quiescevm" ref="quiescevm">
             <a-form-item :label="$t('label.quiescevm')">
-              <a-switch v-decorator="['quiescevm']" />
+              <a-switch v-model:checked="form.quiescevm" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-divider/>
         <div class="tagsTitle">{{ $t('label.tags') }}</div>
         <div>
-          <template v-for="(tag, index) in tags">
+          <div v-for="(tag, index) in tags" :key="index">
             <a-tag :key="index" :closable="true">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
-          </template>
+          </div>
           <div v-if="inputVisible">
             <a-input-group
               type="text"
@@ -68,19 +73,19 @@
                 placeholder="="
                 disabled />
               <a-input :value="inputValue" @change="handleValueChange" style="width: 100px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-              <tooltip-button :tooltip="$t('label.ok')" icon="check" size="small" @click="handleInputConfirm" />
-              <tooltip-button :tooltip="$t('label.cancel')" icon="close" size="small" @click="inputVisible=false" />
+              <tooltip-button :tooltip="$t('label.ok')" icon="check-outlined" size="small" @onClick="handleInputConfirm" />
+              <tooltip-button :tooltip="$t('label.cancel')" icon="close-outlined" size="small" @onClick="inputVisible=false" />
             </a-input-group>
           </div>
           <a-tag v-else @click="showInput" class="btn-add-tag" style="borderStyle: dashed;">
-            <a-icon type="plus" /> {{ $t('label.new.tag') }}
+            <plus-outlined /> {{ $t('label.new.tag') }}
           </a-tag>
         </div>
         <div :span="24" class="action-button">
           <a-button
             :loading="actionLoading"
             @click="closeAction">
-            {{ this.$t('label.cancel') }}
+            {{ $t('label.cancel') }}
           </a-button>
           <a-button
             v-if="handleShowButton()"
@@ -88,7 +93,7 @@
             type="primary"
             ref="submit"
             @click="handleSubmit">
-            {{ this.$t('label.ok') }}
+            {{ $t('label.ok') }}
           </a-button>
         </div>
       </a-form>
@@ -97,11 +102,14 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
+  mixins: [mixinForm],
   components: {
     TooltipButton
   },
@@ -128,21 +136,29 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createSnapshot')
   },
-  mounted () {
+  created () {
+    this.initForm()
     this.quiescevm = this.resource.quiescevm
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        name: undefined,
+        asyncbackup: undefined,
+        quiescevm: false
+      })
+      this.rules = reactive({})
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.actionLoading) return
-      this.form.validateFieldsAndScroll((error, values) => {
-        if (error) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         let params = {}
         params.volumeId = this.resource.id
@@ -186,6 +202,8 @@ export default {
         }).finally(() => {
           this.actionLoading = false
         })
+      }).catch((error) => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     handleVisibleInterval (intervalType) {

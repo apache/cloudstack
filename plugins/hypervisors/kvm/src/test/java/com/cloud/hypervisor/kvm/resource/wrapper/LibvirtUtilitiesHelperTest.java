@@ -16,42 +16,63 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.File;
-import java.util.UUID;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.LibvirtException;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.utils.script.Script;
+import com.cloud.utils.Pair;
 
 import junit.framework.TestCase;
 
+@RunWith(PowerMockRunner.class)
 public class LibvirtUtilitiesHelperTest extends TestCase {
 
-    public void testGenerateUUID() {
-        LibvirtUtilitiesHelper helper = new LibvirtUtilitiesHelper();
-        UUID uuid = UUID.fromString(helper.generateUUIDName());
-        assertEquals(4, uuid.version());
+    LibvirtUtilitiesHelper libvirtUtilitiesHelperSpy = Mockito.spy(LibvirtUtilitiesHelper.class);
+
+    @Mock
+    Connect connectMock;
+
+    @Test
+    public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterExceptionOnRetrievingLibvirtVersionReturnsFalse() throws LibvirtException {
+        Mockito.doThrow(LibvirtException.class).when(connectMock).getLibVirVersion();
+        Pair<String, Boolean> result = LibvirtUtilitiesHelper.isLibvirtVersionEqualOrHigherThanVersionInParameter(connectMock, 0l);
+
+        Assert.assertEquals("Unknow due to [null]", result.first());
+        Assert.assertFalse(result.second());
     }
 
-    public void testSSHKeyPaths() {
-        LibvirtUtilitiesHelper helper = new LibvirtUtilitiesHelper();
-        /* These paths are hardcoded in LibvirtComputingResource and we should
-         * verify that they do not change.
-         * Hardcoded paths are not what we want in the longer run
-         */
-        assertEquals("/root/.ssh", helper.retrieveSshKeysPath());
-        assertEquals("/root/.ssh" + File.separator + "id_rsa.pub.cloud", helper.retrieveSshPubKeyPath());
-        assertEquals("/root/.ssh" + File.separator + "id_rsa.cloud", helper.retrieveSshPrvKeyPath());
+    @Test
+    public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterLibvirtVersionIsLowerThanParameterReturnsFalse() throws LibvirtException {
+        long libvirtVersion = 9l;
+        Mockito.doReturn(libvirtVersion).when(connectMock).getLibVirVersion();
+        Pair<String, Boolean> result = LibvirtUtilitiesHelper.isLibvirtVersionEqualOrHigherThanVersionInParameter(connectMock, 10l);
+
+        Assert.assertEquals(String.valueOf(libvirtVersion), result.first());
+        Assert.assertFalse(result.second());
     }
 
-    public void testBashScriptPath() {
-        LibvirtUtilitiesHelper helper = new LibvirtUtilitiesHelper();
-        assertEquals("/bin/bash", helper.retrieveBashScriptPath());
+    @Test
+    public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterLibvirtVersionIsEqualsToParameterReturnsTrue() throws LibvirtException {
+        long libvirtVersion = 10l;
+        Mockito.doReturn(libvirtVersion).when(connectMock).getLibVirVersion();
+        Pair<String, Boolean> result = LibvirtUtilitiesHelper.isLibvirtVersionEqualOrHigherThanVersionInParameter(connectMock, 10l);
+
+        Assert.assertEquals(String.valueOf(libvirtVersion), result.first());
+        Assert.assertTrue(result.second());
     }
 
-    public void testBuildScript() {
-        LibvirtUtilitiesHelper helper = new LibvirtUtilitiesHelper();
-        String path = "/path/to/my/script";
-        Script script = helper.buildScript(path);
-        assertEquals(path + " ", script.toString());
-        assertEquals(LibvirtUtilitiesHelper.TIMEOUT, script.getTimeout());
+    @Test
+    public void validateIsLibvirtVersionEqualOrHigherThanVersionInParameterLibvirtVersionIsHigherThanParameterReturnsTrue() throws LibvirtException {
+        long libvirtVersion = 11l;
+        Mockito.doReturn(libvirtVersion).when(connectMock).getLibVirVersion();
+        Pair<String, Boolean> result = LibvirtUtilitiesHelper.isLibvirtVersionEqualOrHigherThanVersionInParameter(connectMock, 10l);
+
+        Assert.assertEquals(String.valueOf(libvirtVersion), result.first());
+        Assert.assertTrue(result.second());
     }
 }

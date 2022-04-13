@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 <template>
-  <DetailsTab :resource="resource" />
+  <DetailsTab :resource="dataResource" />
 </template>
 <script>
 import DetailsTab from '@/components/view/DetailsTab'
@@ -30,28 +30,40 @@ export default {
       required: true
     }
   },
+  data () {
+    return {
+      dataResource: {}
+    }
+  },
+  created () {
+    this.dataResource = this.resource
+    this.determineOwner()
+  },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler () {
+        this.dataResource = this.resource
+        if (!this.dataResource || !this.dataResource.id) {
+          return
+        }
+        this.determineOwner()
       }
-      this.resource = newItem
-      this.determineOwner()
     }
   },
   methods: {
     determineOwner () {
-      var owner = this.resource.owner || []
+      var owner = this.dataResource.owner || []
       // If current backend does not support multiple project admins
       if (owner.length === 0) {
-        this.$set(this.resource, 'isCurrentUserProjectAdmin', this.resource.account === this.$store.getters.userInfo.account)
+        this.dataResource.isCurrentUserProjectAdmin = this.dataResource.account === this.$store.getters.userInfo.account
         return
       }
       owner = owner.filter(projectaccount => {
         return (projectaccount.userid && projectaccount.userid === this.$store.getters.userInfo.id) ||
           projectaccount.account === this.$store.getters.userInfo.account
       })
-      this.$set(this.resource, 'isCurrentUserProjectAdmin', owner.length > 0)
+      this.dataResource.isCurrentUserProjectAdmin = owner.length > 0
     }
   }
 }

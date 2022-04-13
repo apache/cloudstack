@@ -471,7 +471,7 @@ SELECT
     `user_ip_address`.`id` AS `public_ip_id`,
     `user_ip_address`.`uuid` AS `public_ip_uuid`,
     `user_ip_address`.`public_ip_address` AS `public_ip_address`,
-    `ssh_keypairs`.`keypair_name` AS `keypair_name`,
+    `ssh_details`.`value` AS `keypair_names`,
     `resource_tags`.`id` AS `tag_id`,
     `resource_tags`.`uuid` AS `tag_uuid`,
     `resource_tags`.`key` AS `tag_key`,
@@ -495,7 +495,7 @@ SELECT
     `affinity_group`.`description` AS `affinity_group_description`,
     `vm_instance`.`dynamically_scalable` AS `dynamically_scalable`
 FROM
-    (((((((((((((((((((((((((((((((((`user_vm`
+    ((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
             AND ISNULL(`vm_instance`.`removed`))))
         JOIN `account` ON ((`vm_instance`.`account_id` = `account`.`id`)))
@@ -524,9 +524,7 @@ FROM
             AND ISNULL(`vpc`.`removed`))))
         LEFT JOIN `user_ip_address` ON ((`user_ip_address`.`vm_id` = `vm_instance`.`id`)))
         LEFT JOIN `user_vm_details` `ssh_details` ON (((`ssh_details`.`vm_id` = `vm_instance`.`id`)
-            AND (`ssh_details`.`name` = 'SSH.PublicKey'))))
-        LEFT JOIN `ssh_keypairs` ON (((`ssh_keypairs`.`public_key` = `ssh_details`.`value`)
-            AND (`ssh_keypairs`.`account_id` = `account`.`id`))))
+            AND (`ssh_details`.`name` = 'SSH.KeyPairNames'))))
         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_instance`.`id`)
             AND (`resource_tags`.`resource_type` = 'UserVm'))))
         LEFT JOIN `async_job` ON (((`async_job`.`instance_id` = `vm_instance`.`id`)
@@ -643,3 +641,30 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
+
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+
+INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
+    SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
+        FROM `cloud`.`user_vm_details`
+        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
+        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
+        WHERE ssh_keypairs.account_id = vm_instance.account_id;
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `security_group_id` bigint unsigned DEFAULT NULL,
+ADD CONSTRAINT `fk_kubernetes_cluster__security_group_id` FOREIGN KEY `fk_kubernetes_cluster__security_group_id`(`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE;
+
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`vm_stats`;
+CREATE TABLE `cloud`.`vm_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `vm_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- PR#5984 Update name for global configuration vm.stats.increment.metrics
+Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
