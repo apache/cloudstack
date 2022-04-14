@@ -454,12 +454,17 @@ export default {
         return
       }
 
-      api('dedicatePublicIpRange', {
+      var params = {
         id: this.selectedItem.id,
         zoneid: this.selectedItem.zoneid,
-        domainid: this.addAccount.domain,
-        account: this.addAccount.account
-      }).catch(error => {
+        domainid: this.addAccount.domain
+      }
+
+      if (this.addAccount.account) {
+        params.account = this.addAccount.account
+      }
+
+      api('dedicatePublicIpRange', params).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.addAccountModal = false
