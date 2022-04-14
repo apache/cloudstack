@@ -2547,21 +2547,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString())) {
                 if (!isInternalAccount(userAccount.getId())) {
                     // Internal accounts are not disabled
-                    int attemptsMade = userAccount.getLoginAttempts() + 1;
-                    if (updateIncorrectLoginCount) {
-                        if (attemptsMade < _allowedLoginAttempts) {
-                            updateLoginAttempts(userAccount.getId(), attemptsMade, false);
-                            s_logger.warn("Login attempt failed. You have " + (_allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
-                        } else {
-                            updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
-                            s_logger.warn("User " + userAccount.getUsername() + " has been disabled due to multiple failed login attempts." + " Please contact admin.");
-                        }
-                    }
+                    updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(userAccount, updateIncorrectLoginCount, _allowedLoginAttempts);
                 }
             } else {
                 s_logger.info("User " + userAccount.getUsername() + " is disabled/locked");
             }
             return null;
+        }
+    }
+
+    protected void updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(UserAccount account, boolean updateIncorrectLoginCount,
+                                                                      int allowedLoginAttempts) {
+        int attemptsMade = account.getLoginAttempts() + 1;
+        if (allowedLoginAttempts <= 0 || !updateIncorrectLoginCount) {
+            return;
+        }
+        if (attemptsMade < allowedLoginAttempts) {
+            updateLoginAttempts(account.getId(), attemptsMade, false);
+            s_logger.warn("Login attempt failed. You have " +
+                    (allowedLoginAttempts - attemptsMade) + " attempt(s) remaining");
+        } else {
+            updateLoginAttempts(account.getId(), allowedLoginAttempts, true);
+            s_logger.warn("User " + account.getUsername() +
+                    " has been disabled due to multiple failed login attempts." + " Please contact admin.");
         }
     }
 
