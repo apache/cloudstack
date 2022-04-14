@@ -2419,21 +2419,21 @@ public class VirtualMachineMO extends BaseMO {
                     scsiControllerDeviceCount++;
                 } else if ((diskControllerType == DiskControllerType.lsisas1068 || diskControllerType == DiskControllerType.scsi) && device instanceof VirtualLsiLogicSASController) {
                     if (scsiControllerDeviceCount == requiredScsiController || groupNumber > -1) {
-                        if (isValidScsiDiskController((VirtualLsiLogicSASController)device,groupNumber)) {
+                        if (isValidScsiDiskController((VirtualLsiLogicSASController)device, groupNumber)) {
                             return ((VirtualLsiLogicSASController)device).getKey();
                         }
                     }
                     scsiControllerDeviceCount++;
                 } else if ((diskControllerType == DiskControllerType.pvscsi || diskControllerType == DiskControllerType.scsi) && device instanceof ParaVirtualSCSIController) {
                     if (scsiControllerDeviceCount == requiredScsiController || groupNumber > -1) {
-                        if (isValidScsiDiskController((ParaVirtualSCSIController)device,groupNumber)) {
+                        if (isValidScsiDiskController((ParaVirtualSCSIController)device, groupNumber)) {
                             return ((ParaVirtualSCSIController)device).getKey();
                         }
                     }
                     scsiControllerDeviceCount++;
                 } else if ((diskControllerType == DiskControllerType.buslogic || diskControllerType == DiskControllerType.scsi) && device instanceof VirtualBusLogicController) {
                     if (scsiControllerDeviceCount == requiredScsiController || groupNumber > -1) {
-                        if (isValidScsiDiskController((VirtualBusLogicController)device,groupNumber)) {
+                        if (isValidScsiDiskController((VirtualBusLogicController)device, groupNumber)) {
                             return ((VirtualBusLogicController)device).getKey();
                         }
                     }
@@ -2456,7 +2456,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
-                if (device instanceof VirtualSCSIController && isValidScsiDiskController((VirtualSCSIController)device,groupNumber)) {
+                if (device instanceof VirtualSCSIController && isValidScsiDiskController((VirtualSCSIController)device, groupNumber)) {
                     return device.getKey();
                 }
             }
@@ -2471,7 +2471,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if (devices != null && devices.size() > 0) {
             for (VirtualDevice device : devices) {
-                if (device instanceof VirtualSCSIController && isValidScsiDiskController((VirtualSCSIController)device,-1)) {
+                if (device instanceof VirtualSCSIController && isValidScsiDiskController((VirtualSCSIController)device, -1)) {
                     return device.getKey();
                 }
             }

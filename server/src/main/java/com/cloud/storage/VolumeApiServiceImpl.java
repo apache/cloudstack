@@ -3958,7 +3958,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     DiskTO disk = answer.getDisk();
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), disk.getDiskSeq());
-                    _volsGroupDao.addVolumeToGroup(vm.getId(),volumeToAttach.getId(),deviceId,groupNumber);
+                    _volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId,groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
@@ -3983,7 +3983,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     deviceId = getDeviceId(vm, deviceId);
 
                     _volsDao.attachVolume(volumeToAttach.getId(), vm.getId(), deviceId);
-                    _volsGroupDao.addVolumeToGroup(vm.getId(),volumeToAttach.getId(),deviceId,groupNumber);
+                    _volsGroupDao.addVolumeToGroup(vm.getId(), volumeToAttach.getId(), deviceId,groupNumber);
 
                     volumeToAttach = _volsDao.findById(volumeToAttach.getId());
 
