@@ -43,7 +43,7 @@ jobs:
       - name: Kick UI Build
         if: steps.ui-changes.outputs.any_changed == 'true'
         run: |
-          curl -s -H "Authorization: token ${{ secrets.ASF_CI_TOKEN }}" \
+          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
             -X POST -d '{"body": "Detected UI changes, kicking a new QA UI build\n@blueorangutan ui"}' \
             "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
 
@@ -75,6 +75,6 @@ jobs:
       - name: Comment PR Coverage Report
         if: steps.java-changes.outputs.any_changed == 'true'
         run: |
-          curl -s -H "Authorization: token ${{ secrets.ASF_CI_TOKEN }}" \
+          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
             -X POST -d '{"body": "PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"}' \
             "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
