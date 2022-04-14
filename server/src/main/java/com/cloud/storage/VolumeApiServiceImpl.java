@@ -57,10 +57,12 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -2639,6 +2641,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volume.getPoolId() != null) {
                 DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
                 volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+                provideVMInfo(dataStore, vmId, volumeId);
             }
             if (volumePool != null && hostId != null) {
                 handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
@@ -3884,12 +3887,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (attached) {
                 ev = Volume.Event.OperationSucceeded;
                 s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
+                provideVMInfo(dataStore, vm.getId(), volInfo.getId());
             } else {
                 s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
             }
             volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
+    }
+
+    private void provideVMInfo(DataStore dataStore, long vmId, Long volumeId) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.isVmInfoNeeded()) {
+                storageDriver.provideVmInfo(vmId, volumeId);
+            }
+        }
     }
 
     private int getMaxDataVolumesSupported(UserVmVO vm) {
