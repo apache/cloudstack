@@ -1114,6 +1114,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
 
         BackupOfferingVO response = backupOfferingDao.findById(id);
+
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
