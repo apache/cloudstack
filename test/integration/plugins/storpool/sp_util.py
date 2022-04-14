@@ -410,16 +410,16 @@ class StorPoolHelper():
         """ Get destination pool which has scope same as migrateto
         and which is not in avoid set
         """
-    
+
         destinationPool = None
-    
+
         # Get Storage Pool Id to migrate to
         for storagePool in pools:
             if storagePool.scope == migrateto:
                 if storagePool.name not in poolsToavoid:
                     destinationPool = storagePool
                     break
-    
+
         return destinationPool
 
     @classmethod
@@ -449,7 +449,7 @@ class StorPoolHelper():
         cmd.securitygroupid = id
         cmd.account = account
         cmd.domainid = domainid
-        
+
         apiclient.authorizeSecurityGroupIngress(cmd)
 
         cmd.protocol = 'ICMP'
@@ -466,7 +466,7 @@ class StorPoolHelper():
         """
         This method is to migrate a VM using migrate virtual machine API
         """
-    
+
         vm.migrate(
             apiclient,
             hostid=destinationHost.id,
@@ -493,7 +493,7 @@ class StorPoolHelper():
                    4. pools -> list of destination pools
         """
         vol_pool_map = {vol.id: pool.id for vol in volumes}
-    
+
         cmd = migrateVirtualMachineWithVolume.migrateVirtualMachineWithVolumeCmd()
         cmd.hostid = destinationHost.id
         cmd.migrateto = []
@@ -514,7 +514,7 @@ class StorPoolHelper():
         assert isinstance(migrated_vm_response, list), "Check list virtual machines response for valid list"
 
         assert migrated_vm_response[0].hostid == destinationHost.id, "VM did not migrate to a specified host"
-    
+
         for vol in volumes:
             migrated_volume_response = list_volumes(
                 apiclient,
@@ -523,9 +523,9 @@ class StorPoolHelper():
                 listall=True)
             assert isinstance(migrated_volume_response, list), "Check list virtual machines response for valid list"
             assert migrated_volume_response[0].storageid == pool.id, "Volume did not migrate to a specified pool"
-    
+
             assert str(migrated_volume_response[0].state).lower().eq('ready'), "Check migrated volume is in Ready state"
-    
+
             return migrated_vm_response[0]
 
     @classmethod
@@ -683,7 +683,7 @@ class StorPoolHelper():
             cmd.diskofferingid = disk_offering.id
         if size:
             cmd.size = size
-        
+
         if maxiops:
             cmd.maxiops = maxiops
         if miniops:

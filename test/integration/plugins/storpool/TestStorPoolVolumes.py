@@ -229,7 +229,7 @@ class TestStoragePool(cloudstackTestCase):
             cls.apiclient,
             name="Large"
             )
-        
+
 
         cls.disk_offerings = disk_offerings[0]
         cls.disk_offering_20 = disk_offering_20[0]
@@ -824,7 +824,7 @@ class TestStoragePool(cloudstackTestCase):
                             flag = True
                 except spapi.ApiError as err:
                     flag = False
-    
+
             if flag is True:
                 raise Exception("Snapshot was not deleted")
         except Exception as err:
@@ -913,12 +913,12 @@ class TestStoragePool(cloudstackTestCase):
                             flag = True
                 except spapi.ApiError as err:
                     flag = False
-    
+
             if flag is True:
                 raise Exception("Snapshot was not deleted")
         except Exception as err:
             self.debug('Snapshot was deleted %s' % err)
-            
+
 
         Template.delete(template, self.apiclient, zoneid = self.zone.id)
 
@@ -1744,7 +1744,7 @@ class TestStoragePool(cloudstackTestCase):
             )
 
         self.assertIsNotNone(self.volume, "Detach: Is none")
- 
+
         snapshot = Snapshot.create(
             self.apiclient,
             self.volume.id,
@@ -2052,10 +2052,10 @@ class TestStoragePool(cloudstackTestCase):
 
         if snapshotid:
             cmd.snapshotid = snapshotid
-        
+
         if account:
             cmd.account=account
-        
+
         if domainid:
             cmd.domainid=domainid
         return Volume(apiclient.createVolume(cmd).__dict__)
@@ -2150,4 +2150,4 @@ class TestStoragePool(cloudstackTestCase):
         auth = cfg['SP_AUTH_TOKEN']
         return host, int(port), auth
 
-        
+
