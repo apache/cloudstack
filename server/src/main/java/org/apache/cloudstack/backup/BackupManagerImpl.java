@@ -1112,6 +1112,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             LOG.warn(String.format("Couldn't update Backup offering [id: %s] with [%s].", id, String.join(", ", fields)));
         }
 
+
         BackupOfferingVO response = backupOfferingDao.findById(id);
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
