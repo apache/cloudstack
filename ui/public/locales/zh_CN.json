@@ -93,7 +93,7 @@
 "label.action.delete.network": "\u5220\u9664\u7f51\u7edc",
 "label.action.delete.network.processing": "\u6b63\u5728\u5220\u9664\u7f51\u7edc...",
 "label.action.delete.nexusvswitch": "\u5220\u9664 Nexus 1000v",
-"label.action.delete.nic": "\u79fb\u9664 NIC",
+"label.action.remove.nic": "\u79fb\u9664 NIC",
 "label.action.delete.physical.network": "\u5220\u9664\u7269\u7406\u7f51\u7edc",
 "label.action.delete.pod": "\u5220\u9664\u63d0\u4f9b\u70b9",
 "label.action.delete.pod.processing": "\u6b63\u5728\u5220\u9664\u63d0\u4f9b\u70b9...",

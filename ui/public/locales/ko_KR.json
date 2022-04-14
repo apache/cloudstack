@@ -112,7 +112,7 @@
 "label.action.delete.network": "\ub124\ud2b8\uc6cc\ud06c \uc0ad\uc81c",
 "label.action.delete.network.processing": "\ub124\ud2b8\uc6cc\ud06c\ub97c \uc0ad\uc81c\ud558\ub294 \uc911...",
 "label.action.delete.nexusvswitch": "Nexus 1000V \uc0ad\uc81c",
-"label.action.delete.nic": "NIC \uc81c\uac70",
+"label.action.remove.nic": "NIC \uc81c\uac70",
 "label.action.delete.physical.network": "\ubb3c\ub9ac \ub124\ud2b8\uc6cc\ud06c \uc0ad\uc81c",
 "label.action.delete.pod": "Pod \uc0ad\uc81c",
 "label.action.delete.pod.processing": "Pod\ub97c \uc0ad\uc81c\ud558\ub294 \uc911...",

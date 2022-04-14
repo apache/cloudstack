@@ -112,7 +112,7 @@
 "label.action.delete.network" : "Διαγραφή δικτύου",
 "label.action.delete.network.processing" : "Διαγραφή δικτύου....",
 "label.action.delete.nexusvswitch" : "Διαγραφή Nexus 1000v",
-"label.action.delete.nic" : "Κατάργηση nic",
+"label.action.remove.nic" : "Κατάργηση nic",
 "label.action.delete.physical.network" : "Διαγραφή φυσικού δικτύου",
 "label.action.delete.pod" : "Διαγραφή υποομάδας",
 "label.action.delete.pod.processing" : "Η υποομάδα διαγραφεται ....",

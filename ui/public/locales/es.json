@@ -93,7 +93,7 @@
 "label.action.delete.network": "Eliminar Red",
 "label.action.delete.network.processing": "Eliminando Red ....",
 "label.action.delete.nexusvswitch": "Eliminar Nexus 1000v",
-"label.action.delete.nic": "Quitar NIC",
+"label.action.remove.nic": "Quitar NIC",
 "label.action.delete.physical.network": "Eliminar red f\u00edsica",
 "label.action.delete.pod": "Eliminar Pod",
 "label.action.delete.pod.processing": "Eliminando Pod ....",

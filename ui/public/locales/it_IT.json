@@ -93,7 +93,7 @@
 "label.action.delete.network": "Cancellazione Rete",
 "label.action.delete.network.processing": "Cancellazione Rete in corso....",
 "label.action.delete.nexusvswitch": "Cancellare Nexus 1000v",
-"label.action.delete.nic": "Rimuovi NIC",
+"label.action.remove.nic": "Rimuovi NIC",
 "label.action.delete.physical.network": "Cancellazione di una rete fisica",
 "label.action.delete.pod": "Cancellazione Pod",
 "label.action.delete.pod.processing": "Cancellazione Pod in corso....",

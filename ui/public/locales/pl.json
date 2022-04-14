@@ -93,7 +93,7 @@
 "label.action.delete.network": "Usu\u0144 sie\u0107",
 "label.action.delete.network.processing": "Usuwam sie\u0107....",
 "label.action.delete.nexusvswitch": "Usu\u0144 Nexus 1000v",
-"label.action.delete.nic": "Remove NIC",
+"label.action.remove.nic": "Remove NIC",
 "label.action.delete.physical.network": "Usu\u0144 fizyczn\u0105 sie\u0107",
 "label.action.delete.pod": "Delete Pod",
 "label.action.delete.pod.processing": "Deleting Pod....",

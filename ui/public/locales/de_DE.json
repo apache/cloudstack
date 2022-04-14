@@ -107,7 +107,7 @@
 "label.action.delete.network": "Löschen des Netzwerks",
 "label.action.delete.network.processing": "Netzwerk wird gelöscht....",
 "label.action.delete.nexusvswitch": "Nexus 1000v löschen",
-"label.action.delete.nic": "NIC entfernen",
+"label.action.remove.nic": "NIC entfernen",
 "label.action.delete.physical.network": "Physikalisches Netzwerk löschen",
 "label.action.delete.pod": "Pod löschen",
 "label.action.delete.pod.processing": "Pod wird gelöscht....",

@@ -93,7 +93,7 @@
 "label.action.delete.network": "Supprimer le r\u00e9seau",
 "label.action.delete.network.processing": "Suppression du r\u00e9seau...",
 "label.action.delete.nexusvswitch": "Supprimer le Nexus 1000v",
-"label.action.delete.nic": "Supprimer carte NIC",
+"label.action.remove.nic": "Supprimer carte NIC",
 "label.action.delete.physical.network": "Supprimer le r\u00e9seau physique",
 "label.action.delete.pod": "Supprimer le Pod",
 "label.action.delete.pod.processing": "Suppression du pod...",

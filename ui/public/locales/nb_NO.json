@@ -93,7 +93,7 @@
 "label.action.delete.network": "Slett nettverk",
 "label.action.delete.network.processing": "Sletter nettverk....",
 "label.action.delete.nexusvswitch": "Slett Nexus 1000v",
-"label.action.delete.nic": "Fjern NIC",
+"label.action.remove.nic": "Fjern NIC",
 "label.action.delete.physical.network": "Slett fysisk nettverk",
 "label.action.delete.pod": "Slett pod",
 "label.action.delete.pod.processing": "Sletter pod....",

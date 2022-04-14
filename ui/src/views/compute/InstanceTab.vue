@@ -103,7 +103,7 @@
             >
               <tooltip-button
                 tooltipPlacement="bottom"
-                :tooltip="$t('label.action.delete.nic')"
+                :tooltip="$t('label.action.remove.nic')"
                 :disabled="!('removeNicFromVirtualMachine' in $store.getters.apis)"
                 type="primary"
                 :danger="true"

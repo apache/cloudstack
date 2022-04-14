@@ -93,7 +93,7 @@
 "label.action.delete.network": "Verwijder Netwerk",
 "label.action.delete.network.processing": "Bezig met verwijderen van Netwerk....",
 "label.action.delete.nexusvswitch": "Verwijder Nexus 1000v",
-"label.action.delete.nic": "Verwijder netwerkkaart",
+"label.action.remove.nic": "Verwijder netwerkkaart",
 "label.action.delete.physical.network": "Verwijder fysiek netwerk",
 "label.action.delete.pod": "Verwijder Pod",
 "label.action.delete.pod.processing": "Bezig met verwijderen van Pod....",

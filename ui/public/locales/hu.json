@@ -93,7 +93,7 @@
 "label.action.delete.network": "H\u00e1l\u00f3zat t\u00f6rl\u00e9se",
 "label.action.delete.network.processing": "H\u00e1l\u00f3zat t\u00f6rl\u00e9se...",
 "label.action.delete.nexusvswitch": "Nexus 1000v t\u00f6rl\u00e9se",
-"label.action.delete.nic": "NIC elt\u00e1vol\u00edt\u00e1sa",
+"label.action.remove.nic": "NIC elt\u00e1vol\u00edt\u00e1sa",
 "label.action.delete.physical.network": "Fizikai h\u00e1l\u00f3zat t\u00f6rl\u00e9se",
 "label.action.delete.pod": "Pod t\u00f6rl\u00e9se",
 "label.action.delete.pod.processing": "Pod t\u00f6rl\u00e9se...",
