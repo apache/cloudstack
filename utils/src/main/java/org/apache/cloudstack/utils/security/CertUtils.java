@@ -246,6 +246,7 @@ public class CertUtils {
         } else {
             cert.verify(caKeyPair.getPublic());
         }
+
         return cert;
     }
 }
