@@ -17,7 +17,7 @@
 
 name: PR Quality Check
 
-on: [pull_request]
+on: [pull_request_target]
 
 jobs:
   build:
@@ -26,27 +26,55 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Changed Java Files
+        id: java-changes
+        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
+        with:
+          files: |
+            **/*.java
+
+      - name: Changed UI Files
+        id: ui-changes
+        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
+        with:
+          files: |
+            ui/*
+
+      - name: Kick UI Build
+        if: steps.ui-changes.outputs.any_changed == 'true'
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
+            -X POST -d '{"body": "UI changes found, kicking a new QA UI build\n@blueorangutan ui"}' \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+
       - name: Set up JDK11
         uses: actions/setup-java@v3
+        if: steps.java-changes.outputs.any_changed == 'true'
         with:
           distribution: 'temurin'
           java-version: '11'
           cache: 'maven'
 
-      - name: Install nonoss jar dependencies
+      - name: Run Build and Tests with Coverage
+        id: coverage
+        if: steps.java-changes.outputs.any_changed == 'true'
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
+          mvn -P quality -Dsimulator -Dnoredist clean install
 
-      - name: Run Build and Tests with Coverage
-        run: mvn -P quality -Dsimulator -Dnoredist clean install
+          echo "COVERAGE<<EOF" >> $GITHUB_ENV
+          for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
+            name=$(basename $file | sed 's/.java//g')
+            coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv | cut -f3-9 -d"," | sed 's/,/|/g')
+            echo $coverage
+            echo "|$coverage|" >> $GITHUB_ENV
+          done
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Generate JaCoCo Report
-        uses: Madrapps/jacoco-report@fd4800e8a81e21bdf373438e5918b975df041d15
-        with:
-          paths: ${{ github.workspace }}/client/target/site/jacoco-aggregate/jacoco.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 10
-          min-coverage-changed-files: 80
-          title: PR Code Coverage
-          debug-mode: false
+      - name: Comment PR Coverage Report
+        if: steps.java-changes.outputs.any_changed == 'true'
+        run: |
+          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
+            -X POST -d '{"body": "PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"}' \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
