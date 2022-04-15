@@ -1705,6 +1705,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean volumeMigrateRequired = false;
         boolean volumeResizeRequired = false;
 
+        // Skip the Disk offering change on Volume if Disk Offering is the same and is linked to a custom Service Offering
+        if(isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering)) {
+            s_logger.debug(String.format("Scaling CPU and/or Memory of VM with custom service offering. New disk offering stills the same. Skipping the Disk offering change on Volume %s.", volume.getUuid()));
+            return volume;
+        }
+
         // VALIDATIONS
         Long[] updateNewSize = {newSize};
         Long[] updateNewMinIops = {newMinIops};
@@ -1794,6 +1800,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    /**
+     * Returns true if the new disk offering is the same than current offering, and the respective Service offering is a custom (constraint or unconstraint) offering.
+     */
+    protected boolean isNewDiskOfferingTheSameAndCustomServiceOffering(DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) {
+        if (newDiskOffering.getId() == existingDiskOffering.getId()) {
+            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(newDiskOffering.getId());
+            if (serviceOffering != null && serviceOffering.isCustomized()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
@@ -1896,11 +1915,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (newDiskOffering.getId() == existingDiskOffering.getId()) {
-            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided", volume.getUuid(), existingDiskOffering.getUuid()));
+            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided.", volume.getUuid(), existingDiskOffering.getUuid()));
         }
 
         if (existingDiskOffering.getDiskSizeStrictness() != newDiskOffering.getDiskSizeStrictness()) {
-            throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering");
+            throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering.");
         }
 
         if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {

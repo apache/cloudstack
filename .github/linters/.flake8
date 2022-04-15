@@ -16,4 +16,4 @@
 # under the License.
 
 [flake8]
-select = W291
+select = W291,W293

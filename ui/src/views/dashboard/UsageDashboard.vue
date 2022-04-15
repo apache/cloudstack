@@ -252,7 +252,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .usage-dashboard {
+  :deep(.usage-dashboard) {
 
     &-chart-tile {
       margin-bottom: 12px;

@@ -247,7 +247,7 @@ class TestMigrateVolumeToAnotherPool(cloudstackTestCase):
         cls.storage_pool = StoragePool.update(cls.apiclient,
                                               id=cls.storage_pool.id,
                                               tags = ["ssd, nfs"])
-        
+
 
         if template == FAILED:
             assert False, "get_template() failed to return template\

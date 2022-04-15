@@ -2575,7 +2575,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         HostMO hostMo = vmMo.getRunningHost();
                         List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
 
-                        // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
+                        // tear down all devices first before we destroy the VM to avoid accidentally delete disk backing files
                         if (VmwareResource.getVmState(vmMo) != PowerState.PowerOff) {
                             vmMo.safePowerOff(_shutdownWaitMs);
                         }

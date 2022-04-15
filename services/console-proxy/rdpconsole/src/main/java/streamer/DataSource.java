@@ -37,7 +37,7 @@ public interface DataSource {
     void pushBack(ByteBuffer buf);
 
     /**
-     * Hold data temporary to use at next pull. Don't return abything untill given
+     * Hold data temporary to use at next pull. Don't return abything until given
      * amount of data will be read from source, because data will be pushed back
      * anyway.
      *

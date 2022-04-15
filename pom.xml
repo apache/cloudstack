@@ -50,6 +50,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.version>4.16.1.0</project.systemvm.template.version>
+        <sonar.organization>apachecloudstack</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
