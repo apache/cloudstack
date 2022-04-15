@@ -41,6 +41,7 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	install -D plugins/storage/volume/storpool/target/cloud-plugin-storage-volume-storpool-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service

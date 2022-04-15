@@ -99,6 +99,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-storage-volume-storpool</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
             <artifactId>cloud-server</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -755,6 +760,12 @@
                                     <artifactId>bcpkix-jdk15on</artifactId>
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${project.build.directory}/lib</outputDirectory>
+			        </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.apache.cloudstack</groupId>
+                                    <artifactId>cloud-plugin-storage-volume-storpool</artifactId>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.bouncycastle</groupId>
@@ -799,6 +810,7 @@
                                     <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
                                     <exclude>org.bouncycastle:bctls-jdk15on</exclude>
                                     <exclude>mysql:mysql-connector-java</exclude>
+                                    <exclude>org.apache.cloudstack:cloud-plugin-storage-volume-storpool</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
