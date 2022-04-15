@@ -1116,7 +1116,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
-
     }
 
 }
