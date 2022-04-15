@@ -101,7 +101,7 @@ public class InputStreamSource extends BaseElement {
             }
 
             // Create buffer of recommended size and with default offset
-            ByteBuffer buf = new ByteBuffer(incommingBufLength);
+            ByteBuffer buf = new ByteBuffer(incomingBufLength);
 
             if (verbose)
                 System.out.println("[" + this + "] INFO: Reading data from stream.");
