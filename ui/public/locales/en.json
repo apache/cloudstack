@@ -3476,7 +3476,7 @@
 "message.volume.state.resizing": "The volume is being resized",
 "message.volume.state.revertsnapshotting": "There is a snapshot created on this volume, the volume is being reverting from snapshot",
 "message.volume.state.snapshotting": "There is a snapshot created on this volume, not backed up to secondary storage yet",
-"message.volume.state.uploadabandoned": "Volume upload is abandoned since the upload was never initiated within a specificed time",
+"message.volume.state.uploadabandoned": "Volume upload is abandoned since the upload was never initiated within a specified time",
 "message.volume.state.uploaded": "Volume is uploaded",
 "message.volume.state.uploaderror": "Volume upload encountered some error",
 "message.volume.state.uploadinprogress": "Volume upload is in progress",

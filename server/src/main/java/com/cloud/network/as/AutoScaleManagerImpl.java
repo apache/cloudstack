@@ -537,7 +537,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     for (ConditionVO condition : conditions) {
                         if (counterIds.contains(condition.getCounterid())) {
                             throw new InvalidParameterValueException(
-                                "atleast two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
+                                "at least two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
                         }
                         counterIds.add(condition.getCounterid());
                     }

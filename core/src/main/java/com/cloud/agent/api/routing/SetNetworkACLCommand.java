@@ -57,7 +57,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
              */
             if (aclTO.revoked() == true) {
                 final StringBuilder sb = new StringBuilder();
-                /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
+                /* This entry is added just to make sure at least there will one entry in the list to get the ipaddress */
                 sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:");
                 final String aclRuleEntry = sb.toString();
                 result[0][i++] = aclRuleEntry;

@@ -256,7 +256,7 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
         self.assertEqual(
                     hasattr(vm_response, "securitygroup"),
                     True,
-                    "List VM response should have atleast one security group"
+                    "List VM response should have at least one security group"
                     )
 
         # Verify listSecurity groups response
