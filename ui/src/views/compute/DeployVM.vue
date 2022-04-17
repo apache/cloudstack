@@ -568,6 +568,25 @@
                         v-model:value="form.userdata">
                       </a-textarea>
                     </a-form-item>
+                    <a-step
+                      v-if="isUserAllowedToListUserDatas"
+                      :title="this.$t('label.user.data')"
+                      :status="zoneSelected ? 'process' : 'wait'">
+                      <template #description>
+                        <div v-if="zoneSelected">
+                          <user-data-selection
+                            :items="options.userDatas"
+                            :row-count="rowCount.userDatas"
+                            :zoneId="zoneId"
+                            :value="userData ? userData.id : ''"
+                            :loading="loading.userDatas"
+                            :preFillContent="dataPreFill"
+                            @select-user-data-item="($event) => updateUserDatas($event)"
+                            @handle-search-filter="($event) => handleSearchFilter('userData', $event)"
+                          />
+                        </div>
+                      </template>
+                    </a-step>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -697,6 +716,7 @@ import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
+import UserDataSelection from '@views/compute/wizard/UserDataSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
@@ -706,6 +726,7 @@ export default {
   name: 'Wizard',
   components: {
     SshKeyPairSelection,
+    UserDataSelection,
     NetworkConfiguration,
     NetworkSelection,
     AffinityGroupSelection,
@@ -768,6 +789,7 @@ export default {
         affinityGroups: [],
         networks: [],
         sshKeyPairs: [],
+        UserDatas: [],
         pods: [],
         clusters: [],
         hosts: [],
@@ -788,6 +810,7 @@ export default {
         affinityGroups: false,
         networks: false,
         sshKeyPairs: false,
+        userDatas: false,
         zones: false,
         pods: false,
         clusters: false,
@@ -813,6 +836,7 @@ export default {
       zone: {},
       sshKeyPairs: [],
       sshKeyPair: {},
+      userData: {},
       overrideDiskOffering: {},
       templateFilter: [
         'featured',
@@ -919,6 +943,15 @@ export default {
         },
         sshKeyPairs: {
           list: 'listSSHKeyPairs',
+          options: {
+            page: 1,
+            pageSize: 10,
+            keyword: undefined,
+            listall: false
+          }
+        },
+        userDatas: {
+          list: 'listUserData',
           options: {
             page: 1,
             pageSize: 10,
@@ -1088,6 +1121,9 @@ export default {
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
     },
+    isUserAllowedToListUserDatas () {
+      return Boolean('listUserData' in this.$store.getters.apis)
+    },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     },
@@ -1174,6 +1210,7 @@ export default {
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
+        this.userData = _.find(this.options.userDatas, (option) => option.name === instanceConfig.userdataid)
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
@@ -1644,6 +1681,13 @@ export default {
       this.form.keypairs = names
       this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
     },
+    updateUserDatas (id) {
+      if (id === '0') {
+        this.form.userdataid = undefined
+        return
+      }
+      this.form.userdataid = id
+    },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
     },
@@ -1830,6 +1874,7 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
+        deployVmData.userdataid = values.userdataid
 
         if (values.name) {
           deployVmData.name = values.name
