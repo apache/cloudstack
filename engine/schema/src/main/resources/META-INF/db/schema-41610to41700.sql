@@ -803,3 +803,6 @@ CREATE VIEW `cloud`.`vpc_offering_view` AS
         `cloud`.`vpc_offering_details` AS `offering_details` ON `offering_details`.`offering_id` = `vpc_offerings`.`id` AND `offering_details`.`name`='internetprotocol'
     GROUP BY
         `vpc_offerings`.`id`;
+
+ALTER TABLE `cloud`.`firewall_rules_cidrs` MODIFY COLUMN `source_cidr` varchar(43) DEFAULT NULL;
+ALTER TABLE `cloud`.`firewall_rules_dcidrs` MODIFY COLUMN `destination_cidr` varchar(43) DEFAULT NULL;

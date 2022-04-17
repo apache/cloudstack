@@ -458,15 +458,23 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         final List<String> sourceCidrList = cmd.getSourceCidrList();
         final List<String> destinationCidrList = cmd.getDestinationCidrList();
 
+        for (String cidr : sourceCidrList) {
+            if (!NetUtils.isValidIp6Cidr(cidr)) {
+                throw new InvalidParameterValueException(String.format("Invalid source IPv6 CIDR: %s", cidr));
+            }
+        }
+        for (String cidr : destinationCidrList) {
+            if (!NetUtils.isValidIp6Cidr(cidr)) {
+                throw new InvalidParameterValueException(String.format("Invalid destination IPv6 CIDR: %s", cidr));
+            }
+        }
         if (portStart != null && !NetUtils.isValidPort(portStart)) {
             throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
         }
         if (portEnd != null && !NetUtils.isValidPort(portEnd)) {
             throw new InvalidParameterValueException("Public port range is an invalid value: " + portEnd);
         }
-
-        // start port can't be bigger than end port
-        if (portStart != null && portEnd != null && portStart > portEnd) {
+        if (ObjectUtils.allNotNull(portStart, portEnd) && portStart > portEnd) {
             throw new InvalidParameterValueException("Start port can't be bigger than end port");
         }
 

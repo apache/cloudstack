@@ -42,6 +42,7 @@ from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
 ICMPV6_TYPE_ANY = "{destination-unreachable, packet-too-big, time-exceeded, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, parameter-problem, router-renumbering}"
+TCP_UDP_PORT_ANY = "{0-65535}"
 
 def removeUndesiredCidrs(cidrs, version):
     version_char = ":"
@@ -304,7 +305,7 @@ class CsAcl(CsDataBag):
                 if direction == "ingress":
                     saddr = "ip6 saddr " + rule['cidr']
                 else:
-                    saddr = "ip6 daddr " + rule['cidr']
+                    daddr = "ip6 daddr " + rule['cidr']
 
                 proto = ""
                 protocol = rule['type']
@@ -336,6 +337,8 @@ class CsAcl(CsDataBag):
                     if last_port and port and \
                        last_port != first_port:
                         port = "{%s-%s}" % (port, last_port)
+                    if (protocol == "tcp" or protocol == "udp") and not port:
+                        port = TCP_UDP_PORT_ANY
                     if port:
                         proto = "%s dport %s" % (proto, port)
 
@@ -355,7 +358,10 @@ class CsAcl(CsDataBag):
                     type = "chain"
                     rstr = action
                 logging.debug("Process IPv6 ACL rule %s" % rstr)
-                self.ipv6_acl.append({'type': type, 'chain': chain, 'rule': rstr})
+                if type == "chain":
+                    self.ipv6_acl.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
+                else:
+                    self.ipv6_acl.append({'type': type, 'chain': chain, 'rule': rstr})
 
         class AclRule():
 
@@ -475,7 +481,7 @@ class CsIpv6Firewall(CsDataBag):
                     dest_cidrs = dest_cidrs[0]
                 else:
                     dest_cidrs = "{" + (",".join(dest_cidrs)) + "}"
-                saddr = "ip6 daddr " + dest_cidrs
+                daddr = "ip6 daddr " + dest_cidrs
 
             proto = ""
             protocol = rule['protocol']
@@ -502,6 +508,8 @@ class CsIpv6Firewall(CsDataBag):
                 if last_port and port and \
                    last_port != first_port:
                     port = "{%s-%s}" % (port, last_port)
+                if (protocol == "tcp" or protocol == "udp") and not port:
+                    port = TCP_UDP_PORT_ANY
                 if port:
                     proto = "%s dport %s" % (proto, port)
 
@@ -536,7 +544,10 @@ class CsIpv6Firewall(CsDataBag):
                 type = "chain"
                 rstr = action
             logging.debug("Process IPv6 firewall rule %s" % rstr)
-            fw.append({'type': type, 'chain': chain, 'rule': rstr})
+            if type == "chain":
+                fw.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
+            else:
+                fw.append({'type': type, 'chain': chain, 'rule': rstr})
 
 
 class CsVmMetadata(CsDataBag):

@@ -253,7 +253,7 @@ class CsNetfilters(object):
                     CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-reply, nd-neighbor-solicit, nd-neighbor-advert} accept" % (address_family, table, chain))
             else:
                 logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
-                CsHelper.execute("nft add rule ip6 %s %s %s" % (table, chain, rule))
+                CsHelper.execute("nft add rule %s %s %s %s" % (address_family, table, chain, rule))
 
 
 class CsNetfilter(object):
