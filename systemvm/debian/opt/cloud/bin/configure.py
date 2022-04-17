@@ -313,14 +313,12 @@ class CsAcl(CsDataBag):
                     icmp_type = ""
                     proto = protocol
                     if proto == "icmp":
-                        proto = "icmpv6"
+                        proto = proto_str = "icmpv6"
                         icmp_type = ICMPV6_TYPE_ANY
-                    if 'icmp_type' in rule and rule['icmp_type'] != -1:
-                        icmp_type = rule['icmp_type']
-                    if proto and icmp_type:
-                        proto = proto + " type " + icmp_type
-                    if 'icmp_code' in rule and rule['icmp_code'] != -1:
-                        proto = proto + " code " + rule['icmp_code']
+                        if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                            proto = "%s type %d" % (proto_str, rule['icmp_type'])
+                        if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                            proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
 
                     if protocol == "protocol":
                         protocol = rule['protocol']
@@ -489,14 +487,12 @@ class CsIpv6Firewall(CsDataBag):
                 icmp_type = ""
                 proto = protocol
                 if proto == "icmp":
-                    proto = "icmpv6"
+                    proto = proto_str = "icmpv6"
                     icmp_type = ICMPV6_TYPE_ANY
-                if 'icmp_type' in rule and rule['icmp_type'] != -1:
-                    icmp_type = rule['icmp_type']
-                if proto and icmp_type:
-                    proto = proto + " type " + icmp_type
-                if 'icmp_code' in rule and rule['icmp_code'] != -1:
-                    proto = proto + " code " + rule['icmp_code']
+                    if 'icmp_type' in rule and rule['icmp_type'] != -1:
+                        proto = "%s type %d" % (proto_str, rule['icmp_type'])
+                    if 'icmp_code' in rule and rule['icmp_code'] != -1:
+                        proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
                 first_port = ""
                 last_port = ""
                 if 'src_port_range' in rule:
