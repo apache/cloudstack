@@ -768,7 +768,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
                 operation = "created";
             }
-            s_logger.debug(String.format("VM [id: %s, instanceName: %s] backup restore operation %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
+            s_logger.debug(String.format("Sync volumes to VM [id: %s, instanceName: %s] in backup restore operation: %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
                     operation, volume.getUuid()));
         }
     }
@@ -849,9 +849,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String tag = parts[parts.length - 1];
         String[] tagSplit = tag.split("-");
         tag = tagSplit[tagSplit.length - 1];
+
+        s_logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
         NetworkVO networkVO = _networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
+            s_logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
+                    networkVO.getUuid(), zoneId, tag, vlan, accountId, domainId));
         }
         return networkVO;
     }
@@ -863,6 +867,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Map<String, NetworkVO> mapping = new HashMap<>();
         for (String networkName : vmNetworkNames) {
             NetworkVO networkVO = getGuestNetworkFromNetworkMorName(networkName, accountId, zoneId, domainId);
+            s_logger.debug(String.format("Mapping network name [%s] to networkVO [id: %s].", networkName, networkVO.getUuid()));
             mapping.put(networkName, networkVO);
         }
         return mapping;
@@ -899,10 +904,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             NetworkVO networkVO = networksMapping.get(networkName);
             NicVO nicVO = _nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
             if (nicVO != null) {
+                s_logger.warn(String.format("Can't find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from VM [id: %s, name: %s].",
+                        networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
             }
         }
         for (final NicVO unMappedNic : allNics) {
+            s_logger.debug(String.format("Removing NIC [id: %s, MAC: %s] from backup restored VM [id: %s, name: %s].",
+                    unMappedNic.getUuid(), unMappedNic.getMacAddress(), vm.getUuid(), vm.getInstanceName()));
             vmManager.removeNicFromVm(vm, unMappedNic);
         }
     }
