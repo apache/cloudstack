@@ -17,7 +17,7 @@
 
 name: PR Quality Check
 
-on: [pull_request]
+on: [pull_request_target]
 
 jobs:
   build:
@@ -25,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
 
       - name: Changed Java Files
         id: java-changes
