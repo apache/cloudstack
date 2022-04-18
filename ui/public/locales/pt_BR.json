@@ -1,7 +1,7 @@
 {
 "alert.service.domainrouter": "Roteador do dom\u00ednio",
 "changed.item.properties": "Propriedades do item alteradas",
-"confirm.enable.s3": "Por favor, preencha as informa\u00e7\u00f5es abaixo para habilitar suporte ao Armazenamento Secund\u00e1rio fornecido pelo S3",
+"confirm.enable.s3": "Por favor, preencha as informa\u00e7\u00f5es abaixo para habilitar o suporte ao Armazenamento Secund\u00e1rio fornecido pelo S3",
 "confirm.enable.swift": "Por favor, preencha as informa\u00e7\u00f5es abaixo para habilitar suporte ao Swift",
 "error.could.not.change.your.password.because.non.native.user": "Erro: n\u00e3o foi poss\u00edvel alterar a sua senha pois o seu usu\u00e1rio n\u00e3o \u00e9 um usu\u00e1rio nativo do CloudStack.",
 "error.could.not.enable.zone": "N\u00e3o foi poss\u00edvel habilitar a zona",
@@ -3203,7 +3203,7 @@
 "message.role.update.fail": "Failed updating rule permission",
 "message.scale.processing": "Scale in progress",
 "message.security.group.usage": "(Use <strong>Ctrl-clique</strong> para selecionar todos os grupos de seguran\u00e7a)",
-"message.select.a.zone": "A zona tipicamente corresponde a um \u00fanico datacenter. M\u00faltiplas zonas auxiliam a cloud a ser mais confi\u00e1vel provendo isolamento f\u00edsico e redund\u00e2ncia.",
+"message.select.a.zone": "A zona tipicamente corresponde a um \u00fanico datacenter. M\u00faltiplas zonas auxiliam a nuvem a ser mais confi\u00e1vel provendo isolamento f\u00edsico e redund\u00e2ncia.",
 "message.select.affinity.groups": "Por favor, selecione quaisquer Grupos de Afinidade que voc\u00ea deseja que esta VM perten\u00e7a:",
 "message.select.destination.image.stores": "Por favor, selecione o(s) armazenamento(s) de imagem(ns) para os quais os dados devem ser migrados",
 "message.select.disk.offering": "Por favor, selecione uma Oferta de Disco para o disco",
