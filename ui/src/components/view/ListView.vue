@@ -283,7 +283,7 @@
       <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
-    <template #readonly="{ record }">
+    <template #access="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
     <template #requiresupgrade="{ record }">
@@ -764,7 +764,7 @@ export default {
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },

@@ -750,7 +750,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -805,7 +805,7 @@ export default {
         let title = columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.field
+            key = columnKey.customTitle
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -1455,7 +1455,7 @@ export default {
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },
