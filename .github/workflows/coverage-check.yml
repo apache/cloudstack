@@ -30,8 +30,8 @@ jobs:
           fetch-depth: 0
 
       - name: Debug Github event
-        run: |
-          echo "${{ toJson(github) }}"
+        env: { CONTENT : "${{ toJson(github) }}" }
+        run: "echo $CONTENT"
 
       - name: Changed Java Files
         id: java-changes
