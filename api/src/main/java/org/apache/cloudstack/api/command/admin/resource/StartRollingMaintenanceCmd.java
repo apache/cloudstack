@@ -17,17 +17,13 @@
 
 package org.apache.cloudstack.api.command.admin.resource;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.resource.RollingMaintenanceManager;
-import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -41,8 +37,15 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.List;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.resource.RollingMaintenanceManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 @APICommand(name = StartRollingMaintenanceCmd.APINAME, description = "Start rolling maintenance",
         responseObject = RollingMaintenanceResponse.class,
@@ -174,5 +177,37 @@ public class StartRollingMaintenanceCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         Pair<RollingMaintenanceManager.ResourceType, List<Long>> pair = manager.getResourceTypeIdPair(this);
         return "Starting rolling maintenance on entity: " + pair.first() + " with IDs: " + pair.second();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        String eventType = getEventType();
+        switch (eventType) {
+            case EventTypes.EVENT_ZONE_ROLLING_MAINTENANCE:
+                return getZoneIds().get(0);
+            case EventTypes.EVENT_POD_ROLLING_MAINTENANCE:
+                return getPodIds().get(0);
+            case EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE:
+                return getClusterIds().get(0);
+            case EventTypes.EVENT_HOST_ROLLING_MAINTENANCE:
+                return getHostIds().get(0);
+        }
+        return null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        String eventType = getEventType();
+        switch (eventType) {
+            case EventTypes.EVENT_ZONE_ROLLING_MAINTENANCE:
+                return ApiCommandResourceType.Zone;
+            case EventTypes.EVENT_POD_ROLLING_MAINTENANCE:
+                return ApiCommandResourceType.Pod;
+            case EventTypes.EVENT_CLUSTER_ROLLING_MAINTENANCE:
+                return ApiCommandResourceType.Cluster;
+            case EventTypes.EVENT_HOST_ROLLING_MAINTENANCE:
+                return ApiCommandResourceType.Host;
+        }
+        return null;
     }
 }

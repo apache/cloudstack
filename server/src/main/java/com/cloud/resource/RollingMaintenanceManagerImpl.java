@@ -134,12 +134,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         Pair<ResourceType, List<Long>> pair = getResourceTypeIdPair(cmd);
         ResourceType entity = pair.first();
         List<Long> ids = pair.second();
-
+        String cmdResourceType = ApiCommandResourceType.fromString(entity.name()) != null ? ApiCommandResourceType.fromString(entity.name()).toString() : null;
         String description = String.format("Success: %s, details: %s, hosts updated: %s, hosts skipped: %s", success, details,
                 generateReportHostsUpdated(hostsUpdated), generateReportHostsSkipped(hostsSkipped));
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                 EventVO.LEVEL_INFO, cmd.getEventType(),
-                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, null, ApiCommandResourceType.Host.toString(), 0);
+                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, ids.get(0), cmdResourceType, 0);
     }
 
     private String generateReportHostsUpdated(List<HostUpdated> hostsUpdated) {

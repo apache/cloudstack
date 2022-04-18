@@ -150,8 +150,22 @@ public class GetDiagnosticsDataCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.SystemVm;
+    public Long getApiResourceId() {
+        return getId();
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+
+        VirtualMachine.Type vmType = _entityMgr.findById(VirtualMachine.class, getId()).getType();
+        switch (vmType) {
+            case ConsoleProxy:
+                return ApiCommandResourceType.ConsoleProxy;
+            case SecondaryStorageVm:
+                return ApiCommandResourceType.SystemVm;
+            case DomainRouter:
+                return ApiCommandResourceType.DomainRouter;
+        }
+        return null;
+    }
 }
