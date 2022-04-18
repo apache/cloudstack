@@ -29,11 +29,16 @@ jobs:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0
 
+      - name: Debug Github event
+        run: |
+          echo "${{ toJson(github) }}"
+
       - name: Changed Java Files
         id: java-changes
         uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
-          use_fork_point: "true"
+          sha: "refs/pull/${{ github.event.number }}/merge"
+          base_sha: "${{ github.event.pull_request.base.ref }}"
           files: |
             **/*.java
 
