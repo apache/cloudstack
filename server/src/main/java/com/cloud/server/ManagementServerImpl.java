@@ -2455,7 +2455,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("state", IpAddress.State.Allocated);
         }
 
-        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() || isAllocated) {
+        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() && IpAddress.State.Free.name().equalsIgnoreCase(state)) {
             sc.setParameters("forsystemvms", false);
         }
     }

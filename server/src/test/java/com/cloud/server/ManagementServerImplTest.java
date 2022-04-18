@@ -35,6 +35,7 @@ import org.powermock.reflect.Whitebox;
 
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.user.Account;
@@ -131,30 +132,54 @@ public class ManagementServerImplTest {
     }
 
     @Test
-    public void setParametersTestWhenIsAllocatedIsFalselAndSystemVmPublicIsTrue() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
+    public void setParametersTestWhenStateIsFreeAndSystemVmPublicIsTrue() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
         Mockito.when(mockConfig.value()).thenReturn(Boolean.TRUE);
 
-        ListPublicIpAddressesCmd cmd = new ListPublicIpAddressesCmd();
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getNetworkId()).thenReturn(10L);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getIpAddress()).thenReturn(null);
+        Mockito.when(cmd.getPhysicalNetworkId()).thenReturn(null);
+        Mockito.when(cmd.getVlanId()).thenReturn(null);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.isSourceNat()).thenReturn(null);
+        Mockito.when(cmd.isStaticNat()).thenReturn(null);
+        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
+        Mockito.when(cmd.getTags()).thenReturn(null);
         spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("display", true);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
         Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
     }
 
     @Test
-    public void setParametersTestWhenIsAllocatedIsFalseAndSystemVmPublicIsFalse() {
+    public void setParametersTestWhenStateIsFreeAndSystemVmPublicIsFalse() {
         Mockito.when(mockConfig.value()).thenReturn(Boolean.FALSE);
-        ListPublicIpAddressesCmd cmd = new ListPublicIpAddressesCmd();
+        ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
+        Mockito.when(cmd.getNetworkId()).thenReturn(10L);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getIpAddress()).thenReturn(null);
+        Mockito.when(cmd.getPhysicalNetworkId()).thenReturn(null);
+        Mockito.when(cmd.getVlanId()).thenReturn(null);
+        Mockito.when(cmd.getId()).thenReturn(null);
+        Mockito.when(cmd.isSourceNat()).thenReturn(null);
+        Mockito.when(cmd.isStaticNat()).thenReturn(null);
+        Mockito.when(cmd.getState()).thenReturn(IpAddress.State.Free.name());
+        Mockito.when(cmd.getTags()).thenReturn(null);
         spy.setParameters(sc, cmd, VlanType.VirtualNetwork, Boolean.FALSE);
 
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("display", true);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
+        Mockito.verify(sc, Mockito.times(1)).setParameters("state", "Free");
         Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
     }
 
     @Test
-    public void setParametersTestWhenIsAllocatedIsTrueAndSystemVmPublicIsFalse() {
+    public void setParametersTestWhenStateIsNullAndSystemVmPublicIsFalse() {
         Mockito.when(mockConfig.value()).thenReturn(Boolean.FALSE);
         ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
         Mockito.when(cmd.getNetworkId()).thenReturn(10L);
@@ -172,11 +197,11 @@ public class ManagementServerImplTest {
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
+        Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
     }
 
     @Test
-    public void setParametersTestWhenIsAllocatedIsTrueAndSystemVmPublicIsTrue() {
+    public void setParametersTestWhenStateIsNullAndSystemVmPublicIsTrue() {
         Mockito.when(mockConfig.value()).thenReturn(Boolean.TRUE);
         ListPublicIpAddressesCmd cmd = Mockito.mock(ListPublicIpAddressesCmd.class);
         Mockito.when(cmd.getNetworkId()).thenReturn(10L);
@@ -194,6 +219,6 @@ public class ManagementServerImplTest {
         Mockito.verify(sc, Mockito.times(1)).setJoinParameters("vlanSearch", "vlanType", VlanType.VirtualNetwork);
         Mockito.verify(sc, Mockito.times(1)).setParameters("display", false);
         Mockito.verify(sc, Mockito.times(1)).setParameters("sourceNetworkId", 10L);
-        Mockito.verify(sc, Mockito.times(1)).setParameters("forsystemvms", false);
+        Mockito.verify(sc, Mockito.never()).setParameters("forsystemvms", false);
     }
 }
