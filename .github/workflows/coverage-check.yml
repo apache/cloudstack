@@ -33,6 +33,7 @@ jobs:
         id: java-changes
         uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
+          use_fork_point: "true"
           files: |
             **/*.java
 
@@ -40,6 +41,7 @@ jobs:
         id: ui-changes
         uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
+          use_fork_point: "true"
           files: |
             ui/*
 
