@@ -805,7 +805,7 @@ export default {
         let title = columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.field
+            key = columnKey.customTitle
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -1455,7 +1455,7 @@ export default {
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },
