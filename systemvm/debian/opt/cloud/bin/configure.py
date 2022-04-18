@@ -41,8 +41,8 @@ from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 from cs.CsVpcGuestNetwork import CsVpcGuestNetwork
 
-ICMPV6_TYPE_ANY = "{destination-unreachable, packet-too-big, time-exceeded, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-reduction, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, parameter-problem, router-renumbering}"
-TCP_UDP_PORT_ANY = "{0-65535}"
+ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
+TCP_UDP_PORT_ANY = "{ 0-65535 }"
 
 def removeUndesiredCidrs(cidrs, version):
     version_char = ":"
@@ -316,7 +316,8 @@ class CsAcl(CsDataBag):
                         proto = proto_str = "icmpv6"
                         icmp_type = ICMPV6_TYPE_ANY
                         if 'icmp_type' in rule and rule['icmp_type'] != -1:
-                            proto = "%s type %d" % (proto_str, rule['icmp_type'])
+                            icmp_type = str(rule['icmp_type'])
+                        proto = "%s type %s" % (proto_str, icmp_type)
                         if 'icmp_code' in rule and rule['icmp_code'] != -1:
                             proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
 
@@ -490,7 +491,8 @@ class CsIpv6Firewall(CsDataBag):
                     proto = proto_str = "icmpv6"
                     icmp_type = ICMPV6_TYPE_ANY
                     if 'icmp_type' in rule and rule['icmp_type'] != -1:
-                        proto = "%s type %d" % (proto_str, rule['icmp_type'])
+                        icmp_type = str(rule['icmp_type'])
+                    proto = "%s type %s" % (proto_str, icmp_type)
                     if 'icmp_code' in rule and rule['icmp_code'] != -1:
                         proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
                 first_port = ""
