@@ -1561,6 +1561,8 @@
 "label.sharedexecutable": "Shared",
 "label.sharedmountpoint": "SharedMountPoint",
 "label.sharewith": "Share with",
+"label.show.ingress.rule": "Show ingress rule",
+"label.show.registered.userdata": "Show registered Userdata",
 "label.showing": "Showing",
 "label.shrinkok": "Shrink OK",
 "label.shutdown.provider": "Shutdown provider",

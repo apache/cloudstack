@@ -20,7 +20,7 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-table
       :loading="loading"
@@ -32,8 +32,8 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
-      <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
+      <template #account><user-outlined /> {{ $t('label.account') }}</template>
+      <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
     </a-table>
     <div style="display: block; text-align: right;">
       <a-pagination
@@ -88,8 +88,8 @@ export default {
       filter: '',
       columns: [
         {
-          dataIndex: 'id',
-          title: this.$t('label.user.data'),
+          dataIndex: 'name',
+          title: this.$t('label.userdata'),
           width: '40%'
         },
         {
@@ -128,8 +128,8 @@ export default {
 
       this.items.map((item) => {
         dataItems.push({
-          key: item.name,
-          id: item.id,
+          key: item.id,
+          name: item.name,
           account: item.account,
           domain: item.domain
         })
@@ -208,7 +208,7 @@ export default {
     margin: 2rem 0;
   }
 
-  /deep/.ant-table-tbody > tr > td {
+  :deep(.ant-table-tbody) > tr > td {
     cursor: pointer;
   }
 </style>
