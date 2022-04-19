@@ -1043,7 +1043,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
                     throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
                 }
-                optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : config.getValue());
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : _configDao.findByName(name).getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
