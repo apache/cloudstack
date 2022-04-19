@@ -595,6 +595,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -4781,6 +4782,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         router.setTemplateVersion(templateVersion);
         router.setScriptsVersion(scriptVersion);
+        String codeVersion = getVersion();
+        if (StringUtils.isNotEmpty(codeVersion)) {
+            codeVersion = CloudStackVersion.parse(codeVersion).toString();
+        }
+        router.setSoftwareVersion(codeVersion);
         return routerDao.update(routerId, router);
     }
 

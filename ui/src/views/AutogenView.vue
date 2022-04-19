@@ -589,6 +589,8 @@ export default {
           var objIndex = 0
           if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
             objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else if (this.$route.path.includes('/router')) {
+            objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
             objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
           }
@@ -1261,7 +1263,7 @@ export default {
           this.items.map(x => {
             itemsNameMap[x.id] = x.name || x.displaytext || x.id
           })
-          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
           for (const params of paramsList) {
             var resourceName = itemsNameMap[params.id]
             // Using a method for this since it's an async call and don't want wrong prarms to be passed

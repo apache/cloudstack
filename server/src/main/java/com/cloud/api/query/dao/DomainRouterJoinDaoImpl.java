@@ -90,6 +90,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.isRedundantRouter());
         routerResponse.setScriptsVersion(router.getScriptsVersion());
+        routerResponse.setSoftwareVersion(router.getSoftwareVersion());
         if (router.getRedundantState() != null) {
             routerResponse.setRedundantState(router.getRedundantState().toString());
         }

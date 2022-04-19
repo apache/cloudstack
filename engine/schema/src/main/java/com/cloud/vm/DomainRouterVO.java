@@ -74,6 +74,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Enumerated(EnumType.STRING)
     private UpdateState updateState;
 
+    @Column(name= "software_version")
+    private String softwareVersion;
+
     public DomainRouterVO(final long id, final long serviceOfferingId, final long elementId, final String name, final long templateId, final HypervisorType hypervisorType, final long guestOSId, final long domainId,
             final long accountId, final long userId, final boolean isRedundantRouter, final RedundantState redundantState, final boolean haEnabled, final boolean stopPending,
             final Long vpcId) {
@@ -210,5 +213,13 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Override
     public String getName() {
         return instanceName;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public void setSoftwareVersion(String softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 }
