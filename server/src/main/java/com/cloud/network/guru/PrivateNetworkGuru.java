@@ -124,7 +124,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
                 throw new InvalidParameterValueException("Can't design network " + network + "; netmask/gateway must be passed in");
             }
 
-            if (offering.isSpecifyVlan()) {
+            if (userSpecified.getBroadcastUri() != null) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
             }

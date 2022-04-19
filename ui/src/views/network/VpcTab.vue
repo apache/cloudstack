@@ -170,7 +170,7 @@
                   </a-select-option>
                 </a-select>
               </a-form-item>
-              <a-form-item :label="$t('label.vlan')" :required="true" ref="vlan" name="vlan">
+              <a-form-item :label="$t('label.vlan')" ref="vlan" name="vlan" v-if="this.isAdmin()">
                 <a-input
                   :placeholder="placeholders.vlan"
                   v-model:value="form.vlan"
@@ -180,24 +180,41 @@
                 ref="bypassvlanoverlapcheck"
                 name="bypassvlanoverlapcheck"
                 :label="$t('label.bypassvlanoverlapcheck')"
-                v-if="$store.getters.apis.createPrivateGateway && $store.getters.apis.createPrivateGateway.params.filter(x => x.name === 'bypassvlanoverlapcheck').length > 0" >
+                v-if="this.isAdmin()">
                 <a-checkbox
                   v-model:checked="form.bypassvlanoverlapcheck"
                 ></a-checkbox>
               </a-form-item>
-              <a-form-item :label="$t('label.publicip')" :required="true" ref="ipaddress" name="ipaddress">
+              <a-form-item :label="$t('label.associatednetwork')" ref="associatednetworkid" name="associatednetworkid">
+                <a-select
+                  v-model:value="form.associatednetwork"
+                  showSearch
+                  optionFilterProp="label"
+                  :filterOption="(input, option) => {
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  }" >
+                  <a-select-option v-for="(opt, optIndex) in this.associatedNetworks" :key="optIndex" :label="opt.name || opt.description" :value="opt.id">
+                    <span>
+                      <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                      <user-outlined style="margin-right: 5px" />
+                      {{ opt.name || opt.description }}
+                    </span>
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item :label="$t('label.publicip')" ref="ipaddress" name="ipaddress">
                 <a-input
                   :placeholder="placeholders.ipaddress"
                   v-model:value="form.ipaddress"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.gateway')" :required="true" ref="gateway" name="gateway">
+              <a-form-item :label="$t('label.gateway')" ref="gateway" name="gateway">
                 <a-input
                   :placeholder="placeholders.gateway"
                   v-model:value="form.gateway"
                 ></a-input>
               </a-form-item>
-              <a-form-item :label="$t('label.netmask')" :required="true" ref="netmask" name="netmask">
+              <a-form-item :label="$t('label.netmask')" ref="netmask" name="netmask">
                 <a-input
                   :placeholder="placeholders.netmask"
                   v-model:value="form.netmask"
@@ -383,6 +400,7 @@ export default {
     return {
       fetchLoading: false,
       privateGateways: [],
+      associatedNetworks: [],
       vpnGateways: [],
       vpnConnections: [],
       networkAcls: [],
@@ -492,6 +510,9 @@ export default {
       this.form = reactive({})
       this.rules = reactive({})
     },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
+    },
     setCurrentTab () {
       this.currentTab = this.$route?.query?.tab || 'details'
     },
@@ -558,6 +579,22 @@ export default {
       }).finally(() => {
         this.fetchLoading = false
       })
+      this.associatedNetworks = []
+      api('listNetworks', {
+        domainid: this.resource.domainid,
+        account: this.resource.account,
+        listAll: true,
+        networkfilter: 'Account'
+      }).then(json => {
+        var networks = json.listnetworksresponse.network || []
+        for (const network of networks) {
+          if (network.type === 'Isolated' || network.type === 'L2') {
+            this.associatedNetworks.push(network)
+          }
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      })
     },
     fetchVpnGateways () {
       this.fetchLoading = true
@@ -609,6 +646,10 @@ export default {
     },
     fetchPhysicalNetworks () {
       this.modals.gatewayLoading = true
+      if (!this.isAdmin()) {
+        this.modals.gatewayLoading = false
+        return
+      }
       api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
@@ -639,7 +680,6 @@ export default {
       switch (e) {
         case 'privateGateways':
           this.rules = {
-            vlan: [{ required: true, message: this.$t('label.required') }],
             ipaddress: [{ required: true, message: this.$t('label.required') }],
             gateway: [{ required: true, message: this.$t('label.required') }],
             netmask: [{ required: true, message: this.$t('label.required') }]
@@ -676,11 +716,16 @@ export default {
           ipaddress: data.ipaddress,
           gateway: data.gateway,
           netmask: data.netmask,
-          vlan: data.vlan,
           aclid: data.acl
         }
         if (data.bypassvlanoverlapcheck) {
           params.bypassvlanoverlapcheck = data.bypassvlanoverlapcheck
+        }
+        if (data.vlan && String(data.vlan).length > 0) {
+          params.vlan = data.vlan
+        }
+        if (data.associatednetwork) {
+          params.associatednetworkid = data.associatednetwork
         }
 
         api('createPrivateGateway', params).then(response => {

@@ -22,9 +22,14 @@ import java.util.Map;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
@@ -148,9 +153,9 @@ public interface NetworkService {
 
     boolean deletePhysicalNetworkTrafficType(Long id);
 
-    GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd);
+    GuestVlanRange dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd);
 
-    Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
+    Pair<List<? extends GuestVlanRange>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd);
 
     boolean releaseDedicatedGuestVlanRange(Long dedicatedGuestVlanRangeId);
 
@@ -184,7 +189,7 @@ public interface NetworkService {
      * @throws ResourceAllocationException
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException;
 
     /**
@@ -210,4 +215,14 @@ public interface NetworkService {
     AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException;
 
     boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException;
+
+    Pair<List<? extends GuestVlan>, Integer> listGuestVlans(ListGuestVlansCmd cmd);
+
+    List<? extends NetworkPermission> listNetworkPermissions(ListNetworkPermissionsCmd listNetworkPermissionsCmd);
+
+    boolean createNetworkPermissions(CreateNetworkPermissionsCmd createNetworkPermissionsCmd);
+
+    boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd);
+
+    boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd);
 }

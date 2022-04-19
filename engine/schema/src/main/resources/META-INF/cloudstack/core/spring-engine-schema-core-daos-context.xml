@@ -296,4 +296,5 @@
   <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
   <bean id="TemplateDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDaoImpl" />
   <bean id="UserVmDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDaoImpl" />
+  <bean id="NetworkPermissionDaoImpl" class="org.apache.cloudstack.network.dao.NetworkPermissionDaoImpl" />
 </beans>

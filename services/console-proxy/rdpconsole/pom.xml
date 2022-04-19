@@ -36,7 +36,7 @@
             <version>${project.version}</version>
         </dependency>
         <!--
-            Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
+            Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL support.
             NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work.
         -->
         <dependency>

@@ -63,7 +63,7 @@ mount_local() {
         qemu-nbd -d /dev/nbd0p1 &> /dev/null
         sleep 0.5
         qemu-nbd -d /dev/nbd0 &> /dev/null
-        printf "Faild to mount qcow2 image\n"
+        printf "Failed to mount qcow2 image\n"
         return 3
     fi
     return $?

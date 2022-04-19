@@ -137,7 +137,7 @@ public class OutputStreamSink extends BaseElement {
             {
                 verbose = true;
                 numBuffers = 3;
-                incommingBufLength = 5;
+                incomingBufLength = 5;
                 delay = 100;
             }
         };

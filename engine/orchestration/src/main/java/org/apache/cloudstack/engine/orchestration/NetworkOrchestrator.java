@@ -53,6 +53,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -318,6 +319,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     ResourceManager resourceManager;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    NetworkPermissionDao networkPermissionDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -2530,7 +2533,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final boolean vlanSpecified = vlanId != null;
         if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
             if (vlanSpecified) {
-                throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
+                if (!isSharedNetworkWithoutSpecifyVlan(ntwkOff) && !isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                    throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
+                }
             } else {
                 throw new InvalidParameterValueException("Vlan has to be specified; corresponding offering says specifyVlan=true");
             }
@@ -2540,8 +2545,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             URI uri = encodeVlanIdIntoBroadcastUri(vlanId, pNtwk);
             // Aux: generate secondary URI for secondary VLAN ID (if provided) for performing checks
             URI secondaryUri = StringUtils.isNotBlank(isolatedPvlan) ? BroadcastDomainType.fromString(isolatedPvlan) : null;
+            if (isSharedNetworkWithoutSpecifyVlan(ntwkOff) || isPrivateGatewayWithoutSpecifyVlan(ntwkOff)) {
+                bypassVlanOverlapCheck = true;
+            }
             //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
-            if (!(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.Shared) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
+            if (!(bypassVlanOverlapCheck && (ntwkOff.getGuestType() == GuestType.Shared || isPrivateNetwork))
+                    && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag to use for new guest network, " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
@@ -2762,6 +2771,18 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         CallContext.current().setEventDetails("Network Id: " + network.getId());
         CallContext.current().putContextParameter(Network.class, network.getUuid());
         return network;
+    }
+
+    @Override
+    public boolean isSharedNetworkWithoutSpecifyVlan(NetworkOffering offering) {
+        if (offering == null || offering.getTrafficType() != TrafficType.Guest || offering.getGuestType() != GuestType.Shared) {
+            return false;
+        }
+        return !offering.isSpecifyVlan();
+    }
+
+    private boolean isPrivateGatewayWithoutSpecifyVlan(NetworkOffering ntwkOff) {
+        return ntwkOff.getId() == _networkOfferingDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan).getId();
     }
 
     /**
@@ -3096,7 +3117,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             throw new CloudRuntimeException("Failed to trash network.");
                         }
 
-                        if (!deleteVlansInNetwork(networkFinal.getId(), context.getCaller().getId(), callerAccount)) {
+                        if (!deleteVlansInNetwork(networkFinal, context.getCaller().getId(), callerAccount)) {
                             s_logger.warn("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                             throw new CloudRuntimeException("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                         } else {
@@ -3118,6 +3139,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 }
 
                                 networkDetailsDao.removeDetails(networkFinal.getId());
+                                networkPermissionDao.removeAllPermissions(networkFinal.getId());
                             }
 
                             final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
@@ -3150,8 +3172,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return updateResourceCount;
     }
 
-    protected boolean deleteVlansInNetwork(final long networkId, final long userId, final Account callerAccount) {
-
+    protected boolean deleteVlansInNetwork(final NetworkVO network, final long userId, final Account callerAccount) {
+        final long networkId = network.getId();
         //cleanup Public vlans
         final List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
@@ -3170,6 +3192,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } else {
             _privateIpDao.deleteByNetworkId(networkId);
             s_logger.debug("Deleted ip range for private network id=" + networkId);
+        }
+
+        // release vlans of user-shared networks without specifyvlan
+        if (isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()))) {
+            s_logger.debug("Releasing vnet for the network id=" + network.getId());
+            _dcDao.releaseVnet(BroadcastDomainType.getValue(network.getBroadcastUri()), network.getDataCenterId(),
+                    network.getPhysicalNetworkId(), network.getAccountId(), network.getReservationId());
         }
         return result;
     }
@@ -3203,6 +3232,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 for (final Long networkId : networkIds) {
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
+                        continue;
+                    }
+
+                    if (!networkDetailsDao.findDetails(Network.AssociatedNetworkId, String.valueOf(networkId), null).isEmpty()) {
+                        s_logger.debug(String.format("Network %s is associated to a shared network, skipping", networkId));
                         continue;
                     }
 

@@ -312,7 +312,7 @@ public class PipelineImpl implements Pipeline {
         // Create elements
         pipeline.add(new FakeSource("source") {
             {
-                incommingBufLength = 3;
+                incomingBufLength = 3;
                 numBuffers = 10;
                 delay = 100;
             }

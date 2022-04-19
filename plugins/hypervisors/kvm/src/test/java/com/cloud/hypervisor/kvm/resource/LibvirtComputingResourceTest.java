@@ -60,6 +60,7 @@ import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -774,7 +775,7 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, prefix + "/graphics/@type", "vnc");
         assertXpath(domainDoc, prefix + "/graphics/@listen", to.getVncAddr());
         assertXpath(domainDoc, prefix + "/graphics/@autoport", "yes");
-        assertXpath(domainDoc, prefix + "/graphics/@passwd", to.getVncPassword());
+        assertXpath(domainDoc, prefix + "/graphics/@passwd", StringUtils.truncate(to.getVncPassword(), 8));
     }
 
     private void verifySerialDevices(Document domainDoc, String prefix) {

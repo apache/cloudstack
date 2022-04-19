@@ -480,7 +480,7 @@ class TestStoragePool(cloudstackTestCase):
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
 
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")
-      
+
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_06_remove_vcpolicy_tag_when_disk_detached(self):

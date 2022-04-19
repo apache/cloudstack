@@ -56,7 +56,7 @@
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated': ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
+                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
                     style="min-width: 100px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
@@ -805,7 +805,7 @@ export default {
         let title = columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.field
+            key = columnKey.customTitle
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -1455,7 +1455,7 @@ export default {
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },
@@ -1497,9 +1497,9 @@ export default {
         query.isofilter = filter
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
-          delete query.type
+          delete query.networkfilter
         } else {
-          query.type = filter
+          query.networkfilter = filter
         }
       } else if (this.$route.name === 'publicip') {
         query.state = filter
@@ -1512,6 +1512,12 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
+      } else if (this.$route.name === 'guestvlans') {
+        if (filter === 'all') {
+          query.allocatedonly = 'false'
+        } else if (filter === 'allocatedonly') {
+          query.allocatedonly = 'true'
+        }
       }
       query.filter = filter
       query.page = '1'

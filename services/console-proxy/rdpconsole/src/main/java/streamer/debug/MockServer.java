@@ -88,7 +88,7 @@ public class MockServer implements Runnable {
                             // Compare actual data with expected data
                             if (actualDataLength != packet.data.length) {
                                 throw new AssertionError("Actual length of client request for packet #" + (i + 1) + " (\"" + packet.id + "\")"
-                                        + " does not match length of expected client request. Actual length: " + actualDataLength + ", expected legnth: " + packet.data.length
+                                        + " does not match length of expected client request. Actual length: " + actualDataLength + ", expected length: " + packet.data.length
                                         + ".");
                             }
 
