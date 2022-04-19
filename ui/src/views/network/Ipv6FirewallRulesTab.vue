@@ -17,6 +17,15 @@
 
 <template>
   <div>
+    <a-alert
+      v-if="'egressdefaultpolicy' in resource"
+      type="info">
+      <template #message>
+      <div
+        v-html="$t('message.egress.rules.info.for.network').replace('%x', resource.egressdefaultpolicy ? '<b>' + $t('label.allow') + '</b>' :
+        '<b>' + $t('label.deny') + '</b>').replace('%y', resource.egressdefaultpolicy ? '<b>' + $t('message.denied') + '</b>' : '<b>' + $t('message.allowed') + '</b>.')" />
+      </template>
+    </a-alert>
     <div>
       <div class="form" v-ctrl-enter="addRule">
         <div class="form__item">
