@@ -183,9 +183,4 @@ public class ResourceManagerUtilImpl implements ResourceManagerUtil {
             throw new PermissionDeniedException(exceptionMessage);
         }
     }
-
-    @Override
-    public Class<?> getResourceTypeClass(ResourceTag.ResourceObjectType resourceType) {
-        return s_typeMap.get(resourceType);
-    }
 }

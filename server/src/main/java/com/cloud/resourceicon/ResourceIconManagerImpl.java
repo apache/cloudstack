@@ -140,7 +140,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
     }
 
     private void updateResourceDetailsInContext(Long resourceId, ResourceTag.ResourceObjectType resourceType) {
-        Class<?> clazz = resourceManagerUtil.getResourceTypeClass(resourceType);
+        Class<?> clazz = ResourceManagerUtilImpl.s_typeMap.get(resourceType);
         ApiCommandResourceType type = ApiCommandResourceType.valueFromAssociatedClass(clazz);
         int depth = 5;
         while (type == null && depth > 0) {
@@ -153,7 +153,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
             type = ApiCommandResourceType.valueFromAssociatedClass(clazz);
         }
         CallContext.current().setEventResourceId(resourceId);
-        if (ApiCommandResourceType.None.equals(type)) {
+        if (!ApiCommandResourceType.None.equals(type)) {
             CallContext.current().setEventResourceType(type);
         }
     }

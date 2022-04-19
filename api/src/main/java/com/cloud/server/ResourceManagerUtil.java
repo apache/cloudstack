@@ -21,5 +21,4 @@ public interface ResourceManagerUtil {
     String getUuid(String resourceId, ResourceTag.ResourceObjectType resourceType);
     ResourceTag.ResourceObjectType getResourceType(String resourceTypeStr);
     void checkResourceAccessible(Long accountId, Long domainId, String exceptionMessage);
-    Class<?> getResourceTypeClass(ResourceTag.ResourceObjectType resourceType);
 }
