@@ -28,9 +28,14 @@ import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
@@ -49,11 +54,13 @@ import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.TrafficType;
@@ -318,13 +325,13 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public GuestVlan dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd) {
+    public GuestVlanRange dedicateGuestVlanRange(DedicateGuestVlanRangeCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<List<? extends GuestVlan>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
+    public Pair<List<? extends GuestVlanRange>, Integer> listDedicatedGuestVlanRanges(ListDedicatedGuestVlanRangesCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -516,7 +523,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      */
     @Override
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck) throws ResourceAllocationException, ConcurrentOperationException,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId, Boolean bypassVlanOverlapCheck, Long associatedNetworkId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
@@ -974,6 +981,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public boolean isSharedNetworkWithoutSpecifyVlan(NetworkOffering offering) {
+        return false;
+    }
+
+    @Override
     public IpAddress updateIP(Long id, String customId, Boolean displayIp) {
         // TODO Auto-generated method stub
         return null;
@@ -1006,5 +1018,30 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override
     public void unmanageNics(VirtualMachineProfile vm) {
+    }
+
+    @Override
+    public Pair<List<? extends GuestVlan>, Integer> listGuestVlans(ListGuestVlansCmd cmd) {
+        return null;
+    }
+
+    @Override
+    public List<? extends NetworkPermission> listNetworkPermissions(ListNetworkPermissionsCmd listNetworkPermissionsCmd) {
+        return null;
+    }
+
+    @Override
+    public boolean createNetworkPermissions(CreateNetworkPermissionsCmd createNetworkPermissionsCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean removeNetworkPermissions(RemoveNetworkPermissionsCmd removeNetworkPermissionsCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean resetNetworkPermissions(ResetNetworkPermissionsCmd resetNetworkPermissionsCmd) {
+        return false;
     }
 }

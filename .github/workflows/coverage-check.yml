@@ -52,11 +52,24 @@ jobs:
             ui/*
 
       - name: Kick UI Build
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
         if: steps.ui-changes.outputs.any_changed == 'true'
-        run: |
-          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
-            -X POST -d '{"body": "UI changes found, kicking a new QA UI build\n@blueorangutan ui"}' \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+        with:
+          token: ${{ secrets.ACS_ROBOT_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Found UI changes, kicking a new UI QA build
+            @blueorangutan ui
+
+      - name: Kick Pkg Build
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
+        if: steps.java-changes.outputs.any_changed == 'true' && ! github.event.pull_request.draft
+        with:
+          token: ${{ secrets.ACS_ROBOT_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Found Java/XML changes, kicking packaging job
+            @blueorangutan package
 
       - name: Set up JDK11
         uses: actions/setup-java@v3
@@ -84,8 +97,9 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Comment PR Coverage Report
+        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
         if: steps.java-changes.outputs.any_changed == 'true'
-        run: |
-          curl -s -H "Authorization: token ${{ secrets.ACS_ROBOT_TOKEN }}" \
-            -X POST -d '{"body": "PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"}' \
-            "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+        with:
+          token: ${{ secrets.ACS_ROBOT_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: "## PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"

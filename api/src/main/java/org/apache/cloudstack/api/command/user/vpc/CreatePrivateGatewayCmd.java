@@ -14,10 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.vpc;
+package org.apache.cloudstack.api.command.user.vpc;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,10 +26,12 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 
@@ -41,11 +44,14 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
-import com.cloud.user.Account;
 
-@APICommand(name = "createPrivateGateway", description = "Creates a private gateway", responseObject = PrivateGatewayResponse.class, entityType = {VpcGateway.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
+@APICommand(name = "createPrivateGateway", description = "Creates a private gateway",
+        responseObject = PrivateGatewayResponse.class,
+        responseView = ResponseView.Restricted,
+        entityType = {VpcGateway.class},
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayCmd.class.getName());
 
     private static final String s_name = "createprivategatewayresponse";
@@ -53,12 +59,6 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
-               type = CommandType.UUID,
-               entityType = PhysicalNetworkResponse.class,
-               description = "the Physical Network ID the network belongs to")
-    private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway of the Private gateway")
     private String gateway;
@@ -68,9 +68,6 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true, description = "the IP address of the Private gateaway")
     private String ipAddress;
-
-    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, required = true, description = "the network implementation uri for the private gateway")
-    private String broadcastUri;
 
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
                type = CommandType.UUID,
@@ -92,8 +89,12 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = false, description = "the ID of the network ACL")
     private Long aclId;
 
-    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during private gateway creation")
-    private Boolean bypassVlanOverlapCheck;
+    @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            since = "4.17.0",
+            description = "The isolated network this private gateway is associated to.")
+    private Long associatedNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -103,23 +104,15 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return gateway;
     }
 
-    public String getBroadcastUri() {
-        return broadcastUri;
-    }
-
     public String getNetmask() {
         return netmask;
     }
 
-    public String getStartIp() {
+    public String getIpAddress() {
         return ipAddress;
     }
 
-    public Long getPhysicalNetworkId() {
-        return physicalNetworkId;
-    }
-
-    private Long getNetworkOfferingId() {
+    public Long getNetworkOfferingId() {
         return networkOfferingId;
     }
 
@@ -138,11 +131,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         return aclId;
     }
 
-    public Boolean getBypassVlanOverlapCheck() {
-        if (bypassVlanOverlapCheck != null) {
-            return bypassVlanOverlapCheck;
-        }
-        return false;
+    public Long getAssociatedNetworkId() {
+        return associatedNetworkId;
     }
 
     /////////////////////////////////////////////////////
@@ -157,9 +147,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         PrivateGateway result = null;
         try {
-            result =
-                _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
-                    getNetworkOfferingId(), getIsSourceNat(), getAclId(), getBypassVlanOverlapCheck());
+            result = _vpcService.createVpcPrivateGateway(this);
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);
@@ -191,7 +179,11 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Invalid id is specified for the vpc");
+        }
+        return vpc.getAccountId();
     }
 
     @Override

@@ -195,6 +195,11 @@
     <template #agentstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
+    <template #vlan="{ text, record }">
+      <a href="javascript:;">
+        <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
+      </a>
+    </template>
     <template #guestnetworkname="{ text, record }">
       <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
     </template>

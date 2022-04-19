@@ -41,6 +41,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offering.DiskOffering;
@@ -173,6 +174,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             return true;
         } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) {
             _networkMgr.checkNetworkPermissions(caller, (Network)entity);
+        } else if (entity instanceof Network && accessType != null && accessType == AccessType.OperateEntry) {
+            _networkMgr.checkNetworkOperatePermissions(caller, (Network)entity);
+        } else if (entity instanceof VirtualRouter) {
+            _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
         } else {
