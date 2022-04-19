@@ -120,6 +120,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -4914,44 +4915,48 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                         final Boolean forSystemVms) {
         final List<UserIpv6AddressVO> listAllocatedIPs = _ipv6Dao.listByVlanIdAndState(id, IpAddress.State.Allocated);
 
-        if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+        if (ip6Gateway != null && !ip6Gateway.equals(vlanRange.getIp6Gateway()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
             throw new InvalidParameterValueException(String.format("Unable to change ipv6 gateway to %s because some IPs are in use", ip6Gateway));
         }
-        if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr()) && CollectionUtils.isNotEmpty(listAllocatedIPs)) {
+        if (ip6Cidr != null && !ip6Cidr.equals(vlanRange.getIp6Cidr()) && (CollectionUtils.isNotEmpty(listAllocatedIPs) || CollectionUtils.isNotEmpty(ipv6Service.getAllocatedIpv6FromVlanRange(vlanRange)))) {
             throw new InvalidParameterValueException(String.format("Unable to change ipv6 cidr to %s because some IPs are in use", ip6Cidr));
         }
         ip6Gateway = MoreObjects.firstNonNull(ip6Gateway, vlanRange.getIp6Gateway());
         ip6Cidr = MoreObjects.firstNonNull(ip6Cidr, vlanRange.getIp6Cidr());
 
-        final String[] existingVlanIPRangeArray = vlanRange.getIp6Range().split("-");
-        final String currentStartIPv6 = existingVlanIPRangeArray[0];
-        final String currentEndIPv6 = existingVlanIPRangeArray[1];
+        final String[] existingVlanIPRangeArray = StringUtils.isNotEmpty(vlanRange.getIp6Range()) ? vlanRange.getIp6Range().split("-") : null;
+        final String currentStartIPv6 = existingVlanIPRangeArray != null ? existingVlanIPRangeArray[0] : null;
+        final String currentEndIPv6 = existingVlanIPRangeArray != null ? existingVlanIPRangeArray[1] : null;
 
-        startIpv6 = MoreObjects.firstNonNull(startIpv6, currentStartIPv6);
-        endIpv6 = MoreObjects.firstNonNull(endIpv6, currentEndIPv6);
+        startIpv6 = ObjectUtils.allNull(startIpv6, currentStartIPv6) ? null : MoreObjects.firstNonNull(startIpv6, currentStartIPv6);
+        endIpv6 = ObjectUtils.allNull(endIpv6, currentEndIPv6) ? null : MoreObjects.firstNonNull(endIpv6, currentEndIPv6);
 
-        if (startIpv6 != currentStartIPv6 || endIpv6 != currentEndIPv6) {
-            _networkModel.checkIp6Parameters(startIpv6, endIpv6, ip6Gateway, ip6Cidr);
+        _networkModel.checkIp6Parameters(startIpv6, endIpv6, ip6Gateway, ip6Cidr);
+
+        if (!ObjectUtils.allNull(startIpv6, endIpv6) && ObjectUtils.anyNull(startIpv6, endIpv6)) {
+            throw new InvalidParameterValueException(String.format("Invalid IPv6 range %s-%s", startIpv6, endIpv6));
+        }
+        if (ObjectUtils.allNotNull(startIpv6, endIpv6) && (!startIpv6.equals(currentStartIPv6) || !endIpv6.equals(currentEndIPv6))) {
             checkAllocatedIpv6sAreWithinVlanRange(listAllocatedIPs, startIpv6, endIpv6);
+        }
 
-            try {
-                VlanVO range = _vlanDao.acquireInLockTable(id, 30);
-                if (range == null) {
-                    throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
-                }
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("lock vlan " + id + " is acquired");
-                }
-
-                commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, ip6Gateway, ip6Cidr, false, isRangeForSystemVM,forSystemVms);
-
-            } catch (final Exception e) {
-                s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
-                throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
-            } finally {
-                _vlanDao.releaseFromLockTable(id);
+        try {
+            VlanVO range = _vlanDao.acquireInLockTable(id, 30);
+            if (range == null) {
+                throw new CloudRuntimeException("Unable to acquire vlan configuration: " + id);
             }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("lock vlan " + id + " is acquired");
+            }
+
+            commitUpdateVlanAndIpRange(id, startIpv6, endIpv6, currentStartIPv6, currentEndIPv6, ip6Gateway, ip6Cidr, false, isRangeForSystemVM,forSystemVms);
+
+        } catch (final Exception e) {
+            s_logger.error("Unable to edit VlanRange due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to edit VlanRange. Please contact Cloud Support.");
+        } finally {
+            _vlanDao.releaseFromLockTable(id);
         }
     }
 
@@ -4973,7 +4978,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         throw new CloudRuntimeException("Failed to update IPv4 range. Please contact Cloud Support.");
                     }
                 } else {
-                    vlanRange.setIp6Range(newStartIP + "-" + newEndIP);
+                    if (ObjectUtils.allNotNull(newStartIP, newEndIP)) {
+                        vlanRange.setIp6Range(newStartIP + "-" + newEndIP);
+                    } else {
+                        vlanRange.setIp6Range(null);
+                    }
                     vlanRange.setIp6Gateway(gateway);
                     vlanRange.setIp6Cidr(netmask);
                     _vlanDao.update(vlanRange.getId(), vlanRange);
@@ -4985,6 +4994,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private boolean checkIfVlanRangeIsForSystemVM(final long vlanId) {
         List<IPAddressVO> existingPublicIPs = _publicIpAddressDao.listByVlanId(vlanId);
+        if (CollectionUtils.isEmpty(existingPublicIPs)) {
+            return false;
+        }
         boolean initialIsSystemVmValue = existingPublicIPs.get(0).isForSystemVms();
         for (IPAddressVO existingIPs : existingPublicIPs) {
             if (initialIsSystemVmValue != existingIPs.isForSystemVms()) {
