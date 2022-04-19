@@ -407,6 +407,7 @@ public class AgentShell implements IAgentShell, Daemon {
         }
         String keystorePass = getProperty(null, "keystore.passphrase");
         if (StringUtils.isBlank(keystorePass)) {
+            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
             return;
         }
         final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
@@ -414,6 +415,8 @@ public class AgentShell implements IAgentShell, Daemon {
         if (f.exists() && !f.isDirectory()) {
             System.setProperty("javax.net.ssl.trustStore", keyStoreFile);
             System.setProperty("javax.net.ssl.trustStorePassword", keystorePass);
+        } else {
+            s_logger.info("Failed to find keystore file: " + keyStoreFile);
         }
     }
 
