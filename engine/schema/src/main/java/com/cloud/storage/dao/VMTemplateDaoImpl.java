@@ -636,6 +636,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId) {
+        SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
+        sc.setParameters("userDataId", userdataId);
+        return listBy(sc);
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();

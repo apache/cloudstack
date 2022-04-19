@@ -45,6 +45,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
@@ -955,6 +957,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public UUIDManager uuidMgr;
     @Inject
     protected UserDataDao _userDataDao;
+    @Inject
+    protected VMTemplateDao _templateDao;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -4429,7 +4433,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final UserDataVO userData = _userDataDao.findById(cmd.getId());
         if (userData == null) {
             final InvalidParameterValueException ex = new InvalidParameterValueException(
-                    "A key pair with id '" + cmd.getId() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
+                    "A UserData with id '" + cmd.getId() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
             final DomainVO domain = ApiDBUtils.findDomainById(owner.getDomainId());
             String domainUuid = String.valueOf(owner.getDomainId());
             if (domain != null) {
@@ -4438,7 +4442,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ex.addProxyObject(domainUuid, "domainId");
             throw ex;
         }
-        annotationDao.removeByEntityType(AnnotationService.EntityType.SSH_KEYPAIR.name(), userData.getUuid());
+
+        List<VMTemplateVO> templatesLinkedToUserData = _templateDao.findTemplatesLinkedToUserdata(userData.getId());
+        if (CollectionUtils.isNotEmpty(templatesLinkedToUserData)) {
+            throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is linked to active template/templates", userData.getName()));
+        }
+
+        annotationDao.removeByEntityType(AnnotationService.EntityType.USER_DATA.name(), userData.getUuid());
 
         return _userDataDao.expunge(userData.getId());
     }

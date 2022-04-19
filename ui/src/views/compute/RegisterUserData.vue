@@ -49,6 +49,18 @@
             v-model:value="form.userdata"
             :placeholder="apiParams.userdata.description"/>
         </a-form-item>
+        <a-form-item name="params" ref="params">
+          <template #label :title="apiParams.params.description">
+            {{ $t('label.userdataparams') }}
+            <a-tooltip>
+              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
+            </a-tooltip>
+          </template>
+          <a-input
+            v-model:value="form.params"
+            :placeholder="apiParams.params.description"
+            v-focus="true" />
+        </a-form-item>
         <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin()">
           <template #label :title="apiParams.domainid.description">
             {{ $t('label.domainid') }}
@@ -199,6 +211,10 @@ export default {
           params.account = values.account
         }
         params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+
+        if (values.params !== null) {
+          params.params = values.params
+        }
 
         api('registerUserData', params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)

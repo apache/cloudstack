@@ -636,18 +636,18 @@ export default {
     {
       name: 'userdata',
       title: 'label.user.data',
-      icon: 'key-outlined',
+      icon: 'paper-clip-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listUserData'],
       columns: () => {
-        var fields = ['name', 'userdata']
+        var fields = ['name', 'id']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('account')
         }
         return fields
       },
       resourceType: 'UserData',
-      details: ['id', 'name', 'userdata', 'account', 'domain'],
+      details: ['id', 'name', 'userdata', 'account', 'domain', 'params'],
       related: [{
         name: 'vm',
         title: 'label.instances',

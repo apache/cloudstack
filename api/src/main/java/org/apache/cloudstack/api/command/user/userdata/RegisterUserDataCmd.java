@@ -65,10 +65,10 @@ public class RegisterUserDataCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Name of the userdata")
+    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Userdata content")
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
     private String params;
 
 
