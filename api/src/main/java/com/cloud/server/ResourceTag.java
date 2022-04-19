@@ -98,46 +98,9 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         }
 
         static {
-            resourceObjectTypeMap.put("uservm", UserVm);
-            resourceObjectTypeMap.put("template", Template);
-            resourceObjectTypeMap.put("iso", ISO);
-            resourceObjectTypeMap.put("volume", Volume);
-            resourceObjectTypeMap.put("snapshot", Snapshot);
-            resourceObjectTypeMap.put("backup", Backup);
-            resourceObjectTypeMap.put("network", Network);
-            resourceObjectTypeMap.put("nic", Nic);
-            resourceObjectTypeMap.put("loadbalancer", LoadBalancer);
-            resourceObjectTypeMap.put("portforwardingrule", PortForwardingRule);
-            resourceObjectTypeMap.put("firewallrule", FirewallRule);
-            resourceObjectTypeMap.put("securitygroup", SecurityGroup);
-            resourceObjectTypeMap.put("securitygrouprule", SecurityGroupRule);
-            resourceObjectTypeMap.put("publicipaddress", PublicIpAddress);
-            resourceObjectTypeMap.put("project", Project);
-            resourceObjectTypeMap.put("account", Account);
-            resourceObjectTypeMap.put("vpc", Vpc);
-            resourceObjectTypeMap.put("networkacl", NetworkACL);
-            resourceObjectTypeMap.put("staticroute", StaticRoute);
-            resourceObjectTypeMap.put("vmsnapshot", VMSnapshot);
-            resourceObjectTypeMap.put("remoteaccessvpn", RemoteAccessVpn);
-            resourceObjectTypeMap.put("zone", Zone);
-            resourceObjectTypeMap.put("serviceoffering", ServiceOffering);
-            resourceObjectTypeMap.put("storage", Storage);
-            resourceObjectTypeMap.put("privategateway", PrivateGateway);
-            resourceObjectTypeMap.put("networkacllist", NetworkACLList);
-            resourceObjectTypeMap.put("vpngateway", VpnGateway);
-            resourceObjectTypeMap.put("customergateway", CustomerGateway);
-            resourceObjectTypeMap.put("vpnconnection", VpnConnection);
-            resourceObjectTypeMap.put("user", User);
-            resourceObjectTypeMap.put("diskoffering", DiskOffering);
-            resourceObjectTypeMap.put("autoscalevmgroup", AutoScaleVmGroup);
-            resourceObjectTypeMap.put("autoscalevmprofile", AutoScaleVmProfile);
-            resourceObjectTypeMap.put("lbstickinesspolicy", LBStickinessPolicy);
-            resourceObjectTypeMap.put("lbhealthcheckpolicy", LBHealthCheckPolicy);
-            resourceObjectTypeMap.put("snapshotpolicy", SnapshotPolicy);
-            resourceObjectTypeMap.put("guestos", GuestOs);
-            resourceObjectTypeMap.put("networkoffering", NetworkOffering);
-            resourceObjectTypeMap.put("vpcoffering", VpcOffering);
-            resourceObjectTypeMap.put("domain", Domain);
+            for (var value : ResourceObjectType.values()) {
+                resourceObjectTypeMap.put(value.toString().toLowerCase(Locale.ROOT), value);
+            }
         }
 
         public static ResourceObjectType getResourceObjectType(String type) {
