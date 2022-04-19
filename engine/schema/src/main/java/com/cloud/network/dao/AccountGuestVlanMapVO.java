@@ -25,11 +25,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 
 @Entity
 @Table(name = "account_vnet_map")
-public class AccountGuestVlanMapVO implements GuestVlan {
+public class AccountGuestVlanMapVO implements GuestVlanRange {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

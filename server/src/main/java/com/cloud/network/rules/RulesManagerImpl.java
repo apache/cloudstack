@@ -31,6 +31,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -170,13 +171,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             }
         }
 
-        _accountMgr.checkAccess(caller, null, true, ipAddress, userVm);
-
-        // validate that IP address and userVM belong to the same account
-        if (ipAddress.getAllocatedToAccountId().longValue() != userVm.getAccountId()) {
-            throw new InvalidParameterValueException("Unable to create ip forwarding rule, IP address " + ipAddress +
-                " owner is not the same as owner of virtual machine " + userVm.toString());
-        }
+        _accountMgr.checkAccess(caller, null, false, ipAddress, userVm);
 
         // validate that userVM is in the same availability zone as the IP address
         if (ipAddress.getDataCenterId() != userVm.getDataCenterId()) {
@@ -195,15 +190,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return;
         }
 
-        _accountMgr.checkAccess(caller, null, true, rule, userVm);
+        _accountMgr.checkAccess(caller, null, false, rule, userVm);
 
         if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
-        }
-
-        // This same owner check is actually not needed, since multiple entities OperateEntry trick guarantee that
-        if (rule.getAccountId() != userVm.getAccountId()) {
-            throw new InvalidParameterValueException("New rule " + rule + " and vm id=" + userVm.getId() + " belong to different accounts");
         }
     }
 
@@ -571,6 +561,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 } else {
                     checkIpAndUserVm(ipAddress, vm, caller, false);
                 }
+                Account vmOwner = _accountMgr.getAccount(vm.getAccountId());
+                _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
                 //is static nat is for vm secondary ip
                 //dstIp = guestNic.getIp4Address();
