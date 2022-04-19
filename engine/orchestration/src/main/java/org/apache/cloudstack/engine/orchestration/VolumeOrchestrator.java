@@ -356,8 +356,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
+                if (s_logger.isTraceEnabled()) {
+                    StringBuilder pooltable = new StringBuilder();
+                    pooltable.append("pools to choose from: ");
+                    int i = 1;
+                    for (StoragePool pool : poolList) {
+                        pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
+                    }
+                    s_logger.trace(pooltable.toString());
+                }
                 // Check if the preferred storage pool can be used. If yes, use it.
                 Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("we have a preferred pool: %b", storagePool.isPresent()));
+                }
 
                 return (storagePool.isPresent()) ? (StoragePool) this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary) :
                     (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
@@ -1011,12 +1023,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException {
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("storage-pool %s/%s is associated with pod %d",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId()));
+        }
         Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
         Pod pod = _entityMgr.findById(Pod.class, podId);
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
         Long clusterId = storagePool.getClusterId();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("storage-pool %s/%s is associated with cluster %d",storagePool.getName(), storagePool.getUuid(), clusterId));
+        }
 
         VolumeInfo vol = null;
         if (volume.getState() == Volume.State.Allocated) {

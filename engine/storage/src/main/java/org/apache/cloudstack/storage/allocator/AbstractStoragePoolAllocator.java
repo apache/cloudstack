@@ -169,8 +169,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     @Override
     public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("reordering pools");
+        }
         if (pools == null) {
             return null;
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("reordering %d pools", pools.size()));
         }
         Account account = null;
         if (vmProfile.getVirtualMachine() != null) {
@@ -178,16 +184,26 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
-            // Shuffle this so that we don't check the pools in the same order.
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)",allocationAlgorithm));
+            }
             Collections.shuffle(pools);
         } else if (allocationAlgorithm.equals("userdispersing")) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("reordering: Algorithm == '%s'",allocationAlgorithm));
+            }
             pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
         } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("reordering: Algorithm == '%s'",allocationAlgorithm));
+            }
             pools = reorderPoolsByCapacity(plan, pools);
         }
 
         if (vmProfile.getVirtualMachine() == null) {
-            s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            }
             return pools;
         }
 

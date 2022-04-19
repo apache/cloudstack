@@ -2084,6 +2084,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
         }
+        if (s_logger.isTraceEnabled()) {
+            String msg = "attaching volume %s/%s to a VM (%s/%s) with an existing volume %s/%s on primary storage %s";
+            if (existingVolumeOfVm != null) {
+                s_logger.trace(String.format(msg,
+                        volumeToAttach.getName(), volumeToAttach.getUuid(),
+                        vm.getName(), vm.getUuid(),
+                        existingVolumeOfVm.getName(), existingVolumeOfVm.getUuid(),
+                        existingVolumeOfVm.getPoolId()));
+            }
+        }
 
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
@@ -2094,6 +2104,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO destPrimaryStorage = null;
         if (existingVolumeOfVm != null && !existingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
             destPrimaryStorage = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
+            if (s_logger.isTraceEnabled() && destPrimaryStorage != null) {
+                s_logger.trace(String.format("decided on target storage: %s/%s", destPrimaryStorage.getName(), destPrimaryStorage.getUuid()));
+            }
         }
 
         boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
@@ -2113,6 +2126,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // reload the volume from db
         newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
         boolean moveVolumeNeeded = needMoveVolume(existingVolumeOfVm, newVolumeOnPrimaryStorage);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("is this a new volume: %s == %s ?", volumeToAttach, newVolumeOnPrimaryStorage));
+            s_logger.trace(String.format("is it needed to move the volume: %b?", moveVolumeNeeded));
+        }
 
         if (moveVolumeNeeded) {
             PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
@@ -3817,6 +3834,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean sendCommand = vm.getState() == State.Running;
         AttachAnswer answer = null;
         StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+        if (s_logger.isTraceEnabled() && volumeToAttachStoragePool != null) {
+            s_logger.trace(String.format("storage is gotten from volume to attach: %s/%s",volumeToAttachStoragePool.getName(),volumeToAttachStoragePool.getUuid()));
+        }
         HostVO host = getHostForVmVolumeAttach(vm, volumeToAttachStoragePool);
         Long hostId = host == null ? null : host.getId();
         if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
