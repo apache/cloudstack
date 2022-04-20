@@ -457,7 +457,7 @@ public class ConsoleProxy {
                 s_logger.info("Added viewer object " + viewer);
                 reportLoadChange = true;
             } else {
-                // protected against malicous attack by modifying URL content
+                // protected against malicious attack by modifying URL content
                 if (ajaxSession != null) {
                     long ajaxSessionIdFromUrl = Long.parseLong(ajaxSession);
                     if (ajaxSessionIdFromUrl != viewer.getAjaxSessionId())
@@ -516,7 +516,7 @@ public class ConsoleProxy {
         ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
 
         if (authResult == null || !authResult.isSuccess()) {
-            s_logger.warn("External authenticator failed authencation request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
+            s_logger.warn("External authenticator failed authentication request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 
             throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
         }
@@ -566,7 +566,7 @@ public class ConsoleProxy {
                 try {
                     authenticationExternally(param);
                 } catch (Exception e) {
-                    s_logger.error("Authencation failed for param: " + param);
+                    s_logger.error("Authentication failed for param: " + param);
                     return null;
                 }
                 s_logger.info("Initializing new novnc client and disconnecting existing session");

@@ -28,7 +28,7 @@ jobs:
     - name: Conflict Check
       uses: eps1lon/actions-label-merge-conflict@v2.0.0
       with:
-        repoToken: "${{ secrets.GITHUB_TOKEN  }}"
+        repoToken: "${{ secrets.GITHUB_TOKEN }}"
         dirtyLabel: "status:has-conflicts"
         removeOnDirtyLabel: "status:ready-for-review"
         continueOnMissingPermissions: true

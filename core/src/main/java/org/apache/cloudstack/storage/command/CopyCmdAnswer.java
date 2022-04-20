@@ -20,6 +20,7 @@
 package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataTO;
 
 public class CopyCmdAnswer extends Answer {
@@ -36,5 +37,9 @@ public class CopyCmdAnswer extends Answer {
 
     public CopyCmdAnswer(String errMsg) {
         super(null, false, errMsg);
+    }
+
+    public CopyCmdAnswer(Command cmd, Exception e) {
+        super(cmd, e);
     }
 }

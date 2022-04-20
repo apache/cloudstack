@@ -27,11 +27,11 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import com.cloud.network.GuestVlan;
 
 @Entity
 @Table(name = "op_dc_vnet_alloc")
-public class DataCenterVnetVO implements InternalIdentity {
+public class DataCenterVnetVO implements GuestVlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -84,6 +84,7 @@ public class DataCenterVnetVO implements InternalIdentity {
         return vnet;
     }
 
+    @Override
     public String getReservationId() {
         return reservationId;
     }
@@ -92,6 +93,7 @@ public class DataCenterVnetVO implements InternalIdentity {
         this.reservationId = reservationId;
     }
 
+    @Override
     public Long getAccountId() {
         return accountId;
     }
@@ -100,10 +102,12 @@ public class DataCenterVnetVO implements InternalIdentity {
         this.accountId = accountId;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
 
+    @Override
     public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
@@ -112,6 +116,7 @@ public class DataCenterVnetVO implements InternalIdentity {
         this.accountGuestVlanMapId = accountGuestVlanMapId;
     }
 
+    @Override
     public Long getAccountGuestVlanMapId() {
         return accountGuestVlanMapId;
     }

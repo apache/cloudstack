@@ -31,6 +31,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -1011,9 +1012,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
-            if (vm.getAccountId() != loadBalancer.getAccountId()) {
-                throw new PermissionDeniedException("Cannot add virtual machines that do not belong to the same owner.");
-            }
+            Account vmOwner = _accountDao.findById(vm.getAccountId());
+            Network network = _networkDao.findById(loadBalancer.getNetworkId());
+            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
             // Let's check to make sure the vm has a nic in the same network as
             // the load balancing rule.

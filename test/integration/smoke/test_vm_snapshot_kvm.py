@@ -322,5 +322,5 @@ class TestVmSnapshot(cloudstackTestCase):
             virtualmachineid=self.virtual_machine.id,
             listall=False)
         self.debug('list_snapshot_response -------------------- %s' % list_snapshot_response)
-        
+
         self.assertIsNone(list_snapshot_response, "snapshot is already deleted")

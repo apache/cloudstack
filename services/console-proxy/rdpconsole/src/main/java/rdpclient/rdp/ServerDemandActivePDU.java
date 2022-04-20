@@ -64,7 +64,7 @@ public class ServerDemandActivePDU extends BaseElement {
         // TS_SHARECONTROLHEADER::pduSource = 0x03ea (1002)
         int pduSource = buf.readSignedShortLE();
         if (pduSource != 1002)
-            throw new RuntimeException("Unexepcted source of demand active PDU. Expected source: 1002, actual source: " + pduSource + ".");
+            throw new RuntimeException("Unexpected source of demand active PDU. Expected source: 1002, actual source: " + pduSource + ".");
 
         // (4 bytes): A 32-bit, unsigned integer. The share identifier for the
         // packet (see [T128] section 8.4.2 for more information regarding share
