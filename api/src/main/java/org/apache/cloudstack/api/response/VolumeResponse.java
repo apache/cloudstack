@@ -280,6 +280,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "pod name of the volume")
     private String podName;
 
+    @SerializedName(ApiConstants.EXTERNAL_UUID)
+    @Param(description = "volume uuid that is given by virtualisation provider (only for VMware)")
+    private String externalUuid;
+
     public String getPath() {
         return path;
     }
@@ -792,5 +796,13 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     public void setPodName(String podName) {
         this.podName = podName;
+    }
+
+    public String getExternalUuid() {
+        return externalUuid;
+    }
+
+    public void setExternalUuid(String externalUuid) {
+        this.externalUuid = externalUuid;
     }
 }
