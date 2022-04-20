@@ -30,7 +30,7 @@ public interface VMSnapshotStrategy {
     StrategyPriority canHandle(VMSnapshot vmSnapshot);
 
     /**
-     * Used only for KVM hypervisors when allocating a VM snapshot
+     * Verifies if the strategy can handle the VM snapshot. This method is used only for KVM hypervisors when allocating a VM snapshot.
      * @param vmId the ID of the virtual machine
      * @param snapshotMemory for VM snapshots with memory
      * @return StrategyPriority

@@ -3144,7 +3144,7 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3212,6 +3212,8 @@ class Network:
             cmd.externalid = externalid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4742,14 +4744,15 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None):
+               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
         cmd.gateway = gateway
         cmd.ipaddress = ipaddress
         cmd.netmask = netmask
-        cmd.vlan = vlan
+        if vlan:
+            cmd.vlan = vlan
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
@@ -4757,6 +4760,8 @@ class PrivateGateway:
             cmd.aclid = aclid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 
@@ -5312,7 +5317,7 @@ class NIC:
         """Remove secondary Ip from NIC"""
         cmd = removeIpFromNic.removeIpFromNicCmd()
         cmd.id = ipaddressid
-        return (apiclient.addIpToNic(cmd))
+        return (apiclient.removeIpFromNic(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -5324,6 +5329,14 @@ class NIC:
             cmd.listall = True
         return (apiclient.listNics(cmd))
 
+    @classmethod
+    def updateIp(cls, apiclient, id, ipaddress=None):
+        """Update Ip for NIC"""
+        cmd = updateVmNicIp.updateVmNicIpCmd()
+        cmd.nicid = id
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        return (apiclient.updateVmNicIp(cmd))
 
 class SimulatorMock:
     """Manage simulator mock lifecycle"""
@@ -5667,3 +5680,40 @@ class ProjectRolePermission:
         cmd.projectid = projectid
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listProjectRolePermissions(cmd))
+
+class NetworkPermission:
+    """Manage Network Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, **kwargs):
+        """Creates network permissions"""
+        cmd = createNetworkPermissions.createNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.createNetworkPermissions(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, **kwargs):
+        """Removes the network permissions"""
+
+        cmd = removeNetworkPermissions.removeNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.removeNetworkPermissions(cmd))
+
+    @classmethod
+    def reset(cls, apiclient, **kwargs):
+        """Updates the network permissions"""
+
+        cmd = resetNetworkPermissions.resetNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.resetNetworkPermissions(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listNetworkPermissions.listNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listNetworkPermissions(cmd))

@@ -1139,7 +1139,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             }
             return new File(destFile.getAbsolutePath());
         } catch (IOException e) {
-            s_logger.debug("Faild to get url:" + url + ", due to " + e.toString());
+            s_logger.debug("Failed to get url: " + url + ", due to " + e.toString());
             throw new CloudRuntimeException(e);
         }
     }

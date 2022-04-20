@@ -21,9 +21,8 @@
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
-            :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
-            :value="zoneSelected.name"
+            v-model:value="zoneSelectedKey"
             @change="changeZone"
             showSearch
             optionFilterProp="label"
@@ -163,6 +162,15 @@ export default {
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
       }
+    }
+  },
+  computed: {
+    zoneSelectedKey () {
+      if (this.zones.length === 0) {
+        return this.zoneSelected.name
+      }
+      const zoneIndex = this.zones.findIndex(zone => zone.id === this.zoneSelected.id)
+      return zoneIndex
     }
   },
   created () {

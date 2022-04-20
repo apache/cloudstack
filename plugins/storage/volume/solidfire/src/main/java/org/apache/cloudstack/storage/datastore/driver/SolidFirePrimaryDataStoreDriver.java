@@ -1619,4 +1619,22 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
     }
+
+    @Override
+    public boolean isVmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVmInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean isVmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
 }

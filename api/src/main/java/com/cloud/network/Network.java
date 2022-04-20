@@ -347,6 +347,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
+    public enum NetworkFilter {
+        Account,        // return account networks that have been registered for or created by the calling user
+        Domain,         // return domain networks that have been registered for or created by the calling user
+        AccountDomain,  // return account and domain networks that have been registered for or created by the calling user
+        Shared,         // including networks that have been granted to the calling user by another user
+        All             // all networks (account, domain and shared)
+    }
+
     public class IpAddresses {
         private String ip4Address;
         private String ip6Address;
@@ -386,6 +394,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             this.ip6Address = ip6Address;
         }
     }
+
+    static final String AssociatedNetworkId = "AssociatedNetworkId";
 
     String getName();
 
