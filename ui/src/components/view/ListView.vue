@@ -291,6 +291,9 @@
     <template #templateversion="{ record }">
       <span>  {{ record.version }} </span>
     </template>
+    <template #softwareversion="{ record }">
+      <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
+    </template>
     <template #access="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
