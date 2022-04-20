@@ -89,4 +89,6 @@ public interface Ipv6Service extends PluggableService, Configurable {
     FirewallRule getIpv6FirewallRule(Long entityId);
 
     boolean applyIpv6FirewallRule(long id);
+
+    void trashPublicIpv6PlaceholderNics(Network network);
 }

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -44,6 +45,7 @@ import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
@@ -88,6 +90,7 @@ import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -96,6 +99,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.googlecode.ipv6.IPv6Address;
@@ -105,6 +109,7 @@ import com.googlecode.ipv6.IPv6NetworkMask;
 public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Service {
 
     public static final Logger s_logger = Logger.getLogger(Ipv6ServiceImpl.class.getName());
+    private static final String s_publicNetworkReserver = PublicNetworkGuru.class.getSimpleName();
 
     ScheduledExecutorService _ipv6GuestPrefixSubnetNetworkMapStateScanner;
 
@@ -134,34 +139,67 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     IPAddressDao ipAddressDao;
     @Inject
     FirewallManager firewallManager;
+    @Inject
+    NetworkOrchestrationService networkOrchestrationService;
+
+    private Pair<String, ? extends Vlan> getPublicIpv6FromNetworkPlaceholder(Network network, List<VlanVO> ranges) {
+        List<NicVO> placeholderNics = nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
+        if (CollectionUtils.isEmpty(placeholderNics)) {
+            return null;
+        }
+        Optional<NicVO> nicOptional = placeholderNics.stream().filter(n -> ObjectUtils.allNotNull(n.getIPv6Address(),
+                n.getIPv6Cidr(), n.getIPv6Gateway()) &&
+                s_publicNetworkReserver.equals(n.getReserver())).findFirst();
+        if (nicOptional.isEmpty()) {
+            return null;
+        }
+        NicVO nic = nicOptional.get();
+        Optional<VlanVO> vlanOptional = ranges.stream().filter(v -> nic.getIPv6Cidr().equals(v.getIp6Cidr()) && nic.getIPv6Gateway().equals(v.getIp6Gateway())).findFirst();
+        if (vlanOptional.isEmpty()) {
+            s_logger.error(String.format("Public IPv6 placeholder NIC with cidr: %s, gateway: %s for network ID: %d is not present in the allocated VLAN: %s",
+                    nic.getIPv6Cidr(), nic.getIPv6Gateway(),network.getId(), ranges.get(0).getVlanTag()));
+            return null;
+        }
+        return new Pair<>(nic.getIPv6Address(), vlanOptional.get());
+    }
 
     private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
-        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
-        if (CollectionUtils.isEmpty(ranges)) {
-            s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
-            InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
-            ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
-            throw ex;
-        }
-        Collections.shuffle(ranges);
-        VlanVO selectedVlan = ranges.get(0);
-        IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
-        if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
-            Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
-            if (splits.hasNext()) {
-                ipv6Network = splits.next();
+        Pair<String, ? extends Vlan> result = Transaction.execute((TransactionCallbackWithException<Pair<String, ? extends Vlan>, InsufficientAddressCapacityException>) status -> {
+            final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
+            if (CollectionUtils.isEmpty(ranges)) {
+                s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
+                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
+                ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+                throw ex;
             }
-        }
-        IPv6Address ipv6Addr = NetUtils.EUI64Address(ipv6Network, nicMacAddress);
-        String event = EventTypes.EVENT_NET_IP6_ASSIGN;
-        String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Addr,  network.getUuid());
+            Pair<String, ? extends Vlan> placeholderResult = getPublicIpv6FromNetworkPlaceholder(network, ranges);
+            if (placeholderResult != null) {
+                return placeholderResult;
+            }
+            trashPublicIpv6PlaceholderNics(network);
+            Collections.shuffle(ranges);
+            VlanVO selectedVlan = ranges.get(0);
+            IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
+            if (ipv6Network.getNetmask().asPrefixLength() < IPV6_SLAAC_CIDR_NETMASK) {
+                Iterator<IPv6Network> splits = ipv6Network.split(IPv6NetworkMask.fromPrefixLength(IPV6_SLAAC_CIDR_NETMASK));
+                if (splits.hasNext()) {
+                    ipv6Network = splits.next();
+                }
+            }
+            IPv6Address ipv6Addr = NetUtils.EUI64Address(ipv6Network, nicMacAddress);
+            networkOrchestrationService.savePlaceholderNic(network, null, ipv6Addr.toString(), selectedVlan.getIp6Cidr(), selectedVlan.getIp6Gateway(), s_publicNetworkReserver, VirtualMachine.Type.DomainRouter);
+            return new Pair<>(ipv6Addr.toString(), selectedVlan);
+        });
+        final String ipv6Address = result.first();
+        final String event = EventTypes.EVENT_NET_IP6_ASSIGN;
+        final String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Address,  network.getUuid());
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        final String guestType = selectedVlan.getVlanType().toString();
+        final String guestType = result.second().getVlanType().toString();
         UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
-                ipv6Addr.toString(), false, guestType, false, usageHidden,
+                ipv6Address, false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
-        return new Pair<>(ipv6Addr.toString(), selectedVlan);
+        return result;
     }
 
     private Ipv6GuestPrefixSubnetNetworkMapVO preallocatePrefixSubnetRandomly(DataCenterGuestIpv6PrefixVO prefix) {
@@ -328,7 +366,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         if (ObjectUtils.allNull(vlan.getIp6Cidr(), vlan.getIp6Gateway())) {
             return null;
         }
-        List<NicVO> nics = nicDao.findNicsByIpv6GatewayIpv6CidrAndReserver(vlan.getIp6Gateway(), vlan.getIp6Cidr(), PublicNetworkGuru.class.getSimpleName());
+        List<NicVO> nics = nicDao.findNicsByIpv6GatewayIpv6CidrAndReserver(vlan.getIp6Gateway(), vlan.getIp6Cidr(), s_publicNetworkReserver);
         if (CollectionUtils.isNotEmpty(nics)) {
             return nics.stream().map(NicVO::getIPv6Address).collect(Collectors.toList());
         }
@@ -398,7 +436,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             List<NicVO> nics = nicDao.listByVmId(router.getId());
             for (NicVO nic : nics) {
                 String address = nic.getIPv6Address();
-                if (!PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver()) ||
+                if (!s_publicNetworkReserver.equals(nic.getReserver()) ||
                         StringUtils.isEmpty(address) ||
                         addresses.contains(address)) {
                     continue;
@@ -600,6 +638,31 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         List<FirewallRuleVO> rules = firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
         rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), FirewallRule.Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
         return firewallManager.applyFirewallRules(rules, false, CallContext.current().getCallingAccount());
+    }
+
+    @Override
+    public void trashPublicIpv6PlaceholderNics(Network network) {
+        try {
+            List<NicVO> nics = nicDao.listPlaceholderNicsByNetworkId(network.getId())
+                    .stream().filter(n -> ObjectUtils.allNotNull(n.getIPv6Address(), n.getIPv6Cidr(),
+                            n.getIPv6Gateway()) &&
+                            s_publicNetworkReserver.equals(n.getReserver())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(nics)) {
+                Transaction.execute(new TransactionCallbackNoReturn() {
+                    @Override
+                    public void doInTransactionWithoutResult(TransactionStatus status) {
+                        for (Nic nic : nics) {
+                            s_logger.debug("Removing placeholder nic " + nic);
+                            nicDao.remove(nic.getId());
+                        }
+                    }
+                });
+            }
+        } catch (Exception e) {
+            String msg = String.format("IPv6 Placeholder Nics trash. Exception: %s", e.getMessage());
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg, e);
+        }
     }
 
     public class Ipv6GuestPrefixSubnetNetworkMapStateScanner extends ManagedContextRunnable {

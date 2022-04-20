@@ -277,6 +277,8 @@ public interface NetworkOrchestrationService {
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 
+    Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, String ip6Cidr, String ip6Gateway, String reserver, Type vmType);
+
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 
     DnsServiceProvider getDnsServiceProvider(Network network);

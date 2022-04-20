@@ -4352,10 +4352,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public NicVO savePlaceholderNic(final Network network, final String ip4Address, final String ip6Address, final Type vmType) {
+        return savePlaceholderNic(network, ip4Address, ip6Address, null, null, null, vmType);
+    }
+
+    @Override
+    public NicVO savePlaceholderNic(final Network network, final String ip4Address, final String ip6Address, final String ip6Cidr, final String ip6Gateway, final String reserver, final Type vmType) {
         final NicVO nic = new NicVO(null, null, network.getId(), null);
         nic.setIPv4Address(ip4Address);
         nic.setIPv6Address(ip6Address);
+        nic.setIPv6Cidr(ip6Cidr);
+        nic.setIPv6Gateway(ip6Gateway);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
+        if (reserver != null) {
+            nic.setReserver(reserver);
+        }
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);
         return _nicDao.persist(nic);

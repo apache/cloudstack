@@ -231,6 +231,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public boolean trash(Network network, NetworkOffering offering) {
+        ipv6Service.trashPublicIpv6PlaceholderNics(network);
         return true;
     }
 
