@@ -592,7 +592,7 @@ export default {
           } else if (this.$route.path.includes('/router')) {
             objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
-            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r] || obj.name === tempResource[r]))
           }
           if (state && objIndex !== -1) {
             this.selectedItems[objIndex].status = state

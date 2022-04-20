@@ -3649,6 +3649,24 @@ public class VirtualMachineMO extends BaseMO {
         return count;
     }
 
+    public String getExternalDiskUUID(String datastoreVolumePath) throws Exception{
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (CollectionUtils.isEmpty(devices) || datastoreVolumePath == null) {
+            return null;
+        }
+
+        for (VirtualDevice device : devices) {
+            if (device instanceof VirtualDisk && device.getBacking() instanceof VirtualDiskFlatVer2BackingInfo){
+                VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo) device.getBacking();
+                if(backingInfo.getFileName().equals(datastoreVolumePath)){
+                   return backingInfo.getUuid();
+                }
+            }
+        }
+
+        return null;
+    }
+
     public boolean consolidateVmDisks() throws Exception {
         ManagedObjectReference morTask = _context.getService().consolidateVMDisksTask(_mor);
         boolean result = _context.getVimClient().waitForTask(morTask);
