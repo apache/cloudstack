@@ -66,7 +66,7 @@ export default {
       }, {
         name: 'virtual.routers',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
-        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis }
+        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis && isAdmin() }
       }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
