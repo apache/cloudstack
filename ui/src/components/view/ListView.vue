@@ -295,6 +295,9 @@
       <status :text="record.requiresupgrade ? 'warning' : ''" />
       {{ record.requiresupgrade ? 'Yes' : 'No' }}
     </template>
+    <template #loadbalancerrule="{ record }">
+      <span>  {{ record.loadbalancerrule }} </span>
+    </template>
     <template #autoscalingenabled="{ record }">
       <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
       {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
