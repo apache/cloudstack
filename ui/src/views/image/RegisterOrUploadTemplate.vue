@@ -397,7 +397,6 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
-        checksum: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
