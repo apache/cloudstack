@@ -65,6 +65,7 @@ public interface NetworkHelper {
      * @return
      */
     public abstract boolean checkRouterVersion(VirtualRouter router);
+    public abstract boolean checkRouterTemplateVersion(VirtualRouter router);
 
     public abstract List<DomainRouterVO> startRouters(
             RouterDeploymentDefinition routerDeploymentDefinition)

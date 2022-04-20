@@ -2226,6 +2226,7 @@
 "label.templatesubject": "Subject",
 "label.templatetotal": "Template",
 "label.templatetype": "Template Type",
+"label.templateversion": "Template Version",
 "label.tftp.dir": "TFTP Directory",
 "label.tftpdir": "Tftp root directory",
 "label.theme.alert": "The setting is only visible to the current browser. To apply the setting, please download the JSON file and replace its content in the `theme` section of the `config.json` file under the path: `/public/config.json`",

@@ -24,7 +24,11 @@ export default {
   docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },
-  columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade'],
+  columns: () => {
+    var columns = ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade']
+    columns.splice(6, 0, { field: 'version', customTitle: 'templateversion' })
+    return columns
+  },
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
   details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
   resourceType: 'VirtualRouter',
@@ -138,8 +142,8 @@ export default {
       message: 'message.confirm.upgrade.router.newer.template',
       docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
       dataView: true,
-      groupAction: true,
-      show: (record) => { return record.requiresupgrade }
+      groupAction: true
+      // show: (record) => { return record.requiresupgrade }
     },
     {
       api: 'migrateSystemVm',

@@ -289,6 +289,20 @@ public class NetworkHelperImpl implements NetworkHelper {
         return routerCheckSumMatch;
     }
 
+    @Override
+    public boolean checkRouterTemplateVersion(final VirtualRouter router) {
+        if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
+            // Router version check is disabled.
+            return true;
+        }
+        if (router.getTemplateVersion() == null) {
+            return false;
+        }
+        final long dcid = router.getDataCenterId();
+        String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
+        return CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+    }
+
     protected DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
             throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);

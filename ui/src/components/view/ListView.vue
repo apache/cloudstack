@@ -288,6 +288,9 @@
       <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
+    <template #templateversion="{ record }">
+      <span>  {{ record.version }} </span>
+    </template>
     <template #access="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>

@@ -46,6 +46,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -66,6 +67,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -364,6 +366,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
+    @Inject private ManagementServer mgr;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -2679,6 +2682,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
         router.setTemplateVersion(versionAnswer.getTemplateVersion());
         router.setScriptsVersion(versionAnswer.getScriptsVersion());
+        String codeVersion = mgr.getVersion();
+        if (StringUtils.isNotEmpty(codeVersion)) {
+            codeVersion = CloudStackVersion.parse(codeVersion).toString();
+        }
+        router.setSoftwareVersion(codeVersion);
         _routerDao.persist(router, guestNetworks);
 
         final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
@@ -3209,7 +3217,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
-            if (!_nwHelper.checkRouterVersion(router)) {
+            if (!_nwHelper.checkRouterTemplateVersion(router)) {
                 s_logger.debug("Upgrading template for router: " + router.getId());
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");
