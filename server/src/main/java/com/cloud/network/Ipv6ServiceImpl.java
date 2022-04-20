@@ -261,54 +261,66 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     public Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException {
-        List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
-        if (CollectionUtils.isEmpty(prefixes)) {
-            s_logger.error(String.format("IPv6 prefixes not found for the zone ID: %d", zoneId));
-            throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
-        }
-        Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
-        for (DataCenterGuestIpv6PrefixVO prefix : prefixes) {
-            ip6Subnet = ipv6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
+        return Transaction.execute((TransactionCallbackWithException<Pair<String, String>, ResourceAllocationException>) status -> {
+            List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+            if (CollectionUtils.isEmpty(prefixes)) {
+                s_logger.error(String.format("IPv6 prefixes not found for the zone ID: %d", zoneId));
+                throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
+            }
+            Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
+            for (DataCenterGuestIpv6PrefixVO prefix : prefixes) {
+                ip6Subnet = ipv6GuestPrefixSubnetNetworkMapDao.findFirstAvailable(prefix.getId());
+                if (ip6Subnet == null) {
+                    ip6Subnet = preallocatePrefixSubnetRandomly(prefix);
+                }
+                if (ip6Subnet != null) {
+                    break;
+                }
+            }
             if (ip6Subnet == null) {
-                ip6Subnet = preallocatePrefixSubnetRandomly(prefix);
+                throw new ResourceAllocationException("Unable to allocate IPv6 guest subnet for the network", Resource.ResourceType.network);
             }
-            if (ip6Subnet != null) {
-                break;
+            ip6Subnet.setUpdated(new Date());
+            if (Ipv6GuestPrefixSubnetNetworkMap.State.Free.equals(ip6Subnet.getState())) {
+                ip6Subnet.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
+                ipv6GuestPrefixSubnetNetworkMapDao.update(ip6Subnet.getId(), ip6Subnet);
+            } else {
+                ipv6GuestPrefixSubnetNetworkMapDao.persist(ip6Subnet);
             }
-        }
-        if (ip6Subnet == null) {
-            throw new ResourceAllocationException("Unable to allocate IPv6 guest subnet for the network", Resource.ResourceType.network);
-        }
-        ip6Subnet.setUpdated(new Date());
-        if (Ipv6GuestPrefixSubnetNetworkMap.State.Free.equals(ip6Subnet.getState())) {
-            ip6Subnet.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Allocating);
-            ipv6GuestPrefixSubnetNetworkMapDao.update(ip6Subnet.getId(), ip6Subnet);
-        } else {
-            ipv6GuestPrefixSubnetNetworkMapDao.persist(ip6Subnet);
-        }
-        IPv6Network network = IPv6Network.fromString(ip6Subnet.getSubnet());
-        IPv6Address gateway = network.getFirst().add(1);
-        return new Pair<>(gateway.toString(), network.toString());
+            IPv6Network network = IPv6Network.fromString(ip6Subnet.getSubnet());
+            IPv6Address gateway = network.getFirst().add(1);
+            return new Pair<>(gateway.toString(), network.toString());
+        });
     }
 
     @Override
     public void assignIpv6SubnetToNetwork(String subnet, long networkId) {
-        Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO  = ipv6GuestPrefixSubnetNetworkMapDao.findBySubnet(subnet);
-        if (ipv6GuestPrefixSubnetNetworkMapVO != null) {
-            ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(ipv6GuestPrefixSubnetNetworkMapVO.getId());
-            ipv6GuestPrefixSubnetNetworkMapVO.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Allocated);
-            ipv6GuestPrefixSubnetNetworkMapVO.setNetworkId(networkId);
-            ipv6GuestPrefixSubnetNetworkMapVO.setUpdated(new Date());
-            ipv6GuestPrefixSubnetNetworkMapDao.update(ipv6GuestPrefixSubnetNetworkMapVO.getId(), ipv6GuestPrefixSubnetNetworkMapVO);
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.findBySubnet(subnet);
+                if (ipv6GuestPrefixSubnetNetworkMapVO != null) {
+                    ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(ipv6GuestPrefixSubnetNetworkMapVO.getId());
+                    ipv6GuestPrefixSubnetNetworkMapVO.setState(Ipv6GuestPrefixSubnetNetworkMap.State.Allocated);
+                    ipv6GuestPrefixSubnetNetworkMapVO.setNetworkId(networkId);
+                    ipv6GuestPrefixSubnetNetworkMapVO.setUpdated(new Date());
+                    ipv6GuestPrefixSubnetNetworkMapDao.update(ipv6GuestPrefixSubnetNetworkMapVO.getId(), ipv6GuestPrefixSubnetNetworkMapVO);
+                }
+            }
+        });
     }
 
     @Override
     public void releaseIpv6SubnetForNetwork(long networkId) {
-        Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO  = ipv6GuestPrefixSubnetNetworkMapDao.findByNetworkId(networkId);
-        if (ipv6GuestPrefixSubnetNetworkMapVO != null) {
-            releaseIpv6Subnet(ipv6GuestPrefixSubnetNetworkMapVO.getId());
-        }
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                Ipv6GuestPrefixSubnetNetworkMapVO ipv6GuestPrefixSubnetNetworkMapVO = ipv6GuestPrefixSubnetNetworkMapDao.findByNetworkId(networkId);
+                if (ipv6GuestPrefixSubnetNetworkMapVO != null) {
+                    releaseIpv6Subnet(ipv6GuestPrefixSubnetNetworkMapVO.getId());
+                }
+            }
+        });
     }
 
     @Override
