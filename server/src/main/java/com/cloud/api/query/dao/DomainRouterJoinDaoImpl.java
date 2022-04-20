@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -103,12 +102,14 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             if (!isTempVersionLower) {
                 routerResponse.setRequiresUpgrade(false);
             } else {
-                String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz").trim().replaceAll("\n","");
-                String routerScriptVersion = router.getScriptsVersion();
                 boolean requiresUpgrade = true;
-                if (StringUtils.isNotEmpty(routerScriptVersion)) {
-                    routerScriptVersion = routerScriptVersion.trim().replaceAll("\n", "");
-                    requiresUpgrade = !(routerScriptVersion.equals(currentCheckSum));
+                String currentCodeVersion = this.getClass().getPackage().getImplementationVersion();
+                if (StringUtils.isNotEmpty(currentCodeVersion)) {
+                    currentCodeVersion = CloudStackVersion.parse(currentCodeVersion).toString();
+                    String routerSoftwareVersion = router.getSoftwareVersion();
+                    if (StringUtils.isNotEmpty(routerSoftwareVersion)) {
+                        requiresUpgrade = !(currentCodeVersion.equals(routerSoftwareVersion));
+                    }
                 }
                 routerResponse.setRequiresUpgrade(requiresUpgrade);
             }
