@@ -220,6 +220,24 @@ CREATE VIEW `cloud`.`service_offering_view` AS
     GROUP BY
         `service_offering`.`id`;
 
+
+--;
+-- Stored procedure to do idempotent column add;
+-- This is copied from schema-41000to41100.sql
+--;
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200),
+    IN in_column_name VARCHAR(200),
+    IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes','external_uuid', 'VARCHAR(40) DEFAULT null ');
+
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
     SELECT
@@ -240,6 +258,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.format,
         volumes.path,
         volumes.chain_info,
+        volumes.external_uuid,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -641,9 +660,17 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
-
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+
+-- table for network permissions
+CREATE TABLE  `cloud`.`network_permissions` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  INDEX `i_network_permission_network_id`(`network_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
     SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`

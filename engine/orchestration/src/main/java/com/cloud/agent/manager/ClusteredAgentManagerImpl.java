@@ -1014,13 +1014,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                     }
 
                                 } else {
-                                    s_logger.debug("Agent " + hostId + " can't be transfered yet as its request queue size is " + attache.getQueueSize() + " and listener queue size is "
+                                    s_logger.debug("Agent " + hostId + " can't be transferred yet as its request queue size is " + attache.getQueueSize() + " and listener queue size is "
                                             + attache.getNonRecurringListenersSize());
                                 }
                             }
                         } else {
                             if (s_logger.isTraceEnabled()) {
-                                s_logger.trace("Found no agents to be transfered by the management server " + _nodeId);
+                                s_logger.trace("Found no agents to be transferred by the management server " + _nodeId);
                             }
                         }
                     }
@@ -1060,7 +1060,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
 
             if (result) {
-                s_logger.debug("Successfully transfered host id=" + hostId + " to management server " + futureOwnerId);
+                s_logger.debug("Successfully transferred host id=" + hostId + " to management server " + futureOwnerId);
                 finishRebalance(hostId, futureOwnerId, Event.RebalanceCompleted);
             } else {
                 s_logger.warn("Failed to transfer host id=" + hostId + " to management server " + futureOwnerId);

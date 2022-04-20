@@ -177,6 +177,8 @@ public interface NetworkOrchestrationService {
      */
     void rollbackNicForMigration(VirtualMachineProfile src, VirtualMachineProfile dst);
 
+    boolean isSharedNetworkWithoutSpecifyVlan(NetworkOffering offering);
+
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
     boolean destroyNetwork(long networkId, ReservationContext context, boolean forced);

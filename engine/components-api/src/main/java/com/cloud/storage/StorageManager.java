@@ -280,6 +280,8 @@ public interface StorageManager extends StorageService {
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
+    void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
+
     void createCapacityEntry(long poolId);
 
     DataStore createLocalStorage(Host host, StoragePoolInfo poolInfo) throws ConnectionException;

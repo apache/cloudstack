@@ -49,7 +49,7 @@ public class UpdatePhysicalNetworkTest {
         NetworkServiceImpl networkService = new NetworkServiceImpl();
         networkService._dcDao = _datacenterDao;
         networkService._physicalNetworkDao = _physicalNetworkDao;
-        networkService._datacneterVnet = _datacenterVnetDao;
+        networkService._dcVnetDao = _datacenterVnetDao;
         return networkService;
     }
 

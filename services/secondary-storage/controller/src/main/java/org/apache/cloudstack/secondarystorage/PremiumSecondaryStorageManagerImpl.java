@@ -149,7 +149,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         }
 
         if (!suspendAutoLoading) {
-            // this is to avoid surprises that people may accidently see two SSVMs being launched, capacity expanding only happens when we have at least the primary SSVM is up
+            // this is to avoid surprises that people may accidentally see two SSVMs being launched, capacity expanding only happens when we have at least the primary SSVM is up
             if (alreadyRunning.size() == 0) {
                 s_logger.info("Primary secondary storage is not even started, wait until next turn");
                 return new Pair<AfterScanAction, Object>(AfterScanAction.nop, null);

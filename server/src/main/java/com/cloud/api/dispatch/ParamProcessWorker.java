@@ -38,7 +38,9 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
@@ -291,7 +293,14 @@ public class ParamProcessWorker implements DispatchWorker {
         if (entityOwners != null) {
             owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
         } else {
-            owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
+            if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getInstanceType() == ApiCommandJobType.Network) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+                }
+                owners = new Account[]{};
+            } else {
+                owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
+            }
         }
 
         if (cmd instanceof BaseAsyncCreateCmd) {

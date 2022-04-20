@@ -46,13 +46,13 @@ public class ServerX224DataPdu extends BaseElement {
         int type = buf.readUnsignedByte(); // High nibble: type, low nibble:
 
         if ((type & 0xf0) != X224_TPDU_DATA)
-            throw new RuntimeException("[" + this + "] ERROR: Unexepcted X224 packet type. Expected packet type: " + X224_TPDU_DATA
+            throw new RuntimeException("[" + this + "] ERROR: Unexpected X224 packet type. Expected packet type: " + X224_TPDU_DATA
                     + " (X224_TPDU_DATA), actual packet type: " + type + ", buf: " + buf + ".");
 
         int options = buf.readUnsignedByte();
 
         if ((options & X224_TPDU_LAST_DATA_UNIT) != X224_TPDU_LAST_DATA_UNIT)
-            throw new RuntimeException("Unexepcted X224 packet options. Expected options: " + X224_TPDU_LAST_DATA_UNIT
+            throw new RuntimeException("Unexpected X224 packet options. Expected options: " + X224_TPDU_LAST_DATA_UNIT
                     + " (X224_TPDU_LAST_DATA_UNIT), actual packet options: " + options + ", buf: " + buf + ".");
 
         ByteBuffer payload = buf.readBytes(buf.length - buf.cursor);

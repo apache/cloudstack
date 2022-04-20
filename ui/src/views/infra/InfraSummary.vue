@@ -49,6 +49,7 @@
               {{ $t('message.update.ssl') }}
             </p>
             <a-form
+              layout="vertical"
               :ref="formRef"
               :model="form"
               :rules="rules"
@@ -109,7 +110,7 @@
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item name="pkcsKey" ref="pkcsKey" :required="true">
+              <a-form-item name="pkcs" ref="pkcs" :required="true">
                 <template #label>
                   <tooltip-label :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
                 </template>
@@ -133,15 +134,14 @@
                   v-model:value="form.dns"
                 ></a-input>
               </a-form-item>
-
-              <a-form-item class="controls">
+              <div :span="24" class="action-button">
                 <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" ref="submit" :loading="sslFormSubmitting">
+                <a-button type="primary" ref="submit" :loading="sslFormSubmitting" @click="handleSslFormSubmit">
                   {{ $t('label.submit' ) }}
                 </a-button>
-              </a-form-item>
+              </div>
             </a-form>
           </a-modal>
         </a-col>
@@ -207,7 +207,7 @@ export default {
       this.rules = reactive({
         root: [{ required: true, message: this.$t('label.required') }],
         server: [{ required: true, message: this.$t('label.required') }],
-        pkcsKey: [{ required: true, message: this.$t('label.required') }],
+        pkcs: [{ required: true, message: this.$t('label.required') }],
         dns: [{ required: true, message: this.$t('label.required') }]
       })
     },

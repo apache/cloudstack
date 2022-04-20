@@ -226,34 +226,10 @@ backup_snapshot() {
       return 2
     fi
   elif [ -f ${disk} ]; then
-    # Does the snapshot exist?
-    qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk 2>&1)
-    ret_code=$?
-    if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"snapshot: invalid option -- 'U'"* ]]
-    then
-      forceShareFlag=""
-      qemuimg_ret=$($qemu_img snapshot $forceShareFlag -l $disk)
-      ret_code=$?
-    fi
-    if [ $ret_code -gt 0 ] || [[ ! $qemuimg_ret == *"$snapshotname"* ]]
-    then
-      printf "there is no $snapshotname on disk $disk\n" >&2
-      return 1
-    fi
 
-    qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1 > /dev/null)
+    cp "$disk" "${destPath}/${destName}"
     ret_code=$?
-    if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"convert: invalid option -- 'U'"* ]]
-    then
-      forceShareFlag=""
-      qemuimg_ret=$($qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -l snapshot.name=$snapshotname $disk $destPath/$destName 2>&1 > /dev/null)
-      ret_code=$?
-    fi
-    if [ $ret_code -gt 0 ] && [[ $qemuimg_ret == *"convert: invalid option -- 'l'"* ]]
-    then
-      $qemu_img convert $forceShareFlag -f qcow2 -O qcow2 -s $snapshotname $disk $destPath/$destName >& /dev/null
-      ret_code=$?
-    fi
+
     if [ $ret_code -gt 0 ]
     then
       printf "Failed to backup $snapshotname for disk $disk to $destPath\n" >&2

@@ -622,9 +622,9 @@ export default {
           popup: true,
           groupMap: (selection, values, record) => {
             return selection.map(x => {
-              const data = record.filter(y => { return y.name === x })
+              const data = record.filter(y => { return y.id === x })
               return {
-                name: x, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name, account: data[0].account, domainid: data[0].domainid
               }
             })
           }

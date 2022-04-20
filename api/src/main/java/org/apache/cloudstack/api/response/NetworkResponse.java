@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Network;
@@ -33,7 +33,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
-public class NetworkResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
+public class NetworkResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the network")
@@ -194,6 +194,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @SerializedName(ApiConstants.VPC_NAME)
     @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
     private String vpcName;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the ID of the Network associated with this network")
+    private String associatedNetworkId;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
+    @Param(description = "the name of the Network associated with this network")
+    private String associatedNetworkName;
 
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
@@ -510,6 +518,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setVpcName(String vpcName) {
         this.vpcName = vpcName;
+    }
+
+    public void setAssociatedNetworkId(String associatedNetworkId) {
+        this.associatedNetworkId = associatedNetworkId;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
     }
 
     @Override

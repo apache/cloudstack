@@ -379,8 +379,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
-        SnapshotObjectTO snapshotTO = (SnapshotObjectTO)snapshot.getTO();
-        RevertSnapshotCommand cmd = new RevertSnapshotCommand(snapshotTO);
+        RevertSnapshotCommand cmd = new RevertSnapshotCommand((SnapshotObjectTO)snapshot.getTO(), (SnapshotObjectTO)snapshotOnPrimaryStore.getTO());
 
         CommandResult result = new CommandResult();
         try {
@@ -491,5 +490,23 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Override
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
+    }
+
+    @Override
+    public boolean isVmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVmInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean isVmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
     }
 }
