@@ -1811,7 +1811,7 @@
 "label.rbdmonitor": "Cephモニター",
 "label.rbdpool": "Cephプール",
 "label.rbdsecret": "Cephxシークレット",
-"label.read": "Read",
+"label.read": "読み取り",
 "label.read.io": "読み取り (IO)",
 "label.readonly": "読み取り専用",
 "label.reason": "理由",
