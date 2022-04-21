@@ -65,6 +65,7 @@ import {
   DoubleRightOutlined,
   DownOutlined,
   DownloadOutlined,
+  DiffOutlined,
   DragOutlined,
   EditOutlined,
   EnvironmentOutlined,
@@ -207,6 +208,7 @@ export default {
     app.component('DoubleRightOutlined', DoubleRightOutlined)
     app.component('DownOutlined', DownOutlined)
     app.component('DownloadOutlined', DownloadOutlined)
+    app.component('DiffOutlined', DiffOutlined)
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)

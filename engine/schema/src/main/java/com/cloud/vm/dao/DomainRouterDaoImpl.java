@@ -79,7 +79,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
-        AllFieldsSearch.and("role", AllFieldsSearch.entity().getRole(), Op.EQ);
+        AllFieldsSearch.and("role", AllFieldsSearch.entity().getRole(), Op.IN);
         AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), Op.EQ);
         AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
         AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
@@ -338,10 +338,10 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public List<DomainRouterVO> listByNetworkAndRole(final long networkId, final Role role) {
+    public List<DomainRouterVO> listByNetworkAndRole(final long networkId, final Role... roles) {
         final SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setJoinParameters("networkRouter", "networkId", networkId);
-        sc.setParameters("role", role);
+        sc.setParameters("role", (Object[])roles);
         return listBy(sc);
     }
 

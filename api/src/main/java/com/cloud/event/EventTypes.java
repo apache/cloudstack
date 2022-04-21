@@ -637,6 +637,9 @@ public class EventTypes {
     // Storage Policies
     public static final String EVENT_IMPORT_VCENTER_STORAGE_POLICIES = "IMPORT.VCENTER.STORAGE.POLICIES";
 
+    // SystemVM
+    public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1048,6 +1051,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_IMPORT_VCENTER_STORAGE_POLICIES, "StoragePolicies");
 
         entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
+        entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
     }
 
     public static String getEntityForEvent(String eventName) {

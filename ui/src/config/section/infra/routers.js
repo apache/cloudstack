@@ -24,9 +24,13 @@ export default {
   docHelp: 'adminguide/systemvm.html#virtual-router',
   permission: ['listRouters'],
   params: { projectid: '-1' },
-  columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
+  columns: () => {
+    var columns = ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'redundantstate', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade']
+    columns.splice(6, 0, { field: 'version', customTitle: 'templateversion' })
+    return columns
+  },
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid'],
-  details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
   resourceType: 'VirtualRouter',
   tabs: [{
     name: 'details',
@@ -85,6 +89,32 @@ export default {
       groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
     },
     {
+      api: 'restartNetwork',
+      icon: 'diff-outlined',
+      label: 'label.action.patch.systemvm',
+      message: 'message.action.patch.router',
+      dataView: true,
+      hidden: (record) => { return record.state === 'Running' },
+      mapping: {
+        id: {
+          value: (record) => { return record.guestnetworkid }
+        },
+        livepatch: {
+          value: (record) => { return true }
+        }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values, record) => {
+        return selection.map(x => {
+          const data = record.filter(y => { return y.id === x })
+          return {
+            id: data[0].guestnetworkid, livepatch: true
+          }
+        })
+      }
+    },
+    {
       api: 'scaleSystemVm',
       icon: 'arrows-alt-outlined',
       label: 'label.change.service.offering',
@@ -112,8 +142,8 @@ export default {
       message: 'message.confirm.upgrade.router.newer.template',
       docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
       dataView: true,
-      groupAction: true,
-      show: (record) => { return record.requiresupgrade }
+      groupAction: true
+      // show: (record) => { return record.requiresupgrade }
     },
     {
       api: 'migrateSystemVm',

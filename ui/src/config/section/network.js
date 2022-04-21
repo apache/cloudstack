@@ -104,7 +104,14 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: (record) => record.vpcid == null ? ['cleanup'] : [], // if it is a tier in a VPC and so it has a vpc do not allow "cleanup
+          args: (record) => {
+            var fields = []
+            if (record.vpcid == null) {
+              fields.push('cleanup')
+            }
+            fields.push('livepatch')
+            return fields
+          },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
@@ -196,6 +203,7 @@ export default {
             if (!record.redundantvpcrouter) {
               fields.push('makeredundant')
             }
+            fields.push('livepatch')
             return fields
           },
           groupAction: true,

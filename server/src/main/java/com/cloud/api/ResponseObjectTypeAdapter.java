@@ -22,6 +22,7 @@ import java.lang.reflect.Type;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.JsonElement;
@@ -38,6 +39,9 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
 
         if (responseObj instanceof SuccessResponse) {
             obj.addProperty("success", ((SuccessResponse)responseObj).getSuccess());
+            if (!StringUtils.isEmpty(((SuccessResponse) responseObj).getDisplayText())) {
+                obj.addProperty("details", ((SuccessResponse)responseObj).getDisplayText());
+            }
             return obj;
         } else if (responseObj instanceof ExceptionResponse) {
             obj.addProperty("errorcode", ((ExceptionResponse)responseObj).getErrorCode());

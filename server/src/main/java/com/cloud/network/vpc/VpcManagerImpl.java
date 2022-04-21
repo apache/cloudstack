@@ -1718,13 +1718,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final long vpcId = cmd.getId();
         final boolean cleanUp = cmd.getCleanup();
         final boolean makeRedundant = cmd.getMakeredundant();
+        final boolean livePatch = cmd.getLivePatch();
         final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        return restartVpc(vpcId, cleanUp, makeRedundant, callerUser);
+        return restartVpc(vpcId, cleanUp, makeRedundant, livePatch, callerUser);
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
-    public boolean restartVpc(Long vpcId, boolean cleanUp, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartVpc(Long vpcId, boolean cleanUp, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
@@ -1767,7 +1768,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 return true;
             }
 
-            restartVPCNetworks(vpcId, callerAccount, user, cleanUp);
+            if (cleanUp) {
+                livePatch = false;
+            }
+
+            restartVPCNetworks(vpcId, callerAccount, user, cleanUp, livePatch);
 
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process without cleanup");
             if (!startVpc(vpcId, false)) {
@@ -1785,11 +1790,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    private void restartVPCNetworks(long vpcId, Account callerAccount, User callerUser, boolean cleanUp) throws InsufficientCapacityException, ResourceUnavailableException {
+    private void restartVPCNetworks(long vpcId, Account callerAccount, User callerUser, boolean cleanUp, boolean livePatch) throws InsufficientCapacityException, ResourceUnavailableException {
         List<? extends Network> networks = _ntwkModel.listNetworksByVpc(vpcId);
         for (Network network: networks) {
-            if (network.isRestartRequired()) {
-                _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp);
+            if (network.isRestartRequired() || livePatch) {
+                _ntwkMgr.restartNetwork(network.getId(), callerAccount, callerUser, cleanUp, livePatch);
             }
         }
     }

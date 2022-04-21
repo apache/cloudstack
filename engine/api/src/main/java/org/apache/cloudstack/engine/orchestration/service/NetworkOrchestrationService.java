@@ -253,7 +253,7 @@ public interface NetworkOrchestrationService {
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
-    boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+    boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup, boolean livePatch) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException;
 
     boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);

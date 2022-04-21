@@ -262,7 +262,7 @@ write_files:
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
   - containerd config default > /etc/containerd/config.toml
-  - sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/a '"\\            SystemdCgroup=true"'' /etc/containerd/config.toml
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
   - systemctl daemon-reload
   - systemctl restart containerd
   - until [ -f /etc/systemd/system/deploy-kube-system.service ]; do sleep 5; done

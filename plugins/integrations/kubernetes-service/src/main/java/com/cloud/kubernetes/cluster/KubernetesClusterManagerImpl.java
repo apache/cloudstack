@@ -444,7 +444,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (!((dockerRegistryUserName != null && !dockerRegistryUserName.isEmpty()) &&
                 (dockerRegistryPassword != null && !dockerRegistryPassword.isEmpty()) &&
                 (dockerRegistryUrl != null && !dockerRegistryUrl.isEmpty()))) {
-            throw new InvalidParameterValueException("All the docker private registry parameters (username, password, url, email) required are specified");
+
+            throw new InvalidParameterValueException("All the docker private registry parameters (username, password, url) required are specified");
         }
 
         try {
@@ -787,7 +788,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_PASSWORD, dockerRegistryPassword, false);
                 addKubernetesClusterDetailIfIsNotEmpty(details, kubernetesClusterId, ApiConstants.DOCKER_REGISTRY_URL, dockerRegistryUrl, true);
 
-                details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.USERNAME, "admin", true));
+                details.add(new KubernetesClusterDetailsVO(kubernetesCluster.getId(), ApiConstants.USERNAME, "admin", true));
                 SecureRandom random = new SecureRandom();
                 String randomPassword = new BigInteger(130, random).toString(32);
                 details.add(new KubernetesClusterDetailsVO(kubernetesClusterId, ApiConstants.PASSWORD, randomPassword, false));
