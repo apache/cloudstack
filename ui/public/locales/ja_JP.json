@@ -463,7 +463,7 @@
 "label.assign.instance.another": "ほかのアカウントへのインスタンスの割り当て",
 "label.assign.to.load.balancer": "ロード バランサーにインスタンスを割り当てています",
 "label.assign.vms": "仮想マシンの割り当て",
-"label.assigning.vms": "Assigning VMs",
+"label.assigning.vms": "VMを割り当て中",
 "label.associatednetwork": "関連付けられたネットワーク",
 "label.associatednetworkid": "関連付けられたネットワーク ID",
 "label.associatednetworkname": "ネットワーク名",
