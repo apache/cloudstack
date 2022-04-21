@@ -504,7 +504,7 @@
 "label.baremetalcpucores": "CPUコア数",
 "label.baremetalmac": "ホスト MAC",
 "label.baremetalmemory": "メモリ(MB)",
-"label.based.on": "Based on",
+"label.based.on": "に基づく",
 "label.based.on.role.id.or.type": "ロールIDまたはタイプのいずれかに基づいてロールを作成します",
 "label.basic": "基本",
 "label.basic.mode": "基本モード",
