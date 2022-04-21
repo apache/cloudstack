@@ -547,7 +547,7 @@
 "label.capacitybytes": "処理能力(バイト)",
 "label.capacityiops": "IOPS合計",
 "label.category": "カテゴリー",
-"label.certchain": "Chain",
+"label.certchain": "チェイン",
 "label.certificate": "サーバー証明書",
 "label.certificate.details": "証明書詳細",
 "label.certificate.upload": "アップロードされた証明書",
