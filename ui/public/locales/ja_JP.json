@@ -1615,7 +1615,7 @@
 "label.outofbandmanagement.configure": "Out-of-band管理設定",
 "label.outofbandmanagement.disable": "Out-of-band管理無効化",
 "label.outofbandmanagement.enable": "Out-of-band管理有効化",
-"label.overprovisionfactor": "Overprovisioning Factor",
+"label.overprovisionfactor": "オーバープロビジョニング要因",
 "label.override.diskoffering": "ディスクオファリングをオーバーライドする",
 "label.override.guest.traffic": "ゲストトラフィックをオーバーライドする",
 "label.override.public.traffic": "パブリックトラフィックをオーバーライドする",
