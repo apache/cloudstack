@@ -94,7 +94,7 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
 
         final NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, ingressRules.toArray(new AclRule[ingressRules.size()]),
                 egressRules.toArray(new AclRule[egressRules.size()]));
-
+        networkACL.setNicIp6Cidr(nic.getIp6Cidr());
         return generateConfigItems(networkACL);
     }
 

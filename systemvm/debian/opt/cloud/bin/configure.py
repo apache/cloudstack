@@ -61,6 +61,15 @@ def removeUndesiredCidrs(cidrs, version):
             return cidrs
     return None
 
+def appendStringIfNotEmpty(s1, s2):
+    if s2:
+        if type(s2) != str:
+            s2 = str(s2)
+        if s1:
+            return s1 + " " + s2
+        return s2
+    return s1
+
 class CsPassword(CsDataBag):
 
     TOKEN_FILE = "/tmp/passwdsrvrtoken"
@@ -265,6 +274,7 @@ class CsAcl(CsDataBag):
             self.egress = []
             self.device = obj['device']
             self.ip = obj['nic_ip']
+            self.ip6_cidr = obj['nic_ip6_cidr']
             self.netmask = obj['nic_netmask']
             self.config = config
             self.cidr = "%s/%s" % (self.ip, self.netmask)
@@ -279,23 +289,20 @@ class CsAcl(CsDataBag):
             self.process("ingress", self.ingress, self.FIXED_RULES_INGRESS)
             self.process("egress", self.egress, self.FIXED_RULES_EGRESS)
 
-        def process(self, direction, rule_list, base):
-            count = base
-            for i in rule_list:
-                ruleData = copy.copy(i)
-                ruleData['cidr'] = removeUndesiredCidrs(ruleData['cidr'], 6)
-                if ruleData['cidr'] == None or ruleData['cidr'] == "":
-                    continue
-                r = self.AclRule(direction, self, ruleData, self.config, count)
-                r.create()
-                count += 1
-
-            # Prepare IPv6 ACL rules
-            chain = "default_ingress_policy"
+        def __process_ip6(self, direction, rule_list):
+            tier_cidr = self.ip6_cidr
+            chain = "%s_%s_policy" % (self.device, direction)
+            rule = "accept"
+            parent_chain = "acl_output"
+            cidr_key = "saddr"
+            parent_chain_rule = "ip6 saddr ::/0 jump %s" % (chain)
             if direction == "ingress":
-                chain = "default_egress_policy"
-            else:
-                self.ipv6_acl.append({'type': "chain", 'chain': chain, 'rule': "drop"})
+                rule = "drop"
+                parent_chain = "acl_input"
+                cidr_key = "daddr"
+            parent_chain_rule = "ip6 %s %s jump %s" % (cidr_key, tier_cidr, chain)
+            self.ipv6_acl.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+            self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain, 'rule': rule})
             for rule in rule_list:
                 rule['cidr'] = removeUndesiredCidrs(rule['cidr'], 4)
                 if rule['cidr'] == None or rule['cidr'] == "":
@@ -311,6 +318,8 @@ class CsAcl(CsDataBag):
                 protocol = rule['type']
                 if protocol != "all":
                     icmp_type = ""
+                    if protocol == "protocol":
+                        protocol = "ip6 nexthdr %d" % rule['protocol']
                     proto = protocol
                     if proto == "icmp":
                         proto = proto_str = "icmpv6"
@@ -320,9 +329,6 @@ class CsAcl(CsDataBag):
                         proto = "%s type %s" % (proto_str, icmp_type)
                         if 'icmp_code' in rule and rule['icmp_code'] != -1:
                             proto = "%s %s code %d" % (proto, proto_str, rule['icmp_code'])
-
-                    if protocol == "protocol":
-                        protocol = rule['protocol']
 
                     first_port = ""
                     last_port = ""
@@ -347,10 +353,8 @@ class CsAcl(CsDataBag):
 
                 rstr = saddr
                 type = ""
-                if rstr and daddr:
-                    rstr = rstr + " " + daddr
-                if rstr and proto:
-                    rstr = rstr + " " + proto
+                rstr = appendStringIfNotEmpty(rstr, daddr)
+                rstr = appendStringIfNotEmpty(rstr, proto)
                 if rstr and action:
                     rstr = rstr + " " + action
                 else:
@@ -361,6 +365,20 @@ class CsAcl(CsDataBag):
                     self.ipv6_acl.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
                 else:
                     self.ipv6_acl.append({'type': type, 'chain': chain, 'rule': rstr})
+
+        def process(self, direction, rule_list, base):
+            count = base
+            for i in rule_list:
+                ruleData = copy.copy(i)
+                ruleData['cidr'] = removeUndesiredCidrs(ruleData['cidr'], 6)
+                if ruleData['cidr'] == None or ruleData['cidr'] == "":
+                    continue
+                r = self.AclRule(direction, self, ruleData, self.config, count)
+                r.create()
+                count += 1
+
+            # Prepare IPv6 ACL rules
+            self.__process_ip6(direction, rule_list)
 
         class AclRule():
 
@@ -532,10 +550,8 @@ class CsIpv6Firewall(CsDataBag):
 
             rstr = saddr
             type = ""
-            if rstr and daddr:
-                rstr = rstr + " " + daddr
-            if rstr and proto:
-                rstr = rstr + " " + proto
+            rstr = appendStringIfNotEmpty(rstr, daddr)
+            rstr = appendStringIfNotEmpty(rstr, proto)
             if rstr and action:
                 rstr = rstr + " " + action
             else:
