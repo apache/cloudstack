@@ -1813,7 +1813,7 @@
 "label.rbdsecret": "Cephxシークレット",
 "label.read": "Read",
 "label.read.io": "Read (IO)",
-"label.readonly": "Read-Only",
+"label.readonly": "読み取り専用",
 "label.reason": "理由",
 "label.reboot": "再起動",
 "label.receivedbytes": "受信バイト",
