@@ -174,7 +174,6 @@ env:
              component/test_stopped_vm
              component/test_tags
              component/test_templates
-             component/test_template_access_across_domains
              component/test_updateResourceCount
              component/test_update_vm"
 
