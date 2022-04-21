@@ -50,7 +50,9 @@
         <a-button @click="() => handleOpenAccountModal(record)">{{ `[${record.domain}] ${record.account === undefined ? '' : record.account}` }}</a-button>
       </template>
       <template #actions="{record}">
-        <div class="actions">
+        <div
+          class="actions"
+          style="text-align: right" >
           <tooltip-button
             v-if="record.account === 'system' && !basicGuestNetwork && record.gateway && !record.ip6gateway"
             tooltipPlacement="bottom"
