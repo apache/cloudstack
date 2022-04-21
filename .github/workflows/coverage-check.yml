@@ -29,19 +29,6 @@ jobs:
           ref: "refs/pull/${{ github.event.number }}/merge"
           fetch-depth: 0
 
-      - name: Debug Github event
-        env: { CONTENT : "${{ toJson(github) }}" }
-        run: "echo $CONTENT"
-
-      - name: Changed Java Files
-        id: java-changes
-        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
-        with:
-          sha: "${{ github.pull_request.sha }}"
-          base_sha: "${{ github.sha }}"
-          files: |
-            **/*.java
-
       - name: Changed UI Files
         id: ui-changes
         uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
@@ -61,15 +48,15 @@ jobs:
             Found UI changes, kicking a new UI QA build
             @blueorangutan ui
 
-      - name: Kick Pkg Build
-        uses: peter-evans/create-or-update-comment@c9fcb64660bc90ec1cc535646af190c992007c32
-        if: steps.java-changes.outputs.any_changed == 'true' && ! github.event.pull_request.draft
+      - name: Changed Java Files
+        id: java-changes
+        uses: tj-actions/changed-files@a59f800cbb60ed483623848e31be67659a2940f8
         with:
-          token: ${{ secrets.ACS_ROBOT_TOKEN }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            Found Java/XML changes, kicking packaging job
-            @blueorangutan package
+          sha: "${{ github.pull_request.sha }}"
+          base_sha: "${{ github.sha }}"
+          files: |
+            **/*.java
+            **/*.xml
 
       - name: Set up JDK11
         uses: actions/setup-java@v3

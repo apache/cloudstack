@@ -25,7 +25,6 @@ dhcpsrvr_svcs() {
 
 setup_dhcpsrvr() {
   log_it "Setting up dhcp server system vm"
-  setup_common eth0 eth1
   setup_dnsmasq
   setup_apache2 $ETH0_IP
 
@@ -36,18 +35,10 @@ setup_dhcpsrvr() {
   enable_irqbalance 0
   enable_fwding 0
 
-  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
-
   #Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
   sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
 
-  if [ "$SSHONGUEST" == "true" ]
-  then
-    setup_sshd $ETH0_IP "eth0"
-  else
-    setup_sshd $ETH1_IP "eth1"
-  fi
 }
 
 dhcpsrvr_svcs

@@ -229,7 +229,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
 mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
 mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
-install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
+install -D systemvm/dist/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
 cp -r python/lib/cloudutils ${RPM_BUILD_ROOT}%{python_sitearch}/
 python3 -m py_compile ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
@@ -615,7 +615,9 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %dir %attr(0755,root,root) %{_datadir}/%{name}-common/vms
 %attr(0755,root,root) %{_datadir}/%{name}-common/scripts
 %attr(0755,root,root) /usr/bin/cloudstack-sccs
-%attr(0644, root, root) %{_datadir}/%{name}-common/vms/systemvm.iso
+%attr(0644, root, root) %{_datadir}/%{name}-common/vms/agent.zip
+%attr(0644, root, root) %{_datadir}/%{name}-common/vms/cloud-scripts.tgz
+%attr(0644, root, root) %{_datadir}/%{name}-common/vms/patch-sysvms.sh
 %attr(0644,root,root) %{python_sitearch}/cloud_utils.py
 %attr(0644,root,root) %{python_sitearch}/__pycache__/*
 %attr(0644,root,root) %{python_sitearch}/cloudutils/*
