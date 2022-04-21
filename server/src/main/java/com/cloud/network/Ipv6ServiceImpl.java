@@ -142,14 +142,17 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Inject
     NetworkOrchestrationService networkOrchestrationService;
 
+    private boolean isPublicIpv6PlaceholderNic(NicVO nic) {
+        return  ObjectUtils.allNotNull(nic.getIPv6Address(), nic.getIPv6Cidr(), nic.getIPv6Gateway()) &&
+                s_publicNetworkReserver.equals(nic.getReserver());
+    }
+
     private Pair<String, ? extends Vlan> getPublicIpv6FromNetworkPlaceholder(Network network, List<VlanVO> ranges) {
         List<NicVO> placeholderNics = nicDao.listPlaceholderNicsByNetworkIdAndVmType(network.getId(), VirtualMachine.Type.DomainRouter);
         if (CollectionUtils.isEmpty(placeholderNics)) {
             return null;
         }
-        Optional<NicVO> nicOptional = placeholderNics.stream().filter(n -> ObjectUtils.allNotNull(n.getIPv6Address(),
-                n.getIPv6Cidr(), n.getIPv6Gateway()) &&
-                s_publicNetworkReserver.equals(n.getReserver())).findFirst();
+        Optional<NicVO> nicOptional = placeholderNics.stream().filter(this::isPublicIpv6PlaceholderNic).findFirst();
         if (nicOptional.isEmpty()) {
             return null;
         }
@@ -176,7 +179,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             if (placeholderResult != null) {
                 return placeholderResult;
             }
-            removeublicIpv6PlaceholderNics(network);
+            removePublicIpv6PlaceholderNics(network);
             Collections.shuffle(ranges);
             VlanVO selectedVlan = ranges.get(0);
             IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
@@ -641,12 +644,10 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public void removeublicIpv6PlaceholderNics(Network network) {
+    public void removePublicIpv6PlaceholderNics(Network network) {
         try {
             List<NicVO> nics = nicDao.listPlaceholderNicsByNetworkId(network.getId())
-                    .stream().filter(n -> ObjectUtils.allNotNull(n.getIPv6Address(), n.getIPv6Cidr(),
-                            n.getIPv6Gateway()) &&
-                            s_publicNetworkReserver.equals(n.getReserver())).collect(Collectors.toList());
+                    .stream().filter(this::isPublicIpv6PlaceholderNic).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(nics)) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override

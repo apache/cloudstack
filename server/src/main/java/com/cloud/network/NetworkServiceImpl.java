@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.commons.lang3.EnumUtils;
-
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
@@ -75,6 +73,7 @@ import org.apache.cloudstack.network.NetworkPermissionVO;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -2514,6 +2513,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
         Network updatedNetwork = getNetwork(network.getId());
         for (NicVO nic : nics) {
+            if (Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
+                continue;
+            }
             long vmId = nic.getInstanceId();
             VMInstanceVO vm = _vmDao.findById(vmId);
             if (vm == null) {
@@ -2767,6 +2769,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             s_logger.info("The specified guest vm cidr has " + range + " IPs");
 
             for (NicVO nic : nicsPresent) {
+                if (nic.getIPv4Address() == null) {
+                    continue;
+                }
                 long nicIp = NetUtils.ip2Long(nic.getIPv4Address());
                 //check if nic IP is outside the guest vm cidr
                 if ((nicIp < startIp || nicIp > endIp) && nic.getState() != Nic.State.Deallocating) {
@@ -2904,7 +2909,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                 // log assign usage events for new offering
                                 List<NicVO> nics = _nicDao.listByNetworkId(networkId);
                                 for (NicVO nic : nics) {
-                                    if (nic.getReservationStrategy() == Nic.ReservationStrategy.PlaceHolder) {
+                                    if (Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
                                         continue;
                                     }
                                     long vmId = nic.getInstanceId();
@@ -2975,7 +2980,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (updateInSequence) {
                 _networkMgr.finalizeUpdateInSequence(network, false);
             }
-            throw new CloudRuntimeException("failed to update network " + network.getUuid() + " due to " + exception.getMessage());
+            throw new CloudRuntimeException("failed to update network " + network.getUuid() + " due to " + exception.getMessage(), exception);
         } finally {
             if (updateInSequence) {
                 if (_networkDetailsDao.findDetail(networkId, Network.updatingInSequence) != null) {
@@ -2995,6 +3000,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             network.setIp6Cidr(null);
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
+                if (Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
+                    continue;
+                }
                 nic.setIPv6Address(null);
                 nic.setIPv6Cidr(null);
                 nic.setIPv6Gateway(null);
@@ -3015,6 +3023,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             Ipv6GuestPrefixSubnetNetworkMapVO map = ipv6GuestPrefixSubnetNetworkMapDao.findByNetworkId(network.getId());
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
+                if (Nic.ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy())) {
+                    continue;
+                }
                 IPv6Address iPv6Address = NetUtils.EUI64Address(map.getSubnet(), nic.getMacAddress());
                 nic.setIPv6Address(iPv6Address.toString());
                 nic.setIPv6Cidr(ip6Cidr);

@@ -229,9 +229,8 @@ class CsNetfilters(object):
             if chain_policy and action:
                 chain_policy = "%s policy %s;" % (chain_policy, action)
             CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
-            if action == "drop":
-                # accept neighbour discovery otherwise connectivity breaks
-                CsHelper.execute("nft add rule %s %s %s icmpv6 type {echo-request, echo-reply, nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert} accept" % (address_family, table, chain))
+            if chain_policy:
+                CsHelper.execute("nft add rule %s %s %s icmpv6 type { nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
 
     def apply_ip6_rules(self, rules, type):
         logging.debug("Add IPv6 rules: %s", rules)
