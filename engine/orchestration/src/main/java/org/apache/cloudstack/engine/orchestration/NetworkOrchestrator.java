@@ -3152,6 +3152,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             // commit transaction only when ips and vlans for the network are released successfully
 
                             ipv6Service.releaseIpv6SubnetForNetwork(networkId);
+                            ipv6Service.removeublicIpv6PlaceholderNics(networkFinal);
                             try {
                                 stateTransitTo(networkFinal, Event.DestroyNetwork);
                             } catch (final NoTransitionException e) {

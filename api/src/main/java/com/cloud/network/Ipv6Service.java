@@ -90,5 +90,5 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     boolean applyIpv6FirewallRule(long id);
 
-    void trashPublicIpv6PlaceholderNics(Network network);
+    void removeublicIpv6PlaceholderNics(Network network);
 }

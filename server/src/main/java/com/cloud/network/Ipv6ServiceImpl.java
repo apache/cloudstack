@@ -176,7 +176,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             if (placeholderResult != null) {
                 return placeholderResult;
             }
-            trashPublicIpv6PlaceholderNics(network);
+            removeublicIpv6PlaceholderNics(network);
             Collections.shuffle(ranges);
             VlanVO selectedVlan = ranges.get(0);
             IPv6Network ipv6Network = IPv6Network.fromString(selectedVlan.getIp6Cidr());
@@ -641,7 +641,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     }
 
     @Override
-    public void trashPublicIpv6PlaceholderNics(Network network) {
+    public void removeublicIpv6PlaceholderNics(Network network) {
         try {
             List<NicVO> nics = nicDao.listPlaceholderNicsByNetworkId(network.getId())
                     .stream().filter(n -> ObjectUtils.allNotNull(n.getIPv6Address(), n.getIPv6Cidr(),
