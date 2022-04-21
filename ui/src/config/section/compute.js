@@ -77,7 +77,9 @@ export default {
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
       details: () => {
-        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename', 'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account', 'domain', 'zonename']
+        var fields = ['displayname', 'name', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
+          'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
+          'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatapolicy']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields
@@ -636,7 +638,7 @@ export default {
     {
       name: 'userdata',
       title: 'label.user.data',
-      icon: 'paper-clip-outlined',
+      icon: 'solution-outlined',
       docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
       permission: ['listUserData'],
       columns: () => {

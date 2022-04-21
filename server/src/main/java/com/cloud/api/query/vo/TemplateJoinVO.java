@@ -242,6 +242,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "user_data_uuid")
     private String userDataUuid;
 
+    @Column(name = "user_data_name")
+    private String userDataName;
+
     @Column(name = "user_data_policy")
     private String userDataPolicy;
 
@@ -525,6 +528,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public String getUserDataUUid() {
         return userDataUuid;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
     }
 
     public String getUserDataPolicy() {

@@ -2723,7 +2723,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Boolean isDisplayVm = cmd.getDisplayVm();
         Long id = cmd.getId();
         Long osTypeId = cmd.getOsTypeId();
-        String userData = cmd.getUserData();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         String hostName = cmd.getHostName();
         Map<String,String> details = cmd.getDetails();
@@ -2732,12 +2731,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String extraConfig = cmd.getExtraConfig();
 
         UserVmVO vmInstance = _vmDao.findById(cmd.getId());
+        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
         if (MapUtils.isNotEmpty(details) || cmd.isCleanupDetails()) {
-            VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
             if (template != null && template.isDeployAsIs()) {
                 throw new CloudRuntimeException("Detail settings are read from OVA, it cannot be changed by API call.");
             }
         }
+        String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserdataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
+            userDataDetails = cmd.getUserdataDetails().toString();
+        }
+        userData = finalizeUserData(userData, userDataId, template);
+
 
         long accountId = vmInstance.getAccountId();
 
@@ -2799,7 +2806,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
-        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, isDynamicallyScalable,
+        return updateVirtualMachine(id, displayName, group, ha, isDisplayVm, osTypeId, userData, userDataId, userDataDetails, isDynamicallyScalable,
                 cmd.getHttpMethod(), cmd.getCustomId(), hostName, cmd.getInstanceName(), securityGroupIdList, cmd.getDhcpOptionsMap());
     }
 
@@ -2897,7 +2904,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
-            Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap)
+                                       Long userDataId, String userDataDetails, Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId, String hostName, String instanceName, List<Long> securityGroupIdList, Map<String, Map<Integer, String>> extraDhcpOptionsMap)
                     throws ResourceUnavailableException, InsufficientCapacityException {
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
@@ -2942,6 +2949,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             updateUserdata = true;
         } else {
             userData = vm.getUserData();
+        }
+
+        if (userDataId == null) {
+            userDataId = vm.getUserDataId();
+        }
+
+        if (userDataDetails == null) {
+            userDataDetails = vm.getUserDataDetails();
         }
 
         if (osTypeId == null) {
@@ -3039,7 +3054,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId, userDataDetails, isDisplayVmEnabled, isDynamicallyScalable, customId, hostName, instanceName);
 
         if (updateUserdata) {
             updateUserData(vm);
@@ -5887,14 +5902,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd), owner, name, displayName, diskOfferingId,
-                        size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, null, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
+                        size , group , cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm , keyboard , cmd.getAffinityGroupIdList(),
                         cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
             if (zone.isSecurityGroupEnabled())  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd), owner, name,
-                        displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, null, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
+                        displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId, null);
 

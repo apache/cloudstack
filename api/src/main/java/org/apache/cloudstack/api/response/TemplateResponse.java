@@ -230,6 +230,9 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata linked to this template", since = "4.18.0.0")
     private String userDataId;
 
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata linked to this template", since = "4.18.0.0")
+    private String userDataName;
+
     @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0.0")
     private String userDataPolicy;
 
@@ -483,6 +486,14 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setUserDataId(String userDataId) {
         this.userDataId = userDataId;
+    }
+
+    public String getUserDataName() {
+        return userDataName;
+    }
+
+    public void setUserDataName(String userDataName) {
+        this.userDataName = userDataName;
     }
 
     public String getUserDataPolicy() {

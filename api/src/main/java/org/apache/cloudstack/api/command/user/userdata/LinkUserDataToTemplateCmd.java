@@ -17,11 +17,6 @@
 
 package org.apache.cloudstack.api.command.user.userdata;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
@@ -43,7 +38,7 @@ import org.apache.log4j.Logger;
 public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(LinkUserDataToTemplateCmd.class.getName());
 
-    private static final String s_name = "linkUserDataToTemplateResponse";
+    private static final String s_name = "linkuserdatatotemplateresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -52,16 +47,19 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
+            required = true,
             description = "the ID of the template for the virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,
+            required = true,
             description = "the ID of the userdata that has to be linked to template")
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
+            type = CommandType.STRING,
             description = "the ID of the template for the virtual machine")
     private String userdataPolicy;
 
@@ -85,7 +83,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() {
         VirtualMachineTemplate result = null;
         try {
             result = _templateService.linkUserDataToTemplate(this);
@@ -110,6 +108,11 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, getTemplateId());
+        if (template != null) {
+            return template.getAccountId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 }

@@ -148,7 +148,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        name: [{ required: true, message: this.$t('message.error.name') }]
+        name: [{ required: true, message: this.$t('message.error.name') }],
+        userdata: [{ required: true, message: this.$t('message.error.userdata') }]
       })
     },
     fetchData () {

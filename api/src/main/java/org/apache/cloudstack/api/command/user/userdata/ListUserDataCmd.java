@@ -40,10 +40,10 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the ssh keypair")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "A key pair name to look for")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Userdata name to look for")
     private String name;
 
     /////////////////////////////////////////////////////
