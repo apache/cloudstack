@@ -1812,7 +1812,7 @@
 "label.rbdpool": "Cephプール",
 "label.rbdsecret": "Cephxシークレット",
 "label.read": "Read",
-"label.read.io": "Read (IO)",
+"label.read.io": "読み取り (IO)",
 "label.readonly": "読み取り専用",
 "label.reason": "理由",
 "label.reboot": "再起動",
