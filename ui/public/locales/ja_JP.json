@@ -27,7 +27,7 @@
 "error.unable.to.proceed": "継続できません。管理者に連絡してください。",
 "error.unable.to.reach.management.server": "管理サーバーと通信できません",
 "error.unresolved.internet.name": "インターネット名を解決できません。",
-"firewall.close": "Firewall",
+"firewall.close": "ファイアウォール",
 "force.delete.domain.warning": "警告: このオプションを選択すると、すべての子ドメインおよび関連するすべてのアカウントとそのリソースが削除されます。",
 "force.remove": "強制的に解除する",
 "force.remove.host.warning": "警告: このオプションを選択すると、実行中のすべての仮想マシンが強制的に停止され、クラスターからこのホストが強制的に解除されます。",
