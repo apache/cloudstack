@@ -135,6 +135,11 @@ public class DeleteAffinityGroupCmd extends BaseAsyncCmd {
     }
 
     @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.AffinityGroup;
     }

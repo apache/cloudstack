@@ -394,6 +394,9 @@ export const resourceTypePlugin = {
         case 'VmSnapshot':
         case 'Pod':
         case 'Cluster':
+        case 'Role':
+        case 'AffinityGroup':
+        case 'VpnCustomerGateway':
           return resourceType.toLowerCase()
       }
       return ''

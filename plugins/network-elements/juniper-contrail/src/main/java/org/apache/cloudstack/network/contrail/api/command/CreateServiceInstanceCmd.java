@@ -202,6 +202,6 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.ServiceOffering;
+        return ApiCommandResourceType.SystemVm;
     }
 }

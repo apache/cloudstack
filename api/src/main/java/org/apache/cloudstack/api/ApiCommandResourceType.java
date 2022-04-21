@@ -24,29 +24,17 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.dc.DataCenter;
-import com.cloud.network.GuestVlan;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.vpc.NetworkACL;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.storage.GuestOS;
-import com.cloud.storage.GuestOSHypervisor;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.snapshot.VMSnapshot;
-
 public enum ApiCommandResourceType {
     None(null),
-    VirtualMachine(VirtualMachine.class),
-    DomainRouter(VirtualRouter.class),
+    VirtualMachine(com.cloud.vm.VirtualMachine.class),
+    DomainRouter(com.cloud.network.router.VirtualRouter.class),
     Volume(com.cloud.storage.Volume.class),
-    ConsoleProxy(VirtualMachine.class),
+    ConsoleProxy(com.cloud.vm.VirtualMachine.class),
     Snapshot(com.cloud.storage.Snapshot.class),
     Backup(org.apache.cloudstack.backup.Backup.class),
-    Template(VirtualMachineTemplate.class),
-    Iso(VirtualMachineTemplate.class),
-    SystemVm(VirtualMachine.class),
+    Template(com.cloud.template.VirtualMachineTemplate.class),
+    Iso(com.cloud.template.VirtualMachineTemplate.class),
+    SystemVm(com.cloud.vm.VirtualMachine.class),
     Host(com.cloud.host.Host.class),
     StoragePool(com.cloud.storage.StoragePool.class),
     ImageStore(com.cloud.storage.ImageStore.class),
@@ -67,15 +55,15 @@ public enum ApiCommandResourceType {
     AutoScaleVmProfile(com.cloud.network.as.AutoScaleVmProfile.class),
     AutoScaleVmGroup(com.cloud.network.as.AutoScaleVmGroup.class),
     GlobalLoadBalancerRule(com.cloud.region.ha.GlobalLoadBalancerRule.class),
-    LoadBalancerRule(LoadBalancingRule.class),
+    LoadBalancerRule(com.cloud.network.lb.LoadBalancingRule.class),
     AffinityGroup(org.apache.cloudstack.affinity.AffinityGroup.class),
-    InternalLbVm(VirtualRouter.class),
-    DedicatedGuestVlanRange(GuestVlan.class),
-    GuestOs(GuestOS.class),
-    GuestOsMapping(GuestOSHypervisor.class),
+    InternalLbVm(com.cloud.network.router.VirtualRouter.class),
+    DedicatedGuestVlanRange(com.cloud.network.GuestVlan.class),
+    GuestOs(com.cloud.storage.GuestOS.class),
+    GuestOsMapping(com.cloud.storage.GuestOSHypervisor.class),
     Network(com.cloud.network.Network.class),
-    NetworkAcl(NetworkACL.class),
-    NetworkAclItem(NetworkACLItem.class),
+    NetworkAcl(com.cloud.network.vpc.NetworkACL.class),
+    NetworkAclItem(com.cloud.network.vpc.NetworkACLItem.class),
     Project(com.cloud.projects.Project.class),
     Domain(com.cloud.domain.Domain.class),
     DiskOffering(com.cloud.offering.DiskOffering.class),
@@ -83,11 +71,13 @@ public enum ApiCommandResourceType {
     NetworkOffering(com.cloud.offering.NetworkOffering.class),
     VpcOffering(com.cloud.network.vpc.VpcOffering.class),
     BackupOffering(org.apache.cloudstack.backup.BackupOffering.class),
-    Zone(DataCenter.class),
+    Zone(com.cloud.dc.DataCenter.class),
     Vpc(com.cloud.network.vpc.Vpc.class),
     Cluster(com.cloud.org.Cluster.class),
     Pod(com.cloud.dc.Pod.class),
-    VmSnapshot(VMSnapshot.class);
+    VmSnapshot(com.cloud.vm.snapshot.VMSnapshot.class),
+    Role(org.apache.cloudstack.acl.Role.class),
+    VpnCustomerGateway(com.cloud.network.Site2SiteCustomerGateway.class);
 
     private final Class<?> clazz;
 

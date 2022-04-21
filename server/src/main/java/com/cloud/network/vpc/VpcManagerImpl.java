@@ -503,6 +503,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().putContextParameter(VpcOffering.class, offering.getUuid());
 
         return offering;
     }
