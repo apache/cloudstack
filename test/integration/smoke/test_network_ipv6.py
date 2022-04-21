@@ -685,26 +685,28 @@ class TestIpv6Network(cloudstackTestCase):
         )
         self.cleanup.append(self.service_offering)
 
-    def createNonRedundantIpv6NetworkOffering(self):
+    def createIpv6NetworkOfferingInternal(self, is_redundant, egressdefaultpolicy=True):
         ipv6_service = self.services["network_offering"]
+        if is_redundant:
+            ipv6_service = self.services["nw_off_isolated_RVR"]
         ipv6_service["internetprotocol"] = "dualstack"
-        self.network_offering = NetworkOffering.create(
+        if egressdefaultpolicy:
+            ipv6_service["egress_policy"] = egressdefaultpolicy
+        network_offering = NetworkOffering.create(
             self.apiclient,
             ipv6_service
         )
-        self.cleanup.append(self.network_offering)
-        self.network_offering.update(self.apiclient, state='Enabled')
+        network_offering.update(self.apiclient, state='Enabled')
+        return network_offering
 
-    def createNonRedundantIpv6NetworkOfferingForUpdate(self):
-        ipv6_service = self.services["isolated_network_offering"]
-        ipv6_service["internetprotocol"] = "dualstack"
-        ipv6_service["egress_policy"] = True
-        self.network_offering_update = NetworkOffering.create(
-            self.apiclient,
-            ipv6_service
-        )
+    def createIpv6NetworkOffering(self, is_redundant):
+        self.network_offering = self.createIpv6NetworkOfferingInternal(is_redundant, False)
+        self.cleanup.append(self.network_offering)
+
+    def createIpv6NetworkOfferingForUpdate(self, is_redundant):
+        self.network_offering_update = self.createIpv6NetworkOfferingInternal(is_redundant)
         self.cleanup.append(self.network_offering_update)
-        self.network_offering_update.update(self.apiclient, state='Enabled')
+
 
     def deployIpv6Network(self):
         self.services["network"]["networkoffering"] = self.network_offering.id
@@ -842,7 +844,7 @@ class TestIpv6Network(cloudstackTestCase):
         result = '\n'.join(result)
         return result
 
-    def getNetworkRouter(self, network):
+    def getNetworkRouter(self, network, red_state="PRIMARY"):
         routers = Router.list(
             self.apiclient,
             networkid=network.id,
@@ -850,12 +852,12 @@ class TestIpv6Network(cloudstackTestCase):
         )
         self.assertTrue(
             isinstance(routers, list) and len(routers) > 0,
-            "Router command cannot be executed, no routers found for network %s" % network.id
+            "No routers found for network %s" % network.id
         )
         if len(routers) == 1:
             return routers[0]
         for router in routers:
-            if router.redundantstate == "PRIMARY":
+            if router.redundantstate == red_state:
                 return router
 
     def getNetworkRoutes(self, network):
@@ -927,6 +929,8 @@ class TestIpv6Network(cloudstackTestCase):
         self.checkRouterNicState(router, "eth0", "UP")
         guest_gateway_check_cmd = "ip -6 address show %s | grep 'inet6 %s'" % ("eth0", self.network.ip6gateway)
         res = self.getRouterProcessStatus(router, guest_gateway_check_cmd)
+        self.assertFalse(type(res) == str and len(res) > 0 and self.network.ip6gateway in res,
+            "%s failed on router %s" % (guest_gateway_check_cmd, router.id))
         self.checkRouterNicState(router, "eth2", "DOWN")
 
     def checkIpv6NetworkRoutersInternal(self):
@@ -969,63 +973,10 @@ class TestIpv6Network(cloudstackTestCase):
     def updateNetworkWithOffering(self):
         self.network.update(self.apiclient, networkofferingid=self.network_offering_update.id)
 
-    def checkNetworkRouting(self):
-        self.services["network"]["networkoffering"] = self.network_offering_update.id
-        self.network1 = Network.create(
-            self.apiclient,
-            self.services["network"],
-            self.account.name,
-            self.account.domainid,
-            zoneid=self.zone.id
-        )
-        self.cleanup.append(self.network1)
-        self.services["virtual_machine"]["zoneid"] = self.zone.id
-        self.virtual_machine1 = VirtualMachine.create(
-            self.apiclient,
-            self.services["virtual_machine"],
-            templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            networkids=[self.network1.id],
-            serviceofferingid=self.service_offering.id,
-            mode="advanced"
-        )
-        self.cleanup.append(self.virtual_machine1)
-
-        router = self.getNetworkRouter(self.network1)
-        self.logger.debug("Adding network routes in network1 %s" % self.network_ipv6_routes)
-        for route in self.network_ipv6_routes:
-            add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
-
-        router = self.getNetworkRouter(self.network)
-        routes = self.getNetworkRoutes(self.network1)
-        self.logger.debug("Adding network1 routes in network %s" % routes)
-        for route in routes:
-            add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
-
-        time.sleep(self.services["sleep"])
-
-        ping_cmd = "ping6 -c 4 %s" % self.virtual_machine_ipv6_address
-        res = self.getRouterProcessStatus(router, ping_cmd)
-        self.assertTrue("0% packet loss" in res,
-            "Ping from router %s of network %s to VM %s of network %s is unsuccessful" % (router.id, self.network1.id, self.virtual_machine.id, self.network.id))
-
-        ssh = self.virtual_machine1.get_ssh_client(retries=5)
-        res = ssh.execute(ping_cmd)
-        self.assertTrue(type(res) == list and len(res) > 0,
-            "%s on VM %s returned invalid result" % (ping_cmd, self.virtual_machine1.id))
-        self.logger.debug(res)
-        res = '\n'.join(res)
-        self.assertTrue("0% packet loss" in res,
-            "Ping from VM %s of network %s to VM %s of network %s is unsuccessful" % (self.virtual_machine1.id, self.network1.id, self.virtual_machine.id, self.network.id))
-
-    def createAndVerifyIpv6FirewallRule(self, traffic_type, source_cidr, dest_cidr, protocol,
-        start_port, end_port, icmp_type, icmp_code, parsed_rule, delete=False):
-        self.logger.debug("createAndVerifyIpv6FirewallRule - %s" % parsed_rule)
+    def createIpv6FirewallRuleInNetwork(self, network_id, traffic_type, source_cidr, dest_cidr, protocol,
+        start_port, end_port, icmp_type, icmp_code):
         cmd = createIpv6FirewallRule.createIpv6FirewallRuleCmd()
-        cmd.networkid = self.network.id
+        cmd.networkid = network_id
         cmd.traffictype = traffic_type
         if source_cidr:
             cmd.cidrlist = source_cidr
@@ -1042,6 +993,76 @@ class TestIpv6Network(cloudstackTestCase):
         if icmp_code is not None:
             cmd.icmpcode = icmp_code
         fw_rule = self.apiclient.createIpv6FirewallRule(cmd)
+        return fw_rule
+
+    def checkNetworkRouting(self):
+        self.routing_test_network_offering = self.createIpv6NetworkOfferingInternal(False, True)
+        self.cleanup.append(self.routing_test_network_offering)
+        self.services["network"]["networkoffering"] = self.routing_test_network_offering.id
+        self.routing_test_network = Network.create(
+            self.apiclient,
+            self.services["network"],
+            self.account.name,
+            self.account.domainid,
+            zoneid=self.zone.id
+        )
+        self.cleanup.append(self.routing_test_network)
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
+        self.routing_test_vm = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=[self.routing_test_network.id],
+            serviceofferingid=self.service_offering.id,
+            mode="advanced"
+        )
+        self.cleanup.append(self.routing_test_vm)
+
+        fw1 = self.createIpv6FirewallRuleInNetwork(self.routing_test_network.id, "Ingress", None, None, "icmp",
+            None, None, None, None)
+        fw2 = self.createIpv6FirewallRuleInNetwork(self.network.id, "Ingress", None, None, "icmp",
+            None, None, None, None)
+
+        router = self.getNetworkRouter(self.routing_test_network)
+        self.logger.debug("Adding network routes in routing_test_network %s" % self.network_ipv6_routes)
+        for route in self.network_ipv6_routes:
+            add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
+            self.getRouterProcessStatus(router, add_route_cmd)
+
+        router = self.getNetworkRouter(self.network)
+        routes = self.getNetworkRoutes(self.routing_test_network)
+        self.logger.debug("Adding routing_test_network routes in network %s" % routes)
+        for route in routes:
+            add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
+            self.getRouterProcessStatus(router, add_route_cmd)
+
+        time.sleep(self.services["sleep"])
+
+        ping_cmd = "ping6 -c 4 %s" % self.virtual_machine_ipv6_address
+        res = self.getRouterProcessStatus(router, ping_cmd)
+        self.assertTrue(" 0% packet loss" in res,
+            "Ping from router %s of network %s to VM %s of network %s is unsuccessful" % (router.id, self.routing_test_network.id, self.virtual_machine.id, self.network.id))
+
+        ssh = self.routing_test_vm.get_ssh_client(retries=5)
+        res = ssh.execute(ping_cmd)
+        self.assertTrue(type(res) == list and len(res) > 0,
+            "%s on VM %s returned invalid result" % (ping_cmd, self.routing_test_vm.id))
+        self.logger.debug(res)
+        res = '\n'.join(res)
+        self.assertTrue(" 0% packet loss" in res,
+            "Ping from VM %s of network %s to VM %s of network %s is unsuccessful" % (self.routing_test_vm.id, self.routing_test_network.id, self.virtual_machine.id, self.network.id))
+
+        cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
+        cmd.id = fw2.id
+        self.apiclient.deleteIpv6FirewallRule(cmd)
+
+    def createAndVerifyIpv6FirewallRule(self, traffic_type, source_cidr, dest_cidr, protocol,
+        start_port, end_port, icmp_type, icmp_code, parsed_rule, delete=False):
+        self.logger.debug("createAndVerifyIpv6FirewallRule - %s" % parsed_rule)
+        fw_rule = self.createIpv6FirewallRuleInNetwork(self.network.id, traffic_type, source_cidr, dest_cidr, protocol,
+        start_port, end_port, icmp_type, icmp_code)
         cmd = listIpv6FirewallRules.listIpv6FirewallRulesCmd()
         cmd.id = fw_rule.id
         rules = self.apiclient.listIpv6FirewallRules(cmd)
@@ -1082,7 +1103,7 @@ class TestIpv6Network(cloudstackTestCase):
         if delete == True:
             cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
             cmd.id = fw_rule.id
-            rules = self.apiclient.deleteIpv6FirewallRule(cmd)
+            self.apiclient.deleteIpv6FirewallRule(cmd)
             res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
             self.assertFalse(parsed_rule in res,
                 "Firewall rule present in nft list chain failure despite delete for rule: %s" % parsed_rule)
@@ -1133,6 +1154,20 @@ class TestIpv6Network(cloudstackTestCase):
         self.createAndVerifyIpv6FirewallRule(traffic_type, None, None, protocol,
             None, None, None, None, rule)
 
+    def checkNetworkVRRedundancy(self):
+        primary_router = self.getNetworkRouter(self.network)
+        Router.stop(
+            self.apiclient,
+            id=primary_router.id
+        )
+        time.sleep(self.services["sleep"]/2)
+        new_primary_router = self.getNetworkRouter(self.network)
+        self.assertNotEqual(new_primary_router.id, primary_router.id,
+            "Original primary router ID: %s of network is still the primary router after stopping" % (primary_router.id))
+        print(new_primary_router)
+        self.checkIpv6NetworkPrimaryRouter(new_primary_router)
+
+
     @attr(
         tags=[
             "advanced",
@@ -1159,8 +1194,8 @@ class TestIpv6Network(cloudstackTestCase):
         # 10. Create IPv6 firewall rules and verify in VR if they get implemented
         """
 
-        self.createNonRedundantIpv6NetworkOffering()
-        self.createNonRedundantIpv6NetworkOfferingForUpdate()
+        self.createIpv6NetworkOffering(False)
+        self.createIpv6NetworkOfferingForUpdate(False)
         self.createTinyServiceOffering()
         self.deployIpv6Network()
         self.deployIpv6NetworkVm()
@@ -1174,3 +1209,47 @@ class TestIpv6Network(cloudstackTestCase):
         self.checkIpv6NetworkRoutersBasic()
         self.checkNetworkRouting()
         self.checkIpv6FirewallRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_02_verify_ipv6_network_redundant(self):
+        """Test to verify redundant IPv6 network
+
+        # Validate the following:
+        # 1. Create IPv6 network, deploy VM
+        # 2. Verify network has required IPv6 details
+        # 3. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 4. SSH into VR(s) and verify correct details are present for its NICs
+        # 5. Verify VM in network has required IPv6 details
+        # 6. Restart network with cleanup
+        # 7. Update network with a new offering
+        # 8. Again verify network and VR details
+        # 9. Deploy another IPv6 network and check routing between two networks and their VM
+        # 10. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 11. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6NetworkOffering(True)
+        self.createIpv6NetworkOfferingForUpdate(True)
+        self.createTinyServiceOffering()
+        self.deployIpv6Network()
+        self.deployIpv6NetworkVm()
+        self.checkIpv6NetworkBasic()
+        self.checkIpv6NetworkRoutersBasic()
+        self.checkIpv6NetworkRoutersInternal()
+        self.checkIpv6NetworkVm()
+        self.restartNetworkWithCleanup()
+        self.updateNetworkWithOffering()
+        self.checkIpv6NetworkBasic()
+        self.checkIpv6NetworkRoutersBasic()
+        self.checkNetworkRouting()
+        self.checkIpv6FirewallRule()
+        self.checkNetworkVRRedundancy()
