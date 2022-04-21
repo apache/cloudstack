@@ -26,6 +26,7 @@ import java.util.List;
 
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.utils.net.NetUtils;
 
 public class SetNetworkACLCommand extends NetworkElementCommand {
     public static final String RULE_DETAIL_SEPARATOR = ";";
@@ -77,7 +78,7 @@ public class SetNetworkACLCommand extends NetworkElementCommand {
             }
             cidr = aclTO.getSourceCidrList();
             if (cidr == null || cidr.isEmpty()) {
-                sb.append("0.0.0.0/0");
+                sb.append(String.format("%s,%s", NetUtils.ALL_IP4_CIDRS, NetUtils.ALL_IP6_CIDRS));
             } else {
                 Boolean firstEntry = true;
                 for (final String tag : cidr) {

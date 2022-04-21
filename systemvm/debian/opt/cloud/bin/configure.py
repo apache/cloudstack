@@ -304,15 +304,16 @@ class CsAcl(CsDataBag):
             self.ipv6_acl.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
             self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain, 'rule': rule})
             for rule in rule_list:
-                rule['cidr'] = removeUndesiredCidrs(rule['cidr'], 4)
-                if rule['cidr'] == None or rule['cidr'] == "":
-                    continue
-                saddr = ""
-                daddr = ""
-                if direction == "ingress":
-                    saddr = "ip6 saddr " + rule['cidr']
-                else:
-                    daddr = "ip6 daddr " + rule['cidr']
+                cidr = rule['cidr']
+                if cidr != None and cidr != "":
+                    cidr = removeUndesiredCidrs(cidr, 4)
+                    if cidr == None or cidr == "":
+                        continue
+                addr = ""
+                if cidr:
+                    addr = "ip6 daddr " + cidr
+                    if direction == "ingress":
+                        addr = "ip6 saddr " + cidr
 
                 proto = ""
                 protocol = rule['type']
@@ -351,9 +352,8 @@ class CsAcl(CsDataBag):
                 if 'allowed' in rule.keys() and rule['allowed']:
                     action = "accept"
 
-                rstr = saddr
+                rstr = addr
                 type = ""
-                rstr = appendStringIfNotEmpty(rstr, daddr)
                 rstr = appendStringIfNotEmpty(rstr, proto)
                 if rstr and action:
                     rstr = rstr + " " + action
@@ -370,9 +370,12 @@ class CsAcl(CsDataBag):
             count = base
             for i in rule_list:
                 ruleData = copy.copy(i)
-                ruleData['cidr'] = removeUndesiredCidrs(ruleData['cidr'], 6)
-                if ruleData['cidr'] == None or ruleData['cidr'] == "":
-                    continue
+                cidr = ruleData['cidr']
+                if cidr != None and cidr != "":
+                    cidr = removeUndesiredCidrs(cidr, 6)
+                    if cidr == None or cidr == "":
+                        continue
+                ruleData['cidr'] = cidr
                 r = self.AclRule(direction, self, ruleData, self.config, count)
                 r.create()
                 count += 1
