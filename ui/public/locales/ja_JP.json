@@ -458,7 +458,7 @@
 "label.archive": "アーカイブ",
 "label.archive.alerts": "アラートのアーカイブ",
 "label.archive.events": "イベントのアーカイブ",
-"label.as.default": "as default",
+"label.as.default": "デフォルトとして",
 "label.assign": "割り当て",
 "label.assign.instance.another": "ほかのアカウントへのインスタンスの割り当て",
 "label.assign.to.load.balancer": "ロード バランサーにインスタンスを割り当てています",
