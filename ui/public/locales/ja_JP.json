@@ -959,7 +959,7 @@
 "label.failed": "失敗",
 "label.featured": "おすすめ",
 "label.fetch.latest": "最新情報の取得",
-"label.files": "Alternate Files to Retrieve",
+"label.files": "取得する代替ファイル",
 "label.filter": "フィルター",
 "label.filter.annotations.all": "すべてのコメント",
 "label.filter.annotations.self": "自身の作った",
