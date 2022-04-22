@@ -54,6 +54,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -212,7 +213,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -5280,7 +5281,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommand() {
+    public void testStartCommand() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5332,6 +5335,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
@@ -5354,7 +5358,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommandIsolationEc2() {
+    public void testStartCommandIsolationEc2() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5410,6 +5416,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
