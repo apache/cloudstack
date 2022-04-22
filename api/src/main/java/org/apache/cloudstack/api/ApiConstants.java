@@ -239,10 +239,17 @@ public class ApiConstants {
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
     public static final String ISO_GUEST_OS_NONE = "None";
+    public static final String JAVA_DISTRIBUTION = "javadistribution";
+    public static final String JAVA_VERSION = "javaversion";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
+    public static final String KERNEL_VERSION = "kernelversion";
     public static final String LABEL = "label";
     public static final String LASTNAME = "lastname";
+    public static final String LAST_BOOT = "lastboottime";
+    public static final String LAST_SERVER_START = "lastserverstart";
+    public static final String LAST_SERVER_STOP = "lastserverstop";
     public static final String LEVEL = "level";
     public static final String LENGTH = "length";
     public static final String LIMIT_CPU_USE = "limitcpuuse";
@@ -260,7 +267,6 @@ public class ApiConstants {
     public static final String MIGRATION_TYPE = "migrationtype";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
-    public static final String KEEPALIVE_ENABLED = "keepaliveenabled";
     public static final String NAME = "name";
     public static final String METHOD_NAME = "methodname";
     public static final String NETWORK_DOMAIN = "networkdomain";
@@ -273,6 +279,7 @@ public class ApiConstants {
     public static final String NEW_END_IP = "newendip";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
+    public static final String OS_DISTRIBUTION = "osdistribution";
     public static final String IS_SYSTEM_OFFERING = "issystem";
     public static final String IS_DEFAULT_USE = "defaultuse";
     public static final String OLD_FORMAT = "oldformat";

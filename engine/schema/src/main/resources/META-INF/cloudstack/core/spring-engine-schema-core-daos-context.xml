@@ -118,6 +118,7 @@
   <bean id="inlineLoadBalancerNicMapDaoImpl" class="com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl" />
   <bean id="instanceGroupDaoImpl" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
+  <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
@@ -128,6 +129,7 @@
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
+  <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
   <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
