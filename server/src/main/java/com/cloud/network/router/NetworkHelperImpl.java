@@ -279,12 +279,15 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
         final long dcid = router.getDataCenterId();
         String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
-        String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz");
         String routerChecksum = router.getScriptsVersion() == null ? "" : router.getScriptsVersion();
         boolean routerVersionMatch = CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
         if (routerVersionMatch) {
             return true;
         }
+        if (HypervisorType.Simulator.equals(router.getHypervisorType())) {
+            return true;
+        }
+        String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz");
         boolean routerCheckSumMatch = currentCheckSum.equals(routerChecksum);
         return routerCheckSumMatch;
     }
