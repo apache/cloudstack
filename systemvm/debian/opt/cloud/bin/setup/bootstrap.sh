@@ -18,6 +18,7 @@
 set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
+CMDLINE_PASSED=/var/cache/cloud/cmdline_passed
 
 rm -f /var/cache/cloud/enabled_svcs
 rm -f /var/cache/cloud/disabled_svcs
@@ -27,6 +28,13 @@ rm -f /var/cache/cloud/disabled_svcs
 log_it() {
   echo "$(date) $@" >> /var/log/cloud.log
   log_action_msg "$@"
+}
+
+perform_actions_when_boot_from_cloudstack() {
+  rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+  # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+  rm -rf /etc/cloudstack/*.json
+  log_it "Booting from cloudstack, removed old configuration files in /etc/cloudstack/"
 }
 
 patch_systemvm() {

@@ -74,8 +74,14 @@ config_guest() {
           if [ ! -f /usr/bin/xenstore-read ]; then
             log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
           fi
-          /usr/bin/xenstore-read vm-data/cloudstack/init > $CMDLINE
-          sed -i "s/%/ /g" $CMDLINE
+          /usr/bin/xenstore-read vm-data/cloudstack/init |tr -d "\n$" > $CMDLINE_PASSED
+          if [ -s $CMDLINE_PASSED ]; then
+            log_it "Received a new non-empty cmdline file from qemu-guest-agent"
+            perform_actions_when_boot_from_cloudstack
+            break
+          else
+            sed -i "s/%/ /g" $CMDLINE
+          fi
           ;;
      kvm)
           # Configure kvm hotplug support
@@ -92,12 +98,10 @@ config_guest() {
           systemctl start qemu-guest-agent
 
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
-          for i in {1..60}; do
-            if [ -s $CMDLINE ]; then
+          for i in {1..10}; do
+            if [ -s $CMDLINE_PASSED ]; then
               log_it "Received a new non-empty cmdline file from qemu-guest-agent"
-              # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
-              rm -rf /etc/cloudstack/*.json
-              log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
+              perform_actions_when_boot_from_cloudstack
               break
             fi
             sleep 1
@@ -113,14 +117,25 @@ config_guest() {
           systemctl enable open-vm-tools
           systemctl start open-vm-tools
 
-          vmtoolsd --cmd 'machine.id.get' > $CMDLINE
+          vmtoolsd --cmd 'machine.id.get' > $CMDLINE_PASSED
+          if [ -s $CMDLINE_PASSED ]; then
+            log_it "Received a new non-empty cmdline file from vm-tools"
+            perform_actions_when_boot_from_cloudstack
+            break
+          fi
+
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
           systemctl enable hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           sleep 5
-          cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE
+          cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE_PASSED
+          if [ -s $CMDLINE_PASSED ]; then
+            log_it "Received a new non-empty cmdline file from vm-tools"
+            perform_actions_when_boot_from_cloudstack
+            break
+          fi
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
           ;;
      virtualbox)
