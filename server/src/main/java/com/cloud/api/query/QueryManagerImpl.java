@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -3636,6 +3637,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // if template is not public, perform permission check here
             else if (!template.isPublicTemplate() && caller.getType() != Account.Type.ADMIN) {
                 _accountMgr.checkAccess(caller, null, false, template);
+            } else if (template.isPublicTemplate()) {
+                _accountMgr.checkAccess(caller, null, false, template);
             }
 
             // if templateId is specified, then we will just use the id to
@@ -3741,13 +3744,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr,
+        return templateChecks(isIso, hypers, tags, name, keyword, hyperType, onlyReady, bootable, zoneId, showDomr, caller,
                 showRemovedTmpl, parentTemplateId, showUnique, searchFilter, sc);
 
     }
 
     private Pair<List<TemplateJoinVO>, Integer> templateChecks(boolean isIso, List<HypervisorType> hypers, Map<String, String> tags, String name, String keyword,
-                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr,
+                                                               HypervisorType hyperType, boolean onlyReady, Boolean bootable, Long zoneId, boolean showDomr, Account caller,
                                                                boolean showRemovedTmpl, Long parentTemplateId, Boolean showUnique,
                                                                Filter searchFilter, SearchCriteria<TemplateJoinVO> sc) {
         if (!isIso) {
@@ -3849,7 +3852,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        return findTemplatesByIdOrTempZonePair(uniqueTmplPair, showRemovedTmpl, showUnique);
+        return findTemplatesByIdOrTempZonePair(uniqueTmplPair, showRemovedTmpl, showUnique, caller);
 
         // TODO: revisit the special logic for iso search in
         // VMTemplateDaoImpl.searchForTemplates and understand why we need to
@@ -3858,7 +3861,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     // findTemplatesByIdOrTempZonePair returns the templates with the given ids if showUnique is true, or else by the TempZonePair
-    private Pair<List<TemplateJoinVO>, Integer> findTemplatesByIdOrTempZonePair(Pair<List<TemplateJoinVO>, Integer> templateDataPair, boolean showRemoved, boolean showUnique) {
+    private Pair<List<TemplateJoinVO>, Integer> findTemplatesByIdOrTempZonePair(Pair<List<TemplateJoinVO>, Integer> templateDataPair,
+                                                                                boolean showRemoved, boolean showUnique, Account caller) {
         Integer count = templateDataPair.second();
         if (count.intValue() == 0) {
             // empty result
@@ -3873,7 +3877,26 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             String[] templateZonePairs = templateData.stream().map(template -> template.getTempZonePair()).toArray(String[]::new);
             templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
         }
+
+        if(caller.getType() != Account.Type.ADMIN) {
+            templates = applyPublicTemplateRestriction(templates, caller);
+            count = templates.size();
+        }
+
         return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
+    }
+
+    private List<TemplateJoinVO> applyPublicTemplateRestriction(List<TemplateJoinVO> templates, Account caller){
+        List<Long> unsharableDomainIds = templates.stream()
+                .map(TemplateJoinVO::getDomainId)
+                .distinct()
+                .filter(domainId -> domainId != caller.getDomainId())
+                .filter(Predicate.not(QueryService.SharePublicTemplatesWithOtherDomains::valueIn))
+                .collect(Collectors.toList());
+
+        return templates.stream()
+                .filter(Predicate.not(t -> unsharableDomainIds.contains(t.getDomainId())))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -4357,6 +4380,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending, AllowUserViewAllDomainAccounts};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, UserVMDeniedDetails, UserVMReadOnlyDetails, SortKeyAscending,
+                AllowUserViewAllDomainAccounts, SharePublicTemplatesWithOtherDomains};
     }
 }
