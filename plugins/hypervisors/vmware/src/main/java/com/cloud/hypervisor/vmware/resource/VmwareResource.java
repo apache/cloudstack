@@ -1702,41 +1702,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             networkUsage(privateIp, "create", null);
         }
 
-        if (VirtualMachineName.isValidRouterName(vmName)) {
-            reconfigureDomainRouterAfterStart(vmName);
-        }
-
         return new CheckSshAnswer(cmd);
-    }
-
-    private void reconfigureDomainRouterAfterStart(String vmName) {
-        s_logger.debug("Reconfigure to remove machine.id from domain router after start. vmName: " + vmName);
-        VmwareContext context = getServiceContext();
-        try {
-            VmwareHypervisorHost hyperHost = getHyperHost(context);
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
-            if (vmMo == null) {
-                if (hyperHost instanceof HostMO) {
-                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO) hyperHost).getParentMor());
-                    vmMo = clusterMo.findVmOnHyperHost(vmName);
-                }
-            }
-            if (vmMo == null) {
-                String msg = "VM " + vmName + " no longer exists to execute UnPlugNic command";
-                s_logger.error(msg);
-                throw new Exception(msg);
-            }
-            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            OptionValue option = new OptionValue();
-            option.setKey("machine.id");
-            option.setValue("");
-            vmConfigSpec.getExtraConfig().add(option);
-            if (!vmMo.configureVm(vmConfigSpec)) {
-                throw new Exception("Failed to reconfigure domain router after start. vmName: " + vmName);
-            }
-        } catch (Exception e) {
-            s_logger.error("Unexpected exception when reconfigure domain router after start: ", e);
-        }
     }
 
     private DiskTO[] validateDisks(DiskTO[] disks) {

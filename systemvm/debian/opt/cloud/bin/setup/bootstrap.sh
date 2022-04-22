@@ -18,7 +18,6 @@
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
-CMDLINE_PASSED=/var/cache/cloud/cmdline_passed
 
 rm -f /var/cache/cloud/enabled_svcs
 rm -f /var/cache/cloud/disabled_svcs
@@ -84,17 +83,8 @@ config_guest() {
           if [ ! -f /usr/bin/xenstore-read ]; then
             log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
           fi
-          /usr/bin/xenstore-read vm-data/cloudstack/init |tr -d "\n$" > $CMDLINE_PASSED
-          if [ -s $CMDLINE_PASSED ]; then
-            log_it "Received a new non-empty cmdline file from qemu-guest-agent"
-            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
-            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
-            rm -rf /etc/cloudstack/*.json
-            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
-            break
-          else
-            sed -i "s/%/ /g" $CMDLINE
-          fi
+          /usr/bin/xenstore-read vm-data/cloudstack/init > $CMDLINE
+          sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
           # Configure kvm hotplug support
@@ -112,9 +102,8 @@ config_guest() {
 
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
           for i in {1..60}; do
-            if [ -s $CMDLINE_PASSED ]; then
+            if [ -s $CMDLINE ]; then
               log_it "Received a new non-empty cmdline file from qemu-guest-agent"
-              rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
               # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
               rm -rf /etc/cloudstack/*.json
               log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
@@ -133,31 +122,14 @@ config_guest() {
           systemctl enable open-vm-tools
           systemctl start open-vm-tools
 
-          vmtoolsd --cmd 'machine.id.get' > $CMDLINE_PASSED
-          if [ -s $CMDLINE_PASSED ]; then
-            log_it "Received a new non-empty cmdline file from vm-tools"
-            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
-            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
-            rm -rf /etc/cloudstack/*.json
-            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
-            break
-          fi
-
+          vmtoolsd --cmd 'machine.id.get' > $CMDLINE
           ;;
      virtualpc|hyperv)
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
           systemctl enable hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
           sleep 5
-          cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE_PASSED
-          if [ -s $CMDLINE_PASSED ]; then
-            log_it "Received a new non-empty cmdline file from vm-tools"
-            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
-            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
-            rm -rf /etc/cloudstack/*.json
-            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
-            break
-          fi
+          cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
           ;;
      virtualbox)

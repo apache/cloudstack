@@ -72,4 +72,4 @@ do
 done
 
 # Write cmdline payload
-send_file $name "/var/cache/cloud/cmdline_passed" $cmdline
+send_file $name "/var/cache/cloud/cmdline" $cmdline
