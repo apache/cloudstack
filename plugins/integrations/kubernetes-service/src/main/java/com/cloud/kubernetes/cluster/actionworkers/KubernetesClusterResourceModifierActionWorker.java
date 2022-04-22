@@ -62,7 +62,6 @@ import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPairVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -77,7 +76,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.firewall.CreateFirewallRuleCmd;
@@ -85,6 +84,7 @@ import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 
 import javax.inject.Inject;
@@ -153,7 +153,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
-        if (!Strings.isNullOrEmpty(sshKeyPair)) {
+        if (StringUtils.isNotEmpty(sshKeyPair)) {
             SSHKeyPairVO sshkp = sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), sshKeyPair);
             if (sshkp != null) {
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
@@ -188,7 +188,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 registryUrl = detail.getValue();
             }
         }
-        if (!Strings.isNullOrEmpty(registryUsername) && !Strings.isNullOrEmpty(registryPassword) && !Strings.isNullOrEmpty(registryUrl)) {
+
+        if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
             // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
             String runCmd = "- bash -x /opt/bin/setup-containerd";
 
@@ -201,7 +202,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             final String registryPsswd = "{{registry.password}}";
 
             final String usernamePasswordKey = registryUsername + ":" + registryPassword;
-            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(StringUtils.getPreferredCharset()));
+            String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
             k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
             k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
             k8sConfig = k8sConfig.replace(registryUname, registryUsername);
@@ -228,7 +229,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                     continue;
                 }
                 hostDao.loadHostTags(h);
-                if (!Strings.isNullOrEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
+                if (StringUtils.isNotEmpty(offering.getHostTag()) && !(h.getHostTags() != null && h.getHostTags().contains(offering.getHostTag()))) {
                     continue;
                 }
                 int reserved = hp.second();
@@ -376,11 +377,25 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         } catch (IOException e) {
             logAndThrow(Level.ERROR, "Failed to read Kubernetes node configuration file", e);
         }
-        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(StringUtils.getPreferredCharset()));
-        nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
-                hostName, hostName, null, null, null,
-                Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, kubernetesCluster.getKeyPair(),
-                null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE);
+
+        String base64UserData = Base64.encodeBase64String(k8sNodeConfig.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        List<String> keypairs = new ArrayList<String>();
+        if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
+            keypairs.add(kubernetesCluster.getKeyPair());
+        }
+        if (zone.isSecurityGroupEnabled()) {
+            List<Long> securityGroupIds = new ArrayList<>();
+            securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
+            nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
+                    hostName, hostName, null, null, null, Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST,base64UserData, keypairs,
+                    null, addrs, null, null, null, customParameterMap, null, null, null,
+                    null, true, null, UserVmManager.CKS_NODE);
+        } else {
+            nodeVm = userVmService.createAdvancedVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, owner,
+                    hostName, hostName, null, null, null,
+                    Hypervisor.HypervisorType.None, BaseCmd.HTTPMethod.POST, base64UserData, keypairs,
+                    null, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
+        }
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info(String.format("Created node VM : %s, %s in the Kubernetes cluster : %s", hostName, nodeVm.getUuid(), kubernetesCluster.getName()));
         }

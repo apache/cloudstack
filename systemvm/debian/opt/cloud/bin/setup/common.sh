@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 . /lib/lsb/init-functions
@@ -322,7 +322,12 @@ setup_common() {
 
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-    ip route add $MGMTNET via $LOCAL_GW dev eth1
+    log_it "Received mgmt cidr : $MGMTNET"
+    cidrs=(${MGMTNET//,/ })
+    for cidr in ${cidrs[@]}
+    do
+      ip route add $cidr via $LOCAL_GW dev eth1
+    done
   fi
 
   ip route delete default
@@ -614,7 +619,7 @@ parse_cmd_line() {
       KEY=$(echo $i | cut -d= -f1)
       VALUE=$(echo $i | cut -d= -f2)
       echo -en ${COMMA} >> ${CHEF_TMP_FILE}
-      # Two lines so values do not accidently interpretted as escapes!!
+      # Two lines so values do not accidentally interpretted as escapes!!
       echo -n \"${KEY}\"': '\"${VALUE}\" >> ${CHEF_TMP_FILE}
       COMMA=",\n\t"
       case $KEY in
@@ -762,6 +767,21 @@ parse_cmd_line() {
         authorized_key)
             export AUTHORIZED_KEYS=$VALUE
             ;;
+        keystore_password)
+            export KEYSTORE_PSSWD=$VALUE
+            ;;
+        validity)
+          export KS_VALIDITY=$VALUE
+          ;;
+        certificate)
+          export CERTIFICATE=$VALUE
+          ;;
+        cacertificate)
+          export CACERTIFICATE=$VALUE
+          ;;
+        privatekey)
+          export PRIVATEKEY=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

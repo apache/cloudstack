@@ -41,7 +41,12 @@ export function api (command, args = {}, method = 'GET', data = {}) {
 }
 
 export function login (arg) {
-  sourceToken.init()
+  if (!sourceToken.checkExistSource()) {
+    sourceToken.init()
+  }
+
+  // Logout before login is called to purge any duplicate sessionkey cookies
+  api('logout')
 
   const params = new URLSearchParams()
   params.append('command', 'login')

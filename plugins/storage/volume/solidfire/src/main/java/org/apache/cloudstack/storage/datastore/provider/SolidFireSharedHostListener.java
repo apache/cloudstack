@@ -67,13 +67,18 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host was not found with id = " + hostId);
+            LOGGER.error(String.format("Failed to add host by SolidFireSharedHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
+        if (host.getClusterId() == null) {
+            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
+            return false;
+        }
+
         SolidFireUtil.hostAddedToCluster(hostId, host.getClusterId(), SolidFireUtil.SHARED_PROVIDER_NAME,
-                clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
+                    clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
 
         handleVMware(host, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
 
@@ -132,6 +137,11 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
+        return true;
+    }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
         return true;
     }
 

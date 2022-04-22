@@ -19,72 +19,56 @@
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
+        layout="vertical"
+       >
 
-        <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
-          <a-switch v-decorator="['ispublic', { initialValue: this.offeringIsPublic }]" :checked="this.offeringIsPublic" @change="val => { this.offeringIsPublic = val }" />
+        <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
+          <a-switch v-model:checked="form.ispublic" v-focus="true" />
         </a-form-item>
 
-        <a-form-item :label="$t('label.domainid')" v-if="!this.offeringIsPublic">
+        <a-form-item name="domainid" ref="domainid" :label="$t('label.domainid')" v-if="!form.ispublic">
           <a-select
-            :autoFocus="!this.offeringIsPublic"
+            v-focus="!form.ispublic"
             mode="multiple"
-            v-decorator="['domainid', {
-              rules: [
-                {
-                  required: true,
-                  message: `${this.$t('message.error.select')}`
-                }
-              ],
-              initialValue: this.selectedDomains
-            }]"
+            v-model:value="form.domainid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
-            :placeholder="this.apiParams.domainid.description">
+            :placeholder="apiParams.domainid.description">
             <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="block" style="margin-right: 5px" />
+                <block-outlined v-else style="margin-right: 5px" />
                 {{ opt.path || opt.name || opt.description }}
               </span>
             </a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item :label="$t('label.zoneid')">
+        <a-form-item name="zoneid" ref="zoneid" :label="$t('label.zoneid')">
           <a-select
-            :autoFocus="this.offeringIsPublic"
+            v-focus="form.ispublic"
             id="zone-selection"
             mode="multiple"
-            v-decorator="['zoneid', {
-              rules: [
-                {
-                  validator: (rule, value, callback) => {
-                    if (value && value.length > 1 && value.indexOf(0) !== -1) {
-                      callback($t('message.error.zone.combined'))
-                    }
-                    callback()
-                  }
-                }
-              ]
-            }]"
+            v-model:value="form.zoneid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="zoneLoading"
-            :placeholder="this.apiParams.zoneid.description">
+            :placeholder="apiParams.zoneid.description">
             <a-select-option v-for="(opt, optIndex) in this.zones" :key="optIndex" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="global" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px"/>
                 {{ opt.name || opt.description }}
               </span>
             </a-select-option>
@@ -92,8 +76,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
 
       </a-form>
@@ -102,12 +86,15 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'UpdateOfferingAccess',
+  mixins: [mixinForm],
   props: {
     resource: {
       type: Object,
@@ -122,7 +109,6 @@ export default {
       formOffering: {},
       selectedDomains: [],
       selectedZones: [],
-      offeringIsPublic: false,
       domains: [],
       domainLoading: false,
       zones: [],
@@ -131,7 +117,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     switch (this.$route.meta.name) {
       case 'computeoffering':
         this.offeringType = 'ServiceOffering'
@@ -161,9 +146,26 @@ export default {
         name: this.$t('label.all.zone')
       }
     ]
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
+        zoneid: [{
+          type: 'array',
+          validator: async (rule, value) => {
+            if (value && value.length > 1 && value.indexOf(0) !== -1) {
+              return Promise.reject(this.$t('message.error.zone.combined'))
+            }
+            return Promise.resolve()
+          }
+        }]
+      })
+    },
     fetchData () {
       this.fetchOfferingData()
       this.fetchDomainData()
@@ -219,7 +221,7 @@ export default {
       var offeringDomainIds = this.formOffering.domainid
       this.selectedDomains = []
       if (offeringDomainIds) {
-        this.offeringIsPublic = false
+        this.form.ispublic = false
         offeringDomainIds = offeringDomainIds.indexOf(',') !== -1 ? offeringDomainIds.split(',') : [offeringDomainIds]
         for (var i = 0; i < offeringDomainIds.length; i++) {
           for (var j = 0; j < this.domains.length; j++) {
@@ -230,13 +232,11 @@ export default {
         }
       } else {
         if (isAdmin()) {
-          this.offeringIsPublic = true
+          this.form.ispublic = true
         }
       }
-      if ('domainid' in this.form.fieldsStore.fieldsMeta) {
-        this.form.setFieldsValue({
-          domainid: this.selectedDomains
-        })
+      if (!this.form.ispublic) {
+        this.form.domainid = this.selectedDomains
       }
     },
     updateZoneSelection () {
@@ -253,18 +253,14 @@ export default {
           }
         }
       }
-      this.form.setFieldsValue({
-        zoneid: this.selectedZones
-      })
+      this.form.zoneid = this.selectedZones
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-        this.loading = true
+      this.formRef.value.validate().then(() => {
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         const params = {}
         params.id = this.resource.id

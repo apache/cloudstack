@@ -21,20 +21,17 @@
       <a-row>
         <a-col :span="14" style="padding-left: 6px">
           <breadcrumb :resource="resource">
-            <span slot="end">
-              <template slot="title">
-                {{ $t('label.refresh') }}
-              </template>
+            <template #end>
               <a-button
                 style="margin-top: 4px"
                 :loading="loading"
                 shape="round"
                 size="small"
-                icon="reload"
                 @click="fetchData()">
+                <template #icon><ReloadOutlined /></template>
                 {{ $t('label.refresh') }}
               </a-button>
-            </span>
+            </template>
           </breadcrumb>
         </a-col>
         <a-col :span="10">
@@ -60,6 +57,7 @@
         :tabs="$route.meta.tabs" />
       <tree-view
         v-else
+        :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
         :treeStore="domainStore"
@@ -105,6 +103,7 @@ export default {
       resource: {},
       loading: false,
       selectedRowKeys: [],
+      treeViewKey: 0,
       treeData: [],
       treeSelected: {},
       showAction: false,
@@ -124,9 +123,6 @@ export default {
       return actions
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   beforeRouteUpdate (to, from, next) {
     next()
   },
@@ -137,28 +133,17 @@ export default {
   created () {
     this.domainStore = store.getters.domainStore
     this.fetchData()
-    eventBus.$on('refresh-domain-icon', () => {
+    eventBus.on('refresh-domain-icon', () => {
       if (this.$showIcon()) {
         this.fetchData()
       }
     })
   },
-  watch: {
-    '$route' (to, from) {
-      if (to.fullPath !== from.fullPath && !to.fullPath.includes('action/')) {
-        this.fetchData()
-      }
-    },
-    '$i18n.locale' (to, from) {
-      if (to !== from) {
-        this.fetchData()
-      }
-    }
-  },
   provide () {
     return {
       parentCloseAction: this.closeAction,
-      parentFetchData: this.fetchData
+      parentFetchData: this.fetchData,
+      parentForceRerender: this.forceRerender
     }
   },
   methods: {
@@ -286,7 +271,6 @@ export default {
                 continue
               }
               param.opts = json[obj][res]
-              this.$forceUpdate()
               break
             }
             break
@@ -323,6 +307,9 @@ export default {
     },
     closeAction () {
       this.showAction = false
+    },
+    forceRerender () {
+      this.treeViewKey += 1
     }
   }
 }

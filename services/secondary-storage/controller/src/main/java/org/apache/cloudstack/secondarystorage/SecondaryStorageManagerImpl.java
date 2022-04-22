@@ -30,12 +30,15 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -123,7 +126,6 @@ import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
@@ -148,6 +150,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
 * Class to manage secondary storages. <br><br>
@@ -245,6 +248,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
     private IndirectAgentLB indirectAgentLB;
+    @Inject
+    private CAManager caManager;
 
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS;
     private int _secStorageVmMtuSize;
@@ -858,7 +863,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         _useSSlCopy = BooleanUtils.toBoolean(_configDao.getValue("secstorage.encrypt.copy"));
 
         String ssvmUrlDomain = _configDao.getValue("secstorage.ssl.cert.domain");
-        if(_useSSlCopy && org.apache.commons.lang3.StringUtils.isEmpty(ssvmUrlDomain)){
+        if(_useSSlCopy && StringUtils.isEmpty(ssvmUrlDomain)){
             s_logger.warn("Empty secondary storage url domain, explicitly disabling SSL");
             _useSSlCopy = false;
         }
@@ -1070,9 +1075,15 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             return false;
         }
 
+        final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(profile.getVirtualMachine());
+        final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+        ipAddressDetails.remove("router.name");
+        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(profile.getHostName(), profile.getInstanceName()),
+                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
+        buf.append(" host=").append(com.cloud.utils.StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
@@ -1125,8 +1136,11 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
+                if (NetUtils.isValidCidrList(mgmt_cidr)) {
+                    s_logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
+                } else {
+                    s_logger.error("Invalid management server cidr list: " + mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 buf.append(" private.network.device=").append("eth").append(deviceId);
@@ -1154,7 +1168,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         String nfsVersion = imageStoreDetailsUtil != null ? imageStoreDetailsUtil.getNfsVersion(secStore.getId()) : null;
         buf.append(" nfsVersion=").append(nfsVersion);
-
+        buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));

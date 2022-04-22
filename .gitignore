@@ -69,7 +69,6 @@ target-eclipse
 db.properties.override
 replace.properties.override
 tools/marvin/marvin/cloudstackAPI/*
-*.egg-info/
 docs/tmp
 docs/publish
 docs/runbook/tmp

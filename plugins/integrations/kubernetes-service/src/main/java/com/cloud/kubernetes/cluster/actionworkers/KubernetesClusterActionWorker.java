@@ -49,7 +49,6 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
@@ -64,7 +63,6 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.google.common.base.Strings;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
@@ -72,6 +70,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -88,11 +87,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 public class KubernetesClusterActionWorker {
 
     public static final String CLUSTER_NODE_VM_USER = "cloud";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
+    public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = 22;
+
+    public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterActionWorker.class);
 
@@ -179,7 +182,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected String readResourceFile(String resource) throws IOException {
-        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), StringUtils.getPreferredCharset());
+        return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
 
     protected String getControlNodeLoginUser() {
@@ -326,7 +329,7 @@ public class KubernetesClusterActionWorker {
     protected Pair<String, Integer> getKubernetesClusterServerIpSshPort(UserVm controlVm) {
         int port = CLUSTER_NODES_DEFAULT_START_SSH_PORT;
         KubernetesClusterDetailsVO detail = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS);
-        if (detail != null && !Strings.isNullOrEmpty(detail.getValue())) {
+        if (detail != null && StringUtils.isNotEmpty(detail.getValue())) {
             return new Pair<>(detail.getValue(), port);
         }
         Network network = networkDao.findById(kubernetesCluster.getNetworkId());

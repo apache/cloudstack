@@ -19,6 +19,7 @@
     "500": "assets/500.png"
   },
   "theme": {
+    "@layout-mode": "light",
     "@logo-background-color": "#ffffff",
     "@navigation-background-color": "#ffffff",
     "@project-nav-background-color": "#001529",

@@ -151,7 +151,7 @@ public class FirstFitPlannerTest {
         when(configDao.getValue(Config.ImplicitHostTags.key())).thenReturn("GPU");
 
         ComponentContext.initComponentsLifeCycle();
-        acct.setType(Account.ACCOUNT_TYPE_ADMIN);
+        acct.setType(Account.Type.ADMIN);
         acct.setAccountName("user1");
         acct.setDomainId(domainId);
         acct.setId(accountId);

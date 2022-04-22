@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.affinity;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -85,7 +86,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Added host " + groupVM.getHostId() + " to avoid set, since VM " + groupVM.getId() + " is present on the host");
                             }
-                        } else if (VirtualMachine.State.Stopped.equals(groupVM.getState()) && groupVM.getLastHostId() != null) {
+                        } else if (Arrays.asList(VirtualMachine.State.Starting, VirtualMachine.State.Stopped).contains(groupVM.getState()) && groupVM.getLastHostId() != null) {
                             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - groupVM.getUpdateTime().getTime()) / 1000;
                             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                                 avoid.addHost(groupVM.getLastHostId());

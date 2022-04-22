@@ -604,7 +604,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 7. Use the Create PF rule ssh and http for vm1 and vm2 in network1.
         # 8. Use the Create PF rule ssh and http for vm3 and vm4  in network2.
         # 9. Successfully ssh into the Guest vm1, vm2, vm3 and vm4 using the PF rule.
-        # 10. Succesfully wget a file from http server present on vm1, vm2, vm3 and vm4.
+        # 10. Successfully wget a file from http server present on vm1, vm2, vm3 and vm4.
         # 11. Stop VPC Virtual Router.
         # 12. Delete all PF rultes for vm1, vm2, vm3 and vm4.
         # 12. Start VPC Virtual Router.
@@ -684,7 +684,7 @@ class TestVPCNetworkPFRules(cloudstackTestCase):
         # 7. Use the Create PF rule ssh and http for vm1 and vm2 in network1.
         # 8. Use the Create PF rule ssh and http for vm3 and vm4  in network2.
         # 9. Successfully ssh into the Guest vm1, vm2, vm3 and vm4 using the PF rule.
-        # 10. Succesfully wget a file from http server present on vm1, vm2, vm3 and vm4.
+        # 10. Successfully wget a file from http server present on vm1, vm2, vm3 and vm4.
         # 12. Delete all PF rultes for vm1, vm2, vm3 and vm4.
         # 13. Fail to ssh and http to vm1, vm2, vm3 and vm4.
         """

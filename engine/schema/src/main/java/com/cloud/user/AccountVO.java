@@ -42,7 +42,8 @@ public class AccountVO implements Account {
     private String accountName = null;
 
     @Column(name = "type")
-    private short type = ACCOUNT_TYPE_NORMAL;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Type type;
 
     @Column(name = "role_id")
     private Long roleId;
@@ -84,17 +85,17 @@ public class AccountVO implements Account {
         uuid = UUID.randomUUID().toString();
     }
 
-    public AccountVO(final String accountName, final long domainId, final String networkDomain, final short type, final String uuid) {
+    public AccountVO(final String accountName, final long domainId, final String networkDomain, final Type type, final String uuid) {
         this.accountName = accountName;
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
-        this.state = State.enabled;
+        this.state = State.ENABLED;
         this.uuid = uuid;
         this.roleId = RoleType.getRoleByAccountType(null, type);
     }
 
-    public AccountVO(final String accountName, final long domainId, final String networkDomain, final short type, final Long roleId, final String uuid) {
+    public AccountVO(final String accountName, final long domainId, final String networkDomain, final Type type, final Long roleId, final String uuid) {
         this(accountName, domainId, networkDomain, type, uuid);
         if (roleId != null) {
             this.roleId = roleId;
@@ -128,11 +129,11 @@ public class AccountVO implements Account {
     }
 
     @Override
-    public short getType() {
+    public Account.Type getType() {
         return type;
     }
 
-    public void setType(short type) {
+    public void setType(Type type) {
         this.type = type;
     }
 

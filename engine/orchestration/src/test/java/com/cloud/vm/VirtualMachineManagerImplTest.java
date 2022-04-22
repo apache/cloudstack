@@ -95,6 +95,9 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private ServiceOfferingVO serviceOfferingMock;
 
+    @Mock
+    private DiskOfferingVO diskOfferingMock;
+
     private long hostMockId = 1L;
     @Mock
     private HostVO hostMock;
@@ -218,14 +221,15 @@ public class VirtualMachineManagerImplTest {
         when(serviceOfferingMock.getId()).thenReturn(2l);
 
         ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
+        DiskOfferingVO mockCurrentDiskOffering = mock(DiskOfferingVO.class);
 
         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
-        when(mockCurrentServiceOffering.isUseLocalStorage()).thenReturn(true);
-        when(serviceOfferingMock.isUseLocalStorage()).thenReturn(true);
+        when(mockCurrentDiskOffering.isUseLocalStorage()).thenReturn(true);
+        when(diskOfferingMock.isUseLocalStorage()).thenReturn(true);
         when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
-        when(mockCurrentServiceOffering.getTags()).thenReturn("x,y");
-        when(serviceOfferingMock.getTags()).thenReturn("z,x,y");
+        when(mockCurrentDiskOffering.getTags()).thenReturn("x,y");
+        when(diskOfferingMock.getTags()).thenReturn("z,x,y");
 
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
     }
@@ -252,6 +256,7 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void isStorageCrossClusterMigrationTestStorageTypeEqualsZone() {
+        Mockito.doReturn(1L).when(hostMock).getClusterId();
         Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();
         Mockito.doReturn(ScopeType.ZONE).when(storagePoolVoMock).getScope();
 
@@ -556,9 +561,9 @@ public class VirtualMachineManagerImplTest {
         HashMap<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
 
         Mockito.doReturn(ScopeType.CLUSTER).when(storagePoolVoMock).getScope();
-        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
-        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
-        Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(hostMockId, storagePoolVoMock);
+        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(Mockito.anyLong(), Mockito.any());
 
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, dataCenterDeploymentMock, volumeToPoolObjectMap, allVolumes);
 
@@ -677,7 +682,7 @@ public class VirtualMachineManagerImplTest {
     private void prepareAndRunCheckIfNewOfferingStorageScopeMatchesStoragePool(boolean isRootOnLocal, boolean isOfferingUsingLocal) {
         Mockito.doReturn(isRootOnLocal).when(virtualMachineManagerImpl).isRootVolumeOnLocalStorage(Mockito.anyLong());
         Mockito.doReturn("vmInstanceMockedToString").when(vmInstanceMock).toString();
-        Mockito.doReturn(isOfferingUsingLocal).when(serviceOfferingMock).isUseLocalStorage();
-        virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, serviceOfferingMock);
+        Mockito.doReturn(isOfferingUsingLocal).when(diskOfferingMock).isUseLocalStorage();
+        virtualMachineManagerImpl.checkIfNewOfferingStorageScopeMatchesStoragePool(vmInstanceMock, diskOfferingMock);
     }
 }

@@ -94,7 +94,7 @@ class TestSecSRMount(cloudstackTestCase):
         for storage_pool in storage_pools:
             if storage_pool.type == 'NetworkFilesystem':
                 return False
-            
+
         return True
 
     def download(self, apiclient, template_id, retries=12, interval=5):
@@ -149,10 +149,10 @@ class TestSecSRMount(cloudstackTestCase):
             "xenserver"],
         required_hardware="true")
     def test_01_prepare_template_local_storage(self):
-    
+
         if not self.isOnlyLocalStorageAvailable():
             self.skipTest("Skipping this test as this is for Local storage on only.")
-        
+
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -161,20 +161,20 @@ class TestSecSRMount(cloudstackTestCase):
         )
         for host in listHost:
             self.logger.debug('Host id %s, hypervisor %s, localstorage %s' % (host.id, host.hypervisor, host.islocalstorageactive))
-                  
+
         if len(listHost) < 2:
             self.logger.debug("Prepare secondary storage race condition can be tested with two or more host only %s, found" % len(listHost));
             self.skipTest("Prepare secondary storage can be tested with two host only %s, found" % len(listHost))
-        
+
         list_template_response = Template.list(
                                             self.apiclient,
                                             templatefilter='all',
                                             zoneid=self.zone.id)
-        
+
         template_response = list_template_response[0]
-        
+
         self.logger.debug('Template id %s is Ready %s' % (template_response.id, template_response.isready))
-        
+
         if template_response.isready != True:
             self.skipTest('Template id %s is Not Ready' % (template_response.id))
 

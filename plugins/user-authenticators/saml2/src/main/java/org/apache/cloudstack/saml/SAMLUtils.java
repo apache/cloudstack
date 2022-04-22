@@ -100,8 +100,11 @@ import com.cloud.utils.HttpUtils;
 public class SAMLUtils {
     public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
 
+    static final String charset = "abcdefghijklmnopqrstuvwxyz";
+
     public static String generateSecureRandomId() {
-        return new BigInteger(160, new SecureRandom()).toString(32);
+        return new BigInteger(160, new SecureRandom()).toString(32).replaceFirst("^[0-9]",
+                String.valueOf(charset.charAt(new SecureRandom().nextInt(charset.length()))));
     }
 
     public static String getValueFromAttributeStatements(final List<AttributeStatement> attributeStatements, final String attributeKey) {
@@ -280,7 +283,7 @@ public class SAMLUtils {
             resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
         resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
-        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
     /**

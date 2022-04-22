@@ -27,6 +27,7 @@ import javax.persistence.Table;
 
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectInvitation.State;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -60,7 +61,8 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     private String accountName;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -156,7 +158,7 @@ public class ProjectInvitationJoinVO extends BaseViewVO implements ControlledVie
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

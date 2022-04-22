@@ -42,7 +42,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -832,5 +832,15 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public Class<?> getEntityType() {
         return Volume.class;
+    }
+
+    @Override
+    public String getExternalUuid() {
+        return volumeVO.getExternalUuid();
+    }
+
+    @Override
+    public void setExternalUuid(String externalUuid) {
+        volumeVO.setExternalUuid(externalUuid);
     }
 }

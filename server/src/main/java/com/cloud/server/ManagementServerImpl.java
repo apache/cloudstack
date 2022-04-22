@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
@@ -42,7 +43,24 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PatchSystemVmAnswer;
+import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DomainVlanMapVO;
+import com.cloud.dc.dao.DomainVlanMapDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.network.Networks;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -73,6 +91,8 @@ import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilities
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.direct.download.ListTemplateDirectDownloadCertificatesCmd;
+import org.apache.cloudstack.api.command.admin.direct.download.ProvisionTemplateDirectDownloadCertificateCmd;
 import org.apache.cloudstack.api.command.admin.direct.download.RevokeTemplateDirectDownloadCertificateCmd;
 import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificateCmd;
 import org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;
@@ -131,6 +151,7 @@ import org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProvi
 import org.apache.cloudstack.api.command.admin.network.DeletePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestVlansCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkIsolationMethodsCmd;
 import org.apache.cloudstack.api.command.admin.network.ListNetworkServiceProvidersCmd;
@@ -221,6 +242,7 @@ import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.MigrateSystemVMCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.PatchSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StartSystemVMCmd;
@@ -293,7 +315,7 @@ import org.apache.cloudstack.api.command.admin.volume.RecoverVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ResizeVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UpdateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.UploadVolumeCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCmd;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.DeletePrivateGatewayCmd;
@@ -315,6 +337,8 @@ import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.DisassociateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
+import org.apache.cloudstack.api.command.user.address.ReleaseIPAddrCmd;
+import org.apache.cloudstack.api.command.user.address.ReserveIPAddrCmd;
 import org.apache.cloudstack.api.command.user.address.UpdateIPAddrCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.CreateAffinityGroupCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.DeleteAffinityGroupCmd;
@@ -403,15 +427,19 @@ import org.apache.cloudstack.api.command.user.nat.ListIpForwardingRulesCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.DeleteNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
+import org.apache.cloudstack.api.command.user.network.RemoveNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
+import org.apache.cloudstack.api.command.user.network.ResetNetworkPermissionsCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
@@ -505,6 +533,7 @@ import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.command.user.volume.AddResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
+import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DeleteVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DestroyVolumeCmd;
@@ -519,6 +548,7 @@ import org.apache.cloudstack.api.command.user.volume.RemoveResourceDetailCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UpdateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateStaticRouteCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.DeleteStaticRouteCmd;
@@ -572,6 +602,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
@@ -601,7 +632,6 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.DomainVlanMapVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
@@ -611,7 +641,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -653,6 +682,7 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
@@ -755,11 +785,13 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
+    protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6", "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<Boolean>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<String>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+    private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
 
     @Inject
     public AccountManager _accountMgr;
@@ -822,7 +854,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private StoragePoolJoinDao _poolJoinDao;
     @Inject
-    private NetworkDao _networkDao;
+    private NetworkDao networkDao;
     @Inject
     private StorageManager _storageMgr;
     @Inject
@@ -895,10 +927,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private AnnotationDao annotationDao;
     @Inject
     private DomainVlanMapDao _domainVlanMapDao;
+    @Inject
+    private NicDao nicDao;
+    @Inject
+    DomainRouterDao routerDao;
+    @Inject
+    public UUIDManager uuidMgr;
 
     private LockControllerListener _lockControllerListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
+    private static final int patchCommandTimeout = 600000;
 
     private Map<String, String> _configs;
 
@@ -938,6 +977,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public ManagementServerImpl() {
         setRunLevel(ComponentLifecycle.RUN_LEVEL_APPLICATION_MAINLOOP);
+        setStateMachine();
     }
 
     public List<UserAuthenticator> getUserAuthenticators() {
@@ -994,6 +1034,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         supportedHypervisors.add(HypervisorType.XenServer);
 
         return true;
+    }
+
+    private void setStateMachine() {
+        _stateMachine = VirtualMachine.State.getStateMachine();
     }
 
     @Override
@@ -1067,7 +1111,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             final DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -1094,7 +1138,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result = true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountMgr.isNormalUser(caller.getId()) || caller.getType() == Account.Type.PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             final DomainVO domain = _domainDao.findById(caller.getDomainId());
@@ -1480,6 +1524,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(final Long volumeId) {
+
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> allPoolsAndSuitablePoolsPair = listStoragePoolsForMigrationOfVolumeInternal(volumeId, null, null, null, null, false);
+        List<? extends StoragePool> allPools = allPoolsAndSuitablePoolsPair.first();
+        List<? extends StoragePool> suitablePools = allPoolsAndSuitablePoolsPair.second();
+        List<StoragePool> avoidPools = new ArrayList<>();
+
+        final VolumeVO volume = _volumeDao.findById(volumeId);
+        StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
+        if (srcVolumePool.getParent() != 0L) {
+            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
+            avoidPools.add(datastoreCluster);
+        }
+        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
+        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
+        return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
+    }
+
+    public Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(final Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1493,6 +1555,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with" + " specified id.");
             ex.addProxyObject(volumeId.toString(), "volumeId");
             throw ex;
+        }
+
+        Long diskOfferingId = volume.getDiskOfferingId();
+        if (newDiskOfferingId != null) {
+            diskOfferingId = newDiskOfferingId;
         }
 
         // Volume must be attached to an instance for live migration.
@@ -1548,24 +1615,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Host vmHost = hostClusterPair.first();
         List<Cluster> clusters = hostClusterPair.second();
         allPools = getAllStoragePoolCompatibleWithVolumeSourceStoragePool(srcVolumePool, hypervisorType, clusters);
-        allPools.remove(srcVolumePool);
+        ExcludeList avoid = new ExcludeList();
+        if (!keepSourceStoragePool) {
+            allPools.remove(srcVolumePool);
+            avoid.addPool(srcVolumePool.getId());
+        }
         if (vm != null) {
-            suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, vmHost, srcVolumePool,
+            suitablePools = findAllSuitableStoragePoolsForVm(volume, diskOfferingId, newSize, newMinIops, newMaxIops, vm, vmHost, avoid,
                     CollectionUtils.isNotEmpty(clusters) ? clusters.get(0) : null, hypervisorType);
         } else {
-            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, allPools);
+            suitablePools = findAllSuitableStoragePoolsForDetachedVolume(volume, diskOfferingId, allPools);
         }
-        List<StoragePool> avoidPools = new ArrayList<>();
-        if (srcVolumePool.getParent() != 0L) {
-            StoragePool datastoreCluster = _poolDao.findById(srcVolumePool.getParent());
-            avoidPools.add(datastoreCluster);
-        }
-        abstractDataStoreClustersList((List<StoragePool>) allPools, new ArrayList<StoragePool>());
-        abstractDataStoreClustersList((List<StoragePool>) suitablePools, avoidPools);
+        removeDataStoreClusterParents((List<StoragePool>) allPools);
+        removeDataStoreClusterParents((List<StoragePool>) suitablePools);
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
 
-    private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
+    private void removeDataStoreClusterParents(List<StoragePool> storagePools) {
+        Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
+        List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
+        if (!childDatastores.isEmpty()) {
+            Set<Long> parentStoragePoolIds = childDatastores.stream().map(mo -> mo.getParent()).collect(Collectors.toSet());
+            for (Long parentStoragePoolId : parentStoragePoolIds) {
+                StoragePool parentPool = _poolDao.findById(parentStoragePoolId);
+                storagePools.remove(parentPool);
+            }
+        }
+    }
+
+        private void abstractDataStoreClustersList(List<StoragePool> storagePools, List<StoragePool> avoidPools) {
         Predicate<StoragePool> childDatastorePredicate = pool -> (pool.getParent() != 0);
         List<StoragePool> childDatastores = storagePools.stream().filter(childDatastorePredicate).collect(Collectors.toList());
         storagePools.removeAll(avoidPools);
@@ -1635,10 +1713,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      *
      *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
      */
-    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, Host vmHost, StoragePool srcVolumePool, Cluster srcCluster, HypervisorType hypervisorType) {
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, Long diskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, VMInstanceVO vm, Host vmHost, ExcludeList avoid, Cluster srcCluster, HypervisorType hypervisorType) {
         List<StoragePool> suitablePools = new ArrayList<>();
-        ExcludeList avoid = new ExcludeList();
-        avoid.addPool(srcVolumePool.getId());
         Long clusterId = null;
         Long podId = null;
         if (srcCluster != null) {
@@ -1650,8 +1726,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         // OfflineVmwareMigration: vm might be null here; deal!
 
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         DiskProfile diskProfile = new DiskProfile(volume, diskOffering, hypervisorType);
+        if (!Objects.equals(volume.getDiskOfferingId(), diskOfferingId)) {
+            diskProfile.setSize(newSize);
+            diskProfile.setMinIops(newMinIops);
+            diskProfile.setMaxIops(newMaxIops);
+        }
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
             List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL, true);
@@ -1669,12 +1750,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return suitablePools;
     }
 
-    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, List<? extends StoragePool> allPools) {
+    private List<StoragePool> findAllSuitableStoragePoolsForDetachedVolume(Volume volume, Long diskOfferingId, List<? extends StoragePool> allPools) {
         List<StoragePool> suitablePools = new ArrayList<>();
         if (CollectionUtils.isEmpty(allPools)) {
             return  suitablePools;
         }
-        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
         List<String> tags = new ArrayList<>();
         String[] tagsArray = diskOffering.getTagsArray();
         if (tagsArray != null && tagsArray.length > 0) {
@@ -1700,7 +1781,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idsNotIn", sb.entity().getId(), SearchCriteria.Op.NOTIN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.LIKE);
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -1745,7 +1826,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
         if (type != null) {
             sc.setParameters("type", "%" + type);
@@ -1792,7 +1873,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<HostPodVO> sb = _hostPodDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
 
@@ -1810,7 +1891,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (podName != null) {
-            sc.setParameters("name", "%" + podName + "%");
+            sc.setParameters("name", podName);
         }
 
         if (zoneId != null) {
@@ -1974,12 +2055,23 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long zoneId = cmd.getZoneId();
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
-        final Long accountId = cmd.getAccountId();
-        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
+
+        final Account caller = CallContext.current().getCallingAccount();
+        if (_accountMgr.isDomainAdmin(caller.getId())) {
+            if (accountId == null && domainId == null) {
+                domainId = caller.getDomainId();
+            }
+        } else if (_accountMgr.isNormalUser(caller.getId())) {
+            if (accountId == null) {
+                accountId = caller.getAccountId();
+            }
+        }
 
         if (zoneId != null) {
             scope = ConfigKey.Scope.Zone.toString();
@@ -1992,11 +2084,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             paramCountCheck++;
         }
         if (accountId != null) {
+            Account account = _accountMgr.getAccount(accountId);
+            _accountMgr.checkAccess(caller, null, false, account);
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
+            _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
             scope = ConfigKey.Scope.Domain.toString();
             id = domainId;
             paramCountCheck++;
@@ -2094,13 +2189,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String state = cmd.getState();
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
-            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
+            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
                 isAllocated = Boolean.FALSE;
             } else {
                 isAllocated = Boolean.TRUE; // default
             }
         } else {
-            if (state != null && state.equalsIgnoreCase(IpAddress.State.Free.name())) {
+            if (state != null && (state.equalsIgnoreCase(IpAddress.State.Free.name()) || state.equalsIgnoreCase(IpAddress.State.Reserved.name()))) {
                 if (isAllocated) {
                     throw new InvalidParameterValueException("Conflict: allocatedonly is true but state is Free");
                 }
@@ -2120,7 +2215,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         List<IPAddressVO> addrs = new ArrayList<>();
 
         if (vlanType == VlanType.DirectAttached && networkId == null && ipId == null) { // only root admin can list public ips in all shared networks
-            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller.getType() != Account.Type.ADMIN) {
                 isAllocated = true;
             }
         } else if (vlanType == VlanType.DirectAttached) {
@@ -2132,9 +2227,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (ip == null) {
                     throw new InvalidParameterValueException("Please specify a valid ipaddress id");
                 }
-                network = _networkDao.findById(ip.getSourceNetworkId());
+                network = networkDao.findById(ip.getSourceNetworkId());
             } else {
-                network = _networkDao.findById(networkId);
+                network = networkDao.findById(networkId);
             }
             if (network == null || network.getGuestType() != Network.GuestType.Shared) {
                 throw new InvalidParameterValueException("Please specify a valid network id");
@@ -2144,19 +2239,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (networkMap == null) {
                     return new Pair<>(addrs, 0);
                 }
-                _accountMgr.checkAccess(caller, null, false, _accountDao.findById(networkMap.getAccountId()));
+                try {
+                    _accountMgr.checkAccess(caller, null, false, _accountDao.findById(networkMap.getAccountId()));
+                } catch (PermissionDeniedException ex) {
+                    s_logger.info("Account " + caller + " do not have permission to access account of network " + network);
+                    _accountMgr.checkAccess(caller, SecurityChecker.AccessType.UseEntry, false, network);
+                    isAllocated = Boolean.TRUE;
+                }
             } else { // Domain level
                 NetworkDomainVO networkMap = _networkDomainDao.getDomainNetworkMapByNetworkId(network.getId());
                 if (networkMap == null) {
                     return new Pair<>(addrs, 0);
                 }
-                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                if (caller.getType() == Account.Type.NORMAL || caller.getType() == Account.Type.PROJECT) {
                     if (_networkMgr.isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
                         isAllocated = Boolean.TRUE;
                     } else {
                         return new Pair<>(addrs, 0);
                     }
-                } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                } else if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                     if (caller.getDomainId() == networkMap.getDomainId() || _domainDao.isChildDomain(caller.getDomainId(), networkMap.getDomainId())) {
                         s_logger.debug("Caller " + caller.getUuid() + " has permission to access the network : " + network.getUuid());
                     } else {
@@ -2173,10 +2274,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Filter searchFilter = new Filter(IPAddressVO.class, "address", false, null, null);
         final SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
-        Boolean isRecursive = null;
+        Boolean isRecursive = cmd.isRecursive();
         final List<Long> permittedAccounts = new ArrayList<>();
         ListProjectResourcesCriteria listProjectResourcesCriteria = null;
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+        Boolean isAllocatedOrReserved = false;
+        if (isAllocated || IpAddress.State.Reserved.name().equalsIgnoreCase(state)) {
+            isAllocatedOrReserved = true;
+        }
+        if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(),
                     null);
             _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
@@ -2189,14 +2294,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         buildParameters(sb, cmd, vlanType == VlanType.VirtualNetwork ? true : isAllocated);
 
         SearchCriteria<IPAddressVO> sc = sb.create();
-        setParameters(sc, cmd, vlanType);
+        setParameters(sc, cmd, vlanType, isAllocated);
 
-        if (isAllocated || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.ACCOUNT_TYPE_ADMIN || cmd.getDomainId() != null))) {
+        if (isAllocatedOrReserved || (vlanType == VlanType.VirtualNetwork && (caller.getType() != Account.Type.ADMIN || cmd.getDomainId() != null))) {
             _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
         if (associatedNetworkId != null) {
-            _accountMgr.checkAccess(caller, null, false, _networkDao.findById(associatedNetworkId));
+            _accountMgr.checkAccess(caller, null, false, networkDao.findById(associatedNetworkId));
             sc.setParameters("associatedNetworkIdEq", associatedNetworkId);
         }
         if (vpcId != null) {
@@ -2208,11 +2313,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Free IP addresses in system IP ranges
         List<Long> freeAddrIds = new ArrayList<>();
-        if (!(isAllocated || vlanType == VlanType.DirectAttached)) {
+        if (!(isAllocatedOrReserved || vlanType == VlanType.DirectAttached)) {
             Long zoneId = zone;
-            Account owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+            Account owner;
+            if (cmd.getProjectId() != null && cmd.getProjectId() != -1) {
+                owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+            } else {
+                owner = _accountMgr.finalizeOwner(CallContext.current().getCallingAccount(), cmd.getAccountName(), cmd.getDomainId(), null);
+            }
             if (associatedNetworkId != null) {
-                NetworkVO guestNetwork = _networkDao.findById(associatedNetworkId);
+                NetworkVO guestNetwork = networkDao.findById(associatedNetworkId);
                 if (zoneId == null) {
                     zoneId = guestNetwork.getDataCenterId();
                 } else if (zoneId != guestNetwork.getDataCenterId()) {
@@ -2252,7 +2362,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sb2.and("ids", sb2.entity().getId(), SearchCriteria.Op.IN);
 
             SearchCriteria<IPAddressVO> sc2 = sb2.create();
-            setParameters(sc2, cmd, vlanType);
+            setParameters(sc2, cmd, vlanType, isAllocated);
             sc2.setParameters("ids", freeAddrIds.toArray());
             addrs.addAll(_publicIpAddressDao.search(sc2, searchFilter)); // Allocated + Free
         }
@@ -2316,7 +2426,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType) {
+    protected void setParameters(SearchCriteria<IPAddressVO> sc, final ListPublicIpAddressesCmd cmd, VlanType vlanType, Boolean isAllocated) {
         final Object keyword = cmd.getKeyword();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final Long sourceNetworkId = cmd.getNetworkId();
@@ -2384,9 +2494,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (state != null) {
             sc.setParameters("state", state);
+        } else if (isAllocated != null && isAllocated) {
+            sc.setParameters("state", IpAddress.State.Allocated);
         }
 
-        sc.setParameters( "forsystemvms", false);
+        if (IpAddressManagerImpl.getSystemvmpublicipreservationmodestrictness().value() && IpAddress.State.Free.name().equalsIgnoreCase(state)) {
+            sc.setParameters("forsystemvms", false);
+        }
     }
 
     @Override
@@ -3146,6 +3260,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListProjectAccountsCmd.class);
         cmdList.add(AssociateIPAddrCmd.class);
         cmdList.add(DisassociateIPAddrCmd.class);
+        cmdList.add(ReserveIPAddrCmd.class);
+        cmdList.add(ReleaseIPAddrCmd.class);
         cmdList.add(ListPublicIpAddressesCmd.class);
         cmdList.add(CreateAutoScalePolicyCmd.class);
         cmdList.add(CreateAutoScaleVmGroupCmd.class);
@@ -3226,6 +3342,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListNetworksCmd.class);
         cmdList.add(RestartNetworkCmd.class);
         cmdList.add(UpdateNetworkCmd.class);
+        cmdList.add(CreateNetworkPermissionsCmd.class);
+        cmdList.add(ListNetworkPermissionsCmd.class);
+        cmdList.add(RemoveNetworkPermissionsCmd.class);
+        cmdList.add(ResetNetworkPermissionsCmd.class);
         cmdList.add(ListDiskOfferingsCmd.class);
         cmdList.add(ListServiceOfferingsCmd.class);
         cmdList.add(ActivateProjectCmd.class);
@@ -3311,6 +3431,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UploadVolumeCmd.class);
         cmdList.add(DestroyVolumeCmd.class);
         cmdList.add(RecoverVolumeCmd.class);
+        cmdList.add(ChangeOfferingForVolumeCmd.class);
         cmdList.add(CreateStaticRouteCmd.class);
         cmdList.add(CreateVPCCmd.class);
         cmdList.add(DeleteStaticRouteCmd.class);
@@ -3466,6 +3587,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateVPCCmdByAdmin.class);
         cmdList.add(ListVPCsCmdByAdmin.class);
         cmdList.add(UpdateVPCCmdByAdmin.class);
+        cmdList.add(CreatePrivateGatewayByAdminCmd.class);
         cmdList.add(UpdateLBStickinessPolicyCmd.class);
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
         cmdList.add(GetUploadParamsForTemplateCmd.class);
@@ -3478,6 +3600,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(RevokeTemplateDirectDownloadCertificateCmd.class);
+        cmdList.add(ListTemplateDirectDownloadCertificatesCmd.class);
+        cmdList.add(ProvisionTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
@@ -3486,6 +3610,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UploadResourceIconCmd.class);
         cmdList.add(DeleteResourceIconCmd.class);
         cmdList.add(ListResourceIconCmd.class);
+        cmdList.add(PatchSystemVMCmd.class);
+        cmdList.add(ListGuestVlansCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3891,7 +4017,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean elasticLoadBalancerEnabled = false;
         boolean KVMSnapshotEnabled = false;
         String supportELB = "false";
-        final List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
+        final List<NetworkVO> networks = networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
             securityGroupsEnabled = true;
             final String elbEnabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
@@ -4123,7 +4249,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         try {
             owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
         } catch (InvalidParameterValueException ex) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && accountName != null && domainId != null) {
+            if (caller.getType() == Account.Type.ADMIN && accountName != null && domainId != null) {
                 owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
             }
             if (owner == null) {
@@ -4584,7 +4710,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
-        if (adminUser.getState() == Account.State.disabled) {
+        if (adminUser.getState() == Account.State.DISABLED) {
             // This means its a new account, set the password using the
             // authenticator
 
@@ -4596,7 +4722,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
 
             adminUser.setPassword(encodedPassword);
-            adminUser.setState(Account.State.enabled);
+            adminUser.setState(Account.State.ENABLED);
             _userDao.persist(adminUser);
             s_logger.info("Admin user enabled");
         }
@@ -4620,6 +4746,104 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         _dpMgr.cleanupVMReservations();
+    }
+
+    @Override
+    public Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd) {
+        Long systemVmId = cmd.getId();
+        boolean forced = cmd.isForced();
+
+        if (systemVmId == null) {
+            throw new InvalidParameterValueException("Please provide a valid ID of a system VM to be patched");
+        }
+
+        final VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, systemVmTypes);
+        if (systemVm == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find SystemVm with id %s. patchSystemVm API can be used to patch CPVM / SSVM only.", systemVmId));
+        }
+
+        return updateSystemVM(systemVm, forced);
+    }
+
+
+    private String getControlIp(final long systemVmId) {
+        String controlIpAddress = null;
+        final List<NicVO> nics = nicDao.listByVmId(systemVmId);
+        for (final NicVO n : nics) {
+            final NetworkVO nc = networkDao.findById(n.getNetworkId());
+            if (nc != null && nc.getTrafficType() == Networks.TrafficType.Control) {
+                controlIpAddress = n.getIPv4Address();
+                // router will have only one control IP
+                break;
+            }
+        }
+
+        if (controlIpAddress == null) {
+            s_logger.warn(String.format("Unable to find systemVm's control ip in its attached NICs!. systemVmId: %s", systemVmId));
+            VMInstanceVO systemVM = _vmInstanceDao.findById(systemVmId);
+            return systemVM.getPrivateIpAddress();
+        }
+
+        return controlIpAddress;
+    }
+
+    public Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced) {
+        String msg = String.format("Unable to patch SystemVM: %s as it is not in Running state. Please destroy and recreate the SystemVM.", systemVM);
+        if (systemVM.getState() != State.Running) {
+            s_logger.error(msg);
+            return new Pair<>(false, msg);
+        }
+        return patchSystemVm(systemVM, forced);
+    }
+
+    private boolean updateRouterDetails(Long routerId, String scriptVersion, String templateVersion) {
+        DomainRouterVO router = routerDao.findById(routerId);
+        if (router == null) {
+            throw new CloudRuntimeException(String.format("Failed to find router with id: %s", routerId));
+        }
+
+        router.setTemplateVersion(templateVersion);
+        router.setScriptsVersion(scriptVersion);
+        String codeVersion = getVersion();
+        if (StringUtils.isNotEmpty(codeVersion)) {
+            codeVersion = CloudStackVersion.parse(codeVersion).toString();
+        }
+        router.setSoftwareVersion(codeVersion);
+        return routerDao.update(routerId, router);
+    }
+
+    private Pair<Boolean, String> patchSystemVm(VMInstanceVO systemVM, boolean forced) {
+        PatchSystemVmAnswer answer;
+        final PatchSystemVmCommand command = new PatchSystemVmCommand();
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getControlIp(systemVM.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, systemVM.getInstanceName());
+        command.setForced(forced);
+        try {
+            Commands cmds = new Commands(Command.OnError.Stop);
+            cmds.addCommand(command);
+            Answer[] answers = _agentMgr.send(systemVM.getHostId(), cmds, patchCommandTimeout);
+            answer = (PatchSystemVmAnswer) answers[0];
+            if (!answer.getResult()) {
+                String errMsg = String.format("Failed to patch systemVM %s due to %s", systemVM.getInstanceName(), answer.getDetails());
+                s_logger.error(errMsg);
+                return new Pair<>(false, errMsg);
+            }
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errMsg = "SystemVM live patch failed";
+            s_logger.error(errMsg, e);
+            return new Pair<>(false,  String.format("%s due to: %s", errMsg, e.getMessage()));
+        }
+        s_logger.info(String.format("Successfully patched system VM %s", systemVM.getInstanceName()));
+        List<VirtualMachine.Type> routerTypes = new ArrayList<>();
+        routerTypes.add(VirtualMachine.Type.DomainRouter);
+        routerTypes.add(VirtualMachine.Type.InternalLoadBalancerVm);
+        if (routerTypes.contains(systemVM.getType())) {
+            boolean updated = updateRouterDetails(systemVM.getId(), answer.getScriptsVersion(), answer.getTemplateVersion());
+            if (!updated) {
+                s_logger.warn("Failed to update router's script and template version details");
+            }
+        }
+        return new Pair<>(true, answer.getDetails());
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

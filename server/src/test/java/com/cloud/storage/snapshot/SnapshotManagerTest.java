@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +37,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -149,6 +151,8 @@ public class SnapshotManagerTest {
     SnapshotDataStoreVO snapshotStoreMock;
     @Mock
     SnapshotService snapshotSrv;
+    @Mock
+    SnapshotHelper snapshotHelperMock;
 
     @Mock
     GlobalLock globalLockMock;
@@ -199,6 +203,7 @@ public class SnapshotManagerTest {
         _snapshotMgr._resourceMgr = _resourceMgr;
         _snapshotMgr._vmSnapshotDao = _vmSnapshotDao;
         _snapshotMgr._snapshotStoreDao = snapshotStoreDao;
+        _snapshotMgr.snapshotHelper = snapshotHelperMock;
         _snapshotMgr._snapshotPolicyDao = snapshotPolicyDaoMock;
         _snapshotMgr._snapSchedMgr = snapshotSchedulerMock;
         _snapshotMgr.taggedResourceService = taggedResourceServiceMock;
@@ -226,7 +231,7 @@ public class SnapshotManagerTest {
         doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
         doNothing().when(_snapshotMgr._resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
 
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         when(_accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -331,6 +336,7 @@ public class SnapshotManagerTest {
         when(vmMock.getState()).thenReturn(State.Stopped);
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
         when(volumeMock.getFormat()).thenReturn(ImageFormat.VHD);
+        doReturn(DataStoreRole.Image).when(snapshotHelperMock).getDataStoreRole(Mockito.any());
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNull(snapshot);
     }
@@ -344,6 +350,7 @@ public class SnapshotManagerTest {
         when(volumeMock.getFormat()).thenReturn(ImageFormat.QCOW2);
         when (snapshotStrategy.revertSnapshot(Mockito.any(SnapshotInfo.class))).thenReturn(true);
         when(_volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+        doReturn(DataStoreRole.Image).when(snapshotHelperMock).getDataStoreRole(Mockito.any());
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNotNull(snapshot);
     }

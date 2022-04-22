@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """
- Test cases for deploying Virtual Machine using impersonation (passing account and domainId parameters) for shared network 
+ Test cases for deploying Virtual Machine using impersonation (passing account and domainId parameters) for shared network
 """
 # Import Local Modules
 import marvin
@@ -67,7 +67,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
             cls.default_apikey = cls.apiclient.connection.apiKey
             cls.default_secretkey = cls.apiclient.connection.securityKey
 
-            # Create domains 
+            # Create domains
             cls.domain_1 = Domain.create(
                 cls.apiclient,
                 cls.acldata["domain1"]
@@ -402,7 +402,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         """
         Valiate that ROOT admin is able to deploy a VM for any user in a subdomain in a shared network with scope=all
         """
-        # Deploy VM as user in a subdomain under ROOT 
+        # Deploy VM as user in a subdomain under ROOT
 
         self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
@@ -984,7 +984,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that ROOT admin is NOT able to deploy a VM for a admin user in a shared network with scope=account which the admin user does not have access to
         """
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
 
         self.apiclient.connection.apiKey = self.default_apikey
         self.apiclient.connection.securityKey = self.default_secretkey
@@ -1100,7 +1100,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that Domain admin is able to deploy a VM for a sub domain user in a shared network with scope=all
         """
 
-        # Deploy VM as user in a subdomain under ROOT 
+        # Deploy VM as user in a subdomain under ROOT
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmD11A"]["name"] + "-shared-scope-all-domain-admin"
@@ -1126,7 +1126,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that Domain admin is able to deploy a VM for a sub domain admin user in a shared network with scope=all
         """
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmD11"]["name"] + "-shared-scope-all-domain-admin"
@@ -1698,7 +1698,7 @@ class TestSharedNetworkImpersonation(cloudstackTestCase):
         Valiate that Domain admin is able NOT able to deploy a VM for an regular user from a differnt domain in a shared network with scope=account
         """
 
-        # Deploy VM as an admin user in a subdomain under ROOT 
+        # Deploy VM as an admin user in a subdomain under ROOT
         self.apiclient.connection.apiKey = self.user_d1_apikey
         self.apiclient.connection.securityKey = self.user_d1_secretkey
         self.vmdata["name"] = self.acldata["vmD2A"]["name"] + "-shared-scope-account-domain-admin"

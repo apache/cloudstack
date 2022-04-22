@@ -1542,7 +1542,7 @@ class TestUserLogin(cloudstackTestCase):
             parentdomainid=self.domain.id
         )
         self.cleanup.append(domain)
-        self.debug("Domain: %s is created succesfully." % domain.name)
+        self.debug("Domain: %s is created successfully." % domain.name)
         self.debug(
             "Checking if the created domain is listed in list domains API")
         domains = Domain.list(self.apiclient, id=domain.id, listall=True)
@@ -1818,7 +1818,7 @@ class TestDomainForceRemove(cloudstackTestCase):
             parentdomainid=self.domain.id
         )
         self.cleanup.append(self.child_domain)
-        self.debug("Domain is created succesfully.")
+        self.debug("Domain is created successfully.")
         self.debug(
             "Checking if the created domain is listed in list domains API")
         domains = Domain.list(self.apiclient, id=self.child_domain.id, listall=True)
@@ -1955,7 +1955,7 @@ class TestDomainForceRemove(cloudstackTestCase):
 
         except Exception as e:
             self.debug("Waiting for account.cleanup.interval" +
-                       " to cleanup any remaining resouces")
+                       " to cleanup any remaining resources")
             # Sleep 3*account.gc to ensure that all resources are deleted
             wait_for_cleanup(self.apiclient, ["account.cleanup.interval"] * 3)
             with self.assertRaises(CloudstackAPIException):

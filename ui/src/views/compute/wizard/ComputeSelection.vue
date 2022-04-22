@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <a-card>
+  <a-card v-if="isCustomized">
     <a-col>
       <a-row>
         <a-col :md="colContraned" :lg="colContraned" v-if="isCustomized">
@@ -29,14 +29,14 @@
                 <a-slider
                   :min="minCpu"
                   :max="maxCpu"
-                  v-model="cpuNumberInputValue"
+                  v-model:value="cpuNumberInputValue"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
               </a-col>
               <a-col :md="4" :lg="4">
                 <a-input-number
-                  :autoFocus="isConstrained"
-                  v-model="cpuNumberInputValue"
+                  v-focus="isConstrained"
+                  v-model:value="cpuNumberInputValue"
                   @change="($event) => updateComputeCpuNumber($event)"
                 />
               </a-col>
@@ -49,8 +49,8 @@
             :validate-status="errors.cpuspeed.status"
             :help="errors.cpuspeed.message">
             <a-input-number
-              :autoFocus="!isConstrained"
-              v-model="cpuSpeedInputValue"
+              v-focus="!isConstrained"
+              v-model:value="cpuSpeedInputValue"
               @change="($event) => updateComputeCpuSpeed($event)"
             />
           </a-form-item>
@@ -65,13 +65,13 @@
                 <a-slider
                   :min="minMemory"
                   :max="maxMemory"
-                  v-model="memoryInputValue"
+                  v-model:value="memoryInputValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
               <a-col :md="4" :lg="4">
                 <a-input-number
-                  v-model="memoryInputValue"
+                  v-model:value="memoryInputValue"
                   @change="($event) => updateComputeMemory($event)"
                 />
               </a-col>
@@ -80,13 +80,13 @@
         </a-col>
         <a-col :md="8" v-if="isCustomizedIOps">
           <a-form-item :label="$t('label.miniops')">
-            <a-input-number v-model="minIOps" @change="updateIOpsValue" />
+            <a-input-number v-model:value="minIOps" @change="updateIOpsValue" />
             <p v-if="errorMinIOps" style="color: red"> {{ $t(errorMinIOps) }} </p>
           </a-form-item>
         </a-col>
         <a-col :md="8" v-if="isCustomizedIOps">
           <a-form-item :label="$t('label.maxiops')">
-            <a-input-number v-model="maxIOps" @change="updateIOpsValue" />
+            <a-input-number v-model:value="maxIOps" @change="updateIOpsValue" />
             <p v-if="errorMaxIOps" style="color: red"> {{ $t(errorMaxIOps) }} </p>
           </a-form-item>
         </a-col>
@@ -106,6 +106,10 @@ export default {
     isConstrained: {
       type: Boolean,
       default: true
+    },
+    cpuSpeed: {
+      type: Number,
+      default: 0
     },
     minCpu: {
       type: Number,
@@ -198,6 +202,7 @@ export default {
     fillValue () {
       this.cpuNumberInputValue = this.minCpu
       this.memoryInputValue = this.minMemory
+      this.cpuSpeedInputValue = this.cpuSpeed
 
       if (!this.preFillContent) {
         this.updateComputeCpuNumber(this.cpuNumberInputValue)

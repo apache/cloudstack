@@ -20,22 +20,24 @@
     <div class="form-layout" v-ctrl-enter="handleSubmitForm">
       <div class="form">
         <a-form
-          :form="form"
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
           layout="vertical"
           @submit="handleSubmitForm">
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.zonenamelabel')" :tooltip="placeholder.zoneid"/>
+          <a-form-item name="zoneid" ref="zoneid">
+            <template #label>
+              <tooltip-label :title="$t('label.zonenamelabel')" :tooltip="placeholder.zoneid"/>
+            </template>
             <a-select
-              v-decorator="['zoneid', {
-                initialValue: this.zoneId,
-                rules: [{ required: true, message: $t('message.error.select') }]
-              }]"
+              v-focus="true"
+              v-model:value="form.zoneid"
               :placeholder="placeholder.zoneid"
               autoFocus
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="fetchPods">
               <a-select-option
@@ -45,24 +47,23 @@
                 :label="zone.name">
                 <span>
                   <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
                 </span>
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.podname')" :tooltip="placeholder.podid"/>
+          <a-form-item name="podid" ref="podid">
+            <template #label>
+              <tooltip-label :title="$t('label.podname')" :tooltip="placeholder.podid"/>
+            </template>
             <a-select
-              v-decorator="['podid', {
-                initialValue: podId,
-                rules: [{ required: true, message: $t('message.error.select') }]
-              }]"
+              v-model:value="form.podid"
               :placeholder="placeholder.podid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="fetchClusters">
               <a-select-option
@@ -73,18 +74,17 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.clustername')" :tooltip="placeholder.clusterid"/>
+          <a-form-item name="clusterid" ref="clusterid">
+            <template #label>
+              <tooltip-label :title="$t('label.clustername')" :tooltip="placeholder.clusterid"/>
+            </template>
             <a-select
-              v-decorator="['clusterid', {
-                initialValue: clusterId,
-                rules: [{ required: true, message: $t('message.error.select') }]
-              }]"
+              v-model:value="form.clusterid"
               :placeholder="placeholder.clusterid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               @change="handleChangeCluster">
               <a-select-option
@@ -95,33 +95,30 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label
-              slot="label"
-              :title="selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel')"
-              :tooltip="placeholder.url"/>
+          <a-form-item name="hostname" ref="hostname">
+            <template #label>
+              <tooltip-label
+                :title="selectedClusterHyperVisorType === 'VMware' ? $t('label.esx.host') : $t('label.hostnamelabel')"
+                :tooltip="placeholder.url"/>
+            </template>
             <a-input
-              v-decorator="['hostname', {
-                initialValue: hostname,
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
+              v-model:value="form.hostname"
               :placeholder="placeholder.url"></a-input>
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware'">
-            <tooltip-label slot="label" :title="$t('label.username')" :tooltip="placeholder.username"/>
+          <a-form-item name="username" ref="username" v-if="selectedClusterHyperVisorType !== 'VMware'">
+            <template #label>
+              <tooltip-label :title="$t('label.username')" :tooltip="placeholder.username"/>
+            </template>
             <a-input
-              v-decorator="['username', {
-                initialValue: username,
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
+              v-model:value="form.username"
               :placeholder="placeholder.username"></a-input>
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware'">
-            <tooltip-label slot="label" :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
+          <a-form-item name="authmethod" ref="authmethod" v-if="selectedClusterHyperVisorType !== 'VMware'">
+            <template #label>
+              <tooltip-label :title="$t('label.authentication.method')" :tooltip="$t('label.authentication.method')"/>
+            </template>
             <a-radio-group
-              v-decorator="['authmethod', {
-                initialValue: authMethod
-              }]"
+              v-model:value="form.authmethod"
               buttonStyle="solid"
               @change="selected => { handleAuthMethodChange(selected.target.value) }">
               <a-radio-button value="password">
@@ -133,87 +130,96 @@
             </a-radio-group>
             <div v-if="authMethod === 'sshkey'">
               <a-alert type="warning">
-                <span style="display:block;width:300px;word-wrap:break-word;" slot="message" v-html="$t('message.add.host.sshkey')" />
+                <template #message>
+                  <span style="display:block;width:300px;word-wrap:break-word;" v-html="$t('message.add.host.sshkey')" />
+                </template>
               </a-alert>
             </div>
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
-            <tooltip-label slot="label" :title="$t('label.password')" :tooltip="placeholder.password"/>
+          <a-form-item name="password" ref="password" v-if="selectedClusterHyperVisorType !== 'VMware' && authMethod === 'password'">
+            <template #label>
+              <tooltip-label :title="$t('label.password')" :tooltip="placeholder.password"/>
+            </template>
             <a-input-password
-              v-decorator="['password', {
-                initialValue: password,
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="placeholder.password"></a-input-password>
+              v-model:value="form.password"
+              :placeholder="placeholder.password" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
-            <tooltip-label slot="label" :title="$t('label.agent.username')" :tooltip="$t('label.agent.username')"/>
+          <a-form-item name="agentusername" ref="agentusername" v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <template #label>
+              <tooltip-label :title="$t('label.agent.username')" :tooltip="$t('label.agent.username')"/>
+            </template>
             <a-input
-              v-decorator="['agentusername', { initialValue: agentusername }]"
-              :placeholder="$t('label.agent.username')"></a-input>
+              v-model:value="form.agentusername"
+              :placeholder="$t('label.agent.username')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
-            <tooltip-label slot="label" :title="$t('label.agent.password')" :tooltip="$t('label.agent.password')"/>
+          <a-form-item name="agentpassword" ref="agentpassword" v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <template #label>
+              <tooltip-label :title="$t('label.agent.password')" :tooltip="$t('label.agent.password')"/>
+            </template>
             <a-input
-              v-decorator="['agentpassword', { initialValue: agentpassword }]"
-              :placeholder="$t('label.agent.password')"></a-input>
+              v-model:value="form.agentpassword"
+              :placeholder="$t('label.agent.password')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'Ovm3'">
-            <tooltip-label slot="label" :title="$t('label.agentport')" :tooltip="$t('label.agentport')"/>
+          <a-form-item name="agentport" ref="agentport" v-if="selectedClusterHyperVisorType === 'Ovm3'">
+            <template #label>
+              <tooltip-label :title="$t('label.agentport')" :tooltip="$t('label.agentport')"/>
+            </template>
             <a-input
-              v-decorator="['agentport', { initialValue: agentport }]"
-              :placeholder="$t('label.agentport')"></a-input>
+              v-model:value="form.agentport"
+              :placeholder="$t('label.agentport')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
+          <a-form-item name="baremetalcpucores" ref="baremetalcpucores" v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <template #label>
+              <tooltip-label :title="$t('label.baremetalcpucores')" :tooltip="$t('label.baremetalcpucores')"/>
+            </template>
             <a-input
-              v-decorator="['baremetalcpucores', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalcpucores')"></a-input>
+              v-model:value="form.baremetalcpucores"
+              :placeholder="$t('label.baremetalcpucores')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
+          <a-form-item name="baremetalcpu" ref="baremetalcpu" v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <template #label>
+              <tooltip-label :title="$t('label.baremetalcpu')" :tooltip="$t('label.baremetalcpu')"/>
+            </template>
             <a-input
-              v-decorator="['baremetalcpu', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalcpu')"></a-input>
+              v-model:value="form.baremetalcpu"
+              :placeholder="$t('label.baremetalcpu')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalmemory')" :tooltip="$t('label.baremetalmemory')"/>
+          <a-form-item name="baremetalmemory" ref="baremetalmemory" v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <template #label>
+              <tooltip-label :title="$t('label.baremetalmemory')" :tooltip="$t('label.baremetalmemory')"/>
+            </template>
             <a-input
-              v-decorator="['baremetalmemory', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalmemory')"></a-input>
+              v-model:value="form.baremetalmemory"
+              :placeholder="$t('label.baremetalmemory')" />
           </a-form-item>
-          <a-form-item v-if="selectedClusterHyperVisorType === 'BareMetal'">
-            <tooltip-label slot="label" :title="$t('label.baremetalmac')" :tooltip="$t('label.baremetalmac')"/>
+          <a-form-item name="baremetalmac" ref="baremetalmac" v-if="selectedClusterHyperVisorType === 'BareMetal'">
+            <template #label>
+              <tooltip-label :title="$t('label.baremetalmac')" :tooltip="$t('label.baremetalmac')"/>
+            </template>
             <a-input
-              v-decorator="['baremetalmac', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]"
-              :placeholder="$t('label.baremetalmac')"></a-input>
+              v-model:value="form.baremetalmac"
+              :placeholder="$t('label.baremetalmac')" />
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.hosttags')" :tooltip="placeholder.hosttags"/>
+          <a-form-item name="hosttags" ref="hosttags">
+            <template #label>
+              <tooltip-label :title="$t('label.hosttags')" :tooltip="placeholder.hosttags"/>
+            </template>
             <a-select
               mode="tags"
-              :placeholder="placeholder.hosttags"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              v-decorator="['hosttags', {
-                rules: hostTagRules
-              }]">
+              v-model:value="form.hosttags"
+              :placeholder="placeholder.hosttags">
               <a-select-option v-for="tag in hostTagsList" :key="tag.name">{{ tag.name }}</a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <tooltip-label slot="label" :title="$t('label.isdedicated')"/>
+          <a-form-item name="isdedicated" ref="isdedicated">
+            <template #label>
+              <tooltip-label :title="$t('label.isdedicated')"/>
+            </template>
             <a-checkbox @change="toggleDedicated"></a-checkbox>
           </a-form-item>
           <template v-if="showDedicated">
@@ -236,13 +242,16 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'HostAdd',
+  mixins: [mixinForm],
   components: {
     DedicateDomain,
     ResourceIcon,
@@ -258,21 +267,11 @@ export default {
   data () {
     return {
       loading: false,
-      zoneId: null,
-      podId: null,
-      clusterId: null,
-      hostname: null,
-      username: null,
-      password: null,
-      selectedTags: [],
       zonesList: [],
       clustersList: [],
       podsList: [],
       hostTagsList: [],
       url: null,
-      agentusername: null,
-      agentpassword: null,
-      agentport: null,
       authMethod: 'password',
       selectedCluster: null,
       selectedClusterHyperVisorType: null,
@@ -303,13 +302,29 @@ export default {
       return rules
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        authmethod: this.authMethod
+      })
+      this.rules = reactive({
+        zoneid: [{ required: true, message: this.$t('message.error.select') }],
+        podid: [{ required: true, message: this.$t('message.error.select') }],
+        clusterid: [{ required: true, message: this.$t('message.error.select') }],
+        hostname: [{ required: true, message: this.$t('message.error.required.input') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        baremetalcpucores: [{ required: true, message: this.$t('message.error.required.input') }],
+        baremetalcpu: [{ required: true, message: this.$t('message.error.required.input') }],
+        baremetalmemory: [{ required: true, message: this.$t('message.error.required.input') }],
+        baremetalmac: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.fetchZones()
       this.fetchHostTags()
@@ -320,8 +335,8 @@ export default {
       this.loading = true
       api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0]?.id || null
-        this.fetchPods(this.zoneId)
+        this.form.zoneid = this.zonesList[0].id || null
+        this.fetchPods(this.form.zoneid)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -329,43 +344,40 @@ export default {
       })
     },
     fetchPods (zoneId) {
-      this.zoneId = zoneId
+      this.form.zoneid = zoneId
       this.loading = true
       api('listPods', {
-        zoneid: this.zoneId
+        zoneid: this.form.zoneid
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
-        this.podId = this.podsList[0]?.id || null
-        this.form.setFieldsValue({ podid: this.podId })
-        this.fetchClusters(this.podId)
+        this.form.podid = this.podsList[0].id || null
+        this.fetchClusters(this.form.podid)
       }).catch(error => {
         this.$notifyError(error)
         this.podsList = []
-        this.podId = ''
+        this.form.podid = ''
       }).finally(() => {
         this.loading = false
       })
     },
     fetchClusters (podId) {
-      this.form.clearField('clusterid')
-      this.clusterId = null
+      this.form.clusterid = null
       this.clustersList = []
       if (!podId) return
       this.podId = podId
       this.loading = true
       api('listClusters', {
-        podid: this.podId
+        podid: this.form.podid
       }).then(response => {
         this.clustersList = response.listclustersresponse.cluster || []
-        this.clusterId = this.clustersList[0]?.id || null
-        this.form.setFieldsValue({ clusterid: this.clusterId })
-        if (this.clusterId) {
-          this.handleChangeCluster(this.clusterId)
+        this.form.clusterid = this.clustersList[0].id || null
+        if (this.form.clusterid) {
+          this.handleChangeCluster(this.form.clusterid)
         }
       }).catch(error => {
         this.$notifyError(error)
         this.clustersList = []
-        this.clusterId = null
+        this.form.clusterid = null
       }).finally(() => {
         this.loading = false
       })
@@ -391,8 +403,8 @@ export default {
       })
     },
     handleChangeCluster (value) {
-      this.clusterId = value
-      this.selectedCluster = this.clustersList.find(i => i.id === this.clusterId)
+      this.form.clusterid = value
+      this.selectedCluster = this.clustersList.find(i => i.id === this.form.clusterid)
       this.selectedClusterHyperVisorType = this.selectedCluster.hypervisortype
     },
     toggleDedicated () {
@@ -405,8 +417,9 @@ export default {
     },
     handleSubmitForm () {
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) return
+      this.formRef.value.validate().then(() => {
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         if (values.hostname.indexOf('http://') === -1) {
           this.url = `http://${values.hostname}`
@@ -428,6 +441,7 @@ export default {
           agentpassword: values.agentpassword,
           agentport: values.agentport
         }
+
         if (this.selectedClusterHyperVisorType === 'BareMetal') {
           args.cpunumber = values.baremetalcpucores
           args.cpuspeed = values.baremetalcpu
@@ -452,6 +466,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     dedicateHost (hostId) {

@@ -175,7 +175,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
                 }
             } else {
-                s_logger.debug("Succesfully added router " + router + " to guest network " + network);
+                s_logger.debug("Successfully added router " + router + " to guest network " + network);
             }
         }
 

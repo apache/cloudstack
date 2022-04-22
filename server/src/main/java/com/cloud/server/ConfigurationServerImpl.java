@@ -46,7 +46,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -667,7 +667,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             s_logger.info("Keypairs already in database, updating local copy");
             updateKeyPairsOnDisk(homeDir);
         }
-        s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
             copyPrivateKeyToHosts(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
@@ -742,13 +741,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         s_logger.info("Trying to copy private keys to hosts");
         String injectScript = getInjectScript();
         String scriptPath = Script.findScript("", injectScript);
-        String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
         if (scriptPath == null) {
             throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
         }
-        if (systemVmIsoPath == null) {
-            throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
-        }
+
         Script command = null;
         if(isOnWindows()) {
             command = new Script("python", s_logger);
@@ -920,18 +916,22 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(name, description, provisioningType, diskSize, tags, isCustomized, null, null, null);
         newDiskOffering.setUniqueName("Cloud.Com-" + name);
-        // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
-        newDiskOffering.setSystemUse(isSystemUse);
-        newDiskOffering = _diskOfferingDao.persistDeafultDiskOffering(newDiskOffering);
+        // leaving the above reference to cloud.com in as it is an identifier and has no real world relevance
+        newDiskOffering = _diskOfferingDao.persistDefaultDiskOffering(newDiskOffering);
         return newDiskOffering;
     }
 
     private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText,
             ProvisioningType provisioningType, boolean localStorageRequired, boolean offerHA, String tags) {
         tags = cleanupTags(tags);
+        DiskOfferingVO diskOfferingVO = new DiskOfferingVO(name, displayText, provisioningType, false, tags, false, false, true);
+        diskOfferingVO.setUniqueName("Cloud.Com-" + name);
+        diskOfferingVO = _diskOfferingDao.persistDefaultDiskOffering(diskOfferingVO);
+
         ServiceOfferingVO offering =
-                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, provisioningType, localStorageRequired, false, tags, false, null, false);
+                new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, offerHA, displayText, false, null, false);
         offering.setUniqueName("Cloud.Com-" + name);
+        offering.setDiskOfferingId(diskOfferingVO.getId());
         // leaving the above reference to cloud.com in as it is an identifyer and has no real world relevance
         offering = _serviceOfferingDao.persistSystemServiceOffering(offering);
         return offering;
@@ -962,8 +962,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated, true);
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOfferingWithoutVlan = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan, GuestType.Isolated, false);
+        privateGatewayNetworkOfferingWithoutVlan = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOfferingWithoutVlan);
 
         //populate providers
         final Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

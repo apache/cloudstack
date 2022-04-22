@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offering.DiskOffering;
+import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -62,13 +64,14 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -363,6 +366,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
+    @Inject private ManagementServer mgr;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -417,6 +421,10 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }
+        DiskOffering newDiskOffering = _entityMgr.findById(DiskOffering.class, newServiceOffering.getDiskOfferingId());
+        if (newDiskOffering == null) {
+            throw new InvalidParameterValueException("Unable to find disk offering: " + newServiceOffering.getDiskOfferingId());
+        }
 
         // check if it is a system service offering, if yes return with error as
         // it cannot be used for user vms
@@ -436,9 +444,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Check that the service offering being upgraded to has the same
         // storage pool preference as the VM's current service
         // offering
-        if (currentServiceOffering.isUseLocalStorage() != newServiceOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.isUseLocalStorage() + " is different from "
-                    + "curruent local storage status: " + currentServiceOffering.isUseLocalStorage());
+        if (_itMgr.isRootVolumeOnLocalStorage(routerId) != newDiskOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newDiskOffering.isUseLocalStorage() + " is different from "
+                    + "current local storage status of router " +  routerId);
         }
 
         router.setServiceOfferingId(serviceOfferingId);
@@ -1210,7 +1218,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return;
         }
 
-        String alertMessage = "Health checks failed: " + failingChecks.size() + " failing checks on router " + router.getUuid();
+        String alertMessage = String.format("Health checks failed: %d failing checks on router %s / %s", failingChecks.size(), router.getName(), router.getUuid());
         _alertMgr.sendAlert(AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(),
                 alertMessage, alertMessage);
         s_logger.warn(alertMessage + ". Checking failed health checks to see if router needs recreate");
@@ -1222,6 +1230,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             String failedCheck = failingChecks.get(i);
             if (i == 0) {
                 failingChecksEvent.append("Router ")
+                        .append(router.getName())
+                        .append(" / ")
                         .append(router.getUuid())
                         .append(" has failing checks: ");
             }
@@ -1262,7 +1272,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
                     "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid());
-            return vpcService.restartVpc(router.getVpcId(), true, false, user);
+            return vpcService.restartVpc(router.getVpcId(), true, false, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart VPC for router recreation " +
                     router.getVpcName() + " ,router " + router.getUuid(), e);
@@ -1286,7 +1296,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
                     "Recreating router " + router.getUuid() + " by restarting network " + router.getNetworkUuid());
-            return networkService.restartNetwork(router.getNetworkId(), true, false, user);
+            return networkService.restartNetwork(router.getNetworkId(), true, false, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart network " + router.getNetworkName() +
                     " for router recreation " + router.getNetworkName(), e);
@@ -2672,6 +2682,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
         router.setTemplateVersion(versionAnswer.getTemplateVersion());
         router.setScriptsVersion(versionAnswer.getScriptsVersion());
+        String codeVersion = mgr.getVersion();
+        if (StringUtils.isNotEmpty(codeVersion)) {
+            codeVersion = CloudStackVersion.parse(codeVersion).toString();
+        }
+        router.setSoftwareVersion(codeVersion);
         _routerDao.persist(router, guestNetworks);
 
         final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
@@ -3202,7 +3217,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
-            if (!_nwHelper.checkRouterVersion(router)) {
+            if (!_nwHelper.checkRouterTemplateVersion(router)) {
                 s_logger.debug("Upgrading template for router: " + router.getId());
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");

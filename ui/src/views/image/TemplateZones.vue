@@ -19,10 +19,11 @@
   <div>
     <a-button
       v-if="(('deleteTemplate' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="danger"
-      icon="delete"
+      type="primary"
+      danger
       style="width: 100%; margin-bottom: 15px"
       @click="bulkActionConfirmation()">
+      <template #icon><delete-outlined /></template>
       {{ $t('label.action.bulk.delete.templates') }}
     </a-button>
     <a-table
@@ -34,21 +35,20 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.zoneid">
-      <div slot="zonename" slot-scope="text, record">
+      <template #zonename="{record}">
         <span v-if="fetchZoneIcon(record.zoneid)">
           <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
         </span>
-        <a-icon v-else type="global" style="margin-right: 5px" />
+        <global-outlined v-else style="margin-right: 5px" />
         <span> {{ record.zonename }} </span>
-      </div>
-      <div slot="isready" slot-scope="text, record">
+      </template>
+      <template #isready="{ record }">
         <span v-if="record.isready">{{ $t('label.yes') }}</span>
         <span v-else>{{ $t('label.no') }}</span>
-      </div>
-      <template slot="expandedRowRender" slot-scope="record">
+      </template>
+      <template #expandedRowRender="{ record }">
         <a-table
           style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
-          slot="expandedRowRender"
           :columns="innerColumns"
           :data-source="record.downloaddetails"
           :pagination="false"
@@ -56,21 +56,22 @@
           :rowKey="record => record.zoneid">
         </a-table>
       </template>
-      <template slot="action" slot-scope="text, record">
+      <template #action="{ record }">
         <tooltip-button
           style="margin-right: 5px"
           :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
           :title="$t('label.action.copy.template')"
-          icon="copy"
+          icon="copy-outlined"
           :loading="copyLoading"
-          @click="showCopyTemplate(record)" />
+          @onClick="showCopyTemplate(record)" />
         <tooltip-button
           style="margin-right: 5px"
           :disabled="!('deleteTemplate' in $store.getters.apis)"
           :title="$t('label.action.delete.template')"
-          type="danger"
-          icon="delete"
-          @click="onShowDeleteModal(record)"/>
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="onShowDeleteModal(record)"/>
       </template>
     </a-table>
     <a-pagination
@@ -84,7 +85,7 @@
       @change="handleChangePage"
       @showSizeChange="handleChangePageSize"
       showSizeChanger>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -99,39 +100,33 @@
       :footer="null"
       :confirmLoading="copyLoading"
       @cancel="onCloseModal"
-      v-ctrl-enter="handleCopyTemplateSubmit"
       centered>
-      <a-spin :spinning="copyLoading">
+      <a-spin :spinning="copyLoading" v-ctrl-enter="handleCopyTemplateSubmit">
         <a-form
-          :form="form"
-          @submit="handleCopyTemplateSubmit"
-          layout="vertical">
-          <a-form-item :label="$t('label.zoneid')">
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          layout="vertical"
+          @finish="handleCopyTemplateSubmit">
+          <a-form-item ref="zoneid" name="zoneid" :label="$t('label.zoneid')">
             <a-select
               id="zone-selection"
               mode="multiple"
               :placeholder="$t('label.select.zones')"
-              v-decorator="['zoneid', {
-                rules: [
-                  {
-                    required: true,
-                    message: `${this.$t('message.error.select')}`
-                  }
-                ]
-              }]"
+              v-model:value="form.zoneid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="zoneLoading"
-              autoFocus>
+              v-focus="true">
               <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
                     <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
                   </span>
-                  <a-icon v-else type="global" style="margin-right: 5px" />
+                  <global-outlined v-else style="margin-right: 5px" />
                   {{ zone.name }}
                 </div>
               </a-select-option>
@@ -152,7 +147,6 @@
       :closable="true"
       :maskClosable="false"
       :footer="null"
-      v-ctrl-enter="deleteTemplate"
       :width="showTable ? modalWidth : '30vw'"
       @ok="selectedItems.length > 0 ? deleteTemplates() : deleteTemplate(currentRecord)"
       @cancel="onCloseModal"
@@ -160,33 +154,37 @@
       :cancel-button-props="getCancelProps()"
       :confirmLoading="deleteLoading"
       centered>
-      <div v-if="selectedRowKeys.length > 0">
-        <a-alert type="error">
-          <a-icon slot="message" type="exclamation-circle" style="color: red; fontSize: 30px; display: inline-flex" />
-          <span style="padding-left: 5px" slot="message" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-          <span slot="message" v-html="$t(message.confirmMessage)" />
-        </a-alert>
-      </div>
-      <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />
-      <br />
-      <a-table
-        v-if="selectedRowKeys.length > 0 && showTable"
-        size="middle"
-        :columns="selectedColumns"
-        :dataSource="selectedItems"
-        :rowKey="(record, idx) => record.zoneid || record.name"
-        :pagination="true"
-        style="overflow-y: auto">
-      </a-table>
-      <a-spin :spinning="deleteLoading">
-        <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
-          <a-switch v-model="forcedDelete" autoFocus></a-switch>
-        </a-form-item>
-        <div :span="24" class="action-button">
-          <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+      <div v-ctrl-enter="deleteTemplate">
+        <div v-if="selectedRowKeys.length > 0">
+          <a-alert type="error">
+            <template #message>
+              <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
+              <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+              <span v-html="$t(message.confirmMessage)" />
+            </template>
+          </a-alert>
         </div>
-      </a-spin>
+        <a-alert v-else :message="$t('message.action.delete.template')" type="warning" />
+        <br />
+        <a-table
+          v-if="selectedRowKeys.length > 0 && showTable"
+          size="middle"
+          :columns="selectedColumns"
+          :dataSource="selectedItems"
+          :rowKey="(record, idx) => record.zoneid || record.name"
+          :pagination="true"
+          style="overflow-y: auto">
+        </a-table>
+        <a-spin :spinning="deleteLoading">
+          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
+            <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
+          </a-form-item>
+          <div :span="24" class="action-button">
+            <a-button @click="onCloseModal">{{ $t('label.cancel') }}</a-button>
+            <a-button type="primary" ref="submit" @click="deleteTemplate">{{ $t('label.ok') }}</a-button>
+          </div>
+        </a-spin>
+      </div>
     </a-modal>
     <bulk-action-progress
       :showGroupActionModal="showGroupActionModal"
@@ -198,6 +196,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -256,7 +255,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('copyTemplate')
   },
   created () {
@@ -264,7 +262,7 @@ export default {
       {
         title: this.$t('label.zonename'),
         dataIndex: 'zonename',
-        scopedSlots: { customRender: 'zonename' }
+        slots: { customRender: 'zonename' }
       },
       {
         title: this.$t('label.status'),
@@ -273,7 +271,7 @@ export default {
       {
         title: this.$t('label.isready'),
         dataIndex: 'isready',
-        scopedSlots: { customRender: 'isready' }
+        slots: { customRender: 'isready' }
       }
     ]
     this.innerColumns = [
@@ -295,7 +293,7 @@ export default {
         title: '',
         dataIndex: 'action',
         width: 100,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       })
     }
 
@@ -304,6 +302,7 @@ export default {
       (userInfo.account !== this.resource.account || userInfo.domain !== this.resource.domain)) {
       this.columns = this.columns.filter(col => { return col.dataIndex !== 'status' })
     }
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -314,6 +313,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ type: 'array', required: true, message: this.$t('message.error.select') }]
+      })
+    },
     fetchData () {
       const params = {}
       params.id = this.resource.id
@@ -388,7 +394,7 @@ export default {
       this.onShowDeleteModal(this.selectedItems[0])
     },
     handleCancel () {
-      eventBus.$emit('update-bulk-job-status', this.selectedItems, false)
+      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
       this.showGroupActionModal = false
       this.selectedItems = []
       this.selectedColumns = []
@@ -418,7 +424,7 @@ export default {
       this.selectedColumns.splice(0, 0, {
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
+        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },
@@ -444,7 +450,7 @@ export default {
       this.deleteLoading = true
       api('deleteTemplate', params).then(json => {
         const jobId = json.deletetemplateresponse.jobid
-        eventBus.$emit('update-job-details', jobId, null)
+        eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
         this.$pollJob({
           jobId,
@@ -464,7 +470,7 @@ export default {
               }
             }
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, template.zoneid, 'success')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: template.zoneid, state: 'success' })
             }
           },
           errorMethod: () => {
@@ -472,7 +478,7 @@ export default {
               this.fetchData()
             }
             if (this.selectedItems.length > 0) {
-              eventBus.$emit('update-resource-state', this.selectedItems, template.zoneid, 'failed')
+              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: template.zoneid, state: 'failed' })
             }
           },
           showLoading: !(this.selectedItems.length > 0 && this.showGroupActionModal),
@@ -502,9 +508,7 @@ export default {
     },
     showCopyTemplate (record) {
       this.currentRecord = record
-      this.form.setFieldsValue({
-        zoneid: []
-      })
+      this.form.zoneid = []
       this.fetchZoneData()
       this.showCopyActionForm = true
     },
@@ -529,10 +533,8 @@ export default {
     handleCopyTemplateSubmit (e) {
       e.preventDefault()
       if (this.copyLoading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
@@ -541,7 +543,7 @@ export default {
         this.copyLoading = true
         api('copyTemplate', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
-          eventBus.$emit('update-job-details', jobId, null)
+          eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
             jobId,
             title: this.$t('label.action.copy.template'),
@@ -564,6 +566,8 @@ export default {
           this.onCloseModal()
           this.fetchData()
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }

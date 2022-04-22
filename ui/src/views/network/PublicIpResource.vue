@@ -18,7 +18,7 @@
 <template>
   <div>
     <autogen-view @change-resource="changeResource">
-      <div slot="action">
+      <template #action>
         <action-button
           :style="{ float: device === 'mobile' ? 'left' : 'right' }"
           :loading="loading"
@@ -27,21 +27,22 @@
           :dataView="true"
           :resource="resource"
           @exec-action="(action) => execAction(action, action.groupAction && !dataView)" />
-      </div>
-      <div slot="resource">
+      </template>
+      <template #resource>
         <resource-view
           v-if="isPublicIpAddress && 'id' in resource"
           :loading="loading"
           :resource="resource"
           :historyTab="activeTab"
           :tabs="tabs"
-          @onTabChange="(tab) => { this.activeTab = tab }" />
-      </div>
+          @onTabChange="(tab) => { activeTab = tab }" />
+      </template>
     </autogen-view>
   </div>
 </template>
 
 <script>
+import { shallowRef, defineAsyncComponent } from 'vue'
 import { api } from '@api'
 import { mixinDevice } from '@/utils/mixin.js'
 import eventBus from '@/config/eventBus'
@@ -64,11 +65,11 @@ export default {
       resource: {},
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }],
       defaultTabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }],
       activeTab: ''
     }
@@ -86,9 +87,12 @@ export default {
     }
   },
   watch: {
-    resource () {
-      if ('id' in this.resource) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler () {
+        if ('id' in this.resource) {
+          this.fetchData()
+        }
       }
     }
   },
@@ -109,6 +113,11 @@ export default {
       this.loading = false
     },
     async filterTabs () {
+      // Public IPs in Free state have nothing
+      if (['Free', 'Reserved'].includes(this.resource.state)) {
+        this.tabs = this.defaultTabs
+        return
+      }
       // VPC IPs with source nat have only VPN
       if (this.resource && this.resource.vpcid && this.resource.issourcenat) {
         this.tabs = this.defaultTabs.concat(this.$route.meta.tabs.filter(tab => tab.name === 'vpn'))
@@ -199,7 +208,7 @@ export default {
       this.loading = !this.loading
     },
     execAction (action, isGroupAction) {
-      eventBus.$emit('exec-action', action, isGroupAction)
+      eventBus.emit('exec-action', { action, isGroupAction })
     }
   }
 }

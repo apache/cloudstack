@@ -24,6 +24,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -90,13 +91,28 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.isRedundantRouter());
         routerResponse.setScriptsVersion(router.getScriptsVersion());
+        routerResponse.setSoftwareVersion(router.getSoftwareVersion());
         if (router.getRedundantState() != null) {
             routerResponse.setRedundantState(router.getRedundantState().toString());
         }
         if (router.getTemplateVersion() != null) {
             String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);
-            routerResponse.setRequiresUpgrade((CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId())) < 0));
+            boolean isTempVersionLower = (CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId())) < 0);
+            if (!isTempVersionLower) {
+                routerResponse.setRequiresUpgrade(false);
+            } else {
+                boolean requiresUpgrade = true;
+                String currentCodeVersion = this.getClass().getPackage().getImplementationVersion();
+                if (StringUtils.isNotEmpty(currentCodeVersion)) {
+                    currentCodeVersion = CloudStackVersion.parse(currentCodeVersion).toString();
+                    String routerSoftwareVersion = router.getSoftwareVersion();
+                    if (StringUtils.isNotEmpty(routerSoftwareVersion)) {
+                        requiresUpgrade = !(currentCodeVersion.equals(routerSoftwareVersion));
+                    }
+                }
+                routerResponse.setRequiresUpgrade(requiresUpgrade);
+            }
         } else {
             routerResponse.setVersion("UNKNOWN");
             routerResponse.setRequiresUpgrade(true);
@@ -105,7 +121,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+        if (caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                 || _accountMgr.isRootAdmin(caller.getId())) {
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());

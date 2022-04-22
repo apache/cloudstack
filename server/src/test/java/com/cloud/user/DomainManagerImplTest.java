@@ -22,7 +22,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.dao.DomainDetailsDao;
+import com.cloud.utils.UuidUtils;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -38,7 +41,6 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
@@ -61,11 +63,16 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@PowerMockIgnore("javax.management.*")
+@RunWith(PowerMockRunner.class)
 public class DomainManagerImplTest {
     @Mock
-    DomainDao _domainDao;
+    DomainDao domainDaoMock;
     @Mock
     AccountManager _accountMgr;
     @Mock
@@ -125,10 +132,10 @@ public class DomainManagerImplTest {
         Mockito.doReturn(adminAccount).when(domainManager).getCaller();
         Mockito.doReturn(lock).when(domainManager).getGlobalLock("AccountCleanup");
         Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
-        Mockito.when(_domainDao.findById(DOMAIN_ID)).thenReturn(domain);
+        Mockito.when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(domain);
         Mockito.when(domain.getAccountId()).thenReturn(ACCOUNT_ID);
         Mockito.when(domain.getId()).thenReturn(DOMAIN_ID);
-        Mockito.when(_domainDao.remove(DOMAIN_ID)).thenReturn(true);
+        Mockito.when(domainDaoMock.remove(DOMAIN_ID)).thenReturn(true);
         domainAccountsForCleanup = new ArrayList<AccountVO>();
         domainNetworkIds = new ArrayList<Long>();
         domainDedicatedResources = new ArrayList<DedicatedResourceVO>();
@@ -140,7 +147,7 @@ public class DomainManagerImplTest {
     @Test
     public void testFindDomainByIdOrPathNullOrEmpty() {
         final DomainVO domain = new DomainVO("someDomain", 123, 1L, "network.domain");
-        Mockito.when(_domainDao.findById(1L)).thenReturn(domain);
+        Mockito.when(domainDaoMock.findById(1L)).thenReturn(domain);
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(null, null));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(0L, ""));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(-1L, " "));
@@ -150,7 +157,7 @@ public class DomainManagerImplTest {
     @Test
     public void testFindDomainByIdOrPathValidPathAndInvalidId() {
         final DomainVO domain = new DomainVO("someDomain", 123, 1L, "network.domain");
-        Mockito.when(_domainDao.findDomainByPath(Mockito.eq("/someDomain/"))).thenReturn(domain);
+        Mockito.when(domainDaoMock.findDomainByPath(Mockito.eq("/someDomain/"))).thenReturn(domain);
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(null, "/someDomain/"));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(0L, " /someDomain/"));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(-1L, "/someDomain/ "));
@@ -159,7 +166,7 @@ public class DomainManagerImplTest {
 
     @Test
     public void testFindDomainByIdOrPathInvalidPathAndInvalidId() {
-        Mockito.when(_domainDao.findDomainByPath(Mockito.anyString())).thenReturn(null);
+        Mockito.when(domainDaoMock.findDomainByPath(Mockito.anyString())).thenReturn(null);
         Assert.assertNull(domainManager.findDomainByIdOrPath(null, "/nonExistingDomain/"));
         Assert.assertNull(domainManager.findDomainByIdOrPath(0L, " /nonExistingDomain/"));
         Assert.assertNull(domainManager.findDomainByIdOrPath(-1L, "/nonExistingDomain/ "));
@@ -170,8 +177,8 @@ public class DomainManagerImplTest {
     @Test
     public void testFindDomainByIdOrPathValidId() {
         final DomainVO domain = new DomainVO("someDomain", 123, 1L, "network.domain");
-        Mockito.when(_domainDao.findById(1L)).thenReturn(domain);
-        Mockito.lenient().when(_domainDao.findDomainByPath(Mockito.eq("/validDomain/"))).thenReturn(new DomainVO());
+        Mockito.when(domainDaoMock.findById(1L)).thenReturn(domain);
+        Mockito.lenient().when(domainDaoMock.findDomainByPath(Mockito.eq("/validDomain/"))).thenReturn(new DomainVO());
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, null));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, ""));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, " "));
@@ -181,13 +188,13 @@ public class DomainManagerImplTest {
 
     @Test(expected=InvalidParameterValueException.class)
     public void testDeleteDomainNullDomain() {
-        Mockito.when(_domainDao.findById(DOMAIN_ID)).thenReturn(null);
+        Mockito.when(domainDaoMock.findById(DOMAIN_ID)).thenReturn(null);
         domainManager.deleteDomain(DOMAIN_ID, testDomainCleanup);
     }
 
     @Test(expected=PermissionDeniedException.class)
     public void testDeleteDomainRootDomain() {
-        Mockito.when(_domainDao.findById(Domain.ROOT_DOMAIN)).thenReturn(domain);
+        Mockito.when(domainDaoMock.findById(Domain.ROOT_DOMAIN)).thenReturn(domain);
         domainManager.deleteDomain(Domain.ROOT_DOMAIN, testDomainCleanup);
     }
 
@@ -222,18 +229,18 @@ public class DomainManagerImplTest {
                 Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
         Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
                 Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
-        Mockito.verify(_domainDao).remove(DOMAIN_ID);
+        Mockito.verify(domainDaoMock).remove(DOMAIN_ID);
     }
 
     @Test(expected=CloudRuntimeException.class)
     public void testPublishRemoveEventsAndRemoveDomainExceptionDelete() {
-        Mockito.when(_domainDao.remove(DOMAIN_ID)).thenReturn(false);
+        Mockito.when(domainDaoMock.remove(DOMAIN_ID)).thenReturn(false);
         domainManager.publishRemoveEventsAndRemoveDomain(domain);
         Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
                 Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
         Mockito.verify(_messageBus, Mockito.never()).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
                 Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
-        Mockito.verify(_domainDao).remove(DOMAIN_ID);
+        Mockito.verify(domainDaoMock).remove(DOMAIN_ID);
     }
 
     @Test(expected=CloudRuntimeException.class)
@@ -246,18 +253,18 @@ public class DomainManagerImplTest {
         DomainVO domain = new DomainVO();
         domain.setId(20l);
         domain.setAccountId(30l);
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
-        Mockito.when(_domainDao.findById(20l)).thenReturn(domain);
+        Mockito.when(domainDaoMock.findById(20l)).thenReturn(domain);
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
-        Mockito.when(_domainDao.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
+        Mockito.when(domainDaoMock.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
         Mockito.lenient().when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
-        Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(domainDaoMock.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_diskOfferingDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
         Mockito.when(_offeringsDao.findByDomainId(Mockito.anyLong())).thenReturn(Collections.emptyList());
@@ -274,21 +281,21 @@ public class DomainManagerImplTest {
         DomainVO domain = new DomainVO();
         domain.setId(20l);
         domain.setAccountId(30l);
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
-        Mockito.when(_domainDao.findById(20l)).thenReturn(domain);
+        Mockito.when(domainDaoMock.findById(20l)).thenReturn(domain);
         Mockito.doNothing().when(_accountMgr).checkAccess(Mockito.any(Account.class), Mockito.any(Domain.class));
-        Mockito.when(_domainDao.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
-        Mockito.when(_domainDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
-        Mockito.when(_domainDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<DomainVO>());
+        Mockito.when(domainDaoMock.update(Mockito.eq(20l), Mockito.any(DomainVO.class))).thenReturn(true);
+        Mockito.when(domainDaoMock.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
+        Mockito.when(domainDaoMock.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<DomainVO>());
         Mockito.when(_accountDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
         Mockito.when(_accountDao.search(Mockito.any(SearchCriteria.class), (Filter)org.mockito.Matchers.isNull())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_networkDomainDao.listNetworkIdsByDomain(Mockito.anyLong())).thenReturn(new ArrayList<Long>());
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
-        Mockito.when(_domainDao.remove(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(domainDaoMock.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
@@ -301,4 +308,100 @@ public class DomainManagerImplTest {
             CallContext.unregister();
         }
     }
+
+    @Test
+    @PrepareForTest(NetUtils.class)
+    public void validateNetworkDomainTestNullNetworkDomainDoesNotCallVerifyDomainName() {
+        PowerMockito.mockStatic(NetUtils.class);
+        PowerMockito.when(NetUtils.verifyDomainName(Mockito.anyString())).thenReturn(true);
+        domainManager.validateNetworkDomain(null);
+        PowerMockito.verifyStatic(NetUtils.class, Mockito.never());
+        NetUtils.verifyDomainName(Mockito.anyString());
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateNetworkDomainTestInvalidNetworkDomainThrowsException(){
+        domainManager.validateNetworkDomain(" t e s t");
+    }
+
+    @Test
+    public void validateNetworkDomainTestValidNetworkDomainDoesNotThrowException(){
+        domainManager.validateNetworkDomain("test");
+    }
+
+    @Test (expected = InvalidParameterValueException.class)
+    public void validateUniqueDomainNameTestExistingNameThrowsException() {
+        SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+        ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
+        Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
+        Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+        Mockito.doReturn(false).when(listMock).isEmpty();
+        domainManager.validateUniqueDomainName("test", 1L);
+    }
+
+    @Test
+    public void validateUniqueDomainNameTestUniqueNameDoesNotThrowException() {
+        SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+        ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
+        Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
+        Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+        Mockito.doReturn(true).when(listMock).isEmpty();
+        domainManager.validateUniqueDomainName("testUnique", 1L);
+        Mockito.verify(domainDaoMock).createSearchCriteria();
+        Mockito.verify(scMock).addAnd("name", SearchCriteria.Op.EQ, "testUnique");
+        Mockito.verify(scMock).addAnd("parent", SearchCriteria.Op.EQ, 1L);
+        Mockito.verify(domainDaoMock).search(scMock,null);
+        Mockito.verify(listMock).isEmpty();
+    }
+
+    @Test
+    public void createDomainVoTestCreateValidUuidIfEmptyString(){
+        DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest","");
+        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+    }
+
+    @Test
+    public void createDomainVoTestCreateValidUuidIfWhiteSpace(){
+        DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest","  ");
+        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+    }
+
+    @Test
+    public void createDomainVoTestCreateValidUuidIfNull(){
+        DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest",null);
+        Assert.assertTrue(UuidUtils.validateUUID(domainVo.getUuid()));
+    }
+
+    @Test
+    public void createDomainVoTestValidInformedUuid(){
+        DomainVO domainVo = domainManager.createDomainVo("test",1L,2L,"NetworkTest","testUuid");
+        Assert.assertEquals("testUuid", domainVo.getUuid());
+    }
+
+    @Test
+    @PrepareForTest(CallContext.class)
+    public void createDomainTest(){
+        Mockito.doNothing().when(domainManager).validateDomainNameAndNetworkDomain(Mockito.any(String.class), Mockito.any(Long.class), Mockito.any(String.class));
+
+        DomainVO domainVoMock = Mockito.mock(DomainVO.class);
+        Mockito.doReturn(domainVoMock).when(domainManager).createDomainVo("test",1L,2L,"netTest","uuidTest");
+        Mockito.doReturn(domainVoMock).when(domainDaoMock).create(domainVoMock);
+        PowerMockito.mockStatic(CallContext.class);
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+
+        Domain actualDomain = domainManager.createDomain("test",1L,2L,"netTest","uuidTest");
+
+        Mockito.verify(domainManager).validateDomainNameAndNetworkDomain("test", 1L, "netTest");
+        Mockito.verify(domainManager).createDomainVo("test",1L,2L,"netTest","uuidTest");
+
+        Mockito.verify(domainDaoMock).create(domainVoMock);
+        Mockito.verify(_resourceCountDao).createResourceCounts(domainVoMock.getId(), ResourceLimit.ResourceOwnerType.Domain);
+        PowerMockito.verifyStatic(CallContext.class);
+        CallContext.current();
+        Mockito.verify(callContextMock).putContextParameter(Domain.class, domainVoMock.getUuid());
+        Mockito.verify(_messageBus).publish("DomainManagerImpl", DomainManager.MESSAGE_ADD_DOMAIN_EVENT, PublishScope.LOCAL, domainVoMock.getId());
+        Assert.assertEquals(domainVoMock, actualDomain);
+    }
+
 }

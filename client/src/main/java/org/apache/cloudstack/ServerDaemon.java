@@ -52,7 +52,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.PropertiesUtil;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 /***
  * The ServerDaemon class implements the embedded server, it can be started either
@@ -221,7 +221,7 @@ public class ServerDaemon implements Daemon {
 
     private void createHttpsConnector(final HttpConfiguration httpConfig) {
         // Configure SSL
-        if (httpsEnable && !Strings.isNullOrEmpty(keystoreFile) && new File(keystoreFile).exists()) {
+        if (httpsEnable && StringUtils.isNotEmpty(keystoreFile) && new File(keystoreFile).exists()) {
             // SSL Context
             final SslContextFactory sslContextFactory = new SslContextFactory.Server();
 
@@ -256,7 +256,7 @@ public class ServerDaemon implements Daemon {
         gzipHandler.setCompressionLevel(9);
         gzipHandler.setHandler(webApp);
 
-        if (Strings.isNullOrEmpty(webAppLocation)) {
+        if (StringUtils.isEmpty(webAppLocation)) {
             webApp.setWar(getShadedWarUrl());
         } else {
             webApp.setWar(webAppLocation);

@@ -130,4 +130,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri, Network.PVlanType pVlanType);
 
     List<NetworkVO> listByPhysicalNetworkPvlan(long physicalNetworkId, String broadcastUri);
+
+    List<NetworkVO> getAllPersistentNetworksFromZone(long dataCenterId);
 }

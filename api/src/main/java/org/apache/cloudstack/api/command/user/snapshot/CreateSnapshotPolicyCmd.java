@@ -125,7 +125,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 PermissionDeniedException ex =
@@ -133,7 +133,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
                 ex.addProxyObject(project.getUuid(), "projectId");
                 throw ex;
             }
-        } else if (account.getState() == Account.State.disabled) {
+        } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
 

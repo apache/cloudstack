@@ -42,7 +42,7 @@ public class CommandCreationWorkerTest {
         // Prepare
         final BaseAsyncCreateCmd asyncCreateCmd = mock(BaseAsyncCreateCmd.class);
         final Map<String, String> params = new HashMap<String, String>();
-        Account account = new AccountVO("testaccount", 1L, "networkdomain", (short) 0, "uuid");
+        Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 

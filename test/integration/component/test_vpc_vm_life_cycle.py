@@ -655,10 +655,10 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                     'Destroyed',
                     "VM state should be destroyed"
                     )
-            
+
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-            
+
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -703,7 +703,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
-            
+
         try:
             self.vm_2.delete(self.apiclient, expunge=False)
 
@@ -727,7 +727,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
             self.fail("Failed to stop the virtual instances, %s" % e)
 
         self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
-                                                self.account.name)            
+                                                self.account.name)
         try:
             self.vm_2.recover(self.apiclient)
 
@@ -1779,10 +1779,10 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
                     'Destroyed',
                     "VM state should be destroyed"
                     )
-            
+
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-            
+
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -1827,7 +1827,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
 
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
-            
+
         try:
             self.vm_2.delete(self.apiclient, expunge=False)
 
@@ -1848,7 +1848,7 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
             self.fail("Failed to stop the virtual instances, %s" % e)
 
         self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
-                                                self.account.name)            
+                                                self.account.name)
         try:
             self.vm_2.recover(self.apiclient)
 
@@ -2494,10 +2494,10 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
                     'Destroyed',
                     "VM state should be destroyed"
                     )
-            
+
         except Exception as e:
             self.fail("Failed to stop the virtual instances, %s" % e)
-            
+
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules ")
         nat_rules = NATRule.list(
@@ -2542,7 +2542,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
         except Exception as e:
             self.fail("Failed to recover the virtual instances, %s" % e)
-            
+
         try:
             self.vm_2.delete(self.apiclient, expunge=False)
 
@@ -2563,7 +2563,7 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
             self.fail("Failed to stop the virtual instances, %s" % e)
 
         self.debug("Recovering the expunged virtual machine vm2 in account: %s" %
-                                                self.account.name)            
+                                                self.account.name)
         try:
             self.vm_2.recover(self.apiclient)
 

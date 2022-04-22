@@ -20,7 +20,7 @@ package com.cloud.agent.direct.download;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -125,7 +125,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
                     s_logger.info("Performing checksum validation for downloaded template " + templateId + " using " + checksum + ", retries left: " + retry);
                     valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
                     if (!valid && retry > 0) {
-                        s_logger.info("Checksum validation failded, re-downloading template");
+                        s_logger.info("Checksum validation failed, re-downloading template");
                         redownload = true;
                         resetDownloadFile();
                         downloadTemplate();

@@ -18,123 +18,129 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
-      <a-form :form="form" :loading="loading" @submit="handleSubmit" layout="vertical">
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        :loading="loading"
+        layout="vertical"
+        @finish="handleSubmit">
+        <a-form-item name="username" ref="username">
+          <template #label>
+            <tooltip-label :title="$t('label.username')" :tooltip="apiParams.username.description"/>
+          </template>
           <a-input
-            v-decorator="['username', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.username"
             :placeholder="apiParams.username.description"
-            autoFocus/>
+            v-focus="true"/>
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.password')" :tooltip="apiParams.password.description"/>
+            <a-form-item name="password" ref="password">
+              <template #label>
+                <tooltip-label :title="$t('label.password')" :tooltip="apiParams.password.description"/>
+              </template>
               <a-input-password
-                v-decorator="['password', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.password"
                 :placeholder="apiParams.password.description"/>
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+            <a-form-item name="confirmpassword" ref="confirmpassword">
+              <template #label>
+                <tooltip-label :title="$t('label.confirmpassword')" :tooltip="apiParams.password.description"/>
+              </template>
               <a-input-password
-                v-decorator="['confirmpassword', {
-                  rules: [
-                    { required: true, message: $t('message.error.required.input') },
-                    { validator: validateConfirmPassword }
-                  ]
-                }]"
+                v-model:value="form.confirmpassword"
                 :placeholder="apiParams.password.description"/>
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+        <a-form-item name="email" ref="email">
+          <template #label>
+            <tooltip-label :title="$t('label.email')" :tooltip="apiParams.email.description"/>
+          </template>
           <a-input
-            v-decorator="['email', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.email"
             :placeholder="apiParams.email.description" />
         </a-form-item>
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+            <a-form-item name="firstname" ref="firstname">
+              <template #label>
+                <tooltip-label :title="$t('label.firstname')" :tooltip="apiParams.firstname.description"/>
+              </template>
               <a-input
-                v-decorator="['firstname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.firstname"
                 :placeholder="apiParams.firstname.description" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
-            <a-form-item>
-              <tooltip-label slot="label" :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+            <a-form-item name="lastname" ref="lastname">
+              <template #label>
+                <tooltip-label :title="$t('label.lastname')" :tooltip="apiParams.lastname.description"/>
+              </template>
               <a-input
-                v-decorator="['lastname', {
-                  rules: [{ required: true, message: $t('message.error.required.input') }]
-                }]"
+                v-model:value="form.lastname"
                 :placeholder="apiParams.lastname.description" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="this.isAdminOrDomainAdmin() && !domainid">
-          <tooltip-label slot="label" :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+        <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin() && !domainid">
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
+          </template>
           <a-select
             :loading="domainLoading"
-            v-decorator="['domainid']"
+            v-model:value="form.domainid"
             :placeholder="apiParams.domainid.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            @change="val => this.fetchAccount(val)" >
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
             <a-select-option v-for="domain in domainsList" :key="domain.id" :label="domain.path || domain.name || domain.description">
               <span>
                 <resource-icon v-if="domain && domain.icon" :image="domain.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="block" style="margin-right: 5px" />
+                <block-outlined v-else style="margin-right: 5px" />
                 {{ domain.path || domain.name || domain.description }}
               </span>
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item v-if="!account">
-          <tooltip-label slot="label" :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+        <a-form-item name="account" ref="account" v-if="!account">
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+          </template>
           <a-select
-            v-decorator="['account', {
-              rules: [{ required: true, message: $t('message.error.required.input') }]
-            }]"
+            v-model:value="form.account"
             :loading="loadingAccount"
             :placeholder="apiParams.account.description"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="(item, idx) in accountList" :key="idx" :label="item.name">
               <span>
                 <resource-icon v-if="item && item.icon" :image="item.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else type="team" style="margin-right: 5px" />
+                <team-outlined v-else style="margin-right: 5px" />
                 {{ item.name }}
               </span>
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item>
-          <tooltip-label slot="label" :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+        <a-form-item name="timezone" ref="timezone">
+          <template #label>
+            <tooltip-label :title="$t('label.timezone')" :tooltip="apiParams.timezone.description"/>
+          </template>
           <a-select
-            v-decorator="['timezone']"
+            v-model:value="form.timezone"
             :loading="timeZoneLoading"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
               {{ opt.name || opt.description }}
@@ -142,20 +148,20 @@
           </a-select>
         </a-form-item>
         <div v-if="samlAllowed">
-          <a-form-item :label="$t('label.samlenable')">
-            <a-switch v-decorator="['samlenable']" @change="checked => { this.samlEnable = checked }" />
+          <a-form-item name="samlenable" ref="samlenable" :label="$t('label.samlenable')">
+            <a-switch v-model:checked="form.samlenable" />
           </a-form-item>
-          <a-form-item v-if="samlEnable">
-            <tooltip-label slot="label" :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
+          <a-form-item name="samlentity" ref="samlentity" v-if="form.samlenable">
+            <template #label>
+              <tooltip-label :title="$t('label.samlentity')" :tooltip="apiParams.entityid.description"/>
+            </template>
             <a-select
-              v-decorator="['samlentity', {
-                initialValue: selectedIdp,
-              }]"
+              v-model:value="form.samlentity"
               :loading="idpLoading"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
               <a-select-option v-for="idp in idps" :key="idp.id">
                 {{ idp.orgName }}
@@ -173,6 +179,7 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
@@ -193,10 +200,10 @@ export default {
       timeZoneMap: [],
       domainLoading: false,
       domainsList: [],
+      selectedDomain: '',
       samlEnable: false,
       idpLoading: false,
       idps: [],
-      selectedIdp: '',
       loadingAccount: false,
       accountList: [],
       account: null,
@@ -204,8 +211,8 @@ export default {
     }
   },
   created () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('createUser', 'authorizeSamlSso')
+    this.initForm()
     this.fetchData()
   },
   computed: {
@@ -214,6 +221,23 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        confirmpassword: [
+          { required: true, message: this.$t('message.error.required.input') },
+          { validator: this.validateConfirmPassword }
+        ],
+        email: [{ required: true, message: this.$t('message.error.required.input') }],
+        firstname: [{ required: true, message: this.$t('message.error.required.input') }],
+        lastname: [{ required: true, message: this.$t('message.error.required.input') }],
+        account: [{ required: true, message: this.$t('message.error.required.input') }],
+        timezone: [{ required: true, message: this.$t('message.error.required.input') }]
+      })
+    },
     fetchData () {
       this.account = this.$route.query && this.$route.query.account ? this.$route.query.account : null
       this.domainid = this.$route.query && this.$route.query.domainid ? this.$route.query.domainid : null
@@ -240,15 +264,15 @@ export default {
           description: error.response.data.errorresponse.errortext
         })
       }).finally(() => {
-        const domainid = this.domainsList[0].id || ''
-        this.form.setFieldsValue({ domainid: domainid })
+        const domainid = this.domainsList[0]?.id || ''
+        this.form.domainid = domainid
         this.fetchAccount(domainid)
         this.domainLoading = false
       })
     },
     fetchAccount (domainid) {
       this.accountList = []
-      this.form.setFieldsValue({ account: null })
+      this.form.account = null
       this.loadingAccount = true
       var params = { listAll: true, showicon: true }
       if (domainid) {
@@ -278,7 +302,7 @@ export default {
       this.idpLoading = true
       api('listIdps').then(response => {
         this.idps = response.listidpsresponse.idp || []
-        this.selectedIdp = this.idps[0].id || ''
+        this.form.samlentity = this.idps[0].id || ''
       }).finally(() => {
         this.idpLoading = false
       })
@@ -292,10 +316,8 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           username: values.username,
@@ -357,22 +379,23 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    validateConfirmPassword (rule, value, callback) {
+    async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {
-        callback()
+        return Promise.resolve()
       } else if (rule.field === 'confirmpassword') {
-        const form = this.form
         const messageConfirm = this.$t('error.password.not.match')
-        const passwordVal = form.getFieldValue('password')
+        const passwordVal = this.form.password
         if (passwordVal && passwordVal !== value) {
-          callback(messageConfirm)
+          return Promise.reject(messageConfirm)
         } else {
-          callback()
+          return Promise.resolve()
         }
       } else {
-        callback()
+        return Promise.resolve()
       }
     },
     closeAction () {

@@ -306,7 +306,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     private static final ConfigKey<Boolean> SystemVmPublicIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
             Boolean.class, "system.vm.public.ip.reservation.mode.strictness", "false",
-            "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", false, ConfigKey.Scope.Global);
+            "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", true, ConfigKey.Scope.Global);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -1239,6 +1239,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 s_logger.debug("Associate IP address lock acquired");
             }
 
+            if (ipaddress != null) {
+                IPAddressVO ipAddr = _ipAddressDao.findByAccountIdAndZoneIdAndStateAndIpAddress(ipOwner.getId(), zone.getId(), State.Reserved, ipaddress);
+                if (ipAddr != null) {
+                    return PublicIp.createFromAddrAndVlan(ipAddr, _vlanDao.findById(ipAddr.getVlanId()));
+                }
+            }
+
             ip = Transaction.execute(new TransactionCallbackWithException<PublicIp, InsufficientAddressCapacityException>() {
                 @Override
                 public PublicIp doInTransaction(TransactionStatus status) throws InsufficientAddressCapacityException {
@@ -1401,7 +1408,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         if (ipToAssoc.getAssociatedWithNetworkId() != null) {
-            s_logger.debug("IP " + ipToAssoc + " is already associated with network id" + networkId);
+            s_logger.debug("IP " + ipToAssoc + " is already associated with network id=" + networkId);
             return ipToAssoc;
         }
 
@@ -1459,6 +1466,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         IPAddressVO ip = _ipAddressDao.findById(ipId);
         //update ip address with networkId
+        ip.setState(State.Allocated);
         ip.setAssociatedWithNetworkId(networkId);
         ip.setSourceNat(isSourceNat);
         _ipAddressDao.update(ipId, ip);
@@ -2297,5 +2305,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
         NetworkDetailVO networkDetail = _networkDetailsDao.findDetail(networkId, Network.hideIpAddressUsage);
         return networkDetail != null && "true".equals(networkDetail.getValue());
+    }
+
+    public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
+        return SystemVmPublicIpReservationModeStrictness;
     }
 }

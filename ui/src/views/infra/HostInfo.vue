@@ -126,11 +126,14 @@ export default {
     this.fetchData()
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource) {
-        this.host = this.resource
-        if (this.resource.id && newItem && newItem.id !== oldItem.id) {
-          this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource) {
+          this.host = this.resource
+          if (this.resource.id && newItem && newItem.id !== oldItem.id) {
+            this.fetchData()
+          }
         }
       }
     }

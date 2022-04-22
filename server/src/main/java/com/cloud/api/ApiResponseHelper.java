@@ -18,6 +18,8 @@ package com.cloud.api;
 
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -43,6 +46,7 @@ import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
@@ -67,6 +71,7 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -78,6 +83,7 @@ import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
@@ -98,6 +104,7 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
@@ -118,6 +125,7 @@ import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
@@ -160,11 +168,15 @@ import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -236,12 +248,14 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -268,6 +282,7 @@ import com.cloud.network.as.Counter;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
@@ -338,7 +353,6 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchBuilder;
@@ -363,7 +377,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
+import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -414,6 +429,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private AnnotationDao annotationDao;
     @Inject
     private UserStatisticsDao userStatsDao;
+    @Inject
+    private NetworkDao networkDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -646,7 +663,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVm vm = ApiDBUtils.findUserVmById(vmSnapshot.getVmId());
         if (vm != null) {
             vmSnapshotResponse.setVirtualMachineId(vm.getUuid());
-            vmSnapshotResponse.setVirtualMachineName(Strings.isNullOrEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
+            vmSnapshotResponse.setVirtualMachineName(StringUtils.isEmpty(vm.getDisplayName()) ? vm.getHostName() : vm.getDisplayName());
             vmSnapshotResponse.setHypervisor(vm.getHypervisorType());
             DataCenterVO datacenter = ApiDBUtils.findZoneById(vm.getDataCenterId());
             if (datacenter != null) {
@@ -1949,7 +1966,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 continue;
             }
 
-            if (account.getType() != Account.ACCOUNT_TYPE_PROJECT) {
+            if (account.getType() != Account.Type.PROJECT) {
                 regularAccounts.add(accountName);
             } else {
                 // convert account to projectIds
@@ -2018,7 +2035,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             Account account = securiytGroupAccounts.get(securityGroup.getAccountId());
 
-            if (securityGroup.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+            if (securityGroup.getAccountType() == Account.Type.PROJECT) {
                 response.setProjectId(securityGroup.getProjectUuid());
                 response.setProjectName(securityGroup.getProjectName());
             } else {
@@ -2303,6 +2320,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
+            if (Network.GuestType.Isolated.equals(network.getGuestType())) {
+                response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
+            }
         }
 
         if (network.getAclType() != null) {
@@ -2425,6 +2445,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setVpcName(vpc.getName());
             }
         }
+
+        setResponseAssociatedNetworkInformation(response, network.getId());
+
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
 
         // set tag information
@@ -2477,6 +2500,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("network");
         return response;
+    }
+
+    private void setResponseAssociatedNetworkInformation(BaseResponseWithAssociatedNetwork response, Long networkId) {
+        final NetworkDetailVO detail = networkDetailsDao.findDetail(networkId, Network.AssociatedNetworkId);
+        if (detail != null) {
+            Long associatedNetworkId = Long.valueOf(detail.getValue());
+            NetworkVO associatedNetwork = ApiDBUtils.findNetworkById(associatedNetworkId);
+            if (associatedNetwork != null) {
+                response.setAssociatedNetworkId(associatedNetwork.getUuid());
+                response.setAssociatedNetworkName(associatedNetwork.getName());
+            }
+        }
     }
 
     @Override
@@ -2624,7 +2659,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     private void populateOwner(ControlledEntityResponse response, ControlledEntity object) {
         Account account = ApiDBUtils.findAccountById(object.getAccountId());
 
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             response.setProjectId(project.getUuid());
@@ -2640,7 +2675,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     public static void populateOwner(ControlledViewEntityResponse response, ControlledViewEntity object) {
 
-        if (object.getAccountType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (object.getAccountType() == Account.Type.PROJECT) {
             response.setProjectId(object.getProjectUuid());
             response.setProjectName(object.getProjectName());
         } else {
@@ -2655,7 +2690,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountById(accountId);
         if (account == null) {
             s_logger.debug("Unable to find account with id: " + accountId);
-        } else if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        } else if (account.getType() == Account.Type.PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
             if (project != null) {
@@ -2750,7 +2785,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan vlan) {
+    public GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlanRange vlan) {
         GuestVlanRangeResponse guestVlanRangeResponse = new GuestVlanRangeResponse();
 
         guestVlanRangeResponse.setId(vlan.getUuid());
@@ -3190,6 +3225,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setAclName(acl.getName());
         }
 
+        setResponseAssociatedNetworkInformation(response, result.getNetworkId());
+
         response.setObjectName("privategateway");
 
         return response;
@@ -3517,7 +3554,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap, boolean oldFormat) {
         UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
             //find the project
             Project project = ApiDBUtils.findProjectByProjectAccountIdIncludingRemoved(account.getId());
             if (project != null) {
@@ -4436,6 +4473,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Vpc vpc = ApiDBUtils.findVpcById(networkACL.getVpcId());
         if (vpc != null) {
             response.setVpcId(vpc.getUuid());
+            response.setVpcName(vpc.getName());
         }
         response.setObjectName("networkacllist");
         return response;
@@ -4543,5 +4581,172 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon) {
         return  ApiDBUtils.newResourceIconResponse(resourceIcon);
+    }
+
+    @Override
+    public GuestVlanResponse createGuestVlanResponse(GuestVlan guestVlan) {
+        GuestVlanResponse guestVlanResponse = new GuestVlanResponse();
+
+        Account owner = null;
+        if (guestVlan.getAccountId() != null) {
+            owner = ApiDBUtils.findAccountById(guestVlan.getAccountId());
+        } else if (guestVlan.getAccountGuestVlanMapId() != null) {
+            Long accountId = ApiDBUtils.getAccountIdForGuestVlan(guestVlan.getAccountGuestVlanMapId());
+            owner = ApiDBUtils.findAccountById(accountId);
+        }
+        if (owner != null) {
+            populateAccount(guestVlanResponse, owner.getId());
+            populateDomain(guestVlanResponse, owner.getDomainId());
+        }
+        guestVlanResponse.setId(guestVlan.getId());
+        guestVlanResponse.setGuestVlan(guestVlan.getVnet());
+        DataCenterVO zone = ApiDBUtils.findZoneById(guestVlan.getDataCenterId());
+        if (zone != null) {
+            guestVlanResponse.setZoneId(zone.getUuid());
+            guestVlanResponse.setZoneName(zone.getName());
+        }
+        PhysicalNetworkVO pnw = ApiDBUtils.findPhysicalNetworkById(guestVlan.getPhysicalNetworkId());
+        if (pnw != null) {
+            guestVlanResponse.setPhysicalNetworkId(pnw.getUuid());
+            guestVlanResponse.setPhysicalNetworkName(pnw.getName());
+        }
+        if (guestVlan.getAccountGuestVlanMapId() != null) {
+            guestVlanResponse.setDedicated(true);
+        } else {
+            guestVlanResponse.setDedicated(false);
+        }
+        if (guestVlan.getTakenAt() != null) {
+            guestVlanResponse.setAllocationState("Allocated");
+            guestVlanResponse.setTaken(guestVlan.getTakenAt());
+        } else {
+            guestVlanResponse.setAllocationState("Free");
+        }
+
+        List<NetworkVO> networks = networkDao.listByZoneAndUriAndGuestType(guestVlan.getDataCenterId(), guestVlan.getVnet(), null);
+        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        for (Network network : networks) {
+            NetworkResponse ntwkRsp = createNetworkResponse(ResponseView.Full, network);
+            networkResponses.add(ntwkRsp);
+        }
+        guestVlanResponse.setNetworks(networkResponses);
+
+        return guestVlanResponse;
+    }
+
+    @Override
+    public NetworkPermissionsResponse createNetworkPermissionsResponse(NetworkPermission permission) {
+        Long networkOwnerDomain = null;
+        Network network = ApiDBUtils.findNetworkById(permission.getNetworkId());
+
+        NetworkPermissionsResponse response = new NetworkPermissionsResponse();
+        response.setNetworkId(network.getUuid());
+
+        Account networkOwner = ApiDBUtils.findAccountById(network.getAccountId());
+        if (networkOwner != null) {
+            networkOwnerDomain = networkOwner.getDomainId();
+            if (networkOwnerDomain != null) {
+                Domain domain = ApiDBUtils.findDomainById(networkOwnerDomain);
+                if (domain != null) {
+                    response.setDomainId(domain.getUuid());
+                    response.setDomainName(domain.getName());
+                }
+            }
+        }
+
+        Account account = ApiDBUtils.findAccountById(permission.getAccountId());
+        response.setAccountName(account.getName());
+        response.setAccountId(account.getUuid());
+        if (account.getType() == Account.Type.PROJECT) {
+            // convert account to projectIds
+            Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+
+            if (project.getUuid() != null && !project.getUuid().isEmpty()) {
+                response.setProjectId(project.getUuid());
+            } else {
+                response.setProjectId(String.valueOf(project.getId()));
+            }
+            response.setProjectName(project.getName());
+        }
+
+        response.setObjectName("networkpermission");
+        return response;
+    }
+
+    protected void handleCertificateResponse(String certStr, DirectDownloadCertificateResponse response) {
+        try {
+            Certificate cert = CertificateHelper.buildCertificate(certStr);
+            if (cert instanceof X509CertImpl) {
+                X509CertImpl certificate = (X509CertImpl) cert;
+                response.setVersion(String.valueOf(certificate.getVersion()));
+                response.setSubject(certificate.getSubjectDN().toString());
+                response.setIssuer(certificate.getIssuerDN().toString());
+                response.setSerialNum(certificate.getSerialNumberObject().toString());
+                response.setValidity(String.format("From: [%s] - To: [%s]", certificate.getNotBefore(), certificate.getNotAfter()));
+            }
+        } catch (CertificateException e) {
+            s_logger.error("Error parsing direct download certificate: " + certStr, e);
+        }
+    }
+
+    @Override
+    public DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate) {
+        DirectDownloadCertificateResponse response = new DirectDownloadCertificateResponse();
+        DataCenterVO datacenter = ApiDBUtils.findZoneById(certificate.getZoneId());
+        if (datacenter != null) {
+            response.setZoneId(datacenter.getUuid());
+            response.setZoneName(datacenter.getName());
+        }
+        response.setId(certificate.getUuid());
+        response.setAlias(certificate.getAlias());
+        handleCertificateResponse(certificate.getCertificate(), response);
+        response.setHypervisor(certificate.getHypervisorType().name());
+        response.setObjectName("directdownloadcertificate");
+        return response;
+    }
+
+    @Override
+    public List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings) {
+        if (CollectionUtils.isEmpty(hostMappings)) {
+            return new ArrayList<>();
+        }
+        List<DirectDownloadCertificateHostStatusResponse> responses = new ArrayList<>(hostMappings.size());
+        for (DirectDownloadCertificateHostMap map : hostMappings) {
+            DirectDownloadCertificateHostStatusResponse response = new DirectDownloadCertificateHostStatusResponse();
+            HostVO host = ApiDBUtils.findHostById(map.getHostId());
+            if (host != null) {
+                response.setHostId(host.getUuid());
+                response.setHostName(host.getName());
+            }
+            response.setStatus(map.isRevoked() ? CertificateStatus.REVOKED.name() : CertificateStatus.UPLOADED.name());
+            response.setObjectName("directdownloadcertificatehoststatus");
+            responses.add(response);
+        }
+        return responses;
+    }
+
+    private DirectDownloadCertificateHostStatusResponse getDirectDownloadHostStatusResponseInternal(Host host, CertificateStatus status, String details) {
+        DirectDownloadCertificateHostStatusResponse response = new DirectDownloadCertificateHostStatusResponse();
+        if (host != null) {
+            response.setHostId(host.getUuid());
+            response.setHostName(host.getName());
+        }
+        response.setStatus(status.name());
+        response.setDetails(details);
+        response.setObjectName("directdownloadcertificatehoststatus");
+        return response;
+    }
+
+    @Override
+    public DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus hostStatus) {
+        Host host = hostStatus.getHost();
+        CertificateStatus status = hostStatus.getStatus();
+        return getDirectDownloadHostStatusResponseInternal(host, status, hostStatus.getDetails());
+    }
+
+    @Override
+    public DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result) {
+        HostVO host = ApiDBUtils.findHostById(hostId);
+        CertificateStatus status = result != null && result.first() ? CertificateStatus.UPLOADED : CertificateStatus.FAILED;
+        return getDirectDownloadHostStatusResponseInternal(host, status, result != null ? result.second() : "provision certificate failure");
     }
 }

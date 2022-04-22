@@ -68,6 +68,19 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
     private Map<String, String> details;
 
+    @Parameter(name = ApiConstants.MIN_IOPS, type = CommandType.LONG, required = false, description = "New minimum number of IOPS for the custom disk offering", since = "4.17")
+    private Long minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS, type = CommandType.LONG, required = false, description = "New maximum number of IOPS for the custom disk offering", since = "4.17")
+    private Long maxIops;
+
+    @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "Flag for automatic migration of the root volume " +
+            "with new compute offering whenever migration is required to apply the offering", since = "4.17")
+    private Boolean autoMigrate;
+
+    @Parameter(name = ApiConstants.SHRINK_OK, type = CommandType.BOOLEAN, required = false, description = "Verify OK to Shrink", since = "4.17")
+    private Boolean shrinkOk;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -92,8 +105,28 @@ public class UpgradeVMCmd extends BaseCmd implements UserCmd {
                 }
             }
         }
+
+        if (shrinkOk != null) customparameterMap.put(ApiConstants.SHRINK_OK, String.valueOf(isShrinkOk()));
+        if (autoMigrate != null) customparameterMap.put(ApiConstants.AUTO_MIGRATE, String.valueOf(getAutoMigrate()));
+        if (getMinIops() != null) customparameterMap.put(ApiConstants.MIN_IOPS, String.valueOf(getMinIops()));
+        if (getMaxIops() != null) customparameterMap.put(ApiConstants.MAX_IOPS, String.valueOf(getMaxIops()));
+
         return customparameterMap;
     }
+
+    public Long getMinIops() {
+        return minIops;
+    }
+
+    public Long getMaxIops() {
+        return maxIops;
+    }
+
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? true : autoMigrate;
+    }
+
+    public boolean isShrinkOk() { return shrinkOk == null ? true : shrinkOk; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

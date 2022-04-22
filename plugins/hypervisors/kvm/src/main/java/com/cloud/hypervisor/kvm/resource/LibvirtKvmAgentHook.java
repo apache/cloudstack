@@ -68,7 +68,7 @@ public class LibvirtKvmAgentHook {
                 Object res = cls.invokeMethod(this.method, params);
                 return res;
             } catch (MissingMethodExceptionNoStack e) {
-                s_logger.error("Error occured when calling method from groovy script, {}", e);
+                s_logger.error("Error occurred when calling method from groovy script, {}", e);
                 return arg;
             }
         }
