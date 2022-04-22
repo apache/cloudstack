@@ -16,26 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.ca.CAManager;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.direct.download.DirectDownloadManager;
-import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -68,6 +48,24 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.ADD_HOST_ON_SERVICE_RESTART_KVM;
 
@@ -163,6 +161,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             validityPeriod = 1;
         }
 
+        String keystorePassword = PasswordGenerator.generateRandomPassword(16);
         final SSHCmdHelper.SSHCmdResult keystoreSetupResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
                 String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
                                 "/etc/cloudstack/agent/agent.properties " +
@@ -171,7 +170,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                                 "/etc/cloudstack/agent/%s",
                         KeyStoreUtils.KS_SETUP_SCRIPT,
                         KeyStoreUtils.KS_FILENAME,
-                        PasswordGenerator.generateRandomPassword(16),
+                        keystorePassword,
                         validityPeriod,
                         KeyStoreUtils.CSR_FILENAME));
 
@@ -186,21 +185,22 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         final SetupCertificateCommand certificateCommand = new SetupCertificateCommand(certificate);
         final SSHCmdHelper.SSHCmdResult setupCertResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
-                    String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
-                                    "/etc/cloudstack/agent/agent.properties " +
-                                    "/etc/cloudstack/agent/%s %s " +
-                                    "/etc/cloudstack/agent/%s \"%s\" " +
-                                    "/etc/cloudstack/agent/%s \"%s\" " +
-                                    "/etc/cloudstack/agent/%s \"%s\"",
-                            KeyStoreUtils.KS_IMPORT_SCRIPT,
-                            KeyStoreUtils.KS_FILENAME,
-                            KeyStoreUtils.SSH_MODE,
-                            KeyStoreUtils.CERT_FILENAME,
-                            certificateCommand.getEncodedCertificate(),
-                            KeyStoreUtils.CACERT_FILENAME,
-                            certificateCommand.getEncodedCaCertificates(),
-                            KeyStoreUtils.PKEY_FILENAME,
-                            certificateCommand.getEncodedPrivateKey()));
+                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
+                                "/etc/cloudstack/agent/agent.properties %s " +
+                                "/etc/cloudstack/agent/%s %s " +
+                                "/etc/cloudstack/agent/%s \"%s\" " +
+                                "/etc/cloudstack/agent/%s \"%s\" " +
+                                "/etc/cloudstack/agent/%s \"%s\"",
+                        KeyStoreUtils.KS_IMPORT_SCRIPT,
+                        keystorePassword,
+                        KeyStoreUtils.KS_FILENAME,
+                        KeyStoreUtils.SSH_MODE,
+                        KeyStoreUtils.CERT_FILENAME,
+                        certificateCommand.getEncodedCertificate(),
+                        KeyStoreUtils.CACERT_FILENAME,
+                        certificateCommand.getEncodedCaCertificates(),
+                        KeyStoreUtils.PKEY_FILENAME,
+                        certificateCommand.getEncodedPrivateKey()));
 
         if (setupCertResult != null && !setupCertResult.isSuccess()) {
             throw new CloudRuntimeException("Failed to setup certificate in the KVM agent's keystore file, please see logs and configure manually!");
@@ -471,7 +471,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostOs = ssCmd.getHostDetails().get("Host.OS");
             if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
                 throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," +
-                    "in which there are " + hostOsInCluster + " hosts added");
+                        "in which there are " + hostOsInCluster + " hosts added");
             }
         }
 

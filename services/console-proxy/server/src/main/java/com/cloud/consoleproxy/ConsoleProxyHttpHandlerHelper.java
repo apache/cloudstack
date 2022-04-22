@@ -40,7 +40,7 @@ public class ConsoleProxyHttpHandlerHelper {
                 map.put(name, value);
             } else {
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Invalid paramemter in URL found. param: " + param);
+                    s_logger.debug("Invalid parameter in URL found. param: " + param);
             }
         }
 

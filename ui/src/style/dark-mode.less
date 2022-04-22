@@ -283,7 +283,7 @@
       & > tr:hover.ant-table-row-selected > td,
       & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
       & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
-        background-color: @table-body-hover-bgColor;
+        background-color: @table-body-hover-bgColor !important;
       }
 
       & > tr > th.ant-table-column-sort {
@@ -551,7 +551,7 @@
       &-option-active:not(.ant-select-item-option-disabled),
       &:hover:not(.ant-select-item-disabled),
       &-active:hover:not(.ant-select-item-disabled) {
-        background-color: @dropdown-hover-bgColor;
+        background-color: @dropdown-hover-bgColor !important;
       }
     }
   }
@@ -714,7 +714,7 @@
 
     &-item:not(.ant-dropdown-menu-item-selected):hover,
     &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
-      background-color: @dropdown-hover-bgColor;
+      background-color: @dropdown-hover-bgColor !important;
     }
 
     &-title-content > a,

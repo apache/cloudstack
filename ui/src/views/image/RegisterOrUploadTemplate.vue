@@ -397,8 +397,6 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
-        checksum: [{ required: true, message: this.$t('message.error.required.input') }],
-        rootDiskControllerType: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
@@ -809,7 +807,9 @@ export default {
             const formattedDetailData = {}
             switch (key) {
               case 'rootDiskControllerType':
-                formattedDetailData['details[0].rootDiskController'] = input
+                if (input) {
+                  formattedDetailData['details[0].rootDiskController'] = input
+                }
                 break
               case 'nicAdapterType':
                 formattedDetailData['details[0].nicAdapter'] = input

@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -106,6 +107,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -117,6 +119,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
@@ -254,6 +257,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IPAddressDao _ipAddressDao;
     @Inject
     private VpcManager _vpcMgr;
+    @Inject
+    private NetworkModel _networkModel;
     @Inject
     private Site2SiteVpnManager _vpnMgr;
     @Inject
@@ -602,8 +607,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 Account account = ApiDBUtils.findAccountById(entity.getAccountId());
                 domainId = account != null ? account.getDomainId() : -1;
             }
-            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) && !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry)
-                    && !(entity instanceof AffinityGroup)) {
+            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
+                    && !(entity instanceof Network && accessType != null && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
+                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -886,7 +892,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
+                Collections.sort(networks, new Comparator<NetworkVO>() {
+                    @Override
+                    public int compare(NetworkVO network1, NetworkVO network2) {
+                        if (network1.getGuestType() != network2.getGuestType() && Network.GuestType.Isolated.equals(network2.getGuestType())) {
+                            return -1;
+                        };
+                        return 1;
+                    }
+                });
                 for (NetworkVO network : networks) {
+                    if (_networkModel.isPrivateGateway(network.getId())) {
+                        continue;
+                    }
 
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 

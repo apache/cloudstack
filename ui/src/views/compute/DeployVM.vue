@@ -246,7 +246,7 @@
                       memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
-                      :isConstrained="'serviceofferingdetails' in serviceOffering"
+                      :isConstrained="isOfferingConstrained(serviceOffering)"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
@@ -1476,6 +1476,11 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    isOfferingConstrained (serviceOffering) {
+      return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
+        'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
+        'minmemory' in serviceOffering.serviceofferingdetails
     },
     getImg (image) {
       return 'data:image/png;charset=utf-8;base64, ' + image

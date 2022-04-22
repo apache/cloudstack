@@ -20,9 +20,8 @@
     <a-select
       v-if="!isDisabled()"
       class="project-select"
-      :defaultValue="$t('label.default.view')"
       :loading="loading"
-      :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : $t('label.default.view')"
+      v-model:value="projectSelected"
       :filterOption="filterProject"
       @change="changeProject"
       @focus="fetchData"
@@ -40,7 +39,10 @@
         </a-tooltip>
       </template>
 
-      <a-select-option v-for="(project, index) in projects" :key="index" :label="project.displaytext || project.name">
+      <a-select-option
+        v-for="(project, index) in projects"
+        :key="index"
+        :label="project.displaytext || project.name">
         <span>
           <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
           <project-outlined v-else style="margin-right: 5px" />
@@ -70,6 +72,16 @@ export default {
   },
   created () {
     this.fetchData()
+  },
+  computed: {
+    projectSelected () {
+      let projectIndex = 0
+      if (this.$store.getters?.project?.id) {
+        projectIndex = this.projects.findIndex(project => project.id === this.$store.getters.project.id)
+      }
+
+      return projectIndex
+    }
   },
   methods: {
     fetchData () {
@@ -135,6 +147,6 @@ export default {
   position: absolute;
   top: 0;
   right: 1px;
-  margin-top: -3px;
+  margin-top: -5px;
 }
 </style>
