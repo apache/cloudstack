@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.allocator;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,6 +74,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+
+    /**
+     * make sure shuffled lists of Pools are really shuffled
+     */
+    private SecureRandom secureRandom = new SecureRandom();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -186,8 +192,24 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)",allocationAlgorithm));
+                StringBuilder pooltable = new StringBuilder();
+                pooltable.append("pools to choose from: ");
+                int i = 1;
+                for (StoragePool pool : pools) {
+                    pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
+                }
+                s_logger.trace(pooltable.toString());
             }
-            Collections.shuffle(pools);
+            Collections.shuffle(pools, secureRandom);
+            if (s_logger.isTraceEnabled()) {
+                StringBuilder pooltable = new StringBuilder();
+                pooltable.append("shuffled list of pools to choose from: ");
+                int i = 1;
+                for (StoragePool pool : pools) {
+                    pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
+                }
+                s_logger.trace(pooltable.toString());
+            }
         } else if (allocationAlgorithm.equals("userdispersing")) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace(String.format("reordering: Algorithm == '%s'",allocationAlgorithm));
