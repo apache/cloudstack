@@ -87,7 +87,10 @@ config_guest() {
           /usr/bin/xenstore-read vm-data/cloudstack/init |tr -d "\n$" > $CMDLINE_PASSED
           if [ -s $CMDLINE_PASSED ]; then
             log_it "Received a new non-empty cmdline file from qemu-guest-agent"
-            perform_actions_when_boot_from_cloudstack
+            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+            rm -rf /etc/cloudstack/*.json
+            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
             break
           else
             sed -i "s/%/ /g" $CMDLINE
@@ -111,7 +114,10 @@ config_guest() {
           for i in {1..10}; do
             if [ -s $CMDLINE_PASSED ]; then
               log_it "Received a new non-empty cmdline file from qemu-guest-agent"
-              perform_actions_when_boot_from_cloudstack
+              rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+              # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+              rm -rf /etc/cloudstack/*.json
+              log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
               break
             fi
             sleep 1
@@ -130,7 +136,10 @@ config_guest() {
           vmtoolsd --cmd 'machine.id.get' > $CMDLINE_PASSED
           if [ -s $CMDLINE_PASSED ]; then
             log_it "Received a new non-empty cmdline file from vm-tools"
-            perform_actions_when_boot_from_cloudstack
+            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+            rm -rf /etc/cloudstack/*.json
+            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
             break
           fi
 
@@ -143,7 +152,10 @@ config_guest() {
           cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE_PASSED
           if [ -s $CMDLINE_PASSED ]; then
             log_it "Received a new non-empty cmdline file from vm-tools"
-            perform_actions_when_boot_from_cloudstack
+            rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+            # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+            rm -rf /etc/cloudstack/*.json
+            log_it "Booting from cloudstack, remove old configuration files in /etc/cloudstack/"
             break
           fi
           cat /dev/null > /var/opt/hyperv/.kvp_pool_0
@@ -161,13 +173,6 @@ config_guest() {
 
   # Find and export guest type
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
-}
-
-perform_actions_when_boot_from_cloudstack() {
-  rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
-  # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
-  rm -rf /etc/cloudstack/*.json
-  log_it "Booting from cloudstack, removed old configuration files in /etc/cloudstack/"
 }
 
 patch_systemvm() {
