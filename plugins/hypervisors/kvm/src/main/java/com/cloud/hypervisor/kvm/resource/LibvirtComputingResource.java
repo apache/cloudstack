@@ -283,6 +283,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String AARCH64 = "aarch64";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+    public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     private String _modifyVlanPath;
     private String _versionstringpath;
@@ -309,8 +310,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final int NUMMEMSTATS =2;
 
     private KVMHAMonitor _monitor;
-    public static final String SSHKEYSPATH = "/root/.ssh";
-    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
@@ -412,7 +411,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    private VirtualRoutingResource _virtRouterResource;
+    public VirtualRoutingResource _virtRouterResource;
 
     private String _pingTestPath;
 
@@ -472,7 +471,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
         } catch (final Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            s_logger.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
             details = e.getMessage();
             success = false;
         }
@@ -1170,20 +1169,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         ha.start();
 
         _storagePoolMgr = new KVMStoragePoolManager(_storage, _monitor);
-
-        _sysvmISOPath = (String)params.get("systemvm.iso.path");
-        if (_sysvmISOPath == null) {
-            final String[] isoPaths = {"/usr/share/cloudstack-common/vms/systemvm.iso"};
-            for (final String isoPath : isoPaths) {
-                if (_storage.exists(isoPath)) {
-                    _sysvmISOPath = isoPath;
-                    break;
-                }
-            }
-            if (_sysvmISOPath == null) {
-                s_logger.debug("Can't find system vm ISO");
-            }
-        }
 
         final Map<String, String> bridges = new HashMap<String, String>();
 
@@ -2942,14 +2927,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
-            if (_sysvmISOPath != null) {
-                final DiskDef iso = new DiskDef();
-                iso.defISODisk(_sysvmISOPath);
-                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-                    iso.setBusType(DiskDef.DiskBus.SCSI);
-                }
-                vm.getDevices().addDevice(iso);
+            final DiskDef iso = new DiskDef();
+            iso.defISODisk(_sysvmISOPath);
+            if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                iso.setBusType(DiskDef.DiskBus.SCSI);
             }
+            vm.getDevices().addDevice(iso);
         }
 
         // For LXC, find and add the root filesystem, rbd data disks

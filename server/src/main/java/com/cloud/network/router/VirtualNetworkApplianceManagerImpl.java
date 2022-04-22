@@ -68,6 +68,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -217,6 +218,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ProvisioningType;
@@ -365,6 +367,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     @Inject protected CommandSetupHelper _commandSetupHelper;
     @Inject protected RouterDeploymentDefinitionBuilder _routerDeploymentManagerBuilder;
+    @Inject private ManagementServer mgr;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -1270,7 +1273,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
                     "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
-            return vpcService.restartVpc(router.getVpcId(), true, false, user);
+            return vpcService.restartVpc(router.getVpcId(), true, false, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart VPC for router recreation " +
                     router.getVpcName() + " ,router " + router.getUuid(), e);
@@ -1294,7 +1297,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
                     "Recreating router " + router.getUuid() + " by restarting network " + router.getNetworkUuid(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
-            return networkService.restartNetwork(router.getNetworkId(), true, false, user);
+            return networkService.restartNetwork(router.getNetworkId(), true, false, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart network " + router.getNetworkName() +
                     " for router recreation " + router.getNetworkName(), e);
@@ -2680,6 +2683,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer) cmds.getAnswer("getDomRVersion");
         router.setTemplateVersion(versionAnswer.getTemplateVersion());
         router.setScriptsVersion(versionAnswer.getScriptsVersion());
+        String codeVersion = mgr.getVersion();
+        if (StringUtils.isNotEmpty(codeVersion)) {
+            codeVersion = CloudStackVersion.parse(codeVersion).toString();
+        }
+        router.setSoftwareVersion(codeVersion);
         _routerDao.persist(router, guestNetworks);
 
         final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
@@ -3210,7 +3218,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private List<Long> rebootRouters(final List<DomainRouterVO> routers) {
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
-            if (!_nwHelper.checkRouterVersion(router)) {
+            if (!_nwHelper.checkRouterTemplateVersion(router)) {
                 s_logger.debug("Upgrading template for router: " + router.getId());
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");

@@ -52,4 +52,6 @@ public interface VirtualRouter extends VirtualMachine {
     Long getVpcId();
 
     String getTemplateVersion();
+
+    String getScriptsVersion();
 }

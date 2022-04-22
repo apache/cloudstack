@@ -36,6 +36,7 @@ public class ApiConstants {
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
+    public static final String LIVE_PATCH = "livepatch";
     public static final String AVAILABLE = "available";
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";

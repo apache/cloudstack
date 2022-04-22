@@ -589,6 +589,8 @@ export default {
           var objIndex = 0
           if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
             objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else if (this.$route.path.includes('/router')) {
+            objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
             objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r] || obj.name === tempResource[r]))
           }

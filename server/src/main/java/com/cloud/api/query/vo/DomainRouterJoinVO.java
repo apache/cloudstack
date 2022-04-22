@@ -251,6 +251,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Enumerated(value = EnumType.STRING)
     private VirtualRouter.Role role;
 
+    @Column(name = "software_version")
+    private String softwareVersion;
+
     public DomainRouterJoinVO() {
     }
 
@@ -533,5 +536,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
     }
 }

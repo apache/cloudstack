@@ -117,11 +117,13 @@ override_dh_auto_install:
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/setup
 	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	mkdir $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
 	cp -r scripts/installer $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/network $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/storage $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/util $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
 	cp -r scripts/vm $(DESTDIR)/usr/share/$(PACKAGE)-common/scripts
+	cp -r systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms
 	install -D client/target/utilities/bin/cloud-migrate-databases $(DESTDIR)/usr/bin/cloudstack-migrate-databases
 	install -D client/target/utilities/bin/cloud-set-guest-password $(DESTDIR)/usr/bin/cloudstack-set-guest-password
 	install -D client/target/utilities/bin/cloud-set-guest-sshkey $(DESTDIR)/usr/bin/cloudstack-set-guest-sshkey
@@ -129,7 +131,7 @@ override_dh_auto_install:
 	install -D client/target/utilities/bin/cloud-setup-management $(DESTDIR)/usr/bin/cloudstack-setup-management
 	install -D client/target/utilities/bin/cloud-setup-encryption $(DESTDIR)/usr/bin/cloudstack-setup-encryption
 	install -D client/target/utilities/bin/cloud-sysvmadm $(DESTDIR)/usr/bin/cloudstack-sysvmadm
-	install -D systemvm/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
+	install -D systemvm/dist/* $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.3.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
 
