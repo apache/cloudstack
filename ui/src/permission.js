@@ -78,6 +78,7 @@ router.beforeEach((to, from, next) => {
               } else {
                 next({ path: redirect })
               }
+              store.dispatch('ToggleTheme', 'light')
             })
           })
           .catch(() => {

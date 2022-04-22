@@ -189,6 +189,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementServerHostStats;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
@@ -988,6 +989,14 @@ public class ApiDBUtils {
 
     public static HostStats getHostStatistics(long hostId) {
         return s_statsCollector.getHostStats(hostId);
+    }
+
+    public static ManagementServerHostStats getManagementServerHostStatistics(String mgmtSrvrUuid) {
+        return s_statsCollector.getManagementServerHostStats(mgmtSrvrUuid);
+    }
+
+    public static Map<String,Object> getDbStatistics() {
+        return s_statsCollector.getDbStats();
     }
 
     public static StorageStats getStoragePoolStatistics(long id) {
