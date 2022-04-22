@@ -335,22 +335,38 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId, Volume.State.Allocated);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), cmd.getFormat());
+        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
 
         volService.registerVolume(vol, store);
         return volume;
+    }
+
+    private String sanitizeFormat(String format) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(format)) {
+            throw new CloudRuntimeException("Please provide a format");
+        }
+
+        String uppercase = format.toUpperCase();
+        try {
+            ImageFormat.valueOf(uppercase);
+        } catch (IllegalArgumentException e) {
+            String msg = "Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values());
+            s_logger.error("ImageFormat IllegalArgumentException: " + e.getMessage(), e);
+            throw new IllegalArgumentException(msg);
+        }
+        return uppercase;
     }
 
     @Override
@@ -361,7 +377,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final Account owner = _entityMgr.findById(Account.class, ownerId);
         final Long zoneId = cmd.getZoneId();
         final String volumeName = cmd.getName();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
@@ -372,11 +388,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             @Override
             public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
-                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
+                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
 
                 VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), format);
                 vol.addPayload(payload);
 
                 Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
@@ -464,12 +480,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
-        try {
-            ImageFormat.valueOf(format.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
-            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-        }
+        sanitizeFormat(format);
 
         // Check that the the disk offering specified is valid
         if (diskOfferingId != null) {
