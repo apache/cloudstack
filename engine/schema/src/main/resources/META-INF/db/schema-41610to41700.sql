@@ -558,6 +558,44 @@ FROM
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
 
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+
+-- table for network permissions
+CREATE TABLE  `cloud`.`network_permissions` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  INDEX `i_network_permission_network_id`(`network_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
+    SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
+        FROM `cloud`.`user_vm_details`
+        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
+        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
+        WHERE ssh_keypairs.account_id = vm_instance.account_id;
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `security_group_id` bigint unsigned DEFAULT NULL,
+ADD CONSTRAINT `fk_kubernetes_cluster__security_group_id` FOREIGN KEY `fk_kubernetes_cluster__security_group_id`(`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE;
+
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`vm_stats`;
+CREATE TABLE `cloud`.`vm_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `vm_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- PR#5984 Update name for global configuration vm.stats.increment.metrics
+Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `software_version` varchar(100) COMMENT 'Software version';
+
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
     select
@@ -629,7 +667,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         domain_router.is_redundant_router is_redundant_router,
         domain_router.redundant_state redundant_state,
         domain_router.stop_pending stop_pending,
-        domain_router.role role
+        domain_router.role role,
+        domain_router.software_version software_version
     from
         `cloud`.`domain_router`
             inner join
@@ -660,38 +699,50 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
 
--- table for network permissions
-CREATE TABLE  `cloud`.`network_permissions` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `network_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  PRIMARY KEY  (`id`),
-  INDEX `i_network_permission_network_id`(`network_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+--
+-- Management Server Status
+--
+ALTER TABLE `cloud`.`mshost` ADD CONSTRAINT `mshost_UUID` UNIQUE KEY (`uuid`);
+CREATE TABLE `cloud`.`mshost_status` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `ms_id` varchar(40) DEFAULT NULL COMMENT 'the uuid of the management server record',
+  `last_jvm_start` datetime DEFAULT NULL COMMENT 'the last start time for this MS',
+  `last_jvm_stop` datetime DEFAULT NULL COMMENT 'the last stop time for this MS',
+  `last_system_boot` datetime DEFAULT NULL COMMENT 'the last system boot time for the host of this MS',
+  `os_distribution` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'the name of the os type running on the host of this MS',
+  `java_name` varchar(64) DEFAULT NULL COMMENT 'the name of the java distribution running this MS',
+  `java_version` varchar(64) DEFAULT NULL COMMENT 'the version of the java distribution running this MS',
+  `updated` datetime DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`),
+  CONSTRAINT `mshost_status_FK` FOREIGN KEY (`ms_id`) REFERENCES `mshost` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
 
-INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
-    SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
-        FROM `cloud`.`user_vm_details`
-        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
-        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
-        WHERE ssh_keypairs.account_id = vm_instance.account_id;
-
-ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `security_group_id` bigint unsigned DEFAULT NULL,
-ADD CONSTRAINT `fk_kubernetes_cluster__security_group_id` FOREIGN KEY `fk_kubernetes_cluster__security_group_id`(`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE;
-
--- PR#5984 Create table to persist VM stats.
-DROP TABLE IF EXISTS `cloud`.`vm_stats`;
-CREATE TABLE `cloud`.`vm_stats` (
-  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `vm_id` bigint unsigned NOT NULL,
-  `mgmt_server_id` bigint unsigned NOT NULL,
-  `timestamp` datetime NOT NULL,
-  `vm_stats_data` text NOT NULL,
-  PRIMARY KEY (`id`)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- PR#5984 Update name for global configuration vm.stats.increment.metrics
-Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+DROP VIEW IF EXISTS `cloud`.`mshost_view`;
+CREATE VIEW `cloud`.`mshost_view` AS
+select
+    `cloud`.`mshost`.`id` AS `id`,
+    `cloud`.`mshost`.`msid` AS `msid`,
+    `cloud`.`mshost`.`runid` AS `runid`,
+    `cloud`.`mshost`.`name` AS `name`,
+    `cloud`.`mshost`.`uuid` AS `uuid`,
+    `cloud`.`mshost`.`state` AS `state`,
+    `cloud`.`mshost`.`version` AS `version`,
+    `cloud`.`mshost`.`service_ip` AS `service_ip`,
+    `cloud`.`mshost`.`service_port` AS `service_port`,
+    `cloud`.`mshost`.`last_update` AS `last_update`,
+    `cloud`.`mshost`.`removed` AS `removed`,
+    `cloud`.`mshost`.`alert_count` AS `alert_count`,
+    `cloud`.`mshost_status`.`last_jvm_start` AS `last_jvm_start`,
+    `cloud`.`mshost_status`.`last_jvm_stop` AS `last_jvm_stop`,
+    `cloud`.`mshost_status`.`last_system_boot` AS `last_system_boot`,
+    `cloud`.`mshost_status`.`os_distribution` AS `os_distribution`,
+    `cloud`.`mshost_status`.`java_name` AS `java_name`,
+    `cloud`.`mshost_status`.`java_version` AS `java_version`
+from
+    (`cloud`.`mshost`
+left join `cloud`.`mshost_status` on
+    ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)));

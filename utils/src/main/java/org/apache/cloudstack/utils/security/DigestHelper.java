@@ -17,6 +17,7 @@
 package org.apache.cloudstack.utils.security;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -32,7 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DigestHelper {
-    public static final Logger s_logger = Logger.getLogger(DigestHelper.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(DigestHelper.class.getName());
     public static ChecksumValue digest(String algorithm, InputStream is) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance(algorithm);
         ChecksumValue checksum = null;
@@ -139,10 +140,10 @@ public class DigestHelper {
 
     public static String calculateChecksum(File file) {
         try (InputStream is = Files.newInputStream(Paths.get(file.getPath()))) {
-            return org.apache.commons.codec.digest.DigestUtils.md5Hex(is);
+            return DigestUtils.md5Hex(is);
         } catch (IOException e) {
             String errMsg = "Failed to calculate template checksum";
-            s_logger.error(errMsg, e);
+            LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
     }

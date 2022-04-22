@@ -33,7 +33,7 @@
                   {{ $t('label.refresh') }}
                 </a-button>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
                   style="margin-left: 8px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -589,6 +589,8 @@ export default {
           var objIndex = 0
           if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
             objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else if (this.$route.path.includes('/router')) {
+            objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
             objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r] || obj.name === tempResource[r]))
           }

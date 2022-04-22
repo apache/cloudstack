@@ -2345,9 +2345,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartNetwork(Long networkId, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         NetworkVO network = getNetworkVO(networkId, "Network with specified id doesn't exist");
-        return restartNetwork(network, cleanup, makeRedundant, user);
+        return restartNetwork(network, cleanup, makeRedundant, livePatch, user);
     }
 
     private NetworkVO getNetworkVO(Long networkId, String errMsgFormat) {
@@ -2359,7 +2359,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_RESTART, eventDescription = "restarting network", async = true)
-    public boolean restartNetwork(NetworkVO network, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean restartNetwork(NetworkVO network, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         // Don't allow to restart network if it's not in Implemented/Setup state
         if (!(network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup)) {
@@ -2384,9 +2384,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             cleanup = true;
         }
-
+        if (cleanup) {
+            livePatch = false;
+        }
         long id = network.getId();
-        boolean success = _networkMgr.restartNetwork(id, callerAccount, user, cleanup);
+        boolean success = _networkMgr.restartNetwork(id, callerAccount, user, cleanup, livePatch);
         if (success) {
             s_logger.debug(String.format("Network id=%d is restarted successfully.",id));
         } else {
@@ -2406,8 +2408,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Cannot restart a VPC tier with cleanup, please restart the whole VPC.", network.getUuid(), "network tier");
         }
         boolean makeRedundant = cmd.getMakeRedundant();
+        boolean livePatch = cmd.getLivePatch();
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
-        return restartNetwork(network, cleanup, makeRedundant, callerUser);
+        return restartNetwork(network, cleanup, makeRedundant, livePatch, callerUser);
     }
 
     @Override

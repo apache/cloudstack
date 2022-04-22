@@ -19,8 +19,10 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
 import java.net.URISyntaxException;
 
+import com.cloud.utils.FileUtil;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
@@ -34,8 +36,8 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
@@ -114,6 +116,20 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         if (result) {
                             break;
                         }
+                    }
+
+                    try {
+                        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+                        FileUtil.scpPatchFiles(controlIp, "/tmp/", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
+                            String errMsg = "Failed to patch systemVM";
+                            s_logger.error(errMsg);
+                            return new StartAnswer(command, errMsg);
+                        }
+                    } catch (Exception e) {
+                        String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                        s_logger.error(errMsg, e);
+                        return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
                     }
                 }
             }

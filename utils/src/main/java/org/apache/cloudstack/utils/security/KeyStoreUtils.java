@@ -26,6 +26,7 @@ import com.cloud.utils.PropertiesUtil;
 public class KeyStoreUtils {
     public static final String KS_SETUP_SCRIPT = "keystore-setup";
     public static final String KS_IMPORT_SCRIPT = "keystore-cert-import";
+    public static final String KS_SYSTEMVM_IMPORT_SCRIPT = "keystore-cert-import-sysvm";
 
     public static final String AGENT_PROPSFILE = "agent.properties";
     public static final String KS_PASSPHRASE_PROPERTY = "keystore.passphrase";

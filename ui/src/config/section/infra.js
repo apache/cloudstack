@@ -26,6 +26,7 @@ import secondaryStorages from '@/config/section/infra/secondaryStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
 import ilbvms from '@/config/section/infra/ilbvms'
+import managementServers from '@/config/section/infra/managementServers'
 
 export default {
   name: 'infra',
@@ -51,6 +52,7 @@ export default {
     systemVms,
     routers,
     ilbvms,
+    managementServers,
     {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
@@ -60,11 +62,12 @@ export default {
       component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
-      name: 'managementserver',
-      title: 'label.management.servers',
-      icon: 'RocketOutlined',
-      permission: ['listManagementServers'],
-      columns: ['name', 'state', 'version']
+      name: 'metric',
+      title: 'label.db.usage.metrics',
+      icon: 'bar-chart-outlined',
+      docHelp: 'adminguide/management.html#metrics',
+      permission: ['listDbMetrics', 'listUsageServerMetrics'],
+      component: () => import('@/views/infra/Metrics.vue')
     },
     {
       name: 'alert',

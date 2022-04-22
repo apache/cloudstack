@@ -137,7 +137,7 @@ public interface VpcService {
      */
     boolean restartVpc(RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Returns a Private gateway found in the VPC by id

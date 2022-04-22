@@ -4934,7 +4934,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @Override
-    public boolean  finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
 
         Answer[] answersToCmds = cmds.getAnswers();
