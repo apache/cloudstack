@@ -907,7 +907,8 @@ public class LibvirtComputingResourceTest {
         final MemoryStatistic[] domainMem = new MemoryStatistic[2];
         domainMem[0] = Mockito.mock(MemoryStatistic.class);
         Mockito.when(domain.getInfo()).thenReturn(domainInfo);
-        Mockito.when(domain.memoryStats(2)).thenReturn(domainMem);
+        Mockito.when(domain.memoryStats(20)).thenReturn(domainMem);
+        Mockito.when(domainMem[0].getTag()).thenReturn(4);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
         final NodeInfo nodeInfo = new NodeInfo();
         nodeInfo.cpus = 8;
@@ -5585,21 +5586,34 @@ public class LibvirtComputingResourceTest {
         Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(null);
         long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
 
-        Assert.assertEquals(0, memoryFreeInKBs);
+        Assert.assertEquals(-1, memoryFreeInKBs);
+    }
+
+    @Test
+    public void getMemoryFreeInKBsTestDomainReturningIncompleteArray() throws LibvirtException {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+
+        MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
+        mem[0].setTag(0);
+        Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(mem);
+        long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
+
+        Assert.assertEquals(-1, memoryFreeInKBs);
     }
 
     private MemoryStatistic[] createMemoryStatisticFreeMemory100() {
         virDomainMemoryStats stat = new virDomainMemoryStats();
         stat.val = 100;
+        stat.tag = 4;
 
-        MemoryStatistic[] mem = new MemoryStatistic[2];
+        MemoryStatistic[] mem = new MemoryStatistic[1];
         mem[0] = new MemoryStatistic(stat);
         return mem;
     }
 
     private Domain getDomainConfiguredToReturnMemoryStatistic(MemoryStatistic[] mem) throws LibvirtException {
         Domain domainMock = Mockito.mock(Domain.class);
-        when(domainMock.memoryStats(2)).thenReturn(mem);
+        when(domainMock.memoryStats(20)).thenReturn(mem);
         return domainMock;
     }
 

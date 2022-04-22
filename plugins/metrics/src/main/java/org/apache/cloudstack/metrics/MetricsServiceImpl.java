@@ -340,7 +340,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             response.setDiskIOWrite((long)statsEntry.getDiskWriteIOs());
             long totalMemory = (long)statsEntry.getMemoryKBs();
             long freeMemory = (long)statsEntry.getIntFreeMemoryKBs();
-            long correctedFreeMemory = freeMemory >= totalMemory ? 0 : freeMemory;
+            long correctedFreeMemory = freeMemory >= totalMemory ? -1 : freeMemory;
             response.setMemoryKBs(totalMemory);
             response.setMemoryIntFreeKBs(correctedFreeMemory);
             response.setMemoryTargetKBs((long)statsEntry.getTargetMemoryKBs());

@@ -106,7 +106,7 @@ public class StatsResponseTest {
     @Test
     public void setNetworkKbsReadTestWithInputNotNull() {
         Long expectedNetworkKbsRead = Long.valueOf("100");
-        String expectedNetworkRead = String.format("0%s10 MB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
+        String expectedNetworkRead = String.format("0%s10 MiB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
 
         statsResponseMock.setNetworkKbsRead(expectedNetworkKbsRead);
 
@@ -125,7 +125,7 @@ public class StatsResponseTest {
     @Test
     public void setNetworkKbsWriteTestWithInputNotNull() {
         Long expectedNetworkKbsWrite = Long.valueOf("100");
-        String expectedNetworkWrite = String.format("0%s10 MB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
+        String expectedNetworkWrite = String.format("0%s10 MiB", decimalSeparator); // the actual result is 0.097 but the value is rounded to 0.10
 
         statsResponseMock.setNetworkKbsWrite(expectedNetworkKbsWrite);
 
