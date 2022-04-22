@@ -19,6 +19,7 @@
 set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
+CMDLINE_PASSED=/var/cache/cloud/cmdline_passed
 
 hypervisor() {
   if [ -d /proc/xen ]; then
@@ -155,6 +156,13 @@ config_guest() {
 
   # Find and export guest type
   export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+}
+
+perform_actions_when_boot_from_cloudstack() {
+  rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
+  # Remove old configuration files in /etc/cloudstack if VR is booted from cloudstack
+  rm -rf /etc/cloudstack/*.json
+  log_it "Booting from cloudstack, removed old configuration files in /etc/cloudstack/"
 }
 
 setup_interface_sshd() {
