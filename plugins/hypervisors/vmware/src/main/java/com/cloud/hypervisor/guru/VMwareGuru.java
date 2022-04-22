@@ -902,7 +902,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String networkName = pair.second();
             NetworkVO networkVO = networksMapping.get(networkName);
-            NicVO nicVO = _nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
+            NicVO nicVO = _nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
                 s_logger.warn(String.format("Can't find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from VM [id: %s, name: %s].",
                         networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
