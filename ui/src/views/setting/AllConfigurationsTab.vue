@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <a-spin :spinning="tabLoading">
     <div class="config-row-element">
       <a-table
         class="config-list-view"
@@ -30,8 +30,12 @@
         :rowKey="record => record.name"
         :rowClassName="getRowClassName"
         @refresh="this.fetchConfigData">
+
+        <template #name="{ record }">
+          <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
+        </template>
         <template #value="{ record }">
-           <ConfigurationValue :configrecord="record" :loading="tabLoading" />
+          <ConfigurationValue :configrecord="record" :loading="tabLoading" />
         </template>
       </a-table>
       <a-pagination
@@ -52,7 +56,7 @@
         </template>
       </a-pagination>
     </div>
-  </div>
+  </a-spin>
 </template>
 
 <script>
@@ -83,14 +87,8 @@ export default {
           title: 'Name',
           dataIndex: 'name',
           slots: { customRender: 'name' },
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
-        },
-        {
-          title: 'Description',
-          dataIndex: 'description',
-          slots: { customRender: 'description' },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
-          width: '30%'
+          width: '60%'
         },
         {
           title: 'Category',

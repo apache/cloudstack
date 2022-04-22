@@ -265,7 +265,7 @@ public interface ConfigurationManager {
 
     AllocationState findClusterAllocationState(ClusterVO cluster);
 
-    String getConfigurationType(String configName); // Value type
+    String getConfigurationType(String configName);
 
     Pair<String, String> getConfigurationGroupAndSubGroup(String configName);
 

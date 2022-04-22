@@ -36,6 +36,7 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
     final SearchBuilder<ConfigurationSubGroupVO> NameSearch;
     final SearchBuilder<ConfigurationSubGroupVO> GroupSearch;
     final SearchBuilder<ConfigurationSubGroupVO> NameAndGroupSearch;
+    final SearchBuilder<ConfigurationSubGroupVO> KeywordSearch;
 
     public ConfigurationSubGroupDaoImpl() {
         super();
@@ -52,6 +53,10 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
         NameAndGroupSearch.and("name", NameAndGroupSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameAndGroupSearch.and("groupId", NameAndGroupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
         NameAndGroupSearch.done();
+
+        KeywordSearch = createSearchBuilder();
+        KeywordSearch.and("keywords", KeywordSearch.entity().getKeywords(), SearchCriteria.Op.NNULL);
+        KeywordSearch.done();
     }
 
     @Override
@@ -74,7 +79,8 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
             return null;
         }
 
-        List<ConfigurationSubGroupVO> configurationSubGroups = listAll();
+        SearchCriteria<ConfigurationSubGroupVO> sc = KeywordSearch.create();
+        List<ConfigurationSubGroupVO> configurationSubGroups = listBy(sc);
         for (ConfigurationSubGroupVO configurationSubGroup : configurationSubGroups) {
             if (StringUtils.isBlank(configurationSubGroup.getKeywords())) {
                 continue;
@@ -89,7 +95,7 @@ public class ConfigurationSubGroupDaoImpl extends GenericDaoBase<ConfigurationSu
             for (String configKeyword : keywords) {
                 if (StringUtils.isNotBlank(configKeyword)) {
                     configKeyword = configKeyword.strip();
-                    if (configKeyword.equalsIgnoreCase(keyword) || configKeyword.toLowerCase().startsWith(keyword.toLowerCase())) {
+                    if (configKeyword.equalsIgnoreCase(keyword) || keyword.toLowerCase().startsWith(configKeyword.toLowerCase())) {
                         return configurationSubGroup;
                     }
                 }

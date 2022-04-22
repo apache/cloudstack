@@ -211,6 +211,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 configUpdated = true;
             }
 
+            if (key.group() == null && key.subGroup() == null ) {
+                Pair<Long, Long> configGroupAndSubGroup = getConfigurationGroupAndSubGroupByName(key.key());
+                if (configGroupAndSubGroup.first() != 1 && configGroupAndSubGroup.second() != 1) {
+                    vo.setGroupId(configGroupAndSubGroup.first());
+                    vo.setSubGroupId(configGroupAndSubGroup.second());
+                    configUpdated = true;
+                }
+            }
+
             if (key.group() != null && vo.getGroupId() != groupId) {
                 vo.setGroupId(groupId);
                 configUpdated = true;
@@ -294,7 +303,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         createOrupdateConfigObject(new Date(), componentName, key, value);
     }
 
-    private Pair<Long, Long> getConfigurationGroupAndSubGroupByName(String configName) {
+    @Override
+    public Pair<Long, Long> getConfigurationGroupAndSubGroupByName(String configName) {
         Long subGroupId = 1L;
         Long groupId = 1L;
         if (StringUtils.isNotBlank(configName)) {

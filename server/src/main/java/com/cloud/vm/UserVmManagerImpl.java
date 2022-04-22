@@ -628,13 +628,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             "enable.additional.vm.configuration", "false", "allow additional arbitrary configuration to vm", true, ConfigKey.Scope.Account);
 
     private static final ConfigKey<String> KvmAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.kvm", "", "Comma separated list of allowed additional configuration options.", true);
+            "allow.additional.vm.configuration.list.kvm", "", "Comma separated list of allowed additional configuration options.", true, EnableAdditionalVmConfig.key());
 
     private static final ConfigKey<String> XenServerAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.xenserver", "", "Comma separated list of allowed additional configuration options", true);
+            "allow.additional.vm.configuration.list.xenserver", "", "Comma separated list of allowed additional configuration options", true, EnableAdditionalVmConfig.key());
 
     private static final ConfigKey<String> VmwareAdditionalConfigAllowList = new ConfigKey<>("Advanced", String.class,
-            "allow.additional.vm.configuration.list.vmware", "", "Comma separated list of allowed additional configuration options.", true);
+            "allow.additional.vm.configuration.list.vmware", "", "Comma separated list of allowed additional configuration options.", true, EnableAdditionalVmConfig.key());
 
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);

@@ -590,7 +590,7 @@ CREATE TABLE `cloud`.`vm_stats` (
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- PR#5984 Update name for global configuration vm.stats.increment.metrics
-Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+UPDATE `cloud`.`configuration` SET name = 'vm.stats.increment.metrics' WHERE name = 'vm.stats.increment.metrics.in.memory';
 
 ALTER TABLE `cloud`.`domain_router` ADD COLUMN `software_version` varchar(100) COMMENT 'Software version';
 
@@ -1002,9 +1002,10 @@ INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) 
 INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Compute', 'Compute configuration', 2);
 INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Storage', 'Storage configuration', 3);
 INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Network', 'Network configuration', 4);
-INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('ManagementServer', 'Management Server configuration', 5);
-INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Hypervisor', 'Hypervisor specific configuration', 6);
-INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('SystemVMs', 'System VMs related configuration', 7);
+INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Hypervisor', 'Hypervisor specific configuration', 5);
+INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Management Server', 'Management Server configuration', 6);
+INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('System VMs', 'System VMs related configuration', 7);
+INSERT INTO `cloud`.`configuration_group` (`name`, `description`, `precedence`) VALUES ('Infrastructure', 'Infrastructure configuration', 8);
 
 ALTER TABLE `cloud`.`configuration_subgroup` AUTO_INCREMENT=1;
 
@@ -1012,51 +1013,51 @@ INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, 
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Account', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Domain', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
 INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Project', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Users', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('LDAP', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('SAML', 'saml2', 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('LDAP', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('SAML', 'saml2', 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Access'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VirtualMachine', 'vm,instance,cpu,ssh,affinity', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Kubernetes', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('HighAvailability', 'ha', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Virtual Machine', 'vm,instance,cpu,ssh,affinity', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Kubernetes', 'prometheus', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('High Availability', 'ha', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Compute'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Storage', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Primary Storage', 'pool,primary', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Secondary Storage', 'image,secstorage', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Volume', 'disk', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Snapshot', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Template', NULL, 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('ISO', NULL, 7, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VM Snapshot', 'vmsnapshot', 8, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Images', 'template,iso', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Volume', 'disk,diskoffering', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Snapshot', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VM Snapshot', 'vmsnapshot', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Network', 'firewall,vlan,dns,dhcp,externaldhcp,ipaddress,cidr', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VPC', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('LoadBalancer', 'lb', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Network', 'firewall,vlan,dns,globodns,ipaddress,cidr', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('DHCP', 'externaldhcp', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VPC', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('LoadBalancer', 'lb,gslb', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Network'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('API', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Alerts', 'alert', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Events', 'event', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Security', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Usage', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Limits', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Jobs', 'job', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Agent', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Backup & Recovery', 'backup,recovery,veeam', 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Certificate Authority', 'CA', 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Diagnostics', NULL, 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Quota', NULL, 7, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'ManagementServer'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('API', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Alerts', 'alert', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Events', 'event', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Security', 'secure,password,authenticators', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Usage', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Limits', 'capacity,delay,interval,workers', 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Jobs', 'job', 7, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Agent', NULL, 8, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Management Server'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('KVM', 'libvirt', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VMware', 'vcenter', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('XenServer', 'xen,xapi,XCP', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('HyperV', NULL, 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('OVM', 'ovm3', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Baremetal', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Hypervisor', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Hypervisor', NULL, 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('KVM', 'libvirt', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VMware', 'vcenter', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('XenServer', 'xen,xapi,XCP', 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('OVM', 'ovm3', 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Baremetal', NULL, 6, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Hypervisor'));
 
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('ConsoleProxyVM', 'cpvm,consoleproxy,novnc', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'SystemVMs'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('SecStorageVM', 'ssvm,secondary', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'SystemVMs'));
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VirtualRouter', 'vr,router,vrouter', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'SystemVMs'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('ConsoleProxyVM', 'cpvm,consoleproxy,novnc', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'System VMs'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('SecStorageVM', 'ssvm,secondary', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'System VMs'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('VirtualRouter', 'vr,router,vrouter', 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'System VMs'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Diagnostics', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'System VMs'));
+
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Primary Storage', 'storage,pool,primary', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Infrastructure'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Secondary Storage', 'image,secstorage', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Infrastructure'));
+
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Backup & Recovery', 'backup,recovery,veeam', 1, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Certificate Authority', 'CA', 2, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Quota', NULL, 3, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
+INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Cloudian', NULL, 4, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Miscellaneous'));
 
 UPDATE `cloud`.`configuration` SET parent = 'agent.lb.enabled' WHERE name IN ('agent.load.threshold');
 UPDATE `cloud`.`configuration` SET parent = 'indirect.agent.lb.check.interval' WHERE name IN ('indirect.agent.lb.algorithm');

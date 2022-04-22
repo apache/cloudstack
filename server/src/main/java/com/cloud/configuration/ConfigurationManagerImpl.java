@@ -7534,23 +7534,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public Pair<String, String> getConfigurationGroupAndSubGroup(final String configName) {
-        if (StringUtils.isNotBlank(configName)) {
-            final ConfigurationVO cfg = _configDao.findByName(configName);
-            if (cfg != null) {
-                ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
-                if (configSubGroup != null) {
-                    String subGroupName = configSubGroup.getName();
-                    ConfigurationGroupVO configGroup = _configGroupDao.findById(configSubGroup.getGroupId());
-                    String groupName = configGroup != null ? configGroup.getName() : "Miscellaneous";
-                    return new Pair<String, String>(groupName, subGroupName);
-                }
-            } else {
-                s_logger.warn("Configuration " + configName + " not found");
-            }
+        if (StringUtils.isBlank(configName)) {
+            throw new CloudRuntimeException("Empty configuration name provided");
         }
 
-        s_logger.debug("Returning default configuration group for config: " + configName);
-        return new Pair<String, String>("Miscellaneous", "Others");
+        final ConfigurationVO cfg = _configDao.findByName(configName);
+        if (cfg == null) {
+            s_logger.warn("Configuration " + configName + " not found");
+            throw new InvalidParameterValueException("configuration with name " + configName + " doesn't exist");
+        }
+
+        String groupName = "Miscellaneous";
+        String subGroupName = "Others";
+        ConfigurationSubGroupVO configSubGroup = _configSubGroupDao.findById(cfg.getSubGroupId());
+        if (configSubGroup != null) {
+            subGroupName = configSubGroup.getName();
+        }
+
+        ConfigurationGroupVO configGroup = _configGroupDao.findById(cfg.getGroupId());
+        if (configGroup != null) {
+            groupName = configGroup.getName();
+        }
+
+        return new Pair<String, String>(groupName, subGroupName);
     }
 
     @Override

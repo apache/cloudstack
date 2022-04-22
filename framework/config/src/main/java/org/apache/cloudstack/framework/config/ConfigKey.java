@@ -113,12 +113,24 @@ public class ConfigKey<T> {
         this(type, name, category, defaultValue, description, isDynamic, scope, null);
     }
 
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, Scope scope, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, null, null, parent, null, null);
+    }
+
     public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
     }
 
+    public ConfigKey(String category, Class<T> type, String name, String defaultValue, String description, boolean isDynamic, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, parent, null, null);
+    }
+
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier) {
         this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, null, null, null, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, scope, multiplier, null, parent, null, null);
     }
 
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, Scope scope, T multiplier,
@@ -140,6 +152,10 @@ public class ConfigKey<T> {
     @Deprecated
     public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic) {
         this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null);
+    }
+
+    public ConfigKey(Class<T> type, String name, String category, String defaultValue, String description, boolean isDynamic, String parent) {
+        this(type, name, category, defaultValue, description, isDynamic, Scope.Global, null, null, parent, null, null);
     }
 
     public T multiplier() {

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.config.impl;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,9 +28,11 @@ import junit.framework.TestCase;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -126,5 +129,39 @@ public class ConfigDepotAdminTest extends TestCase {
         verify(_configDao, times(3)).persist(any(ConfigurationVO.class));
         verify(_configGroupDao, times(2)).persist(any(ConfigurationGroupVO.class));
         verify(_configSubGroupDao, times(2)).persist(any(ConfigurationSubGroupVO.class));
+    }
+
+    @Test
+    public void testDefaultConfigurationGroupAndSubGroup() {
+        Mockito.when(_configSubGroupDao.findByName(anyString())).thenReturn(null);
+        Mockito.when(_configSubGroupDao.findByKeyword(anyString())).thenReturn(null);
+
+        Pair<Long, Long> configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(1L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
+    }
+
+    @Test
+    public void testConfigurationGroupAndSubGroup() {
+        ConfigurationGroupVO testGroup = new ConfigurationGroupVO("TestGroup", "Test Group", 3L);
+        ConfigurationSubGroupVO testSubGroup = new ConfigurationSubGroupVO("TestSubGroup", null, 1L);
+        testSubGroup.setGroupId(9L);
+        Mockito.when(_configSubGroupDao.findByName("storage")).thenReturn(testSubGroup);
+        Mockito.when(_configSubGroupDao.findByKeyword(anyString())).thenReturn(null);
+
+        Pair<Long, Long> configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(9L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
+
+        testSubGroup.setGroupId(5L);
+        Mockito.when(_configSubGroupDao.findByName(anyString())).thenReturn(null);
+        Mockito.when(_configSubGroupDao.findByKeyword("storage")).thenReturn(testSubGroup);
+
+        configGroupAndSubGroup = _depotAdmin.getConfigurationGroupAndSubGroupByName("test.storage.config.setting");
+
+        Assert.assertEquals(5L, configGroupAndSubGroup.first().longValue());
+        Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
     }
 }
