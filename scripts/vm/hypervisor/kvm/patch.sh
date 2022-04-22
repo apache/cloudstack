@@ -72,8 +72,4 @@ do
 done
 
 # Write cmdline payload
-if [[ $bootargs =~ .*type=cksnode.* ]];then
-  send_file $name "/var/cache/cloud/cmdline" $cmdline
-else
-  send_file $name "/var/cache/cloud/cmdline_passed" $cmdline
-fi
+send_file $name "/var/cache/cloud/cmdline_passed" $cmdline

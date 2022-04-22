@@ -111,7 +111,7 @@ config_guest() {
           systemctl start qemu-guest-agent
 
           # Wait for $CMDLINE file to be written by the qemu-guest-agent
-          for i in {1..10}; do
+          for i in {1..60}; do
             if [ -s $CMDLINE_PASSED ]; then
               log_it "Received a new non-empty cmdline file from qemu-guest-agent"
               rm -rf $CMDLINE && mv $CMDLINE_PASSED $CMDLINE
