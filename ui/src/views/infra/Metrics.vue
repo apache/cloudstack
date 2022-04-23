@@ -158,7 +158,7 @@ export default {
           metric.name = 'uptime in seconds'
           metric.value = map[key]
           array.push(metric)
-        } else if (key === 'collectiontime' || key === 'lastheartbeat' || key === 'lastsuccesfuljob') {
+        } else if (key === 'collectiontime' || key === 'lastheartbeat' || key === 'lastsuccessfuljob') {
           metric = {}
           metric.name = key
           metric.value = this.$toLocaleDate(map[key]) // needs a conversion
