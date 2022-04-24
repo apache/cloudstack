@@ -267,18 +267,18 @@
           </a-form-item>
           <a-form-item name="ip4gateway" ref="ip4gateway">
             <template #label>
-              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.netmask.description"/>
+              <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
             </template>
             <a-input
               v-model:value="form.ip4gateway"
-              :placeholder="apiParams.netmask.description"/>
+              :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item name="ip4netmask" ref="ip4netmask">
             <template #label>
-              <tooltip-label :title="$t('label.netmask')" :tooltip="apiParams.netmask.description"/>
+              <tooltip-label :title="$t('label.ip4netmask')" :tooltip="apiParams.netmask.description"/>
             </template>
             <a-input
-              v-model:value="form.netmask"
+              v-model:value="form.ip4netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
           <a-form-item name="startipv4" ref="startipv4">
@@ -296,6 +296,14 @@
             <a-input
               v-model:value="form.endipv4"
               :placeholder="apiParams.endip.description"/>
+          </a-form-item>
+          <a-form-item v-if="isVirtualRouterForAtLeastOneService" name="routerip" ref="routerip">
+            <template #label>
+              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.routerip"
+              :placeholder="apiParams.routerip.description"/>
           </a-form-item>
           <a-form-item name="ip6gateway" ref="ip6gateway">
             <template #label>
@@ -865,7 +873,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         if (
-          (!this.isValidTextValueForKey(values, 'ip4gateway') && !this.isValidTextValueForKey(values, 'netmask') &&
+          (!this.isValidTextValueForKey(values, 'ip4gateway') && !this.isValidTextValueForKey(values, 'ip4netmask') &&
             !this.isValidTextValueForKey(values, 'startipv4') && !this.isValidTextValueForKey(values, 'endipv4') &&
             !this.isValidTextValueForKey(values, 'ip6gateway') && !this.isValidTextValueForKey(values, 'ip6cidr') &&
             !this.isValidTextValueForKey(values, 'startipv6') && !this.isValidTextValueForKey(values, 'endipv6'))
@@ -923,8 +931,8 @@ export default {
         if (this.isValidTextValueForKey(values, 'ip4gateway')) {
           params.gateway = values.ip4gateway
         }
-        if (this.isValidTextValueForKey(values, 'netmask')) {
-          params.netmask = values.netmask
+        if (this.isValidTextValueForKey(values, 'ip4netmask')) {
+          params.netmask = values.ip4netmask
         }
         if (this.isValidTextValueForKey(values, 'startipv4')) {
           params.startip = values.startipv4
@@ -932,14 +940,14 @@ export default {
         if (this.isValidTextValueForKey(values, 'endipv4')) {
           params.endip = values.endipv4
         }
+        if (this.isValidTextValueForKey(values, 'routerip')) {
+          params.routerip = values.routerip
+        }
         // IPv4 (end)
 
         // IPv6 (begin)
-        if (this.isValidTextValueForKey(values, 'ip4gateway')) {
+        if (this.isValidTextValueForKey(values, 'ip6gateway')) {
           params.ip6gateway = values.ip6gateway
-        }
-        if (this.isValidTextValueForKey(values, 'routerip')) {
-          params.routerip = values.routerip
         }
         if (this.isValidTextValueForKey(values, 'ip6cidr')) {
           params.ip6cidr = values.ip6cidr

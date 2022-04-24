@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -103,6 +104,38 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         super();
     }
 
+    /**
+     *
+     * public template can be used by other accounts in:
+     *
+     *  1. the same domain
+     *  2. in sub-domains
+     *  3. domain admin of parent domains
+     *
+     *  In addition to those, everyone can access the public templates in domains that set "share.public.templates.with.other.domains" config to true.
+     *
+     * @param template template object
+     * @param owner owner of the template
+     * @param caller who wants to access to the template
+     */
+
+    private void checkPublicTemplateAccess(VirtualMachineTemplate template, Account owner, Account caller){
+        if (!QueryService.SharePublicTemplatesWithOtherDomains.valueIn(owner.getDomainId()) ||
+                caller.getDomainId() == owner.getDomainId() ||
+                _domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+            return;
+        }
+
+        if (caller.getType() == Account.Type.NORMAL || caller.getType() == Account.Type.PROJECT) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+        } else if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+            if (!_domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
+                throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+            }
+        }
+    }
+
+
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
         if (caller.getState() != Account.State.ENABLED) {
@@ -168,6 +201,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
                         }
                     }
+                } else if (caller.getType() != Account.Type.ADMIN) {
+                    checkPublicTemplateAccess(template, owner, caller);
                 }
             }
 

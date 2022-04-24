@@ -48,9 +48,10 @@ public class AttachVolumeCmd extends BaseAsyncCmd implements UserCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "the ID of the device to map the volume to within the guest OS. "
-            + "If no deviceId is passed in, the next available deviceId will be chosen. " + "Possible values for a Linux OS are:" + "* 0 - /dev/xvda" + "* 1 - /dev/xvdb" + "* 2 - /dev/xvdc"
-        + "* 4 - /dev/xvde" + "* 5 - /dev/xvdf" + "* 6 - /dev/xvdg" + "* 7 - /dev/xvdh" + "* 8 - /dev/xvdi" + "* 9 - /dev/xvdj")
+    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.LONG, description = "The ID of the device to map the volume to the guest OS. "
+        + "If no deviceID is informed, the next available deviceID will be chosen. When using a linux operating system and the hypervisor XenServer, the devices IDs will be mapped as follows:"
+        + "<ul><li>0 maps to /dev/xvda;</li><li>1 maps to /dev/xvdb;</li><li>2 maps /dev/xvdc and so on.</li></ul>"
+        + "Please refer to the docs of your hypervisor for the correct mapping of the deviceID and the actual logical disk structure.")
     private Long deviceId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the disk volume")

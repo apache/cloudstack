@@ -307,7 +307,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private Duration _timeout;
-    private static final int NUMMEMSTATS =2;
+    /**
+     * Since the memoryStats method returns an array that isn't ordered, we pass a big number to get all the array and then search for the information we want.
+     * */
+    private static final int NUMMEMSTATS = 20;
+
+    /**
+     * Unused memory's tag to search in the array returned by the Domain.memoryStats() method.
+     * */
+    private static final int UNUSEDMEMORY = 4;
+
 
     private KVMHAMonitor _monitor;
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
@@ -4050,17 +4059,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     /**
      * This method retrieves the memory statistics from the domain given as parameters.
-     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_MINUS_ONE} as the value of free memory in the domain.
      * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
      *
      * @return the amount of free memory in KBs
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
-        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
-        if (ArrayUtils.isEmpty(mems)) {
-            return NumberUtils.LONG_ZERO;
+        MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
+
+        if(s_logger.isTraceEnabled()){
+            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
         }
-        return mems[0].getValue();
+
+        long freeMemory = NumberUtils.LONG_MINUS_ONE;
+
+        if (ArrayUtils.isEmpty(memoryStats)){
+            return freeMemory;
+        }
+
+        for (int i = 0; i < memoryStats.length; i++) {
+            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+                freeMemory = memoryStats[i].getValue();
+                break;
+            }
+        }
+
+        if (freeMemory == NumberUtils.LONG_MINUS_ONE){
+            s_logger.warn("Couldn't retrieve free memory, returning -1.");
+        }
+        return freeMemory;
     }
 
     private boolean canBridgeFirewall(final String prvNic) {

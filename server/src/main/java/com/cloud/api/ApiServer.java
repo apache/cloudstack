@@ -668,7 +668,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private String getBaseAsyncResponse(final long jobId, final BaseAsyncCmd cmd) {
         final AsyncJobResponse response = new AsyncJobResponse();
 
-        final AsyncJob job = entityMgr.findById(AsyncJob.class, jobId);
+        final AsyncJob job = entityMgr.findByIdIncludingRemoved(AsyncJob.class, jobId);
         response.setJobId(job.getUuid());
         response.setResponseName(cmd.getCommandName());
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
@@ -676,7 +676,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     private String getBaseAsyncCreateResponse(final long jobId, final BaseAsyncCreateCmd cmd, final String objectUuid) {
         final CreateCmdResponse response = new CreateCmdResponse();
-        final AsyncJob job = entityMgr.findById(AsyncJob.class, jobId);
+        final AsyncJob job = entityMgr.findByIdIncludingRemoved(AsyncJob.class, jobId);
         response.setJobId(job.getUuid());
         response.setId(objectUuid);
         response.setResponseName(cmd.getCommandName());
