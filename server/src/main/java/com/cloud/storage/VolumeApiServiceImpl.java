@@ -2215,10 +2215,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Volume vol = null;
         try {
             outcome.get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Operation is interrupted", e);
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Execution excetion", e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId deviceId, e.getMessage()), e);
         }
 
         Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -2253,10 +2251,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private void checkForMatchinHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
         // managed storage can be used for different types of hypervisors
         // only perform this check if the volume's storage pool is not null and not managed
-        if (checkNeeded) {
-            if (volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
-                throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
-            }
+        if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
+            throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
         }
     }
 
@@ -2284,7 +2280,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // if target VM has backups
-        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+        if (CollectionUtils.isNotEmpty(vm.getBackupOfferingId())) {
             throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
         }
     }
