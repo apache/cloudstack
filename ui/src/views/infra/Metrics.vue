@@ -209,19 +209,19 @@ export default {
     margin-bottom: 12px;
   }
 
-  /deep/ .ant-table-thead {
+  :deep(.ant-table-thead) {
     background-color: #f9f9f9;
   }
 
-  /deep/ .ant-table-small > .ant-table-content > .ant-table-body {
+  :deep(.ant-table-small) > .ant-table-content > .ant-table-body {
     margin: 0;
   }
 
-  /deep/ .light-row {
+  :deep(.light-row) {
     background-color: #fff;
   }
 
-  /deep/ .dark-row {
+  :deep(.dark-row) {
     background-color: #f9f9f9;
   }
   .metric-card {
