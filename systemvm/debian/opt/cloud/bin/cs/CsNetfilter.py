@@ -233,7 +233,6 @@ class CsNetfilters(object):
                 CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
 
     def apply_ip6_rules(self, rules, type):
-        logging.info("@pply--Add IPv6 rules: %s", rules)
         if len(rules) == 0:
             return
         address_family = 'ip6'
