@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
@@ -196,7 +197,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         final String ipv6Address = result.first();
         final String event = EventTypes.EVENT_NET_IP6_ASSIGN;
         final String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Address,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         final String guestType = result.second().getVlanType().toString();
         UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
@@ -424,7 +425,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     public void releasePublicIpv6ForNic(Network network, String nicIpv6Address) {
         String event = EventTypes.EVENT_NET_IP6_RELEASE;
         String description = String.format("Releasing public IPv6 address: %s from network ID: %s", nicIpv6Address,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
                 nicIpv6Address, false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
