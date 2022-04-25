@@ -53,14 +53,14 @@ public class ApiSessionListener implements HttpSessionListener, ServletRequestLi
             HttpSession session = event.getSession();
             sessions.put(session, event.getSource());
         }
-        LOGGER.debug("Sessions count: " + sessions.size());
+        LOGGER.debug("Sessions count: " + getSessionCount());
     }
     public void sessionDestroyed(HttpSessionEvent event) {
         LOGGER.debug("Session destroyed by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
         synchronized (this) {
             sessions.remove(event.getSession());
         }
-        LOGGER.debug("Sessions count: " + sessions.size());
+        LOGGER.debug("Sessions count: " + getSessionCount());
     }
 
     @Override
