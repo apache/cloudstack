@@ -35,6 +35,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.user.Account;
@@ -194,6 +195,10 @@ public interface NetworkModel {
     Provider getDefaultUniqueProviderForService(String serviceName);
 
     void checkNetworkPermissions(Account owner, Network network);
+
+    void checkNetworkOperatePermissions(Account owner, Network network);
+
+    void checkRouterPermissions(Account owner, VirtualRouter router);
 
     String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType);
 

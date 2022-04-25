@@ -52,6 +52,12 @@ public class SshHelper {
         scpTo(host, port, user, pemKeyFile, password, remoteTargetDirectory, localFile, fileMode, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
     }
 
+    public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, String[] localFiles, String fileMode)
+            throws Exception {
+
+        scpTo(host, port, user, pemKeyFile, password, remoteTargetDirectory, localFiles, fileMode, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
+    }
+
     public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, byte[] data, String remoteFileName,
             String fileMode) throws Exception {
 
@@ -112,6 +118,42 @@ public class SshHelper {
                 scpClient.put(localFile, remoteTargetDirectory, fileMode);
             else
                 scpClient.put(localFile, remoteTargetDirectory);
+        } finally {
+            if (conn != null)
+                conn.close();
+        }
+    }
+
+    public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, String[] localFiles, String fileMode,
+                             int connectTimeoutInMs, int kexTimeoutInMs) throws Exception {
+
+        com.trilead.ssh2.Connection conn = null;
+        com.trilead.ssh2.SCPClient scpClient = null;
+
+        try {
+            conn = new com.trilead.ssh2.Connection(host, port);
+            conn.connect(null, connectTimeoutInMs, kexTimeoutInMs);
+
+            if (pemKeyFile == null) {
+                if (!conn.authenticateWithPassword(user, password)) {
+                    String msg = "Failed to authentication SSH user " + user + " on host " + host;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            } else {
+                if (!conn.authenticateWithPublicKey(user, pemKeyFile, password)) {
+                    String msg = "Failed to authentication SSH user " + user + " on host " + host;
+                    s_logger.error(msg);
+                    throw new Exception(msg);
+                }
+            }
+
+            scpClient = conn.createSCPClient();
+
+            if (fileMode != null)
+                scpClient.put(localFiles, remoteTargetDirectory, fileMode);
+            else
+                scpClient.put(localFiles, remoteTargetDirectory);
         } finally {
             if (conn != null)
                 conn.close();

@@ -78,7 +78,7 @@ public class AprSocketSink extends BaseElement {
             socketWrapper.upgradeToSsl();
             break;
         case LINK_SWITCH_TO_PULL_MODE:
-            throw new RuntimeException("[" + this + "] ERROR: Unexpected event: sink recived LINK_SWITCH_TO_PULL_MODE event.");
+            throw new RuntimeException("[" + this + "] ERROR: Unexpected event: sink received LINK_SWITCH_TO_PULL_MODE event.");
         default:
             super.handleEvent(event, direction);
         }

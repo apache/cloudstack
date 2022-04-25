@@ -73,7 +73,7 @@
               <a-auto-complete
                 style="width: 100%"
                 v-model:value="item.value"
-                :options="detailOptions[item.name]"
+                :options="getDetailOptions(detailOptions[item.name])"
                 @change="val => handleInputChange(val, index)"
                 @pressEnter="e => updateDetail(index)" />
               <tooltip-button
@@ -223,6 +223,13 @@ export default {
     },
     handleInputChange (val, index) {
       this.details[index].value = val
+    },
+    getDetailOptions (values) {
+      if (!values) {
+        return
+      }
+      var data = values.map(value => { return { value: value } })
+      return data
     },
     onAddInputChange (val, obj) {
       this.error = false

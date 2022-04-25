@@ -422,7 +422,7 @@ class TestVMOwnership(cloudstackTestCase):
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'], snapshot=True)
         with self.assertRaises(Exception):
             self.virtual_machine.assign_virtual_machine(self.apiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
-		
+
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_14_move_across_subdomain_vm_project(self):

@@ -24,13 +24,7 @@
 set -e
 
 TMP=/tmp
-MOUNTPATH=${HOME}/systemvm_mnt
-TMPDIR=${TMP}/cloud/systemvm
 umask 022
-
-clean_up() {
-  $SUDO umount $MOUNTPATH
-}
 
 copy_priv_key() {
   local newprivkey=$1
@@ -44,8 +38,6 @@ if [[ "$EUID" -ne 0  ]]
 then
    SUDO="sudo -n "
 fi
-
-$SUDO mkdir -p $MOUNTPATH
 
 [ $# -ne 1 ] && echo "Usage: $(basename $0) <new private key file>" && exit 3
 newprivkey=$1

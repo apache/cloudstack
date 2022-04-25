@@ -140,6 +140,11 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         return true;
     }
 
+    @Override
+    public boolean hostEnabled(long hostId) {
+        return true;
+    }
+
     private void handleVMware(HostVO host, boolean add, ModifyTargetsCommand.TargetTypeToRemove targetTypeToRemove) {
         if (HypervisorType.VMware.equals(host.getHypervisorType())) {
             List<StoragePoolVO> storagePools = storagePoolDao.findPoolsByProvider(SolidFireUtil.SHARED_PROVIDER_NAME);

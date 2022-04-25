@@ -26,7 +26,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.nio.Link;
 
 /**
- * ConnectedAgentAttache implements an direct connection to this management server.
+ * ConnectedAgentAttache implements a direct connection to this management server.
  */
 public class ConnectedAgentAttache extends AgentAttache {
     private static final Logger s_logger = Logger.getLogger(ConnectedAgentAttache.class);

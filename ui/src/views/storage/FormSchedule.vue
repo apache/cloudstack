@@ -195,10 +195,12 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import { timeZone } from '@/utils/timezone'
+import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
 
 export default {
   name: 'FormSchedule',
+  mixins: [mixinForm],
   components: {
     TooltipButton
   },
@@ -349,7 +351,8 @@ export default {
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         let params = {}
         params.volumeid = this.volumeId

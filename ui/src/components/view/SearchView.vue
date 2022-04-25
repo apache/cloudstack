@@ -53,8 +53,7 @@
                   v-for="(field, index) in fields"
                   :key="index"
                   :label="field.name==='keyword' ?
-                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
-                    (field.name==='entitytype' ? $t('label.entity.type') : $t('label.' + field.name))">
+                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
@@ -251,7 +250,7 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype'].includes(item)) {
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -271,6 +270,15 @@ export default {
       let domainIndex = -1
       let podIndex = -1
       let clusterIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
+          this.fields[typeIndex].loading = false
+        }
+      }
 
       if (arrayField.includes('state')) {
         const stateIndex = this.fields.findIndex(item => item.name === 'state')
@@ -431,6 +439,24 @@ export default {
           reject(error.response.headers['x-description'])
         })
       })
+    },
+    fetchGuestNetworkTypes () {
+      const types = []
+      if (this.apiName.indexOf('listNetworks') > -1) {
+        types.push({
+          id: 'Isolated',
+          name: 'label.isolated'
+        })
+        types.push({
+          id: 'Shared',
+          name: 'label.shared'
+        })
+        types.push({
+          id: 'L2',
+          name: 'label.l2'
+        })
+      }
+      return types
     },
     fetchState () {
       const state = []

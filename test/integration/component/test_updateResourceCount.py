@@ -143,7 +143,7 @@ class TestUpdateResourceCount(cloudstackTestCase):
         )
         self.debug("Created account: %s" % self.account.name)
         self.cleanup.append(self.account)
-        
+
         return
 
     def tearDown(self):
@@ -165,7 +165,7 @@ class TestUpdateResourceCount(cloudstackTestCase):
     def test_01_updateResourceCount(self):
         """Test update resource count for an account using a custom service offering to deploy a VM.
         """
-        
+
         # This test will execute the following steps to assure resource count update is working properly
         # 1. Create an account.
         # 2. Start 2 VMs; one with normal service offering and other with a custom service offering
@@ -173,7 +173,7 @@ class TestUpdateResourceCount(cloudstackTestCase):
         #    The two VMs will add up to 3 CPUs and 1024Mb of RAM.
         # 4. If the return of updateResourceCount method matches with the expected one, the test passes; otherwise, it fails.
         # 5. Remove everything created by deleting the account
-        
+
         vm_1 = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -184,12 +184,12 @@ class TestUpdateResourceCount(cloudstackTestCase):
             customcpuspeed = 1000,
             custommemory = 512
         )
-        
+
         self.debug("Deployed VM 1 in account: %s, ID: %s" % (
             self.account.name,
             vm_1.id
         ))
-        
+
         vm_2 = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -207,8 +207,8 @@ class TestUpdateResourceCount(cloudstackTestCase):
             resourcetype=8,
             account=self.account.name,
             domainid=self.account.domainid
-        ) 
-            
+        )
+
         self.debug("ResourceCount for CPU: %s" % (
             resourceCountCpu[0].resourcecount
         ))
@@ -222,8 +222,8 @@ class TestUpdateResourceCount(cloudstackTestCase):
             resourcetype=9,
             account=self.account.name,
             domainid=self.account.domainid
-        ) 
-            
+        )
+
         self.debug("ResourceCount for memory: %s" % (
             resourceCountMemory[0].resourcecount
         ))

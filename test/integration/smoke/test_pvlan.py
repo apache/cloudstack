@@ -30,12 +30,27 @@ _multiprocess_shared_ = True
 class TestPVLAN(cloudstackTestCase):
 
     zoneId = 1
-    networkOfferingId = 7
     vlan = 2468
     isolatedpvlan = 864
 
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
+        list_shared_network_offerings = NetworkOffering.list(
+            self.apiClient,
+            name="DefaultSharedNetworkOffering",
+            displayText="Offering for Shared networks"
+            )
+        self.assertEqual(
+            isinstance(list_shared_network_offerings, list),
+            True,
+            "List network offerings response was not a valid list"
+        )
+        self.assertNotEqual(
+            len(list_shared_network_offerings),
+            0,
+            "List network offerings response was empty"
+        )
+        self.networkOfferingId = list_shared_network_offerings[0].id
 
     @attr(tags = ["advanced"], required_hardware="false")
     def test_create_pvlan_network(self):

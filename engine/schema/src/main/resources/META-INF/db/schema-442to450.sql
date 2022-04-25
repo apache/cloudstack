@@ -272,7 +272,7 @@ CREATE TABLE `cloud`.`external_brocade_vcs_devices` (
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which brocade vcs switch is added',
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this brocade vcs switch',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the brocade vcs switch',
-  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external brocade vcs switch',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id corresponding to the external brocade vcs switch',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_external_brocade_vcs_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_brocade_vcs_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE

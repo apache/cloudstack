@@ -2674,7 +2674,7 @@ RFB.messages = {
     },
 
     extendedClipboardProvide(sock, formats, inData) {
-        // Deflate incomming data and their sizes
+        // Deflate incoming data and their sizes
         let deflator = new Deflator();
         let dataToDeflate = [];
 

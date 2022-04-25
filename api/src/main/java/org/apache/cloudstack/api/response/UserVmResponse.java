@@ -175,11 +175,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "the number of cpu this virtual machine is running with")
+    @Param(description = "the number of vCPUs this virtual machine is using")
     private Integer cpuNumber;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "the speed of each cpu")
+    @Param(description = "the speed of each vCPU")
     private Integer cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
@@ -187,7 +187,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Integer memory;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
+    @Param(description = "the vGPU type used by the virtual machine", since = "4.4")
     private String vgpu;
 
     @SerializedName("cpuused")
@@ -195,39 +195,39 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String cpuUsed;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the vm")
+    @Param(description = "the incoming network traffic on the VM in KiB")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "the outgoing network traffic on the host in KiB")
     private Long networkKbsWrite;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the read (bytes) of disk on the vm")
+    @Param(description = "the VM's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the write (bytes) of disk on the vm")
+    @Param(description = "the VM's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the vm")
+    @Param(description = "the memory used by the VM in KiB")
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
+    @Param(description = "the internal memory (KiB) that's free in VM or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in vm")
+    @Param(description = "the target memory in VM (KiB)")
     private Long memoryTargetKBs;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (io) of disk on the vm")
+    @Param(description = "the read (IO) of disk on the VM")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (io) of disk on the vm")
+    @Param(description = "the write (IO) of disk on the VM")
     private Long diskIOWrite;
 
     @SerializedName("guestosid")

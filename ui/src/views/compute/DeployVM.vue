@@ -246,7 +246,7 @@
                       memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
-                      :isConstrained="'serviceofferingdetails' in serviceOffering"
+                      :isConstrained="isOfferingConstrained(serviceOffering)"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
@@ -1477,6 +1477,11 @@ export default {
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
+    isOfferingConstrained (serviceOffering) {
+      return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
+        'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
+        'minmemory' in serviceOffering.serviceofferingdetails
+    },
     getImg (image) {
       return 'data:image/png;charset=utf-8;base64, ' + image
     },
@@ -1648,7 +1653,6 @@ export default {
     handleSubmitAndStay (e) {
       this.form.stayonpage = true
       this.handleSubmit(e.domEvent)
-      this.form.stayonpage = false
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1696,8 +1700,10 @@ export default {
         deployVmData.clusterid = values.clusterid
         deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
-        deployVmData.boottype = values.boottype
-        deployVmData.bootmode = values.bootmode
+        if (!this.template?.deployasis) {
+          deployVmData.boottype = values.boottype
+          deployVmData.bootmode = values.bootmode
+        }
         deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
         if (values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
@@ -1881,6 +1887,9 @@ export default {
           }
         }).catch(error => {
           this.$notifyError(error)
+          this.loading.deploy = false
+        }).finally(() => {
+          this.form.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {
