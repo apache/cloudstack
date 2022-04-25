@@ -514,6 +514,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().putContextParameter(VpcOffering.class, offering.getUuid());
 
         return offering;
     }
@@ -1057,7 +1058,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final VpcVO persistedVpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
                 _resourceLimitMgr.incrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
                 s_logger.debug("Created VPC " + persistedVpc);
-
+                CallContext.current().putContextParameter(Vpc.class, persistedVpc.getUuid());
                 return persistedVpc;
             }
         });
@@ -2641,7 +2642,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         });
 
         s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
-
+        CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
         return _ipAddressDao.findById(ipId);
     }
 

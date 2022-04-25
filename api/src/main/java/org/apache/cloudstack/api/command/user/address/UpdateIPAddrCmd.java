@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -132,5 +133,15 @@ public class UpdateIPAddrCmd extends BaseAsyncCustomIdCmd {
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
     }
 }

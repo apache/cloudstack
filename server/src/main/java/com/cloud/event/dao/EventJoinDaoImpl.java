@@ -16,18 +16,25 @@
 // under the License.
 package com.cloud.event.dao;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
+import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.EventResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -42,6 +49,24 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
     private SearchBuilder<EventJoinVO> vrIdSearch;
 
     private SearchBuilder<EventJoinVO> CompletedEventSearch;
+
+    @Inject
+    EntityManager entityMgr;
+
+    private String getResourceName(Object obj) {
+        String[] possibleMethods = {"getDisplayName", "getHostName","getName", "getAccountName", "getUsername"};
+        for (String possibleMethodName : possibleMethods) {
+            try {
+                Method m = obj.getClass().getMethod(possibleMethodName);
+                String name = (String)m.invoke(obj);
+                if (StringUtils.isEmpty(name)) {
+                    continue;
+                }
+                return name;
+            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {}
+        }
+        return null;
+    }
 
     protected EventJoinDaoImpl() {
 
@@ -85,7 +110,19 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
         responseEvent.setParentId(event.getStartUuid());
         responseEvent.setState(event.getState());
         responseEvent.setUsername(event.getUserName());
-
+        Long resourceId = event.getResourceId();
+        responseEvent.setResourceType(event.getResourceType());
+        ApiCommandResourceType resourceType = ApiCommandResourceType.fromString(event.getResourceType());
+        Class<?> clazz = resourceType != null ? resourceType.getAssociatedClass() : null;
+        if (ObjectUtils.allNotNull(resourceId, clazz) && entityMgr.validEntityType(clazz)) {
+            final Object objVO = entityMgr.findByIdIncludingRemoved(clazz, resourceId);
+            if (objVO instanceof Identity) {
+                responseEvent.setResourceId(((Identity)objVO).getUuid());
+            }
+            if (objVO != null) {
+                responseEvent.setResourceName(getResourceName(objVO));
+            }
+        }
         ApiResponseHelper.populateOwner(responseEvent, event);
         responseEvent.setObjectName("event");
         return responseEvent;

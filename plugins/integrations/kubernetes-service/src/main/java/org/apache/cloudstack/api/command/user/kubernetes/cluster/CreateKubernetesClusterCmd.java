@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import com.cloud.kubernetes.cluster.KubernetesCluster;
-import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
-import com.cloud.kubernetes.cluster.KubernetesClusterService;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.security.InvalidParameterException;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -41,8 +41,10 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.security.InvalidParameterException;
+import com.cloud.kubernetes.cluster.KubernetesCluster;
+import com.cloud.kubernetes.cluster.KubernetesClusterEventTypes;
+import com.cloud.kubernetes.cluster.KubernetesClusterService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateKubernetesClusterCmd.APINAME,
         description = "Creates a Kubernetes cluster",
@@ -275,8 +277,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.VirtualMachine;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

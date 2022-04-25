@@ -20,7 +20,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -146,16 +146,6 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     }
 
     @Override
-    public Long getInstanceId() {
-        return getId();
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Network;
-    }
-
-    @Override
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
@@ -224,5 +214,15 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         if (getCustomId() != null) {
             _uuidMgr.checkUuid(getCustomId(), Network.class);
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
     }
 }

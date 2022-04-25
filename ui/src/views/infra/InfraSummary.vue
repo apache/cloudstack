@@ -214,6 +214,9 @@ export default {
     fetchData () {
       this.routes = {}
       for (const section of this.sections) {
+        if (router.resolve('/' + section.substring(0, section.length - 1)).matched[0].redirect === '/exception/404') {
+          continue
+        }
         const node = router.resolve({ name: section.substring(0, section.length - 1) })
         this.routes[section] = {
           title: node.meta.title,

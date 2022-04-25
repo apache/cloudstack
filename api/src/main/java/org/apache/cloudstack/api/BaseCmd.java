@@ -433,4 +433,21 @@ public abstract class BaseCmd {
         return null;
     }
 
+    /**
+     * Commands that generate action events associated to a resource and
+     * async commands that want to be tracked as part of the listXXX commands
+     * need to provide implementations of the two following methods,
+     * getApiResourceId() and getApiResourceType()
+     *
+     * getApiResourceId() should return the id of the object the async command is executing on
+     * getApiResourceType() should return a type from the ApiCommandResourceType enumeration
+     */
+    public Long getApiResourceId() {
+        return null;
+    }
+
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.None;
+    }
+
 }

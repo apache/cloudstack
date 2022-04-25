@@ -580,6 +580,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
                 s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
                 success = true;
+                CallContext.current().putContextParameter(Cluster.class, cluster.getUuid());
                 return result;
             }
 
@@ -1331,7 +1332,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new CloudRuntimeException(err + e.getMessage());
         }
 
-        ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventTypes.EVENT_MAINTENANCE_PREPARE, "starting maintenance for host " + hostId, true, 0);
+        ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventTypes.EVENT_MAINTENANCE_PREPARE, "starting maintenance for host " + hostId, hostId, null, true, 0);
         _agentMgr.pullAgentToMaintenance(hostId);
 
         /* TODO: move below to listener */
@@ -1652,7 +1653,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                 EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
-                "completed maintenance for host " + host.getId(), 0);
+                "completed maintenance for host " + host.getId(), host.getId(), null, 0);
         return true;
     }
 

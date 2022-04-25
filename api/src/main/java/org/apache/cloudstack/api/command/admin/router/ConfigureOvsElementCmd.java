@@ -21,7 +21,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -106,12 +106,12 @@ public class ConfigureOvsElementCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.None;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.None;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return id;
     }
 
