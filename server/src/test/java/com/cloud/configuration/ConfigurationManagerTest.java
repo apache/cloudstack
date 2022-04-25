@@ -1060,5 +1060,6 @@ public class ConfigurationManagerTest {
         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
 
         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+        Mockito.verify(diskOfferingVOMock, Mockito.times(1)).setTags(tags);
     }
 }

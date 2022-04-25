@@ -115,6 +115,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
@@ -3803,15 +3804,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 for (StoragePoolVO storagePoolVO : pools) {
                     List<String> tagsOnPool = storagePoolTagDao.getStoragePoolTags(storagePoolVO.getId());
                     if (CollectionUtils.isEmpty(tagsOnPool) || !tagsOnPool.containsAll(listOfTags)) {
-                                                String offeringUuid = _diskOfferingDao.findById(diskOffering.getId()).getUuid();
+                        DiskOfferingVO offeringToRetrieveInfo = _diskOfferingDao.findById(diskOffering.getId());
                         List<VolumeVO> volumes = _volumeDao.findByDiskOfferingId(diskOffering.getId());
                         List<String> listOfVolumesNamesAndUuid = new ArrayList<>();
-                        for (VolumeVO volumeVO : volumes) {
-                            listOfVolumesNamesAndUuid.add(String.format("Name: %s, UUID: %s",volumeVO.getName(), volumeVO.getUuid()));
-                        }
-                        throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering [Name: %s, UUID: %s], and the pool [Name: %s, UUID: %s] doesn't have the new tags. " +
-                                "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them to the disk offering.",
-                                diskOffering.getName(), offeringUuid, storagePoolVO.getName(), storagePoolVO.getUuid(), listOfVolumesNamesAndUuid));
+
+                        String diskOfferingInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offeringToRetrieveInfo, "name", "uuid");
+                        String poolInfo = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(storagePoolVO, "name", "uuid");
+
+                        for (VolumeVO volumeVO : volumes)
+                            listOfVolumesNamesAndUuid.add(ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumeVO, "name", "uuid"));
+                        throw new InvalidParameterValueException(String.format("There are active volumes using the disk offering %s, and the pool %s doesn't have the new tags. " +
+                                "The following volumes are using the mentioned disk offering %s. Please first add the new tags to the mentioned storage pools before adding them" +
+                                " to the disk offering.", diskOfferingInfo, poolInfo, listOfVolumesNamesAndUuid));
                     }
                 }
             }

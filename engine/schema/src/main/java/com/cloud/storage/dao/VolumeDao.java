@@ -133,7 +133,7 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     void updateDiskOffering(long volumeId, long diskOfferingId);
 
     /**
-     *  Get volumes by the disk offering ID.
+     *  Gets volumes by the disk offering ID.
      *
      * @param diskOfferingId the disk offering ID.
      * @return the list of volumes that uses that disk offering.
