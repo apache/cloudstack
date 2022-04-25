@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -293,8 +293,8 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return s_name;
     }
 
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Template;
+    public ApiCommandResourceType getInstanceType() {
+        return ApiCommandResourceType.Template;
     }
 
     @Override

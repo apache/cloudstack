@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -161,4 +162,13 @@ public class ReserveIPAddrCmd extends BaseCmd implements UserCmd {
         }
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getIpAddressId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
+    }
 }

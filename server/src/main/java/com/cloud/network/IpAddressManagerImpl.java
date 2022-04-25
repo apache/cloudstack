@@ -34,6 +34,7 @@ import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -1720,7 +1721,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         // trigger an action event for the transfer of portable IP across the networks, so that external entities
         // monitoring for this event can initiate the route advertisement for the availability of IP from the zoe
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, EventTypes.EVENT_PORTABLE_IP_TRANSFER,
-                "Portable IP associated is transferred from network " + currentNetworkId + " to " + newNetworkId);
+                "Portable IP associated is transferred from network " + currentNetworkId + " to " + newNetworkId, newNetworkId, ApiCommandResourceType.Network.toString());
     }
 
     protected List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {

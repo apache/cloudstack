@@ -33,4 +33,8 @@ public @interface ActionEvent {
     String eventType();
 
     String eventDescription();
+
+    long resourceId() default -1;
+
+    String resourceType() default "";
 }

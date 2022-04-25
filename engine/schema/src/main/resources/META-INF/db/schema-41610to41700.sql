@@ -746,3 +746,51 @@ from
     (`cloud`.`mshost`
 left join `cloud`.`mshost_status` on
     ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)));
+
+-- Alter event table to add resource_id and resource_type
+ALTER TABLE `cloud`.`event`
+    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the even' AFTER `domain_id`,
+    ADD COLUMN `resource_type` varchar(32) COMMENT 'Account role in the project (Owner or Regular)' AFTER `resource_id`;
+
+DROP VIEW IF EXISTS `cloud`.`event_view`;
+CREATE VIEW `cloud`.`event_view` AS
+    SELECT
+        event.id,
+        event.uuid,
+        event.type,
+        event.state,
+        event.description,
+        event.resource_id,
+        event.resource_type,
+        event.created,
+        event.level,
+        event.parameters,
+        event.start_id,
+        eve.uuid start_uuid,
+        event.user_id,
+        event.archived,
+        event.display,
+        user.username user_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name
+    FROM
+        `cloud`.`event`
+            INNER JOIN
+        `cloud`.`account` ON event.account_id = account.id
+            INNER JOIN
+        `cloud`.`domain` ON event.domain_id = domain.id
+            INNER JOIN
+        `cloud`.`user` ON event.user_id = user.id
+            LEFT JOIN
+        `cloud`.`projects` ON projects.project_account_id = event.account_id
+            LEFT JOIN
+        `cloud`.`event` eve ON event.start_id = eve.id;

@@ -81,7 +81,7 @@
           </a-button>
         </a-col>
         <a-col :xs="{span: 1, offset: 3}" :md="1">
-          <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
+          <a-button :disabled="options.img === ''" type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
         </a-col>
         <a-col :xs="{span: 2, offset: 5}" :md="2">
           <a-button

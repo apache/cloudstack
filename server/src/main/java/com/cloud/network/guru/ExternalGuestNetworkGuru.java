@@ -17,6 +17,15 @@
 package com.cloud.network.guru;
 
 
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
@@ -60,12 +69,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.util.List;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
@@ -158,7 +161,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO,
-                EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
+                EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), config.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             vlanTag = Integer.parseInt(BroadcastDomainType.getValue(config.getBroadcastUri()));
             implemented.setBroadcastUri(config.getBroadcastUri());

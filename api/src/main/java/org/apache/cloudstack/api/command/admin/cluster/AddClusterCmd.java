@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -204,6 +205,11 @@ public class AddClusterCmd extends BaseCmd {
 
     public void setAllocationState(String allocationState) {
         this.allocationState = allocationState;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Cluster;
     }
 
     @Override

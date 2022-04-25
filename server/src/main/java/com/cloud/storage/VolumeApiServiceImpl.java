@@ -33,13 +33,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.server.ManagementService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmDetailVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -102,6 +95,7 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
@@ -114,6 +108,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -142,8 +138,11 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -183,6 +182,8 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -207,7 +208,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -358,22 +358,38 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId, Volume.State.Allocated);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), cmd.getFormat());
+        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
 
         volService.registerVolume(vol, store);
         return volume;
+    }
+
+    private String sanitizeFormat(String format) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(format)) {
+            throw new CloudRuntimeException("Please provide a format");
+        }
+
+        String uppercase = format.toUpperCase();
+        try {
+            ImageFormat.valueOf(uppercase);
+        } catch (IllegalArgumentException e) {
+            String msg = "Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values());
+            s_logger.error("ImageFormat IllegalArgumentException: " + e.getMessage(), e);
+            throw new IllegalArgumentException(msg);
+        }
+        return uppercase;
     }
 
     @Override
@@ -384,7 +400,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final Account owner = _entityMgr.findById(Account.class, ownerId);
         final Long zoneId = cmd.getZoneId();
         final String volumeName = cmd.getName();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
@@ -395,11 +411,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             @Override
             public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
-                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
+                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
 
                 VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), format);
                 vol.addPayload(payload);
 
                 Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
@@ -487,12 +503,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
-        try {
-            ImageFormat.valueOf(format.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
-            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-        }
+        sanitizeFormat(format);
 
         // Check that the the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -582,6 +593,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().putContextParameter(Volume.class, volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
@@ -897,7 +909,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
-
+                CallContext.current().putContextParameter(Volume.class, volume.getId());
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);

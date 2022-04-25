@@ -354,6 +354,60 @@ export const resourceTypePlugin = {
         return type
       }
     }
+
+    app.config.globalProperties.$getRouteFromResourceType = function (resourceType) {
+      switch (resourceType) {
+        case 'VirtualMachine':
+          return 'vm'
+        case 'DomainRouter':
+          return 'router'
+        case 'ConsoleProxy':
+          return 'systemvm'
+        case 'User':
+          return 'accountuser'
+        case 'Network':
+          return 'guestnetwork'
+        case 'ServiceOffering':
+          return 'computeoffering'
+        case 'IpAddress':
+          return 'publicip'
+        case 'SystemVm':
+        case 'PhysicalNetwork':
+        case 'Backup':
+        case 'SecurityGroup':
+        case 'StoragePool':
+        case 'ImageStore':
+        case 'Template':
+        case 'Iso':
+        case 'Host':
+        case 'Volume':
+        case 'Account':
+        case 'Snapshot':
+        case 'Project':
+        case 'Domain':
+        case 'DiskOffering':
+        case 'NetworkOffering':
+        case 'VpcOffering':
+        case 'BackupOffering':
+        case 'Zone':
+        case 'Vpc':
+        case 'VmSnapshot':
+        case 'Pod':
+        case 'Cluster':
+        case 'Role':
+        case 'AffinityGroup':
+        case 'VpnCustomerGateway':
+          return resourceType.toLowerCase()
+      }
+      return ''
+    }
+
+    app.config.globalProperties.$getIconFromResourceType = function (resourceType) {
+      var routePath = this.$getRouteFromResourceType(resourceType)
+      if (!routePath) return ''
+      var route = this.$router.resolve('/' + routePath)
+      return route?.meta?.icon || ''
+    }
   }
 }
 

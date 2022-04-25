@@ -366,6 +366,12 @@
             </li>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.resourcetype && resource.resourceid && routeFromResourceType">
+          <div class="resource-detail-item__label">{{ $t('label.resource') }}</div>
+          <div class="resource-detail-item__details">
+            <resource-label :resourceType="resource.resourcetype" :resourceId="resource.resourceid" :resourceName="resource.resourcename" />
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.virtualmachineid">
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
@@ -704,6 +710,7 @@ import TooltipButton from '@/components/widgets/TooltipButton'
 import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'InfoCard',
@@ -713,7 +720,8 @@ export default {
     Status,
     TooltipButton,
     UploadResourceIcon,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   props: {
     resource: {
@@ -833,6 +841,9 @@ export default {
         return this.resource.icon.base64image
       }
       return null
+    },
+    routeFromResourceType () {
+      return this.$getRouteFromResourceType(this.resource.resourcetype)
     }
   },
   methods: {

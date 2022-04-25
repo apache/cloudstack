@@ -117,6 +117,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -269,7 +270,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 
@@ -1390,6 +1390,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_POD_DELETE, eventDescription = "deleting pod", async = false)
     public boolean deletePod(final DeletePodCmd cmd) {
         final Long podId = cmd.getId();
 
@@ -1897,6 +1898,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_POD_EDIT, eventDescription = "updating pod", async = false)
     public Pod editPod(final UpdatePodCmd cmd) {
         return editPod(cmd.getId(), cmd.getPodName(), null, null, cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
     }
@@ -2010,6 +2012,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
         // Check if the gateway is a valid IP address
         if (!NetUtils.isValidIp4(gateway)) {
@@ -2094,6 +2097,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (linkLocalIpRanges != null) {
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
+
+                CallContext.current().putContextParameter(Pod.class, pod.getUuid());
 
                 return pod;
             }
@@ -3028,6 +3033,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
+            CallContext.current().putContextParameter(ServiceOffering.class, serviceOffering.getId());
             return serviceOffering;
         } else {
             return null;
@@ -3451,6 +3457,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+            CallContext.current().putContextParameter(DiskOffering.class, newDiskOffering.getId());
             return offering;
         }
         return null;
@@ -5891,6 +5898,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
                 serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
     }
 
