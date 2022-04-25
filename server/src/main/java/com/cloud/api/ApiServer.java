@@ -728,7 +728,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // save the scheduled event
             final Long eventId =
                     ActionEventUtils.onScheduledActionEvent((callerUserId == null) ? (Long)User.UID_SYSTEM : callerUserId, asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(),
-                            asyncCmd.getEventDescription(), asyncCmd.isDisplay(), startEventId);
+                            asyncCmd.getEventDescription(), asyncCmd.getApiResourceId(), asyncCmd.getApiResourceType().toString(), asyncCmd.isDisplay(), startEventId);
             if (startEventId == 0) {
                 // There was no create event before, set current event id as start eventId
                 startEventId = eventId;
@@ -738,7 +738,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             params.put("cmdEventType", asyncCmd.getEventType().toString());
             params.put("ctxDetails", ApiGsonHelper.getBuilder().create().toJson(ctx.getContextParameters()));
 
-            Long instanceId = (objectId == null) ? asyncCmd.getInstanceId() : objectId;
+            Long instanceId = (objectId == null) ? asyncCmd.getApiResourceId() : objectId;
 
             // users can provide the job id they want to use, so log as it is a uuid and is unique
             String injectedJobId = asyncCmd.getInjectedJobId();
@@ -746,7 +746,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             AsyncJobVO job = new AsyncJobVO("", callerUserId, caller.getId(), cmdObj.getClass().getName(),
                     ApiGsonHelper.getBuilder().create().toJson(params), instanceId,
-                    asyncCmd.getInstanceType() != null ? asyncCmd.getInstanceType().toString() : null,
+                    asyncCmd.getApiResourceType() != null ? asyncCmd.getApiResourceType().toString() : null,
                             injectedJobId);
             job.setDispatcher(asyncDispatcher.getName());
 
@@ -801,9 +801,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             // list all jobs for ROOT admin
             if (accountMgr.isRootAdmin(account.getId())) {
-                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), null);
+                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), null);
             } else {
-                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType().toString(), account.getId());
+                jobs = asyncMgr.findInstancePendingAsyncJobs(command.getApiResourceType().toString(), account.getId());
             }
 
             if (jobs.size() == 0) {

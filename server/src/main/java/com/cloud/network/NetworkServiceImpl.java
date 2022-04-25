@@ -601,7 +601,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _accountMgr.checkAccess(caller, null, false, ipOwner);
         }
 
-        return _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp, ipaddress);
+        IpAddress address = _ipAddrMgr.allocateIp(ipOwner, false, caller, callerUserId, zone, displayIp, ipaddress);
+        if (address != null) {
+            CallContext.current().putContextParameter(IpAddress.class, address.getUuid());
+        }
+        return address;
     }
 
     @Override
@@ -3474,6 +3478,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     // Add the config drive provider
                     addConfigDriveToPhysicalNetwork(pNetwork.getId());
 
+                    CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
+
                     return pNetwork;
                 }
             });
@@ -4854,8 +4860,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             releaseIpAddress(ipId);
             throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" + " to VPC.Specify vpcId to associate ip address to VPC");
         }
-        return _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, true);
-
+        IpAddress address = _ipAddrMgr.associateIPToGuestNetwork(ipId, networkId, true);
+        if (address != null) {
+            CallContext.current().putContextParameter(IpAddress.class, address.getUuid());
+        }
+        return address;
     }
 
     @Override

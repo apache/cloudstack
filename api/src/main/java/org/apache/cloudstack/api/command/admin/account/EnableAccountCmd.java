@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -107,5 +108,15 @@ public class EnableAccountCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to enable account");
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

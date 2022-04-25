@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -246,5 +247,10 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL Item");
             }
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAclItem;
     }
 }

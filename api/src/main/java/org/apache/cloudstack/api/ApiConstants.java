@@ -335,6 +335,7 @@ public class ApiConstants {
     public static final String RECONNECT = "reconnect";
     public static final String RECOVER = "recover";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
     public static final String RESPONSE = "response";

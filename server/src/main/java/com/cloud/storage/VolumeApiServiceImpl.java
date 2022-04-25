@@ -33,13 +33,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.server.ManagementService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmDetailVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -102,6 +95,7 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
@@ -114,6 +108,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -142,8 +138,11 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -183,6 +182,8 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -207,7 +208,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -593,6 +593,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().putContextParameter(Volume.class, volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
@@ -908,7 +909,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
-
+                CallContext.current().putContextParameter(Volume.class, volume.getId());
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
