@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.StorageUtil;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -356,15 +357,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
-                if (s_logger.isTraceEnabled()) {
-                    StringBuilder pooltable = new StringBuilder();
-                    pooltable.append("pools to choose from: ");
-                    int i = 1;
-                    for (StoragePool pool : poolList) {
-                        pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
-                    }
-                    s_logger.trace(pooltable.toString());
-                }
+                StorageUtil.traceLogStoragePools(poolList, s_logger, "pools to choose from: ");
                 // Check if the preferred storage pool can be used. If yes, use it.
                 Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
                 if (s_logger.isTraceEnabled()) {

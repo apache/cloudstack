@@ -190,34 +190,21 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+            StorageUtil.traceLogStoragePools(pools, s_logger, "pools to choose from: ");
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)",allocationAlgorithm));
-                StringBuilder pooltable = new StringBuilder();
-                pooltable.append("pools to choose from: ");
-                int i = 1;
-                for (StoragePool pool : pools) {
-                    pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
-                }
-                s_logger.trace(pooltable.toString());
+                s_logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)", allocationAlgorithm));
             }
+            StorageUtil.traceLogStoragePools(pools, s_logger, "pools to shuffle: ");
             Collections.shuffle(pools, secureRandom);
-            if (s_logger.isTraceEnabled()) {
-                StringBuilder pooltable = new StringBuilder();
-                pooltable.append("shuffled list of pools to choose from: ");
-                int i = 1;
-                for (StoragePool pool : pools) {
-                    pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
-                }
-                s_logger.trace(pooltable.toString());
-            }
+            StorageUtil.traceLogStoragePools(pools, s_logger, "shuffled list of pools to choose from: ");
         } else if (allocationAlgorithm.equals("userdispersing")) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("reordering: Algorithm == '%s'",allocationAlgorithm));
+                s_logger.trace("reordering: Algorithm == 'userdispersing'");
             }
             pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
         } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("reordering: Algorithm == '%s'",allocationAlgorithm));
+                s_logger.trace("reordering: Algorithm == 'firstfitleastconsumed'");
             }
             pools = reorderPoolsByCapacity(plan, pools);
         }
