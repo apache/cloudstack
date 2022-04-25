@@ -2533,7 +2533,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesSent(bytesSent);
 
         if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
-            response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
+            response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId(), NetUtils.InternetProtocol.IPv4).toString());
             response.setIpv6Routing(Network.Routing.Static.toString());
             response.setIpv6Routes(new LinkedHashSet<>());
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
