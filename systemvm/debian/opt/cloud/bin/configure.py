@@ -274,7 +274,9 @@ class CsAcl(CsDataBag):
             self.egress = []
             self.device = obj['device']
             self.ip = obj['nic_ip']
-            self.ip6_cidr = obj['nic_ip6_cidr']
+            self.ip6_cidr = None
+            if "nic_ip6_cidr" in obj.keys():
+                self.ip6_cidr = obj['nic_ip6_cidr']
             self.netmask = obj['nic_netmask']
             self.config = config
             self.cidr = "%s/%s" % (self.ip, self.netmask)
@@ -290,6 +292,8 @@ class CsAcl(CsDataBag):
             self.process("egress", self.egress, self.FIXED_RULES_EGRESS)
 
         def __process_ip6(self, direction, rule_list):
+            if not self.ip6_cidr:
+                return
             tier_cidr = self.ip6_cidr
             chain = "%s_%s_policy" % (self.device, direction)
             rule = "accept"
