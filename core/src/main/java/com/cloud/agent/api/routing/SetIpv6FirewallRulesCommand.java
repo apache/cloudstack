@@ -30,16 +30,22 @@ import com.cloud.agent.api.to.FirewallRuleTO;
  */
 public class SetIpv6FirewallRulesCommand extends NetworkElementCommand {
     FirewallRuleTO[] rules;
+    String guestIp6Cidr;
 
     protected SetIpv6FirewallRulesCommand() {
     }
 
-    public SetIpv6FirewallRulesCommand(List<FirewallRuleTO> rules) {
+    public SetIpv6FirewallRulesCommand(List<FirewallRuleTO> rules, String guestIp6Cidr) {
         this.rules = rules.toArray(new FirewallRuleTO[rules.size()]);
+        this.guestIp6Cidr = guestIp6Cidr;
     }
 
     public FirewallRuleTO[] getRules() {
         return rules;
+    }
+
+    public String getGuestIp6Cidr() {
+        return guestIp6Cidr;
     }
 
     @Override
