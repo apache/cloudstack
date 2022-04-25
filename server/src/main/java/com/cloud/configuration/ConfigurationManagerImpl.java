@@ -116,6 +116,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -268,7 +270,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang3.StringUtils;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 
@@ -1056,7 +1057,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     s_logger.error("Failed to reset configuration option, name: " + name + ", defaultValue:" + defaultValue);
                     throw new CloudRuntimeException("Failed to reset configuration value. Please contact Cloud Support.");
                 }
-                optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : config.getValue());
+                optionalValue = Optional.ofNullable(configKey != null ? configKey.value() : _configDao.findByName(name).getValue());
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
@@ -1389,6 +1390,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_POD_DELETE, eventDescription = "deleting pod", async = false)
     public boolean deletePod(final DeletePodCmd cmd) {
         final Long podId = cmd.getId();
 
@@ -1896,6 +1898,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_POD_EDIT, eventDescription = "updating pod", async = false)
     public Pod editPod(final UpdatePodCmd cmd) {
         return editPod(cmd.getId(), cmd.getPodName(), null, null, cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
     }
@@ -2009,6 +2012,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
     public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
         // Check if the gateway is a valid IP address
         if (!NetUtils.isValidIp4(gateway)) {
@@ -2093,6 +2097,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (linkLocalIpRanges != null) {
                     _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
                 }
+
+                CallContext.current().putContextParameter(Pod.class, pod.getUuid());
 
                 return pod;
             }
@@ -3027,6 +3033,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             CallContext.current().setEventDetails("Service offering id=" + serviceOffering.getId());
+            CallContext.current().putContextParameter(ServiceOffering.class, serviceOffering.getId());
             return serviceOffering;
         } else {
             return null;
@@ -3450,6 +3457,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 diskOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
+            CallContext.current().putContextParameter(DiskOffering.class, newDiskOffering.getId());
             return offering;
         }
         return null;
@@ -4494,6 +4502,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        boolean isSharedNetworkWithoutSpecifyVlan = _networkMgr.isSharedNetworkWithoutSpecifyVlan(_networkOfferingDao.findById(network.getNetworkOfferingId()));
         if (ipv4) {
             final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(vlanGateway, vlanNetmask);
 
@@ -4518,69 +4527,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             checkConflictsWithPortableIpRange(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
-            // Throw an exception if this subnet overlaps with subnet on other VLAN,
-            // if this is ip range extension, gateway, network mask should be same and ip range should not overlap
-
-            final List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
-            for (final VlanVO vlan : vlans) {
-                final String otherVlanGateway = vlan.getVlanGateway();
-                final String otherVlanNetmask = vlan.getVlanNetmask();
-                // Continue if it's not IPv4
-                if ( otherVlanGateway == null || otherVlanNetmask == null ) {
-                    continue;
-                }
-                if ( vlan.getNetworkId() == null ) {
-                    continue;
-                }
-                final String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
-                if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
-                    continue;
-                }
-                // from here, subnet overlaps
-                if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
-                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
-                        BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
-                    // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
-                    final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
-                    final String otherVlanStartIP = otherVlanIpRange[0];
-                    String otherVlanEndIP = null;
-                    if (otherVlanIpRange.length > 1) {
-                        otherVlanEndIP = otherVlanIpRange[1];
-                    }
-
-                    // extend IP range
-                    if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
-                        throw new InvalidParameterValueException("The IP range has already been added with gateway "
-                                + otherVlanGateway + " ,and netmask " + otherVlanNetmask
-                                + ", Please specify the gateway/netmask if you want to extend ip range" );
-                    }
-                    if (!NetUtils.is31PrefixCidr(newCidr)) {
-                        if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-                            throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
-                                    " Please specify a different start IP/end IP.");
-                        }
-                    }
-                } else {
-                    // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
-                    boolean overlapped = false;
-                    if (network.getTrafficType() == TrafficType.Public) {
-                        overlapped = true;
-                    } else {
-                        final Long nwId = vlan.getNetworkId();
-                        if (nwId != null) {
-                            final Network nw = _networkModel.getNetwork(nwId);
-                            if (nw != null && nw.getTrafficType() == TrafficType.Public) {
-                                overlapped = true;
-                            }
-                        }
-
-                    }
-                    if (overlapped) {
-                        throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
-                                + " in zone " + zone.getName()
-                                + " has overlapped with the subnet. Please specify a different gateway/netmask.");
-                    }
-                }
+            if (!isSharedNetworkWithoutSpecifyVlan) {
+                checkZoneVlanIpOverlap(zone, network, newCidr, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
             }
         }
 
@@ -4611,6 +4559,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // Check if the vlan is being used
+        if (isSharedNetworkWithoutSpecifyVlan) {
+            bypassVlanOverlapCheck = true;
+        }
         if (!bypassVlanOverlapCheck && _zoneDao.findVnet(zoneId, physicalNetworkId, BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId))).size() > 0) {
             throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                     + zone.getName());
@@ -4630,6 +4581,68 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms);
 
         return vlan;
+    }
+
+    private void checkZoneVlanIpOverlap(DataCenterVO zone, Network network, String newCidr, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) {
+        // Throw an exception if this subnet overlaps with subnet on other VLAN,
+        // if this is ip range extension, gateway, network mask should be same and ip range should not overlap
+
+        final List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
+        for (final VlanVO vlan : vlans) {
+            final String otherVlanGateway = vlan.getVlanGateway();
+            final String otherVlanNetmask = vlan.getVlanNetmask();
+            // Continue if it's not IPv4
+            if (ObjectUtils.anyNull(otherVlanGateway, otherVlanNetmask, vlan.getNetworkId())) {
+                continue;
+            }
+            final String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
+            if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
+                continue;
+            }
+            // from here, subnet overlaps
+            if (vlanId.toLowerCase().contains(Vlan.UNTAGGED) || UriUtils.checkVlanUriOverlap(
+                    BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlanId)),
+                    BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan.getVlanTag())))) {
+                // For untagged VLAN Id and overlapping URIs we need to expand and verify IP ranges
+                final String[] otherVlanIpRange = vlan.getIpRange().split("\\-");
+                final String otherVlanStartIP = otherVlanIpRange[0];
+                String otherVlanEndIP = null;
+                if (otherVlanIpRange.length > 1) {
+                    otherVlanEndIP = otherVlanIpRange[1];
+                }
+
+                // extend IP range
+                if (!vlanGateway.equals(otherVlanGateway) || !vlanNetmask.equals(vlan.getVlanNetmask())) {
+                    throw new InvalidParameterValueException("The IP range has already been added with gateway "
+                            + otherVlanGateway + " ,and netmask " + otherVlanNetmask
+                            + ", Please specify the gateway/netmask if you want to extend ip range" );
+                }
+                if (!NetUtils.is31PrefixCidr(newCidr) && NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
+                    throw new InvalidParameterValueException("The IP range already has IPs that overlap with the new range." +
+                            " Please specify a different start IP/end IP.");
+                }
+            } else {
+                // For tagged or non-overlapping URIs we need to ensure there is no Public traffic type
+                boolean overlapped = false;
+                if (network.getTrafficType() == TrafficType.Public) {
+                    overlapped = true;
+                } else {
+                    final Long nwId = vlan.getNetworkId();
+                    if (nwId != null) {
+                        final Network nw = _networkModel.getNetwork(nwId);
+                        if (nw != null && nw.getTrafficType() == TrafficType.Public) {
+                            overlapped = true;
+                        }
+                    }
+
+                }
+                if (overlapped) {
+                    throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
+                            + " in zone " + zone.getName()
+                            + " has overlapped with the subnet. Please specify a different gateway/netmask.");
+                }
+            }
+        }
     }
 
     private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId, final String startIP, final String endIP,
@@ -5025,7 +5038,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 _publicIpAddressDao.deletePublicIPRange(vlanDbId);
-                s_logger.debug(String.format("Delete Public IP Range (from user_ip_address, where vlan_db_d=%s)", vlanDbId));
+                s_logger.debug(String.format("Delete Public IP Range (from user_ip_address, where vlan_db_id=%s)", vlanDbId));
 
                 _vlanDao.remove(vlanDbId);
                 s_logger.debug(String.format("Mark vlan as Remove vlan (vlan_db_id=%s)", vlanDbId));
@@ -5885,6 +5898,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final NetworkOfferingVO offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
                 serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds, enable);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        CallContext.current().putContextParameter(NetworkOffering.class, offering.getId());
         return offering;
     }
 
@@ -6036,14 +6050,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         final int multicastRate = multicastRateStr == null ? 10 : Integer.parseInt(multicastRateStr);
         tags = com.cloud.utils.StringUtils.cleanupTags(tags);
-
-        // specifyVlan should always be true for Shared network offerings
-        if (!specifyVlan && type == GuestType.Shared) {
-            Set<Provider> connectivityProviders = serviceProviderMap != null ? serviceProviderMap.get(Service.Connectivity) : null;
-            if (CollectionUtils.isEmpty(connectivityProviders) || !_networkModel.providerSupportsCapability(connectivityProviders, Service.Connectivity, Capability.NoVlan)) {
-                throw new InvalidParameterValueException("SpecifyVlan should be true if network offering's type is " + type);
-            }
-        }
 
         // specifyIpRanges should always be true for Shared networks
         // specifyIpRanges can only be true for Isolated networks with no Source

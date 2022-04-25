@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -110,4 +111,13 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         return _ravService.getRemoteAccessVpn(publicIpId).getNetworkId();
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return publicIpId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
+    }
 }

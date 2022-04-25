@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.admin.network;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
@@ -26,4 +28,16 @@ import com.cloud.network.Network;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Full, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListNetworksCmdByAdmin extends ListNetworksCmd implements AdminCmd {}
+public class ListNetworksCmdByAdmin extends ListNetworksCmd implements AdminCmd {
+
+    @Parameter(name= ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network", since = "4.17.0")
+    private String vlan;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public String getVlan() {
+        return vlan;
+    }
+}

@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -269,6 +270,30 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
+        if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
+            // Router version check is disabled.
+            return true;
+        }
+        if (router.getTemplateVersion() == null) {
+            return false;
+        }
+        final long dcid = router.getDataCenterId();
+        String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
+        String routerChecksum = router.getScriptsVersion() == null ? "" : router.getScriptsVersion();
+        boolean routerVersionMatch = CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+        if (routerVersionMatch) {
+            return true;
+        }
+        if (HypervisorType.Simulator.equals(router.getHypervisorType())) {
+            return true;
+        }
+        String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz");
+        boolean routerCheckSumMatch = currentCheckSum.equals(routerChecksum);
+        return routerCheckSumMatch;
+    }
+
+    @Override
+    public boolean checkRouterTemplateVersion(final VirtualRouter router) {
         if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
             // Router version check is disabled.
             return true;

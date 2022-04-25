@@ -118,6 +118,7 @@
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
                 <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>
@@ -133,12 +134,14 @@ import { api } from '@/api'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'CapacityDashboard',
   components: {
     ChartCard,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   data () {
     return {

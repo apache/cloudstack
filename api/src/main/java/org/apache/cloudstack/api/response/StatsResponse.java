@@ -35,51 +35,51 @@ public class StatsResponse extends BaseResponse {
     private String cpuUsed;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the VM's disk read (IO)")
+    @Param(description = "the VM's disk number of read requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
     protected Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the VM's disk write (IO)")
+    @Param(description = "the VM's disk number of write requests (IO) made in the last collection cycle as defined by vm.stats.interval configuration")
     protected Long diskIOWrite;
 
     @SerializedName(ApiConstants.DISK_IO_PSTOTAL)
-    @Param(description = "the total disk iops")
+    @Param(description = "the total disk iops since the last stats retrieval")
     protected Long diskIopsTotal = 0L;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the VM's disk read (bytes)")
+    @Param(description = "the VM's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the VM's disk write (bytes)")
+    @Param(description = "the VM's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory free of the VM or zero if it cannot be calculated")
+    @Param(description = "the VM's free memory in KB or -1 if it cannot be gathered")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the VM in Kbps")
+    @Param(description = "the memory used by the VM in KB")
     private Long memoryKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in VM in Kbps")
+    @Param(description = "the target memory in VM (KB)")
     private Long memoryTargetKBs;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the VM")
+    @Param(description = "the incoming network traffic on the VM in KiB")
     protected Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "the outgoing network traffic on the host in KiB")
     protected Long networkKbsWrite;
 
     @SerializedName("networkread")
-    @Param(description = "the network read in MiB")
+    @Param(description = "the amount of downloaded data by the VM in MiB")
     protected String networkRead;
 
     @SerializedName("networkwrite")
-    @Param(description = "the network write in MiB")
+    @Param(description = "the amount of uploaded data by the VM in MiB")
     protected String networkWrite;
 
     public void setTimestamp(Date timestamp) {
@@ -123,14 +123,14 @@ public class StatsResponse extends BaseResponse {
     public void setNetworkKbsRead(Long networkKbsRead) {
         this.networkKbsRead = networkKbsRead;
         if (networkKbsRead != null) {
-            this.networkRead = String.format("%.2f MB", networkKbsRead / 1024.0);
+            this.networkRead = String.format("%.2f MiB", networkKbsRead / 1024.0);
         }
     }
 
     public void setNetworkKbsWrite(Long networkKbsWrite) {
         this.networkKbsWrite = networkKbsWrite;
         if (networkKbsWrite != null) {
-            this.networkWrite = String.format("%.2f MB", networkKbsWrite / 1024.0);
+            this.networkWrite = String.format("%.2f MiB", networkKbsWrite / 1024.0);
         }
     }
 

@@ -69,6 +69,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'events',
+          resourceType: 'Volume',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
@@ -107,7 +113,7 @@ export default {
           icon: 'paper-clip-outlined',
           label: 'label.action.attach.disk',
           dataView: true,
-          show: (record) => { return record.type !== 'ROOT' && ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
+          show: (record) => { return ['Allocated', 'Ready', 'Uploaded'].includes(record.state) && !('virtualmachineid' in record) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/AttachVolume.vue')))
         },
@@ -117,10 +123,7 @@ export default {
           label: 'label.action.detach.disk',
           message: 'message.detach.disk',
           dataView: true,
-          show: (record) => {
-            return record.type !== 'ROOT' && record.virtualmachineid &&
-              ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate)
-          }
+          show: (record) => { return record.virtualmachineid && ['Running', 'Stopped', 'Destroyed'].includes(record.vmstate) }
         },
         {
           api: 'updateVolume',

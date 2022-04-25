@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.pod;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -63,6 +64,16 @@ public class DeletePodCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Pod;
     }
 
     @Override

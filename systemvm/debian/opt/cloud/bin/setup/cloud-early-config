@@ -15,7 +15,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 
 # Clear boot up flag, it would be created by rc.local after boot up done
@@ -31,52 +31,74 @@ log_it() {
   log_action_msg "$@"
 }
 
+validate_checksums() {
+  local oldmd5=
+  [ -f ${1} ] && oldmd5=$(cat ${1})
+  local newmd5=
+  [ -f ${2} ] && newmd5=$(md5sum ${2} | awk '{print $1}')
+  log_it "Scripts checksum detected: oldmd5=$oldmd5 newmd5=$newmd5" >> /dev/null 2>&1
+  echo "oldmd5='${oldmd5}'; newmd5='${newmd5}'"
+}
+
 patch() {
-  local PATCH_MOUNT=/media/cdrom
-  local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
+  local PATCH_MOUNT=/tmp
+  local PATCH_SCRIPTS=cloud-scripts.tgz
+  local oldpatchfile=/usr/share/cloud/$PATCH_SCRIPTS
+  local patchfile=$PATCH_MOUNT/$PATCH_SCRIPTS
   local privkey=$PATCH_MOUNT/authorized_keys
   local md5file=/var/cache/cloud/cloud-scripts-signature
-  local cdrom_dev=
   mkdir -p $PATCH_MOUNT
-
-  if [ -e /dev/xvdd ]; then
-       cdrom_dev=/dev/xvdd
-  elif [ -e /dev/cdrom ]; then
-       cdrom_dev=/dev/cdrom
-  elif [ -e /dev/cdrom1 ]; then
-       cdrom_dev=/dev/cdrom1
-  elif [ -e /dev/cdrom2 ]; then
-       cdrom_dev=/dev/cdrom2
-  elif [ -e /dev/cdrom3 ]; then
-       cdrom_dev=/dev/cdrom3
-  fi
 
   if [ -f /var/cache/cloud/authorized_keys ]; then
     privkey=/var/cache/cloud/authorized_keys
   fi
 
-  if [ -n "$cdrom_dev" ]; then
-    mount -o ro $cdrom_dev $PATCH_MOUNT
-    local oldmd5=
-    [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
-    local newmd5=
-    [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
-    log_it "Scripts checksum detected: oldmd5=$oldmd5 newmd5=$newmd5"
-    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
-    then
-      tar xzf $patchfile -C /
-      echo ${newmd5} > ${md5file}
-      log_it "Patched scripts using $patchfile"
-      touch /var/cache/cloud/patch.required
-    fi
-
-    if [ -f $privkey ]; then
-      cp -f $privkey /root/.ssh/
-      chmod go-rwx /root/.ssh/authorized_keys
-    fi
+  eval $(validate_checksums $md5file $oldpatchfile)
+  if [ "$oldmd5" == "$newmd5" ] && [ -d /usr/local/cloud/systemvm ] && [ "$(ls -A /usr/local/cloud/systemvm)" ]; then
+    log_it "Checksum matches, no need to patch"
+    return 0
   fi
 
-  return 0
+  CMDLINE=/var/cache/cloud/cmdline
+  export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+  retry=60
+  local patched=false
+  if [ "$TYPE" != "cksnode" ]; then
+    while [ $retry -gt 0 ]
+    do
+      if [ -f $patchfile ]; then
+        eval $(validate_checksums $md5file $patchfile)
+        if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+        then
+          tar xzf $patchfile -C /
+          echo ${newmd5} > ${md5file}
+          log_it "Patched scripts using $patchfile"
+          touch /var/cache/cloud/patch.required
+        fi
+
+        if [ -f $privkey ]; then
+          cp -f $privkey /root/.ssh/
+          chmod go-rwx /root/.ssh/authorized_keys
+        fi
+        patched=true
+        break
+      fi
+
+      sleep 2
+      retry=$(($retry-1))
+      log_it "Could not find patch file, retrying"
+    done
+
+    if [ $retry -eq 0 ] && [ "$patched" == "false" ]; then
+      return 2
+    fi
+    return 0
+  fi
+}
+
+cleanup() {
+  rm -rf /tmp/agent.zip
+  mv /tmp/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
 }
 
 start() {
@@ -99,6 +121,7 @@ start() {
   patch
   sync
   /opt/cloud/bin/setup/bootstrap.sh
+  cleanup
 
   log_it "Finished setting up systemvm"
   exit 0
