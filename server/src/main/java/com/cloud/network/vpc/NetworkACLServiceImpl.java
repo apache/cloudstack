@@ -1145,6 +1145,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         NetworkACLVO acl = _networkACLDao.findById(aclId);
         Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Re-ordering rules for a default ACL is prohibited");
+        }
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vpc);
     }

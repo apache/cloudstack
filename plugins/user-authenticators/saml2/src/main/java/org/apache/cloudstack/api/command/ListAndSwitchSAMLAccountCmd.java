@@ -16,18 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.CloudAuthenticationException;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.HttpUtils;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -47,15 +48,17 @@ import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLUtils;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserAccountVO;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.HttpUtils;
 
 @APICommand(name = "listAndSwitchSamlAccount", description = "Lists and switches to other SAML accounts owned by the SAML user", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthenticator {
@@ -203,5 +206,10 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
         if (_samlAuthManager == null) {
             s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 listAndSwitchSamlAccount Cmd");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

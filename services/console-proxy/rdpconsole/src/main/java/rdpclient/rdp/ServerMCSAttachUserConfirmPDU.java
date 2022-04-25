@@ -93,7 +93,7 @@ public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
         byte[] packet = new byte[] {(byte)0x2E, // MCS user confirm (001011..,
                 // 0xb), InitiatorPresent: 1
                 // (......01, 0x1)
-                (byte)0x00, // RT successfull (0000...., 0x0)
+                (byte)0x00, // RT successful (0000...., 0x0)
                 // Initiator: 1001+3 = 1004
                 (byte)0x00, (byte)0x03,};
 

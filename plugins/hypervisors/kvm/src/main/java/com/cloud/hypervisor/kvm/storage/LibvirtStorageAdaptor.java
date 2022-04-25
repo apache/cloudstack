@@ -94,7 +94,20 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         String mountPoint = _mountPoint + File.separator + uuid;
+
+        if (localPath != null) {
+            s_logger.debug(String.format("Pool [%s] is of type local or shared mount point; therefore, we will use the local path [%s] to create the folder [%s] (if it does not"
+                    + " exist).", uuid, localPath, path));
+
+            mountPoint = localPath;
+        }
+
         File f = new File(mountPoint + File.separator + path);
         if (!f.exists()) {
             f.mkdirs();
@@ -1399,38 +1412,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         return newDisk;
-    }
-
-    @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        s_logger.info("Creating volume " + name + " from snapshot " + snapshotName + " in pool " + destPool.getUuid() +
-                " (" + destPool.getType().toString() + ")");
-
-        PhysicalDiskFormat format = snapshot.getFormat();
-        long size = snapshot.getSize();
-        String destPath = destPool.getLocalPath().endsWith("/") ?
-                destPool.getLocalPath() + name :
-                destPool.getLocalPath() + "/" + name;
-
-        if (destPool.getType() == StoragePoolType.NetworkFilesystem) {
-            try {
-                if (format == PhysicalDiskFormat.QCOW2) {
-                    QemuImg qemu = new QemuImg(timeout);
-                    QemuImgFile destFile = new QemuImgFile(destPath, format);
-                    if (size > snapshot.getVirtualSize()) {
-                        destFile.setSize(size);
-                    } else {
-                        destFile.setSize(snapshot.getVirtualSize());
-                    }
-                    QemuImgFile srcFile = new QemuImgFile(snapshot.getPath(), snapshot.getFormat());
-                    qemu.convert(srcFile, destFile, snapshotName);
-                }
-            } catch (QemuImgException | LibvirtException e) {
-                s_logger.error("Failed to create " + destPath +
-                        " due to a failed executing of qemu-img: " + e.getMessage());
-            }
-        }
-        return destPool.getPhysicalDisk(name);
     }
 
     @Override

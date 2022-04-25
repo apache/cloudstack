@@ -687,7 +687,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // this time-out check was disabled
         // "until we have found out a VMware API that can check if there are pending tasks on the subject VM"
-        // but as we expire jobs and those stale worker VMs stay around untill an MS reboot we opt in to have them removed anyway
+        // but as we expire jobs and those stale worker VMs stay around until an MS reboot we opt in to have them removed anyway
         Instant start = Instant.ofEpochMilli(startTick);
         Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
         Instant now = Instant.now();

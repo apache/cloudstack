@@ -162,6 +162,7 @@ class CsAcl(CsDataBag):
                                         " -A FIREWALL_%s" % self.ip +
                                         " -s %s " % cidr +
                                         " -p %s " % rule['protocol'] +
+                                        " -m %s " % rule['protocol'] +
                                         "  %s -j %s" % (rnge, self.rule['action'])])
 
             sflag = False
@@ -851,6 +852,20 @@ class CsForwardingRules(CsDataBag):
                 interfaces.append(interface)
         return interfaces
 
+    def getStaticRoutes(self):
+        static_routes = CsStaticRoutes("staticroutes", self.config)
+        routes = []
+        if not static_routes:
+            return routes
+        for item in static_routes.get_bag():
+            if item == "id":
+                continue
+            static_route = static_routes.get_bag()[item]
+            if static_route['revoke']:
+                continue
+            routes.append(static_route)
+        return routes
+
     def portsToString(self, ports, delimiter):
         ports_parts = ports.split(":", 2)
         if ports_parts[0] == ports_parts[1]:
@@ -996,6 +1011,10 @@ class CsForwardingRules(CsDataBag):
         for private_gw in private_gateways:
             self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
                             (chain_name, private_gw.get_network())])
+        static_routes = self.getStaticRoutes()
+        for static_route in static_routes:
+            self.fw.append(["mangle", "front", "-A %s -d %s -j RETURN" %
+                            (chain_name, static_route['network'])])
 
         self.fw.append(["nat", "front",
                         "-A PREROUTING -d %s/32 -j DNAT --to-destination %s" % (rule["public_ip"], rule["internal_ip"])])

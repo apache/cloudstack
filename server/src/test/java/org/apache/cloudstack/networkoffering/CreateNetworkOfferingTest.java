@@ -136,12 +136,12 @@ public class CreateNetworkOfferingTest extends TestCase {
         assertNotNull("Shared network offering with specifyVlan=true failed to create ", off);
     }
 
-    @Test(expected=InvalidParameterValueException.class)
+    @Test
     public void createSharedNtwkOffWithNoVlan() {
         NetworkOfferingVO off =
                 configMgr.createNetworkOffering("shared", "shared", TrafficType.Guest, null, false, Availability.Optional, 200, null, false, Network.GuestType.Shared,
                     false, null, false, null, true, false, null, false, null, true, false, null, null, false);
-        assertNull("Shared network offering with specifyVlan=false was created", off);
+        assertNotNull("Shared network offering with specifyVlan=false was created", off);
     }
 
     @Test

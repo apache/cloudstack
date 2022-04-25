@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -269,6 +270,30 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     @Override
     public boolean checkRouterVersion(final VirtualRouter router) {
+        if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
+            // Router version check is disabled.
+            return true;
+        }
+        if (router.getTemplateVersion() == null) {
+            return false;
+        }
+        final long dcid = router.getDataCenterId();
+        String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
+        String routerChecksum = router.getScriptsVersion() == null ? "" : router.getScriptsVersion();
+        boolean routerVersionMatch = CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+        if (routerVersionMatch) {
+            return true;
+        }
+        if (HypervisorType.Simulator.equals(router.getHypervisorType())) {
+            return true;
+        }
+        String currentCheckSum = ChecksumUtil.calculateCurrentChecksum(router.getName(), "vms/cloud-scripts.tgz");
+        boolean routerCheckSumMatch = currentCheckSum.equals(routerChecksum);
+        return routerCheckSumMatch;
+    }
+
+    @Override
+    public boolean checkRouterTemplateVersion(final VirtualRouter router) {
         if (!VirtualNetworkApplianceManager.RouterVersionCheckEnabled.value()) {
             // Router version check is disabled.
             return true;
@@ -567,20 +592,18 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected List<HypervisorType> getHypervisors(final RouterDeploymentDefinition routerDeploymentDefinition) throws InsufficientServerCapacityException {
         final DeployDestination dest = routerDeploymentDefinition.getDest();
         List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
+        final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
+        if (defaults != HypervisorType.None) {
+            hypervisors.add(defaults);
+        }
         if (dest.getCluster() != null) {
             if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
                 hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
             }
-        } else {
-            final HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
-            if (defaults != HypervisorType.None) {
-                hypervisors.add(defaults);
-            } else {
-                // if there is no default hypervisor, get it from the cluster
-                hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
-            }
+        } else if (defaults == HypervisorType.None) {
+            hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true, routerDeploymentDefinition.getPlan().getPodId());
         }
 
         filterSupportedHypervisors(hypervisors);

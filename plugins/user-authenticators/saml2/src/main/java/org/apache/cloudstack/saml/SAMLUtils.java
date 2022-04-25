@@ -283,7 +283,7 @@ public class SAMLUtils {
             resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
         resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
-        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
     /**

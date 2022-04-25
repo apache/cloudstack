@@ -87,11 +87,15 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 public class KubernetesClusterActionWorker {
 
     public static final String CLUSTER_NODE_VM_USER = "cloud";
     public static final int CLUSTER_API_PORT = 6443;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
+    public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = 22;
+
+    public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterActionWorker.class);
 

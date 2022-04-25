@@ -233,6 +233,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultResponse.class, since = "4.14")
     List<RouterHealthCheckResultResponse> healthCheckResults;
 
+    @SerializedName("softwareversion")
+    @Param(description = "the version of the code / software in the router")
+    private String softwareVersion;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -489,5 +493,13 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setHealthCheckResults(List<RouterHealthCheckResultResponse> healthCheckResults) {
         this.healthCheckResults = healthCheckResults;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public void setSoftwareVersion(String softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 }

@@ -316,10 +316,12 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterOrUploadTemplate',
+  mixins: [mixinForm],
   props: {
     resource: {
       type: Object,
@@ -395,8 +397,6 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
-        checksum: [{ required: true, message: this.$t('message.error.required.input') }],
-        rootDiskControllerType: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
@@ -755,6 +755,10 @@ export default {
       this.hyperKVMShow = false
       this.deployasis = false
       this.allowDirectDownload = false
+      this.selectedFormat = null
+      this.form.deployasis = false
+      this.form.directdownload = false
+      this.form.xenserverToolsVersion61plus = false
 
       this.resetSelect(arrSelectReset)
       this.fetchFormat(hyperVisor)
@@ -773,7 +777,8 @@ export default {
         } else {
           delete this.form.zoneids
         }
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         let params = {}
         for (const key in values) {
           const input = values[key]
@@ -802,7 +807,9 @@ export default {
             const formattedDetailData = {}
             switch (key) {
               case 'rootDiskControllerType':
-                formattedDetailData['details[0].rootDiskController'] = input
+                if (input) {
+                  formattedDetailData['details[0].rootDiskController'] = input
+                }
                 break
               case 'nicAdapterType':
                 formattedDetailData['details[0].nicAdapter'] = input

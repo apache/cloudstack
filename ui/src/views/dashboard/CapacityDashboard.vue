@@ -21,9 +21,8 @@
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
-            :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
-            v-model:value="zoneSelected.name"
+            v-model:value="zoneSelectedKey"
             @change="changeZone"
             showSearch
             optionFilterProp="label"
@@ -119,6 +118,7 @@
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
                 <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>
@@ -134,12 +134,14 @@ import { api } from '@/api'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'CapacityDashboard',
   components: {
     ChartCard,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   data () {
     return {
@@ -162,6 +164,15 @@ export default {
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
         VLAN: 'label.vlan'
       }
+    }
+  },
+  computed: {
+    zoneSelectedKey () {
+      if (this.zones.length === 0) {
+        return this.zoneSelected.name
+      }
+      const zoneIndex = this.zones.findIndex(zone => zone.id === this.zoneSelected.id)
+      return zoneIndex
     }
   },
   created () {

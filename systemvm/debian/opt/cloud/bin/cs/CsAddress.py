@@ -498,7 +498,7 @@ class CsIP:
                     if not inf.startswith("eth"):
                         continue
                     for address in addresses:
-                        if "nw_type" in address and address["nw_type"] == "guest":
+                        if "nw_type" in address and address["nw_type"] == "guest" and address["add"]:
                             self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %
                                             (address["network"], self.address["network"], self.dev)])
                             self.fw.append(["filter", "front", "-A FORWARD -s %s -d %s -j ACL_INBOUND_%s" %

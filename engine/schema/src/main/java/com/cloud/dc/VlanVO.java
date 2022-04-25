@@ -205,8 +205,8 @@ public class VlanVO implements Vlan {
                     .append("|")
                     .append(ipRange)
                     .append("|")
-                    .append("|")
                     .append(ip6Range)
+                    .append("|")
                     .append(networkId)
                     .append("]")
                     .toString();

@@ -139,6 +139,9 @@
       <a-tab-pane :tab="$t('label.settings')" key="settings">
         <DetailSettings :resource="dataResource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.events')" key="events" v-if="'listEvents' in $store.getters.apis">
+        <events-tab :resource="dataResource" resourceType="VirtualMachine" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
         <AnnotationsTab
           :resource="vm"
@@ -304,6 +307,7 @@ import { mixinDevice } from '@/utils/mixin.js'
 import ResourceLayout from '@/layouts/ResourceLayout'
 import Status from '@/components/widgets/Status'
 import DetailsTab from '@/components/view/DetailsTab'
+import EventsTab from '@/components/view/EventsTab'
 import DetailSettings from '@/components/view/DetailSettings'
 import NicsTable from '@/views/network/NicsTable'
 import ListResourceTable from '@/components/view/ListResourceTable'
@@ -316,6 +320,7 @@ export default {
   components: {
     ResourceLayout,
     DetailsTab,
+    EventsTab,
     DetailSettings,
     NicsTable,
     Status,

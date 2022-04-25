@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cluster.dao.ManagementServerStatusDao;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -97,9 +98,13 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @Inject
     private ManagementServerHostDao _mshostDao;
     @Inject
+    private ManagementServerStatusDao mshostStatusDao;
+    @Inject
     private ManagementServerHostPeerDao _mshostPeerDao;
 
     protected Dispatcher _dispatcher;
+
+    private StatusAdministrator statusAdministrator;
 
     //
     // pay attention to _mshostId and _msid
@@ -137,6 +142,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     @Override
     public void registerDispatcher(final Dispatcher dispatcher) {
         _dispatcher = dispatcher;
+    }
+
+    @Override
+    public void registerStatusAdministrator(final StatusAdministrator administrator) {
+        statusAdministrator = administrator;
     }
 
     private ClusterServiceRequestPdu popRequestPdu(final long ackSequenceId) {
@@ -312,6 +322,12 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                             } else {
                                 s_logger.warn("Original request has already been cancelled. pdu: " + pdu.getJsonPackage());
                             }
+                        } else if (pdu.getPduType() == ClusterServicePdu.PDU_TYPE_STATUS_UPDATE) {
+                            if (statusAdministrator == null) {
+                                s_logger.warn("No status administration to report a status update too.");
+                            } else {
+                                statusAdministrator.newStatus(pdu);
+                            }
                         } else {
                             String result = _dispatcher.dispatch(pdu);
                             if (result == null) {
@@ -381,6 +397,37 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         pdu.setDestPeer(strPeer);
         pdu.setAgentId(agentId);
         pdu.setJsonPackage(cmds);
+        pdu.setStopOnError(true);
+        addOutgoingClusterPdu(pdu);
+    }
+
+    @Override
+    public void publishStatus(final String status) {
+        final Date cutTime = DateUtil.currentGMTTime();
+
+        final List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
+        for (final ManagementServerHostVO peer : peers) {
+            final String peerName = Long.toString(peer.getMsid());
+            try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Forwarding " + status + " to " + peer.getMsid());
+                }
+                sendStatus(peerName, status);
+            } catch (final Exception e) {
+                String msg = String.format("Caught exception while talking to %d", peer.getMsid());
+                s_logger.warn(msg);
+                s_logger.debug(msg, e);
+            }
+        }
+    }
+
+    public void sendStatus(final String strPeer, final String status) {
+        final ClusterServicePdu pdu = new ClusterServicePdu();
+        pdu.setSourcePeer(getSelfPeerName());
+        pdu.setDestPeer(strPeer);
+        pdu.setPduType(ClusterServicePdu.PDU_TYPE_STATUS_UPDATE);
+        pdu.setAgentId(0);
+        pdu.setJsonPackage(status);
         pdu.setStopOnError(true);
         addOutgoingClusterPdu(pdu);
     }
@@ -1005,8 +1052,11 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         if (_mshostId != null) {
             final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+            final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
             mshost.setState(ManagementServerHost.State.Down);
+            mshostStatus.setLastJvmStop(new Date());
             _mshostDao.update(_mshostId, mshost);
+            mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
         }
 
         _heartbeatScheduler.shutdownNow();
@@ -1141,7 +1191,10 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 return true;
             } catch (final IOException e) {
                 if (e instanceof ConnectException) {
-                    s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                    s_logger.error("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException");
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Unable to ping management server at " + targetIp + ":" + mshost.getServicePort() + " due to ConnectException", e);
+                    }
                     return false;
                 }
             } finally {
@@ -1200,5 +1253,4 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             }
         }
     }
-
 }

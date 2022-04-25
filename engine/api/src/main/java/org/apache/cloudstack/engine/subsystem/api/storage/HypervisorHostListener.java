@@ -30,4 +30,6 @@ public interface HypervisorHostListener {
     boolean hostAboutToBeRemoved(long hostId);
 
     boolean hostRemoved(long hostId, long clusterId);
+
+    boolean hostEnabled(long hostId);
 }

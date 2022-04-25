@@ -25,7 +25,6 @@ ilbvm_svcs() {
 
 setup_ilbvm() {
   log_it "Setting up Internal Load Balancer system vm"
-  setup_common eth0 eth1
   #eth0 = guest network, eth1=control network
 
   sed -i  /$NAME/d /etc/hosts

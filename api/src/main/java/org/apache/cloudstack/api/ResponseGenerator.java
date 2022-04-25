@@ -23,10 +23,18 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.server.ResourceIcon;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
+import org.apache.cloudstack.api.response.GuestVlanResponse;
+import org.apache.cloudstack.api.response.NetworkPermissionsResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import com.cloud.resource.RollingMaintenanceManager;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
+import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -148,9 +156,11 @@ import com.cloud.event.Event;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkPermission;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
@@ -256,7 +266,7 @@ public interface ResponseGenerator {
 
     IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
-    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
+    GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlanRange result);
 
     GlobalLoadBalancerResponse createGlobalLoadBalancerResponse(GlobalLoadBalancerRule globalLoadBalancerRule);
 
@@ -491,4 +501,15 @@ public interface ResponseGenerator {
 
     ResourceIconResponse createResourceIconResponse(ResourceIcon resourceIcon);
 
+    GuestVlanResponse createGuestVlanResponse(GuestVlan vlan);
+
+    NetworkPermissionsResponse createNetworkPermissionsResponse(NetworkPermission permission);
+
+    DirectDownloadCertificateResponse createDirectDownloadCertificateResponse(DirectDownloadCertificate certificate);
+
+    List<DirectDownloadCertificateHostStatusResponse> createDirectDownloadCertificateHostMapResponse(List<DirectDownloadCertificateHostMap> hostMappings);
+
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateHostStatusResponse(DirectDownloadManager.HostCertificateStatus status);
+
+    DirectDownloadCertificateHostStatusResponse createDirectDownloadCertificateProvisionResponse(Long certificateId, Long hostId, Pair<Boolean, String> result);
 }

@@ -600,6 +600,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             // return the attache instead of null, even it is disconnectede
             handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
         }
+        if (answer instanceof ReadyAnswer) {
+            ReadyAnswer readyAnswer = (ReadyAnswer)answer;
+            Map<String, String> detailsMap = readyAnswer.getDetailsMap();
+            if (detailsMap != null) {
+                String uefiEnabled = detailsMap.get(Host.HOST_UEFI_ENABLE);
+                s_logger.debug(String.format("Got HOST_UEFI_ENABLE [%s] for hostId [%s]:", uefiEnabled, host.getUuid()));
+                if (uefiEnabled != null) {
+                    _hostDao.loadDetails(host);
+                    if (!uefiEnabled.equals(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                        host.getDetails().put(Host.HOST_UEFI_ENABLE, uefiEnabled);
+                        _hostDao.saveDetails(host);
+                    }
+                }
+            }
+        }
 
         agentStatusTransitTo(host, Event.Ready, _nodeId);
         attache.ready();

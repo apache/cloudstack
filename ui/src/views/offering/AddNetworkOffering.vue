@@ -68,21 +68,21 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-row :gutter="12" v-if="guestType !== 'shared'">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="ispersistent" ref="ispersistent">
-              <template #label>
-                <tooltip-label :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
-              </template>
-              <a-switch v-model:checked="form.ispersistent" />
-            </a-form-item>
-          </a-col>
+        <a-row :gutter="12">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
               <template #label>
                 <tooltip-label :title="$t('label.specifyvlan')" :tooltip="apiParams.specifyvlan.description"/>
               </template>
               <a-switch v-model:checked="form.specifyvlan" />
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="ispersistent" ref="ispersistent" v-if="guestType !== 'shared'">
+              <template #label>
+                <tooltip-label :title="$t('label.ispersistent')" :tooltip="apiParams.ispersistent.description"/>
+              </template>
+              <a-switch v-model:checked="form.ispersistent" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -452,12 +452,14 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddNetworkOffering',
+  mixins: [mixinForm],
   components: {
     CheckBoxSelectPair,
     ResourceIcon,
@@ -800,7 +802,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {}
 
         var keys = Object.keys(values)
@@ -815,7 +818,9 @@ export default {
         })
 
         if (values.guestiptype === 'shared') { // specifyVlan checkbox is disabled, so inputData won't include specifyVlan
-          params.specifyvlan = true
+          if (values.specifyvlan === true) {
+            params.specifyvlan = true
+          }
           params.specifyipranges = true
           delete params.ispersistent
         } else if (values.guestiptype === 'isolated') { // specifyVlan checkbox is shown

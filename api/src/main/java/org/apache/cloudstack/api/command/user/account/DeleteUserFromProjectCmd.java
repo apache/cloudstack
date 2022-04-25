@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -101,6 +102,16 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
     @Override
     public List<Long> getEntityOwnerIds() {
         return _projectService.getProjectOwners(projectId);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return projectId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 
     @Override

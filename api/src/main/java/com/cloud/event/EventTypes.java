@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.annotation.Annotation;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.HostResponse;
@@ -63,6 +64,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -637,6 +639,9 @@ public class EventTypes {
     // Storage Policies
     public static final String EVENT_IMPORT_VCENTER_STORAGE_POLICIES = "IMPORT.VCENTER.STORAGE.POLICIES";
 
+    // SystemVM
+    public static final String EVENT_LIVE_PATCH_SYSTEMVM = "LIVE.PATCH.SYSTEM.VM";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -969,9 +974,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VPC_RESTART, Vpc.class);
 
         // VPC offerings
-        entityEventDetails.put(EVENT_VPC_OFFERING_CREATE, Vpc.class);
-        entityEventDetails.put(EVENT_VPC_OFFERING_UPDATE, Vpc.class);
-        entityEventDetails.put(EVENT_VPC_OFFERING_DELETE, Vpc.class);
+        entityEventDetails.put(EVENT_VPC_OFFERING_CREATE, VpcOffering.class);
+        entityEventDetails.put(EVENT_VPC_OFFERING_UPDATE, VpcOffering.class);
+        entityEventDetails.put(EVENT_VPC_OFFERING_DELETE, VpcOffering.class);
 
         // Private gateway
         entityEventDetails.put(EVENT_PRIVATE_GATEWAY_CREATE, PrivateGateway.class);
@@ -1011,6 +1016,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_GUEST_VLAN_RANGE_DEDICATE, GuestVlan.class);
         entityEventDetails.put(EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, GuestVlan.class);
 
+        entityEventDetails.put(EVENT_AFFINITY_GROUP_CREATE, AffinityGroup.class);
+        entityEventDetails.put(EVENT_AFFINITY_GROUP_DELETE, AffinityGroup.class);
+        entityEventDetails.put(EVENT_AFFINITY_GROUP_ASSIGN, AffinityGroup.class);
+        entityEventDetails.put(EVENT_AFFINITY_GROUP_REMOVE, AffinityGroup.class);
+
         // OpenDaylight
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER, "OpenDaylightController");
         entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER, "OpenDaylightController");
@@ -1048,6 +1058,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_IMPORT_VCENTER_STORAGE_POLICIES, "StoragePolicies");
 
         entityEventDetails.put(EVENT_IMAGE_STORE_DATA_MIGRATE, ImageStore.class);
+        entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
     }
 
     public static String getEntityForEvent(String eventName) {
