@@ -97,7 +97,9 @@ jobs:
             name=$(basename $file | sed 's/.java//g')
             coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv | cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
-            echo "|$coverage|" >> $GITHUB_ENV
+            if [[ ! -z "${coverage// }" ]]; then
+              echo "|$coverage|" >> $GITHUB_ENV
+            fi
           done
           echo "EOF" >> $GITHUB_ENV
 
