@@ -81,6 +81,9 @@
               <a-tag v-if="resource.version">
                 {{ resource.version }}
               </a-tag>
+              <a-tag v-if="resource.internetprotocol && ['IPv6', 'DualStack'].includes(resource.internetprotocol)">
+                {{ resource.internetprotocol ? $t('label.ip.v4.v6') : resource.internetprotocol }}
+              </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
                   <span>{{ $t('label.view.console') }}</span>
@@ -289,7 +292,7 @@
                 v-for="(eth, index) in resource.nic"
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
-                <api-outlined />eth{{ index }} {{ eth.ipaddress }}
+                <api-outlined /><strong>eth{{ index }}</strong> {{ eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress }}
                 <router-link v-if="!isStatic && eth.networkname && eth.networkid" :to="{ path: '/guestnetwork/' + eth.networkid }">({{ eth.networkname }})</router-link>
                 <a-tag v-if="eth.isdefault">
                   {{ $t('label.default') }}
@@ -322,15 +325,6 @@
               v-clipboard:copy="ipaddress" />
             <router-link v-if="!isStatic && resource.ipaddressid" :to="{ path: '/publicip/' + resource.ipaddressid }">{{ ipaddress }}</router-link>
             <span v-else>{{ ipaddress }}</span>
-          </div>
-        </div>
-        <div class="resource-detail-item" v-if="ipV6Address && ipV6Address !== null">
-          <div class="resource-detail-item__label">{{ $t('label.ip6address') }}</div>
-          <div class="resource-detail-item__details">
-            <environment-outlined
-              @click="$message.success(`${$t('label.copied.clipboard')} : ${ ipV6Address }`)"
-              v-clipboard:copy="ipV6Address" />
-            {{ ipV6Address }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.projectid || resource.projectname">
@@ -816,13 +810,6 @@ export default {
     name () {
       return this.resource.displayname || this.resource.displaytext || this.resource.name || this.resource.username ||
         this.resource.ipaddress || this.resource.virtualmachinename || this.resource.templatetype
-    },
-    ipV6Address () {
-      if (this.resource.nic && this.resource.nic.length > 0) {
-        return this.resource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
-      }
-
-      return null
     },
     keypairs () {
       if (!this.resource.keypairs) {

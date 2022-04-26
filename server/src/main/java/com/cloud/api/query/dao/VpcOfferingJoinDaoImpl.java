@@ -70,6 +70,7 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
             offeringResponse.setDomain(offeringJoinVO.getDomainPath());
             offeringResponse.setZoneId(offeringJoinVO.getZoneUuid());
             offeringResponse.setZone(offeringJoinVO.getZoneName());
+            offeringResponse.setInternetProtocol(offeringJoinVO.getInternetProtocol());
         }
         offeringResponse.setObjectName("vpcoffering");
 

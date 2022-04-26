@@ -16,15 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class IpRangeResponse extends BaseResponse {
+
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway for the range")
+    private String gateway;
+
+    @SerializedName(ApiConstants.CIDR)
+    @Param(description = "the CIDR for the range")
+    private String cidr;
 
     @SerializedName(ApiConstants.START_IP)
     @Param(description = "the starting IP for the range")
@@ -41,6 +48,22 @@ public class IpRangeResponse extends BaseResponse {
     @SerializedName(ApiConstants.VLAN_ID)
     @Param(description = "indicates Vlan ID for the range")
     private String vlanId;
+
+    public String getGateway() {
+        return gateway;
+    }
+
+    public void setGateway(String gateway) {
+        this.gateway = gateway;
+    }
+
+    public String getCidr() {
+        return cidr;
+    }
+
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
+    }
 
     public String getStartIp() {
         return startIp;

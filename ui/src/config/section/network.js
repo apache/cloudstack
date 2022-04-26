@@ -39,7 +39,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -59,6 +59,10 @@ export default {
         name: 'egress.rules',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
         show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis }
+      }, {
+        name: 'ip.v6.firewall',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
+        show: (record) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis }
       }, {
         name: 'public.ip.addresses',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
@@ -162,7 +166,7 @@ export default {
       permission: ['listVPCs'],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',

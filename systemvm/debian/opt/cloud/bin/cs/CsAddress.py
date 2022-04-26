@@ -135,6 +135,15 @@ class CsInterface:
     def get_ip(self):
         return self.get_attr("public_ip")
 
+    def get_ip6(self):
+        if not self.config.is_vpc():
+            return self.config.cmdline().get_dev_ip6prelen(self.get_device())
+        if self.is_public():
+            return self.config.guestnetwork().get_router_ip6prelen()
+        elif self.is_guest():
+            return self.config.guestnetwork().get_dev_ip6prelen(self.get_device())
+        return self.get_attr("public_ip6")
+
     def get_network(self):
         return self.get_attr("network")
 
@@ -147,6 +156,19 @@ class CsInterface:
         else:
             return self.config.cmdline().get_guest_gw()
 
+    def get_gateway6(self):
+        if self.config.is_vpc():
+            if self.is_public():
+                return self.config.guestnetwork().get_router_ip6gateway()
+            elif self.is_guest():
+                return self.config.guestnetwork().get_dev_ip6gateway(self.get_device())
+        else:
+            if self.is_public():
+                return self.config.cmdline().get_ip6gateway()
+            elif self.is_guest():
+                return self.config.cmdline().get_guest_ip6gateway()
+        return self.get_attr("gateway6")
+
     def ip_in_subnet(self, ip):
         ipo = IPAddress(ip)
         net = IPNetwork("%s/%s" % (self.get_ip(), self.get_size()))
@@ -155,9 +177,23 @@ class CsInterface:
     def get_gateway_cidr(self):
         return "%s/%s" % (self.get_gateway(), self.get_size())
 
+    def get_gateway6_cidr(self):
+        gw6 = self.get_gateway6()
+        cidr6_size = self.get_cidr6_size()
+        if not gw6 or not cidr6_size or gw6 == "ERROR" or cidr6_size == "ERROR":
+            return False
+        return "%s/%s" % (self.get_gateway6(), self.get_cidr6_size())
+
     def get_size(self):
         """ Return the network size in bits (24, 16, 8 etc) """
         return self.get_attr("size")
+
+    def get_cidr6_size(self):
+        if self.config.is_vpc() and self.is_guest():
+            return self.config.guestnetwork().get_dev_ip6cidr(self.get_device())
+        elif not self.config.is_vpc() and self.is_guest():
+            return self.config.cmdline().get_guest_ip6cidr_size()
+        return self.get_attr("size6")
 
     def get_device(self):
         return self.get_attr("device")
@@ -327,6 +363,9 @@ class CsIP:
             # is a default route and add if needed
             if(self.cl.get_gateway()):
                 route.add_defaultroute(self.cl.get_gateway())
+
+        if self.config.is_router() and self.cl.get_ip6gateway():
+            route.add_defaultroute_v6(self.cl.get_ip6gateway())
 
     def set_mark(self):
         cmd = "-A PREROUTING -i %s -m state --state NEW -j CONNMARK --set-xmark %s/0xffffffff" % \

@@ -29,14 +29,13 @@ import javax.inject.Inject;
 
 import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 import org.apache.cloudstack.utils.CloudStackVersion;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -66,6 +65,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -165,6 +165,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     NetworkDetailsDao networkDetailsDao;
     @Inject
     RouterHealthCheckResultDao _routerHealthCheckResultDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -663,7 +665,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         return controlConfig;
     }
 
-    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) {
+    protected LinkedHashMap<Network, List<? extends NicProfile>> configurePublicNic(final RouterDeploymentDefinition routerDeploymentDefinition, final boolean hasGuestNic) throws InsufficientAddressCapacityException {
         final LinkedHashMap<Network, List<? extends NicProfile>> publicConfig = new LinkedHashMap<Network, List<? extends NicProfile>>(3);
 
         if (routerDeploymentDefinition.isPublicNetwork()) {
@@ -703,6 +705,9 @@ public class NetworkHelperImpl implements NetworkHelper {
             if (peerNic != null) {
                 s_logger.info("Use same MAC as previous RvR, the MAC is " + peerNic.getMacAddress());
                 defaultNic.setMacAddress(peerNic.getMacAddress());
+            }
+            if (routerDeploymentDefinition.getGuestNetwork() != null) {
+                ipv6Service.updateNicIpv6(defaultNic, routerDeploymentDefinition.getDest().getDataCenter(), routerDeploymentDefinition.getGuestNetwork());
             }
             publicConfig.put(publicNetworks.get(0), new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
         }

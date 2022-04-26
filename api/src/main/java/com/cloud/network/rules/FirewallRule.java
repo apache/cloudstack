@@ -25,7 +25,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface FirewallRule extends ControlledEntity, Identity, InternalIdentity, Displayable {
     enum Purpose {
-        Firewall, PortForwarding, LoadBalancing, Vpn, StaticNat, NetworkACL,
+        Firewall, PortForwarding, LoadBalancing, Vpn, StaticNat, NetworkACL, Ipv6Firewall,
     }
 
     enum FirewallRuleType {

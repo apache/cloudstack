@@ -42,6 +42,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 @DB()
@@ -51,6 +52,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     final SearchBuilder<NetworkOfferingVO> AvailabilitySearch;
     final SearchBuilder<NetworkOfferingVO> AllFieldsSearch;
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
+
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
     @Inject
@@ -268,5 +270,17 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
                 "Offering for L2 networks with config drive user data VLAN",
                 true, true);
+    }
+
+    @Override
+    public NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId) {
+        String internetProtocolStr = _detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol);
+        return NetUtils.InternetProtocol.fromValue(internetProtocolStr);
+    }
+
+    @Override
+    public boolean isIpv6Supported(long offeringId) {
+        NetUtils.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
+        return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
     }
 }

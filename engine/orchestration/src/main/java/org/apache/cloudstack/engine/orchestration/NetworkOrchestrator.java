@@ -55,7 +55,9 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -116,6 +118,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Event;
@@ -156,6 +159,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
+import com.cloud.network.dao.RouterNetworkDao;
 import com.cloud.network.element.AggregatedCommandExecutor;
 import com.cloud.network.element.ConfigDriveNetworkElement;
 import com.cloud.network.element.DhcpServiceProvider;
@@ -169,6 +173,7 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
+import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallManager;
@@ -244,7 +249,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.commons.lang3.StringUtils;
+import com.googlecode.ipv6.IPv6Address;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -324,6 +329,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public ManagementServer mgr;
     @Inject
     NetworkPermissionDao networkPermissionDao;
+    @Inject
+    Ipv6Service ipv6Service;
+    @Inject
+    RouterNetworkDao routerNetworkDao;
 
     List<NetworkGuru> networkGurus;
 
@@ -482,21 +491,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.QuickCloudNoServices) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.QuickCloudNoServices, "Offering for QuickCloud with no services", TrafficType.Guest, null, true,
                             Availability.Optional, null, new HashMap<Network.Service, Set<Network.Provider>>(), true, Network.GuestType.Shared, false, null, true, null, true,
-                            false, null, false, null, true, false, null, null, true);
+                            false, null, false, null, true, false, null, null, true, null);
                 }
 
                 //#2 - SG enabled network offering
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true,
-                            null, true, false, null, false, null, true, false, null, null, true);
+                            null, true, false, null, false, null, true, false, null, null, true, null);
                 }
 
                 //#3 - shared network offering with no SG service
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true,
                             Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true, false, null, false,
-                            null, true, false, null, null, true);
+                            null, true, false, null, null, true, null);
                 }
 
                 //#4 - default isolated offering with Source nat service
@@ -504,14 +513,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService,
                             "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Required, null,
                             defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false, false, null, false, null,
-                            true, false, null, null, true);
+                            true, false, null, null, true, null);
                 }
 
                 //#5 - default vpc offering with LB service
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                             "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest, null, false, Availability.Optional, null,
-                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true);
+                            defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true, null);
                 }
 
                 //#6 - default vpc offering with no LB service
@@ -520,14 +529,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     defaultVPCOffProviders.remove(Service.Lb);
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
                             "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest, null, false, Availability.Optional,
-                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true);
+                            null, defaultVPCOffProviders, true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true, null);
                 }
 
                 //#7 - isolated offering with source nat disabled
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service",
                             TrafficType.Guest, null, true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null,
-                            true, null, true, false, null, false, null, true, false, null, null, true);
+                            true, null, true, false, null, false, null, true, false, null, null, true, null);
                 }
 
                 //#8 - network offering with internal lb service
@@ -549,7 +558,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB,
                             "Offering for Isolated VPC networks with Internal Lb support", TrafficType.Guest, null, false, Availability.Optional, null, internalLbOffProviders,
-                            true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true);
+                            true, Network.GuestType.Isolated, false, null, false, null, false, false, null, false, null, true, true, null, null, true, null);
                     offering.setInternalLb(true);
                     offering.setPublicLb(false);
                     _networkOfferingDao.update(offering.getId(), offering);
@@ -580,7 +589,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
                     offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedEIPandELBNetworkOffering,
                             "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null, true, Availability.Optional, null,
-                            netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null, false, null, true, false, null, null, true);
+                            netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true, false, null, false, null, true, false, null, null, true, null);
                     offering.setDedicatedLB(false);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
@@ -2348,6 +2357,25 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         s_logger.debug("Removed nic id=" + nic.getId());
+        // release assigned IPv6 for Isolated Network VR NIC
+
+        if (Type.DomainRouter.equals(vm.getType()) && PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver())
+                && StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            List<Long> routerNetworks = routerNetworkDao.getRouterNetworks(vm.getId());
+            if (CollectionUtils.isNotEmpty(routerNetworks)) {
+                Network guestNetwork = _networksDao.findById(routerNetworks.get(0));
+                ipv6Service.releasePublicIpv6ForNic(guestNetwork, nic.getIPv6Address());
+            }
+        }
+
+        if (Type.User.equals(vm.getType()) && GuestType.Isolated.equals(network.getGuestType())
+                && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId()) && StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_RELEASE, network.getAccountId(), network.getDataCenterId(), 0L,
+                    nic.getIPv6Address(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                    IPv6Address.class.getName(), null);
+        }
+
         //remove the secondary ip addresses corresponding to to this nic
         if (!removeVmSecondaryIpsOfNic(nic.getId())) {
             s_logger.debug("Removing nic " + nic.getId() + " secondary ip addreses failed");
@@ -3125,6 +3153,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             throw new CloudRuntimeException("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");
                         } else {
                             // commit transaction only when ips and vlans for the network are released successfully
+
+                            ipv6Service.releaseIpv6SubnetForNetwork(networkId);
+                            ipv6Service.removePublicIpv6PlaceholderNics(networkFinal);
                             try {
                                 stateTransitTo(networkFinal, Event.DestroyNetwork);
                             } catch (final NoTransitionException e) {
@@ -4343,10 +4374,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public NicVO savePlaceholderNic(final Network network, final String ip4Address, final String ip6Address, final Type vmType) {
+        return savePlaceholderNic(network, ip4Address, ip6Address, null, null, null, vmType);
+    }
+
+    @Override
+    public NicVO savePlaceholderNic(final Network network, final String ip4Address, final String ip6Address, final String ip6Cidr, final String ip6Gateway, final String reserver, final Type vmType) {
         final NicVO nic = new NicVO(null, null, network.getId(), null);
         nic.setIPv4Address(ip4Address);
         nic.setIPv6Address(ip6Address);
+        nic.setIPv6Cidr(ip6Cidr);
+        nic.setIPv6Gateway(ip6Gateway);
         nic.setReservationStrategy(ReservationStrategy.PlaceHolder);
+        if (reserver != null) {
+            nic.setReserver(reserver);
+        }
         nic.setState(Nic.State.Reserved);
         nic.setVmType(vmType);
         return _nicDao.persist(nic);

@@ -162,7 +162,8 @@ export default {
         STORAGE: 'label.storage',
         STORAGE_ALLOCATED: 'label.primary.storage',
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
-        VLAN: 'label.vlan'
+        VLAN: 'label.vlan',
+        VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
       }
     }
   },

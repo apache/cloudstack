@@ -222,6 +222,49 @@ class CsNetfilters(object):
         The rule will not actually be removed on the host """
         self.rules[:] = [x for x in self.rules if not x == rule]
 
+    def add_ip6_chain(self, address_family, table, chain, hook, action):
+            chain_policy = ""
+            if hook:
+                chain_policy = "type filter hook %s priority 0;" % hook
+            if chain_policy and action:
+                chain_policy = "%s policy %s;" % (chain_policy, action)
+            CsHelper.execute("nft add chain %s %s %s '{ %s }'" % (address_family, table, chain, chain_policy))
+            if chain_policy:
+                CsHelper.execute("nft add rule %s %s %s icmpv6 type { echo-request, echo-reply, nd-neighbor-solicit, nd-router-advert, nd-neighbor-advert } accept" % (address_family, table, chain))
+
+    def apply_ip6_rules(self, rules, type):
+        logging.debug("Add IPv6 rules: %s", rules)
+        if len(rules) == 0:
+            return
+        address_family = 'ip6'
+        table = 'ip6_firewall'
+        default_chains = [
+            { "chain": "fw_chain_ingress", "hook": "input", "action": "drop"}
+        ]
+        if type == "acl":
+            table = 'ip6_acl'
+            default_chains = [
+                { "chain": "acl_input", "hook": "input", "action": "drop" },
+                { "chain": "acl_output", "hook": "output", "action": "accept" }
+            ]
+        CsHelper.execute("nft add table %s %s" % (address_family, table))
+        for chain in default_chains:
+            self.add_ip6_chain(address_family, table, chain['chain'], chain['hook'], chain['action'])
+        for fw in rules:
+            chain = fw['chain']
+            type = fw['type']
+            rule = fw['rule']
+            if type == "chain":
+                hook = "input"
+                if "egress" in chain:
+                    hook = "output"
+                if chain.startswith("eth"):
+                    hook = ""
+                self.add_ip6_chain(address_family, table, chain, hook, rule)
+            else:
+                logging.info("Add: rule=%s in address_family=%s table=%s, chain=%s", rule, address_family, table, chain)
+                CsHelper.execute("nft add rule %s %s %s %s" % (address_family, table, chain, rule))
+
 
 class CsNetfilter(object):
 

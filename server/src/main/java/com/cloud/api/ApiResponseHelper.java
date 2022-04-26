@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -71,6 +71,8 @@ import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DataCenterGuestIpv6PrefixResponse;
+import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.DirectDownloadCertificateResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -93,6 +95,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IpRangeResponse;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
@@ -125,7 +128,6 @@ import org.apache.cloudstack.api.response.ResourceCountResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.DirectDownloadCertificateHostStatusResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostSkippedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceHostUpdatedResponse;
 import org.apache.cloudstack.api.response.RollingMaintenanceResponse;
@@ -168,6 +170,7 @@ import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.direct.download.DirectDownloadCertificateHostMap;
 import org.apache.cloudstack.direct.download.DirectDownloadManager;
 import org.apache.cloudstack.direct.download.DirectDownloadManager.HostCertificateStatus.CertificateStatus;
@@ -176,7 +179,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.direct.download.DirectDownloadCertificate;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -192,6 +194,7 @@ import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -231,6 +234,7 @@ import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -250,6 +254,7 @@ import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.GuestVlanRange;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -312,6 +317,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
@@ -362,6 +368,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.security.CertificateHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
@@ -377,7 +384,7 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.commons.lang3.StringUtils;
+
 import sun.security.x509.X509CertImpl;
 
 public class ApiResponseHelper implements ResponseGenerator {
@@ -431,6 +438,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     private UserStatisticsDao userStatsDao;
     @Inject
     private NetworkDao networkDao;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -791,8 +802,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            vlanResponse.setGateway(vlan.getVlanGateway());
-            vlanResponse.setNetmask(vlan.getVlanNetmask());
+            String gateway = vlan.getVlanGateway();
+            String netmask = vlan.getVlanNetmask();
+            vlanResponse.setGateway(gateway);
+            vlanResponse.setNetmask(netmask);
+            if (StringUtils.isNotEmpty(gateway) && StringUtils.isNotEmpty(netmask)) {
+                vlanResponse.setCidr(NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask));
+            }
 
             // get start ip and end ip of corresponding vlan
             String ipRange = vlan.getIpRange();
@@ -864,7 +880,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         SearchCriteria<IPAddressVO> sc = sb.create();
         sc.setParameters("vlanId", vlanId);
         IPAddressVO userIpAddresVO = userIpAddressDao.findOneBy(sc);
-        return userIpAddresVO.isForSystemVms();
+        return userIpAddresVO != null ? userIpAddresVO.isForSystemVms() : false;
     }
 
     @Override
@@ -1182,6 +1198,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             capacityResponses.addAll(getStatsCapacityresponse(null, null, pod.getId(), pod.getDataCenterId()));
             podResponse.setCapacities(new ArrayList<CapacityResponse>(capacityResponses));
         }
+
         podResponse.setHasAnnotation(annotationDao.hasAnnotations(pod.getUuid(), AnnotationService.EntityType.POD.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         podResponse.setObjectName("pod");
@@ -1246,6 +1263,23 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         return capacityResponses;
+    }
+
+    @Override
+    public DataCenterGuestIpv6PrefixResponse createDataCenterGuestIpv6PrefixResponse(DataCenterGuestIpv6Prefix prefix) {
+        DataCenterGuestIpv6PrefixResponse response = new DataCenterGuestIpv6PrefixResponse();
+        response.setId(prefix.getUuid());
+        response.setPrefix(prefix.getPrefix());
+        DataCenter dc = ApiDBUtils.findZoneById(prefix.getDataCenterId());
+        response.setZoneId(dc.getUuid());
+        Pair<Integer, Integer> usedTotal = ipv6Service.getUsedTotalIpv6SubnetForPrefix(prefix);
+        int used = usedTotal.first();
+        int total = usedTotal.second();
+        response.setUsedSubnets(used);
+        response.setAvailableSubnets(total - used);
+        response.setTotalSubnets(total);
+        response.setCreated(prefix.getCreated());
+        return response;
     }
 
     @Override
@@ -2498,6 +2532,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
 
+        if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+            response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId()).toString());
+            response.setIpv6Routing(Network.Routing.Static.toString());
+            response.setIpv6Routes(new LinkedHashSet<>());
+            if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
+                List<String> ipv6Addresses = ipv6Service.getPublicIpv6AddressesForNetwork(network);
+                for (String address : ipv6Addresses) {
+                    Ipv6RouteResponse route = new Ipv6RouteResponse(network.getIp6Cidr(), address);
+                    response.addIpv6Route(route);
+                }
+            }
+        }
+
         response.setObjectName("network");
         return response;
     }
@@ -3186,6 +3233,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
         response.setObjectName("vpc");
         return response;
     }
@@ -4748,5 +4796,47 @@ public class ApiResponseHelper implements ResponseGenerator {
         HostVO host = ApiDBUtils.findHostById(hostId);
         CertificateStatus status = result != null && result.first() ? CertificateStatus.UPLOADED : CertificateStatus.FAILED;
         return getDirectDownloadHostStatusResponseInternal(host, status, result != null ? result.second() : "provision certificate failure");
+    }
+
+    @Override
+    public FirewallResponse createIpv6FirewallRuleResponse(FirewallRule fwRule) {
+        FirewallResponse response = new FirewallResponse();
+
+        response.setId(fwRule.getUuid());
+        response.setProtocol(fwRule.getProtocol());
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+        List<String> destinationCidrs = ApiDBUtils.findFirewallDestCidrs(fwRule.getId());
+        response.setDestCidr(StringUtils.join(destinationCidrs, ","));
+        response.setTrafficType(fwRule.getTrafficType().toString());
+        response.setProtocol(fwRule.getProtocol());
+        response.setStartPort(fwRule.getSourcePortStart());
+        response.setEndPort(fwRule.getSourcePortEnd());
+        response.setIcmpCode(fwRule.getIcmpCode());
+        response.setIcmpType(fwRule.getIcmpType());
+
+        Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
+        response.setNetworkId(network.getUuid());
+
+        FirewallRule.State state = fwRule.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+
+        response.setForDisplay(fwRule.isDisplay());
+
+        // set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.FirewallRule, fwRule.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        response.setTags(tagResponses);
+
+        response.setState(stateToSet);
+        response.setObjectName("firewallrule");
+        return response;
     }
 }

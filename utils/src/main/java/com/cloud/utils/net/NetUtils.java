@@ -32,9 +32,10 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Formatter;
-import java.util.List;
 import java.util.Collections;
+import java.util.Formatter;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -42,8 +43,8 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.commons.validator.routines.RegexValidator;
@@ -92,6 +93,27 @@ public class NetUtils {
     // RFC4291 IPv6 EUI-64
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
+
+    public enum InternetProtocol {
+        IPv4, IPv6, DualStack;
+
+        public static InternetProtocol fromValue(String protocol) {
+            if (StringUtils.isBlank(protocol)) {
+                return null;
+            } else if (protocol.equalsIgnoreCase("IPv4")) {
+                return IPv4;
+            } else if (protocol.equalsIgnoreCase("IPv6")) {
+                return IPv6;
+            } else if (protocol.equalsIgnoreCase("DualStack")) {
+                return DualStack;
+            }
+            throw new IllegalArgumentException("Unexpected Internet Protocol : " + protocol);
+        }
+
+        public static boolean isIpv6EnabledProtocol(InternetProtocol protocol) {
+            return IPv6.equals(protocol) || DualStack.equals(protocol);
+        }
+    }
 
     public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
         /*
@@ -1678,6 +1700,31 @@ public class NetUtils {
             }
         }
         return isIpv4;
+    }
+
+    public static String getIpv6RangeFromCidr(String ipv6Cidr) {
+        if (StringUtils.isEmpty(ipv6Cidr)) {
+            return null;
+        }
+        IPv6Network network = IPv6Network.fromString(ipv6Cidr);
+        return String.format("%s-%s", network.getFirst().toString(), network.getLast().toString());
+    }
+
+    public static boolean ipv6NetworksOverlap(IPv6Network n1, IPv6Network n2) {
+        IPv6Network higher = n1;
+        IPv6Network lower = n2;
+        if (lower.getNetmask().asPrefixLength() < higher.getNetmask().asPrefixLength()) {
+            lower = n1;
+            higher = n2;
+        }
+        Iterator<IPv6Network> splits = higher.split(lower.getNetmask());
+        while (splits.hasNext()) {
+            IPv6Network i = splits.next();
+            if (i.equals(lower)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

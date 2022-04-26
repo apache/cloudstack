@@ -26,20 +26,16 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -102,6 +98,7 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -139,6 +136,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
 @Component
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
@@ -313,6 +312,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockNetworkMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
                 } else if (cmd instanceof SetFirewallRulesCommand) {
                     answer = _mockNetworkMgr.SetFirewallRules((SetFirewallRulesCommand)cmd);
+                } else if (cmd instanceof SetIpv6FirewallRulesCommand) {
+                    answer = _mockNetworkMgr.SetIpv6FirewallRules((SetIpv6FirewallRulesCommand)cmd);
                 } else if (cmd instanceof SetPortForwardingRulesCommand) {
                     answer = _mockNetworkMgr.SetPortForwardingRules((SetPortForwardingRulesCommand)cmd);
                 } else if (cmd instanceof NetworkUsageCommand) {

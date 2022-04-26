@@ -68,6 +68,31 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
+        <a-form-item name="internetprotocol" ref="internetprotocol" v-if="guestType === 'isolated'">
+          <template #label>
+            <tooltip-label :title="$t('label.internetprotocol')" :tooltip="apiParams.internetprotocol.description"/>
+          </template>
+          <span v-if="!ipv6NetworkOfferingEnabled || internetProtocolValue!=='ipv4'">
+            <a-alert type="warning">
+              <template #message>
+                <span v-html="ipv6NetworkOfferingEnabled ? $t('message.offering.internet.protocol.warning') : $t('message.offering.ipv6.warning')" />
+              </template>
+            </a-alert>
+            <br/>
+          </span>
+          <a-radio-group
+            v-model:value="form.internetprotocol"
+            :disabled="!ipv6NetworkOfferingEnabled"
+            buttonStyle="solid"
+            @change="e => { internetProtocolValue = e.target.value }" >
+            <a-radio-button value="ipv4">
+              {{ $t('label.ip.v4') }}
+            </a-radio-button>
+            <a-radio-button value="dualstack">
+              {{ $t('label.ip.v4.v6') }}
+            </a-radio-button>
+          </a-radio-group>
+        </a-form-item>
         <a-row :gutter="12">
           <a-col :md="12" :lg="12">
             <a-form-item name="specifyvlan" ref="specifyvlan">
@@ -470,6 +495,7 @@ export default {
       hasAdvanceZone: false,
       requiredNetworkOfferingExists: false,
       guestType: 'isolated',
+      internetProtocolValue: 'ipv4',
       selectedDomains: [],
       selectedZones: [],
       forVpc: false,
@@ -498,6 +524,7 @@ export default {
       domainLoading: false,
       zones: [],
       zoneLoading: false,
+      ipv6NetworkOfferingEnabled: false,
       loading: false
     }
   },
@@ -518,6 +545,7 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
+        internetprotocol: this.internetProtocolValue,
         guestiptype: this.guestType,
         specifyvlan: true,
         lbtype: this.lbType,
@@ -555,6 +583,7 @@ export default {
       this.fetchZoneData()
       this.fetchSupportedServiceData()
       this.fetchServiceOfferingData()
+      this.fetchIpv6NetworkOfferingConfiguration()
     },
     isAdmin () {
       return isAdmin()
@@ -573,6 +602,14 @@ export default {
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
         this.domainLoading = false
+      })
+    },
+    fetchIpv6NetworkOfferingConfiguration () {
+      this.ipv6NetworkOfferingEnabled = false
+      var params = { name: 'ipv6.offering.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.ipv6NetworkOfferingEnabled = value === 'true'
       })
     },
     fetchZoneData () {
