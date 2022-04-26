@@ -317,7 +317,7 @@ public class VeeamClient {
     }
 
     protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
-        for (int j = 0; j < restoreTimeout; j++) {
+        for (int j = 0; j < this.restoreTimeout; j++) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
