@@ -81,11 +81,11 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             snapshotObj.processEvent(Snapshot.Event.BackupToSecondary);
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
         } catch (NoTransitionException ex) {
-            StorPoolUtil.spLog("Failed to change state: " + ex.toString());
+            log.debug("Failed to change state: " + ex.toString());
             try {
                 snapshotObj.processEvent(Snapshot.Event.OperationFailed);
             } catch (NoTransitionException ex2) {
-                StorPoolUtil.spLog("Failed to change state: " + ex2.toString());
+                log.debug("Failed to change state: " + ex2.toString());
             }
         }
         return snapshotInfo;
@@ -126,7 +126,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op) {
-        StorPoolUtil.spLog("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op);
+        log.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
