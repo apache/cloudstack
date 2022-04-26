@@ -2196,7 +2196,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + " to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
+                s_logger.info(String.format("Trying to attach volume [%s/%s] to VM instance [%s/%s], update async job-%s progress status",
+                        volumeToAttach.getName(),
+                        volumeToAttach.getUuid(),
+                        vm.getName(),
+                        vm.getUuid(),
+                        job.getId()));
             }
 
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
@@ -2216,7 +2221,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             outcome.get();
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId deviceId, e.getMessage()), e);
+            throw new RuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId, deviceId, e.getMessage()), e);
         }
 
         Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
@@ -2276,12 +2281,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // if target VM has associated VM snapshots
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
         if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have VM snapshots");
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have VM snapshots", vm.getName(), vm.getUuid()));
         }
 
         // if target VM has backups
-        if (CollectionUtils.isNotEmpty(vm.getBackupOfferingId())) {
-            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have any backups", vm.getName(), vm.getUuid()));
         }
     }
 
@@ -2312,19 +2317,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    /**
+     * validate ROOT volume type;
+     * 1. vm shouldn't have any volume with deviceId 0
+     * 2. volume can't be in Uploaded state
+     *
+     * @param deviceId requested device number to attach as
+     * @param volumeToAttach
+     * @param vm
+     */
     private void checkDeviceId(Long deviceId, VolumeInfo volumeToAttach, UserVmVO vm) {
-        if (deviceId != null) {
-            // validate ROOT volume type
-            if (deviceId.longValue() == 0) {
-                validateRootVolumeDetachAttach(_volsDao.findById(volumeToAttach.getId()), vm);
-                // vm shouldn't have any volume with deviceId 0
-                if (!_volsDao.findByInstanceAndDeviceId(vm.getId(), 0).isEmpty()) {
-                    throw new InvalidParameterValueException("Vm already has root volume attached to it");
-                }
-                // volume can't be in Uploaded state
-                if (volumeToAttach.getState() == Volume.State.Uploaded) {
-                    throw new InvalidParameterValueException("No support for Root volume attach in state " + Volume.State.Uploaded);
-                }
+        if (deviceId != null && deviceId.longValue() == 0) {
+            validateRootVolumeDetachAttach(_volsDao.findById(volumeToAttach.getId()), vm);
+            if (!_volsDao.findByInstanceAndDeviceId(vm.getId(), 0).isEmpty()) {
+                throw new InvalidParameterValueException("Vm already has root volume attached to it");
+            }
+            if (volumeToAttach.getState() == Volume.State.Uploaded) {
+                throw new InvalidParameterValueException("No support for Root volume attach in state " + Volume.State.Uploaded);
             }
         }
     }
