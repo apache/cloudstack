@@ -85,15 +85,6 @@ config_sysctl() {
       sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
   fi
 
-  eth0_ip6=$(grep -Po 'eth0ip6=\K[0-9a-zA-Z:]*' $CMDLINE)
-  eth2_ip6=$(grep -Po 'eth2ip6=\K[0-9a-zA-Z:]*' $CMDLINE)
-  if [ -n "$eth0_ip6" ] || [ -n "$eth2_ip6" ]
-  then
-      sed  -i "s/net.ipv6.conf.all.disable_ipv6 =.*$/net.ipv6.conf.all.disable_ipv6 = 0/" /etc/sysctl.conf
-      sed  -i "s/net.ipv6.conf.all.forwarding =.*$/net.ipv6.conf.all.forwarding = 1/" /etc/sysctl.conf
-      sed  -i "s/net.ipv6.conf.all.accept_ra =.*$/net.ipv6.conf.all.accept_ra = 1/" /etc/sysctl.conf
-  fi
-
   sync
   sysctl -p
 }

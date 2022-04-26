@@ -71,6 +71,7 @@ setup_router() {
   enable_fwding 1
   enable_rpsrfs 1
   enable_passive_ftp 1
+  restore_ipv6
 
   # Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
