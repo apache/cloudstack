@@ -111,18 +111,19 @@ setup_interface() {
 }
 
 enable_interface_ipv6() {
+  local intf=eth${1}
+  log_it "Enabling IPv6 on interface: ${intf}"
   sysctl net.ipv6.conf.all.disable_ipv6=0
   sysctl net.ipv6.conf.all.forwarding=1
   sysctl net.ipv6.conf.all.accept_ra=1
   sed  -i "s/net.ipv6.conf.all.disable_ipv6 =.*$/net.ipv6.conf.all.disable_ipv6 = 0/" /etc/sysctl.conf
   sed  -i "s/net.ipv6.conf.all.forwarding =.*$/net.ipv6.conf.all.forwarding = 1/" /etc/sysctl.conf
   sed  -i "s/net.ipv6.conf.all.accept_ra =.*$/net.ipv6.conf.all.accept_ra = 1/" /etc/sysctl.conf
-  sysctl net.ipv6.conf.eth$1.accept_dad=0
-  sysctl net.ipv6.conf.eth$1.use_tempaddr=0
+  sysctl net.ipv6.conf.${intf}.accept_dad=0
+  sysctl net.ipv6.conf.${intf}.use_tempaddr=0
   if [ "$2" = true ] ; then
-    local intf=eth${1}
-    ifdown $intf
-    ifup $intf
+    ifdown ${intf}
+    ifup ${intf}
   fi
 }
 
@@ -292,9 +293,12 @@ setup_ipv6() {
 }
 
 restore_ipv6() {
+  if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+    then
+    enable_interface_ipv6 "0" true
+  fi
   if [ -n "$ETH0_IP6" ]
   then
-    enable_interface_ipv6 "0" true
     enable_radvd
   fi
   if [ -n "$ETH2_IP6" ]
