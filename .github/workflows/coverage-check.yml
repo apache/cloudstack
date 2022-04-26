@@ -66,13 +66,31 @@ jobs:
           java-version: '11'
           cache: 'maven'
 
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2
+
       - name: Run Build and Tests with Coverage
         id: coverage
         if: steps.java-changes.outputs.any_changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
-          mvn -P quality -Dsimulator -Dnoredist clean install
+          mvn -P quality -Dsimulator -Dnoredist clean verify install org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apachecloudstack
 
           echo "COVERAGE<<EOF" >> $GITHUB_ENV
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
