@@ -16,14 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.Vlan;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vlan.class)
 @SuppressWarnings("unused")
@@ -64,6 +63,10 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Param(description = "the Pod name for the VLAN IP range")
     private String podName;
 
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the description of the VLAN IP range")
+    private String description;
+
     @SerializedName(ApiConstants.GATEWAY)
     @Param(description = "the gateway of the VLAN IP range")
     private String gateway;
@@ -72,9 +75,9 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
     @Param(description = "the netmask of the VLAN IP range")
     private String netmask;
 
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the VLAN IP range")
-    private String description;
+    @SerializedName(ApiConstants.CIDR)
+    @Param(description = "the cidr of the VLAN IP range")
+    private String cidr;
 
     @SerializedName(ApiConstants.START_IP)
     @Param(description = "the start ip of the VLAN IP range")
@@ -167,6 +170,10 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.podName = podName;
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
     public void setGateway(String gateway) {
         this.gateway = gateway;
     }
@@ -175,8 +182,8 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.netmask = netmask;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setCidr(String cidr) {
+        this.cidr = cidr;
     }
 
     public void setStartIp(String startIp) {

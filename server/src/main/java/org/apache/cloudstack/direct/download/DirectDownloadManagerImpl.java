@@ -52,6 +52,7 @@ import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.RevokeDirectDownloadCertificateCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -376,7 +377,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         }
         String description = "Direct Download for template Id: " + template.getId() + " on pool Id: " + poolId + " failed";
         s_logger.error(description);
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, template.getId(), ApiCommandResourceType.Template.toString(), 0);
     }
 
     /**

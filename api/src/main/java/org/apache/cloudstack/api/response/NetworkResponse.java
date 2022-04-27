@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponseWithAssociatedNetwork;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.Network;
@@ -33,7 +33,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
-public class NetworkResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
+public class NetworkResponse extends BaseResponseWithAssociatedNetwork implements ControlledEntityResponse, SetResourceIconResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the network")
@@ -195,6 +195,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @Param(description = "Name of the VPC to which this network belongs", since = "4.15")
     private String vpcName;
 
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the ID of the Network associated with this network")
+    private String associatedNetworkId;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK)
+    @Param(description = "the name of the Network associated with this network")
+    private String associatedNetworkName;
+
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
     @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
@@ -266,6 +274,20 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
     @SerializedName((ApiConstants.EGRESS_DEFAULT_POLICY))
     @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
+
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "The internet protocol of network offering")
+    private String internetProtocol;
+
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The routing mode of network offering", since = "4.17.0")
+    private String ipv6Routing;
+
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6RouteResponse> ipv6Routes;
+
+    public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -512,6 +534,14 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
         this.vpcName = vpcName;
     }
 
+    public void setAssociatedNetworkId(String associatedNetworkId) {
+        this.associatedNetworkId = associatedNetworkId;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
+    }
+
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
@@ -539,5 +569,21 @@ public class NetworkResponse extends BaseResponseWithAnnotations implements Cont
 
     public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
         this.egressDefaultPolicy = egressDefaultPolicy;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
+    }
+
+    public void setIpv6Routing(String ipv6Routing) {
+        this.ipv6Routing = ipv6Routing;
+    }
+
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
+    }
+
+    public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
+        this.ipv6Routes.add(ipv6Route);
     }
 }

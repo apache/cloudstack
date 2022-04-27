@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -198,8 +198,8 @@ public class ListHostsCmd extends BaseListCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Host;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Host;
     }
 
     protected ListResponse<HostResponse> getHostResponses() {

@@ -18,14 +18,13 @@ package org.apache.cloudstack.api.command.user.event;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.Event;
 
@@ -68,6 +67,12 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.START_ID, type = CommandType.UUID, entityType = EventResponse.class, description = "the parent/start ID of the event, when provided this will list all the events with the start/parent ID including the parent event")
     private Long startId;
 
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, description = "the ID of the resource associated with the event", since="4.17.0")
+    private String resourceId;
+
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, description = "the type of the resource associated with the event", since="4.17.0")
+    private String resourceType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -102,6 +107,14 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getStartId() {
         return startId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public String getResourceType() {
+        return resourceType;
     }
 
     /////////////////////////////////////////////////////

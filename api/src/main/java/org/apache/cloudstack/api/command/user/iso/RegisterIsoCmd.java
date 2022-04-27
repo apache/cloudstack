@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.iso;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -240,6 +241,11 @@ public class RegisterIsoCmd extends BaseCmd implements UserCmd {
         }
 
         return accountId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Iso;
     }
 
     @Override

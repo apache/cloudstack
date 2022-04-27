@@ -25,7 +25,6 @@ setup_secstorage() {
   echo "conntrackd keepalived haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 
-  setup_common eth0 eth1 eth2
   setup_storage_network
   setup_system_rfc1918_internal
 
@@ -36,14 +35,6 @@ setup_secstorage() {
 
   log_it "Applying iptables rules"
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
-
-  log_it "Configuring sshd"
-  local hyp=$HYPERVISOR
-  if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then
-    setup_sshd $ETH1_IP "eth1"
-  else
-    setup_sshd $ETH0_IP "eth0"
-  fi
 
   log_it "Configuring apache2"
   setup_apache2 $ETH2_IP

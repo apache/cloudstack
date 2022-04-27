@@ -17,6 +17,7 @@
 package com.cloud.network.firewall;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.user.firewall.IListFirewallRulesCmd;
+import org.apache.cloudstack.api.command.user.ipv6.ListIpv6FirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -256,6 +258,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                     throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                 }
                 CallContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                CallContext.current().putContextParameter(FirewallRule.class, newRule.getId());
 
                 return newRule;
             }
@@ -336,12 +339,19 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             sc.setParameters("ip", ipId);
         }
 
-            if (networkId != null) {
-                sc.setParameters("networkId", networkId);
-            }
+        if (networkId != null) {
+            sc.setParameters("networkId", networkId);
+        }
 
-        sc.setParameters("purpose", Purpose.Firewall);
-        sc.setParameters("trafficType", trafficType);
+        if (cmd instanceof ListIpv6FirewallRulesCmd) {
+            sc.setParameters("purpose", Purpose.Ipv6Firewall);
+        } else {
+            sc.setParameters("purpose", Purpose.Firewall);
+        }
+
+        if (trafficType != null) {
+            sc.setParameters("trafficType", trafficType);
+        }
 
         Pair<List<FirewallRuleVO>, Integer> result = _firewallDao.searchAndCount(sc, filter);
         return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
@@ -554,7 +564,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             return true;
         }
         Purpose purpose = rules.get(0).getPurpose();
-        if (!_ipAddrMgr.applyRules(rules, purpose, this, continueOnError)) {
+        boolean applied;
+        if (purpose.equals(Purpose.Ipv6Firewall)) {
+            Network network = _networkDao.findById(rules.get(0).getNetworkId());
+            applied = applyRules(network, purpose, rules);
+        } else {
+            applied = _ipAddrMgr.applyRules(rules, purpose, this, continueOnError);
+        }
+        if (!applied) {
             s_logger.warn("Rules are not completely applied");
             return false;
         } else {
@@ -593,7 +610,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         /* StaticNatRule would be applied by Firewall provider, since the incompatible of two object */
         case StaticNat:
         case Firewall:
-                for (FirewallServiceProvider fwElement : _firewallElements) {
+        case Ipv6Firewall:
+            for (FirewallServiceProvider fwElement : _firewallElements) {
                 Network.Provider provider = fwElement.getProvider();
                 boolean  isFwProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
                 if (!isFwProvider) {
@@ -658,8 +676,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_EGRESS_OPEN, eventDescription = "creating egress firewall rule", async = true)
     public boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException {
-                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
-                return applyFirewallRules(rules, false, caller);
+        List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
+        return applyFirewallRules(rules, false, caller);
     }
 
     @Override
@@ -725,10 +743,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     protected boolean revokeFirewallRule(long ruleId, boolean apply, Account caller, long userId) {
-
         FirewallRuleVO rule = _firewallDao.findById(ruleId);
-        if (rule == null || rule.getPurpose() != Purpose.Firewall) {
-            throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.Firewall);
+        if (rule == null || !Arrays.asList(Purpose.Firewall, Purpose.Ipv6Firewall).contains(rule.getPurpose())) {
+            throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Arrays.asList(Purpose.Firewall, Purpose.Ipv6Firewall));
         }
 
         if (rule.getType() == FirewallRuleType.System && !_accountMgr.isRootAdmin(caller.getId())) {
@@ -746,11 +763,15 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             // ingress firewall rule
             if (rule.getSourceIpAddressId() != null) {
                 //feteches ingress firewall, ingress firewall rules associated with the ip
-            List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
-            return applyFirewallRules(rules, false, caller);
+                List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(rule.getSourceIpAddressId(), Purpose.Firewall);
+                return applyFirewallRules(rules, false, caller);
                 //egress firewall rule
             } else if (networkId != null) {
-                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
+                boolean isIpv6 = Purpose.Ipv6Firewall.equals(rule.getPurpose());
+                List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
+                if (isIpv6) {
+                    rules.addAll(_firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
+                }
                 return applyFirewallRules(rules, false, caller);
             }
         } else {

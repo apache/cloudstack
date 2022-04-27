@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.backup;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -113,5 +114,15 @@ public class UpdateBackupOfferingCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.BackupOffering;
     }
 }

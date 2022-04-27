@@ -231,6 +231,8 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+import java.math.BigInteger;
+import java.util.UUID;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -1818,7 +1820,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-            StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+            StoragePoolVO dataStoreVO = getExistingPoolByUuid(childStoragePoolInfo.getUuid());
             if (dataStoreVO == null && childDataStoreAnswer.getPoolType().equalsIgnoreCase("NFS")) {
                 List<StoragePoolVO> nfsStoragePools = _storagePoolDao.findPoolsByStorageType(StoragePoolType.NetworkFilesystem.toString());
                 for (StoragePoolVO storagePool : nfsStoragePools) {
@@ -1862,6 +1864,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         handleRemoveChildStoragePoolFromDatastoreCluster(childDatastoreUUIDs);
+    }
+
+    private StoragePoolVO getExistingPoolByUuid(String uuid){
+        if(!uuid.contains("-")){
+            UUID poolUuid = new UUID(
+                new BigInteger(uuid.substring(0, 16), 16).longValue(),
+                new BigInteger(uuid.substring(16), 16).longValue()
+            );
+            uuid = poolUuid.toString();
+        }
+        return _storagePoolDao.findByUuid(uuid);
     }
 
     private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {

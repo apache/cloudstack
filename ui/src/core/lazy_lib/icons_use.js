@@ -24,6 +24,7 @@ import {
   ArrowsAltOutlined,
   AuditOutlined,
   BankOutlined,
+  BarChartOutlined,
   BarcodeOutlined,
   BarsOutlined,
   BellOutlined,
@@ -48,10 +49,12 @@ import {
   CloseOutlined,
   CloudDownloadOutlined,
   CloudOutlined,
+  CloudServerOutlined,
   CloudUploadOutlined,
   ClusterOutlined,
   CodeOutlined,
   CompassOutlined,
+  ControlOutlined,
   CopyOutlined,
   CreditCardOutlined,
   DashboardOutlined,
@@ -65,6 +68,7 @@ import {
   DoubleRightOutlined,
   DownOutlined,
   DownloadOutlined,
+  DiffOutlined,
   DragOutlined,
   EditOutlined,
   EnvironmentOutlined,
@@ -166,6 +170,7 @@ export default {
     app.component('ArrowsAltOutlined', ArrowsAltOutlined)
     app.component('AuditOutlined', AuditOutlined)
     app.component('BankOutlined', BankOutlined)
+    app.component('BarChartOutlined', BarChartOutlined)
     app.component('BarcodeOutlined', BarcodeOutlined)
     app.component('BarsOutlined', BarsOutlined)
     app.component('BellOutlined', BellOutlined)
@@ -190,9 +195,11 @@ export default {
     app.component('CloseOutlined', CloseOutlined)
     app.component('CloudDownloadOutlined', CloudDownloadOutlined)
     app.component('CloudOutlined', CloudOutlined)
+    app.component('CloudServerOutlined', CloudServerOutlined)
     app.component('CloudUploadOutlined', CloudUploadOutlined)
     app.component('ClusterOutlined', ClusterOutlined)
     app.component('CodeOutlined', CodeOutlined)
+    app.component('ControlOutlined', ControlOutlined)
     app.component('CompassOutlined', CompassOutlined)
     app.component('CopyOutlined', CopyOutlined)
     app.component('CreditCardOutlined', CreditCardOutlined)
@@ -207,6 +214,7 @@ export default {
     app.component('DoubleRightOutlined', DoubleRightOutlined)
     app.component('DownOutlined', DownOutlined)
     app.component('DownloadOutlined', DownloadOutlined)
+    app.component('DiffOutlined', DiffOutlined)
     app.component('DragOutlined', DragOutlined)
     app.component('EditOutlined', EditOutlined)
     app.component('EnvironmentOutlined', EnvironmentOutlined)

@@ -20,6 +20,7 @@ package org.apache.cloudstack.network.contrail.api.command;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -199,4 +200,8 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
         return accountId;
     }
 
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.SystemVm;
+    }
 }

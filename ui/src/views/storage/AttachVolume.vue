@@ -47,6 +47,25 @@
             {{ vm.name || vm.displayname }}
           </a-select-option>
         </a-select>
+      </a-form-item >
+      <a-form-item :label="$t('label.deviceid')">
+        <div style="margin-bottom: 10px">
+          <a-collapse>
+            <a-collapse-panel header="More information about deviceID">
+              <a-alert type="warning">
+                <template #message>
+                  <span v-html="apiParams.deviceid.description" />
+                </template>
+              </a-alert>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
+        <a-input-number
+          v-model:value="form.deviceid"
+          style="width: 100%;"
+          :min="0"
+          :placeholder="$t('label.deviceid')"
+        />
       </a-form-item>
     </a-form>
     <div class="actions">
@@ -85,7 +104,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        virtualmachineid: [{ required: true, message: this.$t('message.error.select') }]
+        virtualmachineid: [{ required: true, message: this.$t('message.error.select') }],
+        deviceid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
     fetchData () {
@@ -127,7 +147,8 @@ export default {
         this.loading = true
         api('attachVolume', {
           id: this.resource.id,
-          virtualmachineid: values.virtualmachineid
+          virtualmachineid: values.virtualmachineid,
+          deviceid: values.deviceid
         }).then(response => {
           this.$pollJob({
             jobId: response.attachvolumeresponse.jobid,

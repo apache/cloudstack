@@ -28,6 +28,9 @@
     <listener>
         <listener-class>org.apache.cloudstack.spring.module.web.CloudStackContextLoaderListener</listener-class>
     </listener>
+    <listener>
+        <listener-class>com.cloud.api.ApiSessionListener</listener-class>
+    </listener>
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>classpath:META-INF/cloudstack/webApplicationContext.xml</param-value>

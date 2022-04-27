@@ -269,6 +269,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
         }
 
         volResponse.setObjectName("volume");
+        volResponse.setExternalUuid(volume.getExternalUuid());
         return volResponse;
     }
 

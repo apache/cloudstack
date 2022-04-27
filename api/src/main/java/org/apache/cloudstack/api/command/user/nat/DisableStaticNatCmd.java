@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.nat;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -110,5 +111,19 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Unable to find IP address by ID " + ipAddressId);
         }
         return ip;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        IpAddress object = _entityMgr.findById(IpAddress.class, ipAddressId);
+        if (object != null) {
+            object.getAssociatedWithVmId();
+        }
+        return null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 }

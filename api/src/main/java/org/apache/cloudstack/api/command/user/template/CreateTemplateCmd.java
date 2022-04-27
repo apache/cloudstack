@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -276,8 +276,8 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Template;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Template;
     }
 
     protected boolean isBareMetal() {

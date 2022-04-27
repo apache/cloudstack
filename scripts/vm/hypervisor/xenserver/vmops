@@ -235,14 +235,29 @@ def createFileInDomr(session, args):
     src_filepath = args['srcfilepath']
     dst_path = args['dstfilepath']
     domrip = args['domrip']
+    cleanup = 'true' if 'cleanup' not in args else args['cleanup']
     txt=""
     try:
         target = "root@" + domrip + ":" + dst_path
         txt = util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',src_filepath, target])
-        util.pread2(['rm',src_filepath])
+        if cleanup == 'true' or not cleanup:
+            util.pread2(['rm',src_filepath])
         txt = 'succ#' + txt
     except:
         logging.debug("failed to copy file " + src_filepath + " from host to VR with ip " + domrip)
+        txt = 'fail#' + txt
+    return txt
+
+@echo
+def runPatchScriptInDomr(session, args):
+    domrip = args['domrip']
+    txt=""
+    try:
+        target = "root@" + domrip
+        txt = util.pread2(['ssh','-p','3922','-i','/root/.ssh/id_rsa.cloud', target, "/bin/bash","/tmp/patch-sysvms.sh"])
+        txt = 'succ#' + txt
+    except:
+        logging.debug("failed to run patch script in systemVM with IP:  " + domrip)
         txt = 'fail#' + txt
     return txt
 
@@ -1588,4 +1603,5 @@ if __name__ == "__main__":
                             "cleanup_rules":cleanup_rules,
                             "createFileInDomr":createFileInDomr,
                             "kill_copy_process":kill_copy_process,
-                            "secureCopyToHost":secureCopyToHost})
+                            "secureCopyToHost":secureCopyToHost,
+                            "runPatchScriptInDomr": runPatchScriptInDomr})

@@ -283,6 +283,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String AARCH64 = "aarch64";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+    public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     private String _modifyVlanPath;
     private String _versionstringpath;
@@ -306,11 +307,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private Duration _timeout;
-    private static final int NUMMEMSTATS =2;
+    /**
+     * Since the memoryStats method returns an array that isn't ordered, we pass a big number to get all the array and then search for the information we want.
+     * */
+    private static final int NUMMEMSTATS = 20;
+
+    /**
+     * Unused memory's tag to search in the array returned by the Domain.memoryStats() method.
+     * */
+    private static final int UNUSEDMEMORY = 4;
+
 
     private KVMHAMonitor _monitor;
-    public static final String SSHKEYSPATH = "/root/.ssh";
-    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
@@ -412,7 +420,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    private VirtualRoutingResource _virtRouterResource;
+    public VirtualRoutingResource _virtRouterResource;
 
     private String _pingTestPath;
 
@@ -472,7 +480,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
         } catch (final Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            s_logger.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
             details = e.getMessage();
             success = false;
         }
@@ -1170,20 +1178,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         ha.start();
 
         _storagePoolMgr = new KVMStoragePoolManager(_storage, _monitor);
-
-        _sysvmISOPath = (String)params.get("systemvm.iso.path");
-        if (_sysvmISOPath == null) {
-            final String[] isoPaths = {"/usr/share/cloudstack-common/vms/systemvm.iso"};
-            for (final String isoPath : isoPaths) {
-                if (_storage.exists(isoPath)) {
-                    _sysvmISOPath = isoPath;
-                    break;
-                }
-            }
-            if (_sysvmISOPath == null) {
-                s_logger.debug("Can't find system vm ISO");
-            }
-        }
 
         final Map<String, String> bridges = new HashMap<String, String>();
 
@@ -2942,14 +2936,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
-            if (_sysvmISOPath != null) {
-                final DiskDef iso = new DiskDef();
-                iso.defISODisk(_sysvmISOPath);
-                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-                    iso.setBusType(DiskDef.DiskBus.SCSI);
-                }
-                vm.getDevices().addDevice(iso);
+            final DiskDef iso = new DiskDef();
+            iso.defISODisk(_sysvmISOPath);
+            if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                iso.setBusType(DiskDef.DiskBus.SCSI);
             }
+            vm.getDevices().addDevice(iso);
         }
 
         // For LXC, find and add the root filesystem, rbd data disks
@@ -4067,17 +4059,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     /**
      * This method retrieves the memory statistics from the domain given as parameters.
-     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_MINUS_ONE} as the value of free memory in the domain.
      * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
      *
      * @return the amount of free memory in KBs
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
-        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
-        if (ArrayUtils.isEmpty(mems)) {
-            return NumberUtils.LONG_ZERO;
+        MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
+
+        if(s_logger.isTraceEnabled()){
+            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
         }
-        return mems[0].getValue();
+
+        long freeMemory = NumberUtils.LONG_MINUS_ONE;
+
+        if (ArrayUtils.isEmpty(memoryStats)){
+            return freeMemory;
+        }
+
+        for (int i = 0; i < memoryStats.length; i++) {
+            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+                freeMemory = memoryStats[i].getValue();
+                break;
+            }
+        }
+
+        if (freeMemory == NumberUtils.LONG_MINUS_ONE){
+            s_logger.warn("Couldn't retrieve free memory, returning -1.");
+        }
+        return freeMemory;
     }
 
     private boolean canBridgeFirewall(final String prvNic) {
