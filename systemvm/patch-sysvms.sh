@@ -89,6 +89,9 @@ restart_services() {
         return
       fi
     done < "$svcfile"
+    if [ "$TYPE" == "consoleproxy" ]; then
+      iptables -A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
+    fi
 }
 
 cleanup_systemVM() {
