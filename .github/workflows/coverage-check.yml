@@ -66,20 +66,41 @@ jobs:
           java-version: '11'
           cache: 'maven'
 
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2
+
       - name: Run Build and Tests with Coverage
         id: coverage
         if: steps.java-changes.outputs.any_changed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          PR_ID: ${{ github.event.pull_request.number }}
         run: |
           git clone https://github.com/shapeblue/cloudstack-nonoss.git nonoss
           cd nonoss && bash -x install-non-oss.sh && cd ..
-          mvn -P quality -Dsimulator -Dnoredist clean install
+          mvn -P quality -Dsimulator -Dnoredist clean install org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=apachecloudstack -Dsonar.pullrequest.key=$PR_ID -Dsonar.pullrequest.base=main -Dsonar.pullrequest.branch=refs/pull/${{ github.event.number }}/merge -Dsonar.pullrequest.github.repository=apache/cloudstack -Dsonar.pullrequest.provider=GitHub
 
           echo "COVERAGE<<EOF" >> $GITHUB_ENV
           for file in ${{ steps.java-changes.outputs.all_changed_files }}; do
             name=$(basename $file | sed 's/.java//g')
             coverage=$(grep ,$name, client/target/site/jacoco-aggregate/jacoco.csv | cut -f3-9 -d"," | sed 's/,/|/g')
             echo $coverage
-            echo "|$coverage|" >> $GITHUB_ENV
+            if [[ ! -z "${coverage// }" ]]; then
+              echo "|$coverage|" >> $GITHUB_ENV
+            fi
           done
           echo "EOF" >> $GITHUB_ENV
 
@@ -89,4 +110,4 @@ jobs:
         with:
           token: ${{ secrets.ACS_ROBOT_TOKEN }}
           issue-number: ${{ github.event.pull_request.number }}
-          body: "## PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"
+          body: "## PR Analysis\nhttps://sonarcloud.io/summary/new_code?id=apachecloudstack&pullRequest=${{ github.event.pull_request.number }}\n## PR Coverage Report\n|**CLASS**|**INSTRUCTION MISSED**|**INSTRUCTION COVERED**|**BRANCH MISSED**|**BRANCH COVERED**|**LINE MISSED**|**LINE COVERED**|\n|-----|-----|-----|-----|-----|-----|-----|\n${{ env.COVERAGE }}"

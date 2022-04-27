@@ -32,6 +32,7 @@ import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
@@ -149,6 +150,10 @@ public class EventTypes {
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
     public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
+
+    public static final String EVENT_NET_IP6_ASSIGN = "NET.IP6ASSIGN";
+    public static final String EVENT_NET_IP6_RELEASE = "NET.IP6RELEASE";
+    public static final String EVENT_NET_IP6_UPDATE = "NET.IP6UPDATE";
 
     public static final String EVENT_FIREWALL_EGRESS_OPEN = "FIREWALL.EGRESS.OPEN";
     public static final String EVENT_FIREWALL_EGRESS_CLOSE = "FIREWALL.EGRESS.CLOSE";
@@ -334,6 +339,9 @@ public class EventTypes {
     public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
     public static final String EVENT_MANAGEMENT_IP_RANGE_UPDATE = "MANAGEMENT.IP.RANGE.UPDATE";
 
+    public static final String EVENT_GUEST_IP6_PREFIX_CREATE = "GUEST.IP6.PREFIX.CREATE";
+    public static final String EVENT_GUEST_IP6_PREFIX_DELETE = "GUEST.IP6.PREFIX.DELETE";
+
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
@@ -481,6 +489,11 @@ public class EventTypes {
     public static final String EVENT_NETWORK_ACL_ITEM_CREATE = "NETWORK.ACL.ITEM.CREATE";
     public static final String EVENT_NETWORK_ACL_ITEM_UPDATE = "NETWORK.ACL.ITEM.UPDATE";
     public static final String EVENT_NETWORK_ACL_ITEM_DELETE = "NETWORK.ACL.ITEM.DELETE";
+
+    // IPv6 firewall rule
+    public static final String EVENT_IPV6_FIREWALL_RULE_CREATE = "IPV6.FIREWALL.RULE.CREATE";
+    public static final String EVENT_IPV6_FIREWALL_RULE_UPDATE = "IPV6.FIREWALL.RULE.UPDATE";
+    public static final String EVENT_IPV6_FIREWALL_RULE_DELETE = "IPV6.FIREWALL.RULE.DELETE";
 
     // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
@@ -704,6 +717,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_FIREWALL_EGRESS_OPEN, FirewallRule.class);
         entityEventDetails.put(EVENT_FIREWALL_EGRESS_CLOSE, FirewallRule.class);
         entityEventDetails.put(EVENT_FIREWALL_EGRESS_UPDATE, FirewallRule.class);
+        entityEventDetails.put(EVENT_NET_IP6_ASSIGN, Network.class);
+        entityEventDetails.put(EVENT_NET_IP6_RELEASE, Network.class);
+        entityEventDetails.put(EVENT_NET_IP6_UPDATE, Network.class);
 
         // Nic Events
         entityEventDetails.put(EVENT_NIC_CREATE, Nic.class);
@@ -844,6 +860,9 @@ public class EventTypes {
 
         entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_CREATE, Pod.class);
         entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_DELETE, Pod.class);
+
+        entityEventDetails.put(EVENT_GUEST_IP6_PREFIX_CREATE, DataCenterGuestIpv6Prefix.class);
+        entityEventDetails.put(EVENT_GUEST_IP6_PREFIX_DELETE, DataCenterGuestIpv6Prefix.class);
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class);
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class);

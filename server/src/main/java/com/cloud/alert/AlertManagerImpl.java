@@ -21,8 +21,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +40,11 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
@@ -64,22 +71,17 @@ import com.cloud.event.AlertGenerator;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.cloudstack.utils.mailing.MailAddress;
-import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
-import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     protected Logger logger = Logger.getLogger(AlertManagerImpl.class.getName());
@@ -119,6 +121,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected ConfigDepot _configDepot;
     @Inject
     ServiceOfferingDao _offeringsDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -196,6 +200,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VLAN, _vlanCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, Ipv6SubnetCapacityThreshold.value());
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -314,6 +319,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 // Calculate new Public IP capacity for Virtual Network
                 if (datacenter.getNetworkType() == NetworkType.Advanced) {
                     createOrUpdateIpCapacity(dcId, null, Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
+                    createOrUpdateIpv6Capacity(dcId, datacenter.getAllocationState());
                 }
 
                 // Calculate new Public IP capacity for Direct Attached Network
@@ -412,6 +418,31 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             capacity.setUsedCapacity(allocatedIPs);
             capacity.setTotalCapacity(totalIPs);
             capacity.setCapacityState(ipCapacityState);
+            _capacityDao.update(capacity.getId(), capacity);
+        }
+    }
+
+    public void createOrUpdateIpv6Capacity(Long dcId, AllocationState capacityState) {
+        final short capacityType = Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+
+        List<CapacityVO>  capacities = _capacityDao.search(capacitySC, null);
+        Pair<Integer, Integer> usedTotal =  ipv6Service.getUsedTotalIpv6SubnetForZone(dcId);
+        int total = usedTotal.second();
+        int allocated = usedTotal.first();
+        CapacityState state = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
+        if (capacities.size() == 0) {
+            CapacityVO capacityVO = new CapacityVO(null, dcId, null, null, allocated, total, capacityType);
+            capacityVO.setCapacityState(state);
+            _capacityDao.persist(capacityVO);
+        } else if (!(capacities.get(0).getUsedCapacity() == allocated && capacities.get(0).getTotalCapacity() == total
+                && capacities.get(0).getCapacityState() == state)) {
+            CapacityVO capacity = capacities.get(0);
+            capacity.setUsedCapacity(allocated);
+            capacity.setTotalCapacity(total);
+            capacity.setCapacityState(state);
             _capacityDao.update(capacity.getId(), capacity);
         }
     }
@@ -626,6 +657,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
             alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
             break;
+        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
+            msgSubject = "System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated virtual network guest IPv6 subnets is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+            break;
         }
 
         try {
@@ -646,6 +684,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET);
         return dataCenterCapacityTypes;
 
     }
@@ -760,7 +799,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
-            AlertSmtpUseStartTLS};
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold};
     }
 
     @Override
