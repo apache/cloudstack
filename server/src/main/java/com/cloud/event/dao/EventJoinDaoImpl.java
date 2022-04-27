@@ -54,7 +54,7 @@ public class EventJoinDaoImpl extends GenericDaoBase<EventJoinVO, Long> implemen
     EntityManager entityMgr;
 
     private String getResourceName(Object obj) {
-        String[] possibleMethods = {"getDisplayName", "getHostName","getName", "getAccountName", "getUsername"};
+        String[] possibleMethods = {"getDisplayName", "getDisplayText", "getHostName", "getName", "getAccountName", "getUsername"};
         for (String possibleMethodName : possibleMethods) {
             try {
                 Method m = obj.getClass().getMethod(possibleMethodName);
