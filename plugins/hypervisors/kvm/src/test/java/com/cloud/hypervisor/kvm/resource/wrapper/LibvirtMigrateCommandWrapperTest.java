@@ -571,7 +571,7 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(fullfile, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(fullfile, targetIp, "");
         assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
     }
 
@@ -594,7 +594,7 @@ public class LibvirtMigrateCommandWrapperTest {
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "10.10.10.10";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp, "");
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
@@ -617,7 +617,7 @@ public class LibvirtMigrateCommandWrapperTest {
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "localhost.localdomain";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp, "");
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
