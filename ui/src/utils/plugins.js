@@ -371,6 +371,8 @@ export const resourceTypePlugin = {
           return 'computeoffering'
         case 'IpAddress':
           return 'publicip'
+        case 'NetworkAcl':
+          return 'acllist'
         case 'SystemVm':
         case 'PhysicalNetwork':
         case 'Backup':
