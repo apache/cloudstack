@@ -68,7 +68,7 @@ public class CitrixPatchSystemVmCommandWrapper extends CommandWrapper<PatchSyste
 
         String patchResult = null;
         try {
-            serverResource.copyPatchFilesToVR(controlIp, "/tmp/");
+            serverResource.copyPatchFilesToVR(controlIp, VRScripts.CONFIG_CACHE_LOCATION);
             patchResult = serverResource.callHostPlugin(conn, "vmops", "runPatchScriptInDomr", "domrip", controlIp);
         } catch (Exception e) {
             return new PatchSystemVmAnswer(command, e.getMessage());

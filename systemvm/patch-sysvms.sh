@@ -17,9 +17,9 @@
 # under the License.
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-backupfolder=/tmp/bkpup_live_patch
+backupfolder=/var/cache/cloud/bkpup_live_patch
 logfile="/var/log/livepatchsystemvm.log"
-newpath="/tmp/"
+newpath="/var/cache/cloud/"
 CMDLINE=/var/cache/cloud/cmdline
 md5file=/var/cache/cloud/cloud-scripts-signature
 svcfile=/var/cache/cloud/enabled_svcs

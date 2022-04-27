@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.io.File;
 import java.net.URISyntaxException;
 
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.utils.FileUtil;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -120,7 +121,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
 
                     try {
                         File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-                        FileUtil.scpPatchFiles(controlIp, "/tmp/", Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
                         if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
                             String errMsg = "Failed to patch systemVM";
                             s_logger.error(errMsg);
