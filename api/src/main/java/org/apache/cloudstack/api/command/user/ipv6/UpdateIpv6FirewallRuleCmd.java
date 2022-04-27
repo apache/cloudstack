@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -172,4 +173,17 @@ public class UpdateIpv6FirewallRuleCmd extends BaseAsyncCustomIdCmd {
         }
     }
 
+    @Override
+    public Long getApiResourceId() {
+        FirewallRule rule = _firewallService.getFirewallRule(id);
+        if (rule != null) {
+            return rule.getNetworkId();
+        }
+        return null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
+    }
 }

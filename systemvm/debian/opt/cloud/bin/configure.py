@@ -296,17 +296,13 @@ class CsAcl(CsDataBag):
                 return
             tier_cidr = self.ip6_cidr
             chain = "%s_%s_policy" % (self.device, direction)
-            rule = "accept"
-            parent_chain = "acl_output"
+            parent_chain = "acl_forward"
             cidr_key = "saddr"
-            parent_chain_rule = "ip6 saddr ::/0 jump %s" % (chain)
             if direction == "ingress":
-                rule = "drop"
-                parent_chain = "acl_input"
                 cidr_key = "daddr"
             parent_chain_rule = "ip6 %s %s jump %s" % (cidr_key, tier_cidr, chain)
-            self.ipv6_acl.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
-            self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain, 'rule': rule})
+            self.ipv6_acl.insert(0, {'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+            self.ipv6_acl.insert(0, {'type': "chain", 'chain': chain})
             for rule in rule_list:
                 cidr = rule['cidr']
                 if cidr != None and cidr != "":
@@ -369,6 +365,8 @@ class CsAcl(CsDataBag):
                     self.ipv6_acl.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
                 else:
                     self.ipv6_acl.append({'type': type, 'chain': chain, 'rule': rstr})
+            rstr = "counter packets 0 bytes 0 drop"
+            self.ipv6_acl.append({'type': "", 'chain': chain, 'rule': rstr})
 
         def process(self, direction, rule_list, base):
             count = base
@@ -480,10 +478,30 @@ class CsIpv6Firewall(CsDataBag):
     def process(self):
         fw = self.config.get_ipv6_fw()
         logging.info("Processing IPv6 firewall rules %s; %s" % (self.dbag, fw))
+        chains_added = False
+        egress_policy = None
         for item in self.dbag:
             if item == "id":
                 continue
             rule = self.dbag[item]
+
+            if chains_added == False:
+                guest_cidr = rule['guest_ip6_cidr']
+                parent_chain = "fw_forward"
+                chain = "fw_chain_egress"
+                parent_chain_rule = "ip6 saddr %s jump %s" % (guest_cidr, chain)
+                fw.append({'type': "chain", 'chain': chain})
+                fw.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+                chain = "fw_chain_ingress"
+                parent_chain_rule = "ip6 daddr %s jump %s" % (guest_cidr, chain)
+                fw.append({'type': "chain", 'chain': chain})
+                fw.append({'type': "", 'chain': parent_chain, 'rule': parent_chain_rule})
+                if rule['default_egress_policy']:
+                    egress_policy = "accept"
+                else:
+                    egress_policy = "drop"
+                chains_added = True
+
             rstr = ""
 
             chain = "fw_chain_ingress"
@@ -561,14 +579,14 @@ class CsIpv6Firewall(CsDataBag):
             rstr = appendStringIfNotEmpty(rstr, proto)
             if rstr and action:
                 rstr = rstr + " " + action
-            else:
-                type = "chain"
-                rstr = action
-            logging.debug("Process IPv6 firewall rule %s" % rstr)
-            if type == "chain":
-                fw.insert(0, {'type': type, 'chain': chain, 'rule': rstr})
-            else:
+                logging.debug("Process IPv6 firewall rule %s" % rstr)
                 fw.append({'type': type, 'chain': chain, 'rule': rstr})
+        if chains_added:
+            base_rstr = "counter packets 0 bytes 0"
+            rstr = "%s drop" % base_rstr
+            fw.append({'type': "", 'chain': "fw_chain_ingress", 'rule': rstr})
+            rstr = "%s %s" % (base_rstr, egress_policy)
+            fw.append({'type': "", 'chain': "fw_chain_egress", 'rule': rstr})
 
 
 class CsVmMetadata(CsDataBag):

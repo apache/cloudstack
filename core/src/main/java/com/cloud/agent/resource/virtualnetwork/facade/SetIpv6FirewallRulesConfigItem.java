@@ -42,6 +42,7 @@ public class SetIpv6FirewallRulesConfigItem extends AbstractConfigItemFacade{
             final FirewallRule fwRule = new FirewallRule(rule.getId(), rule.getSrcVlanTag(), rule.getSrcIp(), rule.getProtocol(), rule.getSrcPortRange(), rule.revoked(),
                     rule.isAlreadyAdded(), rule.getSourceCidrList(), rule.getDestCidrList(), rule.getPurpose().toString(), rule.getIcmpType(), rule.getIcmpCode(), rule.getTrafficType().toString(),
                     rule.getGuestCidr(), rule.isDefaultEgressPolicy());
+            fwRule.setGuestIp6Cidr(command.getGuestIp6Cidr());
             rules.add(fwRule);
         }
 

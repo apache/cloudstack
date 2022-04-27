@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.ipv6;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -94,4 +95,17 @@ public class DeleteIpv6FirewallRuleCmd extends BaseAsyncCmd {
         }
     }
 
+    @Override
+    public Long getApiResourceId() {
+        FirewallRule rule = _firewallService.getFirewallRule(id);
+        if (rule != null) {
+            return rule.getNetworkId();
+        }
+        return null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
+    }
 }

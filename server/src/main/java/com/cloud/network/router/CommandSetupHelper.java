@@ -461,7 +461,9 @@ public class CommandSetupHelper {
     public void createApplyIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
-        Boolean defaultEgressPolicy = false;
+        final NetworkVO network = _networkDao.findById(guestNetworkId);
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();;
         if (rules != null) {
             if (rules.size() > 0) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
@@ -476,16 +478,13 @@ public class CommandSetupHelper {
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, trafficType);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                    final NetworkVO network = _networkDao.findById(guestNetworkId);
-                    final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, trafficType, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
             }
         }
 
-        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO);
+        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO, network.getIp6Cidr());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -547,7 +546,9 @@ public class CommandSetupHelper {
     public void createIpv6FirewallRulesCommands(final List<? extends FirewallRule> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId) {
         final List<FirewallRuleTO> rulesTO = new ArrayList<>();
         String systemRule = null;
-        Boolean defaultEgressPolicy = false;
+        final NetworkVO network = _networkDao.findById(guestNetworkId);
+        final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
         if (rules != null) {
             if (rules.size() > 0) {
                 if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System) {
@@ -562,16 +563,13 @@ public class CommandSetupHelper {
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, traffictype);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
-                    final NetworkVO network = _networkDao.findById(guestNetworkId);
-                    final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-                    defaultEgressPolicy = offering.isEgressDefaultPolicy();
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 }
             }
         }
 
-        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO);
+        final SetIpv6FirewallRulesCommand cmd = new SetIpv6FirewallRulesCommand(rulesTO, network.getIp6Cidr());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
