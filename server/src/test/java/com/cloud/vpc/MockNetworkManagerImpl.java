@@ -886,6 +886,12 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, String ip6Cidr, String ip6Gateway, String reserver, Type vmType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public DhcpServiceProvider getDhcpServiceProvider(Network network) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

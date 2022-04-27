@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.NetUtils;
 
 public interface VpcProvisioningService {
 
@@ -34,7 +35,7 @@ public interface VpcProvisioningService {
 
     VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices,
                                   Map<String, List<String>> serviceProviders,
-                                  Map serviceCapabilitystList,
+                                  Map serviceCapabilitystList, NetUtils.InternetProtocol internetProtocol,
                                   Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, VpcOffering.State state);
 
     Pair<List<? extends VpcOffering>,Integer> listVpcOfferings(ListVPCOfferingsCmd cmd);

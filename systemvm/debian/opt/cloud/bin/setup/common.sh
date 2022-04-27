@@ -110,14 +110,25 @@ setup_interface() {
   fi
 }
 
-setup_interface_ipv6() {
+enable_interface_ipv6() {
+  local intf=eth${1}
+  log_it "Enabling IPv6 on interface: ${intf}"
   sysctl net.ipv6.conf.all.disable_ipv6=0
   sysctl net.ipv6.conf.all.forwarding=1
   sysctl net.ipv6.conf.all.accept_ra=1
-
   sed  -i "s/net.ipv6.conf.all.disable_ipv6 =.*$/net.ipv6.conf.all.disable_ipv6 = 0/" /etc/sysctl.conf
   sed  -i "s/net.ipv6.conf.all.forwarding =.*$/net.ipv6.conf.all.forwarding = 1/" /etc/sysctl.conf
   sed  -i "s/net.ipv6.conf.all.accept_ra =.*$/net.ipv6.conf.all.accept_ra = 1/" /etc/sysctl.conf
+  sysctl net.ipv6.conf.${intf}.accept_dad=0
+  sysctl net.ipv6.conf.${intf}.use_tempaddr=0
+  if [ "$2" = true ] ; then
+    ifdown ${intf}
+    ifup ${intf}
+  fi
+}
+
+setup_interface_ipv6() {
+  enable_interface_ipv6 $1 false
 
   local intfnum=$1
   local ipv6="$2"
@@ -263,21 +274,52 @@ enable_rpsrfs() {
   echo 256 > /sys/class/net/eth2/queues/rx-0/rps_flow_cnt
 }
 
+setup_ipv6() {
+  local enableradvd=false
+  if [ -n "$ETH0_IP6" ]
+  then
+    enableradvd=true
+    setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
+  fi
+  if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+  then
+    rm -rf /etc/radvd.conf
+    setup_radvd "0" $GUEST_GW6 $GUEST_CIDR6_SIZE $enableradvd
+  fi
+  if [ -n "$ETH2_IP6" ]
+  then
+    setup_interface_ipv6 "2" $ETH2_IP6 $ETH2_IP6_PRELEN
+  fi
+}
+
+restore_ipv6() {
+  if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+    then
+    enable_interface_ipv6 "0" true
+  fi
+  if [ -n "$ETH0_IP6" ]
+  then
+    enable_radvd
+  fi
+  if [ -n "$ETH2_IP6" ]
+  then
+    enable_interface_ipv6 "2" true
+  fi
+}
+
+
 setup_common() {
   init_interfaces $1 $2 $3
   if [ -n "$ETH0_IP" ]
   then
     setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   fi
-  if [ -n "$ETH0_IP6" ]
-  then
-      setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
-  fi
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
   if [ -n "$ETH2_IP" ]
   then
     setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
+  setup_ipv6
 
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
@@ -354,6 +396,52 @@ setup_common() {
 
   if [ "$HYPERVISOR" == "vmware" ]; then
       ntpq -p &> /dev/null || vmware-toolbox-cmd timesync enable
+  fi
+}
+
+enable_radvd() {
+  systemctl -q is-enabled radvd
+  status=$?
+  if [ $status -ne 0 ]
+  then
+    log_it "Enabling radvd"
+    systemctl enable radvd
+    echo "radvd" >> /var/cache/cloud/enabled_svcs
+  fi
+  systemctl -q is-active radvd
+  status=$?
+  if [ $status -ne 0 ]
+  then
+    log_it "Starting radvd"
+    systemctl start radvd
+  fi
+}
+
+setup_radvd() {
+  log_it "Setting up radvd"
+
+  local intfnum=$1
+  local ipv6="$2"
+  local prelen="$3"
+  local enable="$4"
+
+  local intf=eth${intfnum}
+  local ip6cidr="$ipv6/$prelen"
+
+  cp /etc/radvd.conf.tmpl /etc/radvd.conf.$intf
+  sed -i "s,{{ GUEST_INTERFACE }},$intf,g" /etc/radvd.conf.$intf
+  sed -i "s,{{ IPV6_CIDR }},$ip6cidr,g" /etc/radvd.conf.$intf
+  RDNSS_CFG=
+  if [ -n "$IP6_NS1" ];then
+    RDNSS_CFG=$RDNSS_CFG"    RDNSS $IP6_NS1\n    {\n        AdvRDNSSLifetime 30;\n    };\n"
+  fi
+  if [ -n "$IP6_NS2" ];then
+    RDNSS_CFG=$RDNSS_CFG"    RDNSS $IP6_NS2\n    {\n        AdvRDNSSLifetime 30;\n    };\n"
+  fi
+  sed -i "s,{{ RDNSS_CONFIG }},$RDNSS_CFG,g" /etc/radvd.conf.$intf
+  cat /etc/radvd.conf.$intf >> /etc/radvd.conf
+  if [ "$enable" = true ] ; then
+    enable_radvd
   fi
 }
 
@@ -659,6 +747,12 @@ parse_cmd_line() {
         eth0ip6prelen)
             export ETH0_IP6_PRELEN=$VALUE
             ;;
+        eth2ip6)
+            export ETH2_IP6=$VALUE
+            ;;
+        eth2ip6prelen)
+            export ETH2_IP6_PRELEN=$VALUE
+            ;;
         internaldns1)
             export internalNS1=$VALUE
             ;;
@@ -676,6 +770,9 @@ parse_cmd_line() {
             ;;
         ip6dns2)
             export IP6_NS2=$VALUE
+            ;;
+        ip6firewall)
+            export IP6_FIREWALL=$VALUE
             ;;
         domain)
             export DOMAIN=$VALUE
@@ -727,6 +824,12 @@ parse_cmd_line() {
             ;;
         guestcidrsize)
             export GUEST_CIDR_SIZE=$VALUE
+            ;;
+        guestgw6)
+            export GUEST_GW6=$VALUE
+            ;;
+        guestcidr6size)
+            export GUEST_CIDR6_SIZE=$VALUE
             ;;
         router_pr)
             export ROUTER_PR=$VALUE

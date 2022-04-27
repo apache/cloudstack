@@ -898,7 +898,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo arg0, QualityOfServiceState arg1) {
-        StorPoolUtil.spLog("handleQualityOfServiceForVolumeMigration with volume name=%s", arg0.getName());
+        log.debug(String.format("handleQualityOfServiceForVolumeMigration with volume name=%s is not supported", arg0.getName()));
     }
 
 

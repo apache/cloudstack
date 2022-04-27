@@ -2343,7 +2343,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
-
                     if (nic.getIPv4Address() == null) {
                         long nicId = nic.getId();
                         long vmId = nic.getInstanceId();

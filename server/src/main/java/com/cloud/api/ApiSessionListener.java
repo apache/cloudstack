@@ -33,17 +33,12 @@ public class ApiSessionListener implements HttpSessionListener, ServletRequestLi
     public static final Logger LOGGER = Logger.getLogger(ApiSessionListener.class.getName());
     private static final String ATTRIBUTE_NAME = "SessionCounter";
     private static Map<HttpSession, Object> sessions = new ConcurrentHashMap<>();
-    private static long sessionCount;
-
-    public ApiSessionListener() {
-        sessionCount = 0;
-    }
 
     /**
      * @return the internal adminstered session count
      */
     public static long getSessionCount() {
-        return sessionCount;
+        return sessions.size();
     }
 
     /**
@@ -57,17 +52,15 @@ public class ApiSessionListener implements HttpSessionListener, ServletRequestLi
         synchronized (this) {
             HttpSession session = event.getSession();
             sessions.put(session, event.getSource());
-            sessionCount++;
         }
-        LOGGER.debug("Sessions count: " + sessions);
+        LOGGER.debug("Sessions count: " + getSessionCount());
     }
     public void sessionDestroyed(HttpSessionEvent event) {
         LOGGER.debug("Session destroyed by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
         synchronized (this) {
-            sessionCount--;
             sessions.remove(event.getSession());
         }
-        LOGGER.debug("Sessions count: " + sessions);
+        LOGGER.debug("Sessions count: " + getSessionCount());
     }
 
     @Override
