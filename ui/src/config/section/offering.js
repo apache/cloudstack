@@ -228,7 +228,7 @@ export default {
         dataView: true,
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-        args: ['name', 'description']
+        args: ['name', 'description', 'allowuserdrivenbackups']
       }, {
         api: 'deleteBackupOffering',
         icon: 'delete-outlined',
