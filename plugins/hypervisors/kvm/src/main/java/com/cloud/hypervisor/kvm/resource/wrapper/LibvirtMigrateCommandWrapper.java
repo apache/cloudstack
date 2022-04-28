@@ -77,7 +77,6 @@ import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.LogUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -103,7 +102,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
-        s_logger.debug(LogUtils.logGsonWithoutException("Trying to migrate VM [%s] with VLAN map [%s] and disk info [%s] to destination host [%s].", vmName, vlanToPersistenceMap, migrateDiskInfoList, destinationUri));
+        s_logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
 
         String result = null;
 
@@ -124,7 +123,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
 
-            s_logger.debug(LogUtils.logGsonWithoutException("Found domain with name [%s] with interfaces [%s] and disks [%s].", vmName, ifaces, disks));
+            s_logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
             VirtualMachineTO to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
@@ -180,14 +179,14 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final boolean migrateStorageManaged = command.isMigrateStorageManaged();
 
             if (migrateStorage) {
-                s_logger.debug(LogUtils.logGsonWithoutException("Changing VM [%s] volumes using mapping of storages: [%s].", vmName, mapMigrateStorage));
+                s_logger.debug(String.format("Changing VM [%s] volumes during migration to host: [%s].", vmName, target));
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
                 s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
-                s_logger.debug(LogUtils.logGsonWithoutException("Changing VM [%s] DPDK interfaces using mapping: [%s].", vmName, dpdkPortsMapping));
+                s_logger.debug(String.format("Changing VM [%s] DPDK interfaces during migration to host: [%s].", vmName, target));
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
                 s_logger.debug(String.format("Changed VM [%s] XML configuration of DPDK interfaces. New XML configuration is [%s].", vmName, xmlDesc));
             }
