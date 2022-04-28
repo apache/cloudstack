@@ -599,6 +599,12 @@ class TestIpv6Network(cloudstackTestCase):
                 cls.zone.id,
                 cls.services["ostype"]
             )
+            if cls.hypervisor.lower() in ('xenserver'):
+                # Default Xenserver template has IPv6 disabled
+                cls.template = get_test_template(
+                   cls.apiclient,
+                   cls.zone.id,
+                   cls.hypervisor)
         else:
             cls.debug("IPv6 is not supported, skipping tests!")
         return
