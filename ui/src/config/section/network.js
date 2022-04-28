@@ -114,9 +114,9 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: (record) => {
+          args: (record, store, isGroupAction) => {
             var fields = []
-            if (record.vpcid == null) {
+            if (isGroupAction || record.vpcid == null) {
               fields.push('cleanup')
             }
             fields.push('livepatch')
