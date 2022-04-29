@@ -41,7 +41,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -437,25 +436,14 @@ public class AgentShell implements IAgentShell, Daemon {
             Class<?> impl;
             try {
                 impl = Class.forName(name);
-                final Constructor<?> constructor = impl.getDeclaredConstructor();
+                Constructor<?> constructor = impl.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 ServerResource resource = (ServerResource)constructor.newInstance();
                 launchNewAgent(resource);
-            } catch (final ClassNotFoundException e) {
-                throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
-            } catch (final SecurityException e) {
-                throw new ConfigurationException("Security exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final NoSuchMethodException e) {
-                throw new ConfigurationException("Method not found exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final IllegalArgumentException e) {
-                throw new ConfigurationException("Illegal argument exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final InstantiationException e) {
-                throw new ConfigurationException("Instantiation exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final IllegalAccessException e) {
-                throw new ConfigurationException("Illegal access exception when loading resource: " + name + " due to: " + e.toString());
-            } catch (final InvocationTargetException e) {
-                throw new ConfigurationException("Invocation target exception when loading resource: " + name + " due to: " + e.toString());
-            }
+            } catch (final Exception e) {
+                ConfigurationException configurationException = new ConfigurationException(String.format("Error while creating Agent with class [%s].", name));
+                configurationException.setRootCause(e);
+                throw configurationException;            }
         }
     }
 
@@ -539,10 +527,6 @@ public class AgentShell implements IAgentShell, Daemon {
                 s_logger.debug("[ignored] AgentShell was interrupted.");
             }
 
-        } catch (final ConfigurationException e) {
-            s_logger.error("Unable to start agent: " + e.getMessage());
-            System.out.println("Unable to start agent: " + e.getMessage());
-            System.exit(ExitStatus.Configuration.value());
         } catch (final Exception e) {
             s_logger.error("Unable to start agent: ", e);
             System.out.println("Unable to start agent: " + e.getMessage());

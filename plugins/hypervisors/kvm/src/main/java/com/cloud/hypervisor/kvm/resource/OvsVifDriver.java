@@ -33,6 +33,8 @@ import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.network.Networks;
@@ -53,13 +55,9 @@ public class OvsVifDriver extends VifDriverBase {
 
         getPifs();
 
-        String networkScriptsDir = (String)params.get("network.scripts.dir");
-        if (networkScriptsDir == null) {
-            networkScriptsDir = "scripts/vm/network/vnet";
-        }
+        String networkScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_SCRIPTS_DIR);
 
-        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
-        if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
+        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED)) {
             dpdkDriver = new DpdkDriverImpl();
         }
 

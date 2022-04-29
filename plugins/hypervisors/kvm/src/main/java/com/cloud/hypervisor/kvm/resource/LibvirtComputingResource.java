@@ -322,7 +322,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
-    public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
     public final static String CONFIG_DIR = "config";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
@@ -737,34 +736,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private String getDefaultDirectDownloadTemporaryPath() {
-        return "/var/lib/libvirt/images";
-    }
-
-    private String getDefaultCachePath() {
-        return "/var/cache/cloud";
-    }
-
-    protected String getDefaultNetworkScriptsDir() {
-        return "scripts/vm/network/vnet";
-    }
-
-    protected String getDefaultStorageScriptsDir() {
-        return "scripts/storage/qcow2";
-    }
-
-    protected String getDefaultHypervisorScriptsDir() {
-        return "scripts/vm/hypervisor";
-    }
-
-    protected String getDefaultKvmScriptsDir() {
-        return "scripts/vm/hypervisor/kvm";
-    }
-
-    protected String getDefaultDomrScriptsDir() {
-        return "scripts/network/domr";
-    }
-
     protected String getNetworkDirectSourceMode() {
         return _networkDirectSourceMode;
     }
@@ -788,56 +759,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _storage = new JavaStorageLayer();
         _storage.configure("StorageLayer", params);
 
-        String domrScriptsDir = (String)params.get("domr.scripts.dir");
-        if (domrScriptsDir == null) {
-            domrScriptsDir = getDefaultDomrScriptsDir();
-        }
+        String domrScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DOMR_SCRIPTS_DIR);
 
-        String hypervisorScriptsDir = (String)params.get("hypervisor.scripts.dir");
-        if (hypervisorScriptsDir == null) {
-            hypervisorScriptsDir = getDefaultHypervisorScriptsDir();
-        }
+        String hypervisorScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_SCRIPTS_DIR);
 
-        String kvmScriptsDir = (String)params.get("kvm.scripts.dir");
-        if (kvmScriptsDir == null) {
-            kvmScriptsDir = getDefaultKvmScriptsDir();
-        }
+        String kvmScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVM_SCRIPTS_DIR);
 
-        String networkScriptsDir = (String)params.get("network.scripts.dir");
-        if (networkScriptsDir == null) {
-            networkScriptsDir = getDefaultNetworkScriptsDir();
-        }
+        String networkScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_SCRIPTS_DIR);
 
-        String storageScriptsDir = (String)params.get("storage.scripts.dir");
-        if (storageScriptsDir == null) {
-            storageScriptsDir = getDefaultStorageScriptsDir();
-        }
+        String storageScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STORAGE_SCRIPTS_DIR);
 
-        final String bridgeType = (String)params.get("network.bridge.type");
-        if (bridgeType == null) {
-            _bridgeType = BridgeType.NATIVE;
-        } else {
-            _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
-        }
+        final String bridgeType = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_BRIDGE_TYPE);
+        _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
 
-        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
-        if (_bridgeType == BridgeType.OPENVSWITCH && Boolean.parseBoolean(dpdk)) {
+        Boolean dpdk = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED);
+        if (_bridgeType == BridgeType.OPENVSWITCH && dpdk) {
             dpdkSupport = true;
-            dpdkOvsPath = (String) params.get("openvswitch.dpdk.ovs.path");
+            dpdkOvsPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_OVS_PATH);
             if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
                 dpdkOvsPath += "/";
             }
         }
 
-        directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
-        if (StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
-            directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
-        }
+        directDownloadTemporaryDownloadPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DIRECT_DOWNLOAD_TEMPORARY_DOWNLOAD_LOCATION);
 
-        cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
-        if (StringUtils.isBlank(cachePath)) {
-            cachePath = getDefaultCachePath();
-        }
+        cachePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CACHE_LOCATION);
 
         params.put("domr.scripts.dir", domrScriptsDir);
 
@@ -848,22 +794,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
 
-        _host = (String)params.get("host");
-        if (_host == null) {
-            _host = "localhost";
-        }
+        _host = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST);
 
-        _dcId = (String)params.get("zone");
-        if (_dcId == null) {
-            _dcId = "default";
-        }
+        _dcId = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ZONE);
 
-        _pod = (String)params.get("pod");
-        if (_pod == null) {
-            _pod = "default";
-        }
+        _pod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.POD);
 
-        _clusterId = (String)params.get("cluster");
+        _clusterId = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CLUSTER);
 
         _updateHostPasswdPath = Script.findScript(hypervisorScriptsDir, VRScripts.UPDATE_HOST_PASSWD);
         if (_updateHostPasswdPath == null) {
@@ -940,9 +877,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the ovs-pvlan-kvm-vm.sh");
         }
 
-        String value = (String)params.get("developer");
-        final boolean isDeveloper = Boolean.parseBoolean(value);
-
+        final boolean isDeveloper = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER);
         if (isDeveloper) {
             params.putAll(getDeveloperProperties());
         }
@@ -952,42 +887,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _pool = "/root";
         }
 
-        final String instance = (String)params.get("instance");
+        final String instance = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INSTANCE);
 
-        _hypervisorType = HypervisorType.getType((String)params.get("hypervisor.type"));
-        if (_hypervisorType == HypervisorType.None) {
-            _hypervisorType = HypervisorType.KVM;
-        }
+        _hypervisorType = HypervisorType.getType(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_TYPE));
 
-        String hooksDir = (String)params.get("rolling.maintenance.hooks.dir");
-        value = (String) params.get("rolling.maintenance.service.executor.disabled");
-        rollingMaintenanceExecutor = Boolean.parseBoolean(value) ? new RollingMaintenanceAgentExecutor(hooksDir) :
+        String hooksDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_HOOKS_DIR);
+        rollingMaintenanceExecutor = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED) ? new RollingMaintenanceAgentExecutor(hooksDir) :
                 new RollingMaintenanceServiceExecutor(hooksDir);
 
-        _hypervisorURI = (String)params.get("hypervisor.uri");
+        _hypervisorURI = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_URI);
         if (_hypervisorURI == null) {
             _hypervisorURI = LibvirtConnection.getHypervisorURI(_hypervisorType.toString());
         }
 
-        _networkDirectSourceMode = (String)params.get("network.direct.source.mode");
-        _networkDirectDevice = (String)params.get("network.direct.device");
+        _networkDirectSourceMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_SOURCE_MODE);
+        _networkDirectDevice = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_DEVICE);
 
-        String startMac = (String)params.get("private.macaddr.start");
-        if (startMac == null) {
-            startMac = "00:16:3e:77:e2:a0";
-        }
+        String startMac = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_MACADDR_START);
 
-        String startIp = (String)params.get("private.ipaddr.start");
-        if (startIp == null) {
-            startIp = "192.168.166.128";
-        }
+        String startIp = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_IPADDR_START);
 
         _pingTestPath = Script.findScript(kvmScriptsDir, "pingtest.sh");
         if (_pingTestPath == null) {
             throw new ConfigurationException("Unable to find the pingtest.sh");
         }
 
-        _linkLocalBridgeName = (String)params.get("private.bridge.name");
+        _linkLocalBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_BRIDGE_NAME);
         if (_linkLocalBridgeName == null) {
             if (isDeveloper) {
                 _linkLocalBridgeName = "cloud-" + instance + "-0";
@@ -996,22 +921,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        _publicBridgeName = (String)params.get("public.network.device");
-        if (_publicBridgeName == null) {
-            _publicBridgeName = "cloudbr0";
-        }
+        _publicBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PUBLIC_NETWORK_DEVICE);
 
-        _privBridgeName = (String)params.get("private.network.device");
-        if (_privBridgeName == null) {
-            _privBridgeName = "cloudbr1";
-        }
+        _privBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_NETWORK_DEVICE);
 
-        _guestBridgeName = (String)params.get("guest.network.device");
+        _guestBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_NETWORK_DEVICE);
         if (_guestBridgeName == null) {
             _guestBridgeName = _privBridgeName;
         }
 
-        _privNwName = (String)params.get("private.network.name");
+        _privNwName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_NETWORK_NAME);
         if (_privNwName == null) {
             if (isDeveloper) {
                 _privNwName = "cloud-" + instance + "-private";
@@ -1020,80 +939,54 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        configureLocalStorage(params);
+        configureLocalStorage();
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
-        _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
-        String _qemuSocketsPathVar = (String)params.get("qemu.sockets.path");
-        if (_qemuSocketsPathVar != null && StringUtils.isNotBlank(_qemuSocketsPathVar)) {
-            _qemuSocketsPath = new File(_qemuSocketsPathVar);
-        }
+        String _qemuSocketsPathVar = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.QEMU_SOCKETS_PATH);
+        _qemuSocketsPath = new File(_qemuSocketsPathVar);
 
-        value = (String)params.get("scripts.timeout");
+        // This value is never set. Default value is always used.
+        String value = (String)params.get("scripts.timeout");
         _timeout = Duration.standardSeconds(NumbersUtil.parseInt(value, 30 * 60));
 
-        value = (String)params.get("stop.script.timeout");
-        _stopTimeout = NumbersUtil.parseInt(value, 120) * 1000;
+        _stopTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.STOP_SCRIPT_TIMEOUT) * 1000;
 
-        value = (String)params.get("cmds.timeout");
-        _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
+        _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
 
-        value = (String) params.get("vm.memballoon.disable");
-        if (Boolean.parseBoolean(value)) {
-            _noMemBalloon = true;
-        }
+        _noMemBalloon = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE);
 
-        value = (String)params.get("host.cpu.manual.speed.mhz");
-        _manualCpuSpeed = NumbersUtil.parseInt(value, 0);
+        _manualCpuSpeed = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_CPU_MANUAL_SPEED_MHZ);
 
-        _videoHw = (String) params.get("vm.video.hardware");
-        value = (String) params.get("vm.video.ram");
-        _videoRam = NumbersUtil.parseInt(value, 0);
+        _videoHw = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_VIDEO_HARDWARE);
 
-        value = (String)params.get("host.reserved.mem.mb");
+        _videoRam = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_VIDEO_RAM);
+
         // Reserve 1GB unless admin overrides
-        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024* 1024L;
+        _dom0MinMem = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB) * 1024 * 1024L;
 
-        value = (String)params.get("host.overcommit.mem.mb");
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
-        _dom0OvercommitMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024L;
+        _dom0OvercommitMem = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB) * 1024 * 1024L;
 
-        value = (String) params.get("kvmclock.disable");
-        if (Boolean.parseBoolean(value)) {
+        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVMCLOCK_DISABLE)) {
             _noKvmClock = true;
         }
 
-        value = (String) params.get("vm.rng.enable");
-        if (Boolean.parseBoolean(value)) {
+        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_ENABLE)) {
             _rngEnable = true;
 
-            value = (String) params.get("vm.rng.model");
-            if (StringUtils.isNotEmpty(value)) {
-                _rngBackendModel = RngBackendModel.valueOf(value.toUpperCase());
-            }
+            _rngBackendModel = RngBackendModel.valueOf(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_MODEL).toUpperCase());
 
-            value = (String) params.get("vm.rng.path");
-            if (StringUtils.isNotEmpty(value)) {
-                _rngPath = value;
-            }
+            _rngPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_PATH);
 
-            value = (String) params.get("vm.rng.rate.bytes");
-            _rngRateBytes = NumbersUtil.parseInt(value, new Integer(_rngRateBytes));
+            _rngRateBytes = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_RATE_BYTES);
 
-            value = (String) params.get("vm.rng.rate.period");
-            _rngRatePeriod = NumbersUtil.parseInt(value, new Integer(_rngRatePeriod));
+            _rngRatePeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_RATE_PERIOD);
         }
 
-        value = (String) params.get("vm.watchdog.model");
-        if (StringUtils.isNotEmpty(value)) {
-            _watchDogModel = WatchDogModel.valueOf(value.toUpperCase());
-        }
+        _watchDogModel = WatchDogModel.valueOf(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_WATCHDOG_MODEL).toUpperCase());
 
-        value = (String) params.get("vm.watchdog.action");
-        if (StringUtils.isNotEmpty(value)) {
-            _watchDogAction = WatchDogAction.valueOf(value.toUpperCase());
-        }
+        _watchDogAction = WatchDogAction.valueOf(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_WATCHDOG_ACTION).toUpperCase());
 
         LibvirtConnection.initialize(_hypervisorURI);
         Connect conn = null;
@@ -1141,15 +1034,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.trace("Ignoring libvirt error.", e);
         }
 
-        final String cpuArchOverride = (String)params.get("guest.cpu.arch");
+        final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
         if (StringUtils.isNotEmpty(cpuArchOverride)) {
             _guestCpuArch = cpuArchOverride;
             s_logger.info("Using guest CPU architecture: " + _guestCpuArch);
         }
 
-        _guestCpuMode = (String)params.get("guest.cpu.mode");
+        _guestCpuMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_MODE);
         if (_guestCpuMode != null) {
-            _guestCpuModel = (String)params.get("guest.cpu.model");
+            _guestCpuModel = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_MODEL);
 
             if (_hypervisorLibvirtVersion < 9 * 1000 + 10) {
                 s_logger.warn("Libvirt version 0.9.10 required for guest cpu mode, but version " + prettyVersion(_hypervisorLibvirtVersion) +
@@ -1161,7 +1054,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             params.put("guest.cpu.model", _guestCpuModel);
         }
 
-        final String cpuFeatures = (String)params.get("guest.cpu.features");
+        final String cpuFeatures = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_FEATURES);
         if (cpuFeatures != null) {
             _cpuFeatures = new ArrayList<String>();
             for (final String feature: cpuFeatures.split(" ")) {
@@ -1220,24 +1113,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.warn("No default IPv4 gateway found");
         }
 
-        _mountPoint = (String)params.get("mount.path");
-        if (_mountPoint == null) {
-            _mountPoint = "/mnt";
-        }
+        _mountPoint = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MOUNT_PATH);
 
-        value = (String) params.get("vm.migrate.downtime");
-        _migrateDowntime = NumbersUtil.parseInt(value, -1);
+        _migrateDowntime = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOWNTIME);
 
-        value = (String) params.get("vm.migrate.pauseafter");
-        _migratePauseAfter = NumbersUtil.parseInt(value, -1);
+        _migratePauseAfter = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_PAUSEAFTER);
 
-        value = (String) params.get("vm.migrate.wait");
-        _migrateWait = NumbersUtil.parseInt(value, -1);
+        _migrateWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_WAIT);
 
         configureAgentHooks(params);
 
-        value = (String)params.get("vm.migrate.speed");
-        _migrateSpeed = NumbersUtil.parseInt(value, -1);
+        _migrateSpeed = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_SPEED);
         if (_migrateSpeed == -1) {
             //get guest network device speed
             _migrateSpeed = 0;
@@ -1269,7 +1155,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
-        Boolean _iscsiCleanUpEnabled = Boolean.parseBoolean((String)params.get("iscsi.session.cleanup.enabled"));
+        Boolean _iscsiCleanUpEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ISCSI_SESSION_CLEANUP_ENABLED);
 
         if (BooleanUtils.isTrue(_iscsiCleanUpEnabled)) {
             IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
@@ -1282,20 +1168,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    protected void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
-        String localStoragePath = (String)params.get(LOCAL_STORAGE_PATH);
-        if (localStoragePath == null) {
-            localStoragePath = DEFAULT_LOCAL_STORAGE_PATH;
-        }
-        String localStorageUUIDString = (String)params.get(LOCAL_STORAGE_UUID);
+    protected void configureLocalStorage() throws ConfigurationException {
+        String localStoragePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_PATH);
+        s_logger.debug(String.format("Local Storage Path set: [%s].", localStoragePath));
+
+        String localStorageUUIDString = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_UUID);
         if (localStorageUUIDString == null) {
             localStorageUUIDString = UUID.randomUUID().toString();
         }
+        s_logger.debug(String.format("Local Storage UUID set: [%s].", localStorageUUIDString));
 
         String[] localStorageRelativePaths = localStoragePath.split(CONFIG_VALUES_SEPARATOR);
         String[] localStorageUUIDStrings = localStorageUUIDString.split(CONFIG_VALUES_SEPARATOR);
         if (localStorageRelativePaths.length != localStorageUUIDStrings.length) {
-            throw new ConfigurationException("The path and UUID of local storage pools have different length");
+            s_logger.error(String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath, localStorageUUIDString));
+            throw new ConfigurationException(String.format("The path and UUID of the local storage pools have different length. Path: [%s], UUID: [%s].", localStoragePath, localStorageUUIDString));
         }
         for (String localStorageRelativePath : localStorageRelativePaths) {
             final File storagePath = new File(localStorageRelativePath);
@@ -1328,9 +1215,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Save configurations in agent.properties
         PropertiesStorage storage = new PropertiesStorage();
         storage.configure("Storage", new HashMap<String, Object>());
-        if (params.get("router.aggregation.command.each.timeout") != null) {
-            String value = (String)params.get("router.aggregation.command.each.timeout");
-            Long longValue = NumbersUtil.parseLong(value, 600);
+        Long longValue = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT);
+        if (longValue != null) {
             storage.persist("router.aggregation.command.each.timeout", String.valueOf(longValue));
         }
 
@@ -1345,46 +1231,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private void configureAgentHooks(final Map<String, Object> params) {
-        String value = (String) params.get("agent.hooks.basedir");
-        if (null != value) {
-            _agentHooksBasedir = value;
-        }
+        _agentHooksBasedir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_BASEDIR);
         s_logger.debug("agent.hooks.basedir is " + _agentHooksBasedir);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_xml_transformer.script");
-        if (null != value) {
-            _agentHooksLibvirtXmlScript = value;
-        }
+
+        _agentHooksLibvirtXmlScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT);
         s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + _agentHooksLibvirtXmlScript);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_xml_transformer.method");
-        if (null != value) {
-            _agentHooksLibvirtXmlMethod = value;
-        }
+        _agentHooksLibvirtXmlMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_METHOD);
         s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.method is " + _agentHooksLibvirtXmlMethod);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_on_start.script");
-        if (null != value) {
-            _agentHooksVmOnStartScript = value;
-        }
+        _agentHooksVmOnStartScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT);
         s_logger.debug("agent.hooks.libvirt_vm_on_start.script is " + _agentHooksVmOnStartScript);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_on_start.method");
-        if (null != value) {
-            _agentHooksVmOnStartMethod = value;
-        }
+        _agentHooksVmOnStartMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_METHOD);
         s_logger.debug("agent.hooks.libvirt_vm_on_start.method is " + _agentHooksVmOnStartMethod);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_on_stop.script");
-        if (null != value) {
-            _agentHooksVmOnStopScript = value;
-        }
+        _agentHooksVmOnStopScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT);
         s_logger.debug("agent.hooks.libvirt_vm_on_stop.script is " + _agentHooksVmOnStopScript);
 
-        value = (String) params.get("agent.hooks.libvirt_vm_on_stop.method");
-        if (null != value) {
-            _agentHooksVmOnStopMethod = value;
-        }
+        _agentHooksVmOnStopMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_METHOD);
         s_logger.debug("agent.hooks.libvirt_vm_on_stop.method is " + _agentHooksVmOnStopMethod);
     }
 
@@ -1414,13 +1280,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected void configureDiskActivityChecks(final Map<String, Object> params) {
-        _diskActivityCheckEnabled = Boolean.parseBoolean((String)params.get("vm.diskactivity.checkenabled"));
+        _diskActivityCheckEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_DISKACTIVITY_CHECKENABLED);
         if (_diskActivityCheckEnabled) {
-            final int timeout = NumbersUtil.parseInt((String)params.get("vm.diskactivity.checktimeout_s"), 0);
+            final int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_DISKACTIVITY_CHECKTIMEOUT_S);
             if (timeout > 0) {
                 _diskActivityCheckTimeoutSeconds = timeout;
             }
-            final long inactiveTime = NumbersUtil.parseLong((String)params.get("vm.diskactivity.inactivetime_ms"), 0L);
+            final long inactiveTime = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_DISKACTIVITY_INACTIVETIME_MS);
             if (inactiveTime > 0) {
                 _diskActivityInactiveThresholdMilliseconds = inactiveTime;
             }
@@ -1433,7 +1299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _trafficTypeVifDrivers = new HashMap<TrafficType, VifDriver>();
 
         // Load the default vif driver
-        String defaultVifDriverName = (String)params.get(LIBVIRT_VIF_DRIVER);
+        String defaultVifDriverName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LIBVIRT_VIF_DRIVER);
         if (defaultVifDriverName == null) {
             if (_bridgeType == BridgeType.OPENVSWITCH) {
                 s_logger.info("No libvirt.vif.driver specified. Defaults to OvsVifDriver.");
