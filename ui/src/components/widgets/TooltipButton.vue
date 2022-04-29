@@ -20,10 +20,10 @@
     <template #title v-if="tooltip">
       {{ tooltip }}
     </template>
-    <span>
+    <span style="margin-right: 5px">
       <a-button
         v-if="copyResource"
-        :shape="shape"
+        shape="circle"
         :size="size"
         :type="type"
         :danger="danger"
@@ -39,7 +39,7 @@
       </a-button>
       <a-button
         v-else
-        :shape="shape"
+        shape="circle"
         :size="size"
         :type="type"
         :danger="danger"
@@ -108,10 +108,6 @@ export default {
     danger: {
       type: Boolean,
       default: false
-    },
-    shape: {
-      type: String,
-      default: 'circle'
     }
   },
   methods: {
