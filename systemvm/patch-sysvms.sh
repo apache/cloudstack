@@ -17,9 +17,9 @@
 # under the License.
 
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-backupfolder=/tmp/bkpup_live_patch
+backupfolder=/var/cache/cloud/bkpup_live_patch
 logfile="/var/log/livepatchsystemvm.log"
-newpath="/tmp/"
+newpath="/var/cache/cloud/"
 CMDLINE=/var/cache/cloud/cmdline
 md5file=/var/cache/cloud/cloud-scripts-signature
 svcfile=/var/cache/cloud/enabled_svcs
@@ -89,6 +89,9 @@ restart_services() {
         return
       fi
     done < "$svcfile"
+    if [ "$TYPE" == "consoleproxy" ]; then
+      iptables -A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
+    fi
 }
 
 cleanup_systemVM() {
