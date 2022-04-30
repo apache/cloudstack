@@ -57,7 +57,7 @@
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
-                    style="min-width: 100px; margin-left: 10px"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -804,7 +804,7 @@ export default {
       const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
-        let title = columnKey
+        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
             key = columnKey.customTitle

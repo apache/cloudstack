@@ -41,7 +41,7 @@ validate_checksums() {
 }
 
 patch() {
-  local PATCH_MOUNT=/tmp
+  local PATCH_MOUNT=/var/cache/cloud
   local PATCH_SCRIPTS=cloud-scripts.tgz
   local oldpatchfile=/usr/share/cloud/$PATCH_SCRIPTS
   local patchfile=$PATCH_MOUNT/$PATCH_SCRIPTS
@@ -97,8 +97,8 @@ patch() {
 }
 
 cleanup() {
-  rm -rf /tmp/agent.zip
-  mv /tmp/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
+  rm -rf /var/cache/cloud/agent.zip
+  mv /var/cache/cloud/cloud-scripts.tgz /usr/share/cloud/cloud-scripts.tgz
 }
 
 start() {

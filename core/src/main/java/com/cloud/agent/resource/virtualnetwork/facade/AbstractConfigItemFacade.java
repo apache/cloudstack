@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BumpUpPriorityCommand;
@@ -38,6 +39,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -84,6 +86,7 @@ public abstract class AbstractConfigItemFacade {
         flyweight.put(DeleteIpAliasCommand.class, new DeleteIpAliasConfigItem());
         flyweight.put(VmDataCommand.class, new VmDataConfigItem());
         flyweight.put(SetFirewallRulesCommand.class, new SetFirewallRulesConfigItem());
+        flyweight.put(SetIpv6FirewallRulesCommand.class, new SetIpv6FirewallRulesConfigItem());
         flyweight.put(BumpUpPriorityCommand.class, new BumpUpPriorityConfigItem());
         flyweight.put(RemoteAccessVpnCfgCommand.class, new RemoteAccessVpnConfigItem());
         flyweight.put(VpnUsersCfgCommand.class, new VpnUsersConfigItem());

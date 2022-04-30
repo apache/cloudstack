@@ -50,6 +50,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
 import com.cloud.network.NetworkUsageService;
@@ -207,6 +208,8 @@ public abstract class BaseCmd {
     public AnnotationService annotationService;
     @Inject
     public ResourceIconManager resourceIconManager;
+    @Inject
+    public Ipv6Service ipv6Service;
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException;

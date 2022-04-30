@@ -71,6 +71,7 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1983,12 +1984,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     buf.append(" gateway=").append(nic.getIPv4Gateway());
                 }
                 if (ipv6) {
+                    defaultIp6Dns1 = nic.getIPv6Dns1() != null? nic.getIPv6Dns1() : dc.getIp6Dns1();
+                    defaultIp6Dns2 = nic.getIPv6Dns2() != null? nic.getIPv6Dns2() : dc.getIp6Dns2();
                     buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
                 }
                 defaultDns1 = nic.getIPv4Dns1();
                 defaultDns2 = nic.getIPv4Dns2();
-                defaultIp6Dns1 = nic.getIPv6Dns1();
-                defaultIp6Dns2 = nic.getIPv6Dns2();
             }
 
             if (nic.getTrafficType() == TrafficType.Management) {
@@ -2140,11 +2141,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final StringBuilder buf = new StringBuilder();
 
+        boolean isIpv6Supported = _networkOfferingDao.isIpv6Supported(guestNetwork.getNetworkOfferingId());
+        if (isIpv6Supported) {
+            buf.append(" ip6firewall=true");
+        }
+
         final boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(createRedundantRouterArgs(guestNic, router));
             final Network net = _networkModel.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
+            if (ObjectUtils.allNotNull(net.getIp6Gateway(), guestNic.getIPv6Cidr())) {
+                buf.append(" guestgw6=").append(net.getIp6Gateway());
+                buf.append(" guestcidr6size=").append(NetUtils.getIp6CidrSize(guestNic.getIPv6Cidr()));
+            }
             final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
             buf.append(" guestbrd=").append(brd);
             buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getIPv4Netmask()));
@@ -2429,18 +2439,28 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
         final List<FirewallRule> firewallRulesEgress = new ArrayList<FirewallRule>();
+        final List<FirewallRule> ipv6firewallRules = new ArrayList<>();
 
         // Fetch firewall Egress rules.
         if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
             firewallRulesEgress.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Firewall, FirewallRule.TrafficType.Egress));
             //create egress default rule for VR
             createDefaultEgressFirewallRule(firewallRulesEgress, guestNetworkId);
+
+            createDefaultEgressIpv6FirewallRule(ipv6firewallRules, guestNetworkId);
+            ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Egress));
+            ipv6firewallRules.addAll(_rulesDao.listByNetworkPurposeTrafficType(guestNetworkId, Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
         }
 
         // Re-apply firewall Egress rules
         s_logger.debug("Found " + firewallRulesEgress.size() + " firewall Egress rule(s) to apply as a part of domR " + router + " start.");
         if (!firewallRulesEgress.isEmpty()) {
             _commandSetupHelper.createFirewallRulesCommands(firewallRulesEgress, router, cmds, guestNetworkId);
+        }
+
+        s_logger.debug(String.format("Found %d Ipv6 firewall rule(s) to apply as a part of domR %s start.", ipv6firewallRules.size(), router));
+        if (!ipv6firewallRules.isEmpty()) {
+            _commandSetupHelper.createIpv6FirewallRulesCommands(ipv6firewallRules, router, cmds, guestNetworkId);
         }
 
         if (publicIps != null && !publicIps.isEmpty()) {
@@ -2580,13 +2600,28 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             sourceCidr.add(network.getCidr());
             destCidr.add(NetUtils.ALL_IP4_CIDRS);
 
-            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
+            final FirewallRule rule = new FirewallRuleVO(null, null, null, null, NetUtils.ALL_PROTO, networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
                     destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
         } else {
             s_logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the rule to Allow. ");
         }
+    }
+
+    private void createDefaultEgressIpv6FirewallRule(final List<FirewallRule> rules, final long networkId) {
+        final NetworkVO network = _networkDao.findById(networkId);
+        if(!_networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
+            return;
+        }
+        // Since not all networks will IPv6 supported, add a system rule for IPv6 networks
+        final List<String> sourceCidr = new ArrayList<String>();
+        final List<String> destCidr = new ArrayList<String>();
+        sourceCidr.add(network.getIp6Cidr());
+        destCidr.add(NetUtils.ALL_IP6_CIDRS);
+        final FirewallRule rule = new FirewallRuleVO(null, null, null, null, NetUtils.ALL_PROTO, networkId, network.getAccountId(), network.getDomainId(), Purpose.Ipv6Firewall, sourceCidr,
+                destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
+        rules.add(rule);
     }
 
     private void removeRevokedIpAliasFromDb(final List<NicIpAliasVO> revokedIpAliasVOs) {

@@ -27,9 +27,14 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String networkDomain;
     String defaultDns1 = null;
     String defaultDns2 = null;
+    String defaultIp6Dns1 = null;
+    String defaultIp6Dns2 = null;
     boolean isRedundant = false;
     boolean add = true;
     NicTO nic;
+    String routerIpv6 = null;
+    String routerIpv6Gateway = null;
+    String routerIpv6Cidr = null;
 
     public NicTO getNic() {
         return nic;
@@ -41,6 +46,14 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
 
     public String getDefaultDns2() {
         return defaultDns2;
+    }
+
+    public String getDefaultIp6Dns1() {
+        return defaultIp6Dns1;
+    }
+
+    public String getDefaultIp6Dns2() {
+        return defaultIp6Dns2;
     }
 
     public String getNetworkDomain() {
@@ -68,5 +81,37 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
         this.isRedundant = isRedundant;
         this.add = add;
         this.nic = nic;
+    }
+
+    public String getRouterIpv6() {
+        return routerIpv6;
+    }
+
+    public void setRouterIpv6(String routerIpv6) {
+        this.routerIpv6 = routerIpv6;
+    }
+
+    public String getRouterIpv6Gateway() {
+        return routerIpv6Gateway;
+    }
+
+    public void setRouterIpv6Gateway(String routerIpv6Gateway) {
+        this.routerIpv6Gateway = routerIpv6Gateway;
+    }
+
+    public String getRouterIpv6Cidr() {
+        return routerIpv6Cidr;
+    }
+
+    public void setRouterIpv6Cidr(String routerIpv6Cidr) {
+        this.routerIpv6Cidr = routerIpv6Cidr;
+    }
+
+    public void setDefaultIp6Dns1(String defaultIp6Dns1) {
+        this.defaultIp6Dns1 = defaultIp6Dns1;
+    }
+
+    public void setDefaultIp6Dns2(String defaultIp6Dns2) {
+        this.defaultIp6Dns2 = defaultIp6Dns2;
     }
 }

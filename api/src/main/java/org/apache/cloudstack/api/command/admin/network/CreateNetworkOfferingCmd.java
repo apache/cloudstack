@@ -92,6 +92,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.GUEST_IP_TYPE, type = CommandType.STRING, required = true, description = "guest type of the network offering: Shared or Isolated")
     private String guestIptype;
 
+    @Parameter(name = ApiConstants.INTERNET_PROTOCOL,
+            type = CommandType.STRING,
+            description = "The internet protocol of network offering. Options are ipv4 and dualstack. Default is ipv4. dualstack will create a network offering that supports both IPv4 and IPv6",
+            since = "4.17.0")
+    private String internetProtocol;
+
     @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
@@ -209,6 +215,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public String getGuestIpType() {
         return guestIptype;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
     }
 
     public Boolean getSpecifyIpRanges() {

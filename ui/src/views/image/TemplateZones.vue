@@ -176,7 +176,7 @@
           style="overflow-y: auto">
         </a-table>
         <a-spin :spinning="deleteLoading">
-          <a-form-item ref="forcedDelete" name="forcedDelete" :label="$t('label.isforced')" style="margin-bottom: 0;">
+          <a-form-item :label="$t('label.isforced')" style="margin-bottom: 0;">
             <a-switch v-model:checked="forcedDelete" v-focus="true"></a-switch>
           </a-form-item>
           <div :span="24" class="action-button">

@@ -38,6 +38,7 @@ public class ApiConstants {
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String LIVE_PATCH = "livepatch";
     public static final String AVAILABLE = "available";
+    public static final String AVAILABLE_SUBNETS = "availablesubnets";
     public static final String BACKUP_ID = "backupid";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
@@ -113,6 +114,7 @@ public class ApiConstants {
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DESCRIPTION = "description";
+    public static final String DESTINATION = "destination";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
@@ -205,12 +207,14 @@ public class ApiConstants {
     public static final String ID = "id";
     public static final String IDS = "ids";
     public static final String INDEX = "index";
+    public static final String PREFIX = "prefix";
     public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
+    public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String INTERVAL_TYPE = "intervaltype";
     public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
@@ -238,6 +242,7 @@ public class ApiConstants {
     public static final String IS_READY = "isready";
     public static final String IS_RECURSIVE = "isrecursive";
     public static final String ISO_FILTER = "isofilter";
+    public static final String ISO_ID = "isoid";
     public static final String ISO_GUEST_OS_NONE = "None";
     public static final String JAVA_DISTRIBUTION = "javadistribution";
     public static final String JAVA_VERSION = "javaversion";
@@ -385,6 +390,7 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
@@ -395,15 +401,16 @@ public class ApiConstants {
     public static final String TEMPLATE_ID = "templateid";
     public static final String TEMPLATE_IDS = "templateids";
     public static final String TEMPLATE_NAME = "templatename";
-    public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TOTAL_SUBNETS = "totalsubnets";
     public static final String TYPE = "type";
     public static final String TRUST_STORE = "truststore";
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
+    public static final String USED_SUBNETS = "usedsubnets";
     public static final String USER_DATA = "userdata";
     public static final String USER_FILTER = "userfilter";
     public static final String USER_ID = "userid";
@@ -560,6 +567,7 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_EANBLED = "securitygroupenabled";
     public static final String LOCAL_STORAGE_ENABLED = "localstorageenabled";
     public static final String GUEST_IP_TYPE = "guestiptype";
+    public static final String GUEST_IP6_PREFIX = "guestip6prefix";
     public static final String XENSERVER_NETWORK_LABEL = "xennetworklabel";
     public static final String KVM_NETWORK_LABEL = "kvmnetworklabel";
     public static final String VMWARE_NETWORK_LABEL = "vmwarenetworklabel";
@@ -602,6 +610,8 @@ public class ApiConstants {
     public static final String KEYWORD = "keyword";
     public static final String LIST_ALL = "listall";
     public static final String IP_RANGES = "ipranges";
+    public static final String IPV6_ROUTING = "ip6routing";
+    public static final String IPV6_ROUTES = "ip6routes";
     public static final String SPECIFY_IP_RANGES = "specifyipranges";
     public static final String IS_SOURCE_NAT = "issourcenat";
     public static final String IS_STATIC_NAT = "isstaticnat";
