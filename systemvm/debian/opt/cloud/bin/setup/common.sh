@@ -75,6 +75,8 @@ setup_interface() {
   local intf=eth${intfnum}
   local bootproto="static"
 
+  log_it "Setting up interface: ${intf}"
+
   if [ "$BOOTPROTO" == "dhcp" ]
   then
     if [ "$intfnum" != "0" ]
@@ -408,13 +410,6 @@ enable_radvd() {
     log_it "Enabling radvd"
     systemctl enable radvd
     echo "radvd" >> /var/cache/cloud/enabled_svcs
-  fi
-  systemctl -q is-active radvd
-  status=$?
-  if [ $status -ne 0 ]
-  then
-    log_it "Starting radvd"
-    systemctl start radvd
   fi
 }
 
