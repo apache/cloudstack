@@ -453,10 +453,9 @@ export default {
           successMethod: result => {
             if (singleZone) {
               const isResourcePage = (this.$route.params && this.$route.params.id)
-              if (isResourcePage) {
-                if (this.selectedItems.length === 0 && !this.showGroupActionModal) {
-                  this.$router.push({ path: '/template' })
-                }
+              const isSameResource = isResourcePage && this.$route.params.id === result.jobinstanceid
+              if (isResourcePage && isSameResource && this.selectedItems.length === 0 && !this.showGroupActionModal) {
+                this.$router.push({ path: '/template' })
               }
             } else {
               if (this.selectedItems.length === 0) {
