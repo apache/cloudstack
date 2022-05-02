@@ -72,8 +72,14 @@ public class ComponentContext implements ApplicationContextAware {
 
         Map<String, ComponentMethodInterceptable> interceptableComponents = getApplicationContext().getBeansOfType(ComponentMethodInterceptable.class);
         for (Map.Entry<String, ComponentMethodInterceptable> entry : interceptableComponents.entrySet()) {
-            Object bean = getTargetObject(entry.getValue());
-            beanFactory.configureBean(bean, entry.getKey());
+            try {
+                Object bean = getTargetObject(entry.getValue());
+                beanFactory.configureBean(bean, entry.getKey());
+            } catch (Throwable e){
+                s_logger.error(String.format("Could not load bean due to: [%s]. The service will be stopped. Please investigate the cause of the error or contact your support team.", e.getMessage(), e));
+                System.exit(1);
+            }
+
         }
 
         Map<String, ComponentLifecycle> lifecycleComponents = getApplicationContext().getBeansOfType(ComponentLifecycle.class);
