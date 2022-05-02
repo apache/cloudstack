@@ -5705,10 +5705,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
-        if (StringUtils.isEmpty(userData) && userDataId == null && template.getUserDataId() == null) {
+        if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }
-        if (template.getUserDataId() != null) {
+        if (template != null && template.getUserDataId() != null) {
             switch (template.getUserDataOverridePolicy()) {
                 case denyoverride:
                     if (StringUtils.isNotEmpty(userData) || userDataId != null) {

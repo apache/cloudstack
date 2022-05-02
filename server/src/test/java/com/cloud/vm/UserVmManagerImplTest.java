@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -155,6 +156,9 @@ public class UserVmManagerImplTest {
     @Mock
     VolumeApiService volumeApiService;
 
+    @Mock
+    UserDataDao userDataDao;
+
     private long vmId = 1l;
 
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
@@ -254,6 +258,7 @@ public class UserVmManagerImplTest {
         Mockito.when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
         Mockito.when(userVmVoMock.isDisplay()).thenReturn(true);
         Mockito.doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
 
@@ -269,6 +274,7 @@ public class UserVmManagerImplTest {
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(true);
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
         Mockito.doNothing().when(userVmDetailVO).removeDetails(vmId);
+        Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
@@ -319,6 +325,7 @@ public class UserVmManagerImplTest {
         if(!isDetailsEmpty) {
             details.put("", "");
         }
+        Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
         Mockito.when(updateVmCommand.getDetails()).thenReturn(details);
         Mockito.when(updateVmCommand.isCleanupDetails()).thenReturn(cleanUpDetails);
         configureDoNothingForDetailsMethod();
@@ -345,7 +352,7 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(userVmManagerImpl).updateVirtualMachine(nullable(Long.class), nullable(String.class), nullable(String.class), nullable(Boolean.class),
                 nullable(Boolean.class), nullable(Long.class),
-                nullable(String.class), null, null, nullable(Boolean.class), nullable(HTTPMethod.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(List.class),
+                nullable(String.class), nullable(Long.class), nullable(String.class), nullable(Boolean.class), nullable(HTTPMethod.class), nullable(String.class), nullable(String.class), nullable(String.class), nullable(List.class),
                 nullable(Map.class));
 
     }
@@ -356,7 +363,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(new ArrayList<Long>()).when(userVmManagerImpl).getSecurityGroupIdList(updateVmCommand);
         Mockito.lenient().doReturn(Mockito.mock(UserVm.class)).when(userVmManagerImpl).updateVirtualMachine(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(),
                 Mockito.anyBoolean(), Mockito.anyLong(),
-                Mockito.anyString(), null, null, Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
                 Mockito.anyMap());
     }
 

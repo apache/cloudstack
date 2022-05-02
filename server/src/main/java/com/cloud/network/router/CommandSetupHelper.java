@@ -1185,9 +1185,6 @@ public class CommandSetupHelper {
         }
     }
 
-    private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, final String serviceOffering,
-            final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
-            final long guestNetworkId, String hostname) {
     private VmDataCommand generateVmDataCommand(final VirtualRouter router, final String vmPrivateIpAddress, final String userData, String userDataDetails, final String serviceOffering,
                                                 final String zoneName, final String publicIpAddress, final String vmName, final String vmInstanceName, final long vmId, final String vmUuid, final String publicKey,
                                                 final long guestNetworkId, String hostname) {
