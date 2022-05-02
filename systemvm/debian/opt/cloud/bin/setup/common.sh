@@ -280,8 +280,9 @@ setup_ipv6() {
   then
     enableradvd=true
     setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
-  fi
-  if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+    rm -rf /etc/radvd.conf
+    setup_radvd "0" $ETH0_IP6 $ETH0_IP6_PRELEN $enableradvd
+  elif [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
   then
     rm -rf /etc/radvd.conf
     setup_radvd "0" $GUEST_GW6 $GUEST_CIDR6_SIZE $enableradvd
