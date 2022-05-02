@@ -300,7 +300,7 @@ restore_ipv6() {
   fi
   if [ -n "$ETH0_IP6" ]
   then
-    enable_radvd true
+    enable_radvd
   fi
   if [ -n "$ETH2_IP6" ]
   then
@@ -409,15 +409,12 @@ enable_radvd() {
     systemctl enable radvd
     echo "radvd" >> /var/cache/cloud/enabled_svcs
   fi
-  local startradvd=$1
-  if [ "$startradvd" = true ] ; then
-    systemctl -q is-active radvd
-    status=$?
-    if [ $status -ne 0 ]
-    then
-      log_it "Starting radvd"
-      systemctl start radvd
-    fi
+  systemctl -q is-active radvd
+  status=$?
+  if [ $status -ne 0 ]
+  then
+    log_it "Starting radvd"
+    systemctl start radvd
   fi
 }
 
@@ -445,7 +442,7 @@ setup_radvd() {
   sed -i "s,{{ RDNSS_CONFIG }},$RDNSS_CFG,g" /etc/radvd.conf.$intf
   cat /etc/radvd.conf.$intf >> /etc/radvd.conf
   if [ "$enable" = true ] ; then
-    enable_radvd false
+    enable_radvd
   fi
 }
 
