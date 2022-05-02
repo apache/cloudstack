@@ -48,9 +48,11 @@ import com.cloud.hypervisor.vmware.mo.LicenseAssignmentManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.ExceptionUtil;
+import com.google.gson.Gson;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestOsDescriptor;
@@ -61,6 +63,7 @@ import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PerfCounterInfo;
 import com.vmware.vim25.PerfMetricId;
 import com.vmware.vim25.ResourceAllocationInfo;
+import com.vmware.vim25.StorageIOAllocationInfo;
 import com.vmware.vim25.VirtualCdrom;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
@@ -141,7 +144,6 @@ public class VmwareHelper {
 
     public static VirtualDevice prepareNicOpaque(VirtualMachineMO vmMo, VirtualEthernetCardType deviceType, String portGroupName,
             String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
-
         assert(vmMo.getRunningHost().hasOpaqueNSXNetwork());
 
         VirtualEthernetCard nic = createVirtualEthernetCard(deviceType);
@@ -215,8 +217,10 @@ public class VmwareHelper {
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
-                                                  ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
-
+                                                  ManagedObjectReference morDs, int deviceNumber, int contextNumber, Long maxIops) throws Exception {
+        LOGGER.debug(LogUtils.logGsonWithoutException("Trying to prepare disk device to virtual machine [%s], using the following details: Virtual device [%s], "
+                + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s].",
+                vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops));
         assert (vmdkDatastorePathChain != null);
         assert (vmdkDatastorePathChain.length >= 1);
 
@@ -243,6 +247,13 @@ public class VmwareHelper {
             disk.setKey(-contextNumber);
             disk.setUnitNumber(deviceNumber);
 
+            if (maxIops != null && maxIops > 0) {
+                LOGGER.debug(LogUtils.logGsonWithoutException("Adding [%s] as the max IOPS of disk [%s].", maxIops, disk));
+                StorageIOAllocationInfo storageIOAllocationInfo = new StorageIOAllocationInfo();
+                storageIOAllocationInfo.setLimit(maxIops);
+                disk.setStorageIOAllocation(storageIOAllocationInfo);
+            }
+
             VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
             connectInfo.setConnected(true);
             connectInfo.setStartConnected(true);
@@ -255,6 +266,9 @@ public class VmwareHelper {
             setParentBackingInfo(backingInfo, morDs, parentDisks);
         }
 
+        LOGGER.debug(LogUtils.logGsonWithoutException("Prepared disk device, to attach to virtual machine [%s], has the following details: Virtual device [%s], "
+                + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s], is: [%s].",
+                vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops, disk));
         return disk;
     }
 
@@ -750,5 +764,4 @@ public class VmwareHelper {
         }
         return host;
     }
-
 }
