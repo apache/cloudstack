@@ -78,25 +78,25 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         }
 
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
-        boolean hasNfs = false;
+        boolean hasHaPool = false;
         for (StoragePoolVO pool : clusterPools) {
-            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                hasNfs = true;
+            if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.RBD) {
+                hasHaPool = true;
                 break;
             }
         }
-        if (!hasNfs) {
+        if (!hasHaPool) {
             List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
             for (StoragePoolVO pool : zonePools) {
-                if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
-                    hasNfs = true;
+                if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.RBD) {
+                    hasHaPool = true;
                     break;
                 }
             }
         }
-        if (!hasNfs) {
+        if (!hasHaPool) {
             s_logger.warn(
-                    "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
+                    "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS, RBD storage. Skipping investigation.");
             return Status.Disconnected;
         }
 

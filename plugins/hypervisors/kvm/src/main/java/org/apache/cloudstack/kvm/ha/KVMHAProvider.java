@@ -72,8 +72,9 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     public boolean recover(Host r) throws HARecoveryException {
         try {
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
-                return resp.getSuccess();
+                // final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
+                // return resp.getSuccess();
+                return false; // Changed so that ha occurs when oobm is off
             } else {
                 LOG.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
