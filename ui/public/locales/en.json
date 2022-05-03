@@ -233,6 +233,7 @@
 "label.action.migrate.systemvm.processing": "Migrating system VM...",
 "label.action.migrate.systemvm.to.ps": "Migrate system VM to another primary storage",
 "label.action.patch.systemvm": "Patch system VM",
+"label.action.patch.systemvm.vpc": "Patch system VM - VPC Router",
 "label.action.patch.systemvm.processing": "Patching system VM....",
 "label.action.project.add.account": "Add account to project",
 "label.action.project.add.user": "Add user to project",
