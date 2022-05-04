@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -440,7 +441,8 @@ public class AgentShell implements IAgentShell, Daemon {
                 constructor.setAccessible(true);
                 ServerResource resource = (ServerResource)constructor.newInstance();
                 launchNewAgent(resource);
-            } catch (final Exception e) {
+            } catch (final ClassNotFoundException | SecurityException | NoSuchMethodException | IllegalArgumentException | InstantiationException |
+                    IllegalAccessException | InvocationTargetException e) {
                 ConfigurationException configurationException = new ConfigurationException(String.format("Error while creating Agent with class [%s].", name));
                 configurationException.setRootCause(e);
                 throw configurationException;            }
@@ -529,7 +531,6 @@ public class AgentShell implements IAgentShell, Daemon {
 
         } catch (final Exception e) {
             s_logger.error("Unable to start agent: ", e);
-            System.out.println("Unable to start agent: " + e.getMessage());
             System.exit(ExitStatus.Error.value());
         }
     }
