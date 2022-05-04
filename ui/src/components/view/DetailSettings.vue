@@ -56,8 +56,8 @@
             :options="detailValues"
             :placeholder="$t('label.value')"
             @change="e => onAddInputChange(e, 'newValue')" />
-          <tooltip-button :tooltip="$t('label.add.setting')" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
-          <tooltip-button :tooltip="$t('label.cancel')" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
+          <tooltip-button :tooltip="$t('label.add.setting')" :shape="null" icon="check-outlined" @onClick="addDetail" buttonClass="detail-button" />
+          <tooltip-button :tooltip="$t('label.cancel')" :shape="null" icon="close-outlined" @onClick="closeDetail" buttonClass="detail-button" />
         </a-input-group>
         <p v-if="error" style="color: red"> {{ $t(error) }} </p>
       </div>

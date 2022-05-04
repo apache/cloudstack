@@ -133,23 +133,25 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
+          let onClose = () => {}
           if (!bulkAction) {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: errMessage,
-              description: desc,
-              key: jobId,
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            onClose = () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
           }
+          notification.error({
+            top: '65px',
+            message: errMessage,
+            description: desc,
+            key: jobId,
+            duration: 0,
+            onClose: onClose
+          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,

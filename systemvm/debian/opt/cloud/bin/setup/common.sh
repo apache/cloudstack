@@ -75,6 +75,8 @@ setup_interface() {
   local intf=eth${intfnum}
   local bootproto="static"
 
+  log_it "Setting up interface: ${intf}"
+
   if [ "$BOOTPROTO" == "dhcp" ]
   then
     if [ "$intfnum" != "0" ]
@@ -280,8 +282,9 @@ setup_ipv6() {
   then
     enableradvd=true
     setup_interface_ipv6 "0" $ETH0_IP6 $ETH0_IP6_PRELEN
-  fi
-  if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
+    rm -rf /etc/radvd.conf
+    setup_radvd "0" $ETH0_IP6 $ETH0_IP6_PRELEN $enableradvd
+  elif [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
   then
     rm -rf /etc/radvd.conf
     setup_radvd "0" $GUEST_GW6 $GUEST_CIDR6_SIZE $enableradvd
@@ -293,6 +296,7 @@ setup_ipv6() {
 }
 
 restore_ipv6() {
+  log_it "Restoring IPv6 configurations with ETH0_IP6=$ETH0_IP6 GUEST_GW6=$GUEST_GW6 GUEST_CIDR6_SIZE=$GUEST_CIDR6_SIZE ETH2_IP6=$ETH2_IP6"
   if [ -n "$ETH0_IP6" ] || [ -n "$GUEST_GW6"  -a -n "$GUEST_CIDR6_SIZE" ]
     then
     enable_interface_ipv6 "0" true
@@ -406,15 +410,8 @@ enable_radvd() {
   then
     log_it "Enabling radvd"
     systemctl enable radvd
-    echo "radvd" >> /var/cache/cloud/enabled_svcs
   fi
-  systemctl -q is-active radvd
-  status=$?
-  if [ $status -ne 0 ]
-  then
-    log_it "Starting radvd"
-    systemctl start radvd
-  fi
+  grep -q "radvd" /var/cache/cloud/enabled_svcs || echo "radvd" >> /var/cache/cloud/enabled_svcs
 }
 
 setup_radvd() {
