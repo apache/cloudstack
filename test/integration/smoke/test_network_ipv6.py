@@ -845,7 +845,7 @@ class TestIpv6Network(cloudstackTestCase):
             cmd,
             hypervisor=self.routerDetailsMap[router.id]['hypervisor']
         )
-        self.assertTrue(type(result) == list and len(result) > 0,
+        self.assertTrue(type(result) == list,
             "%s on router %s returned invalid result" % (cmd, router.id))
         result = '\n'.join(result)
         return result

@@ -100,7 +100,7 @@ export default {
       label: 'label.action.patch.systemvm',
       message: 'message.action.patch.router',
       dataView: true,
-      hidden: (record) => { return record.state === 'Running' },
+      show: (record) => { return record.state === 'Running' && !('vpcid' in record) },
       mapping: {
         id: {
           value: (record) => { return record.guestnetworkid }
@@ -116,6 +116,32 @@ export default {
           const data = record.filter(y => { return y.id === x })
           return {
             id: data[0].guestnetworkid, livepatch: true
+          }
+        })
+      }
+    },
+    {
+      api: 'restartVPC',
+      icon: 'diff-outlined',
+      label: 'label.action.patch.systemvm.vpc',
+      message: 'message.action.patch.router',
+      dataView: true,
+      show: (record) => { return record.state === 'Running' && ('vpcid' in record) },
+      mapping: {
+        id: {
+          value: (record) => { return record.vpcid }
+        },
+        livepatch: {
+          value: (record) => { return true }
+        }
+      },
+      groupAction: true,
+      popup: true,
+      groupMap: (selection, values, record) => {
+        return selection.map(x => {
+          const data = record.filter(y => { return y.id === x })
+          return {
+            id: data[0].vpcid, livepatch: true
           }
         })
       }
