@@ -57,7 +57,7 @@
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
-                    style="min-width: 100px; margin-left: 10px"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
