@@ -187,21 +187,55 @@ class TestGatewayOnSharedNetwork(cloudstackTestCase):
         self.services["vlan_ip_range"]["startip"] = "192.168.3.2"
         self.services["vlan_ip_range"]["endip"] = "192.168.3.20"
         self.services["vlan_ip_range"]["vlan"] = "111"
-        PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"], networkid=self.network1.id)
+        range1 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"], networkid=self.network1.id)
+        self.debug(f"============range 1 : {range1}")
 
         self.services["vlan_ip_range"]["netmask"] = "255.255.255.192"
         self.services["vlan_ip_range"]["gateway"] = "192.168.3.21"
         self.services["vlan_ip_range"]["startip"] = "192.168.3.2"
         self.services["vlan_ip_range"]["endip"] = "192.168.3.20"
         self.services["vlan_ip_range"]["vlan"] = "222"
-        PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"], networkid=self.network2.id)
+        range2 = PublicIpRange.create(self.apiclient, self.services["vlan_ip_range"], networkid=self.network2.id)
 
         # - Update IP address of the two vms, by specifying new IP address on additional IP ranges. The new gateway and
         #   netmask should be updated correctly (eg vm1 on network1-iprange2, vm2 on network2-iprange2).
-        nic1 = NIC.list(self.apiclient, virtualmachineid=virtual_machine1)[0]
-        nic1.updateIP(self.apiclient, id=nic1.id, ipaddress="192.168.3.2")
+        nic1id = NIC.list(self.apiclient, virtualmachineid=virtual_machine1.id, networkid=self.network1.id)[0].id
+        NIC.updateIp(self.apiclient, id=nic1id, ipaddress="192.168.3.2")
+        nics = NIC.list(self.apiclient, virtualmachineid=virtual_machine1.id, networkid=self.network1.id)
+        self.check_nic(nics, self.network1, range1)
 
-        nic2 = NIC.list(self.apiclient, virtualmachineid=virtual_machine1)[0]
-        nic2.updateIP(self.apiclient, id=nic1.id, ipaddress="192.168.3.2")
+        nic2id = NIC.list(self.apiclient, virtualmachineid=virtual_machine2.id, networkid=self.network2.id)[0].id
+        NIC.updateIp(self.apiclient, id=nic2id, ipaddress="192.168.3.2")
+        nics = NIC.list(self.apiclient, virtualmachineid=virtual_machine2.id, networkid=self.network2.id)
+        self.check_nic(nics, self.network2, range2)
+
 
         return
+
+    def check_nic(self, nics, network, range):
+        # network = Network.list(self.apiclient, id=network_obj.id)[0]
+        self.assertEqual(
+            len(nics),
+            1,
+            "VM should have only one nic"
+        )
+        self.assertNotEqual(
+            nics[0].netmask,
+            network.netmask,
+            "netmask is from the primary range of the network"
+        )
+        self.assertNotEqual(
+            nics[0].gateway,
+            network.gateway,
+            "gateway is from the primary range of the network"
+        )
+        self.assertEqual(
+            nics[0].netmask,
+            range.vlan.netmask,
+            f"netmask should be from the extra range {range}, of network {network}."
+        )
+        self.assertEqual(
+            nics[0].gateway,
+            range.vlan.gateway,
+            f"gateway should be from the extra range {range}, of network {network}."
+        )
