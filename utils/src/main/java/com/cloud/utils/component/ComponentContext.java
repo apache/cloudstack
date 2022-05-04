@@ -75,8 +75,8 @@ public class ComponentContext implements ApplicationContextAware {
             try {
                 Object bean = getTargetObject(entry.getValue());
                 beanFactory.configureBean(bean, entry.getKey());
-            } catch (Throwable e){
-                s_logger.error(String.format("Could not load bean due to: [%s]. The service will be stopped. Please investigate the cause of the error or contact your support team.", e.getMessage(), e));
+            } catch (BeansException e){
+                s_logger.error(String.format("Could not load bean due to: [%s]. The service will be stopped. Please investigate the cause of the error or contact your support team.", e.getMessage()), e);
                 System.exit(1);
             }
 
