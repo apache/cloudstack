@@ -904,9 +904,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             NetworkVO networkVO = networksMapping.get(networkName);
             NicVO nicVO = _nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
-                s_logger.warn(String.format("Can't find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from VM [id: %s, name: %s].",
+                s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
                         networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
+
+                if (nicVO.getRemoved() != null) {
+                    _nicDao.unremove(nicVO.getId());
+                }
             }
         }
         for (final NicVO unMappedNic : allNics) {
