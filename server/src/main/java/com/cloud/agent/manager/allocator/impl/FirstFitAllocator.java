@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -205,6 +206,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
         allhostsInCluster.removeAll(clusterHosts);
+        s_logger.debug(String.format("Adding hosts [%s] to the avoid set because these hosts does not support HA.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(allhostsInCluster, "uuid", "name")));
         for (HostVO host : allhostsInCluster) {
             avoid.addHost(host.getId());
         }
@@ -318,10 +321,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
             //find number of guest VMs occupying capacity on this host.
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
-                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
-                }
+                s_logger.debug(String.format("Adding host [%s] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
                 avoid.addHost(host.getId());
                 continue;
             }
@@ -330,7 +331,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
                 ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
                 if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    s_logger.info("Host name: " + host.getName() + ", hostId: "+ host.getId() +" does not have required GPU devices available");
+                    s_logger.debug(String.format("Adding host [%s] to avoid set, because this host does not have required GPU devices available.",
+                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
                     avoid.addHost(host.getId());
                     continue;
                 }
