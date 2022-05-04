@@ -18,12 +18,13 @@
  */
 package org.apache.cloudstack.api.command;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -37,8 +38,10 @@ import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.UUID;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
 @APICommand(name = LinkAccountToLdapCmd.APINAME, description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
@@ -138,5 +141,16 @@ public class LinkAccountToLdapCmd extends BaseCmd {
 
     public Account.Type getAccountType() {
         return Account.Type.getFromValue(accountType);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        return account != null ? account.getAccountId() : null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

@@ -25,7 +25,6 @@ setup_console_proxy() {
   echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 
-  setup_common eth0 eth1 eth2
   setup_system_rfc1918_internal
 
   log_it "Setting up entry in hosts"
@@ -33,21 +32,11 @@ setup_console_proxy() {
   public_ip=`getPublicIp`
   echo "$public_ip $NAME" >> /etc/hosts
 
-  log_it "Applying iptables rules"
-  cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4
-
-  log_it "Configuring sshd"
-  local hyp=$HYPERVISOR
-  if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then
-    setup_sshd $ETH1_IP "eth1"
-  else
-    setup_sshd $ETH0_IP "eth0"
-  fi
-
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
   rm -f /etc/logrotate.d/cloud
+
 }
 
 setup_console_proxy

@@ -27,6 +27,4 @@ public interface IBaseListCmd {
     Long getPageSizeVal();
 
     Long getStartIndex();
-
-    ApiCommandJobType getInstanceType();
 }

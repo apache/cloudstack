@@ -195,6 +195,11 @@
     <template #agentstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
+    <template #vlan="{ text, record }">
+      <a href="javascript:;">
+        <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
+      </a>
+    </template>
     <template #guestnetworkname="{ text, record }">
       <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
     </template>
@@ -263,6 +268,9 @@
         <span v-else>{{ text }}</span>
       </template>
     </template>
+    <template #resource="{ record }">
+      <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
+    </template>
     <template #domain="{ text, record }">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
@@ -283,12 +291,21 @@
       <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
     </template>
+    <template #templateversion="{ record }">
+      <span>  {{ record.version }} </span>
+    </template>
+    <template #softwareversion="{ record }">
+      <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
+    </template>
     <template #access="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
     </template>
     <template #requiresupgrade="{ record }">
       <status :text="record.requiresupgrade ? 'warning' : ''" />
       {{ record.requiresupgrade ? 'Yes' : 'No' }}
+    </template>
+    <template #loadbalancerrule="{ record }">
+      <span>  {{ record.loadbalancerrule }} </span>
     </template>
     <template #autoscalingenabled="{ record }">
       <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
@@ -398,6 +415,7 @@ import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'ListView',
@@ -406,7 +424,8 @@ export default {
     Status,
     QuickView,
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   props: {
     columns: {

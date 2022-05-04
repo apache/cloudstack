@@ -22,8 +22,8 @@ export default {
   icon: 'share-alt-outlined',
   permission: ['listInternalLoadBalancerVMs'],
   params: { projectid: '-1' },
-  columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'hostname', 'account', 'zonename', 'requiresupgrade'],
-  details: ['name', 'id', 'version', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
+  columns: ['name', 'state', 'publicip', 'guestnetworkname', 'vpcname', 'version', 'softwareversion', 'hostname', 'account', 'zonename', 'requiresupgrade'],
+  details: ['name', 'id', 'version', 'softwareversion', 'requiresupgrade', 'guestnetworkname', 'vpcname', 'publicip', 'guestipaddress', 'linklocalip', 'serviceofferingname', 'networkdomain', 'isredundantrouter', 'redundantstate', 'hostname', 'account', 'zonename', 'created'],
   actions: [
     {
       api: 'startInternalLoadBalancerVM',

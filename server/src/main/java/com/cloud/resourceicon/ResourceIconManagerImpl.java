@@ -16,6 +16,17 @@
 // under the License.
 package com.cloud.resourceicon;
 
+import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.persistence.EntityExistsException;
+
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+
 import com.cloud.domain.PartOf;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -27,13 +38,12 @@ import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.projects.ProjectVO;
+import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceIconManager;
-
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceTag;
-import com.cloud.resource.icon.ResourceIconVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.ResourceManagerUtilImpl;
@@ -52,14 +62,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.persistence.EntityExistsException;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class ResourceIconManagerImpl extends ManagerBase implements ResourceIconManager {
     public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
@@ -137,6 +139,25 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
         return new Pair<>(accountId, domainId);
     }
 
+    private void updateResourceDetailsInContext(Long resourceId, ResourceTag.ResourceObjectType resourceType) {
+        Class<?> clazz = ResourceManagerUtilImpl.s_typeMap.get(resourceType);
+        ApiCommandResourceType type = ApiCommandResourceType.valueFromAssociatedClass(clazz);
+        int depth = 5;
+        while (type == null && depth > 0) {
+            Class<?>[] clazzes = clazz.getInterfaces();
+            if (clazzes.length == 0) {
+                break;
+            }
+            depth--;
+            clazz = clazzes[0];
+            type = ApiCommandResourceType.valueFromAssociatedClass(clazz);
+        }
+        CallContext.current().setEventResourceId(resourceId);
+        if (!ApiCommandResourceType.None.equals(type)) {
+            CallContext.current().setEventResourceType(type);
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_RESOURCE_ICON_UPLOAD, eventDescription = "uploading resource icon")
@@ -157,6 +178,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
 
                     long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
                     String resourceUuid = resourceManagerUtil.getUuid(resourceId, resourceType);
+                    updateResourceDetailsInContext(id, resourceType);
                     ResourceIconVO existingResourceIcon = resourceIconDao.findByResourceUuid(resourceUuid, resourceType);
                     ResourceIconVO resourceIcon = null;
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
@@ -198,6 +220,7 @@ public class ResourceIconManagerImpl extends ManagerBase implements ResourceIcon
                 for (ResourceIcon resourceIcon : resourceIcons) {
                     String resourceId = resourceIcon.getResourceUuid();
                     long id = resourceManagerUtil.getResourceId(resourceId, resourceType);
+                    updateResourceDetailsInContext(id, resourceType);
                     Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
                     Long domainId = accountDomainPair.second();
                     Long accountId = accountDomainPair.first();

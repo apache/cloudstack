@@ -49,6 +49,15 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
+    "publicip6range": {
+        "ip6gateway": "fd17:ac56:1234:2000::1",
+        "ip6cidr": "fd17:ac56:1234:2000::/64",
+        "vlan": 301,
+        "forvirtualnetwork": "true"
+    },
+    "guestip6prefix": {
+        "prefix": "fd17:ac56:1234:1000::/52"
+    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",

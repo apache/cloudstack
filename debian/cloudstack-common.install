@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloudstack-common/vms/systemvm.iso
 /usr/share/cloudstack-common/scripts/installer/*
 /usr/share/cloudstack-common/scripts/network/*
 /usr/share/cloudstack-common/scripts/storage/*
@@ -29,6 +28,7 @@
 /usr/share/cloudstack-common/scripts/vm/hypervisor/vmware/*
 /usr/share/cloudstack-common/scripts/vm/hypervisor/xenserver/*
 /usr/share/cloudstack-common/lib/*
+/usr/share/cloudstack-common/vms/*
 /usr/bin/cloudstack-set-guest-password
 /usr/bin/cloudstack-set-guest-sshkey
 /usr/share/pyshared

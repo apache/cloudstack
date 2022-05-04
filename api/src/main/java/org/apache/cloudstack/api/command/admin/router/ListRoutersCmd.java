@@ -20,7 +20,7 @@ import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -160,8 +160,8 @@ public class ListRoutersCmd extends BaseListProjectAndAccountResourcesCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.DomainRouter;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.DomainRouter;
     }
 
     @Override

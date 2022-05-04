@@ -54,6 +54,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -212,7 +213,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -906,7 +907,8 @@ public class LibvirtComputingResourceTest {
         final MemoryStatistic[] domainMem = new MemoryStatistic[2];
         domainMem[0] = Mockito.mock(MemoryStatistic.class);
         Mockito.when(domain.getInfo()).thenReturn(domainInfo);
-        Mockito.when(domain.memoryStats(2)).thenReturn(domainMem);
+        Mockito.when(domain.memoryStats(20)).thenReturn(domainMem);
+        Mockito.when(domainMem[0].getTag()).thenReturn(4);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
         final NodeInfo nodeInfo = new NodeInfo();
         nodeInfo.cpus = 8;
@@ -5280,7 +5282,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommand() {
+    public void testStartCommand() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5332,6 +5336,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
@@ -5354,7 +5359,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommandIsolationEc2() {
+    public void testStartCommandIsolationEc2() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5410,6 +5417,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
@@ -5578,21 +5586,34 @@ public class LibvirtComputingResourceTest {
         Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(null);
         long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
 
-        Assert.assertEquals(0, memoryFreeInKBs);
+        Assert.assertEquals(-1, memoryFreeInKBs);
+    }
+
+    @Test
+    public void getMemoryFreeInKBsTestDomainReturningIncompleteArray() throws LibvirtException {
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+
+        MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
+        mem[0].setTag(0);
+        Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(mem);
+        long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
+
+        Assert.assertEquals(-1, memoryFreeInKBs);
     }
 
     private MemoryStatistic[] createMemoryStatisticFreeMemory100() {
         virDomainMemoryStats stat = new virDomainMemoryStats();
         stat.val = 100;
+        stat.tag = 4;
 
-        MemoryStatistic[] mem = new MemoryStatistic[2];
+        MemoryStatistic[] mem = new MemoryStatistic[1];
         mem[0] = new MemoryStatistic(stat);
         return mem;
     }
 
     private Domain getDomainConfiguredToReturnMemoryStatistic(MemoryStatistic[] mem) throws LibvirtException {
         Domain domainMock = Mockito.mock(Domain.class);
-        when(domainMock.memoryStats(2)).thenReturn(mem);
+        when(domainMock.memoryStats(20)).thenReturn(mem);
         return domainMock;
     }
 

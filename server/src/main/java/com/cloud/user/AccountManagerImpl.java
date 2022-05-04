@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -39,7 +40,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
@@ -51,6 +51,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -73,6 +74,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -106,6 +108,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -117,6 +120,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
@@ -156,6 +160,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -183,7 +188,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.jetbrains.annotations.NotNull;
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
@@ -254,6 +258,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private IPAddressDao _ipAddressDao;
     @Inject
     private VpcManager _vpcMgr;
+    @Inject
+    private NetworkModel _networkModel;
     @Inject
     private Site2SiteVpnManager _vpnMgr;
     @Inject
@@ -602,8 +608,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 Account account = ApiDBUtils.findAccountById(entity.getAccountId());
                 domainId = account != null ? account.getDomainId() : -1;
             }
-            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) && !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry)
-                    && !(entity instanceof AffinityGroup)) {
+            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
+                    && !(entity instanceof Network && accessType != null && (accessType == AccessType.UseEntry || accessType == AccessType.OperateEntry))
+                    && !(entity instanceof AffinityGroup) && !(entity instanceof VirtualRouter)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -886,7 +893,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
+                Collections.sort(networks, new Comparator<NetworkVO>() {
+                    @Override
+                    public int compare(NetworkVO network1, NetworkVO network2) {
+                        if (network1.getGuestType() != network2.getGuestType() && Network.GuestType.Isolated.equals(network2.getGuestType())) {
+                            return -1;
+                        };
+                        return 1;
+                    }
+                });
                 for (NetworkVO network : networks) {
+                    if (_networkModel.isPrivateGateway(network.getId())) {
+                        continue;
+                    }
 
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
@@ -1176,6 +1195,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
+        CallContext.current().putContextParameter(User.class, userId);
 
         // check success
         return _userAccountDao.findById(userId);
@@ -2345,7 +2365,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void logoutUser(long userId) {
         UserAccount userAcct = _userAccountDao.findById(userId);
         if (userAcct != null) {
-            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out");
+            ActionEventUtils.onActionEvent(userId, userAcct.getAccountId(), userAcct.getDomainId(), EventTypes.EVENT_USER_LOGOUT, "user has logged out", userId, ApiCommandResourceType.User.toString());
         } // else log some kind of error event? This likely means the user doesn't exist, or has been deleted...
     }
 
@@ -2484,7 +2504,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
 
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress);
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
 
             return user;
         } else {

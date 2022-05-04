@@ -21,6 +21,8 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
+import com.cloud.network.Network;
+
 @Component
 public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailVO> implements NetworkDetailsDao {
 
@@ -29,4 +31,9 @@ public class NetworkDetailsDaoImpl extends ResourceDetailsDaoBase<NetworkDetailV
         super.addDetail(new NetworkDetailVO(resourceId, key, value, display));
     }
 
+    @Override
+    public boolean isNetworkUsageHidden(long networkId) {
+        NetworkDetailVO networkDetail = findDetail(networkId, Network.hideIpAddressUsage);
+        return networkDetail != null && "true".equals(networkDetail.getValue());
+    }
 }

@@ -36,6 +36,7 @@ import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
@@ -57,6 +58,8 @@ public interface MockNetworkManager extends Manager {
     Answer SetPortForwardingRules(SetPortForwardingRulesCommand cmd);
 
     Answer SetFirewallRules(SetFirewallRulesCommand cmd);
+
+    Answer SetIpv6FirewallRules(SetIpv6FirewallRulesCommand cmd);
 
     Answer getNetworkUsage(NetworkUsageCommand cmd);
 

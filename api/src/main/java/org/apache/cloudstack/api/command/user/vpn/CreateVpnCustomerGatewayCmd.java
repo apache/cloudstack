@@ -16,26 +16,27 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Site2SiteCustomerGateway;
 
 @APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
+public class CreateVpnCustomerGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 
     private static final String s_name = "createvpncustomergatewayresponse";
@@ -192,8 +193,19 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() {
+    public void create() throws ResourceAllocationException {
         Site2SiteCustomerGateway result = _s2sVpnService.createCustomerGateway(this);
+        if (result != null) {
+            setEntityId(result.getId());
+            setEntityUuid(result.getUuid());
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create customer VPN gateway");
+        }
+    }
+
+    @Override
+    public void execute() {
+        Site2SiteCustomerGateway result = _s2sVpnService.getCustomerGateway(getEntityId());
         if (result != null) {
             Site2SiteCustomerGatewayResponse response = _responseGenerator.createSite2SiteCustomerGatewayResponse(result);
             response.setResponseName(getCommandName());
@@ -201,5 +213,10 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create customer VPN gateway");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VpnCustomerGateway;
     }
 }
