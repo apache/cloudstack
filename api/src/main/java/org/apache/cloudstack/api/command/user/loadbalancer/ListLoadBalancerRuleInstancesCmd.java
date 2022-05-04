@@ -97,7 +97,10 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd implements Use
     public void execute() {
         Pair<List<? extends UserVm>, List<String>> vmServiceMap =  _lbService.listLoadBalancerInstances(this);
         List<? extends UserVm> result = vmServiceMap.first();
+        s_logger.debug(String.format("A total of [%s] user VMs were obtained when listing the load balancer instances: [%s].", result.size(), result.toString()));
+
         List<String> serviceStates  = vmServiceMap.second();
+        s_logger.debug(String.format("A total of [%s] service states were obtained when listing the load balancer instances: [%s].", serviceStates.size(), serviceStates.toString()));
 
         if (!isListLbVmip()) {
             // list lb instances
