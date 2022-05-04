@@ -102,7 +102,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         final Map<String, Boolean> vlanToPersistenceMap = command.getVlanToPersistenceMap();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
         final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
-        s_logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Trying to migrate VM [%s] to destination host: [%s].", vmName, destinationUri));
+        }
 
         String result = null;
 
@@ -122,8 +124,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
             ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
             disks = libvirtComputingResource.getDisks(conn, vmName);
-
-            s_logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Found domain with name [%s]. Starting VM migration to host [%s].", vmName, destinationUri));
+            }
             VirtualMachineTO to = command.getVirtualMachine();
 
             dm = conn.domainLookupByName(vmName);
@@ -150,7 +153,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
-            s_logger.debug(String.format("VM [%s] with XML configuration [%s] will be migrated to host [%s].", vmName, xmlDesc, target));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("VM [%s] with XML configuration [%s] will be migrated to host [%s].", vmName, xmlDesc, target));
+            }
 
             xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target, vmName);
 
@@ -159,7 +164,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
                 s_logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
-                s_logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Replaced disk mount point [%s] with [%s] in VM [%s] XML configuration. New XML configuration is [%s].", oldIsoVolumePath, newIsoVolumePath, vmName, xmlDesc));
+                }
             }
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
@@ -179,16 +186,24 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final boolean migrateStorageManaged = command.isMigrateStorageManaged();
 
             if (migrateStorage) {
-                s_logger.debug(String.format("Changing VM [%s] volumes during migration to host: [%s].", vmName, target));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Changing VM [%s] volumes during migration to host: [%s].", vmName, target));
+                }
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
-                s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
+                }
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
             if (MapUtils.isNotEmpty(dpdkPortsMapping)) {
-                s_logger.debug(String.format("Changing VM [%s] DPDK interfaces during migration to host: [%s].", vmName, target));
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("Changing VM [%s] DPDK interfaces during migration to host: [%s].", vmName, target));
+                }
                 xmlDesc = replaceDpdkInterfaces(xmlDesc, dpdkPortsMapping);
-                s_logger.debug(String.format("Changed VM [%s] XML configuration of DPDK interfaces. New XML configuration is [%s].", vmName, xmlDesc));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Changed VM [%s] XML configuration of DPDK interfaces. New XML configuration is [%s].", vmName, xmlDesc));
+                }
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
@@ -276,7 +291,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             destDomain = migrateThread.get(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT), TimeUnit.SECONDS);
 
             if (destDomain != null) {
-                s_logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Cleaning the disks of VM [%s] in the source pool after VM migration finished.", vmName));
+                }
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
             }
 
@@ -470,7 +487,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 graphElem = graphElem.replaceAll("listen='[a-zA-Z0-9\\.]*'", "listen='" + target + "'");
                 graphElem = graphElem.replaceAll("address='[a-zA-Z0-9\\.]*'", "address='" + target + "'");
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
-                s_logger.debug(String.format("Replaced the VNC IP address [%s] with [%s] in VM [%s].", originalGraphElem, graphElem, vmName));
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Replaced the VNC IP address [%s] with [%s] in VM [%s].", originalGraphElem, graphElem, vmName));
+                }
             }
         }
         return xmlDesc;

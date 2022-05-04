@@ -4500,14 +4500,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("Cleaning the metadata of vm snapshots of vm " + dm.getName());
         List<Ternary<String, Boolean, String>> vmsnapshots = new ArrayList<Ternary<String, Boolean, String>>();
         if (dm.snapshotNum() == 0) {
-            s_logger.debug(String.format("VM [%s] does not have any snapshots. Skipping cleanup of snapshots for this VM.", dm.getName()));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("VM [%s] does not have any snapshots. Skipping cleanup of snapshots for this VM.", dm.getName()));
+            }
             return vmsnapshots;
         }
         String currentSnapshotName = null;
         try {
             DomainSnapshot snapshotCurrent = dm.snapshotCurrent();
             String snapshotXML = snapshotCurrent.getXMLDesc();
-            s_logger.debug(String.format("Current snapshot of VM [%s] has the following XML: [%s].", dm.getName(), snapshotXML));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Current snapshot of VM [%s] has the following XML: [%s].", dm.getName(), snapshotXML));
+            }
 
             snapshotCurrent.free();
             DocumentBuilder builder;
@@ -4536,7 +4540,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             vmsnapshots.add(new Ternary<String, Boolean, String>(snapshotName, isCurrent, snapshot.getXMLDesc()));
         }
         for (String snapshotName: snapshotNames) {
-            s_logger.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+            }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
         }
