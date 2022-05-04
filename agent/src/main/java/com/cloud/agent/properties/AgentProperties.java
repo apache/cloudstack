@@ -61,6 +61,21 @@ public class AgentProperties{
      */
     public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", true);
 
+    /**
+     * Disables memory ballooning on VM guests for overcommit.<br>
+     * By default overcommit feature enables balloon and sets currentMemory to a minimum value.<br>
+     * Data type: Boolean.<br>
+     * Default value: <code>false</code>
+     */
+    public static final Property<Boolean> VM_MEMBALLOON_DISABLE = new Property<Boolean>("vm.memballoon.disable", false);
+
+    /**
+     * The time interval (in seconds) at which the balloon driver will get memory stats updates. This is equivalent to Libvirt's <code>--period</code> parameter when using the dommemstat command.
+     * Data type: Integer.<br>
+     * Default value: <code>60</code>
+     */
+    public static final Property<Integer> VM_MEMBALLOON_STATS_PERIOD = new Property<Integer>("vm.memballoon.stats.period", 60);
+
     public static class Property <T>{
         private final String name;
         private final T defaultValue;

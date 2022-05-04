@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -67,6 +68,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentControlChannelException;
@@ -100,7 +103,7 @@ import com.cloud.utils.script.Script;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
+    protected static Logger s_logger = Logger.getLogger(Agent.class);
 
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
@@ -149,6 +152,29 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     private String _keystoreSetupPath;
     private String _keystoreCertImportPath;
+
+    /**
+     * Virsh command to list the name of all VM instances starting with "i-".
+     */
+    protected static final String COMMAND_LIST_ALL_VMS = "virsh list --all --name | grep '^i-*'";
+
+    /**
+     * Virsh command to set the memory balloon stats period.<br><br>
+     * 1st parameter: the VM name;<br>
+     * 2nd parameter: the period (in seconds).
+     */
+    private static final String COMMAND_SET_MEM_BALLOON_STATS_PERIOD = "virsh dommemstat %s --period %s --live";
+
+    /**
+     * Virsh command to get the memory balloon tag from the VM's XML file.<br><br>
+     * 1st parameter: the VM name;<br>
+     */
+    private static final String COMMAND_GET_MEM_BALLOON_FROM_XML_FILE = "virsh dumpxml %s | grep '<memballoon model='";
+
+    // for unit tests only
+    public Agent() {
+
+    }
 
     // for simulator use only
     public Agent(final IAgentShell shell) {
@@ -303,6 +329,8 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
         _shell.updateConnectedHost();
         scavengeOldAgentObjects();
+
+        runTasksAfterAgentStartup();
     }
 
     public void stop(final String reason, final String detail) {
@@ -697,6 +725,62 @@ public class Agent implements HandlerFactory, IAgentControl {
                     s_logger.warn("Unable to send response: " + response.toString());
                 }
             }
+        }
+    }
+
+    /**
+     * Performs tasks after Agent startup. The tasks performed here should not interfere with the Agent's operation.
+     */
+    protected void runTasksAfterAgentStartup() {
+        setupMemoryBalloonStatsPeriod();
+    }
+
+    /**
+     * Sets the balloon driver of each VM to get the memory stats at the time interval defined in the agent.properties file.
+     */
+    protected void setupMemoryBalloonStatsPeriod() {
+        String listAllVmsResult = Script.runSimpleBashScript(COMMAND_LIST_ALL_VMS);
+        if (StringUtils.isBlank(listAllVmsResult)) {
+            s_logger.debug("Skipping the memory balloon stats period setting, since there are no guest VMs.");
+            return;
+        }
+
+        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_DISABLE)) {
+            s_logger.debug(String.format("Skipping the memory balloon stats period setting because the [%s] property is set to 'true'.",
+                    AgentProperties.VM_MEMBALLOON_DISABLE.getName()));
+            return;
+        }
+
+        List<String> vmNames = Arrays.asList(listAllVmsResult.split("\\n"));
+        s_logger.debug(String.format("We have found a total of [%s] user VMs on this host: [%s].", vmNames.size(), vmNames.toString()));
+
+        Integer currentVmBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
+
+        for (String vmName : vmNames) {
+            String getMemBalloonFromXmlFileCommand = String.format(COMMAND_GET_MEM_BALLOON_FROM_XML_FILE, vmName);
+            String getMemBalloonFromXmlFileResult = Script.runSimpleBashScript(getMemBalloonFromXmlFileCommand);
+            if (StringUtils.isBlank(getMemBalloonFromXmlFileResult)) {
+                s_logger.error(String.format("Unable to get the <memballoon> tag from the XML file for the VM with name [%s] due to an error when running the [%s] command. "
+                        + "Therefore, we cannot set the period to collect memory information for the VM. This situation can happen if the <memballoon> tag was manually removed "
+                        + "from the XML file of the VM.", vmName,
+                        getMemBalloonFromXmlFileCommand));
+                continue;
+            }
+            s_logger.trace(String.format("The <memballoon> tag was successfully obtained from the XML file for the VM with name [%s].", vmName));
+
+            if (getMemBalloonFromXmlFileResult.contains("virtio")) {
+                String setMemBalloonStatsPeriodCommand = String.format(COMMAND_SET_MEM_BALLOON_STATS_PERIOD, vmName, currentVmBalloonStatsPeriod);
+                String setMemBalloonStatsPeriodResult = Script.runSimpleBashScript(setMemBalloonStatsPeriodCommand);
+                if (StringUtils.isNotBlank(setMemBalloonStatsPeriodResult)) {
+                    s_logger.error(String.format("Unable to set up memory balloon stats period for VM with name [%s] due to an error when running the [%s] command. Output: [%s].",
+                            vmName, setMemBalloonStatsPeriodCommand, setMemBalloonStatsPeriodResult));
+                    continue;
+                }
+                s_logger.debug(String.format("The memory balloon stats period [%s] has been set successfully for the VM with name [%s].", currentVmBalloonStatsPeriod,
+                        vmName));
+                continue;
+            }
+            s_logger.debug(String.format("Skipping the memory balloon stats period setting for the VM with name [%s] because this VM has no memory balloon.", vmName));
         }
     }
 

@@ -26,6 +26,9 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
+
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
 
@@ -235,6 +238,7 @@ public class LibvirtVMDef {
         private int vcpu = -1;
         private int maxVcpu = -1;
         private boolean memoryBalloning = false;
+        private int memoryBalloonStatsPeriod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MEMBALLOON_STATS_PERIOD);
 
         public void setMemorySize(long mem) {
             this.memory = mem;
@@ -275,7 +279,14 @@ public class LibvirtVMDef {
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
-            response.append(String.format("<devices>\n<memballoon model='%s'/>\n</devices>\n", this.memoryBalloning ? "virtio" : "none"));
+            String memBalloonModel = "none";
+            int statsPeriod = 0;
+            if (this.memoryBalloning) {
+                memBalloonModel = "virtio";
+                statsPeriod = memoryBalloonStatsPeriod;
+            }
+            response.append(String.format("<devices>\n<memballoon model='%s'>\n<stats period='%s'/>\n</memballoon>\n</devices>\n", memBalloonModel, statsPeriod));
+
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
         }
