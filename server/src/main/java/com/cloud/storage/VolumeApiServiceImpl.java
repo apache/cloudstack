@@ -2192,20 +2192,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
 
-        if (asyncExecutionContext != null) {
-            AsyncJob job = asyncExecutionContext.getJob();
+        AsyncJob job = asyncExecutionContext.getJob();
 
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info(String.format("Trying to attach volume [%s/%s] to VM instance [%s/%s], update async job-%s progress status",
-                        volumeToAttach.getName(),
-                        volumeToAttach.getUuid(),
-                        vm.getName(),
-                        vm.getUuid(),
-                        job.getId()));
-            }
-
-            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info(String.format("Trying to attach volume [%s/%s] to VM instance [%s/%s], update async job-%s progress status",
+                    volumeToAttach.getName(),
+                    volumeToAttach.getUuid(),
+                    vm.getName(),
+                    vm.getUuid(),
+                    job.getId()));
         }
+
+        _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
         if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
             return savelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
