@@ -20,6 +20,11 @@ set -x
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 CMDLINE=/var/cache/cloud/cmdline
 
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_msg "$@"
+}
+
 hypervisor() {
   if [ -d /proc/xen ]; then
     mount -t xenfs none /proc/xen

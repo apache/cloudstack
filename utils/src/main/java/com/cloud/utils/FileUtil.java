@@ -38,7 +38,7 @@ public class FileUtil {
     }
 
     public static void scpPatchFiles(String controlIp, String destPath, int sshPort, File pemFile, String[] files, String basePath) {
-        String errMsg = "Failed to scp files to system VM";
+        String finalErrMsg = "";
         List<String> srcFiles = Arrays.asList(files);
         srcFiles = srcFiles.stream()
                 .map(file -> basePath + file) // Using Lambda notation to update the entries
@@ -50,10 +50,11 @@ public class FileUtil {
                         destPath, newSrcFiles, "0755");
                 return;
             } catch (Exception e) {
-                errMsg += ", retrying";
-                s_logger.error(errMsg);
+                finalErrMsg = String.format("Failed to scp files to system VM due to, %s",
+                        e.getCause() != null ? e.getCause().getLocalizedMessage() : e.getLocalizedMessage());
+                s_logger.error(finalErrMsg);
             }
         }
-        throw new CloudRuntimeException(errMsg);
+        throw new CloudRuntimeException(finalErrMsg);
     }
 }

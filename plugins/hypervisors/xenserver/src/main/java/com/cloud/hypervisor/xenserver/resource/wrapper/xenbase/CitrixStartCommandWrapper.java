@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -197,7 +198,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 }
 
                 try {
-                    citrixResourceBase.copyPatchFilesToVR(controlIp, "/tmp/");
+                    citrixResourceBase.copyPatchFilesToVR(controlIp, VRScripts.CONFIG_CACHE_LOCATION);
                     VirtualRoutingResource vrResource = citrixResourceBase.getVirtualRoutingResource();
                     if (!vrResource.isSystemVMSetup(vmName, controlIp)) {
                         String errMsg = "Failed to patch systemVM";
