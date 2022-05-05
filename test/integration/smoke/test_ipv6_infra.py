@@ -14,89 +14,26 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT tests for Network offerings"""
+""" BVT tests for IPv6 infra operations"""
 
 #Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listGuestNetworkIpv6Prefixes,
-                                  deleteGuestNetworkIpv6Prefix,
-                                  listIpv6FirewallRules,
-                                  createIpv6FirewallRule,
-                                  deleteIpv6FirewallRule)
-from marvin.lib.utils import (isAlmostEqual,
-                              cleanup_resources,
-                              random_gen,
-                              get_process_status,
-                              get_host_credentials)
+                                  deleteGuestNetworkIpv6Prefix)
+from marvin.lib.utils import (cleanup_resources)
 from marvin.lib.base import (Configurations,
-                             Domain,
                              NetworkOffering,
                              VpcOffering,
-                             Account,
-                             PublicIpRange,
-                             Network,
-                             Router,
-                             ServiceOffering,
-                             VirtualMachine,
-                             NIC,
-                             Host)
-from marvin.lib.common import (get_domain,
-                               get_zone,
-                               list_hosts,
-                               get_test_template,
-                               get_template)
-from marvin.sshClient import SshClient
+                             PublicIpRange)
+from marvin.lib.common import (get_zone)
 from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.decoratorGenerators import skipTestIf
 
 from nose.plugins.attrib import attr
-from ipaddress import IPv6Network
-from random import getrandbits, choice, randint
-import time
 import logging
 
 ipv6_offering_config_name = "ipv6.offering.enabled"
-ULA_BASE = IPv6Network("fd00::/8")
-PREFIX_OPTIONS = [i for i in range(48, 65, 4)]
-FIREWALL_TABLE = "ip6_firewall"
-FIREWALL_CHAINS = {
-    "Ingress": "fw_chain_ingress",
-    "Egress": "fw_chain_egress"
-}
-CIDR_IPV6_ANY = "::/0"
-ICMPV6_TYPE = {
-    1: "destination-unreachable",
-    2: "packet-too-big",
-    3: "time-exceeded",
-    4: "parameter-problem",
-    128: "echo-request",
-    129: "echo-reply",
-    130: "mld-listener-query",
-    131: "mld-listener-report",
-    132: "mld-listener-done",
-    132: "mld-listener-reduction",
-    133: "nd-router-solicit",
-    134: "nd-router-advert",
-    135: "nd-neighbor-solicit",
-    136: "nd-neighbor-advert",
-    137: "nd-redirect",
-    138: "router-renumbering",
-    141: "ind-neighbor-solicit",
-    142: "ind-neighbor-advert",
-    143: "mld2-listener-report"
-}
-ICMPV6_CODE_TYPE = {
-    0: "no-route",
-    1: "admin-prohibited",
-    3: "addr-unreachable",
-    4: "port-unreachable",
-    5: "policy-fail",
-    6: "reject-route"
-}
-ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
-TCP_UDP_PORT_ANY = "{ 0-65535 }"
 
 class TestCreateIpv6NetworkVpcOffering(cloudstackTestCase):
 
