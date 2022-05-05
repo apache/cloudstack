@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'account',
   title: 'label.accounts',
@@ -50,6 +52,12 @@ export default {
       name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
+    },
+    {
+      name: 'events',
+      resourceType: 'Account',
+      component: () => import('@/components/view/EventsTab.vue'),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [

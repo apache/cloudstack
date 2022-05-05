@@ -323,6 +323,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = adapter.create(profile);
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create ISO");
@@ -349,6 +350,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = adapter.create(profile);
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");
@@ -1939,6 +1941,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         if (template != null) {
+            CallContext.current().putContextParameter(VirtualMachineTemplate.class, template.getUuid());
             return template;
         } else {
             throw new CloudRuntimeException("Failed to create a template");

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -89,4 +90,13 @@ public class DeleteVMSnapshotCmd extends BaseAsyncCmd {
         return EventTypes.EVENT_VM_SNAPSHOT_DELETE;
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VmSnapshot;
+    }
 }

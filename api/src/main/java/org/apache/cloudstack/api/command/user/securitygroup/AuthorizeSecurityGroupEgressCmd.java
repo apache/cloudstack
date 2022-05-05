@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -229,12 +229,12 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.SecurityGroup;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.SecurityGroup;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getSecurityGroupId();
     }
 }

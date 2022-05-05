@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'pod',
   title: 'label.pods',
@@ -38,6 +40,11 @@ export default {
   }, {
     name: 'resources',
     component: () => import('@/views/infra/Resources.vue')
+  }, {
+    name: 'events',
+    resourceType: 'Pod',
+    component: () => import('@/components/view/EventsTab.vue'),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: () => import('@/components/view/AnnotationsTab.vue')

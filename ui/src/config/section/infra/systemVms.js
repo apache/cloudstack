@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'systemvm',
   title: 'label.system.vms',
@@ -28,6 +30,12 @@ export default {
     {
       name: 'details',
       component: () => import('@/components/view/DetailsTab.vue')
+    },
+    {
+      name: 'events',
+      resourceType: 'SystemVm',
+      component: () => import('@/components/view/EventsTab.vue'),
+      show: () => { return 'listEvents' in store.getters.apis }
     },
     {
       name: 'comments',

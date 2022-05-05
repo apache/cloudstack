@@ -249,9 +249,11 @@
         <span v-else>{{ text }}</span>
       </template>
     </span>
+    <span slot="resource" slot-scope="text, record" href="javascript:;">
+      <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
+    </span>
     <span slot="domain" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
     </span>
     <span slot="domainpath" slot-scope="text, record" href="javascript:;">
       <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
@@ -376,6 +378,7 @@ import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'ListView',
@@ -386,7 +389,8 @@ export default {
     InfoCard,
     QuickView,
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   props: {
     columns: {

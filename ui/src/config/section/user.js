@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'accountuser',
   title: 'label.users',
@@ -24,6 +26,18 @@ export default {
   permission: ['listUsers'],
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
+  tabs: [
+    {
+      name: 'details',
+      component: () => import('@/components/view/DetailsTab.vue')
+    },
+    {
+      name: 'events',
+      resourceType: 'User',
+      component: () => import('@/components/view/EventsTab.vue'),
+      show: () => { return 'listEvents' in store.getters.apis }
+    }
+  ],
   actions: [
     {
       api: 'createUser',

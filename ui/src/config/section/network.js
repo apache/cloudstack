@@ -72,6 +72,12 @@ export default {
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
       },
       {
+        name: 'events',
+        resourceType: 'Network',
+        component: () => import('@/components/view/EventsTab.vue'),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: () => import('@/components/view/AnnotationsTab.vue')
       }],
@@ -298,6 +304,12 @@ export default {
         name: 'vpn',
         component: () => import('@/views/network/VpnDetails.vue'),
         show: (record) => { return record.issourcenat }
+      },
+      {
+        name: 'events',
+        resourceType: 'IpAddress',
+        component: () => import('@/components/view/EventsTab.vue'),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',

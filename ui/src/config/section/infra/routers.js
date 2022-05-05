@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import store from '@/store'
+
 export default {
   name: 'router',
   title: 'label.virtual.routers',
@@ -36,6 +38,11 @@ export default {
     name: 'router.health.checks',
     show: (record, route, user) => { return ['Running'].includes(record.state) && ['Admin'].includes(user.roletype) },
     component: () => import('@views/infra/routers/RouterHealthCheck.vue')
+  }, {
+    name: 'events',
+    resourceType: 'DomainRouter',
+    component: () => import('@/components/view/EventsTab.vue'),
+    show: () => { return 'listEvents' in store.getters.apis }
   }, {
     name: 'comments',
     component: () => import('@/components/view/AnnotationsTab.vue')

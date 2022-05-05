@@ -63,6 +63,15 @@
             :key="tab.name"
             v-if="checkShowTabDetail(tab)">
             <component
+              v-if="tab.resourceType"
+              :is="tab.component"
+              :resource="resource"
+              :resourceType="tab.resourceType"
+              :loading="loading"
+              :tab="tabActive"
+              :bordered="false" />
+            <component
+              v-else
               :is="tab.component"
               :resource="resource"
               :items="items"
@@ -123,6 +132,12 @@ export default {
       default () {
         return {}
       }
+    }
+  },
+  provide: function () {
+    return {
+      parentFetchData: null,
+      parentToggleLoading: null
     }
   },
   data () {

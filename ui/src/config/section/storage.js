@@ -68,6 +68,12 @@ export default {
           component: () => import('@/components/view/DetailsTab.vue')
         },
         {
+          name: 'events',
+          resourceType: 'Volume',
+          component: () => import('@/components/view/EventsTab.vue'),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: () => import('@/components/view/AnnotationsTab.vue')
         }
@@ -296,6 +302,12 @@ export default {
           component: () => import('@/components/view/DetailsTab.vue')
         },
         {
+          name: 'events',
+          resourceType: 'Snapshot',
+          component: () => import('@/components/view/EventsTab.vue'),
+          show: () => { return 'listEvents' in store.getters.apis }
+        },
+        {
           name: 'comments',
           component: () => import('@/components/view/AnnotationsTab.vue')
         }
@@ -376,6 +388,12 @@ export default {
         {
           name: 'details',
           component: () => import('@/components/view/DetailsTab.vue')
+        },
+        {
+          name: 'events',
+          resourceType: 'VmSnapshot',
+          component: () => import('@/components/view/EventsTab.vue'),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',

@@ -25,7 +25,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 
 import com.cloud.utils.db.GenericDao;
@@ -93,7 +93,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "instance_type", length = 64)
-    private ApiCommandJobType instanceType;
+    private ApiCommandResourceType instanceType;
 
     @Column(name = "instance_id", length = 64)
     private Long instanceId;
@@ -190,7 +190,7 @@ public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity {
         return removed;
     }
 
-    public ApiCommandJobType getInstanceType() {
+    public ApiCommandResourceType getInstanceType() {
         return instanceType;
     }
 

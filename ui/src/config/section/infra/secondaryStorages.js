@@ -47,6 +47,11 @@ export default {
     name: 'settings',
     component: () => import('@/components/view/SettingsTab.vue')
   }, {
+    name: 'events',
+    resourceType: 'ImageStore',
+    component: () => import('@/components/view/EventsTab.vue'),
+    show: () => { return 'listEvents' in store.getters.apis }
+  }, {
     name: 'comments',
     component: () => import('@/components/view/AnnotationsTab.vue')
   }],

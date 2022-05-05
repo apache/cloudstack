@@ -52,6 +52,12 @@ export default {
       name: 'limits',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: () => import('@/components/view/ResourceLimitTab.vue')
+    },
+    {
+      name: 'events',
+      resourceType: 'Project',
+      component: () => import('@/components/view/EventsTab.vue'),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [

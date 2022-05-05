@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import store from '@/store'
 
 export default {
   name: 'domain',
@@ -54,7 +55,14 @@ export default {
       name: 'settings',
       component: () => import('@/components/view/SettingsTab.vue'),
       show: (record, route, user) => { return ['Admin'].includes(user.roletype) }
-    }, {
+    },
+    {
+      name: 'events',
+      resourceType: 'Domain',
+      component: () => import('@/components/view/EventsTab.vue'),
+      show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
       name: 'comments',
       component: () => import('@/components/view/AnnotationsTab.vue')
     }

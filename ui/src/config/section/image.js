@@ -69,6 +69,12 @@ export default {
         component: () => import('@/components/view/DetailSettings')
       },
       {
+        name: 'events',
+        resourceType: 'Template',
+        component: () => import('@/components/view/EventsTab.vue'),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
         component: () => import('@/components/view/AnnotationsTab.vue')
       }],
@@ -201,6 +207,12 @@ export default {
       }, {
         name: 'zones',
         component: () => import('@/views/image/IsoZones.vue')
+      },
+      {
+        name: 'events',
+        resourceType: 'Iso',
+        component: () => import('@/components/view/EventsTab.vue'),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',

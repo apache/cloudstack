@@ -108,6 +108,16 @@
                     </a-input-group>
                   </div>
                 </div>
+                <a-auto-complete
+                  v-else-if="field.type==='autocomplete'"
+                  v-decorator="[field.name, {
+                    initialValue: fieldValues[field.name] || null
+                  }]"
+                  :placeholder="$t('message.error.input.value')"
+                  :options="field.opts"
+                  :filterOption="(inputValue, option) => {
+                    return option.value.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1
+                  }" />
               </a-form-item>
               <div class="filter-group-button">
                 <a-button
@@ -243,6 +253,8 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        } else if (item === 'resourcetype') {
+          type = 'autocomplete'
         }
 
         this.fields.push({
@@ -303,6 +315,22 @@ export default {
         this.fields[entityTypeIndex].loading = true
         this.fields[entityTypeIndex].opts = this.fetchEntityType()
         this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('resourcetype')) {
+        const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
+        this.fields[resourceTypeIndex].loading = true
+        this.fields[resourceTypeIndex].opts = [
+          { value: 'Account' },
+          { value: 'Domain' },
+          { value: 'Iso' },
+          { value: 'Network' },
+          { value: 'Template' },
+          { value: 'User' },
+          { value: 'VirtualMachine' },
+          { value: 'Volume' }
+        ]
+        this.fields[resourceTypeIndex].loading = false
       }
 
       Promise.all(promises).then(response => {
@@ -517,6 +545,7 @@ export default {
           return
         }
         this.isFiltered = true
+        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

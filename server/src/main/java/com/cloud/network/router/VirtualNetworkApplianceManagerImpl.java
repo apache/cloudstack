@@ -17,6 +17,8 @@
 
 package com.cloud.network.router;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -47,6 +49,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
@@ -270,8 +273,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual
@@ -1237,7 +1238,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
 
         ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
-                Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString());
+                Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS, failingChecksEvent.toString(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
 
         if (recreateRouter) {
             s_logger.warn("Health Check Alert: Found failing checks in " +
@@ -1261,7 +1262,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             s_logger.debug("Attempting restart VPC " + router.getVpcName() + " for router recreation " + router.getUuid());
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
-                    "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid());
+                    "Recreating router " + router.getUuid() + " by restarting VPC " + router.getVpcUuid(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
             return vpcService.restartVpc(router.getVpcId(), true, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart VPC for router recreation " +
@@ -1285,7 +1286,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             s_logger.info("Attempting restart network " + router.getNetworkName() + " for router recreation " + router.getUuid());
             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                     Domain.ROOT_DOMAIN, EventTypes.EVENT_ROUTER_HEALTH_CHECKS,
-                    "Recreating router " + router.getUuid() + " by restarting network " + router.getNetworkUuid());
+                    "Recreating router " + router.getUuid() + " by restarting network " + router.getNetworkUuid(), router.getId(), ApiCommandResourceType.DomainRouter.toString());
             return networkService.restartNetwork(router.getNetworkId(), true, false, user);
         } catch (Exception e) {
             s_logger.error("Failed to restart network " + router.getNetworkName() +
@@ -3213,7 +3214,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 params.put("id", "" + router.getId());
                 params.put("ctxStartEventId", "1");
                 final AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, router.getAccountId(), RebootRouterCmd.class.getName(), ApiGsonHelper.getBuilder().create().toJson(params),
-                        router.getId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                        router.getId(), cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
                 final long jobId = _asyncMgr.submitAsyncJob(job);
                 jobIds.add(jobId);

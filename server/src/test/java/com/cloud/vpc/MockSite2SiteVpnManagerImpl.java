@@ -86,6 +86,15 @@ public class MockSite2SiteVpnManagerImpl extends ManagerBase implements Site2Sit
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.vpn.Site2SiteVpnService#getCustomerGateway(java.lang.Long)
+     */
+    @Override
+    public Site2SiteCustomerGateway getCustomerGateway(Long customerGatewayId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.vpn.Site2SiteVpnService#createVpnConnection(org.apache.cloudstack.api.commands.CreateVpnConnectionCmd)
      */
     @Override
