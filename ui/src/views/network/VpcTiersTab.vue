@@ -80,17 +80,19 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
-                  </router-link>
-                </template>
-                <template #state="{ record }">
-                  <status :text="record.state" displayText></status>
-                </template>
-                <template #ip="{ record }">
-                  <div v-for="nic in record.nic" :key="nic.id">
-                    {{ nic.networkid === network.id ? nic.ipaddress : '' }}
-                  </div>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/vm/' + record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
+                  <template v-if="column.key === 'state'">
+                    <status :text="record.state" displayText></status>
+                  </template>
+                  <template v-if="column.key === 'ip'">
+                    <div v-for="nic in record.nic" :key="nic.id">
+                      {{ nic.networkid === network.id ? nic.ipaddress : '' }}
+                    </div>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -127,9 +129,11 @@
                 :rowKey="item => item.id"
                 :pagination="false"
                 :loading="fetchLoading">
-                <template #name="{ record }">
-                  <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
-                  </router-link>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <router-link :to="{ path: '/ilb/'+ record.id}">{{ record.name }}
+                    </router-link>
+                  </template>
                 </template>
               </a-table>
               <a-divider/>
@@ -368,9 +372,9 @@ export default {
       },
       internalLbCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.sourceipaddress'),
@@ -385,58 +389,20 @@ export default {
           dataIndex: 'account'
         }
       ],
-      LBPublicIPCols: [
-        {
-          title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.vm'),
-          dataIndex: 'virtualmachinename'
-        }
-      ],
-      StaticNatCols: [
-        {
-          title: this.$t('label.ips'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
-        },
-        {
-          title: this.$t('label.zoneid'),
-          dataIndex: 'zonename'
-        },
-        {
-          title: this.$t('label.networkid'),
-          dataIndex: 'associatedNetworkName'
-        },
-        {
-          title: this.$t('label.state'),
-          dataIndex: 'state'
-        }
-      ],
       vmCols: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
-          title: this.$t('label.ip'),
-          slots: { customRender: 'ip' }
+          key: 'ip',
+          title: this.$t('label.ip')
         }
       ],
       customStyle: 'margin-bottom: 0; border: none',

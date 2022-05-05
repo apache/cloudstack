@@ -94,38 +94,40 @@
       :dataSource="rules"
       :pagination="{ pageSizeOptions: ['10', '20', '40', '80', '100', '200'], showSizeChanger: true}"
       :rowKey="record => record.ruleid">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #account="{ record }">
-        <div v-if="record.account && record.securitygroupname">
-          {{ record.account }} - {{ record.securitygroupname }}
-        </div>
-      </template>
-      <template #startport="{text, record}">
-        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
-        <div v-else>{{ text }}</div>
-      </template>
-      <template #endport="{text, record}">
-        <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
-        <div v-else>{{ text }}</div>
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record)" />
-        <a-popconfirm
-          :title="$t('label.delete') + '?'"
-          @confirm="handleDeleteRule(record)"
-          :okText="$t('label.yes')"
-          :cancelText="$t('label.no')"
-        >
-          <tooltip-button
-            :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            buttonClass="rule-action" />
-        </a-popconfirm>
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'account'">
+          <div v-if="record.account && record.securitygroupname">
+            {{ record.account }} - {{ record.securitygroupname }}
+          </div>
+        </template>
+        <template v-if="column.key === 'startport'">
+          <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+          <div v-else>{{ text }}</div>
+        </template>
+        <template v-if="column.key === 'endport'">
+          <div v-if="!['tcp', 'udp', 'icmp'].includes(record.protocol)">{{ $t('label.all') }}</div>
+          <div v-else>{{ text }}</div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record)" />
+          <a-popconfirm
+            :title="$t('label.delete') + '?'"
+            @confirm="handleDeleteRule(record)"
+            :okText="$t('label.yes')"
+            :cancelText="$t('label.no')"
+          >
+            <tooltip-button
+              :disabled="!('revokeSecurityGroupIngress' in $store.getters.apis) && !('revokeSecurityGroupEgress' in $store.getters.apis)"
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              buttonClass="rule-action" />
+          </a-popconfirm>
+        </template>
       </template>
     </a-table>
 
@@ -222,18 +224,18 @@ export default {
       pagesize: 10,
       columns: [
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
+          key: 'startport',
           title: this.$t('label.startport'),
-          dataIndex: 'startport',
-          slots: { customRender: 'startport' }
+          dataIndex: 'startport'
         },
         {
+          key: 'endport',
           title: this.$t('label.endport'),
-          dataIndex: 'endport',
-          slots: { customRender: 'endport' }
+          dataIndex: 'endport'
         },
         {
           title: this.$t('label.icmptype'),
@@ -248,12 +250,12 @@ export default {
           dataIndex: 'cidr'
         },
         {
-          title: this.$t('label.account.and.security.group'),
-          slots: { customRender: 'account' }
+          key: 'account',
+          title: this.$t('label.account.and.security.group')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ],
       isSubmitted: false

@@ -97,23 +97,25 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #startport="{ record }">
-        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
-      </template>
-      <template #endport="{ record }">
-        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteRule(record)" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'startport'">
+          {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : 'All' }}
+        </template>
+        <template v-if="column.key === 'endport'">
+          {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : 'All' }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteEgressFirewallRule' in $store.getters.apis)"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined"
+            @onClick="deleteRule(record)" />
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -207,20 +209,20 @@ export default {
           dataIndex: 'destcidrlist'
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
-          title: this.$t('label.icmptype.start.port'),
-          slots: { customRender: 'startport' }
+          key: 'startport',
+          title: this.$t('label.icmptype.start.port')
         },
         {
-          title: this.$t('label.icmpcode.end.port'),
-          slots: { customRender: 'endport' }
+          key: 'endport',
+          title: this.$t('label.icmpcode.end.port')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ]
     }
@@ -291,9 +293,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

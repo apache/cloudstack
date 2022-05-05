@@ -48,10 +48,12 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }">
-            <router-link :to="{ path: '/acllist/' + record.id }">
-              {{ text }}
-            </router-link>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <router-link :to="{ path: '/acllist/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -117,11 +119,13 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #ipaddress="{ text, record }">
-            <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
-          </template>
-          <template #state="{ record }">
-            <status :text="record.state" displayText></status>
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'ipaddress'">
+              <router-link :to="{ path: '/privategw/' + record.id }">{{ text }}</router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="record.state" displayText></status>
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -286,13 +290,15 @@
           :dataSource="vpnConnections"
           :pagination="false"
           :rowKey="record => record.id">
-          <template #publicip="{text, record}">
-            <router-link :to="{ path: '/s2svpnconn/' + record.id }">
-              {{ text }}
-            </router-link>
-          </template>
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText />
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'publicip'">
+              <router-link :to="{ path: '/s2svpnconn/' + record.id }">
+                {{ text }}
+              </router-link>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText />
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -426,14 +432,14 @@ export default {
       vpncustomergateways: [],
       privateGatewaysColumns: [
         {
+          key: 'ipaddress',
           title: this.$t('label.ip'),
-          dataIndex: 'ipaddress',
-          slots: { customRender: 'ipaddress' }
+          dataIndex: 'ipaddress'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -450,14 +456,14 @@ export default {
       ],
       vpnConnectionsColumns: [
         {
+          key: 'publicip',
           title: this.$t('label.ip'),
-          dataIndex: 'publicip',
-          slots: { customRender: 'publicip' }
+          dataIndex: 'publicip'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.gateway'),
@@ -470,9 +476,9 @@ export default {
       ],
       networkAclsColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
           title: this.$t('label.description'),

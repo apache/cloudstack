@@ -212,26 +212,26 @@ export default {
     this.listIdps = []
     this.columns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: 120,
-        slots: { customRender: 'name' }
+        width: 120
       },
       {
+        key: 'username',
         title: this.$t('label.username'),
         dataIndex: 'username',
-        width: 120,
-        slots: { customRender: 'username' }
+        width: 120
       },
       {
+        key: 'email',
         title: this.$t('label.email'),
-        dataIndex: 'email',
-        slots: { customRender: 'email' }
+        dataIndex: 'email'
       },
       {
+        key: 'conflictingusersource',
         title: this.$t('label.user.conflict'),
-        dataIndex: 'conflictingusersource',
-        slots: { customRender: 'conflictingusersource' }
+        dataIndex: 'conflictingusersource'
       }
     ]
     this.filters = [

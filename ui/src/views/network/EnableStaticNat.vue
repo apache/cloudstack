@@ -52,36 +52,38 @@
       :dataSource="vmsList"
       :pagination="false"
       :rowKey="record => record.id || record.account">
-      <template #name="{ record }">
-        <div>
-          {{ record.name }}
-        </div>
-        <a-select
-          v-if="nicsList.length && selectedVm && selectedVm === record.id"
-          class="nic-select"
-          :defaultValue="selectedNic.ipaddress"
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }">
-          <a-select-option
-            @click="selectedNic = item"
-            v-for="item in nicsList"
-            :key="item.id">
-            {{ item.ipaddress }}
-          </a-select-option>
-        </a-select>
-      </template>
-      <template #state="{ text }">
-        <status :text="text ? text : ''" displayText />
-      </template>
-      <template #radio="{ text }">
-        <a-radio
-          class="list__radio"
-          :value="text"
-          :checked="selectedVm && selectedVm === text"
-          @change="fetchNics"></a-radio>
+      <template #bodyCell="{ column, text, record }">
+        <template v-if="column.key === 'name'">
+          <div>
+            {{ record.name }}
+          </div>
+          <a-select
+            v-if="nicsList.length && selectedVm && selectedVm === record.id"
+            class="nic-select"
+            :defaultValue="selectedNic.ipaddress"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }">
+            <a-select-option
+              @click="selectedNic = item"
+              v-for="item in nicsList"
+              :key="item.id">
+              {{ item.ipaddress }}
+            </a-select-option>
+          </a-select>
+        </template>
+        <template v-if="column.key === 'state'">
+          <status :text="text ? text : ''" displayText />
+        </template>
+        <template v-if="column.key === 'radio'">
+          <a-radio
+            class="list__radio"
+            :value="text"
+            :checked="selectedVm && selectedVm === text"
+            @change="fetchNics"></a-radio>
+        </template>
       </template>
     </a-table>
 
@@ -134,14 +136,14 @@ export default {
       selectedNic: null,
       columns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          slots: { customRender: 'name' },
           width: 200
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.displayname'),
@@ -156,9 +158,9 @@ export default {
           dataIndex: 'zonename'
         },
         {
+          key: 'radio',
           title: this.$t('label.select'),
           dataIndex: 'id',
-          slots: { customRender: 'radio' },
           width: 70
         }
       ],

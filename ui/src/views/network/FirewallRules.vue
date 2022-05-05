@@ -80,27 +80,29 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #protocol="{ record }">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #startport="{ record }">
-        {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
-      </template>
-      <template #endport="{ record }">
-        {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
-      </template>
-      <template #actions="{ record }">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
-          <tooltip-button
-            :tooltip="$t('label.delete')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            buttonClass="rule-action"
-            :disabled="!('deleteFirewallRule' in $store.getters.apis)"
-            @onClick="deleteRule(record)" />
-        </div>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'startport'">
+          {{ record.icmptype || record.startport >= 0 ? record.icmptype || record.startport : $t('label.all') }}
+        </template>
+        <template v-if="column.key === 'endport'">
+          {{ record.icmpcode || record.endport >= 0 ? record.icmpcode || record.endport : $t('label.all') }}
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" buttonClass="rule-action" @onClick="() => openTagsModal(record.id)" />
+            <tooltip-button
+              :tooltip="$t('label.delete')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              buttonClass="rule-action"
+              :disabled="!('deleteFirewallRule' in $store.getters.apis)"
+              @onClick="deleteRule(record)" />
+          </div>
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -248,24 +250,24 @@ export default {
           dataIndex: 'cidrlist'
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
-          title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`,
-          slots: { customRender: 'startport' }
+          key: 'startport',
+          title: `${this.$t('label.startport')}/${this.$t('label.icmptype')}`
         },
         {
-          title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`,
-          slots: { customRender: 'endport' }
+          key: 'endport',
+          title: `${this.$t('label.endport')}/${this.$t('label.icmpcode')}`
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ]
     }
@@ -346,9 +348,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

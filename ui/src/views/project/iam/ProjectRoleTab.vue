@@ -32,26 +32,28 @@
           <template #expandedRowRender="{ record }">
             <ProjectRolePermissionTab class="table" :resource="resource" :role="record"/>
           </template>
-          <template #name="{ record }"> {{ record.name }} </template>
-          <template #description="{ record }">
-            {{ record.description }}
-          </template>
-          <template #action="{ record }">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.update.project.role')"
-              icon="edit-outlined"
-              size="small"
-              style="margin:10px"
-              @onClick="openUpdateModal(record)" />
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.remove.project.role')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined"
-              size="small"
-              @onClick="deleteProjectRole(record)" />
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'name'"> {{ record.name }} </template>
+            <template v-if="column.key === 'description'">
+              {{ record.description }}
+            </template>
+            <template v-if="column.key === 'action'">
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.update.project.role')"
+                icon="edit-outlined"
+                size="small"
+                style="margin:10px"
+                @onClick="openUpdateModal(record)" />
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.remove.project.role')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                size="small"
+                @onClick="deleteProjectRole(record)" />
+            </template>
           </template>
         </a-table>
         <a-modal
@@ -149,20 +151,20 @@ export default {
   created () {
     this.columns = [
       {
+        key: 'name',
         title: this.$t('label.name'),
         dataIndex: 'name',
-        width: '35%',
-        slots: { customRender: 'name' }
+        width: '35%'
       },
       {
         title: this.$t('label.description'),
         dataIndex: 'description'
       },
       {
+        key: 'action',
         title: this.$t('label.action'),
         dataIndex: 'action',
-        width: 100,
-        slots: { customRender: 'action' }
+        width: 100
       }
     ]
     this.initForm()

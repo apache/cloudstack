@@ -317,9 +317,9 @@ export default {
       this.selectedItemsProgress = Array.from(this.selectedItems)
       this.selectedItemsProgress = this.selectedItemsProgress.map(v => ({ ...v, status: 'InProgress' }))
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        scopedSlots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

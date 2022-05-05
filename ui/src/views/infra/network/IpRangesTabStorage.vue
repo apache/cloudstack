@@ -34,17 +34,19 @@
       :rowKey="record => record.id"
       :pagination="false"
     >
-      <template #name="{record}">
-        <div>{{ returnPodName(record.podid) }}</div>
-      </template>
-      <template #actions="{record}">
-        <tooltip-button
-          :tooltip="$t('label.remove.ip.range')"
-          :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
-          icon="delete-outlined"
-          type="primary"
-          :danger="true"
-          @onClick="handleDeleteIpRange(record.id)" />
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <div>{{ returnPodName(record.podid) }}</div>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <tooltip-button
+            :tooltip="$t('label.remove.ip.range')"
+            :disabled="!('deleteStorageNetworkIpRange' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true"
+            @onClick="handleDeleteIpRange(record.id)" />
+        </template>
       </template>
     </a-table>
     <a-pagination
@@ -152,8 +154,8 @@ export default {
       defaultSelectedPod: null,
       columns: [
         {
-          title: this.$t('label.podid'),
-          slots: { customRender: 'name' }
+          key: 'name',
+          title: this.$t('label.podid')
         },
         {
           title: this.$t('label.gateway'),
@@ -176,8 +178,8 @@ export default {
           dataIndex: 'endip'
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ],
       page: 1,

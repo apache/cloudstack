@@ -39,20 +39,22 @@
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template #name="{ text, record }">
-            <hdd-outlined />
-            <router-link :to="{ path: '/volume/' + record.id }">
-              {{ text }}
-            </router-link>
-            <a-tag v-if="record.provisioningtype">
-              {{ record.provisioningtype }}
-            </a-tag>
-          </template>
-          <template #state="{ text }">
-            <status :text="text ? text : ''" />{{ text }}
-          </template>
-          <template #size="{ record }">
-            {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+          <template #bodyCell="{ column, text, record }">
+            <template v-if="column.key === 'name'">
+              <hdd-outlined />
+              <router-link :to="{ path: '/volume/' + record.id }">
+                {{ text }}
+              </router-link>
+              <a-tag v-if="record.provisioningtype">
+                {{ record.provisioningtype }}
+              </a-tag>
+            </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" />{{ text }}
+            </template>
+            <template v-if="column.key === 'size'">
+              {{ parseFloat(record.size / (1024.0 * 1024.0 * 1024.0)).toFixed(2) }} GB
+            </template>
           </template>
         </a-table>
       </a-tab-pane>
@@ -364,23 +366,23 @@ export default {
       newSecondaryIp: '',
       volumeColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
-          dataIndex: 'name',
-          slots: { customRender: 'name' }
+          dataIndex: 'name'
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.type'),
           dataIndex: 'type'
         },
         {
+          key: 'size',
           title: this.$t('label.size'),
-          dataIndex: 'size',
-          slots: { customRender: 'size' }
+          dataIndex: 'size'
         }
       ],
       editNicResource: {},

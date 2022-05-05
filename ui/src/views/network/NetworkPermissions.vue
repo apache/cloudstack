@@ -44,19 +44,21 @@
         :rowKey="item => item.id"
         :pagination="false" >
 
-        <template #action="{ record }">
-          <a-popconfirm
-            :title="$t('message.confirm.remove.network.permission')"
-            @confirm="removeNetworkPermission(record.accountid, record.projectid)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')" >
-            <tooltip-button
-              tooltipPlacement="bottom"
-              :tooltip="$t('label.action.delete.network.permission')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'action'">
+            <a-popconfirm
+              :title="$t('message.confirm.remove.network.permission')"
+              @confirm="removeNetworkPermission(record.accountid, record.projectid)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')" >
+              <tooltip-button
+                tooltipPlacement="bottom"
+                :tooltip="$t('label.action.delete.network.permission')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </template>
         </template>
 
       </a-table>
@@ -140,8 +142,8 @@ export default {
           dataIndex: 'project'
         },
         {
-          title: '',
-          slots: { customRender: 'action' }
+          key: 'action',
+          title: ''
         }
       ]
     }

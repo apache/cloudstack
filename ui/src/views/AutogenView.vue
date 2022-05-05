@@ -817,9 +817,9 @@ export default {
           }
         }
         this.columns.push({
+          key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          slots: { customRender: key },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         })
         this.selectedColumns.push(key)
@@ -1243,9 +1243,9 @@ export default {
           this.bulkColumns = this.chosenColumns
           this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
           this.bulkColumns.splice(0, 0, {
+            key: 'status',
             dataIndex: 'status',
             title: this.$t('label.operation.status'),
-            slots: { customRender: 'status' },
             filters: [
               { text: 'In Progress', value: 'InProgress' },
               { text: 'Success', value: 'success' },
@@ -1472,13 +1472,9 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-      this.columns.push({
-        dataIndex: 'dropdownFilter',
-        slots: {
-          filterDropdown: 'filterDropdown',
-          filterIcon: 'filterIcon'
-        }
-      })
+      if (this.columns.length > 0) {
+        this.columns[this.columns.length - 1].customFilterDropdown = true
+      }
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }

@@ -160,19 +160,19 @@ export default {
       const columns = args.columns.map(col => {
         if (col === 'action') {
           return {
+            key: col,
             title: this.$t('label.' + col),
             dataIndex: col,
             width: 80,
-            fixed: 'right',
-            slots: { customRender: col }
+            fixed: 'right'
           }
         }
         const width = 100 / (length) + '%'
         return {
+          key: col,
           title: this.$t('label.' + col),
           width: width,
-          dataIndex: col,
-          slots: { customRender: col }
+          dataIndex: col
         }
       })
 

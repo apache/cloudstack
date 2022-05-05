@@ -93,22 +93,43 @@
       :pagination="false"
       :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
-      <template #algorithm="{ record }">
-        {{ returnAlgorithmName(record.algorithm) }}
-      </template>
-      <template #protocol="{record}">
-        {{ getCapitalise(record.protocol) }}
-      </template>
-      <template #stickiness="{record}">
-        <a-button @click="() => openStickinessModal(record.id)">
-          {{ returnStickinessLabel(record.id) }}
-        </a-button>
-      </template>
-      <template #add="{record}">
-        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
-          <template #icon><plus-outlined /></template>
-            {{ $t('label.add') }}
-        </a-button>
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'algorithm'">
+          {{ returnAlgorithmName(record.algorithm) }}
+        </template>
+        <template v-if="column.key === 'protocol'">
+          {{ getCapitalise(record.protocol) }}
+        </template>
+        <template v-if="column.key === 'stickiness'">
+          <a-button @click="() => openStickinessModal(record.id)">
+            {{ returnStickinessLabel(record.id) }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'add'">
+          <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+            <template #icon><plus-outlined /></template>
+              {{ $t('label.add') }}
+          </a-button>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <div class="actions">
+            <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
+            <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
+            <a-popconfirm
+              :title="$t('label.delete') + '?'"
+              @confirm="handleDeleteRule(record)"
+              :okText="$t('label.yes')"
+              :cancelText="$t('label.no')"
+            >
+              <tooltip-button
+                :tooltip="$t('label.delete')"
+                :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined" />
+            </a-popconfirm>
+          </div>
+        </template>
       </template>
       <template #expandedRowRender="{ record }">
         <div class="rule-instance-list">
@@ -130,25 +151,6 @@
                 @onClick="() => handleDeleteInstanceFromRule(instance, record, ip)" />
             </div>
           </div>
-        </div>
-      </template>
-      <template #actions="{record}">
-        <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit')" icon="edit-outlined" @onClick="() => openEditRuleModal(record)" />
-          <tooltip-button :tooltip="$t('label.edit.tags')" :disabled="!('updateLoadBalancerRule' in $store.getters.apis)" icon="tag-outlined" @onClick="() => openTagsModal(record.id)" />
-          <a-popconfirm
-            :title="$t('label.delete') + '?'"
-            @confirm="handleDeleteRule(record)"
-            :okText="$t('label.yes')"
-            :cancelText="$t('label.no')"
-          >
-            <tooltip-button
-              :tooltip="$t('label.delete')"
-              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined" />
-          </a-popconfirm>
         </div>
       </template>
     </a-table>
@@ -421,33 +423,35 @@
           :pagination="false"
           :rowKey="record => record.id"
           :scroll="{ y: 300 }">
-          <template #name="{text, record, index}">
-            <span>
-              {{ text }}
-            </span>
-            <loading-outlined v-if="addVmModalNicLoading" />
-            <a-select
-              style="display: block"
-              v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
-              mode="multiple"
-              v-model:value="newRule.vmguestip[index]"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
-                {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
-              </a-select-option>
-            </a-select>
-          </template>
+          <template #bodyCell="{ column, text, record, index }">
+            <template v-if="column.key === 'name'">
+              <span>
+                {{ text }}
+              </span>
+              <loading-outlined v-if="addVmModalNicLoading" />
+              <a-select
+                style="display: block"
+                v-else-if="!addVmModalNicLoading && newRule.virtualmachineid[index] === record.id"
+                mode="multiple"
+                v-model:value="newRule.vmguestip[index]"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
+                  {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
+                </a-select-option>
+              </a-select>
+            </template>
 
-          <template #state="{text}">
-            <status :text="text ? text : ''" displayText></status>
-          </template>
+            <template v-if="column.key === 'state'">
+              <status :text="text ? text : ''" displayText></status>
+            </template>
 
-          <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+            <template v-if="column.key === 'action'" style="text-align: center" :text="text">
+              <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+            </template>
           </template>
         </a-table>
         <a-pagination
@@ -578,28 +582,28 @@ export default {
           dataIndex: 'privateport'
         },
         {
-          title: this.$t('label.algorithm'),
-          slots: { customRender: 'algorithm' }
+          key: 'algorithm',
+          title: this.$t('label.algorithm')
         },
         {
-          title: this.$t('label.protocol'),
-          slots: { customRender: 'protocol' }
+          key: 'protocol',
+          title: this.$t('label.protocol')
         },
         {
           title: this.$t('label.state'),
           dataIndex: 'state'
         },
         {
-          title: this.$t('label.action.configure.stickiness'),
-          slots: { customRender: 'stickiness' }
+          key: 'stickiness',
+          title: this.$t('label.action.configure.stickiness')
         },
         {
-          title: this.$t('label.add.vms'),
-          slots: { customRender: 'add' }
+          key: 'add',
+          title: this.$t('label.add.vms')
         },
         {
-          title: this.$t('label.action'),
-          slots: { customRender: 'actions' }
+          key: 'actions',
+          title: this.$t('label.action')
         }
       ],
       tiers: {
@@ -608,15 +612,15 @@ export default {
       },
       vmColumns: [
         {
+          key: 'name',
           title: this.$t('label.name'),
           dataIndex: 'name',
-          slots: { customRender: 'name' },
           width: 220
         },
         {
+          key: 'state',
           title: this.$t('label.state'),
-          dataIndex: 'state',
-          slots: { customRender: 'state' }
+          dataIndex: 'state'
         },
         {
           title: this.$t('label.displayname'),
@@ -631,9 +635,9 @@ export default {
           dataIndex: 'zonename'
         },
         {
+          key: 'action',
           title: this.$t('label.select'),
           dataIndex: 'action',
-          slots: { customRender: 'action' },
           width: 80
         }
       ],
@@ -1105,9 +1109,9 @@ export default {
     deleteRules (e) {
       this.showConfirmationAction = false
       this.selectedColumns.splice(0, 0, {
+        key: 'status',
         dataIndex: 'status',
         title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
         filters: [
           { text: 'In Progress', value: 'InProgress' },
           { text: 'Success', value: 'success' },

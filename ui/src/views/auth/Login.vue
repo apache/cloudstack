@@ -26,6 +26,7 @@
     v-ctrl-enter="handleSubmit"
   >
     <a-tabs
+      class="tab-center"
       :activeKey="customActiveKey"
       size="large"
       :tabBarStyle="{ textAlign: 'center', borderBottom: 'unset' }"
