@@ -25,15 +25,13 @@ from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listIpv6FirewallRules,
                                   createIpv6FirewallRule,
                                   deleteIpv6FirewallRule)
-from marvin.lib.utils import (isAlmostEqual,
-                              cleanup_resources,
+from marvin.lib.utils import (cleanup_resources,
                               random_gen,
                               get_process_status,
                               get_host_credentials)
 from marvin.lib.base import (Configurations,
                              Domain,
                              NetworkOffering,
-                             VpcOffering,
                              Account,
                              PublicIpRange,
                              Network,
@@ -56,6 +54,7 @@ from ipaddress import IPv6Network
 from random import getrandbits, choice, randint
 import time
 import logging
+import threading
 
 ipv6_offering_config_name = "ipv6.offering.enabled"
 ULA_BASE = IPv6Network("fd00::/8")
@@ -96,6 +95,7 @@ ICMPV6_CODE_TYPE = {
 }
 ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
 TCP_UDP_PORT_ANY = "{ 0-65535 }"
+SLEEP_BEFORE_VR_CHANGES = 45
 
 class TestIpv6Network(cloudstackTestCase):
 
@@ -191,7 +191,10 @@ class TestIpv6Network(cloudstackTestCase):
                     vlan = ip_range.vlan
                     if ipv4_range_vlan == None and vlan.startswith("vlan://"):
                         vlan = vlan.replace("vlan://", "")
-                        ipv4_range_vlan = int(vlan)
+                        if vlan == "untagged":
+                            ipv4_range_vlan = None
+                        else:
+                            ipv4_range_vlan = int(vlan)
         ipv6_publiciprange_service = cls.services["publicip6range"]
         ipv6_publiciprange_service["zoneid"] = cls.zone.id
         ipv6_publiciprange_service["vlan"] = ipv4_range_vlan
@@ -206,14 +209,16 @@ class TestIpv6Network(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.thread = None
         self.cleanup = []
         return
 
     def tearDown(self):
         try:
+            if self.thread and self.thread.is_alive():
+                self.thread.join(5*60)
             #Clean up, terminate the created templates
             cleanup_resources(self.apiclient, reversed(self.cleanup))
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -259,7 +264,7 @@ class TestIpv6Network(cloudstackTestCase):
         self.cleanup.append(self.network_offering_update)
 
 
-    def deployIpv6Network(self):
+    def deployNetwork(self):
         self.services["network"]["networkoffering"] = self.network_offering.id
         self.network = Network.create(
             self.apiclient,
@@ -270,7 +275,7 @@ class TestIpv6Network(cloudstackTestCase):
         )
         self.cleanup.append(self.network)
 
-    def deployIpv6NetworkVm(self):
+    def deployNetworkVm(self):
         if self.template == FAILED:
             assert False, "get_test_template() failed to return template"
         self.services["virtual_machine"]["zoneid"] = self.zone.id
@@ -538,9 +543,11 @@ class TestIpv6Network(cloudstackTestCase):
 
     def restartNetworkWithCleanup(self):
         self.network.restart(self.apiclient, cleanup=True)
+        time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
     def updateNetworkWithOffering(self):
         self.network.update(self.apiclient, networkofferingid=self.network_offering_update.id)
+        time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
     def createIpv6FirewallRuleInNetwork(self, network_id, traffic_type, source_cidr, dest_cidr, protocol,
         start_port, end_port, icmp_type, icmp_code):
@@ -564,7 +571,7 @@ class TestIpv6Network(cloudstackTestCase):
         fw_rule = self.apiclient.createIpv6FirewallRule(cmd)
         return fw_rule
 
-    def checkNetworkRouting(self):
+    def deployRoutingTestResources(self):
         self.routing_test_network_offering = self.createNetworkOfferingInternal(False, True)
         self.cleanup.append(self.routing_test_network_offering)
         self.services["network"]["networkoffering"] = self.routing_test_network_offering.id
@@ -589,14 +596,28 @@ class TestIpv6Network(cloudstackTestCase):
         )
         self.cleanup.append(self.routing_test_vm)
 
+    def prepareRoutingTestResourcesInBackground(self):
+        self.thread = threading.Thread(target=self.deployRoutingTestResources, args=())
+        self.thread.daemon = True
+        self.thread.start()
+
+    def checkIpv6NetworkRouting(self):
+        if not self.thread:
+            self.deployRoutingTestResources()
+        else:
+            self.thread.join(5*60)
+        self.assertFalse(not self.routing_test_network or not self.routing_test_vm,
+            "Routing resources failure")
+
         fw1 = self.createIpv6FirewallRuleInNetwork(self.routing_test_network.id, "Ingress", None, None, "icmp",
             None, None, None, None)
         fw2 = self.createIpv6FirewallRuleInNetwork(self.network.id, "Ingress", None, None, "icmp",
             None, None, None, None)
 
         router = self.getNetworkRouter(self.routing_test_network)
-        self.logger.debug("Adding network routes in routing_test_network %s" % self.network_ipv6_routes)
-        for route in self.network_ipv6_routes:
+        routes = self.getNetworkRoutes(self.network)
+        self.logger.debug("Adding network routes in routing_test_network %s" % routes)
+        for route in routes:
             add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
             self.getRouterProcessStatus(router, add_route_cmd)
 
@@ -730,12 +751,18 @@ class TestIpv6Network(cloudstackTestCase):
             self.apiclient,
             id=primary_router.id
         )
-        time.sleep(self.services["sleep"]/2)
+        time.sleep(SLEEP_BEFORE_VR_CHANGES)
         new_primary_router = self.getNetworkRouter(self.network)
         self.assertNotEqual(new_primary_router.id, primary_router.id,
             "Original primary router ID: %s of network is still the primary router after stopping" % (primary_router.id))
         print(new_primary_router)
         self.checkIpv6NetworkPrimaryRouter(new_primary_router, network_ip6gateway)
+
+    def checkIpv6Network(self):
+        self.checkIpv6NetworkBasic()
+        self.checkIpv6NetworkRoutersBasic()
+        self.checkIpv6NetworkRoutersInternal()
+
 
     @attr(
         tags=[
@@ -756,27 +783,25 @@ class TestIpv6Network(cloudstackTestCase):
         # 3. List router for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
         # 4. SSH into VR(s) and verify correct details are present for its NICs
         # 5. Verify VM in network has required IPv6 details
-        # 6. Restart network with cleanup
-        # 7. Update network with a new offering
-        # 8. Again verify network and VR details
-        # 9. Deploy another IPv6 network and check routing between two networks and their VM
-        # 10. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 6. Restart network with cleanup and re-verify network details
+        # 7. Update network with a new offering and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
         """
 
         self.createIpv6NetworkOffering()
         self.createIpv6NetworkOfferingForUpdate()
         self.createTinyServiceOffering()
-        self.deployIpv6Network()
-        self.deployIpv6NetworkVm()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkIpv6NetworkRoutersInternal()
+        self.deployNetwork()
+        self.deployNetworkVm()
+        self.checkIpv6Network()
         self.checkIpv6NetworkVm()
+        self.prepareRoutingTestResourcesInBackground()
         self.restartNetworkWithCleanup()
+        self.checkIpv6Network()
         self.updateNetworkWithOffering()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkNetworkRouting()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
 
     @attr(
@@ -798,28 +823,26 @@ class TestIpv6Network(cloudstackTestCase):
         # 3. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
         # 4. SSH into VR(s) and verify correct details are present for its NICs
         # 5. Verify VM in network has required IPv6 details
-        # 6. Restart network with cleanup
-        # 7. Update network with a new offering
-        # 8. Again verify network and VR details
-        # 9. Deploy another IPv6 network and check routing between two networks and their VM
-        # 10. Create IPv6 firewall rules and verify in VR if they get implemented
-        # 11. Stop primary router and verify internals in backup VR
+        # 6. Restart network with cleanup and re-verify network details
+        # 7. Update network with a new offering and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 10. Stop primary router and verify internals in backup VR
         """
 
         self.createIpv6NetworkOffering(True)
         self.createIpv6NetworkOfferingForUpdate(True)
         self.createTinyServiceOffering()
-        self.deployIpv6Network()
-        self.deployIpv6NetworkVm()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkIpv6NetworkRoutersInternal()
+        self.deployNetwork()
+        self.deployNetworkVm()
+        self.checkIpv6Network()
         self.checkIpv6NetworkVm()
+        self.prepareRoutingTestResourcesInBackground()
         self.restartNetworkWithCleanup()
+        self.checkIpv6Network()
         self.updateNetworkWithOffering()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkNetworkRouting()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
         self.checkNetworkVRRedundancy()
 
@@ -843,26 +866,23 @@ class TestIpv6Network(cloudstackTestCase):
         # 4. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
         # 5. SSH into VR(s) and verify correct details are present for its NICs
         # 6. Verify VM in network has required IPv6 details
-        # 7. Restart network with cleanup
-        # 8. Again verify network and VR details
-        # 9. Deploy another IPv6 network and check routing between two networks and their VM
-        # 10. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 7. Restart network with cleanup and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
         """
 
         self.createIpv4NetworkOffering(False)
         self.createIpv6NetworkOfferingForUpdate(False)
         self.createTinyServiceOffering()
-        self.deployIpv6Network()
-        self.deployIpv6NetworkVm()
+        self.prepareRoutingTestResourcesInBackground()
+        self.deployNetwork()
+        self.deployNetworkVm()
         self.updateNetworkWithOffering()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkIpv6NetworkRoutersInternal()
+        self.checkIpv6Network()
         self.checkIpv6NetworkVm()
         self.restartNetworkWithCleanup()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkNetworkRouting()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
 
     @attr(
@@ -885,25 +905,22 @@ class TestIpv6Network(cloudstackTestCase):
         # 4. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
         # 5. SSH into VR(s) and verify correct details are present for its NICs
         # 6. Verify VM in network has required IPv6 details
-        # 7. Restart network with cleanup
-        # 8. Again verify network and VR details
-        # 9. Deploy another IPv6 network and check routing between two networks and their VM
-        # 10. Create IPv6 firewall rules and verify in VR if they get implemented
-        # 11. Stop primary router and verify internals in backup VR
+        # 7. Restart network with cleanup and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 10. Stop primary router and verify internals in backup VR
         """
 
         self.createIpv4NetworkOffering(False)
         self.createIpv6NetworkOfferingForUpdate(False)
         self.createTinyServiceOffering()
-        self.deployIpv6Network()
-        self.deployIpv6NetworkVm()
+        self.prepareRoutingTestResourcesInBackground()
+        self.deployNetwork()
+        self.deployNetworkVm()
         self.updateNetworkWithOffering()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkIpv6NetworkRoutersInternal()
+        self.checkIpv6Network()
         self.checkIpv6NetworkVm()
         self.restartNetworkWithCleanup()
-        self.checkIpv6NetworkBasic()
-        self.checkIpv6NetworkRoutersBasic()
-        self.checkNetworkRouting()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
