@@ -74,6 +74,10 @@ export default {
       type: Boolean,
       default: false
     },
+    disabled: {
+      type: Boolean,
+      default: false
+    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -120,7 +124,7 @@ export default {
       if (this.options.page === 1) {
         dataItems.push({
           key: this.$t('label.noselect'),
-          id: this.$t('label.noselect'),
+          name: this.$t('label.noselect'),
           account: '-',
           domain: '-'
         })
