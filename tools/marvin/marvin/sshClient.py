@@ -61,9 +61,9 @@ class SshClient(object):
         self.retryCnt = 0
         self.delay = 0
         self.timeout = 3.0
-        ch = logging.StreamHandler()
-        ch.setLevel(log_lvl)
-        self.logger.addHandler(ch)
+        self.ch = logging.StreamHandler()
+        self.ch.setLevel(log_lvl)
+        self.logger.addHandler(self.ch)
 
         # Check invalid host value and raise exception
         # Atleast host is required for connection
@@ -200,6 +200,7 @@ class SshClient(object):
 
     def __del__(self):
         self.close()
+        self.logger.removeHandler(self.ch)
 
     def close(self):
         if self.ssh is not None:
