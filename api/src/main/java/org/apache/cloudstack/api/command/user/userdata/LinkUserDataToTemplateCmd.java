@@ -60,7 +60,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
             type = CommandType.STRING,
-            description = "the ID of the template for the virtual machine")
+            description = "an optional override policy of the userdata. Possible values are - allowoverride, append, denyoverride. Default policy is allowoverride")
     private String userdataPolicy;
 
     /////////////////////////////////////////////////////

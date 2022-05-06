@@ -27,11 +27,8 @@
         @finish="handleSubmit"
         layout="vertical">
         <a-form-item name="name" ref="name">
-          <template #label :title="apiParams.name.description">
-            {{ $t('label.name') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
           </template>
           <a-input
             v-model:value="form.name"
@@ -39,34 +36,34 @@
             v-focus="true" />
         </a-form-item>
         <a-form-item name="userdata" ref="userdata">
-          <template #label :title="apiParams.userdata.description">
-            {{ $t('label.userdata') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
           </template>
           <a-textarea
             v-model:value="form.userdata"
             :placeholder="apiParams.userdata.description"/>
         </a-form-item>
         <a-form-item name="params" ref="params">
-          <template #label :title="apiParams.params.description">
-            {{ $t('label.userdataparams') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.userdataparams')" :tooltip="apiParams.params.description"/>
           </template>
-          <a-input
+          <a-select
+            mode="tags"
             v-model:value="form.params"
-            :placeholder="apiParams.params.description"
-            v-focus="true" />
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :placeholder="apiParams.params.description">
+            <a-select-option v-for="opt in params" :key="opt">
+              {{ opt }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item name="domainid" ref="domainid" v-if="isAdminOrDomainAdmin()">
-          <template #label :title="apiParams.domainid.description">
-            {{ $t('label.domainid') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
           </template>
           <a-select
             id="domain-selection"
@@ -85,11 +82,8 @@
           </a-select>
         </a-form-item>
         <a-form-item name="account" ref="account" v-if="isAdminOrDomainAdmin() && !isObjectEmpty(selectedDomain) && selectedDomain.id !== null">
-          <template #label :title="apiParams.account.description">
-            {{ $t('label.account') }}
-            <a-tooltip>
-              <info-circle-outlined style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
+          <template #label>
+            <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
           </template>
           <a-input
             v-model:value="form.account"
@@ -116,10 +110,14 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'registerUserData',
   props: {},
+  components: {
+    TooltipLabel
+  },
   data () {
     return {
       domains: [],
@@ -213,8 +211,9 @@ export default {
         }
         params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
 
-        if (values.params !== null) {
-          params.params = values.params
+        if (values.params != null && values.params.length > 0) {
+          var userdataparams = values.params.join(',')
+          params.params = userdataparams
         }
 
         api('registerUserData', params).then(json => {
