@@ -273,7 +273,6 @@ public class SAMLUtils {
     }
 
     public static void setupSamlUserCookies(final LoginCmdResponse loginResponse, final HttpServletResponse resp) throws IOException {
-        resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
         resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
         resp.addCookie(new Cookie("role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
         resp.addCookie(new Cookie("username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
@@ -283,6 +282,7 @@ public class SAMLUtils {
             resp.addCookie(new Cookie("timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
         resp.addCookie(new Cookie("userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;Path=/", "userid", loginResponse.getUserId()));
         resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
