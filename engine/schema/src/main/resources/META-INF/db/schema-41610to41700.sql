@@ -888,8 +888,8 @@ left join `cloud`.`mshost_status` on
 
 -- Alter event table to add resource_id and resource_type
 ALTER TABLE `cloud`.`event`
-    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the even' AFTER `domain_id`,
-    ADD COLUMN `resource_type` varchar(32) COMMENT 'Account role in the project (Owner or Regular)' AFTER `resource_id`;
+    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the event' AFTER `domain_id`,
+    ADD COLUMN `resource_type` varchar(32) COMMENT 'Type of the resource associated with the event' AFTER `resource_id`;
 
 DROP VIEW IF EXISTS `cloud`.`event_view`;
 CREATE VIEW `cloud`.`event_view` AS
