@@ -200,12 +200,13 @@ class SshClient(object):
 
     def __del__(self):
         self.close()
-        self.logger.removeHandler(self.ch)
 
     def close(self):
         if self.ssh is not None:
             self.ssh.close()
             self.ssh = None
+        if self.ch is not None:
+            self.logger.removeHandler(self.ch)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT tests for Network offerings"""
+""" BVT tests for IPv6 Network"""
 
 #Import Local Modules
 from marvin.codes import FAILED
@@ -43,8 +43,7 @@ from marvin.lib.base import (Configurations,
 from marvin.lib.common import (get_domain,
                                get_zone,
                                list_hosts,
-                               get_test_template,
-                               get_template)
+                               get_test_template)
 from marvin.sshClient import SshClient
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.lib.decoratorGenerators import skipTestIf
@@ -96,6 +95,8 @@ ICMPV6_CODE_TYPE = {
 ICMPV6_TYPE_ANY = "{ destination-unreachable, packet-too-big, time-exceeded, parameter-problem, echo-request, echo-reply, mld-listener-query, mld-listener-report, mld-listener-done, nd-router-solicit, nd-router-advert, nd-neighbor-solicit, nd-neighbor-advert, nd-redirect, router-renumbering }"
 TCP_UDP_PORT_ANY = "{ 0-65535 }"
 SLEEP_BEFORE_VR_CHANGES = 45
+PING_RETRIES = 5
+PING_SLEEP = 20
 
 class TestIpv6Network(cloudstackTestCase):
 
@@ -140,11 +141,10 @@ class TestIpv6Network(cloudstackTestCase):
             )
             cls._cleanup.append(cls.account)
             cls.hypervisor = testClient.getHypervisorInfo()
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
+            cls.template = get_test_template(
+               cls.apiclient,
+               cls.zone.id,
+               cls.hypervisor)
         else:
             cls.debug("IPv6 is not supported, skipping tests!")
         return
@@ -395,7 +395,7 @@ class TestIpv6Network(cloudstackTestCase):
             cmd,
             hypervisor=self.routerDetailsMap[router.id]['hypervisor']
         )
-        self.assertTrue(type(result) == list,
+        self.assertTrue(type(result) == list and len(result) > 0,
             "%s on router %s returned invalid result" % (cmd, router.id))
         result = '\n'.join(result)
         return result
@@ -614,33 +614,44 @@ class TestIpv6Network(cloudstackTestCase):
         fw2 = self.createIpv6FirewallRuleInNetwork(self.network.id, "Ingress", None, None, "icmp",
             None, None, None, None)
 
-        router = self.getNetworkRouter(self.routing_test_network)
+        test_network_router = self.getNetworkRouter(self.routing_test_network)
         routes = self.getNetworkRoutes(self.network)
         self.logger.debug("Adding network routes in routing_test_network %s" % routes)
         for route in routes:
             add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
+            self.getRouterProcessStatus(test_network_router, add_route_cmd)
 
-        router = self.getNetworkRouter(self.network)
+        network_router = self.getNetworkRouter(self.network)
         routes = self.getNetworkRoutes(self.routing_test_network)
         self.logger.debug("Adding routing_test_network routes in network %s" % routes)
         for route in routes:
             add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
-
-        time.sleep(self.services["sleep"])
+            self.getRouterProcessStatus(network_router, add_route_cmd)
 
         ping_cmd = "ping6 -c 4 %s" % self.virtual_machine_ipv6_address
-        res = self.getRouterProcessStatus(router, ping_cmd)
+        count = 0
+        while count < PING_RETRIES:
+            count = count + 1
+            res = self.getRouterProcessStatus(test_network_router, ping_cmd)
+            if " 0% packet loss" in res:
+                break
+            time.sleep(PING_SLEEP)
         self.assertTrue(" 0% packet loss" in res,
-            "Ping from router %s of network %s to VM %s of network %s is unsuccessful" % (router.id, self.routing_test_network.id, self.virtual_machine.id, self.network.id))
+            "Ping from router %s of network %s to VM %s of network %s is unsuccessful" % (test_network_router.id, self.routing_test_network.id, self.virtual_machine.id, self.network.id))
 
         ssh = self.routing_test_vm.get_ssh_client(retries=5)
-        res = ssh.execute(ping_cmd)
+        count = 0
+        while count < PING_RETRIES:
+            count = count + 1
+            res = ssh.execute(ping_cmd)
+            if type(res) == list and len(res) > 0 and " 0% packet loss" in '\n'.join(res):
+                break
+            time.sleep(PING_SLEEP)
         self.assertTrue(type(res) == list and len(res) > 0,
             "%s on VM %s returned invalid result" % (ping_cmd, self.routing_test_vm.id))
         self.logger.debug(res)
         res = '\n'.join(res)
+
         self.assertTrue(" 0% packet loss" in res,
             "Ping from VM %s of network %s to VM %s of network %s is unsuccessful" % (self.routing_test_vm.id, self.routing_test_network.id, self.virtual_machine.id, self.network.id))
 
@@ -755,7 +766,6 @@ class TestIpv6Network(cloudstackTestCase):
         new_primary_router = self.getNetworkRouter(self.network)
         self.assertNotEqual(new_primary_router.id, primary_router.id,
             "Original primary router ID: %s of network is still the primary router after stopping" % (primary_router.id))
-        print(new_primary_router)
         self.checkIpv6NetworkPrimaryRouter(new_primary_router, network_ip6gateway)
 
     def checkIpv6Network(self):
@@ -924,3 +934,4 @@ class TestIpv6Network(cloudstackTestCase):
         self.checkIpv6Network()
         self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
+        self.checkNetworkVRRedundancy()

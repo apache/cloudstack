@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT tests for Network offerings"""
+""" BVT tests for IPv6 VPC"""
 
 #Import Local Modules
 from marvin.codes import FAILED
@@ -44,7 +44,6 @@ from marvin.lib.base import (Configurations,
                              NetworkACL)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               list_hosts,
                                get_test_template,
                                get_template)
 from marvin.sshClient import SshClient
@@ -56,6 +55,7 @@ from ipaddress import IPv6Network
 from random import getrandbits, choice, randint
 import time
 import logging
+import threading
 
 ipv6_offering_config_name = "ipv6.offering.enabled"
 ULA_BASE = IPv6Network("fd00::/8")
@@ -76,7 +76,6 @@ ICMPV6_TYPE = {
     130: "mld-listener-query",
     131: "mld-listener-report",
     132: "mld-listener-done",
-    132: "mld-listener-reduction",
     133: "nd-router-solicit",
     134: "nd-router-advert",
     135: "nd-neighbor-solicit",
@@ -110,6 +109,9 @@ ROUTE_TEST_VPC_DATA = {
     "tier1_gateway": "10.2.1.1",
     "tier_netmask": "255.255.255.0"
 }
+SLEEP_BEFORE_VR_CHANGES = 90
+PING_RETRIES = 5
+PING_SLEEP = 20
 
 
 class TestIpv6Vpc(cloudstackTestCase):
@@ -156,11 +158,10 @@ class TestIpv6Vpc(cloudstackTestCase):
             )
             cls._cleanup.append(cls.account)
             cls.hypervisor = testClient.getHypervisorInfo()
-            cls.template = get_template(
-                cls.apiclient,
-                cls.zone.id,
-                cls.services["ostype"]
-            )
+            cls.template = get_test_template(
+               cls.apiclient,
+               cls.zone.id,
+               cls.hypervisor)
         else:
             cls.debug("IPv6 is not supported, skipping tests!")
         return
@@ -207,7 +208,10 @@ class TestIpv6Vpc(cloudstackTestCase):
                     vlan = ip_range.vlan
                     if ipv4_range_vlan == None and vlan.startswith("vlan://"):
                         vlan = vlan.replace("vlan://", "")
-                        ipv4_range_vlan = int(vlan)
+                        if vlan == "untagged":
+                            ipv4_range_vlan = None
+                        else:
+                            ipv4_range_vlan = int(vlan)
         ipv6_publiciprange_service = cls.services["publicip6range"]
         ipv6_publiciprange_service["zoneid"] = cls.zone.id
         ipv6_publiciprange_service["vlan"] = ipv4_range_vlan
@@ -222,13 +226,16 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
+        self.thread = None
         self.cleanup = []
         return
 
     def tearDown(self):
         try:
+            if self.thread and self.thread.is_alive():
+                self.thread.join(5*60)
             #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
+            # cleanup_resources(self.apiclient, reversed(self.cleanup))
 
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -276,8 +283,17 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.vpc_offering_update = self.createVpcOfferingInternal(is_redundant, True)
         self.cleanup.append(self.vpc_offering_update)
 
-    def createNetworkTierOfferingInternal(self, is_ipv6):
+    def createNetworkTierOfferingInternal(self, is_ipv6, remove_lb=True):
         off_service = self.services["nw_offering_isolated_vpc"]
+        if not remove_lb: # Remove Lb service
+            if "serviceProviderList" in off_service and "Lb" in off_service["serviceProviderList"].keys():
+                providers = off_service["serviceProviderList"]
+                providers.pop("Lb")
+                off_service["serviceProviderList"] = providers
+            if "supportedservices" in off_service and "Lb" in off_service["supportedservices"]:
+                supportedServices = off_service["supportedservices"].split(",")
+                supportedServices.remove("Lb")
+                off_service["supportedservices"] = ",".join(supportedServices)
         if is_ipv6:
             off_service["internetprotocol"] = "dualstack"
         network_offering = NetworkOffering.create(
@@ -288,15 +304,15 @@ class TestIpv6Vpc(cloudstackTestCase):
         network_offering.update(self.apiclient, state='Enabled')
         return network_offering
 
-    def createIpv4NetworkTierOffering(self, is_redundant=False):
+    def createIpv4NetworkTierOffering(self):
         self.network_offering = self.createNetworkTierOfferingInternal(False)
         self.cleanup.append(self.network_offering)
 
-    def createIpv6NetworkTierOffering(self, is_redundant=False):
+    def createIpv6NetworkTierOffering(self, remove_lb=True):
         self.network_offering = self.createNetworkTierOfferingInternal(True)
         self.cleanup.append(self.network_offering)
 
-    def createIpv6NetworkTierOfferingForUpdate(self, is_redundant=False):
+    def createIpv6NetworkTierOfferingForUpdate(self):
         self.network_offering_update = self.createNetworkTierOfferingInternal(True)
         self.cleanup.append(self.network_offering_update)
 
@@ -323,13 +339,11 @@ class TestIpv6Vpc(cloudstackTestCase):
             "traffictype": "ingress",
         }
         NetworkACL.create(self.apiclient,
-            # networkid=None,
             services=rule,
             aclid=acl.id
         )
         rule["traffictype"] = "egress"
         NetworkACL.create(self.apiclient,
-            networkid=None,
             services=rule,
             aclid=acl.id
         )
@@ -340,13 +354,16 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.vpc = self.deployAllowAllVpcInternal(VPC_DATA["cidr"])
         self.cleanup.append(self.vpc)
 
-    def deployNetworkTierInternal(self, network_offering_id, vpc_id, tier_gateway, tier_netmask):
-        acl_id = None
-        if vpc_id in self.vpcAllowAllAclDetailsMap:
+    def deployNetworkTierInternal(self, network_offering_id, vpc_id, tier_gateway, tier_netmask, acl_id=None, tier_name=None):
+        if not acl_id and vpc_id in self.vpcAllowAllAclDetailsMap:
             acl_id = self.vpcAllowAllAclDetailsMap[vpc_id]
+        service = self.services["ntwk"]
+        if tier_name:
+            service["name"] = tier_name
+            service["displaytext"] = "vpc-%s" % tier_name
         network = Network.create(
             self.apiclient,
-            self.services["ntwk"],
+            service,
             self.account.name,
             self.account.domainid,
             networkofferingid=network_offering_id,
@@ -367,19 +384,23 @@ class TestIpv6Vpc(cloudstackTestCase):
         )
         self.cleanup.append(self.network)
 
-    def deployNetworkTierVm(self):
+    def deployNetworkTierVmInternal(self, network):
         if self.template == FAILED:
             assert False, "get_test_template() failed to return template"
         self.services["virtual_machine"]["zoneid"] = self.zone.id
-        self.virtual_machine = VirtualMachine.create(
+        virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             templateid=self.template.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
-            networkids=self.network.id,
+            networkids=network,
             serviceofferingid=self.service_offering.id
         )
+        return virtual_machine
+
+    def deployNetworkTierVm(self):
+        self.virtual_machine = self.deployNetworkTierVmInternal(self.network.id)
         self.cleanup.append(self.virtual_machine)
 
     def checkIpv6Vpc(self):
@@ -606,7 +627,7 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.assertTrue(type(res) == str and len(res) > 0 and public_ipv6_gateway in res,
             "%s failed on router %s" % (default_route_check_cmd, router.id))
 
-    def checkIpv6NetworkBackupRouter(self, router, network_ip6gateway):
+    def checkIpv6VpcBackupRouter(self, router, network_ip6gateway):
         self.checkRouterNicState(router, VPC_ROUTER_GUEST_NIC, "UP")
         guest_gateway_check_cmd = "ip -6 address show %s | grep 'inet6 %s'" % ("eth0", network_ip6gateway)
         res = self.getRouterProcessStatus(router, guest_gateway_check_cmd)
@@ -649,13 +670,15 @@ class TestIpv6Vpc(cloudstackTestCase):
                     None,
                     "IPv6 gateway for VM %s NIC is empty" % nic.traffictype)
 
-    def restartVpckWithCleanup(self):
+    def restartVpcWithCleanup(self):
         self.vpc.restart(self.apiclient, cleanup=True)
+        time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
     def updateNetworkTierWithOffering(self):
-        self.vpc.update(self.apiclient, networkofferingid=self.network_offering_update.id)
+        self.network.update(self.apiclient, networkofferingid=self.network_offering_update.id)
+        time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
-    def checkVpcRouting(self):
+    def deployRoutingTestResources(self):
         self.routing_test_vpc = self.deployAllowAllVpcInternal(ROUTE_TEST_VPC_DATA["cidr"])
         self.cleanup.append(self.routing_test_vpc)
         self.routing_test_network_offering = self.createNetworkTierOfferingInternal(True)
@@ -681,29 +704,52 @@ class TestIpv6Vpc(cloudstackTestCase):
         )
         self.cleanup.append(self.routing_test_vm)
 
-        router = self.getVpcRouter(self.routing_test_vpc)
+    def prepareRoutingTestResourcesInBackground(self):
+        self.thread = threading.Thread(target=self.deployRoutingTestResources, args=())
+        self.thread.daemon = True
+        self.thread.start()
+
+    def checkVpcRouting(self):
+        if not self.thread:
+            self.deployRoutingTestResources()
+        else:
+            self.thread.join(5*60)
+        self.assertFalse(not self.routing_test_vpc or not self.routing_test_network or not self.routing_test_vm,
+            "Routing resources failure")
+
+        test_vpc_router = self.getVpcRouter(self.routing_test_vpc)
         routes = self.getNetworkRoutes(self.network)
         self.logger.debug("Adding vpc routes in routing_test_vpc %s" % routes)
         for route in routes:
             add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
+            self.getRouterProcessStatus(test_vpc_router, add_route_cmd)
 
-        router = self.getVpcRouter(self.vpc)
+        vpc_router = self.getVpcRouter(self.vpc)
         routes = self.getNetworkRoutes(self.routing_test_network)
         self.logger.debug("Adding routing_test_vpc routes in vpc %s" % routes)
         for route in routes:
             add_route_cmd = "ip -6 route add %s via %s" % (route.subnet, route.gateway)
-            self.getRouterProcessStatus(router, add_route_cmd)
-
-        time.sleep(self.services["sleep"])
+            self.getRouterProcessStatus(vpc_router, add_route_cmd)
 
         ping_cmd = "ping6 -c 4 %s" % self.virtual_machine_ipv6_address
-        res = self.getRouterProcessStatus(router, ping_cmd)
+        count = 0
+        while count < PING_RETRIES:
+            count = count + 1
+            res = self.getRouterProcessStatus(test_vpc_router, ping_cmd)
+            if " 0% packet loss" in res:
+                break
+            time.sleep(PING_SLEEP)
         self.assertTrue(" 0% packet loss" in res,
-            "Ping from router %s of VPC %s to VM %s of VPC %s is unsuccessful" % (router.id, self.routing_test_vpc.id, self.virtual_machine.id, self.vpc.id))
+            "Ping from router %s of VPC %s to VM %s of VPC %s is unsuccessful" % (test_vpc_router.id, self.routing_test_vpc.id, self.virtual_machine.id, self.vpc.id))
 
         ssh = self.routing_test_vm.get_ssh_client(retries=5)
-        res = ssh.execute(ping_cmd)
+        count = 0
+        while count < PING_RETRIES:
+            count = count + 1
+            res = ssh.execute(ping_cmd)
+            if type(res) == list and len(res) > 0 and " 0% packet loss" in '\n'.join(res):
+                break
+            time.sleep(PING_SLEEP)
         self.assertTrue(type(res) == list and len(res) > 0,
             "%s on VM %s returned invalid result" % (ping_cmd, self.routing_test_vm.id))
         self.logger.debug(res)
@@ -711,8 +757,96 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.assertTrue(" 0% packet loss" in res,
             "Ping from VM %s of VPC %s to VM %s of VPC %s is unsuccessful" % (self.routing_test_vm.id, self.routing_test_vpc.id, self.virtual_machine.id, self.vpc.id))
 
+    def createNetworkAclRule(self, rule, aclid):
+        return NetworkACL.create(self.apiclient,
+            services=rule,
+            aclid=aclid
+        )
+
+    def verifyAclRulesInRouter(self, nic, rules, router):
+        for rule in rules:
+            acl_chain = nic + ACL_CHAINS_SUFFIX[rule["traffictype"]]
+            routerCmd = "nft list chain ip6 %s %s" % (ACL_TABLE, acl_chain)
+            res = self.getRouterProcessStatus(router, routerCmd)
+            self.assertTrue(rule["parsedrule"] in res,
+                "Listing firewall rule with nft list chain failure for rule: %s" % rule["parsedrule"])
+
     def checkIpv6AclRule(self):
-        return
+        router = self.getVpcRouter(self.vpc)
+
+        tier1_acl = NetworkACLList.create(
+            self.apiclient,
+            services={},
+            name="tier1_acl",
+            description="tier1_acl",
+            vpcid=self.vpc.id
+        )
+        rules = []
+        # Ingress - ip6 saddr SOURCE_CIDR tcp dport { START_PORT-END_PORT } accept
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = self.getRandomIpv6Cidr()
+        rule["protocol"] = "tcp"
+        rule["startport"] = randint(3000, 5000)
+        rule["endport"] = rule["startport"] + randint(1, 8)
+        parsedrule = "ip6 saddr %s %s dport { %d-%d } accept" % (rule["cidrlist"], rule["protocol"], rule["startport"], rule["endport"])
+        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        self.createNetworkAclRule(rule, tier1_acl.id)
+        # Egress - ip6 daddr DEST_CIDR icmpv6 type TYPE code CODE accept
+        rule = {}
+        rule["traffictype"] = "Egress"
+        rule["cidrlist"] = self.getRandomIpv6Cidr()
+        rule["protocol"] = "icmp"
+        rule["icmptype"] = choice(list(ICMPV6_TYPE.keys()))
+        rule["icmpcode"] = choice(list(ICMPV6_CODE_TYPE.keys()))
+        parsedrule = "ip6 daddr %s %sv6 type %s %sv6 code %s accept" % (rule["cidrlist"], rule["protocol"], ICMPV6_TYPE[rule["icmptype"]], rule["protocol"], ICMPV6_CODE_TYPE[rule["icmpcode"]])
+        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        self.createNetworkAclRule(rule, tier1_acl.id)
+
+        self.network.replaceACLList(self.apiclient, tier1_acl.id)
+
+        self.verifyAclRulesInRouter("eth2", rules, router)
+
+
+        tier2_acl = NetworkACLList.create(
+            self.apiclient,
+            services={},
+            name="tier2_acl",
+            description="tier2_acl",
+            vpcid=self.vpc.id
+        )
+        rules = []
+        # Ingress - ip6 saddr ::/0 udp dport { 0-65355 } ACTION
+        rule = {}
+        rule["traffictype"] = "Ingress"
+        rule["cidrlist"] = CIDR_IPV6_ANY
+        rule["protocol"] = "udp"
+        parsedrule = "ip6 saddr %s %s dport %s accept" % (rule["cidrlist"], rule["protocol"], TCP_UDP_PORT_ANY)
+        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        self.createNetworkAclRule(rule, tier2_acl.id)
+        # Egress - ip6 daddr DEST_CIDR icmpv6 type TYPE code CODE accept
+        rule = {}
+        rule["traffictype"] = "Egress"
+        rule["protocol"] = "all"
+        parsedrule = "ip6 daddr %s accept" % (CIDR_IPV6_ANY)
+        rules.append({"traffictype": rule["traffictype"], "parsedrule": parsedrule})
+        self.createNetworkAclRule(rule, tier2_acl.id)
+
+        self.network_offering_tier2 = self.createNetworkTierOfferingInternal(True, False)
+        self.cleanup.append(self.network_offering_tier2)
+        self.tier2_network = self.deployNetworkTierInternal(
+            self.network_offering_tier2.id,
+            self.vpc.id,
+            VPC_DATA["tier2_gateway"],
+            VPC_DATA["tier_netmask"],
+            tier2_acl.id,
+            "tier2"
+        )
+        self.cleanup.append(self.tier2_network)
+        self.tier2_vm = self.deployNetworkTierVmInternal(self.tier2_network.id)
+        self.cleanup.append(self.tier2_vm)
+
+        self.verifyAclRulesInRouter("eth3", rules, router)
 
     def checkVpcVRRedundancy(self):
         network_ip6gateway = self.getNetworkGateway(self.network)
@@ -722,11 +856,18 @@ class TestIpv6Vpc(cloudstackTestCase):
             id=primary_router.id
         )
         time.sleep(self.services["sleep"]/2)
-        new_primary_router = self.getNetworkRouter(self.vpc)
+        new_primary_router = self.getVpcRouter(self.vpc)
         self.assertNotEqual(new_primary_router.id, primary_router.id,
             "Original primary router ID: %s of VPC is still the primary router after stopping" % (primary_router.id))
-        print(new_primary_router)
         self.checkIpv6VpcPrimaryRouter(new_primary_router, network_ip6gateway)
+
+    def checkIpv6VpcNetworking(self, check_vm=False):
+        self.checkIpv6Vpc()
+        self.checkIpv6NetworkTierBasic()
+        self.checkIpv6VpcRoutersBasic()
+        self.checkIpv6VpcRoutersInternal()
+        if check_vm:
+            self.checkIpv6NetworkTierVm()
 
     @attr(
         tags=[
@@ -747,11 +888,10 @@ class TestIpv6Vpc(cloudstackTestCase):
         # 3. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
         # 4. SSH into VR(s) and verify correct details are present for its NICs
         # 5. Verify VM in network tier has required IPv6 details
-        # 6. Restart VPC with cleanup
-        # 7. Update network tier with a new offering
-        # 8. Again verify network tier and VR details
-        # 9. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
-        # 10. Create IPv6 ACL rules and verify in VR if they get implemented
+        # 6. Restart VPC with cleanup and re-verify VPC networking
+        # 7. Update network tier with a new offering and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
         """
 
         self.createIpv6VpcOffering()
@@ -761,14 +901,136 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.createTinyServiceOffering()
         self.deployNetworkTier()
         self.deployNetworkTierVm()
-        self.checkIpv6Vpc()
-        self.checkIpv6NetworkTierBasic()
-        self.checkIpv6VpcRoutersBasic()
-        # self.checkIpv6VpcRoutersInternal()
-        self.checkIpv6NetworkTierVm()
-        # self.restartVpcWithCleanup()
-        # self.updateNetworkTierWithOffering()
-        # self.checkIpv6NetworkTierBasic()
-        # self.checkIpv6NetworkTierRoutersBasic()
+        self.checkIpv6VpcNetworking(True)
+        self.prepareRoutingTestResourcesInBackground()
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking()
         self.checkVpcRouting()
-        # self.checkIpv6AclRule()
+        self.checkIpv6AclRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_02_verify_ipv6_vpc_redundant(self):
+        """Test to verify redundant IPv6 VPC
+
+        # Validate the following:
+        # 1. Create redundant IPv6 VPC, add tiers, deploy VM
+        # 2. Verify VPC, tier has required IPv6 details
+        # 3. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 4. SSH into VR(s) and verify correct details are present for its NICs
+        # 5. Verify VM in network tier has required IPv6 details
+        # 6. Restart VPC with cleanup and re-verify VPC networking
+        # 7. Update network tier with a new offering and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6VpcOffering(True)
+        self.deployVpc()
+        self.createIpv6NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.checkIpv6VpcNetworking(True)
+        self.prepareRoutingTestResourcesInBackground()
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+        self.checkVpcVRRedundancy()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_03_verify_upgraded_ipv6_vpc(self):
+        """Test to verify IPv4 VPC tier upgraded to IPv6 VPC tier
+
+        # Validate the following:
+        # 1. Create IPv4 VPC, add tiers, deploy VM
+        # 2. Update VPC tier to IPv6 offering
+        # 3. Verify VPC, tier has required IPv6 details
+        # 4. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network tier has required IPv6 details
+        # 7. Restart VPC with cleanup and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        """
+
+        self.createIpv6VpcOffering()
+        self.deployVpc()
+        self.prepareRoutingTestResourcesInBackground()
+        self.createIpv4NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking(True)
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_04_verify_upgraded_ipv6_vpc_redundant(self):
+        """Test to verify redunadnt IPv4 VPC tier upgraded to IPv6 VPC tier
+
+        # Validate the following:
+        # 1. Create redundant IPv4 VPC, add tiers, deploy VM
+        # 2. Update VPC tier to IPv6 offering
+        # 3. Verify VPC, tier has required IPv6 details
+        # 4. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network tier has required IPv6 details
+        # 7. Restart VPC with cleanup and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6VpcOffering(True)
+        self.deployVpc()
+        self.prepareRoutingTestResourcesInBackground()
+        self.createIpv4NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking(True)
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+        self.checkVpcVRRedundancy()
