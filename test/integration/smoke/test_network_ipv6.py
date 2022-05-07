@@ -921,8 +921,8 @@ class TestIpv6Network(cloudstackTestCase):
         # 10. Stop primary router and verify internals in backup VR
         """
 
-        self.createIpv4NetworkOffering(False)
-        self.createIpv6NetworkOfferingForUpdate(False)
+        self.createIpv4NetworkOffering(True)
+        self.createIpv6NetworkOfferingForUpdate(True)
         self.createTinyServiceOffering()
         self.prepareRoutingTestResourcesInBackground()
         self.deployNetwork()
