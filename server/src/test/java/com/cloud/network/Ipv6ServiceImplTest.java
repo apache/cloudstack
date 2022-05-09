@@ -21,12 +21,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -54,14 +58,20 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.rules.FirewallManager;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
@@ -104,13 +114,13 @@ public class Ipv6ServiceImplTest {
     @Mock
     AccountManager accountManager;
     @Mock
-    NetworkModel networkModel;
+    NetworkModel networkModel = Mockito.mock(NetworkModelImpl.class);
     @Mock
     IPAddressDao ipAddressDao;
     @Mock
-    FirewallManager firewallManager;
-    @Mock
     NetworkOrchestrationService networkOrchestrationService;
+
+    FirewallManager firewallManager = Mockito.mock(FirewallManager.class);
 
     @InjectMocks
     private Ipv6ServiceImpl ipv6Service = new Ipv6ServiceImpl();
@@ -134,6 +144,7 @@ public class Ipv6ServiceImplTest {
         updatedPrefixSubnetMap = new ArrayList<>();
         persistedPrefixSubnetMap = new ArrayList<>();
         MockitoAnnotations.initMocks(this);
+        ipv6Service.firewallManager = firewallManager;
         Mockito.when(ipv6GuestPrefixSubnetNetworkMapDao.update(Mockito.anyLong(), Mockito.any(Ipv6GuestPrefixSubnetNetworkMapVO.class))).thenAnswer((Answer<Boolean>) invocation -> {
             Ipv6GuestPrefixSubnetNetworkMapVO map = (Ipv6GuestPrefixSubnetNetworkMapVO)invocation.getArguments()[1];
             updatedPrefixSubnetMap.add(map);
@@ -144,6 +155,8 @@ public class Ipv6ServiceImplTest {
             persistedPrefixSubnetMap.add(map);
             return map;
         });
+        PowerMockito.mockStatic(ApiDBUtils.class);
+        Mockito.when(ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
     }
 
     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {
@@ -164,8 +177,8 @@ public class Ipv6ServiceImplTest {
     public void testGetUsedTotalIpv6SubnetForPrefix() {
         DataCenterGuestIpv6PrefixVO prefix = prepareMocksForIpv6Subnet();
         Pair<Integer, Integer> results = ipv6Service.getUsedTotalIpv6SubnetForPrefix(prefix);
-        Assert.assertEquals(results.first().intValue(), 2);
-        Assert.assertEquals(results.second().intValue(), 4);
+        Assert.assertEquals(2, results.first().intValue());
+        Assert.assertEquals(4, results.second().intValue());
     }
 
     @Test
@@ -174,8 +187,8 @@ public class Ipv6ServiceImplTest {
         final List<DataCenterGuestIpv6PrefixVO> prefixes = new ArrayList<>();
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId)).thenReturn(prefixes);
         Pair<Integer, Integer> results = ipv6Service.getUsedTotalIpv6SubnetForZone(zoneId);
-        Assert.assertEquals(results.first().intValue(), 0);
-        Assert.assertEquals(results.second().intValue(), 0);
+        Assert.assertEquals(0, results.first().intValue());
+        Assert.assertEquals(0, results.second().intValue());
     }
 
     @Test
@@ -187,8 +200,8 @@ public class Ipv6ServiceImplTest {
         prefixes.add(prefix);
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId)).thenReturn(prefixes);
         Pair<Integer, Integer> results = ipv6Service.getUsedTotalIpv6SubnetForZone(zoneId);
-        Assert.assertEquals(results.first().intValue(), 4);
-        Assert.assertEquals(results.second().intValue(), 8);
+        Assert.assertEquals(4, results.first().intValue());
+        Assert.assertEquals(8, results.second().intValue());
     }
 
     @Test(expected = ResourceAllocationException.class)
@@ -374,8 +387,6 @@ public class Ipv6ServiceImplTest {
         Mockito.when(nic.getIPv6Address()).thenReturn(null);
         Mockito.when(nic.getBroadcastUri()).thenReturn(URI.create(vlan));
         Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(1L, "vlan")).thenReturn(new ArrayList<>());
-        PowerMockito.mockStatic(ApiDBUtils.class);
-        Mockito.when(ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         try (TransactionLegacy txn = TransactionLegacy.open("testNewErrorAssignPublicIpv6ToNetwork")) {
            ipv6Service.assignPublicIpv6ToNetwork(Mockito.mock(Network.class), nic);
         }
@@ -400,8 +411,6 @@ public class Ipv6ServiceImplTest {
         List<VlanVO> vlans = new ArrayList<>();
         vlans.add(vlanVO);
         Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlans);
-        PowerMockito.mockStatic(ApiDBUtils.class);
-        Mockito.when(ApiDBUtils.findZoneById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         List<NicVO> placeholderNics = new ArrayList<>();
         if (fromPlaceholder) {
             placeholderNics = mockPlaceholderNics();
@@ -526,5 +535,136 @@ public class Ipv6ServiceImplTest {
         List<String> addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
         Assert.assertEquals(1, addresses.size());
         Assert.assertEquals(ipv6Address, addresses.get(0));
+    }
+
+    @Test
+    public void testEmptyUpdateIpv6RoutesForVpcResponse() {
+        VpcResponse response = new VpcResponse();
+        Vpc vpc = Mockito.mock(Vpc.class);
+        List<NetworkVO> networks = new ArrayList<>();
+        Mockito.doReturn(networks).when(networkModel).listNetworksByVpc(Mockito.anyLong());
+        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
+        Assert.assertTrue(CollectionUtils.isEmpty(response.getIpv6Routes()));
+    }
+
+    @Test
+    public void testUpdateIpv6RoutesForVpcResponse() {
+        VpcResponse response = new VpcResponse();
+        Vpc vpc = Mockito.mock(Vpc.class);
+        List<NetworkVO> networks = new ArrayList<>();
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getIp6Cidr()).thenReturn(cidr);
+        networks.add(network);
+        List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class));
+        Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(routers);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
+        Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(List.of(nic));
+        Mockito.doReturn(networks).when(networkModel).listNetworksByVpc(Mockito.anyLong());
+        Mockito.when(networkOfferingDao.isIpv6Supported(Mockito.anyLong())).thenReturn(true);
+        ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
+        Assert.assertEquals(1, response.getIpv6Routes().size());
+        Ipv6RouteResponse routeResponse = new ArrayList<>(response.getIpv6Routes()).get(0);
+        Assert.assertEquals(ipv6Address, routeResponse.getGateway());
+        Assert.assertEquals(cidr, routeResponse.getSubnet());
+    }
+
+    @Test
+    public void testCheckNetworkIpv6UpgradeForNoPrefixes() {
+        Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(new ArrayList<>());
+        try {
+            ipv6Service.checkNetworkIpv6Upgrade(Mockito.mock(Network.class));
+            Assert.fail("No ResourceAllocationException");
+        } catch (InsufficientAddressCapacityException | ResourceAllocationException ignored) {}
+    }
+
+    @Test
+    public void testCheckNetworkIpv6UpgradeForNoIpv6Vlan() {
+        final long physicalNetworkId = 1L;
+        Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getVpcId()).thenReturn(null);
+        Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
+        VlanVO vlanVO = Mockito.mock(VlanVO.class);
+        Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
+        Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
+        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(new ArrayList<>());
+        try {
+            ipv6Service.checkNetworkIpv6Upgrade(network);
+            Assert.fail("No InsufficientAddressCapacityException");
+        } catch (InsufficientAddressCapacityException | ResourceAllocationException ignored) {}
+    }
+
+    @Test
+    public void testCheckNetworkIpv6UpgradeForNetwork() {
+        final long physicalNetworkId = 1L;
+        Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(Mockito.mock(DataCenterGuestIpv6PrefixVO.class)));
+        Network network = Mockito.mock(Network.class);
+        Mockito.when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        Mockito.when(network.getVpcId()).thenReturn(null);
+        Mockito.when(ipAddressDao.listByAssociatedNetwork(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(IPAddressVO.class)));
+        VlanVO vlanVO = Mockito.mock(VlanVO.class);
+        Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
+        Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
+        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(physicalNetworkId, vlan)).thenReturn(List.of(vlanVO));
+        try {
+            ipv6Service.checkNetworkIpv6Upgrade(network);
+        } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testUpdateIpv6FirewallRule() {
+        final Long firewallRuleId = 1L;
+        UpdateIpv6FirewallRuleCmd cmd = Mockito.mock(UpdateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getId()).thenReturn(firewallRuleId);
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(null);
+        try {
+            ipv6Service.updateIpv6FirewallRule(cmd);
+            Assert.fail("No InvalidParameterValueException");
+        } catch (InvalidParameterValueException ignored) {}
+        FirewallRuleVO ingressFirewallRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(ingressFirewallRule.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(ingressFirewallRule);
+        try {
+            ipv6Service.updateIpv6FirewallRule(cmd);
+        } catch (InvalidParameterValueException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testDeleteIpv6FirewallRule() {
+        final Long firewallRuleId = 1L;
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(null);
+        try {
+            ipv6Service.revokeIpv6FirewallRule(firewallRuleId);
+            Assert.fail("No InvalidParameterValueException");
+        } catch (InvalidParameterValueException ignored) {}
+        FirewallRuleVO ingressFirewallRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(ingressFirewallRule.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(ingressFirewallRule);
+        try {
+            ipv6Service.revokeIpv6FirewallRule(firewallRuleId);
+        } catch (InvalidParameterValueException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testGetIpv6FirewallRule() {
+        final Long firewallRuleId = 1L;
+        final String uuid = UUID.randomUUID().toString();
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(null);
+        FirewallRule rule = ipv6Service.getIpv6FirewallRule(firewallRuleId);
+        Assert.assertNull(rule);
+        FirewallRuleVO ingressFirewallRule = Mockito.mock(FirewallRuleVO.class);
+        Mockito.when(ingressFirewallRule.getUuid()).thenReturn(uuid);
+        Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(ingressFirewallRule);
+        rule = ipv6Service.getIpv6FirewallRule(firewallRuleId);
+        Assert.assertEquals(uuid, rule.getUuid());
     }
 }
