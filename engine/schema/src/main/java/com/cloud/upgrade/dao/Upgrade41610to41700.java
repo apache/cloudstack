@@ -26,7 +26,6 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.upgrade.ConfigurationGroupsAggregator;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -34,7 +33,6 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     final static Logger LOG = Logger.getLogger(Upgrade41700to41710.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
-    private ConfigurationGroupsAggregator configGroupsAggregator = new ConfigurationGroupsAggregator();
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -115,9 +113,5 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error(errorMsg,ex);
             throw new CloudRuntimeException(errorMsg, ex);
         }
-    }
-
-    private void updateConfigurationGroups() {
-        configGroupsAggregator.updateConfigurationGroups();
     }
 }

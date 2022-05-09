@@ -137,36 +137,6 @@ export default {
   created () {
     this.fetchConfigurationGroups()
   },
-  watch: {
-  //   configGroup: {
-  //     deep: true,
-  //     handler (newItem, oldItem) {
-  //       if (!newItem) {
-  //         return
-  //       }
-  //       if (this.configGroup.length > 0) {
-  //         const query = Object.assign({}, this.$route.query)
-  //         delete query.page
-  //         delete query.pagesize
-  //         this.$router.push({ query })
-  //       }
-  //     }
-  //   },
-  //   configSubGroup: {
-  //     deep: true,
-  //     handler (newItem, oldItem) {
-  //       if (!newItem) {
-  //         return
-  //       }
-  //       if (this.configSubGroup.length > 0) {
-  //         const query = Object.assign({}, this.$route.query)
-  //         delete query.page
-  //         delete query.pagesize
-  //         this.$router.push({ query })
-  //       }
-  //     }
-  //   }
-  },
   methods: {
     fetchConfigurationGroups () {
       this.configLoading = true

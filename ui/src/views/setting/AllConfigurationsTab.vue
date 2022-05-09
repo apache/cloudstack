@@ -29,7 +29,7 @@
         :columnKeys="columnKeys"
         :rowKey="record => record.name"
         :rowClassName="getRowClassName"
-        @refresh="this.fetchConfigData">
+        @refresh="fetchConfigData">
 
         <template #name="{ record }">
           <b> {{record.displaytext }} </b> {{ ' (' + record.name + ')' }} <br/> {{ record.description }}
@@ -84,20 +84,20 @@ export default {
       apiName: 'listConfigurations',
       columns: [
         {
-          title: 'Name',
+          title: this.$t('label.name'),
           dataIndex: 'name',
           slots: { customRender: 'name' },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') },
           width: '60%'
         },
         {
-          title: 'Category',
+          title: this.$t('label.category'),
           dataIndex: 'category',
           slots: { customRender: 'category' },
           sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
         },
         {
-          title: 'Value',
+          title: this.$t('label.value'),
           dataIndex: 'value',
           slots: { customRender: 'value' }
         }

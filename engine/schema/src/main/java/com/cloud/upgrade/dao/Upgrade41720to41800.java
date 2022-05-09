@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
+import com.cloud.upgrade.ConfigurationGroupsAggregator;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
@@ -40,6 +41,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     final static Logger LOG = Logger.getLogger(Upgrade41720to41800.class);
 
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
+    private ConfigurationGroupsAggregator configGroupsAggregator = new ConfigurationGroupsAggregator();
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -71,6 +73,7 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
     public void performDataMigration(Connection conn) {
         convertQuotaTariffsToNewParadigm(conn);
         convertVmResourcesQuotaTypesToRunningVmQuotaType(conn);
+        updateConfigurationGroups();
     }
 
     @Override
@@ -229,5 +232,8 @@ public class Upgrade41720to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate
             LOG.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
+
+    private void updateConfigurationGroups() {
+        configGroupsAggregator.updateConfigurationGroups();
     }
 }

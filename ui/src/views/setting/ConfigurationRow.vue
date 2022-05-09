@@ -39,7 +39,7 @@
               size="small"
               :showHeader="false"
               :columns="childrenColumns"
-              :dataSource="this.childrenConfigData"
+              :dataSource="childrenConfigData"
               :rowKey="record => record.name"
               :pagination="false"
               :rowClassName="getRowClassName"

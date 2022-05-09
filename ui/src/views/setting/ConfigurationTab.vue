@@ -21,14 +21,14 @@
       size="small"
       :showHeader="false"
       :columns="columns"
-      :dataSource="this.configdata.filter(config => !config.parent)"
+      :dataSource="configdata.filter(config => !config.parent)"
       :rowKey="record => record.name"
       :pagination="true"
       :rowClassName="getRowClassName"
       style="overflow-y: auto; margin-left: 10px" >
 
       <template #displaytext="{ record }">
-        <ConfigurationRow :config="this.configdata" :configrecord="record" :loading="tabLoading" />
+        <ConfigurationRow :config="configdata" :configrecord="record" :loading="tabLoading" />
       </template>
     </a-table>
   </a-spin>
