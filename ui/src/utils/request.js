@@ -177,6 +177,7 @@ const sourceToken = {
   cancel: () => {
     if (!source) sourceToken.init()
     source.cancel()
+    source = null
   }
 }
 
