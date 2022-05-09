@@ -276,7 +276,7 @@ public interface StorageManager extends StorageService {
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 

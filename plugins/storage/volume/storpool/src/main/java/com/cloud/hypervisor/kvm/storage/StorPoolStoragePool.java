@@ -161,4 +161,9 @@ public class StorPoolStoragePool implements KVMStoragePool {
     public boolean supportsConfigDriveIso() {
         return false;
     }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
 }

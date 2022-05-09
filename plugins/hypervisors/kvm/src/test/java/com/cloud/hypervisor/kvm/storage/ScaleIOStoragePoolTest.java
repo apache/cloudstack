@@ -26,7 +26,10 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -57,10 +60,13 @@ public class ScaleIOStoragePoolTest {
     @Before
     public void setUp() throws Exception {
         final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
+        final String systemId = "218ce1797566a00f";
         final StoragePoolType type = StoragePoolType.PowerFlex;
+        Map<String,String> details = new HashMap<String, String>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         adapter = spy(new ScaleIOStorageAdaptor(storageLayer));
-        pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, adapter);
+        pool = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
     }
 
     @After
@@ -77,6 +83,7 @@ public class ScaleIOStoragePoolTest {
         assertEquals(pool.getSourcePort(), 443);
         assertEquals(pool.getSourceDir(), "a519be2f00000000");
         assertEquals(pool.getType(), StoragePoolType.PowerFlex);
+        assertEquals(pool.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), "218ce1797566a00f");
 
         pool.setCapacity(131072);
         pool.setUsed(24576);
@@ -85,6 +92,41 @@ public class ScaleIOStoragePoolTest {
         assertEquals(pool.getCapacity(), 131072);
         assertEquals(pool.getUsed(), 24576);
         assertEquals(pool.getAvailable(), 106496);
+    }
+
+    @Test
+    public void testSdcIdAttribute() {
+        final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
+        final String systemId = "218ce1797566a00f";
+        final String sdcId = "301b852c00000003";
+        final StoragePoolType type = StoragePoolType.PowerFlex;
+        Map<String,String> details = new HashMap<String, String>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
+
+        PowerMockito.mockStatic(ScaleIOUtil.class);
+        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
+
+        ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
+        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), systemId);
+        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.SDC_ID), sdcId);
+    }
+
+    @Test
+    public void testSdcGuidAttribute() {
+        final String uuid = "345fc603-2d7e-47d2-b719-a0110b3732e6";
+        final String systemId = "218ce1797566a00f";
+        final String sdcGuid = "B0E3BFB8-C20B-43BF-93C8-13339E85AA50";
+        final StoragePoolType type = StoragePoolType.PowerFlex;
+        Map<String,String> details = new HashMap<String, String>();
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
+
+        PowerMockito.mockStatic(ScaleIOUtil.class);
+        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(null);
+        when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
+
+        ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
+        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), systemId);
+        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.SDC_GUID), sdcGuid);
     }
 
     @Test
