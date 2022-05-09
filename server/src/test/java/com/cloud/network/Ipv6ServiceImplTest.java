@@ -28,6 +28,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,6 +68,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -117,10 +119,11 @@ public class Ipv6ServiceImplTest {
 
     List<Ipv6GuestPrefixSubnetNetworkMapVO> persistedPrefixSubnetMap;
 
-    final String PUBLIC_RESERVER = PublicNetworkGuru.class.getSimpleName();
+    final String publicReserver = PublicNetworkGuru.class.getSimpleName();
     final String vlan = "vlan";
     final long networkId = 101L;
     final long nicId = 100L;
+    final String ipv6Prefix = "fd17:6:8a43:e2a4::/62"; // Will have 4 /64 subnets
     final String cidr = "fd17:5:8a43:e2a5::/64";
     final String gateway = "fd17:5:8a43:e2a5::1";
     final String macAddress = "1e:00:4c:00:00:03";
@@ -145,10 +148,9 @@ public class Ipv6ServiceImplTest {
 
     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {
         final long prefixId = 1L;
-        String prefixStr = "fd17:5:8a43:e2a4::/62"; // Will have 4 /64 subnets
         DataCenterGuestIpv6PrefixVO prefix = Mockito.mock(DataCenterGuestIpv6PrefixVO.class);
         Mockito.when(prefix.getId()).thenReturn(prefixId);
-        Mockito.when(prefix.getPrefix()).thenReturn(prefixStr);
+        Mockito.when(prefix.getPrefix()).thenReturn(ipv6Prefix);
         List<Ipv6GuestPrefixSubnetNetworkMapVO> subnets = new ArrayList<>();
         Ipv6GuestPrefixSubnetNetworkMapVO subnetMap = new Ipv6GuestPrefixSubnetNetworkMapVO(prefixId, "subnet", 1L, Ipv6GuestPrefixSubnetNetworkMap.State.Allocated);
         subnets.add(subnetMap);
@@ -318,7 +320,6 @@ public class Ipv6ServiceImplTest {
     public void testReleaseIpv6SubnetForNetwork() {
         final long prefixId = 1L;
         final String subnet = "fd17:5:8a43:e2a5::/64";
-        final Long networkId = 100L;
         Ipv6GuestPrefixSubnetNetworkMapVO allocatingMap = new Ipv6GuestPrefixSubnetNetworkMapVO(prefixId, subnet, networkId, Ipv6GuestPrefixSubnetNetworkMap.State.Allocated);
         Mockito.when(ipv6GuestPrefixSubnetNetworkMapDao.findByNetworkId(networkId)).thenReturn(allocatingMap);
         Mockito.when(ipv6GuestPrefixSubnetNetworkMapDao.createForUpdate(Mockito.anyLong())).thenReturn(allocatingMap);
@@ -341,19 +342,17 @@ public class Ipv6ServiceImplTest {
         Mockito.when(vlan.getIp6Gateway()).thenReturn(null);
         Assert.assertNull(ipv6Service.getAllocatedIpv6FromVlanRange(vlan));
         List<String> addresses = Arrays.asList("fd17:5:8a43:e2a5::1000", "fd17:5:8a43:e2a5::1001");
-        final String cidr = "fd17:5:8a43:e2a5::/64";
-        final String gateway = "fd17:5:8a43:e2a5::1";
         Vlan vlan1 = Mockito.mock(Vlan.class);
         Mockito.when(vlan1.getIp6Cidr()).thenReturn(cidr);
         Mockito.when(vlan1.getIp6Gateway()).thenReturn(gateway);
 
         List<NicVO> nics = new ArrayList<>();
         for (String address : addresses) {
-            NicVO nic = new NicVO(PUBLIC_RESERVER, 100L, 1L, VirtualMachine.Type.DomainRouter);
+            NicVO nic = new NicVO(publicReserver, 100L, 1L, VirtualMachine.Type.DomainRouter);
             nic.setIPv6Address(address);
             nics.add(nic);
         }
-        Mockito.when(nicDao.findNicsByIpv6GatewayIpv6CidrAndReserver(gateway, cidr, PUBLIC_RESERVER)).thenReturn(nics);
+        Mockito.when(nicDao.findNicsByIpv6GatewayIpv6CidrAndReserver(gateway, cidr, publicReserver)).thenReturn(nics);
         List<String> result = ipv6Service.getAllocatedIpv6FromVlanRange(vlan1);
         Assert.assertEquals(addresses.size(), result.size());
         for (String address : addresses) {
@@ -363,7 +362,6 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testAlreadyExistAssignPublicIpv6ToNetwork() {
-        final String ipv6Address = "fd17:5:8a43:e2a5::1000";
         Nic nic = Mockito.mock(Nic.class);
         Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
         Nic assignedNic = ipv6Service.assignPublicIpv6ToNetwork(Mockito.mock(Network.class), nic);
@@ -372,7 +370,6 @@ public class Ipv6ServiceImplTest {
 
     @Test(expected = CloudRuntimeException.class)
     public void testNewErrorAssignPublicIpv6ToNetwork() {
-        final String vlan = "vlan";
         Nic nic = Mockito.mock(Nic.class);
         Mockito.when(nic.getIPv6Address()).thenReturn(null);
         Mockito.when(nic.getBroadcastUri()).thenReturn(URI.create(vlan));
@@ -389,7 +386,7 @@ public class Ipv6ServiceImplTest {
         Mockito.when(placeholderNic.getIPv6Address()).thenReturn(ipv6Address);
         Mockito.when(placeholderNic.getIPv6Gateway()).thenReturn(gateway);
         Mockito.when(placeholderNic.getIPv6Cidr()).thenReturn(cidr);
-        Mockito.when(placeholderNic.getReserver()).thenReturn(PUBLIC_RESERVER);
+        Mockito.when(placeholderNic.getReserver()).thenReturn(publicReserver);
         List<NicVO> placeholderNics = new ArrayList<>();
         placeholderNics.add(placeholderNic);
         return placeholderNics;
@@ -410,7 +407,7 @@ public class Ipv6ServiceImplTest {
             placeholderNics = mockPlaceholderNics();
         }
         Mockito.when(nicDao.listPlaceholderNicsByNetworkIdAndVmType(networkId, VirtualMachine.Type.DomainRouter)).thenReturn(placeholderNics);
-        Mockito.when(nicDao.createForUpdate(nicId)).thenReturn(new NicVO(PUBLIC_RESERVER, 100L, 1L, VirtualMachine.Type.DomainRouter));
+        Mockito.when(nicDao.createForUpdate(nicId)).thenReturn(new NicVO(publicReserver, 100L, 1L, VirtualMachine.Type.DomainRouter));
         PowerMockito.mockStatic(ActionEventUtils.class);
         Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
         PowerMockito.mockStatic(UsageEventUtils.class);
@@ -438,7 +435,6 @@ public class Ipv6ServiceImplTest {
 
     @Test
     public void testFromPlaceholderAssignPublicIpv6ToNetwork() {
-        final String vlan = "vlan";;
         NicVO nic = Mockito.mock(NicVO.class);
         Mockito.when(nic.getIPv6Address()).thenReturn(null);
         Mockito.when(nic.getBroadcastUri()).thenReturn(URI.create(vlan));
@@ -498,5 +494,37 @@ public class Ipv6ServiceImplTest {
         Assert.assertEquals(ipv6Address, nicProfile.getIPv6Address());
         Assert.assertEquals(gateway, nicProfile.getIPv6Gateway());
         Assert.assertEquals(cidr, nicProfile.getIPv6Cidr());
+    }
+
+    @Test
+    public void testEmptyGetPublicIpv6AddressesForNetwork(){
+        Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(new ArrayList<>());
+        List<String> addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+        Assert.assertTrue(CollectionUtils.isEmpty(addresses));
+        List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class));
+        Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(routers);
+        Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(new ArrayList<>());
+        addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+        Assert.assertTrue(CollectionUtils.isEmpty(addresses));
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getIPv6Address()).thenReturn(null);
+        List<NicVO> nics = List.of(nic);
+        Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
+        addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+        Assert.assertTrue(CollectionUtils.isEmpty(addresses));
+    }
+
+    @Test
+    public void testGetPublicIpv6AddressesForNetwork(){
+        List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class), Mockito.mock(DomainRouterVO.class));
+        Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(routers);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
+        List<NicVO> nics = List.of(nic);
+        Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
+        List<String> addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+        Assert.assertEquals(1, addresses.size());
+        Assert.assertEquals(ipv6Address, addresses.get(0));
     }
 }
