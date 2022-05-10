@@ -75,23 +75,23 @@ public class ScaleIOStoragePoolTest {
 
     @Test
     public void testAttributes() {
-        assertEquals(pool.getCapacity(), 0);
-        assertEquals(pool.getUsed(), 0);
-        assertEquals(pool.getAvailable(), 0);
-        assertEquals(pool.getUuid(), "345fc603-2d7e-47d2-b719-a0110b3732e6");
-        assertEquals(pool.getSourceHost(), "192.168.1.19");
-        assertEquals(pool.getSourcePort(), 443);
-        assertEquals(pool.getSourceDir(), "a519be2f00000000");
-        assertEquals(pool.getType(), StoragePoolType.PowerFlex);
-        assertEquals(pool.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), "218ce1797566a00f");
+        assertEquals(0, pool.getCapacity());
+        assertEquals(0, pool.getUsed());
+        assertEquals(0, pool.getAvailable());
+        assertEquals("345fc603-2d7e-47d2-b719-a0110b3732e6", pool.getUuid());
+        assertEquals("192.168.1.19", pool.getSourceHost());
+        assertEquals(443, pool.getSourcePort());
+        assertEquals("a519be2f00000000", pool.getSourceDir());
+        assertEquals(StoragePoolType.PowerFlex, pool.getType());
+        assertEquals("218ce1797566a00f", pool.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
 
         pool.setCapacity(131072);
         pool.setUsed(24576);
         pool.setAvailable(106496);
 
-        assertEquals(pool.getCapacity(), 131072);
-        assertEquals(pool.getUsed(), 24576);
-        assertEquals(pool.getAvailable(), 106496);
+        assertEquals(131072, pool.getCapacity());
+        assertEquals(24576, pool.getUsed());
+        assertEquals(106496, pool.getAvailable());
     }
 
     @Test
@@ -107,8 +107,8 @@ public class ScaleIOStoragePoolTest {
         when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
 
         ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
-        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), systemId);
-        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.SDC_ID), sdcId);
+        assertEquals(systemId, pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
+        assertEquals(sdcId, pool1.getDetails().get(ScaleIOGatewayClient.SDC_ID));
     }
 
     @Test
@@ -125,14 +125,14 @@ public class ScaleIOStoragePoolTest {
         when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
 
         ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
-        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID), systemId);
-        assertEquals(pool1.getDetails().get(ScaleIOGatewayClient.SDC_GUID), sdcGuid);
+        assertEquals(systemId, pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
+        assertEquals(sdcGuid, pool1.getDetails().get(ScaleIOGatewayClient.SDC_GUID));
     }
 
     @Test
     public void testDefaults() {
-        assertEquals(pool.getDefaultFormat(), PhysicalDiskFormat.RAW);
-        assertEquals(pool.getType(), StoragePoolType.PowerFlex);
+        assertEquals(PhysicalDiskFormat.RAW, pool.getDefaultFormat());
+        assertEquals(StoragePoolType.PowerFlex, pool.getType());
 
         assertNull(pool.getAuthUserName());
         assertNull(pool.getAuthSecret());
@@ -187,7 +187,7 @@ public class ScaleIOStoragePoolTest {
         disk.setSize(8192);
         disk.setVirtualSize(8192);
 
-        assertEquals(disk.getPath(), "/dev/disk/by-id/emc-vol-218ce1797566a00f-6c3362b500000001");
+        assertEquals("/dev/disk/by-id/emc-vol-218ce1797566a00f-6c3362b500000001", disk.getPath());
 
         when(adapter.getPhysicalDisk(volumeId, pool)).thenReturn(disk);
 

@@ -1069,10 +1069,8 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "SDC Id cannot be null");
 
         Sdc sdc = getSdc(sdcId);
-        if (sdc != null) {
-            if (MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
-                return true;
-            }
+        if (sdc != null && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
+            return true;
         }
 
         return false;
@@ -1085,7 +1083,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
         List<Sdc> sdcs = listSdcs();
         if (sdcs != null) {
             for (Sdc sdc : sdcs) {
-                if (ipAddress.equalsIgnoreCase(sdc.getSdcIp()) && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
+                if (sdc != null && ipAddress.equalsIgnoreCase(sdc.getSdcIp()) && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
                     return true;
                 }
             }

@@ -79,7 +79,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         if (systemId == null) {
             throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool " + storagePool.getName());
         }
-        Map<String,String> details = new HashMap<String, String>();
+        Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool, storagePool.getPath(), details);
