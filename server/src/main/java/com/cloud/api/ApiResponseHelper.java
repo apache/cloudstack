@@ -2536,8 +2536,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
 
+        response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId(), NetUtils.InternetProtocol.IPv4).toString());
         if (networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId())) {
-            response.setInternetProtocol(networkOfferingDao.getNetworkOfferingInternetProtocol(network.getNetworkOfferingId(), NetUtils.InternetProtocol.IPv4).toString());
             response.setIpv6Routing(Network.Routing.Static.toString());
             response.setIpv6Routes(new LinkedHashSet<>());
             if (Network.GuestType.Isolated.equals(networkOffering.getGuestType())) {
