@@ -2303,10 +2303,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException(String.format("unable to find template with id %s", templateId));
         }
 
-        if (template.getUserDataId() != null) {
-            throw new InvalidParameterValueException(String.format("template %s has already userdata linked to it", templateId));
-        }
-
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         template.setUserDataId(userDataId);
