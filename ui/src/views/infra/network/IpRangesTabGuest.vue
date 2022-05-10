@@ -18,6 +18,41 @@
 <template>
   <a-spin :spinning="componentLoading">
     <a-button
+      :disabled="!('createGuestNetworkIpv6Prefix' in $store.getters.apis)"
+      type="dashed"
+      style="margin-bottom: 20px; width: 100%"
+      @click="handleOpenAddIpv6PrefixForm()">
+      <template #icon><plus-outlined /></template>
+      {{ $t('label.add.ip.v6.prefix') }}
+    </a-button>
+    <a-table
+      style="overflow-y: auto"
+      size="small"
+      :columns="ipv6Columns"
+      :dataSource="ipv6Prefixes"
+      :rowKey="record => record.id + record.prefix"
+      :pagination="false"
+    >
+      <template #allocated="{ record }">
+        {{ record.usedsubnets + '/' + record.totalsubnets }}
+      </template>
+      <template #actions="{ record }">
+        <div class="actions">
+          <tooltip-button
+            tooltipPlacement="bottom"
+            :tooltip="$t('label.delete.ip.v6.prefix')"
+            type="primary"
+            icon="delete-outlined"
+            :danger="true"
+            @click="handleDeleteIpv6Prefix(record)"
+            :disabled="!('deleteGuestNetworkIpv6Prefix' in $store.getters.apis)" />
+        </div>
+      </template>
+    </a-table>
+    <br>
+    <br>
+
+    <a-button
       :disabled="!('createNetwork' in $store.getters.apis)"
       type="dashed"
       style="margin-bottom: 20px; width: 100%"
@@ -72,19 +107,49 @@
       <CreateNetwork :resource="{ zoneid: resource.zoneid }" @close-action="closeAction"/>
     </a-modal>
 
+    <a-modal
+      :visible="addIpv6PrefixModal"
+      :title="$t('Add IPv6 Prefix')"
+      :maskClosable="false"
+      :footer="null"
+      @cancel="handleCloseAddIpv6PrefixForm()"
+      centered
+      v-ctrl-enter="handleAddIpv6Prefix">
+      <a-form
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @submit="handleAddIpv6Prefix"
+        layout="vertical"
+        class="form"
+      >
+        <a-form-item name="prefix" ref="prefix" :label="$t('label.prefix')" class="form__item">
+          <a-input v-model:value="form.prefix" />
+        </a-form-item>
+
+        <div :span="24" class="action-button">
+          <a-button @click="handleCloseAddIpv6PrefixForm()">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" ref="submit" @click="handleAddIpv6Prefix">{{ $t('label.ok') }}</a-button>
+        </div>
+      </a-form>
+    </a-modal>
+
   </a-spin>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import CreateNetwork from '@/views/network/CreateNetwork'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'IpRangesTabGuest',
   components: {
     CreateNetwork,
-    ResourceIcon
+    ResourceIcon,
+    TooltipButton
   },
   props: {
     resource: {
@@ -130,8 +195,29 @@ export default {
           title: this.$t('label.ip6cidr'),
           dataIndex: 'ip6cidr'
         }
-      ]
+      ],
+      ipv6Prefixes: [],
+      ipv6Columns: [
+        {
+          title: this.$t('label.prefix'),
+          dataIndex: 'prefix'
+        },
+        {
+          title: this.$t('label.allocated'),
+          slots: { customRender: 'allocated' }
+        },
+        {
+          title: this.$t('label.action'),
+          slots: { customRender: 'actions' }
+        }
+      ],
+      addIpv6PrefixModal: false
     }
+  },
+  beforeCreate () {
+    this.form = null
+    this.formRef = null
+    this.rules = null
   },
   created () {
     this.fetchData()
@@ -145,6 +231,13 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        prefix: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.componentLoading = true
       api('listNetworks', {
@@ -154,12 +247,27 @@ export default {
         page: this.page,
         pagesize: this.pageSize
       }).then(response => {
-        this.items = response.listnetworksresponse.network ? response.listnetworksresponse.network : []
-        this.total = response.listnetworksresponse.count || 0
+        this.items = response?.listnetworksresponse?.network || []
+        this.total = response?.listnetworksresponse?.count || 0
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.componentLoading = false
+      })
+      this.fetchIpv6PrefixData()
+    },
+    fetchIpv6PrefixData () {
+      api('listGuestNetworkIpv6Prefixes', {
+        zoneid: this.resource.zoneid,
+        page: this.page,
+        pagesize: this.pageSize
+      }).then(response => {
+        this.ipv6Prefixes = response?.listguestnetworkipv6prefixesresponse?.guestnetworkipv6prefix || []
+        this.total = response?.listguestnetworkipv6prefixesresponse?.count || 0
+      }).catch(error => {
+        console.log(error)
+        this.$notifyError(error)
+      }).finally(() => {
       })
     },
     handleOpenShowCreateForm () {
@@ -167,6 +275,14 @@ export default {
     },
     closeAction () {
       this.showCreateForm = false
+    },
+    handleOpenAddIpv6PrefixForm () {
+      this.initForm()
+      this.addIpv6PrefixModal = true
+    },
+    handleCloseAddIpv6PrefixForm () {
+      this.formRef.value.resetFields()
+      this.addIpv6PrefixModal = false
     },
     changePage (page, pageSize) {
       this.page = page
@@ -177,6 +293,80 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
+    },
+    handleAddIpv6Prefix (e) {
+      if (this.componentLoading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+
+        this.componentLoading = true
+        this.addIpv6PrefixModal = false
+        var params = {
+          zoneid: this.resource.zoneid,
+          prefix: values.prefix
+        }
+        api('createGuestNetworkIpv6Prefix', params).then(response => {
+          this.$pollJob({
+            jobId: response.createguestnetworkipv6prefixresponse.jobid,
+            title: this.$t('label.add.ip.v6.prefix'),
+            description: values.prefix,
+            successMessage: this.$t('message.success.add.ip.v6.prefix'),
+            successMethod: () => {
+              this.componentLoading = false
+              this.fetchData()
+            },
+            errorMessage: this.$t('message.add.failed'),
+            errorMethod: () => {
+              this.componentLoading = false
+              this.fetchData()
+            },
+            loadingMessage: this.$t('message.add.ip.v6.prefix.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => {
+              this.componentLoading = false
+              this.fetchData()
+            }
+          })
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.componentLoading = false
+          this.fetchData()
+        })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    handleDeleteIpv6Prefix (prefix) {
+      this.componentLoading = true
+      api('deleteGuestNetworkIpv6Prefix', { id: prefix.id }).then(response => {
+        this.$pollJob({
+          jobId: response.deleteguestnetworkipv6prefixresponse.jobid,
+          title: this.$t('label.delete.ip.v6.prefix'),
+          description: prefix.prefix,
+          successMessage: this.$t('message.ip.v6.prefix.deleted') + ' ' + prefix.prefix,
+          successMethod: () => {
+            this.componentLoading = false
+            this.fetchIpv6PrefixData()
+          },
+          errorMessage: this.$t('message.delete.failed'),
+          errorMethod: () => {
+            this.componentLoading = false
+            this.fetchIpv6PrefixData()
+          },
+          loadingMessage: this.$t('message.delete.ip.v6.prefix.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.componentLoading = false
+            this.fetchIpv6PrefixData()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.componentLoading = false
+        this.fetchIpv6PrefixData()
+      })
     }
   }
 }

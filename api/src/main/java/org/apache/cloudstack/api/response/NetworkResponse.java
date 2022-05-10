@@ -275,6 +275,20 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "true if guest network default egress policy is allow; false if default egress policy is deny")
     private Boolean egressDefaultPolicy;
 
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "The internet protocol of network offering")
+    private String internetProtocol;
+
+    @SerializedName(ApiConstants.IPV6_ROUTING)
+    @Param(description = "The routing mode of network offering", since = "4.17.0")
+    private String ipv6Routing;
+
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6RouteResponse> ipv6Routes;
+
+    public NetworkResponse() {}
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -555,5 +569,21 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setEgressDefaultPolicy(Boolean egressDefaultPolicy) {
         this.egressDefaultPolicy = egressDefaultPolicy;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
+    }
+
+    public void setIpv6Routing(String ipv6Routing) {
+        this.ipv6Routing = ipv6Routing;
+    }
+
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
+    }
+
+    public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
+        this.ipv6Routes.add(ipv6Route);
     }
 }
