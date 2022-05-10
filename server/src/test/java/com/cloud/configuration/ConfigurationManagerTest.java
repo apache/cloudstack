@@ -40,8 +40,10 @@ import java.util.Random;
 import java.util.UUID;
 
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
@@ -83,7 +85,10 @@ import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddressManager;
@@ -91,6 +96,7 @@ import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -113,6 +119,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -1029,7 +1036,7 @@ public class ConfigurationManagerTest {
     public void testWrongCreateDataCenterGuestIpv6Prefix() {
         CreateGuestNetworkIpv6PrefixCmd cmd = Mockito.mock(CreateGuestNetworkIpv6PrefixCmd.class);
         Mockito.when(cmd.getZoneId()).thenReturn(1L);
-        Mockito.when(cmd.getPrefix()).thenReturn("fd17:5:8a43:e2a4::/66");
+        Mockito.when(cmd.getPrefix()).thenReturn("fd17:5:8a43:e2a4:c000::/66");
         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         configurationMgr.createDataCenterGuestIpv6Prefix(cmd);
     }
@@ -1133,5 +1140,34 @@ public class ConfigurationManagerTest {
         configurationMgr.deleteDataCenterGuestIpv6Prefix(cmd);
         Assert.assertEquals(1, removedPrefix.size());
         Assert.assertEquals(prefixId, removedPrefix.get(0));
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidNetworkTypeCreateIpv6NetworkOffering() {
+        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.L2.toString());
+        Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        configurationMgr.createNetworkOffering(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDisabledConfigCreateIpv6NetworkOffering() {
+        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.toString());
+        Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        configurationMgr.createNetworkOffering(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testWrongIpv6CreateVlanAndPublicIpRange() {
+        CreateVlanIpRangeCmd cmd = Mockito.mock(CreateVlanIpRangeCmd.class);
+        Mockito.when(cmd.getIp6Cidr()).thenReturn("fd17:5:8a43:e2a4:c000::/66");
+        try {
+            configurationMgr.createVlanAndPublicIpRange(cmd);
+        } catch (InsufficientCapacityException | ResourceUnavailableException | ResourceAllocationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
