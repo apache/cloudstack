@@ -46,7 +46,7 @@ public class NetworkOfferingDaoImplTest {
 
     @Test
     public void testGetNetworkOfferingInternetProtocolWithDefault() {
-        Mockito.when(detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol)).thenReturn("null");
+        Mockito.when(detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol)).thenReturn(null);
         NetUtils.InternetProtocol protocol = networkOfferingDao.getNetworkOfferingInternetProtocol(offeringId, NetUtils.InternetProtocol.IPv4);
         Assert.assertEquals(NetUtils.InternetProtocol.IPv4, protocol);
 
@@ -57,7 +57,7 @@ public class NetworkOfferingDaoImplTest {
 
     @Test
     public void testIsIpv6Supported() {
-        Mockito.when(detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol)).thenReturn("null");
+        Mockito.when(detailsDao.getDetail(offeringId, NetworkOffering.Detail.internetProtocol)).thenReturn("");
         boolean result = networkOfferingDao.isIpv6Supported(offeringId);
         Assert.assertFalse(result);
 

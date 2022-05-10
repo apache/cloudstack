@@ -280,19 +280,16 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
 
     @Override
     public NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId, NetUtils.InternetProtocol defaultProtocol) {
-        NetUtils.InternetProtocol protocol = defaultProtocol;
-        try {
-            protocol = getNetworkOfferingInternetProtocol(offeringId);
-        } catch (IllegalArgumentException ignored) {}
+        NetUtils.InternetProtocol protocol = getNetworkOfferingInternetProtocol(offeringId);
+        if (protocol == null) {
+            return defaultProtocol;
+        }
         return protocol;
     }
 
     @Override
     public boolean isIpv6Supported(long offeringId) {
-        NetUtils.InternetProtocol internetProtocol = null;
-        try {
-            internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
-        } catch (IllegalArgumentException ignored) {}
+        NetUtils.InternetProtocol internetProtocol = getNetworkOfferingInternetProtocol(offeringId);
         return NetUtils.InternetProtocol.isIpv6EnabledProtocol(internetProtocol);
     }
 }
