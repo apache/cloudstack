@@ -1048,7 +1048,7 @@ public class ConfigurationManagerTest {
         Mockito.when(cmd.getPrefix()).thenReturn("fd17:5:8a43:e2a5::/64");
         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
         DataCenterGuestIpv6PrefixVO prefix = Mockito.mock(DataCenterGuestIpv6PrefixVO.class);
-        Mockito.when(prefix.getPrefix()).thenReturn("fd17:5:8a43:e2a6::/64");
+        Mockito.when(prefix.getPrefix()).thenReturn("fd17:5:8a43:e2a4::/62");
         Mockito.when(dataCenterGuestIpv6PrefixDao.listByDataCenterId(Mockito.anyLong())).thenReturn(List.of(prefix));
         configurationMgr.createDataCenterGuestIpv6Prefix(cmd);
     }
