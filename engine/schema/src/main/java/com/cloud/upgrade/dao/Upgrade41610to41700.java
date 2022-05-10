@@ -19,10 +19,6 @@ package com.cloud.upgrade.dao;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.cloudstack.api.response.UsageTypeResponse;
-import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;

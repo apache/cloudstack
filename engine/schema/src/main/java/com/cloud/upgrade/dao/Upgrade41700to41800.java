@@ -17,8 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.storage.GuestOSHypervisorMapping;
-import com.cloud.upgrade.GuestOsMapper;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
@@ -32,13 +30,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Upgrade41700to41800 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41700to41800.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
-    private GuestOsMapper guestOsMapper = new GuestOsMapper();
 
     @Override
     public String[] getUpgradableVersionRange() {
