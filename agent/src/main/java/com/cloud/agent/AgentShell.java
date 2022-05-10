@@ -76,6 +76,8 @@ public class AgentShell implements IAgentShell, Daemon {
     private String connectedHost;
     private Long preferredHostCheckInterval;
 
+    static final String LIBVIRT_COMPUTING_RESOURCE = "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource";
+
     public AgentShell() {
     }
 
@@ -375,7 +377,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
         loadProperties();
         parseCommand(args);
-        enableSSL();
+        enableSSLForKvmAgent();
 
         if (s_logger.isDebugEnabled()) {
             List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
@@ -399,10 +401,15 @@ public class AgentShell implements IAgentShell, Daemon {
         _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
     }
 
-    private void enableSSL() {
+    private void enableSSLForKvmAgent() {
         final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
         if (agentFile == null) {
             s_logger.info("Failed to find agent.properties file");
+            return;
+        }
+        final String resource = getProperty(null, "resource");
+        if (!LIBVIRT_COMPUTING_RESOURCE.equalsIgnoreCase(resource)) {
+            s_logger.info("This is not a cloudstack kvm agent, ignoring");
             return;
         }
         String keystorePass = getProperty(null, "keystore.passphrase");
