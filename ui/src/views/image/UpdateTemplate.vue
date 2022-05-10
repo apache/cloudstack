@@ -243,14 +243,24 @@ export default {
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }]
       })
-      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable']
+      const resourceFields = ['name', 'displaytext', 'passwordenabled', 'ostypeid', 'isdynamicallyscalable', 'userdataid', 'userdatapolicy']
       if (this.isAdmin) {
         resourceFields.push('templatetype')
       }
       for (var field of resourceFields) {
         var fieldValue = this.resource[field]
         if (fieldValue) {
-          this.form[field] = fieldValue
+          switch (field) {
+            case 'userdataid':
+              this.userdataid = fieldValue
+              break
+            case 'userdatapolicy':
+              this.userdatapolicy = fieldValue
+              break
+            default:
+              this.form[field] = fieldValue
+              break
+          }
         }
       }
       const resourceDetailsFields = []
