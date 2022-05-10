@@ -98,6 +98,10 @@ export default {
     loading: {
       type: Boolean,
       default: false
+    },
+    tab: {
+      type: String,
+      default: null
     }
   },
   data () {

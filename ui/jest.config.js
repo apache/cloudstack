@@ -44,7 +44,7 @@ module.exports = {
   transformIgnorePatterns: [
     '<rootDir>/node_modules/(?!ant-design-vue|vue|@babel/runtime|lodash-es|@ant-design)'
   ],
-  collectCoverage: true,
+  collectCoverage: false,
   collectCoverageFrom: [
     '<rootDir>/src/**/*.{js,vue}',
     '!**/node_modules/**',
