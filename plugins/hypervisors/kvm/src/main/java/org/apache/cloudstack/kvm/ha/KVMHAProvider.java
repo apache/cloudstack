@@ -80,7 +80,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
                 if(oobm.getPowerState() == PowerState.Off){
                     LOG.warn("OOBM recover operation failed for the host " + r.getName() + " already OFF");
-                    return false; // Changed so that ha occurs when oobm is off
+                    return false;
                 }else{
                     final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                     return resp.getSuccess();
