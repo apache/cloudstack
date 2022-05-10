@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -205,7 +206,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnetId));
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(),
-                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnetId + " Network Id: " + network.getId(), 0);
+                    EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnetId + " Network Id: " + network.getId(), network.getId(), ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

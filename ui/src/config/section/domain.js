@@ -57,7 +57,14 @@ export default {
       name: 'settings',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
       show: () => { return 'listConfigurations' in store.getters.apis }
-    }, {
+    },
+    {
+      name: 'events',
+      resourceType: 'Domain',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
+    },
+    {
       name: 'comments',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
     }

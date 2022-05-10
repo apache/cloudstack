@@ -108,7 +108,7 @@ public class Queue extends BaseElement {
             {
                 delay = 100;
                 numBuffers = 10;
-                incommingBufLength = 10;
+                incomingBufLength = 10;
             }
         };
 
@@ -116,7 +116,7 @@ public class Queue extends BaseElement {
             {
                 delay = 100;
                 numBuffers = 10;
-                incommingBufLength = 10;
+                incomingBufLength = 10;
             }
         };
 

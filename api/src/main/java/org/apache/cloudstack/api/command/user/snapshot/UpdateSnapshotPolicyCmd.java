@@ -79,7 +79,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getId();
     }
 

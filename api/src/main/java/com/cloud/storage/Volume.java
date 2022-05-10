@@ -243,4 +243,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     boolean isDisplay();
 
     boolean isDeployAsIs();
+
+    String getExternalUuid();
+
+    void setExternalUuid(String externalUuid);
 }

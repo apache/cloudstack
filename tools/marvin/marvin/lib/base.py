@@ -2423,7 +2423,6 @@ class NetworkOffering:
     @classmethod
     def create(cls, apiclient, services, **kwargs):
         """Create network offering"""
-
         cmd = createNetworkOffering.createNetworkOfferingCmd()
         cmd.displaytext = "-".join([services["displaytext"], random_gen()])
         cmd.name = "-".join([services["name"], random_gen()])
@@ -2462,6 +2461,8 @@ class NetworkOffering:
             cmd.egressdefaultpolicy = services["egress_policy"]
         if "tags" in services:
             cmd.tags = services["tags"]
+        if "internetprotocol" in services:
+            cmd.internetprotocol = services["internetprotocol"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -3143,7 +3144,7 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3211,6 +3212,8 @@ class Network:
             cmd.externalid = externalid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -3624,19 +3627,30 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None, networkid=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
-        cmd.gateway = services["gateway"]
-        cmd.netmask = services["netmask"]
-        cmd.forvirtualnetwork = services["forvirtualnetwork"]
-        cmd.startip = services["startip"]
-        cmd.endip = services["endip"]
-        cmd.zoneid = services["zoneid"]
+        if "gateway" in services:
+            cmd.gateway = services["gateway"]
+        if "netmask" in services:
+            cmd.netmask = services["netmask"]
+        if "forvirtualnetwork" in services:
+            cmd.forvirtualnetwork = services["forvirtualnetwork"]
+        if "startip" in services:
+            cmd.startip = services["startip"]
+        if "endip" in services:
+            cmd.endip = services["endip"]
+        if "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
         if "podid" in services:
             cmd.podid = services["podid"]
-        cmd.vlan = services["vlan"]
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
+        if "ip6gateway" in services:
+            cmd.ip6gateway = services["ip6gateway"]
+        if "ip6cidr" in services:
+            cmd.ip6cidr = services["ip6cidr"]
 
         if account:
             cmd.account = account
@@ -3644,6 +3658,8 @@ class PublicIpRange:
             cmd.domainid = domainid
         if forsystemvms:
             cmd.forsystemvms = forsystemvms
+        if networkid:
+            cmd.networkid = networkid
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 
@@ -4614,6 +4630,8 @@ class VpcOffering:
                         'capabilitytype': ctype,
                         'capabilityvalue': value
                     })
+        if "internetprotocol" in services:
+            cmd.internetprotocol = services["internetprotocol"]
         return VpcOffering(apiclient.createVPCOffering(cmd).__dict__)
 
     def update(self, apiclient, name=None, displaytext=None, state=None):
@@ -4731,14 +4749,15 @@ class PrivateGateway:
 
     @classmethod
     def create(cls, apiclient, gateway, ipaddress, netmask, vlan, vpcid,
-               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None):
+               physicalnetworkid=None, aclid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
         """Create private gateway"""
 
         cmd = createPrivateGateway.createPrivateGatewayCmd()
         cmd.gateway = gateway
         cmd.ipaddress = ipaddress
         cmd.netmask = netmask
-        cmd.vlan = vlan
+        if vlan:
+            cmd.vlan = vlan
         cmd.vpcid = vpcid
         if physicalnetworkid:
             cmd.physicalnetworkid = physicalnetworkid
@@ -4746,6 +4765,8 @@ class PrivateGateway:
             cmd.aclid = aclid
         if bypassvlanoverlapcheck:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
+        if associatednetworkid:
+            cmd.associatednetworkid = associatednetworkid
 
         return PrivateGateway(apiclient.createPrivateGateway(cmd).__dict__)
 
@@ -5301,7 +5322,7 @@ class NIC:
         """Remove secondary Ip from NIC"""
         cmd = removeIpFromNic.removeIpFromNicCmd()
         cmd.id = ipaddressid
-        return (apiclient.addIpToNic(cmd))
+        return (apiclient.removeIpFromNic(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -5313,6 +5334,14 @@ class NIC:
             cmd.listall = True
         return (apiclient.listNics(cmd))
 
+    @classmethod
+    def updateIp(cls, apiclient, id, ipaddress=None):
+        """Update Ip for NIC"""
+        cmd = updateVmNicIp.updateVmNicIpCmd()
+        cmd.nicid = id
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+        return (apiclient.updateVmNicIp(cmd))
 
 class SimulatorMock:
     """Manage simulator mock lifecycle"""
@@ -5656,3 +5685,40 @@ class ProjectRolePermission:
         cmd.projectid = projectid
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.listProjectRolePermissions(cmd))
+
+class NetworkPermission:
+    """Manage Network Permission"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(cls, apiclient, **kwargs):
+        """Creates network permissions"""
+        cmd = createNetworkPermissions.createNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.createNetworkPermissions(cmd))
+
+    @classmethod
+    def remove(cls, apiclient, **kwargs):
+        """Removes the network permissions"""
+
+        cmd = removeNetworkPermissions.removeNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.removeNetworkPermissions(cmd))
+
+    @classmethod
+    def reset(cls, apiclient, **kwargs):
+        """Updates the network permissions"""
+
+        cmd = resetNetworkPermissions.resetNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.resetNetworkPermissions(cmd))
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List all role permissions matching criteria"""
+
+        cmd = listNetworkPermissions.listNetworkPermissionsCmd()
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.listNetworkPermissions(cmd))

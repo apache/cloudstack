@@ -139,6 +139,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zone;
 
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "the internet protocol of the network offering")
+    private String internetProtocol;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -261,5 +265,13 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
     }
 }

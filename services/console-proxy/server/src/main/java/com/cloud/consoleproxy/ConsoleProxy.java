@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.eclipse.jetty.websocket.api.Session;
@@ -74,6 +75,7 @@ public class ConsoleProxy {
     static boolean standaloneStart = false;
 
     static String encryptorPassword = "Dummy";
+    static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -109,6 +111,9 @@ public class ConsoleProxy {
         s_logger.info("Configure console proxy...");
         for (Object key : conf.keySet()) {
             s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
+            if (!ArrayUtils.contains(skipProperties, key)) {
+                s_logger.info("Property " + (String)key + ": " + conf.getProperty((String)key));
+            }
         }
 
         String s = conf.getProperty("consoleproxy.httpListenPort");
@@ -247,7 +252,9 @@ public class ConsoleProxy {
 
         if (conf != null) {
             for (Object key : conf.keySet()) {
-                s_logger.info("Context property " + (String)key + ": " + conf.getProperty((String)key));
+                if (!ArrayUtils.contains(skipProperties, key)) {
+                    s_logger.info("Context property " + (String) key + ": " + conf.getProperty((String) key));
+                }
             }
         }
 
@@ -457,7 +464,7 @@ public class ConsoleProxy {
                 s_logger.info("Added viewer object " + viewer);
                 reportLoadChange = true;
             } else {
-                // protected against malicous attack by modifying URL content
+                // protected against malicious attack by modifying URL content
                 if (ajaxSession != null) {
                     long ajaxSessionIdFromUrl = Long.parseLong(ajaxSession);
                     if (ajaxSessionIdFromUrl != viewer.getAjaxSessionId())
@@ -516,7 +523,7 @@ public class ConsoleProxy {
         ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
 
         if (authResult == null || !authResult.isSuccess()) {
-            s_logger.warn("External authenticator failed authencation request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
+            s_logger.warn("External authenticator failed authentication request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 
             throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
         }
@@ -566,7 +573,7 @@ public class ConsoleProxy {
                 try {
                     authenticationExternally(param);
                 } catch (Exception e) {
-                    s_logger.error("Authencation failed for param: " + param);
+                    s_logger.error("Authentication failed for param: " + param);
                     return null;
                 }
                 s_logger.info("Initializing new novnc client and disconnecting existing session");

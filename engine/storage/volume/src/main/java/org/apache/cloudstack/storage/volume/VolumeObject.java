@@ -833,4 +833,14 @@ public class VolumeObject implements VolumeInfo {
     public Class<?> getEntityType() {
         return Volume.class;
     }
+
+    @Override
+    public String getExternalUuid() {
+        return volumeVO.getExternalUuid();
+    }
+
+    @Override
+    public void setExternalUuid(String externalUuid) {
+        volumeVO.setExternalUuid(externalUuid);
+    }
 }

@@ -19,7 +19,12 @@
 
 package com.cloud.agent.api;
 
+import java.util.Map;
+
 public class ReadyAnswer extends Answer {
+
+    private Map<String, String> detailsMap;
+
     protected ReadyAnswer() {
     }
 
@@ -30,5 +35,15 @@ public class ReadyAnswer extends Answer {
     public ReadyAnswer(ReadyCommand cmd, String details) {
         super(cmd, false, details);
     }
+
+    public ReadyAnswer(ReadyCommand cmd, Map<String, String> detailsMap) {
+        super(cmd, true, null);
+        this.detailsMap = detailsMap;
+    }
+
+    public Map<String, String> getDetailsMap() {
+        return detailsMap;
+    }
+
 
 }

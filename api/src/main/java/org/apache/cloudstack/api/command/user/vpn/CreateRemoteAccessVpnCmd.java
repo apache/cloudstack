@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -200,5 +201,15 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
             return true;
         else
             return display;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getPublicIpId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
     }
 }

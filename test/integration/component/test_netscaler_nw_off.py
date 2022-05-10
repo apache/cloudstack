@@ -984,7 +984,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     @attr(configuration = "network.gc")
     @attr(tags = ["advancedns"])
     def test_04_delete_account_after_capacity_full(self):
-        """Test delete and add resouces after netscaler device capacity is full
+        """Test delete and add resources after netscaler device capacity is full
         """
 
 

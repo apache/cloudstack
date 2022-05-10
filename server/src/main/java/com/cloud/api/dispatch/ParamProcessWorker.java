@@ -38,7 +38,9 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
@@ -47,6 +49,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -56,7 +59,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang3.StringUtils;
 
 public class ParamProcessWorker implements DispatchWorker {
 
@@ -291,7 +293,14 @@ public class ParamProcessWorker implements DispatchWorker {
         if (entityOwners != null) {
             owners = entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
         } else {
-            owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
+            if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && ((BaseAsyncCmd)cmd).getApiResourceType() == ApiCommandResourceType.Network) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+                }
+                owners = new Account[]{};
+            } else {
+                owners = new Account[]{_accountMgr.getAccount(cmd.getEntityOwnerId())};
+            }
         }
 
         if (cmd instanceof BaseAsyncCreateCmd) {

@@ -215,6 +215,8 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
+    private static final String CONFIG_VALUES_SEPARATOR = ",";
+
     private static final String LEGACY = "legacy";
     private static final String SECURE = "secure";
 
@@ -281,6 +283,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String AARCH64 = "aarch64";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+    public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     private String _modifyVlanPath;
     private String _versionstringpath;
@@ -304,11 +307,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private Duration _timeout;
-    private static final int NUMMEMSTATS =2;
+    /**
+     * Since the memoryStats method returns an array that isn't ordered, we pass a big number to get all the array and then search for the information we want.
+     * */
+    private static final int NUMMEMSTATS = 20;
+
+    /**
+     * Unused memory's tag to search in the array returned by the Domain.memoryStats() method.
+     * */
+    private static final int UNUSEDMEMORY = 4;
+
 
     private KVMHAMonitor _monitor;
-    public static final String SSHKEYSPATH = "/root/.ssh";
-    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
@@ -347,8 +357,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _pool;
     protected String _localGateway;
     private boolean _canBridgeFirewall;
-    protected String _localStoragePath;
-    protected String _localStorageUUID;
     protected boolean _noMemBalloon = false;
     protected String _guestCpuArch;
     protected String _guestCpuMode;
@@ -371,6 +379,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _rngPath = "/dev/random";
     protected int _rngRatePeriod = 1000;
     protected int _rngRateBytes = 2048;
+    protected int _manualCpuSpeed = 0;
     protected String _agentHooksBasedir = "/etc/cloudstack/agent/hooks";
 
     protected String _agentHooksLibvirtXmlScript = "libvirt-vm-xml-transformer.groovy";
@@ -381,6 +390,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected String _agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
     protected String _agentHooksVmOnStopMethod = "onStop";
+
+    protected static final String LOCAL_STORAGE_PATH = "local.storage.path";
+    protected static final String LOCAL_STORAGE_UUID = "local.storage.uuid";
+    protected static final String DEFAULT_LOCAL_STORAGE_PATH = "/var/lib/libvirt/images/";
+
+    protected List<String> localStoragePaths = new ArrayList<>();
+    protected List<String> localStorageUUIDs = new ArrayList<>();
 
     private static final String CONFIG_DRIVE_ISO_DISK_LABEL = "hdd";
     private static final int CONFIG_DRIVE_ISO_DEVICE_ID = 4;
@@ -404,7 +420,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    private VirtualRoutingResource _virtRouterResource;
+    public VirtualRoutingResource _virtRouterResource;
 
     private String _pingTestPath;
 
@@ -464,7 +480,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
         } catch (final Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            s_logger.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
             details = e.getMessage();
             success = false;
         }
@@ -1004,24 +1020,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
-        _localStoragePath = (String)params.get("local.storage.path");
-        if (_localStoragePath == null) {
-            _localStoragePath = "/var/lib/libvirt/images/";
-        }
+        configureLocalStorage(params);
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
         _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
         String _qemuSocketsPathVar = (String)params.get("qemu.sockets.path");
         if (_qemuSocketsPathVar != null && StringUtils.isNotBlank(_qemuSocketsPathVar)) {
             _qemuSocketsPath = new File(_qemuSocketsPathVar);
-        }
-
-        final File storagePath = new File(_localStoragePath);
-        _localStoragePath = storagePath.getAbsolutePath();
-
-        _localStorageUUID = (String)params.get("local.storage.uuid");
-        if (_localStorageUUID == null) {
-            _localStorageUUID = UUID.randomUUID().toString();
         }
 
         value = (String)params.get("scripts.timeout");
@@ -1037,6 +1042,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (Boolean.parseBoolean(value)) {
             _noMemBalloon = true;
         }
+
+        value = (String)params.get("host.cpu.manual.speed.mhz");
+        _manualCpuSpeed = NumbersUtil.parseInt(value, 0);
 
         _videoHw = (String) params.get("vm.video.hardware");
         value = (String) params.get("vm.video.ram");
@@ -1171,20 +1179,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         _storagePoolMgr = new KVMStoragePoolManager(_storage, _monitor);
 
-        _sysvmISOPath = (String)params.get("systemvm.iso.path");
-        if (_sysvmISOPath == null) {
-            final String[] isoPaths = {"/usr/share/cloudstack-common/vms/systemvm.iso"};
-            for (final String isoPath : isoPaths) {
-                if (_storage.exists(isoPath)) {
-                    _sysvmISOPath = isoPath;
-                    break;
-                }
-            }
-            if (_sysvmISOPath == null) {
-                s_logger.debug("Can't find system vm ISO");
-            }
-        }
-
         final Map<String, String> bridges = new HashMap<String, String>();
 
         params.put("libvirt.host.bridges", bridges);
@@ -1286,6 +1280,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    protected void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
+        String localStoragePath = (String)params.get(LOCAL_STORAGE_PATH);
+        if (localStoragePath == null) {
+            localStoragePath = DEFAULT_LOCAL_STORAGE_PATH;
+        }
+        String localStorageUUIDString = (String)params.get(LOCAL_STORAGE_UUID);
+        if (localStorageUUIDString == null) {
+            localStorageUUIDString = UUID.randomUUID().toString();
+        }
+
+        String[] localStorageRelativePaths = localStoragePath.split(CONFIG_VALUES_SEPARATOR);
+        String[] localStorageUUIDStrings = localStorageUUIDString.split(CONFIG_VALUES_SEPARATOR);
+        if (localStorageRelativePaths.length != localStorageUUIDStrings.length) {
+            throw new ConfigurationException("The path and UUID of local storage pools have different length");
+        }
+        for (String localStorageRelativePath : localStorageRelativePaths) {
+            final File storagePath = new File(localStorageRelativePath);
+            localStoragePaths.add(storagePath.getAbsolutePath());
+        }
+
+        for (String localStorageUUID : localStorageUUIDStrings) {
+            validateLocalStorageUUID(localStorageUUID);
+            localStorageUUIDs.add(localStorageUUID);
+        }
+    }
+
+    private void validateLocalStorageUUID(String localStorageUUID) throws ConfigurationException {
+        if (StringUtils.isBlank(localStorageUUID)) {
+            throw new ConfigurationException("The UUID of local storage pools must be non-blank");
+        }
+        try {
+            UUID.fromString(localStorageUUID);
+        } catch (IllegalArgumentException ex) {
+            throw new ConfigurationException("The UUID of local storage pool is invalid : " + localStorageUUID);
+        }
     }
 
     public boolean configureHostParams(final Map<String, String> params) {
@@ -2723,25 +2754,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public String getVolumePath(final Connect conn, final DiskTO volume, boolean diskOnHostCache) throws LibvirtException, URISyntaxException {
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
+        final String dataPath = data.getPath();
 
-        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
-                store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
-
-            if (data.getPath().startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
-                String configDrivePath = getConfigPath() + "/" + data.getPath();
-                return configDrivePath;
+        if (volume.getType() == Volume.Type.ISO && dataPath != null) {
+            if (dataPath.startsWith(ConfigDrive.CONFIGDRIVEDIR) && diskOnHostCache) {
+                return getConfigPath() + "/" + data.getPath();
             }
 
-            final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
-            final int index = isoPath.lastIndexOf("/");
-            final String path = isoPath.substring(0, index);
-            final String name = isoPath.substring(index + 1);
-            final KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(path);
-            final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
-            return isoVol.getPath();
-        } else {
-            return data.getPath();
+            if (store instanceof NfsTO || store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload()) {
+                final String isoPath = store.getUrl().split("\\?")[0] + File.separator + dataPath;
+                final int index = isoPath.lastIndexOf("/");
+                final String path = isoPath.substring(0, index);
+                final String name = isoPath.substring(index + 1);
+                final KVMStoragePool secondaryPool = _storagePoolMgr.getStoragePoolByURI(path);
+                final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
+                return isoVol.getPath();
+            }
         }
+
+        return dataPath;
     }
 
     public void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
@@ -2905,14 +2936,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
-            if (_sysvmISOPath != null) {
-                final DiskDef iso = new DiskDef();
-                iso.defISODisk(_sysvmISOPath);
-                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-                    iso.setBusType(DiskDef.DiskBus.SCSI);
-                }
-                vm.getDevices().addDevice(iso);
+            final DiskDef iso = new DiskDef();
+            iso.defISODisk(_sysvmISOPath);
+            if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                iso.setBusType(DiskDef.DiskBus.SCSI);
             }
+            vm.getDevices().addDevice(iso);
         }
 
         // For LXC, find and add the root filesystem, rbd data disks
@@ -2957,7 +2986,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (ii) Libvirt >= 6.3.0
      */
     protected void setDiskIoDriver(DiskDef disk) {
-        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
+        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
+                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING
+                && AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING)) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
     }
@@ -3261,7 +3292,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem, _manualCpuSpeed);
 
         String capabilities = String.join(",", info.getCapabilities());
         if (dpdkSupport) {
@@ -3285,12 +3316,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _hostDistro = cmd.getHostDetails().get("Host.OS");
         }
 
+        List<StartupCommand> startupCommands = new ArrayList<>();
+        startupCommands.add(cmd);
+        for (int i = 0; i < localStoragePaths.size(); i++) {
+            String localStoragePath = localStoragePaths.get(i);
+            String localStorageUUID = localStorageUUIDs.get(i);
+            StartupStorageCommand sscmd = createLocalStoragePool(localStoragePath, localStorageUUID, cmd);
+            if (sscmd != null) {
+                startupCommands.add(sscmd);
+            }
+        }
+        StartupCommand[] startupCommandsArray = new StartupCommand[startupCommands.size()];
+        int i = 0;
+        for (StartupCommand startupCommand : startupCommands) {
+            startupCommandsArray[i] = startupCommand;
+            i++;
+        }
+        return startupCommandsArray;
+    }
+
+    private StartupStorageCommand createLocalStoragePool(String localStoragePath, String localStorageUUID, StartupRoutingCommand cmd) {
         StartupStorageCommand sscmd = null;
         try {
-
-            final KVMStoragePool localStoragePool = _storagePoolMgr.createStoragePool(_localStorageUUID, "localhost", -1, _localStoragePath, "", StoragePoolType.Filesystem);
+            final KVMStoragePool localStoragePool = _storagePoolMgr.createStoragePool(localStorageUUID, "localhost", -1, localStoragePath, "", StoragePoolType.Filesystem);
             final com.cloud.agent.api.StoragePoolInfo pi =
-                    new com.cloud.agent.api.StoragePoolInfo(localStoragePool.getUuid(), cmd.getPrivateIpAddress(), _localStoragePath, _localStoragePath,
+                    new com.cloud.agent.api.StoragePoolInfo(localStoragePool.getUuid(), cmd.getPrivateIpAddress(), localStoragePath, localStoragePath,
                             StoragePoolType.Filesystem, localStoragePool.getCapacity(), localStoragePool.getAvailable());
 
             sscmd = new StartupStorageCommand();
@@ -3301,12 +3351,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final CloudRuntimeException e) {
             s_logger.debug("Unable to initialize local storage pool: " + e);
         }
-
-        if (sscmd != null) {
-            return new StartupCommand[] {cmd, sscmd};
-        } else {
-            return new StartupCommand[] {cmd};
-        }
+        return sscmd;
     }
 
     public String diskUuidToSerial(String uuid) {
@@ -4014,17 +4059,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     /**
      * This method retrieves the memory statistics from the domain given as parameters.
-     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_MINUS_ONE} as the value of free memory in the domain.
      * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
      *
      * @return the amount of free memory in KBs
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
-        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
-        if (ArrayUtils.isEmpty(mems)) {
-            return NumberUtils.LONG_ZERO;
+        MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
+
+        if(s_logger.isTraceEnabled()){
+            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
         }
-        return mems[0].getValue();
+
+        long freeMemory = NumberUtils.LONG_MINUS_ONE;
+
+        if (ArrayUtils.isEmpty(memoryStats)){
+            return freeMemory;
+        }
+
+        for (int i = 0; i < memoryStats.length; i++) {
+            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+                freeMemory = memoryStats[i].getValue();
+                break;
+            }
+        }
+
+        if (freeMemory == NumberUtils.LONG_MINUS_ONE){
+            s_logger.warn("Couldn't retrieve free memory, returning -1.");
+        }
+        return freeMemory;
     }
 
     private boolean canBridgeFirewall(final String prvNic) {

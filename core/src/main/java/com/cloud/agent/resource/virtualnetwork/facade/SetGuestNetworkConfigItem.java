@@ -21,6 +21,8 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
@@ -53,8 +55,28 @@ public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
             }
         }
 
+        String dns6 = command.getDefaultIp6Dns1();
+        if (StringUtils.isEmpty(dns6)) {
+            dns6 = command.getDefaultIp6Dns2();
+        } else {
+            final String dns2 = command.getDefaultIp6Dns2();
+            if (StringUtils.isNotEmpty(dns2)) {
+                dns6 += "," + dns2;
+            }
+        }
+
         final GuestNetwork guestNetwork = new GuestNetwork(command.isAdd(), nic.getMac(), "eth" + nic.getDeviceId(), routerGIP, netmask, gateway,
-                cidr, dns, domainName);
+                cidr, dns, dns6, domainName);
+        guestNetwork.setRouterGuestIp6(nic.getIp6Address());
+        guestNetwork.setRouterGuestIp6Gateway(nic.getIp6Gateway());
+        guestNetwork.setRouterGuestIp6Cidr(nic.getIp6Cidr());
+        if (nic.getIp6Cidr() != null) {
+            guestNetwork.setCidr6(String.valueOf(NetUtils.getIp6CidrSize(nic.getIp6Cidr())));
+        }
+
+        guestNetwork.setRouterIp6(command.getRouterIpv6());
+        guestNetwork.setRouterIp6Gateway(command.getRouterIpv6Gateway());
+        guestNetwork.setRouterIp6Cidr(command.getRouterIpv6Cidr());
 
         return generateConfigItems(guestNetwork);
     }

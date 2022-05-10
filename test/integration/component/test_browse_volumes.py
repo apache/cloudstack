@@ -1978,7 +1978,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_01_Browser_volume_Life_cycle_tpath(self):
         """
-        Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes  
+        Test Browser_volume_Life_cycle - This includes upload volume,attach to a VM, write data ,Stop ,Start, Reboot,Reset  of a VM, detach,attach back to the VM, delete volumes
         """
         try:
 
@@ -2228,7 +2228,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_03_Browser_Upload_Volume_Global_Config_TPath(self):
         """
-        Test Browser_Upload_Volume_Global_Config limits 
+        Test Browser_Upload_Volume_Global_Config limits
         """
         try:
 

@@ -53,8 +53,7 @@
                   v-for="(field, index) in fields"
                   :key="index"
                   :label="field.name==='keyword' ?
-                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) :
-                    (field.name==='entitytype' ? $t('label.entity.type') : $t('label.' + field.name))">
+                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
@@ -106,6 +105,14 @@
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-auto-complete
+                    v-else-if="field.type==='autocomplete'"
+                    v-model:value="form[field.name]"
+                    :placeholder="$t('message.error.input.value')"
+                    :options="field.opts"
+                    :filterOption="(inputValue, option) => {
+                      return option.value.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1
+                    }" />
                 </a-form-item>
                 <div class="filter-group-button">
                   <a-button
@@ -251,10 +258,12 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype'].includes(item)) {
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        } else if (item === 'resourcetype') {
+          type = 'autocomplete'
         }
 
         this.fields.push({
@@ -271,6 +280,15 @@ export default {
       let domainIndex = -1
       let podIndex = -1
       let clusterIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
+          this.fields[typeIndex].loading = false
+        }
+      }
 
       if (arrayField.includes('state')) {
         const stateIndex = this.fields.findIndex(item => item.name === 'state')
@@ -315,6 +333,22 @@ export default {
         this.fields[entityTypeIndex].loading = true
         this.fields[entityTypeIndex].opts = this.fetchEntityType()
         this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('resourcetype')) {
+        const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
+        this.fields[resourceTypeIndex].loading = true
+        this.fields[resourceTypeIndex].opts = [
+          { value: 'Account' },
+          { value: 'Domain' },
+          { value: 'Iso' },
+          { value: 'Network' },
+          { value: 'Template' },
+          { value: 'User' },
+          { value: 'VirtualMachine' },
+          { value: 'Volume' }
+        ]
+        this.fields[resourceTypeIndex].loading = false
       }
 
       Promise.all(promises).then(response => {
@@ -432,6 +466,24 @@ export default {
         })
       })
     },
+    fetchGuestNetworkTypes () {
+      const types = []
+      if (this.apiName.indexOf('listNetworks') > -1) {
+        types.push({
+          id: 'Isolated',
+          name: 'label.isolated'
+        })
+        types.push({
+          id: 'Shared',
+          name: 'label.shared'
+        })
+        types.push({
+          id: 'L2',
+          name: 'label.l2'
+        })
+      }
+      return types
+    },
     fetchState () {
       const state = []
       if (this.apiName.indexOf('listVolumes') > -1) {
@@ -532,6 +584,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.isFiltered = true
+        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

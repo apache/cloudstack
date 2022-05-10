@@ -133,23 +133,25 @@ export const pollJobPlugin = {
           if (name) {
             desc = `(${name}) ${desc}`
           }
+          let onClose = () => {}
           if (!bulkAction) {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: errMessage,
-              description: desc,
-              key: jobId,
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            onClose = () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
           }
+          notification.error({
+            top: '65px',
+            message: errMessage,
+            description: desc,
+            key: jobId,
+            duration: 0,
+            onClose: onClose
+          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -353,6 +355,62 @@ export const resourceTypePlugin = {
       } else {
         return type
       }
+    }
+
+    app.config.globalProperties.$getRouteFromResourceType = function (resourceType) {
+      switch (resourceType) {
+        case 'VirtualMachine':
+          return 'vm'
+        case 'DomainRouter':
+          return 'router'
+        case 'ConsoleProxy':
+          return 'systemvm'
+        case 'User':
+          return 'accountuser'
+        case 'Network':
+          return 'guestnetwork'
+        case 'ServiceOffering':
+          return 'computeoffering'
+        case 'IpAddress':
+          return 'publicip'
+        case 'NetworkAcl':
+          return 'acllist'
+        case 'SystemVm':
+        case 'PhysicalNetwork':
+        case 'Backup':
+        case 'SecurityGroup':
+        case 'StoragePool':
+        case 'ImageStore':
+        case 'Template':
+        case 'Iso':
+        case 'Host':
+        case 'Volume':
+        case 'Account':
+        case 'Snapshot':
+        case 'Project':
+        case 'Domain':
+        case 'DiskOffering':
+        case 'NetworkOffering':
+        case 'VpcOffering':
+        case 'BackupOffering':
+        case 'Zone':
+        case 'Vpc':
+        case 'VmSnapshot':
+        case 'Pod':
+        case 'Cluster':
+        case 'Role':
+        case 'AffinityGroup':
+        case 'VpnCustomerGateway':
+          return resourceType.toLowerCase()
+      }
+      return ''
+    }
+
+    app.config.globalProperties.$getIconFromResourceType = function (resourceType) {
+      var routePath = this.$getRouteFromResourceType(resourceType)
+      if (!routePath) return ''
+      var route = this.$router.resolve('/' + routePath)
+      return route?.meta?.icon || ''
     }
   }
 }

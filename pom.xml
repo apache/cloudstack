@@ -49,18 +49,21 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.systemvm.template.version>4.16.1.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.17.0.0</project.systemvm.template.version>
+        <sonar.organization>apache</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.3</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -77,7 +80,7 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.reload4j.version>1.2.18.4</cs.reload4j.version>
+        <cs.reload4j.version>1.2.20</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
@@ -173,7 +176,7 @@
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.19</cs.xstream.version>
-        <org.springframework.version>5.3.3</org.springframework.version>
+        <org.springframework.version>5.3.18</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
@@ -1152,7 +1155,6 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -204,7 +204,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
@@ -295,11 +295,13 @@
 import { api } from '@/api'
 import { reactive, ref, toRaw } from 'vue'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddDiskOffering',
+  mixins: [mixinForm],
   components: {
     ResourceIcon,
     TooltipLabel
@@ -370,6 +372,9 @@ export default {
           }
         }]
       })
+    },
+    handleWriteCacheTypeChange (val) {
+      this.form.writeCacheType = val
     },
     fetchData () {
       this.fetchDomainData()
@@ -443,7 +448,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           isMirrored: false,
           name: values.name,

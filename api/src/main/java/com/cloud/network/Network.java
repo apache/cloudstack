@@ -22,16 +22,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.exception.InvalidParameterValueException;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -75,6 +74,22 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
                 return Isolated;
             } else {
                 throw new InvalidParameterValueException("Unexpected Private VLAN type: " + type);
+            }
+        }
+    }
+
+    enum Routing {
+        Static, Dynamic;
+
+        public static Routing fromValue(String type) {
+            if (StringUtils.isBlank(type)) {
+                return null;
+            } else if (type.equalsIgnoreCase("Static")) {
+                return Static;
+            } else if (type.equalsIgnoreCase("Dynamic")) {
+                return Dynamic;
+            } else {
+                throw new InvalidParameterValueException("Unexpected Routing type : " + type);
             }
         }
     }
@@ -332,6 +347,14 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         }
     }
 
+    public enum NetworkFilter {
+        Account,        // return account networks that have been registered for or created by the calling user
+        Domain,         // return domain networks that have been registered for or created by the calling user
+        AccountDomain,  // return account and domain networks that have been registered for or created by the calling user
+        Shared,         // including networks that have been granted to the calling user by another user
+        All             // all networks (account, domain and shared)
+    }
+
     public class IpAddresses {
         private String ip4Address;
         private String ip6Address;
@@ -371,6 +394,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             this.ip6Address = ip6Address;
         }
     }
+
+    static final String AssociatedNetworkId = "AssociatedNetworkId";
 
     String getName();
 

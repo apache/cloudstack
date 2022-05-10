@@ -14,45 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.agent.api;
 
-public enum ApiCommandJobType {
-    None,
-    VirtualMachine,
-    DomainRouter,
-    Volume,
-    ConsoleProxy,
-    Snapshot,
-    Backup,
-    Template,
-    Iso,
-    SystemVm,
-    Host,
-    StoragePool,
-    ImageStore,
-    IpAddress,
-    PortableIpAddress,
-    SecurityGroup,
-    PhysicalNetwork,
-    TrafficType,
-    PhysicalNetworkServiceProvider,
-    FirewallRule,
-    Account,
-    User,
-    PrivateGateway,
-    StaticRoute,
-    Counter,
-    Condition,
-    AutoScalePolicy,
-    AutoScaleVmProfile,
-    AutoScaleVmGroup,
-    GlobalLoadBalancerRule,
-    LoadBalancerRule,
-    AffinityGroup,
-    InternalLbVm,
-    DedicatedGuestVlanRange,
-    GuestOs,
-    GuestOsMapping,
-    Network,
-    Management
+public class PatchSystemVmAnswer extends Answer {
+
+    String templateVersion;
+    String scriptsVersion;
+
+    public PatchSystemVmAnswer() {
+    }
+
+    public PatchSystemVmAnswer(PatchSystemVmCommand cmd, String details, String templateVersion, String scriptsVersion) {
+        super(cmd, true, details);
+        this.templateVersion = templateVersion;
+        this.scriptsVersion = scriptsVersion;
+    }
+
+    public PatchSystemVmAnswer(PatchSystemVmCommand cmd, String details) {
+        super(cmd, false, details);
+    }
+
+    public String getTemplateVersion() {
+        return this.templateVersion;
+    }
+
+    public String getScriptsVersion() {
+        return this.scriptsVersion;
+    }
 }

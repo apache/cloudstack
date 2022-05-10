@@ -148,7 +148,9 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         return Transaction.execute(new TransactionCallback<RoleVO>() {
             @Override
             public RoleVO doInTransaction(TransactionStatus status) {
-                return roleDao.persist(new RoleVO(name, roleType, description));
+                RoleVO role = roleDao.persist(new RoleVO(name, roleType, description));
+                CallContext.current().putContextParameter(Role.class, role.getUuid());
+                return role;
             }
         });
     }

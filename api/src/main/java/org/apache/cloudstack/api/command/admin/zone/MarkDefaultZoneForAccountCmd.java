@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.admin.zone;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -107,8 +107,14 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Account;
+    public Long getApiResourceId() {
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        return account != null ? account.getId() : null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 
     @Override
