@@ -138,15 +138,13 @@ public class Ipv6ServiceImplTest {
 
     final String publicReserver = PublicNetworkGuru.class.getSimpleName();
     final String vlan = "vlan";
-    final long networkId = 101L;
-    final long nicId = 100L;
+    final Long networkId = 101L;
+    final Long nicId = 100L;
     final String ipv6Prefix = "fd17:6:8a43:e2a4::/62"; // Will have 4 /64 subnets
     final String cidr = "fd17:5:8a43:e2a5::/64";
     final String gateway = "fd17:5:8a43:e2a5::1";
     final String macAddress = "1e:00:4c:00:00:03";
     final String ipv6Address = "fd17:5:8a43:e2a5:1c00:4cff:fe00:3"; // Resulting  IPv6 address using SLAAC
-
-    public static final long USER_ID = 1;
     public static final long ACCOUNT_ID = 1;
 
     private AccountVO account;
@@ -768,7 +766,7 @@ public class Ipv6ServiceImplTest {
         });
         ipv6Service.removePublicIpv6PlaceholderNics(network);
         Assert.assertEquals(1, removedNics.size());
-        Assert.assertTrue(nicId == removedNics.get(0));
+        Assert.assertEquals(nicId, removedNics.get(0));
         removedNics.clear();
         NicVO nic1 = Mockito.mock(NicVO.class);
         Mockito.when(nic1.getId()).thenReturn(nicId);
