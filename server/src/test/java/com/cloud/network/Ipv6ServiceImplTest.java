@@ -28,9 +28,11 @@ import javax.management.MBeanRegistrationException;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
 import org.apache.cloudstack.api.response.Ipv6RouteResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Assert;
@@ -59,6 +61,7 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -73,7 +76,11 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
@@ -138,6 +145,12 @@ public class Ipv6ServiceImplTest {
     final String gateway = "fd17:5:8a43:e2a5::1";
     final String macAddress = "1e:00:4c:00:00:03";
     final String ipv6Address = "fd17:5:8a43:e2a5:1c00:4cff:fe00:3"; // Resulting  IPv6 address using SLAAC
+
+    public static final long USER_ID = 1;
+    public static final long ACCOUNT_ID = 1;
+
+    private AccountVO account;
+    private UserVO user;
 
     @Before
     public void setup() {
@@ -666,5 +679,102 @@ public class Ipv6ServiceImplTest {
         Mockito.when(firewallDao.findById(firewallRuleId)).thenReturn(ingressFirewallRule);
         rule = ipv6Service.getIpv6FirewallRule(firewallRuleId);
         Assert.assertEquals(uuid, rule.getUuid());
+    }
+
+    private void registerCallContext() {
+        account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(ACCOUNT_ID);
+        user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidSourceCidrCreateIpv6FirewallRule() {
+        registerCallContext();
+        CreateIpv6FirewallRuleCmd cmd = Mockito.mock(CreateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getSourceCidrList()).thenReturn(List.of("10.1.1.1"));
+        try {
+            ipv6Service.createIpv6FirewallRule(cmd);
+        } catch (NetworkRuleConflictException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidDestinationCidrCreateIpv6FirewallRule() {
+        registerCallContext();
+        CreateIpv6FirewallRuleCmd cmd = Mockito.mock(CreateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getDestinationCidrList()).thenReturn(List.of("10.1.1.1"));
+        try {
+            ipv6Service.createIpv6FirewallRule(cmd);
+        } catch (NetworkRuleConflictException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testStartPortCidrCreateIpv6FirewallRule() {
+        registerCallContext();
+        CreateIpv6FirewallRuleCmd cmd = Mockito.mock(CreateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getSourcePortStart()).thenReturn(800000);
+        try {
+            ipv6Service.createIpv6FirewallRule(cmd);
+        } catch (NetworkRuleConflictException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testEndPortCidrCreateIpv6FirewallRule() {
+        registerCallContext();
+        CreateIpv6FirewallRuleCmd cmd = Mockito.mock(CreateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getSourcePortEnd()).thenReturn(800000);
+        try {
+            ipv6Service.createIpv6FirewallRule(cmd);
+        } catch (NetworkRuleConflictException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testPortRangeCidrCreateIpv6FirewallRule() {
+        registerCallContext();
+        CreateIpv6FirewallRuleCmd cmd = Mockito.mock(CreateIpv6FirewallRuleCmd.class);
+        Mockito.when(cmd.getSourcePortStart()).thenReturn(900);
+        Mockito.when(cmd.getSourcePortEnd()).thenReturn(800);
+        try {
+            ipv6Service.createIpv6FirewallRule(cmd);
+        } catch (NetworkRuleConflictException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testRemovePublicIpv6PlaceholderNics() {
+        Network network = Mockito.mock(NetworkVO.class);
+        Mockito.when(network.getId()).thenReturn(networkId);
+        NicVO nic = Mockito.mock(NicVO.class);
+        Mockito.when(nic.getId()).thenReturn(nicId);
+        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+        Mockito.when(nic.getIPv6Cidr()).thenReturn(cidr);
+        Mockito.when(nic.getIPv6Gateway()).thenReturn(gateway);
+        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
+        Mockito.when(nicDao.listPlaceholderNicsByNetworkId(Mockito.anyLong())).thenReturn(List.of(nic));
+        final List<Long> removedNics = new ArrayList<>();
+        Mockito.when(nicDao.remove(Mockito.anyLong())).thenAnswer((Answer<Boolean>) invocation -> {
+            removedNics.add((Long)invocation.getArguments()[0]);
+            return true;
+        });
+        ipv6Service.removePublicIpv6PlaceholderNics(network);
+        Assert.assertEquals(1, removedNics.size());
+        Assert.assertTrue(nicId == removedNics.get(0));
+        removedNics.clear();
+        NicVO nic1 = Mockito.mock(NicVO.class);
+        Mockito.when(nic1.getId()).thenReturn(nicId);
+        Mockito.when(nic1.getIPv6Address()).thenReturn(null);
+        Mockito.when(nicDao.listPlaceholderNicsByNetworkId(Mockito.anyLong())).thenReturn(List.of(nic1));
+        ipv6Service.removePublicIpv6PlaceholderNics(network);
+        Assert.assertEquals(0, removedNics.size());
     }
 }
