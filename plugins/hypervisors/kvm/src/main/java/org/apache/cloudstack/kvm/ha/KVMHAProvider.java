@@ -33,6 +33,9 @@ import org.apache.cloudstack.ha.provider.HARecoveryException;
 import org.apache.cloudstack.ha.provider.host.HAAbstractHostProvider;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerOperation;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerState;
+import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
+import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
@@ -46,6 +49,8 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     protected KVMHostActivityChecker hostActivityChecker;
     @Inject
     protected OutOfBandManagementService outOfBandManagementService;
+    @Inject
+    private OutOfBandManagementDao outOfBandManagementDao;
 
     @Override
     public boolean isEligible(final Host host) {
@@ -72,8 +77,14 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     public boolean recover(Host r) throws HARecoveryException {
         try {
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
-                return resp.getSuccess();
+                final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
+                if(oobm.getPowerState() == PowerState.Off){
+                    LOG.warn("OOBM recover operation failed for the host " + r.getName() + " already OFF");
+                    return false;
+                }else{
+                    final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
+                    return resp.getSuccess();
+                }
             } else {
                 LOG.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
@@ -88,8 +99,13 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     public boolean fence(Host r) throws HAFenceException {
         try {
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
-                final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
-                return resp.getSuccess();
+                final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
+                if (oobm.getPowerState() == PowerState.Unknown){
+                    return true;
+                } else {
+                    final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.OFF, null);
+                    return resp.getSuccess();
+                }
             } else {
                 LOG.warn("OOBM fence operation failed for this host " + r.getName());
                 return false;
