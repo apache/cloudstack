@@ -340,7 +340,7 @@
         </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
-            <tooltip-label :title="$t('label.computeonly.offering')" tooltip="Option to specify root disk related information in the compute offering or to link a disk offering to the compute offering"/>
+            <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
