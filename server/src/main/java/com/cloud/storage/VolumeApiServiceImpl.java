@@ -2188,7 +2188,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     volumeToAttach.getName(), volumeToAttach.getUuid(), volumeToAttachStoragePool.getName(), volumeToAttachStoragePool.getUuid()));
         }
 
-        checkForMatchinHypervisorTypesIf(volumeToAttachStoragePool != null && !volumeToAttachStoragePool.isManaged(), rootDiskHyperType, volumeToAttachHyperType);
+        checkForMatchingHypervisorTypesIf(volumeToAttachStoragePool != null && !volumeToAttachStoragePool.isManaged(), rootDiskHyperType, volumeToAttachHyperType);
 
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
 
@@ -2206,7 +2206,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
 
         if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            return savelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
         } else {
             return getVolumeAttachJobResult(vmId, volumeId, deviceId);
         }
@@ -2239,7 +2239,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return vol;
     }
 
-    private Volume savelyOrchestrateAttachVolume(Long vmId, Long volumeId, Long deviceId) {
+    private Volume safelyOrchestrateAttachVolume(Long vmId, Long volumeId, Long deviceId) {
         // avoid re-entrance
 
         VmWorkJobVO placeHolder = null;
@@ -2251,7 +2251,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private void checkForMatchinHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
+    private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
         // managed storage can be used for different types of hypervisors
         // only perform this check if the volume's storage pool is not null and not managed
         if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
