@@ -321,7 +321,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 VeeamUsername,
                 VeeamPassword,
                 VeeamValidateSSLSecurity,
-                VeeamApiRequestTimeout
+                VeeamApiRequestTimeout,
+                VeeamRestoreTimeout
         };
     }
 

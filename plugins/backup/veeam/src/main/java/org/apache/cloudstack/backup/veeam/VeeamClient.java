@@ -326,6 +326,7 @@ public class VeeamClient {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
+                LOG.trace(String.format("Ignoring InterruptedException [%s] when waiting for restore session finishes.", ignored.getMessage()));
             }
         }
         throw new CloudRuntimeException("Related job type: " + type + " was not successful");
