@@ -446,7 +446,7 @@ public enum Config {
     ConsoleProxyDisableRpFilter(
             "Console Proxy",
             AgentManager.class,
-            Integer.class,
+            Boolean.class,
             "consoleproxy.disable.rpfilter",
             "true",
             "disable rp_filter on console proxy VM public interface",
