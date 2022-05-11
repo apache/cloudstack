@@ -768,8 +768,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
                 operation = "created";
             }
-            s_logger.debug(String.format("Sync volumes to VM [id: %s, instanceName: %s] in backup restore operation: %s volume [id: %s].", instanceId, vmInstanceVO.getInstanceName(),
-                    operation, volume.getUuid()));
+            s_logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
         }
     }
 
@@ -914,8 +913,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         for (final NicVO unMappedNic : allNics) {
-            s_logger.debug(String.format("Removing NIC [id: %s, MAC: %s] from backup restored VM [id: %s, name: %s].",
-                    unMappedNic.getUuid(), unMappedNic.getMacAddress(), vm.getUuid(), vm.getInstanceName()));
+            s_logger.debug(String.format("Removing NIC [%s] from backup restored %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(unMappedNic, "uuid", "macAddress"), vm));
             vmManager.removeNicFromVm(vm, unMappedNic);
         }
     }
