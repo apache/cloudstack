@@ -32,6 +32,7 @@ import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
@@ -197,16 +198,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             StorageUtil.traceLogStoragePools(pools, s_logger, "pools to shuffle: ");
             Collections.shuffle(pools, secureRandom);
             StorageUtil.traceLogStoragePools(pools, s_logger, "shuffled list of pools to choose from: ");
-        } else if (allocationAlgorithm.equals("userdispersing")) {
+        } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("reordering: Algorithm == 'userdispersing'");
+                s_logger.trace(String.format("Using reordering algorithm [%s]", allocationAlgorithm));
             }
-            pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
-        } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("reordering: Algorithm == 'firstfitleastconsumed'");
+
+            if (allocationAlgorithm.equals("userdispersing")) {
+                pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
+            } else {
+                pools = reorderPoolsByCapacity(plan, pools);
             }
-            pools = reorderPoolsByCapacity(plan, pools);
         }
 
         if (vmProfile.getVirtualMachine() == null) {
