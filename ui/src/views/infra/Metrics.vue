@@ -27,9 +27,10 @@
               :loading="loading"
               shape="round"
               size="small"
-              icon="reload"
-              @click="fetchDetails()"
-            >{{ $t('label.refresh') }}</a-button>
+              @click="fetchDetails()">
+              <template #icon><ReloadOutlined /></template>
+              {{ $t('label.refresh') }}
+            </a-button>
           </a-tooltip>
         </template>
       </breadcrumb>
