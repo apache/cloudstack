@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.api.command.user.vmsnapshot;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -90,7 +91,13 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        VMSnapshot vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
+        VMSnapshot vmsnapshot;
+        try {
+            vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot: " + e.getMessage(), e);
+        }
+
         if (vmsnapshot != null) {
             setEntityId(vmsnapshot.getId());
         } else {
