@@ -57,7 +57,7 @@
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['publicip'].includes($route.name)
                         ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
-                    style="min-width: 100px; margin-left: 10px"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -1066,10 +1066,10 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        this.setRules(param)
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
+        this.setRules(param)
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }

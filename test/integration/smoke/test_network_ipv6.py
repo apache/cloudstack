@@ -76,7 +76,6 @@ ICMPV6_TYPE = {
     130: "mld-listener-query",
     131: "mld-listener-report",
     132: "mld-listener-done",
-    132: "mld-listener-reduction",
     133: "nd-router-solicit",
     134: "nd-router-advert",
     135: "nd-neighbor-solicit",
@@ -599,6 +598,12 @@ class TestIpv6Network(cloudstackTestCase):
                 cls.zone.id,
                 cls.services["ostype"]
             )
+            if cls.hypervisor.lower() in ('xenserver'):
+                # Default Xenserver template has IPv6 disabled
+                cls.template = get_test_template(
+                   cls.apiclient,
+                   cls.zone.id,
+                   cls.hypervisor)
         else:
             cls.debug("IPv6 is not supported, skipping tests!")
         return
@@ -839,7 +844,7 @@ class TestIpv6Network(cloudstackTestCase):
             cmd,
             hypervisor=self.routerDetailsMap[router.id]['hypervisor']
         )
-        self.assertTrue(type(result) == list and len(result) > 0,
+        self.assertTrue(type(result) == list,
             "%s on router %s returned invalid result" % (cmd, router.id))
         result = '\n'.join(result)
         return result

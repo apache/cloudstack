@@ -254,7 +254,7 @@ def runPatchScriptInDomr(session, args):
     txt=""
     try:
         target = "root@" + domrip
-        txt = util.pread2(['ssh','-p','3922','-i','/root/.ssh/id_rsa.cloud', target, "/bin/bash","/tmp/patch-sysvms.sh"])
+        txt = util.pread2(['ssh','-p','3922','-i','/root/.ssh/id_rsa.cloud', target, "/bin/bash","/var/cache/cloud/patch-sysvms.sh"])
         txt = 'succ#' + txt
     except:
         logging.debug("failed to run patch script in systemVM with IP:  " + domrip)

@@ -27,7 +27,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
@@ -375,7 +374,6 @@ public class AgentShell implements IAgentShell, Daemon {
 
         loadProperties();
         parseCommand(args);
-        enableSSL();
 
         if (s_logger.isDebugEnabled()) {
             List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
@@ -397,27 +395,6 @@ public class AgentShell implements IAgentShell, Daemon {
         s_logger.info("Defaulting to the constant time backoff algorithm");
         _backoff = new ConstantTimeBackoff();
         _backoff.configure("ConstantTimeBackoff", new HashMap<String, Object>());
-    }
-
-    private void enableSSL() {
-        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
-        if (agentFile == null) {
-            s_logger.info("Failed to find agent.properties file");
-            return;
-        }
-        String keystorePass = getProperty(null, "keystore.passphrase");
-        if (StringUtils.isBlank(keystorePass)) {
-            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
-            return;
-        }
-        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
-        File f = new File(keyStoreFile);
-        if (f.exists() && !f.isDirectory()) {
-            System.setProperty("javax.net.ssl.trustStore", keyStoreFile);
-            System.setProperty("javax.net.ssl.trustStorePassword", keystorePass);
-        } else {
-            s_logger.info("Failed to find keystore file: " + keyStoreFile);
-        }
     }
 
     private void launchAgent() throws ConfigurationException {
