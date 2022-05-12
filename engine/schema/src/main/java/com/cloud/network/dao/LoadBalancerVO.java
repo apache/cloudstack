@@ -127,4 +127,9 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public Scheme getScheme() {
         return scheme;
     }
+
+    @Override
+    public String toString() {
+        return String.format("Load Balancer {uuid: \"%s\", name: \"%s\"}", getUuid(), name);
+    }
 }

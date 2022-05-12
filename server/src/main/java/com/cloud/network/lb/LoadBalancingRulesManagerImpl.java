@@ -2199,7 +2199,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             s_logger.warn(String.format("Unable to find the load balancer with ID [%s].", cmd.getId()));
             return null;
         }
-        String loadBalancerAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(loadBalancer, "uuid", "name");
+        String loadBalancerAsString = loadBalancer.toString();
 
         _accountMgr.checkAccess(caller, null, true, loadBalancer);
 
@@ -2235,7 +2235,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 continue;
             }
 
-            String userVmAsString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(userVm, "uuid", "name");
+            String userVmAsString = userVm.toString();
 
             boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
             String isAppliedMsg = isApplied ? "is applied" : "is not applied";
