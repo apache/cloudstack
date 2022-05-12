@@ -899,6 +899,7 @@
 "label.diskofferingstrictness": "Disk offering strictness",
 "label.disksizestrictness": "Disk size strictness",
 "label.computeonly.offering": "Compute only disk offering",
+"label.computeonly.offering.tooltip": "Option to specify root disk related information in the compute offering or to directly link a disk offering to the compute offering",
 "label.edit": "Edit",
 "label.edit.acl.list": "Edit ACL list",
 "label.edit.acl.rule": "Edit ACL rule",
