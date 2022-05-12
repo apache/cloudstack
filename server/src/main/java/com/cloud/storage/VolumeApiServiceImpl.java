@@ -92,6 +92,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -341,6 +342,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
+    private static final List<Volume.State> validAttachStates = Arrays.asList(Volume.State.Allocated, Volume.State.Ready, Volume.State.Uploaded);
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -2251,16 +2253,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    /**
+     * managed storage can be used for different types of hypervisors
+     * only perform this check if the volume's storage pool is not null and not managed
+     */
     private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
-        // managed storage can be used for different types of hypervisors
-        // only perform this check if the volume's storage pool is not null and not managed
         if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
             throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
         }
     }
 
     private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, UserVmVO vm) {
-        // permission check
         _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
 
         Account owner = _accountDao.findById(volumeToAttach.getAccountId());
@@ -2382,7 +2385,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
         }
 
-        if (!Arrays.asList(Volume.State.Allocated, Volume.State.Ready, Volume.State.Uploaded).contains(volumeToAttach.getState())) {
+        if (!validAttachStates.contains(volumeToAttach.getState())) {
             throw new InvalidParameterValueException("Volume state must be in Allocated, Ready or in Uploaded state");
         }
         return volumeToAttach;
@@ -2573,7 +2576,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info(String.format("Trying to attach volume [%s/%s] to VM instance [%s/%s], update async job-%s progress status", volume.getName(), volume.getUuid(), vm.getName(), vm.getUuid(), job.getId()));
+                s_logger.info(String.format("Trying to attach volume %s to VM instance %s, update async job-%s progress status",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volume, "name", "uuid"),
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "name", "uuid"),
+                        job.getId()));
             }
 
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
