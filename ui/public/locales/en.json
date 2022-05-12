@@ -1846,6 +1846,7 @@
 "label.quota.statement.bydates": "Statement",
 "label.quota.statement.quota": "Quota usage",
 "label.quota.statement.tariff": "Quota tariff",
+"label.quota.summary": "Summary",
 "label.quota.tariff": "Tariff",
 "label.quota.tariff.edit": "Edit tariff",
 "label.quota.tariff.effectivedate": "Effective date",
