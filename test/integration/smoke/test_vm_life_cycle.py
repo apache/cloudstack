@@ -1671,6 +1671,15 @@ class TestUnmanageVM(cloudstackTestCase):
             self.network
         ]
 
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @attr(tags=["advanced", "advancedns", "smoke", "sg"], required_hardware="false")
     @skipTestIf("hypervisorNotSupported")
     def test_01_unmanage_vm_cycle(self):
@@ -1752,6 +1761,31 @@ class TestUnmanageVM(cloudstackTestCase):
             "PowerOn",
             "Unmanaged VM is still running"
         )
+        unmanaged_vm_nic = unmanaged_vm.nic[0]
+        nicnetworklist = [{}]
+        nicnetworklist[0]["nic"] = unmanaged_vm_nic.id
+        nicnetworklist[0]["network"] = self.network.id
+        nicipaddresslist = [{}]
+        nicipaddresslist[0]["nic"] = unmanaged_vm_nic.id
+        nicipaddresslist[0]["ip4Address"] = "auto"
+        importedVMService = {
+            "nicnetworklist": nicnetworklist,
+            "nicipaddresslist": nicipaddresslist
+        }
+        imported_vm = VirtualMachine.importUnmanagedInstance(
+            clusterid=clusterid,
+            name=vm_instance_name,
+            serviceofferingid=self.small_offering.id,
+            service=importedVMService,
+            templateid=self.template.id)
+
+        self.assertEqual(
+            self.small_offering.id,
+            imported_vm.serviceofferingid,
+            "Imported VM service offering is different"
+        )
+
+        self.cleanup.append(imported_vm)
 
 
 class TestVAppsVM(cloudstackTestCase):
