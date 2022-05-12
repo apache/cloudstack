@@ -160,3 +160,51 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities` (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) values (UUID(), 'VMware', '7.0.3.0', 1024, 0, 59, 64, 1, 1);
 -- Copy VMware 7.0.1.0 hypervisor guest OS mappings to VMware 7.0.3.0
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '7.0.3.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='7.0.1.0';
+
+ -- Alter event table to add resource_id and resource_type
+ALTER TABLE `cloud`.`event`
+    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the even' AFTER `domain_id`,
+    ADD COLUMN `resource_type` varchar(32) COMMENT 'Account role in the project (Owner or Regular)' AFTER `resource_id`;
+
+DROP VIEW IF EXISTS `cloud`.`event_view`;
+CREATE VIEW `cloud`.`event_view` AS
+    SELECT
+        event.id,
+        event.uuid,
+        event.type,
+        event.state,
+        event.description,
+        event.resource_id,
+        event.resource_type,
+        event.created,
+        event.level,
+        event.parameters,
+        event.start_id,
+        eve.uuid start_uuid,
+        event.user_id,
+        event.archived,
+        event.display,
+        user.username user_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name
+    FROM
+        `cloud`.`event`
+            INNER JOIN
+        `cloud`.`account` ON event.account_id = account.id
+            INNER JOIN
+        `cloud`.`domain` ON event.domain_id = domain.id
+            INNER JOIN
+        `cloud`.`user` ON event.user_id = user.id
+            LEFT JOIN
+        `cloud`.`projects` ON projects.project_account_id = event.account_id
+            LEFT JOIN
+        `cloud`.`event` eve ON event.start_id = eve.id;
