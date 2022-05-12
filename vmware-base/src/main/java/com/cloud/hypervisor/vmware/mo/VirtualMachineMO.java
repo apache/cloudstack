@@ -51,6 +51,7 @@ import com.cloud.hypervisor.vmware.mo.SnapshotDescriptor.SnapshotInfo;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;

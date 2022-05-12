@@ -52,7 +52,6 @@ import com.cloud.utils.LogUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.ExceptionUtil;
-import com.google.gson.Gson;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestOsDescriptor;
@@ -90,7 +89,6 @@ import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
 public class VmwareHelper {
-    @SuppressWarnings("unused")
     private static final Logger s_logger = Logger.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
@@ -218,7 +216,7 @@ public class VmwareHelper {
     // vmdkDatastorePath: [datastore name] vmdkFilePath
     public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
                                                   ManagedObjectReference morDs, int deviceNumber, int contextNumber, Long maxIops) throws Exception {
-        LOGGER.debug(LogUtils.logGsonWithoutException("Trying to prepare disk device to virtual machine [%s], using the following details: Virtual device [%s], "
+        s_logger.debug(LogUtils.logGsonWithoutException("Trying to prepare disk device to virtual machine [%s], using the following details: Virtual device [%s], "
                 + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s].",
                 vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops));
         assert (vmdkDatastorePathChain != null);
@@ -248,7 +246,7 @@ public class VmwareHelper {
             disk.setUnitNumber(deviceNumber);
 
             if (maxIops != null && maxIops > 0) {
-                LOGGER.debug(LogUtils.logGsonWithoutException("Adding [%s] as the max IOPS of disk [%s].", maxIops, disk));
+                s_logger.debug(LogUtils.logGsonWithoutException("Adding [%s] as the max IOPS of disk [%s].", maxIops, disk));
                 StorageIOAllocationInfo storageIOAllocationInfo = new StorageIOAllocationInfo();
                 storageIOAllocationInfo.setLimit(maxIops);
                 disk.setStorageIOAllocation(storageIOAllocationInfo);
@@ -266,7 +264,7 @@ public class VmwareHelper {
             setParentBackingInfo(backingInfo, morDs, parentDisks);
         }
 
-        LOGGER.debug(LogUtils.logGsonWithoutException("Prepared disk device, to attach to virtual machine [%s], has the following details: Virtual device [%s], "
+        s_logger.debug(LogUtils.logGsonWithoutException("Prepared disk device, to attach to virtual machine [%s], has the following details: Virtual device [%s], "
                 + "ManagedObjectReference [%s], ControllerKey [%s], VMDK path chain [%s], DeviceNumber [%s], ContextNumber [%s] and max IOPS [%s], is: [%s].",
                 vmMo, device, morDs, controllerKey, vmdkDatastorePathChain, deviceNumber, contextNumber, maxIops, disk));
         return disk;

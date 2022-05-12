@@ -51,6 +51,7 @@ import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -321,7 +322,6 @@ import com.vmware.vim25.PerfMetricIntSeries;
 import com.vmware.vim25.PerfMetricSeries;
 import com.vmware.vim25.PerfQuerySpec;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.StorageIOAllocationInfo;
 import com.vmware.vim25.StoragePodSummary;
 import com.vmware.vim25.ToolsUnavailableFaultMsg;
 import com.vmware.vim25.VAppOvfSectionInfo;
@@ -940,7 +940,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             boolean volumePathChangeObserved = false;
             boolean datastoreChangeObserved = false;
 
-            StorageIOAllocationInfo limitIops = vdisk.first().getStorageIOAllocation();
             Pair<String, String> pathAndChainInfo = getNewPathAndChainInfoInDatastoreCluster(vmMo, path, chainInfo, managed, cmd.get_iScsiName(), poolUUID, cmd.getContextParam(DiskTO.PROTOCOL_TYPE));
             Pair<String, String> poolUUIDandChainInfo = getNewPoolUUIDAndChainInfoInDatastoreCluster(vmMo, path, chainInfo, managed, cmd.get_iScsiName(), poolUUID, cmd.getContextParam(DiskTO.PROTOCOL_TYPE));
 
@@ -965,7 +964,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             disk.setCapacityInKB(newSize);
-            disk.setStorageIOAllocation(limitIops);
 
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
 
