@@ -1039,15 +1039,15 @@ class VirtualMachine:
         return apiclient.listUnmanagedInstances(cmd)
 
     @classmethod
-    def importUnmanagedInstance(cls, apiclient, clusterid, name, serviceofferingid, services, templateid=None
-        account=None, domainid=None, projectid=None, migrateallowed=None, forced=None):
+    def importUnmanagedInstance(cls, apiclient, clusterid, name, serviceofferingid, services, templateid=None,
+                                account=None, domainid=None, projectid=None, migrateallowed=None, forced=None):
         """Import an unmanaged VM (currently VMware only)"""
         cmd = importUnmanagedInstance.importUnmanagedInstanceCmd()
         cmd.clusterid = clusterid
         cmd.name = name
         cmd.serviceofferingid = serviceofferingid
         if templateid:
-            cmd.templateid = account
+            cmd.templateid = templateid
         elif "templateid" in services:
             cmd.templateid = services["templateid"]
         if account:
@@ -1077,8 +1077,9 @@ class VirtualMachine:
         if "nicnetworklist" in services:
             cmd.nicnetworklist = services["nicnetworklist"]
         if "nicipaddresslist" in services:
-            cmd.nicnetworklist = services["nicipaddresslist"]
-        return apiclient.importUnmanagedInstance(cmd)
+            cmd.nicipaddresslist = services["nicipaddresslist"]
+        virtual_machine = apiclient.importUnmanagedInstance(cmd)
+        return VirtualMachine(virtual_machine.__dict__, services)
 
 
 class Volume:
