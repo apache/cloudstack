@@ -265,7 +265,7 @@ public enum Config {
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
-            Integer.class,
+            Boolean.class,
             "network.disable.rpfilter",
             "true",
             "disable rp_filter on Domain Router VM public interfaces.",
@@ -446,7 +446,7 @@ public enum Config {
     ConsoleProxyDisableRpFilter(
             "Console Proxy",
             AgentManager.class,
-            Integer.class,
+            Boolean.class,
             "consoleproxy.disable.rpfilter",
             "true",
             "disable rp_filter on console proxy VM public interface",
