@@ -167,6 +167,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return new Pair<>(nic.getIPv6Address(), vlanOptional.get());
     }
 
+    private void publishPublicIpv6AssignActionEvent(final Network network, final String ipv6Address) {
+        final String description = String.format("Assigned public IPv6 address: %1$s for network ID: %2$s. Static route: %3$s via %1$s", ipv6Address,  network.getUuid(), network.getIp6Cidr());
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP6_ASSIGN, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
+    }
+
     private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
         Pair<String, ? extends Vlan> result = Transaction.execute((TransactionCallbackWithException<Pair<String, ? extends Vlan>, InsufficientAddressCapacityException>) status -> {
             final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
@@ -195,12 +200,10 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             return new Pair<>(ipv6Addr.toString(), selectedVlan);
         });
         final String ipv6Address = result.first();
-        final String event = EventTypes.EVENT_NET_IP6_ASSIGN;
-        final String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Address,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
+        publishPublicIpv6AssignActionEvent(network, ipv6Address);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         final String guestType = result.second().getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), 0L,
                 ipv6Address, false, guestType, false, usageHidden,
                 IPv6Network.class.getName(), null);
         return result;
@@ -380,6 +383,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public Nic assignPublicIpv6ToNetwork(Network network, Nic nic) {
         if (StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            if (network.getVpcId() != null) {
+                publishPublicIpv6AssignActionEvent(network, nic.getIPv6Address());
+            }
             return nic;
         }
         try {
