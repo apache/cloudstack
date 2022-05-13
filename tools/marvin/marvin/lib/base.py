@@ -3627,7 +3627,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None, networkid=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3635,15 +3635,18 @@ class PublicIpRange:
             cmd.gateway = services["gateway"]
         if "netmask" in services:
             cmd.netmask = services["netmask"]
-        cmd.forvirtualnetwork = services["forvirtualnetwork"]
+        if "forvirtualnetwork" in services:
+            cmd.forvirtualnetwork = services["forvirtualnetwork"]
         if "startip" in services:
             cmd.startip = services["startip"]
         if "endip" in services:
             cmd.endip = services["endip"]
-        cmd.zoneid = services["zoneid"]
+        if "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
         if "podid" in services:
             cmd.podid = services["podid"]
-        cmd.vlan = services["vlan"]
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
         if "ip6gateway" in services:
             cmd.ip6gateway = services["ip6gateway"]
         if "ip6cidr" in services:
@@ -3655,6 +3658,8 @@ class PublicIpRange:
             cmd.domainid = domainid
         if forsystemvms:
             cmd.forsystemvms = forsystemvms
+        if networkid:
+            cmd.networkid = networkid
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 

@@ -376,15 +376,19 @@ export default {
       } else { // from guest network section
         var params = {}
         this.networkOfferingLoading = true
-        api('listVPCs', params).then(json => {
-          const listVPCs = json.listvpcsresponse.vpc
-          var vpcAvailable = this.arrayHasItems(listVPCs)
-          if (vpcAvailable === false) {
-            this.fetchNetworkOfferingData(false)
-          } else {
-            this.fetchNetworkOfferingData()
-          }
-        })
+        if ('listVPCs' in this.$store.getters.apis) {
+          api('listVPCs', params).then(json => {
+            const listVPCs = json.listvpcsresponse.vpc
+            var vpcAvailable = this.arrayHasItems(listVPCs)
+            if (vpcAvailable === false) {
+              this.fetchNetworkOfferingData(false)
+            } else {
+              this.fetchNetworkOfferingData()
+            }
+          })
+        } else {
+          this.fetchNetworkOfferingData(false)
+        }
       }
     },
     fetchNetworkOfferingData (forVpc) {
