@@ -569,7 +569,7 @@
                           <a-text type="primary">
                               Userdata "{{ $t(this.template.userdataname) }}" is linked with template "{{ $t(this.template.name) }}" with override policy "{{ $t(this.template.userdatapolicy) }}"
                           </a-text><br/><br/>
-                          <div v-if="templateUserDataParams.length > 0">
+                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
                             <a-text type="primary" v-if="this.template && this.template.userdataid && templateUserDataParams.length > 0">
                                 Enter the values for the variables in userdata
                             </a-text>
@@ -1367,7 +1367,6 @@ export default {
           this.vm.ostypename = this.template.ostypename
 
           if (this.template.userdataid) {
-            instanceConfig.userdataid = this.template.userdataid
             this.doUserdataOverride = false
             this.doUserdataAppend = false
           }
@@ -1384,13 +1383,10 @@ export default {
           }
 
           if (this.iso.userdataid) {
-            instanceConfig.userdataid = this.iso.userdataid
             this.doUserdataOverride = false
             this.doUserdataAppend = false
           }
         }
-
-        this.userData = _.find(this.options.userDatas, (option) => option.id === instanceConfig.userdataid)
 
         if (this.serviceOffering) {
           this.vm.serviceofferingid = this.serviceOffering.id
