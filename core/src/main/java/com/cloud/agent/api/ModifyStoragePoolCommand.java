@@ -42,9 +42,7 @@ public class ModifyStoragePoolCommand extends Command {
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath, Map<String, String> details) {
-        this.add = add;
-        this.pool = new StorageFilerTO(pool);
-        this.localPath = localPath;
+        this(add, pool, localPath);
         this.details = details;
     }
 

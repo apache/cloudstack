@@ -346,8 +346,10 @@ public class KVMStoragePoolManager {
         return createStoragePool(name, host, port, path, userInfo, type, null, true);
     }
 
+    /**
+     * Primary Storage registers itself through here
+     */
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details) {
-        // primary storage registers itself through here
         return createStoragePool(name, host, port, path, userInfo, type, details, true);
     }
 

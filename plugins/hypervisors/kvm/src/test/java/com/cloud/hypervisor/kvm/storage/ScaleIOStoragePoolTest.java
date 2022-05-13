@@ -45,8 +45,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.script.Script;
 
-@PrepareForTest(ScaleIOUtil.class)
+@PrepareForTest({ScaleIOUtil.class, Script.class})
 @RunWith(PowerMockRunner.class)
 public class ScaleIOStoragePoolTest {
 
@@ -103,8 +104,8 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        PowerMockito.mockStatic(ScaleIOUtil.class);
-        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
+        PowerMockito.mockStatic(Script.class);
+        when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(sdcId);
 
         ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         assertEquals(systemId, pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));
@@ -120,9 +121,9 @@ public class ScaleIOStoragePoolTest {
         Map<String,String> details = new HashMap<String, String>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
-        PowerMockito.mockStatic(ScaleIOUtil.class);
-        when(ScaleIOUtil.getSdcId(systemId)).thenReturn(null);
-        when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
+        PowerMockito.mockStatic(Script.class);
+        when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(null);
+        when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_guid")).thenReturn(sdcGuid);
 
         ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type, details, adapter);
         assertEquals(systemId, pool1.getDetails().get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID));

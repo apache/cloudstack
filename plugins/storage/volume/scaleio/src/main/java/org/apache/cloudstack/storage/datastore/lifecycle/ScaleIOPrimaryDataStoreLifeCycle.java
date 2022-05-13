@@ -331,13 +331,13 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStoreId, storagePoolDetailsDao);
             haveConnectedSdcs = client.haveConnectedSdcs();
         } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error("Failed to create storage pool", e);
-            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to create storage pool");
+            LOGGER.error(String.format("Failed to create storage pool for datastore: %s", dataStoreId), e);
+            throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to create storage pool for datastore: %s", dataStoreId));
         }
 
         if (!haveConnectedSdcs) {
-            LOGGER.debug("No connected SDCs found for the PowerFlex storage pool");
-            throw new CloudRuntimeException("Failed to create storage pool as connected SDCs not found");
+            LOGGER.debug(String.format("No connected SDCs found for the PowerFlex storage pool of datastore: %s", dataStoreId));
+            throw new CloudRuntimeException(String.format("Failed to create storage pool as connected SDCs not found for datastore: %s", dataStoreId));
         }
     }
 

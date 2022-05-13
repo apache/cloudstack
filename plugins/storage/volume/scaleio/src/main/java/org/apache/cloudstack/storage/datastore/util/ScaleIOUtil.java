@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang3.StringUtils;
 
@@ -47,21 +48,31 @@ public class ScaleIOUtil {
     private static final String SDC_HOME_PATH = getSdcHomePath();
 
     private static final String RESCAN_CMD = "drv_cfg --rescan";
+
+    /**
+     * Cmd for querying volumes in SDC
+     * Sample output for cmd: drv_cfg --query_vols:
+     * Retrieved 2 volume(s)
+     * VOL-ID 6c33633100000009 MDM-ID 218ce1797566a00f
+     * VOL-ID 6c3362a30000000a MDM-ID 218ce1797566a00f
+     */
     private static final String QUERY_VOLUMES_CMD = "drv_cfg --query_vols";
-    // Sample output for cmd: drv_cfg --query_vols:
-    // Retrieved 2 volume(s)
-    // VOL-ID 6c33633100000009 MDM-ID 218ce1797566a00f
-    // VOL-ID 6c3362a30000000a MDM-ID 218ce1797566a00f
 
+    /**
+     * Cmd for querying guid in SDC
+     * Sample output for cmd: drv_cfg --query_guid:
+     * B0E3BFB8-C20B-43BF-93C8-13339E85AA50
+     */
     private static final String QUERY_GUID_CMD = "drv_cfg --query_guid";
-    // Sample output for cmd: drv_cfg --query_guid:
-    // B0E3BFB8-C20B-43BF-93C8-13339E85AA50
 
+    /**
+     * Cmd for querying MDMs in SDC
+     * Sample output for cmd: drv_cfg --query_mdms:
+     * Retrieved 2 mdm(s)
+     * MDM-ID 3ef46cbf2aaf5d0f SDC ID 6b18479c00000003 INSTALLATION ID 68ab55462cbb3ae4 IPs [0]-x.x.x.x [1]-x.x.x.x
+     * MDM-ID 2e706b2740ec200f SDC ID 301b852c00000003 INSTALLATION ID 33f8662e7a5c1e6c IPs [0]-x.x.x.x [1]-x.x.x.x
+     */
     private static final String QUERY_MDMS_CMD = "drv_cfg --query_mdms";
-    // Sample output for cmd: drv_cfg --query_mdms:
-    // Retrieved 2 mdm(s)
-    // MDM-ID 3ef46cbf2aaf5d0f SDC ID 6b18479c00000003 INSTALLATION ID 68ab55462cbb3ae4 IPs [0]-x.x.x.x [1]-x.x.x.x
-    // MDM-ID 2e706b2740ec200f SDC ID 301b852c00000003 INSTALLATION ID 33f8662e7a5c1e6c IPs [0]-x.x.x.x [1]-x.x.x.x
 
     public static String getSdcHomePath() {
         String sdcHomePath = DEFAULT_SDC_HOME_PATH;
@@ -120,8 +131,7 @@ public class ScaleIOUtil {
             return null;
         }
 
-        String guidRegEx = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
-        if (!result.matches(guidRegEx)) {
+        if (!UuidUtils.validateUUID(result)) {
             LOGGER.warn("Invalid SDC guid: " + result);
             return null;
         }
