@@ -2359,15 +2359,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         s_logger.debug("Removed nic id=" + nic.getId());
         // release assigned IPv6 for Isolated Network VR NIC
 
-        if (Type.DomainRouter.equals(vm.getType()) && PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver())
-                && StringUtils.isNotEmpty(nic.getIPv6Address())) {
-            List<Long> routerNetworks = routerNetworkDao.getRouterNetworks(vm.getId());
-            if (CollectionUtils.isNotEmpty(routerNetworks)) {
-                Network guestNetwork = _networksDao.findById(routerNetworks.get(0));
-                ipv6Service.releasePublicIpv6ForNic(guestNetwork, nic.getIPv6Address());
-            }
-        }
-
         if (Type.User.equals(vm.getType()) && GuestType.Isolated.equals(network.getGuestType())
                 && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId()) && StringUtils.isNotEmpty(nic.getIPv6Address())) {
             final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
