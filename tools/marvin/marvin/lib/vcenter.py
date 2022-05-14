@@ -158,6 +158,8 @@ class Vcenter():
             else:
                 result.append(c)
         container.Destroy()
+        if len(result) == 0:
+            return None
         if parse:
             return [self.parse_details(c, vimtype) for c in result]
         return result
