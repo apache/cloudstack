@@ -70,8 +70,6 @@ public interface Ipv6Service extends PluggableService, Configurable {
 
     void updateNicIpv6(NicProfile nic, DataCenter dc, Network network) throws InsufficientAddressCapacityException;
 
-    void releasePublicIpv6ForNic(Network network, String nicIpv6Address);
-
     List<String> getPublicIpv6AddressesForNetwork(Network network);
 
     void updateIpv6RoutesForVpcResponse(Vpc vpc, VpcResponse response);
