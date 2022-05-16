@@ -907,6 +907,7 @@ public class ApiConstants {
     public static final String ANNOTATION_FILTER = "annotationfilter";
     public static final String LOGIN = "login";
     public static final String LOGOUT = "logout";
+    public static final String LIST_IDPS = "listIdps";
 
     public enum BootType {
         UEFI, BIOS;
