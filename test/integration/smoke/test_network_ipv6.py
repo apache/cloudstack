@@ -76,7 +76,6 @@ ICMPV6_TYPE = {
     130: "mld-listener-query",
     131: "mld-listener-report",
     132: "mld-listener-done",
-    132: "mld-listener-reduction",
     133: "nd-router-solicit",
     134: "nd-router-advert",
     135: "nd-neighbor-solicit",
