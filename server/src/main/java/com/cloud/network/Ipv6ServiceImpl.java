@@ -181,7 +181,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
 
     private void publishPublicIpv6ReleaseActionEvent(Network network, String nicIpv6Address) {
         String event = EventTypes.EVENT_NET_IP6_RELEASE;
-        String description = String.format("Releasing public IPv6 address: %1$s from network ID: %2$s. Subnet: %3$s, gateway: %1$s", nicIpv6Address,  network.getUuid(), network.getIp6Cidr());
+        String description = String.format("Released public IPv6 address: %1$s from network ID: %2$s. Subnet: %3$s, gateway: %1$s", nicIpv6Address,  network.getUuid(), network.getIp6Cidr());
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
         final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
         UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
