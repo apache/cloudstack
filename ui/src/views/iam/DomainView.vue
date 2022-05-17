@@ -62,6 +62,7 @@
         :treeStore="domainStore"
         :loading="loading"
         :tabs="$route.meta.tabs"
+        :treeDeletedKey="treeDeletedKey"
         @change-resource="changeResource"
         @change-tree-store="changeDomainStore"/>
     </div>
@@ -108,7 +109,8 @@ export default {
       showAction: false,
       action: {},
       dataView: false,
-      domainStore: {}
+      domainStore: {},
+      treeDeletedKey: null
     }
   },
   computed: {
@@ -193,6 +195,7 @@ export default {
       })
     },
     execAction (action) {
+      this.treeDeletedKey = action.api === 'deleteDomain' ? this.resource.key : null
       this.actionData = []
       this.action = action
       this.action.params = store.getters.apis[this.action.api].params
