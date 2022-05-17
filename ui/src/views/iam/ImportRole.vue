@@ -31,7 +31,7 @@
           <a-upload-dragger
             :multiple="false"
             :fileList="fileList"
-            :remove="handleRemove"
+            @remove="handleRemove"
             :beforeUpload="beforeUpload"
             @change="handleChange"
             v-model:value="form.file">

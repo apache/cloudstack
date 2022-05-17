@@ -42,8 +42,9 @@
               @select="onSelect"
               @expand="onExpand"
               :expandedKeys="arrExpand">
-              <template #parent><folder-outlined /></template>
-              <template #leaf><block-outlined /></template>
+              <template #icon="{data}">
+                <block-outlined v-if="data.isLeaf" />
+              </template>
             </a-tree>
           </a-spin>
         </a-card>
@@ -183,11 +184,11 @@ export default {
       this.treeViewData = []
       this.arrExpand = []
       if (!this.loading) {
-        this.treeViewData = this.treeData
-        this.treeVerticalData = this.treeData
+        this.treeViewData = this.treeData.slice()
+        this.treeVerticalData = this.treeData.slice()
 
         if (this.treeViewData.length > 0) {
-          this.oldTreeViewData = this.treeViewData
+          this.oldTreeViewData = this.treeViewData.slice()
           this.rootKey = this.treeViewData[0].key
         }
       }
@@ -320,7 +321,6 @@ export default {
     },
     onSelect (selectedKeys, event) {
       if (!event.selected) {
-        setTimeout(() => { event.node.$refs.selectHandle.click() })
         return
       }
 
@@ -524,15 +524,13 @@ export default {
       })
       resource.title = resource.name
       resource.key = resource.id
-      resource.slots = {
-        icon: 'parent'
+      if (resource?.icon) {
+        resource.resourceIcon = resource.icon
+        delete resource.icon
       }
 
       if (!resource.haschild) {
         resource.isLeaf = true
-        resource.slots = {
-          icon: 'leaf'
-        }
       }
 
       return resource
@@ -586,8 +584,9 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.list-tree-view {
+:deep(.ant-tree).list-tree-view {
   overflow-y: hidden;
+  margin-top: 10px;
 }
 :deep(.ant-tree).ant-tree-directory {
   li.ant-tree-treenode-selected {
@@ -615,7 +614,7 @@ export default {
   }
 }
 
-:deep(.ant-tree) li span.ant-tree-switcher.ant-tree-switcher-noop {
+:deep(.ant-tree-show-line) .ant-tree-switcher.ant-tree-switcher-noop {
   display: none
 }
 
@@ -626,10 +625,38 @@ export default {
 
 :deep(.ant-tree-icon__customize) {
   padding-right: 5px;
+  background: transparent;
 }
 
-:deep(.ant-tree) li .ant-tree-node-content-wrapper {
-  padding-left: 0;
-  margin-left: 3px;
+:deep(.ant-tree) {
+  .ant-tree-treenode {
+    .ant-tree-node-content-wrapper {
+      margin-left: -2px;
+      margin-bottom: 2px;
+
+      &:before {
+        border-left: 1px solid #d9d9d9;
+        content: " ";
+        height: 100%;
+        height: calc(100% - 15px);
+        left: 12px;
+        margin: 22px 0 0;
+        position: absolute;
+        width: 1px;
+        top: 0;
+      }
+    }
+
+    &.ant-tree-treenode-switcher-close, &.ant-tree-treenode-switcher-open, &.ant-tree-treenode-leaf-last {
+      .ant-tree-node-content-wrapper:before {
+        display: none;
+      }
+    }
+  }
+}
+
+:deep(.ant-tree-show-line) .ant-tree-indent-unit:before {
+  bottom: -2px;
+  top: -5px;
 }
 </style>

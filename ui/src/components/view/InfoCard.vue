@@ -824,8 +824,13 @@ export default {
       return this.resource.templateid
     },
     resourceIcon () {
-      if (this.$showIcon() && this.resource?.icon?.base64image) {
-        return this.resource.icon.base64image
+      if (this.$showIcon()) {
+        if (this.resource?.icon?.base64image) {
+          return this.resource.icon.base64image
+        }
+        if (this.resource?.resourceIcon?.base64image) {
+          return this.resource.resourceIcon.base64image
+        }
       }
       return null
     },

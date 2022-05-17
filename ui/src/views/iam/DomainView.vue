@@ -56,7 +56,6 @@
         :loading="loading"
         :tabs="$route.meta.tabs" />
       <tree-view
-        v-else
         :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
@@ -286,9 +285,8 @@ export default {
 
       rootItem[0].title = rootItem[0].title ? rootItem[0].title : rootItem[0].name
       rootItem[0].key = rootItem[0].id ? rootItem[0].id : 0
-      rootItem[0].slots = {
-        icon: 'leaf'
-      }
+      rootItem[0].resourceIcon = rootItem[0].icon || {}
+      delete rootItem[0].icon
 
       if (!rootItem[0].haschild) {
         rootItem[0].isLeaf = true
