@@ -5125,8 +5125,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getState() == State.Running) {
-            throw new InvalidParameterValueException("The virtual machine " + vm.getUuid() +
-                    " (" + vm.getDisplayNameOrHostName() + ") is already running");
+            throw new InvalidParameterValueException(String.format("The virtual machine %s (%s) is already running",
+                    vm.getUuid(), vm.getDisplayNameOrHostName()));
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, vm);
