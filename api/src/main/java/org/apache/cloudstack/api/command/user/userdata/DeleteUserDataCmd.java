@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.log4j.Logger;
 
@@ -85,9 +87,13 @@ public class DeleteUserDataCmd extends BaseCmd {
     @Override
     public void execute() {
         boolean result = _mgr.deleteUserData(this);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(result);
-        setResponseObject(response);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            response.setSuccess(result);
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete userdata");
+        }
     }
 
     @Override

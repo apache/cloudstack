@@ -1203,17 +1203,7 @@ public class CommandSetupHelper {
         cmd.addVmData("metadata", "local-ipv4", vmPrivateIpAddress);
         cmd.addVmData("metadata", "local-hostname", StringUtils.unicodeEscape(vmName));
 
-        if(userDataDetails != null && !userDataDetails.isEmpty()) {
-            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
-            String[] keyValuePairs = userDataDetails.split(",");
-            for(String pair : keyValuePairs)
-            {
-                String[] entry = pair.split("=");
-                String key = entry[0].trim();
-                String value = entry[1].trim();
-                cmd.addVmData("metadata", key, value);
-            }
-        }
+        addUserDataDetailsToCommand(cmd, userDataDetails);
 
         Network network = _networkDao.findById(guestNetworkId);
         if (dcVo.getNetworkType() == NetworkType.Basic || network.getGuestType() == Network.GuestType.Shared) {
@@ -1247,6 +1237,20 @@ public class CommandSetupHelper {
 
         cmd.addVmData("metadata", "hypervisor-host-name", hostname);
         return cmd;
+    }
+
+    protected void addUserDataDetailsToCommand(VmDataCommand cmd, String userDataDetails) {
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                String key = entry[0].trim();
+                String value = entry[1].trim();
+                cmd.addVmData("metadata", key, value);
+            }
+        }
     }
 
     private NicVO findGatewayIp(final long userVmId) {

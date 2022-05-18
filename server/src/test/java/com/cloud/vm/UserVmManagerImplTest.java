@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.UserData;
+import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
@@ -580,4 +585,103 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
     }
+
+    @Test (expected = CloudRuntimeException.class)
+    public void testUserDataDenyOverride() {
+        String userData = "testUserdata1";
+        Long userDataId = 1L;
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(2L);
+        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.denyoverride);
+
+        userVmManagerImpl.finalizeUserData(userData, userDataId, template);
+    }
+
+    @Test
+    public void testUserDataAllowOverride() {
+        String userData = "testUserdata";
+        String templateUserData = "testTemplateUserdata";
+        Long userDataId = 1L;
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(2L);
+        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.allowoverride);
+
+        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
+        doReturn(apiUserDataVO).when(userDataDao).findById(userDataId);
+        when(apiUserDataVO.getUserData()).thenReturn(templateUserData);
+
+        String finalUserdata = userVmManagerImpl.finalizeUserData(userData, userDataId, template);
+
+        Assert.assertEquals(finalUserdata, templateUserData);
+    }
+
+    @Test
+    public void testUserDataAppend() {
+        String userData = "testUserdata";
+        String templateUserData = "testTemplateUserdata";
+        Long userDataId = 1L;
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(2L);
+        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.append);
+
+        UserDataVO templateUserDataVO = Mockito.mock(UserDataVO.class);
+        doReturn(templateUserDataVO).when(userDataDao).findById(2L);
+        when(templateUserDataVO.getUserData()).thenReturn(templateUserData);
+
+        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
+        doReturn(apiUserDataVO).when(userDataDao).findById(userDataId);
+        when(apiUserDataVO.getUserData()).thenReturn(userData);
+
+        String finalUserdata = userVmManagerImpl.finalizeUserData(userData, userDataId, template);
+
+        Assert.assertEquals(finalUserdata, templateUserData+userData);
+    }
+
+    @Test
+    public void testUserDataWithoutTemplate() {
+        String userData = "testUserdata";
+        Long userDataId = 1L;
+
+        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
+        doReturn(apiUserDataVO).when(userDataDao).findById(userDataId);
+        when(apiUserDataVO.getUserData()).thenReturn(userData);
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(null);
+
+        String finalUserdata = userVmManagerImpl.finalizeUserData(userData, userDataId, template);
+
+        Assert.assertEquals(finalUserdata, userData);
+    }
+
+    @Test
+    public void testUserDataAllowOverrideWithoutAPIuserdata() {
+        String templateUserData = "testTemplateUserdata";
+
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(2L);
+        when(template.getUserDataOverridePolicy()).thenReturn(UserData.UserDataOverridePolicy.allowoverride);
+        UserDataVO templateUserDataVO = Mockito.mock(UserDataVO.class);
+        doReturn(templateUserDataVO).when(userDataDao).findById(2L);
+        when(templateUserDataVO.getUserData()).thenReturn(templateUserData);
+
+        String finalUserdata = userVmManagerImpl.finalizeUserData(null, null, template);
+
+        Assert.assertEquals(finalUserdata, templateUserData);
+    }
+
+    @Test
+    public void testUserDataAllowOverrideWithUserdataText() {
+        String userData = "testUserdata";
+        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+        when(template.getUserDataId()).thenReturn(null);
+
+        String finalUserdata = userVmManagerImpl.finalizeUserData(userData, null, template);
+
+        Assert.assertEquals(finalUserdata, userData);
+    }
+
 }

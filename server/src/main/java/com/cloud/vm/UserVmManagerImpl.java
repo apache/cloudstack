@@ -5704,7 +5704,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm.getHypervisorType();
     }
 
-    private String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
+    protected String finalizeUserData(String userData, Long userDataId, VirtualMachineTemplate template) {
         if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }
