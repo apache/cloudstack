@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.test;
+package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.storage.Storage;
 import com.cloud.template.TemplateApiService;
