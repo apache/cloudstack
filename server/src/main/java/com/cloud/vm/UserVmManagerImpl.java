@@ -3130,10 +3130,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
 
-        if (!State.Running.equals(vmInstance.getState())) {
-            throw new InvalidParameterValueException(String.format("The VM %s is not in %s state",
-                    StringUtils.firstNonBlank(vmInstance.getDisplayName(), vmInstance.getName(),
-                            vmInstance.getUuid()), State.Running));
+        if (vmInstance.getState() != State.Running) {
+            throw new InvalidParameterValueException(String.format("The VM %s (%s) is not running, unable to reboot it",
+                    vmInstance.getUuid(), vmInstance.getDisplayNameOrHostName()));
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -5125,8 +5124,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        if (vm.getState()== State.Running) {
-            throw new InvalidParameterValueException("The virtual machine "+ vm.getUuid()+ " ("+ vm.getDisplayName()+ ") is already running");
+        if (vm.getState() == State.Running) {
+            throw new InvalidParameterValueException("The virtual machine " + vm.getUuid() +
+                    " (" + vm.getDisplayNameOrHostName() + ") is already running");
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, vm);
