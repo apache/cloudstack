@@ -110,6 +110,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
 import com.cloud.network.as.AutoScalePolicyVO;
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
@@ -1772,7 +1773,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 List<AutoScaleVmGroupVO> asGroups = _asGroupDao.listAll();
                 for (AutoScaleVmGroupVO asGroup : asGroups) {
                     // check group state
-                    if ((asGroup.getState().equals("enabled")) && (is_native(asGroup.getId()))) {
+                    if ((asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) && (is_native(asGroup.getId()))) {
                         // check minimum vm of group
                         Integer currentVM = _asGroupVmDao.countByGroup(asGroup.getId());
                         if (currentVM < asGroup.getMinMembers()) {

@@ -291,7 +291,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return null;
     }
 
-    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, String currentState, LoadBalancerVO lb) {
+    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState, LoadBalancerVO lb) {
         long lbNetworkId = lb.getNetworkId();
         String lbName = lb.getName();
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyMapList = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(vmGroup.getId());
@@ -349,7 +349,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
-    private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, String currentState) throws ResourceUnavailableException {
+    private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
         LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState, lb);
         /*
          * Regular config like destinations need not be packed for applying
@@ -389,7 +389,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     @DB
-    public boolean configureLbAutoScaleVmGroup(final long vmGroupid, String currentState) throws ResourceUnavailableException {
+    public boolean configureLbAutoScaleVmGroup(final long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
         final AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
         boolean success = false;
 
@@ -397,10 +397,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         FirewallRule.State backupState = loadBalancer.getState();
 
-        if (vmGroup.getState().equals(AutoScaleVmGroup.State_New)) {
+        if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)) {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
-        } else if (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State_Revoke)) {
+        } else if (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State.Revoke)) {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
         }
@@ -422,14 +422,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (success) {
-            if (vmGroup.getState().equals(AutoScaleVmGroup.State_New)) {
+            if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         loadBalancer.setState(FirewallRule.State.Active);
                         s_logger.debug("LB rule " + loadBalancer.getId() + " state is set to Active");
                         _lbDao.persist(loadBalancer);
-                        vmGroup.setState(AutoScaleVmGroup.State_Enabled);
+                        vmGroup.setState(AutoScaleVmGroup.State.Enabled);
                         _autoScaleVmGroupDao.persist(vmGroup);
                         s_logger.debug("LB Auto Scale Vm Group with Id: " + vmGroupid + " is set to Enabled state.");
                     }

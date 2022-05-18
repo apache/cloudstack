@@ -427,7 +427,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         List<AutoScaleVmGroupVO> vmGroupList = _autoScaleVmGroupDao.listByAll(null, profileId);
         for (AutoScaleVmGroupVO vmGroupVO : vmGroupList) {
-            if (physicalParameterUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+            if (physicalParameterUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state");
             }
         }
@@ -743,7 +743,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 continue;
 
             }
-            if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+            if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
             }
             if (policy.getDuration() < vmGroupVO.getInterval()) {
@@ -782,7 +782,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
-            loadBalancer.getDefaultPortStart(), interval, null, cmd.getProfileId(), AutoScaleVmGroup.State_New);
+            loadBalancer.getDefaultPortStart(), interval, null, cmd.getProfileId(), AutoScaleVmGroup.State.New);
 
         if (forDisplay != null) {
             vmGroupVO.setDisplay(forDisplay);
@@ -797,14 +797,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_CREATE, eventDescription = "creating autoscale vm group", async = true)
     public boolean configureAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) throws ResourceUnavailableException {
-        return configureAutoScaleVmGroup(cmd.getEntityId(), AutoScaleVmGroup.State_New);
+        return configureAutoScaleVmGroup(cmd.getEntityId(), AutoScaleVmGroup.State.New);
     }
 
     public boolean isLoadBalancerBasedAutoScaleVmGroup(AutoScaleVmGroup vmGroup) {
         return vmGroup.getLoadBalancerId() != null;
     }
 
-    private boolean configureAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException {
+    private boolean configureAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
         AutoScaleVmGroup vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
 
         if (isLoadBalancerBasedAutoScaleVmGroup(vmGroup)) {
@@ -828,12 +828,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public boolean deleteAutoScaleVmGroup(final long id) {
         AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
 
-        if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State_New)) {
+        if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.New)) {
             /* This condition is for handling failures during creation command */
             return _autoScaleVmGroupDao.remove(id);
         }
-        String bakupState = autoScaleVmGroupVO.getState();
-        autoScaleVmGroupVO.setState(AutoScaleVmGroup.State_Revoke);
+        AutoScaleVmGroup.State bakupState = autoScaleVmGroupVO.getState();
+        autoScaleVmGroupVO.setState(AutoScaleVmGroup.State.Revoke);
         _autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
         boolean success = false;
 
@@ -1013,7 +1013,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || interval != null);
 
-        if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+        if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
         }
 
@@ -1051,16 +1051,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public AutoScaleVmGroup enableAutoScaleVmGroup(Long id) {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
-        if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+        if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.");
         }
 
         try {
-            vmGroup.setState(AutoScaleVmGroup.State_Enabled);
+            vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
-            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State_Disabled);
+            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Disabled);
         } catch (ResourceUnavailableException e) {
-            vmGroup.setState(AutoScaleVmGroup.State_Disabled);
+            vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             _autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {
@@ -1078,16 +1078,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public AutoScaleVmGroup disableAutoScaleVmGroup(Long id) {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
-        if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Enabled)) {
+        if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled state can be disabled.");
         }
 
         try {
-            vmGroup.setState(AutoScaleVmGroup.State_Disabled);
+            vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
-            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State_Enabled);
+            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
         } catch (ResourceUnavailableException e) {
-            vmGroup.setState(AutoScaleVmGroup.State_Enabled);
+            vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             _autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {

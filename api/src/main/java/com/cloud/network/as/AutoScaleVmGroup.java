@@ -19,16 +19,34 @@ package com.cloud.network.as;
 
 import java.util.Date;
 
+import com.cloud.exception.InvalidParameterValueException;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Displayable {
 
-    String State_New = "new";
-    String State_Revoke = "revoke";
-    String State_Enabled = "enabled";
-    String State_Disabled = "disabled";
+    enum State {
+        New, Revoke, Enabled, Disabled;
+
+        public static State fromValue(String state) {
+            if (StringUtils.isBlank(state)) {
+                return null;
+            } else if (state.equalsIgnoreCase("new")) {
+                return New;
+            } else if (state.equalsIgnoreCase("revoke")) {
+                return Revoke;
+            } else if (state.equalsIgnoreCase("enabled")) {
+                return Enabled;
+            } else if (state.equalsIgnoreCase("disabled")) {
+                return Disabled;
+            } else {
+                throw new InvalidParameterValueException("Unexpected AutoScale VM group state : " + state);
+            }
+        }
+    }
 
     @Override
     long getId();
@@ -50,7 +68,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
 
     Date getLastInterval();
 
-    String getState();
+    State getState();
 
     String getUuid();
 

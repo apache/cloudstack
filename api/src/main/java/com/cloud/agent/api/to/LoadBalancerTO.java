@@ -548,11 +548,11 @@ public class LoadBalancerTO {
         private final int interval;
         private final List<AutoScalePolicyTO> policies;
         private final AutoScaleVmProfileTO profile;
-        private final String state;
-        private final String currentState;
+        private final AutoScaleVmGroup.State state;
+        private final AutoScaleVmGroup.State currentState;
 
         AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
-                String state, String currentState) {
+                           AutoScaleVmGroup.State state, AutoScaleVmGroup.State currentState) {
             this.uuid = uuid;
             this.minMembers = minMembers;
             this.maxMembers = maxMembers;
@@ -592,11 +592,11 @@ public class LoadBalancerTO {
             return profile;
         }
 
-        public String getState() {
+        public AutoScaleVmGroup.State getState() {
             return state;
         }
 
-        public String getCurrentState() {
+        public AutoScaleVmGroup.State getCurrentState() {
             return currentState;
         }
     }

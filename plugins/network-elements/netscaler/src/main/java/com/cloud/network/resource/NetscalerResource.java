@@ -115,6 +115,7 @@ import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
@@ -2838,7 +2839,7 @@ public class NetscalerResource implements ServerResource {
         if (!isAutoScaleSupportedInNetScaler()) {
             throw new ExecutionException("AutoScale not supported in this version of NetScaler");
         }
-        if (loadBalancer.isRevoked() || vmGroupTO.getState().equals("revoke")) {
+        if (loadBalancer.isRevoked() || vmGroupTO.getState().equals(AutoScaleVmGroup.State.Revoke)) {
             removeAutoScaleConfig(loadBalancer);
         } else {
             createAutoScaleConfig(loadBalancer);
@@ -2895,10 +2896,10 @@ public class NetscalerResource implements ServerResource {
         }
 
         // Create the autoscale config
-        if (!loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+        if (!loadBalancerTO.getAutoScaleVmGroupTO().getState().equals(AutoScaleVmGroup.State.Disabled)) {
             // on restart of network, there might be vmgrps in disabled state, no need to create autoscale config for them
             enableAutoScaleConfig(loadBalancerTO, false);
-        } else if (loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("disabled")) {
+        } else if (loadBalancerTO.getAutoScaleVmGroupTO().getState().equals(AutoScaleVmGroup.State.Disabled)) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
@@ -2913,7 +2914,7 @@ public class NetscalerResource implements ServerResource {
         final String nsVirtualServerName = generateNSVirtualServerName(srcIp, srcPort);
         final String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
 
-        if (loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
+        if (loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals(AutoScaleVmGroup.State.Enabled)) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
