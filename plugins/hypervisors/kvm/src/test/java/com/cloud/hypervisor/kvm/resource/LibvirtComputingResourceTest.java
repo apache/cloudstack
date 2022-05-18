@@ -60,6 +60,7 @@ import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -372,7 +373,7 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, "/domain/devices/graphics/@type", "vnc");
         assertXpath(domainDoc, "/domain/devices/graphics/@listen", to.getVncAddr());
         assertXpath(domainDoc, "/domain/devices/graphics/@autoport", "yes");
-        assertXpath(domainDoc, "/domain/devices/graphics/@passwd", to.getVncPassword());
+        assertXpath(domainDoc, "/domain/devices/graphics/@passwd", StringUtils.truncate(to.getVncPassword(), 8));
 
         assertXpath(domainDoc, "/domain/devices/console/@type", "pty");
         assertXpath(domainDoc, "/domain/devices/console/target/@port", "0");

@@ -1723,7 +1723,7 @@ public class LibvirtVMDef {
                 graphicBuilder.append(" listen=''");
             }
             if (_passwd != null) {
-                graphicBuilder.append(" passwd='" + _passwd + "'");
+                graphicBuilder.append(" passwd='" + StringUtils.truncate(_passwd, 8) + "'");
             } else if (_keyMap != null) {
                 graphicBuilder.append(" _keymap='" + _keyMap + "'");
             }
