@@ -764,6 +764,9 @@ public class Ipv6ServiceImplTest {
             removedNics.add((Long)invocation.getArguments()[0]);
             return true;
         });
+        PowerMockito.mockStatic(ActionEventUtils.class);
+        Mockito.when(ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
+        PowerMockito.mockStatic(UsageEventUtils.class);
         ipv6Service.removePublicIpv6PlaceholderNics(network);
         Assert.assertEquals(1, removedNics.size());
         Assert.assertEquals(nicId, removedNics.get(0));
