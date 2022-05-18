@@ -1137,8 +1137,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         startWorker = ComponentContext.inject(startWorker);
         if (onCreate) {
             // Start for Kubernetes cluster in 'Created' state
-            Account owner = getOwnerOrCaller(kubernetesCluster);
-            String[] keys = getServiceUserKeys(owner);
+            String[] keys = getServiceUserKeys(kubernetesCluster);
             startWorker.setKeys(keys);
             return startWorker.startKubernetesClusterOnCreate();
         } else {
@@ -1147,16 +1146,9 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
     }
 
-    private Account getOwnerOrCaller(KubernetesClusterVO kubernetesCluster) {
+    private String[] getServiceUserKeys(KubernetesClusterVO kubernetesCluster) {
         Account owner = accountService.getActiveAccountById(kubernetesCluster.getAccountId());
-        if (owner.getType() == Account.Type.PROJECT) {
-            owner = CallContext.current().getCallingAccount();
-        }
-        return owner;
-    }
-
-    private String[] getServiceUserKeys(Account owner) {
-        if (owner == null) {
+        if (owner == null || owner.getType() == Account.Type.PROJECT) {
             owner = CallContext.current().getCallingAccount();
         }
         String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
@@ -1307,8 +1299,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         validateKubernetesClusterScaleParameters(cmd);
 
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
-        Account owner = getOwnerOrCaller(kubernetesCluster);
-        String[] keys = getServiceUserKeys(owner);
+        String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
             new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
                 serviceOfferingDao.findById(cmd.getServiceOfferingId()),
@@ -1331,8 +1322,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         validateKubernetesClusterUpgradeParameters(cmd);
         KubernetesClusterVO kubernetesCluster = kubernetesClusterDao.findById(cmd.getId());
-        Account owner = getOwnerOrCaller(kubernetesCluster);
-        String[] keys = getServiceUserKeys(owner);
+        String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterUpgradeWorker upgradeWorker =
             new KubernetesClusterUpgradeWorker(kubernetesClusterDao.findById(cmd.getId()),
                 kubernetesSupportedVersionDao.findById(cmd.getKubernetesVersionId()), this, keys);
