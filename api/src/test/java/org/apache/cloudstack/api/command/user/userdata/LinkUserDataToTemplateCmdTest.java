@@ -24,7 +24,6 @@ import com.cloud.user.Account;
 import com.cloud.user.UserData;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.command.user.userdata.LinkUserDataToTemplateCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
