@@ -905,6 +905,8 @@ public class ApiConstants {
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";
+    public static final String LOGIN = "login";
+    public static final String LOGOUT = "logout";
 
     public enum BootType {
         UEFI, BIOS;
