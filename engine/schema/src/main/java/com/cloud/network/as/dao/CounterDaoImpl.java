@@ -42,7 +42,7 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
     }
 
     @Override
-    public List<CounterVO> listCounters(Long id, String name, String source, String keyword, Filter filter) {
+    public List<CounterVO> listCounters(Long id, String name, String source, String provider, String keyword, Filter filter) {
         SearchCriteria<CounterVO> sc = AllFieldsSearch.create();
 
         if (keyword != null) {
@@ -61,6 +61,9 @@ public class CounterDaoImpl extends GenericDaoBase<CounterVO, Long> implements C
 
         if (source != null) {
             sc.addAnd("source", SearchCriteria.Op.EQ, source);
+        }
+        if (provider != null) {
+            sc.addAnd("provider", SearchCriteria.Op.EQ, provider);
         }
         return listBy(sc, filter);
     }

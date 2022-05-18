@@ -26,7 +26,8 @@ public interface Counter extends InternalIdentity, Identity {
         netscaler,
         snmp,
         cpu,
-        memory
+        memory,
+        cloudstack
     }
 
     String getName();
@@ -34,5 +35,7 @@ public interface Counter extends InternalIdentity, Identity {
     String getValue();
 
     Source getSource();
+
+    String getProvider();
 
 }

@@ -3291,6 +3291,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSource(counter.getSource().toString());
         response.setName(counter.getName());
         response.setValue(counter.getValue());
+        response.setProvider(counter.getProvider());
         response.setObjectName("counter");
         return response;
     }

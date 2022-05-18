@@ -76,6 +76,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
@@ -1112,10 +1113,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("The Source " + source + " does not exist; Unable to create Counter");
         }
 
+        // Validate Provider
+        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());;
+        if (provider == null) {
+            throw new InvalidParameterValueException("The Provider " + cmd.getProvider() + " does not exist; Unable to create Counter");
+        }
+
         CounterVO counter = null;
 
         s_logger.debug("Adding Counter " + name);
-        counter = _counterDao.persist(new CounterVO(src, name, cmd.getValue()));
+        counter = _counterDao.persist(new CounterVO(src, name, cmd.getValue(), provider));
 
         CallContext.current().setEventDetails(" Id: " + counter.getId() + " Name: " + name);
         return counter;
@@ -1156,12 +1163,21 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         String name = cmd.getName();
         Long id = cmd.getId();
         String source = cmd.getSource();
-        if (source != null)
+        if (source != null) {
             source = source.toLowerCase();
+        }
+        String providerStr = cmd.getProvider();
+        if (providerStr != null) {
+            Network.Provider provider = Network.Provider.getProvider(providerStr);
+            if (provider == null) {
+                throw new InvalidParameterValueException("The Provider " + providerStr + " does not exist; Unable to list Counter");
+            }
+            providerStr = provider.getName();
+        }
 
         Filter searchFilter = new Filter(CounterVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        List<CounterVO> counters = _counterDao.listCounters(id, name, source, cmd.getKeyword(), searchFilter);
+        List<CounterVO> counters = _counterDao.listCounters(id, name, source, providerStr, cmd.getKeyword(), searchFilter);
 
         return counters;
     }
