@@ -3130,8 +3130,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
 
-        if (!vmInstance.getState().equals(State.Running)) {
-            throw new InvalidParameterValueException("The VM with id " + vmInstance.getUuid() + " is not in Running state");
+        if (!State.Running.equals(vmInstance.getState())) {
+            throw new InvalidParameterValueException(String.format("The VM %s is not in %s state",
+                    StringUtils.firstNonBlank(vmInstance.getDisplayName(), vmInstance.getName(),
+                            vmInstance.getUuid()), State.Running));
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
