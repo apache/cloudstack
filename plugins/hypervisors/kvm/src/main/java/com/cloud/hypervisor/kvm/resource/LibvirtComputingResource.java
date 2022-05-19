@@ -2955,17 +2955,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean isIoUringSupportedByQemu() {
         s_logger.debug("Checking if iouring is supported");
         String command = getIoUringCheckCommand();
+        if (org.apache.commons.lang3.StringUtils.isBlank(command)) {
+            return false;
+        }
         int exitValue = executeBashScriptAndRetrieveExitValue(command);
         return exitValue == 0;
     }
 
     protected String getIoUringCheckCommand() {
-        String qemuPath = "/usr/bin/qemu-system-x86_64";
-        File file = new File(qemuPath);
-        if (!file.exists()) {
-            qemuPath = "/usr/libexec/qemu-kvm";
+        String[] qemuPaths = {"/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm" };
+        for (String qemuPath : qemuPaths) {
+            File file = new File(qemuPath);
+            if (file.exists()) {
+                return String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+            }
         }
-        return String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+        return null;
     }
 
     /**
