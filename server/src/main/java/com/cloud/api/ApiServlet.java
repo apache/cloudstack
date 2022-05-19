@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
@@ -66,6 +67,7 @@ public class ApiServlet extends HttpServlet {
     private final static List<String> s_clientAddressHeaders = Collections
             .unmodifiableList(Arrays.asList("X-Forwarded-For",
                     "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
+    public static final String REPLACEMENT = "_";
 
     @Inject
     ApiServerService apiServer;
@@ -79,6 +81,7 @@ public class ApiServlet extends HttpServlet {
     APIAuthenticationManager authManager;
     @Inject
     private ProjectDao projectDao;
+    private final static String LOG_REPLACEMENTS = "[\n\r\t]";
 
     public ApiServlet() {
     }
@@ -206,11 +209,11 @@ public class ApiServlet extends HttpServlet {
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("command %s processing for user \"%s\"", command, username.replaceAll("[\n\r\t]", "_")));
+                s_logger.trace(String.format("command %s processing for user \"%s\"",
+                        saveLogString(command),
+                        saveLogString(username)));
             }
 
-            List<String> loglessAPIs = Arrays.asList(ApiConstants.LOGOUT, ApiConstants.LIST_IDPS,
-                    "cloudianIsEnabled", "listLdapConfigurations", "listZones", "listApis", "listCapabilities" );
             if (command != null) {
 
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
@@ -238,7 +241,7 @@ public class ApiServlet extends HttpServlet {
                     try {
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace(String.format("apiAuthenticator.authenticate(%s, params[%d], %s, %s, %s, %s, %s,%s)",
-                                    command, params.size(), session, remoteAddress, responseType, auditTrailSb, req, resp));
+                                    saveLogString(command), params.size(), session.getId(), remoteAddress.getHostAddress(), saveLogString(responseType), "auditTrailSb", "req", "resp"));
                         }
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
@@ -277,9 +280,7 @@ public class ApiServlet extends HttpServlet {
                     return;
                 }
             } else {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("no command available"));
-                }
+                s_logger.trace("no command available");
             }
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
@@ -351,6 +352,11 @@ public class ApiServlet extends HttpServlet {
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
         }
+    }
+
+    @Nullable
+    private Object saveLogString(String stringToLog) {
+        return stringToLog == null ? null : stringToLog.replace(LOG_REPLACEMENTS, REPLACEMENT);
     }
 
     /**
