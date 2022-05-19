@@ -57,9 +57,9 @@ public class AgentProperties{
     /**
      * Enable manually IO driver on KVM's VM. <br>
      * Data type: boolean.<br>
-     * Default value: true.
+     * Default value: false.
      */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", true);
+    public static final Property<Boolean> ENABLE_IO_URING = new Property<>("enable.io.uring", false);
 
     public static class Property <T>{
         private final String name;
