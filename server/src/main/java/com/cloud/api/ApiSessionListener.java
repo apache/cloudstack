@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @WebListener
 public class ApiSessionListener implements HttpSessionListener {
     public static final Logger LOGGER = Logger.getLogger(ApiSessionListener.class.getName());
-    private static Map<HttpSession, Object> sessions = new ConcurrentHashMap<>();
+    private static Map<String, HttpSession> sessions = new ConcurrentHashMap<>();
 
     /**
      * @return the internal adminstered session count
@@ -50,7 +50,7 @@ public class ApiSessionListener implements HttpSessionListener {
         }
         synchronized (this) {
             HttpSession session = event.getSession();
-            sessions.put(session, event.getSource());
+            sessions.put(session.getId(), event.getSession());
         }
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Sessions count: " + getSessionCount());
@@ -62,7 +62,7 @@ public class ApiSessionListener implements HttpSessionListener {
             LOGGER.debug("Session destroyed by Id : " + event.getSession().getId() + " , session: " + event.getSession().toString() + " , source: " + event.getSource().toString() + " , event: " + event.toString());
         }
         synchronized (this) {
-            sessions.remove(event.getSession());
+            sessions.remove(event.getSession().getId());
         }
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace("Sessions count: " + getSessionCount());
