@@ -2950,10 +2950,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * Check if IO_URING is available on the host
+     * Check if IO_URING is supported by qemu
      */
-    protected boolean isIoUringEnabled() {
-        s_logger.debug("Checking if iouring is enabled on the host");
+    protected boolean isIoUringSupportedByQemu() {
+        s_logger.debug("Checking if iouring is supported");
         String hostOsKey = "Host.OS";
         Map<String, String> versionStrings = getVersionStrings();
         if (MapUtils.isEmpty(versionStrings) || !versionStrings.containsKey(hostOsKey)) {
@@ -2978,6 +2978,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 && isIoUringEnabled()) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
+    }
+
+    /**
+     * IO_URING supported if it is supported by qemu AND the property 'enable.io.uring' is set to true
+     */
+    private boolean isIoUringEnabled() {
+        return isIoUringSupportedByQemu() && AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
