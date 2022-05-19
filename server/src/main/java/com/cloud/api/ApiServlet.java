@@ -206,7 +206,7 @@ public class ApiServlet extends HttpServlet {
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("command %s processing for user \"%s\"", command, username));
+                s_logger.trace(String.format("command %s processing for user \"%s\"", command, username.replaceAll("[\n\r\t]", "_")));
             }
 
             List<String> loglessAPIs = Arrays.asList(ApiConstants.LOGOUT, ApiConstants.LIST_IDPS,
@@ -237,8 +237,8 @@ public class ApiServlet extends HttpServlet {
 
                     try {
                         if (s_logger.isTraceEnabled()) {
-                            s_logger.trace(String.format("apiAuthenticator.authenticate(%s, %s, %s, %s, %s, %s, %s,%s)",
-                                    command, params, session, remoteAddress, responseType, auditTrailSb, req, resp));
+                            s_logger.trace(String.format("apiAuthenticator.authenticate(%s, params[%d], %s, %s, %s, %s, %s,%s)",
+                                    command, params.size(), session, remoteAddress, responseType, auditTrailSb, req, resp));
                         }
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
@@ -311,8 +311,8 @@ public class ApiServlet extends HttpServlet {
             }
             setProjectContext(params);
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("verifying request for user %s from %s with params %s",
-                        userId, remoteAddress.getHostAddress(), org.apache.commons.lang3.StringUtils.join(params)));
+                s_logger.trace(String.format("verifying request for user %s from %s with %d parameters",
+                        userId, remoteAddress.getHostAddress(), params.size()));
             }
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
