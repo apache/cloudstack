@@ -98,7 +98,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> ParentTemplateIdSearch;
     private SearchBuilder<VMTemplateVO> InactiveUnremovedTmpltSearch;
     private SearchBuilder<VMTemplateVO> LatestTemplateByHypervisorTypeSearch;
-
+    private SearchBuilder<VMTemplateVO> UserDataSearch;
     @Inject
     ResourceTagDao _tagsDao;
 
@@ -422,6 +422,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         InactiveUnremovedTmpltSearch.and("removed", InactiveUnremovedTmpltSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         InactiveUnremovedTmpltSearch.done();
 
+        UserDataSearch = createSearchBuilder();
+        UserDataSearch.and("userDataId", UserDataSearch.entity().getUserDataId(), SearchCriteria.Op.EQ);
+        UserDataSearch.done();
+
         return result;
     }
 
@@ -629,7 +633,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-     public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states) {
+    public List<VMTemplateVO> listUnRemovedTemplatesByStates(VirtualMachineTemplate.State ...states) {
         SearchCriteria<VMTemplateVO> sc = InactiveUnremovedTmpltSearch.create();
         sc.setParameters("state", (Object[]) states);
         return listBy(sc);
@@ -637,7 +641,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
     @Override
     public List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId) {
-        SearchCriteria<VMTemplateVO> sc = PublicSearch.create();
+        SearchCriteria<VMTemplateVO> sc = UserDataSearch.create();
         sc.setParameters("userDataId", userdataId);
         return listBy(sc);
     }
