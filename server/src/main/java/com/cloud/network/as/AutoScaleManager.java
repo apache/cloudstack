@@ -16,7 +16,15 @@
 // under the License.
 package com.cloud.network.as;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 public interface AutoScaleManager extends AutoScaleService {
+
+    ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>("Advanced", Integer.class,
+            "autoscale.stats.interval",
+            "0",
+            "The interval (in milliseconds) when VM auto scaling stats retrieved from agents and/or other resources. Less than 1 means disabled.",
+            false);
 
     void cleanUpAutoScaleResources(Long accountId);
 
