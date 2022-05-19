@@ -403,7 +403,7 @@
         ref="listview"
         @update-selected-columns="updateSelectedColumns"
         @selection-change="onRowSelectionChange"
-        @refresh="this.fetchData"
+        @refresh="fetchData"
         @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
       <a-pagination
         class="row-element"
