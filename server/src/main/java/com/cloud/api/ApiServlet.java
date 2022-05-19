@@ -67,7 +67,8 @@ public class ApiServlet extends HttpServlet {
     private final static List<String> s_clientAddressHeaders = Collections
             .unmodifiableList(Arrays.asList("X-Forwarded-For",
                     "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
-    public static final String REPLACEMENT = "_";
+    private static final String REPLACEMENT = "_";
+    private static final String LOG_REPLACEMENTS = "[\n\r\t]";
 
     @Inject
     ApiServerService apiServer;
@@ -81,7 +82,6 @@ public class ApiServlet extends HttpServlet {
     APIAuthenticationManager authManager;
     @Inject
     private ProjectDao projectDao;
-    private final static String LOG_REPLACEMENTS = "[\n\r\t]";
 
     public ApiServlet() {
     }
@@ -209,9 +209,11 @@ public class ApiServlet extends HttpServlet {
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (s_logger.isTraceEnabled()) {
+                String logCommand = saveLogString(command);
+                String logName = saveLogString(username);
                 s_logger.trace(String.format("command %s processing for user \"%s\"",
-                        saveLogString(command),
-                        saveLogString(username)));
+                        logCommand,
+                        logName));
             }
 
             if (command != null) {
@@ -355,7 +357,7 @@ public class ApiServlet extends HttpServlet {
     }
 
     @Nullable
-    private Object saveLogString(String stringToLog) {
+    private String saveLogString(String stringToLog) {
         return stringToLog == null ? null : stringToLog.replace(LOG_REPLACEMENTS, REPLACEMENT);
     }
 
