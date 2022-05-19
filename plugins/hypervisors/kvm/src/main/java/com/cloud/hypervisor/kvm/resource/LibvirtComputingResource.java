@@ -2950,6 +2950,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
+     * Check if IO_URING is available on the host
+     */
+    protected boolean isIoUringEnabled() {
+        s_logger.debug("Checking if iouring is enabled on the host");
+        String hostOsKey = "Host.OS";
+        Map<String, String> versionStrings = getVersionStrings();
+        if (MapUtils.isEmpty(versionStrings) || !versionStrings.containsKey(hostOsKey)) {
+            return false;
+        }
+        String os = versionStrings.get(hostOsKey);
+        String qemuBinary = os.equalsIgnoreCase("ubuntu") ? "/usr/bin/qemu-system-x86_64" : "/usr/libexec/qemu-kvm";
+        String command = String.format("ldd %s | grep -i uring", qemuBinary);
+        String result = executeBashScript(command);
+        return StringUtils.isNotBlank(result) && result.contains("liburing");
+    }
+
+    /**
      * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
      * IO Driver works for:
      * (i) Qemu >= 5.0;
@@ -2958,7 +2975,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected void setDiskIoDriver(DiskDef disk) {
         if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
                 && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING
-                && AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING)) {
+                && isIoUringEnabled()) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
     }
