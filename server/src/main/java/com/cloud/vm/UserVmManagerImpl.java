@@ -2979,7 +2979,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
 
-            if (vm.getHostName().equalsIgnoreCase(hostName)) {
+            if (vm.getHostName().equals(hostName)) {
                 s_logger.debug("Vm " + vm + " is already set with the hostName specified: " + hostName);
                 hostName = null;
             }
@@ -4279,11 +4279,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.details.putAll(details);
                 }
 
-                if (sshPublicKeys != "") {
+                if (StringUtils.isNotBlank(sshPublicKeys)) {
                     vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKeys);
                 }
 
-                if (sshkeypairs != "") {
+                if (StringUtils.isNotBlank(sshkeypairs)) {
                     vm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, sshkeypairs);
                 }
 
