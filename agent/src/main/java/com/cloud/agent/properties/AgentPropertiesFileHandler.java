@@ -56,24 +56,23 @@ public class AgentPropertiesFileHandler {
             String configValue = PropertiesUtil.loadFromFile(agentPropertiesFile).getProperty(name);
             if (StringUtils.isBlank(configValue)) {
                 logger.debug(String.format("Property [%s] has empty or null value. Using default value [%s].", name, defaultValue));
-
                 return defaultValue;
-                }
+            }
 
             if (defaultValue instanceof Integer) {
                 ConvertUtils.register(new IntegerConverter(defaultValue), Integer.class);
-                }
+            }
 
             if (defaultValue instanceof Long) {
                 ConvertUtils.register(new LongConverter(defaultValue), Long.class);
-                }
+            }
 
             logger.debug(String.format("Property [%s] was altered. Now using the value [%s].", name, configValue));
             return (T)ConvertUtils.convert(configValue, property.getTypeClass());
 
-            } catch (IOException ex) {
-                logger.debug(String.format("Failed to get property [%s]. Using default value [%s].", name, defaultValue), ex);
-            }
+        } catch (IOException ex) {
+            logger.debug(String.format("Failed to get property [%s]. Using default value [%s].", name, defaultValue), ex);
+        }
 
         return defaultValue;
     }

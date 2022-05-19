@@ -963,11 +963,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _videoRam = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_VIDEO_RAM);
 
         // Reserve 1GB unless admin overrides
-        _dom0MinMem = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB) * 1024 * 1024L;
+        _dom0MinMem = ByteScaleUtils.mibToBytes((long) AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
 
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
-        _dom0OvercommitMem = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB) * 1024 * 1024L;
+        _dom0OvercommitMem = ByteScaleUtils.mibToBytes((long) AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB));
 
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVMCLOCK_DISABLE)) {
             _noKvmClock = true;
