@@ -639,7 +639,7 @@ export default {
 :deep(.ant-tree) {
   .ant-tree-treenode {
     .ant-tree-node-content-wrapper {
-      margin-left: -2px;
+      margin-left: 0;
       margin-bottom: 2px;
 
       &:before {
