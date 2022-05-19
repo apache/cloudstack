@@ -1009,6 +1009,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _localStoragePath = "/var/lib/libvirt/images/";
         }
 
+        enableSSLForKvmAgent(params);
+
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
         _qemuSocketsPath = new File("/var/lib/libvirt/qemu");
         String _qemuSocketsPathVar = (String)params.get("qemu.sockets.path");
@@ -1289,6 +1291,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    private void enableSSLForKvmAgent(final Map<String, Object> params) {
+        final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
+        if (keyStoreFile == null) {
+            s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        String keystorePass = (String)params.get(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+        if (StringUtils.isBlank(keystorePass)) {
+            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        if (keyStoreFile.exists() && !keyStoreFile.isDirectory()) {
+            System.setProperty("javax.net.ssl.trustStore", keyStoreFile.getAbsolutePath());
+            System.setProperty("javax.net.ssl.trustStorePassword", keystorePass);
+        }
     }
 
     public boolean configureHostParams(final Map<String, String> params) {
