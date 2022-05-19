@@ -2956,6 +2956,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("Checking if iouring is supported");
         String command = getIoUringCheckCommand();
         if (org.apache.commons.lang3.StringUtils.isBlank(command)) {
+            s_logger.debug("Could not check iouring support, disabling it");
             return false;
         }
         int exitValue = executeBashScriptAndRetrieveExitValue(command);
@@ -2963,11 +2964,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String getIoUringCheckCommand() {
-        String[] qemuPaths = {"/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm" };
+        String[] qemuPaths = {"/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm", "/usr/bin/qemu-kvm" };
         for (String qemuPath : qemuPaths) {
             File file = new File(qemuPath);
             if (file.exists()) {
-                return String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+                String cmd = String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+                s_logger.debug("Using the check command: " + cmd);
+                return cmd;
             }
         }
         return null;
