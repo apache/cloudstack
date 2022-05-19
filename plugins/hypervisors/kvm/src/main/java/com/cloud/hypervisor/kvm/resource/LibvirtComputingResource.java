@@ -2960,10 +2960,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         String os = versionStrings.get(hostOsKey);
-        String qemuBinary = os.equalsIgnoreCase("ubuntu") ? "/usr/bin/qemu-system-x86_64" : "/usr/libexec/qemu-kvm";
-        String command = String.format("ldd %s | grep -i uring", qemuBinary);
-        String result = executeBashScript(command);
-        return StringUtils.isNotBlank(result) && result.contains("liburing");
+        if (org.apache.commons.lang3.StringUtils.isBlank(os)) {
+            return false;
+        }
+        if (os.equalsIgnoreCase("ubuntu")) {
+            // Enabled by default on ubuntu
+            return true;
+        }
+        String qemuBinary = os.toLowerCase().contains("suse") ? "/usr/bin/qemu-kvm" : "/usr/libexec/qemu-kvm";
+        String command = String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuBinary);
+        int exitValue = executeBashScriptAndRetrieveExitValue(command);
+        return exitValue == 0;
     }
 
     /**
@@ -3850,10 +3857,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private String executeBashScript(final String script) {
+        return createScript(script).execute();
+    }
+
+    private Script createScript(final String script) {
         final Script command = new Script("/bin/bash", _timeout, s_logger);
         command.add("-c");
         command.add(script);
-        return command.execute();
+        return command;
+    }
+
+    private int executeBashScriptAndRetrieveExitValue(final String script) {
+        Script command = createScript(script);
+        command.execute();
+        return command.getExitValue();
     }
 
     public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {
