@@ -229,23 +229,6 @@
           </span>
         </template>
       </template>
-      <!-- <div
-        v-for="(value, name) in thresholdMapping"
-        :key="name">
-        <template v-if="column.key === name">
-          <span>
-            <span v-if="record[value.disable]" class="alert-disable-threshold">
-              {{ text }}
-            </span>
-            <span v-else-if="record[value.notification]" class="alert-notification-threshold">
-              {{ text }}
-            </span>
-            <span style="padding: 10%;" v-else>
-              {{ text }}
-            </span>
-          </span>
-        </template>
-      </div> -->
 
       <template v-if="column.key === 'level'">
         <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
