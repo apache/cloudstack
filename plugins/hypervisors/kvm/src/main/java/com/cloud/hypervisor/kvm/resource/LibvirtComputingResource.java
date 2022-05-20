@@ -313,7 +313,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
     public final static String CONFIG_DIR = "config";
-    private Boolean enableIoUring;
+    private boolean enableIoUring;
     private final static String ENABLE_IO_URING_PROPERTY = "enable.io.uring";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
@@ -820,9 +820,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
-        if (enableIoUringConfig != null) {
-            enableIoUring = Boolean.parseBoolean(enableIoUringConfig);
-        }
+        enableIoUring = isIoUringEnabled(enableIoUringConfig);
 
         cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
         if (org.apache.commons.lang.StringUtils.isBlank(cachePath)) {
@@ -2990,9 +2988,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * (ii) Libvirt >= 6.3.0
      */
     protected void setDiskIoDriver(DiskDef disk) {
-        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
-                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING
-                && isIoUringEnabled()) {
+        if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
     }
@@ -3000,8 +2996,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
-    private boolean isIoUringEnabled() {
-        return enableIoUring != null ? enableIoUring: (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+    private boolean isIoUringEnabled(String enableIoUringConfig) {
+        boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
+                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
+        if (!meetRequirements) {
+            return false;
+        }
+        return enableIoUringConfig != null ?
+                Boolean.parseBoolean(enableIoUringConfig):
+                (isBaseOsUbuntu() || isIoUringSupportedByQemu());
     }
 
     private boolean isBaseOsUbuntu() {
