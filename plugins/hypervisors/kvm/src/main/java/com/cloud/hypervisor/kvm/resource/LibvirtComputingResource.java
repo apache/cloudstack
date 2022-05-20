@@ -2964,7 +2964,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected String getIoUringCheckCommand() {
-        String[] qemuPaths = {"/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm", "/usr/bin/qemu-kvm" };
+        String[] qemuPaths = { "/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm", "/usr/bin/qemu-kvm" };
         for (String qemuPath : qemuPaths) {
             File file = new File(qemuPath);
             if (file.exists()) {
@@ -2991,10 +2991,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-     * IO_URING supported if it is supported by qemu AND the property 'enable.io.uring' is set to true
+     * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
     private boolean isIoUringEnabled() {
-        return isIoUringSupportedByQemu() && AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
+        Boolean propertyValue = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
+        return BooleanUtils.isTrue(propertyValue) || isBaseOsUbuntu() || isIoUringSupportedByQemu();
+    }
+
+    private boolean isBaseOsUbuntu() {
+        Map<String, String> versionString = getVersionStrings();
+        if (MapUtils.isEmpty(versionString) || !versionString.containsKey("Host.OS") || versionString.get("Host.OS") == null) {
+            return false;
+        }
+        return versionString.get("Host.OS").equalsIgnoreCase("ubuntu");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
