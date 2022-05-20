@@ -22,7 +22,9 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface UserData extends ControlledEntity, InternalIdentity, Identity {
 
-    public enum UserDataOverridePolicy { allowoverride, append, denyoverride }
+    public enum UserDataOverridePolicy {
+        allowoverride, append, denyoverride
+    }
 
     String getUserData();
 

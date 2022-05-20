@@ -43,10 +43,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
-    @Column(name = "user_data_id", nullable = true, length = 17)
+    @Column(name = "user_data_id", nullable = true)
     private Long userDataId = null;
 
-    @Column(name = "user_data_details", updatable = true)
+    @Column(name = "user_data_details", updatable = true, length = 4096)
     private String userDataDetails;
 
     @Column(name = "display_name", updatable = true, nullable = true)

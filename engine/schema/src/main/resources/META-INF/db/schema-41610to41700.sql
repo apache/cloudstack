@@ -932,8 +932,7 @@ CREATE VIEW `cloud`.`event_view` AS
         `cloud`.`projects` ON projects.project_account_id = event.account_id
             LEFT JOIN
         `cloud`.`event` eve ON event.start_id = eve.id;
--- PR#5984 Update name for global configuration vm.stats.increment.metrics
-Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+
 CREATE TABLE `cloud`.`user_data` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL COMMENT 'UUID of the user data',

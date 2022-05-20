@@ -424,6 +424,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         UserDataSearch = createSearchBuilder();
         UserDataSearch.and("userDataId", UserDataSearch.entity().getUserDataId(), SearchCriteria.Op.EQ);
+        UserDataSearch.and("state", UserDataSearch.entity().getState(), SearchCriteria.Op.EQ);
         UserDataSearch.done();
 
         return result;
@@ -643,6 +644,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     public List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId) {
         SearchCriteria<VMTemplateVO> sc = UserDataSearch.create();
         sc.setParameters("userDataId", userdataId);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
         return listBy(sc);
     }
 

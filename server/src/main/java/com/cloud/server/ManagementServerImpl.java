@@ -4563,7 +4563,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private void checkForUserData(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
         final UserDataVO userData = _userDataDao.findByUserData(owner.getAccountId(), owner.getDomainId(), cmd.getUserData());
         if (userData != null) {
-            throw new InvalidParameterValueException("A userdata with same content already exists for this account.");
+            throw new InvalidParameterValueException(String.format("Userdata %s with same content already exists for this account.", userData.getName()));
         }
     }
 

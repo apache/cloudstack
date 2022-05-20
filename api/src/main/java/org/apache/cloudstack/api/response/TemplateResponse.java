@@ -227,16 +227,16 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata linked to this template", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata linked to this template", since = "4.18.0")
     private String userDataId;
 
-    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata linked to this template", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata linked to this template", since = "4.18.0")
     private String userDataName;
 
-    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
     private String userDataPolicy;
 
-    @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
     private String userDataParams;
 
     public TemplateResponse() {

@@ -44,7 +44,7 @@ public class DeleteUserDataCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, entityType = UserDataResponse.class, description = "the ID of the Userdata")
     private Long id;
 
     //Owner information

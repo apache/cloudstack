@@ -33,8 +33,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.log4j.Logger;
 
-@APICommand(name = "linkUserDataToTemplate", description = "Links a userdata to a template.", responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "linkUserDataToTemplate", description = "Link or unlink a userdata to a template.", responseObject = TemplateResponse.class, responseView = ResponseObject.ResponseView.Restricted,
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     public static final Logger s_logger = Logger.getLogger(LinkUserDataToTemplateCmd.class.getName());
 
@@ -54,7 +54,6 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,
-            required = true,
             description = "the ID of the userdata that has to be linked to template")
     private Long userdataId;
 
@@ -79,7 +78,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
         if (userdataPolicy == null) {
             return UserData.UserDataOverridePolicy.allowoverride;
         }
-        return UserData.UserDataOverridePolicy.valueOf(userdataPolicy);
+        return UserData.UserDataOverridePolicy.valueOf(userdataPolicy.toLowerCase());
     }
 
     @Override

@@ -16,8 +16,10 @@
 // under the License.
 package com.cloud.user;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -49,10 +51,11 @@ public class UserDataVO implements UserData {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "user_data")
+    @Column(name = "user_data", updatable = true, length = 1048576)
+    @Basic(fetch = FetchType.LAZY)
     private String userData;
 
-    @Column(name = "params")
+    @Column(name = "params", length = 4096)
     private String params;
 
     @Override

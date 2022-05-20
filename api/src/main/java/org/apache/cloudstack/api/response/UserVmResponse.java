@@ -336,16 +336,16 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string containing the user data", since = "4.18.0.0")
     private String userData;
 
-    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_ID) @Param(description="the id of userdata used for the VM", since = "4.18.0")
     private String userDataId;
 
-    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_NAME) @Param(description="the name of userdata used for the VM", since = "4.18.0")
     private String userDataName;
 
-    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_POLICY) @Param(description="the userdata override policy with the userdata provided while deploying VM", since = "4.18.0")
     private String userDataPolicy;
 
-    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0.0")
+    @SerializedName(ApiConstants.USER_DATA_DETAILS) @Param(description="list of variables and values for the variables declared in userdata", since = "4.18.0")
     private String userDataDetails;
 
     public UserVmResponse() {
