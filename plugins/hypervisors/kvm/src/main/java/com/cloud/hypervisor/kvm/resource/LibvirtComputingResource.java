@@ -819,6 +819,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
+        // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
         String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
         enableIoUring = isIoUringEnabled(enableIoUringConfig);
 
