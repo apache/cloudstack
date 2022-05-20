@@ -19,6 +19,7 @@ package com.cloud.network.as;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -247,7 +248,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     private boolean isAutoScaleScaleUpPolicy(AutoScalePolicy policyVO) {
-        return policyVO.getAction().equals("scaleup");
+        return policyVO.getAction().equals(AutoScalePolicy.Action.ScaleUp);
     }
 
     private List<AutoScalePolicyVO> getAutoScalePolicies(String paramName, List<Long> policyIds, List<Counter> counters, int interval, boolean scaleUpPolicies) {
@@ -569,12 +570,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             quietTime = NetUtils.DEFAULT_AUTOSCALE_POLICY_QUIET_TIME;
         }
 
-        action = action.toLowerCase();
-        if (!NetUtils.isValidAutoScaleAction(action)) {
-            throw new InvalidParameterValueException("action is invalid, only 'scaleup' and 'scaledown' is supported");
+        AutoScalePolicy.Action scaleAction = AutoScalePolicy.Action.fromValue(action);
+        if (scaleAction == null) {
+            throw new InvalidParameterValueException("action is invalid. Supported actions are: " + Arrays.toString(AutoScalePolicy.Action.values()));
         }
 
-        AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, null, action);
+        AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, null, scaleAction);
 
         policyVO = checkValidityAndPersist(policyVO, cmd.getConditionIds());
         s_logger.info("Successfully created AutoScale Policy with Id: " + policyVO.getId());
@@ -680,6 +681,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long conditionId = cmd.getConditionId();
         String action = cmd.getAction();
         Long vmGroupId = cmd.getVmGroupId();
+
+        if (action != null) {
+            AutoScalePolicy.Action scaleAction = AutoScalePolicy.Action.fromValue(action);
+            if (scaleAction == null) {
+                throw new InvalidParameterValueException("action is invalid. Supported actions are: " + Arrays.toString(AutoScalePolicy.Action.values()));
+            }
+        }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("action", sb.entity().getAction(), SearchCriteria.Op.EQ);
@@ -1483,7 +1491,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
                         AutoScalePolicyVO vo = _autoScalePolicyDao
                             .findById(GroupPolicyVO.getPolicyId());
-                        if (vo.getAction().equals("scaleup")) {
+                        if (vo.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
                             vo.setLastQuiteTime(new Date());
                             _autoScalePolicyDao.persist(vo);
                             break;
@@ -1521,7 +1529,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
             for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
                 AutoScalePolicyVO vo = _autoScalePolicyDao.findById(GroupPolicyVO.getPolicyId());
-                if (vo.getAction().equals("scaledown")) {
+                if (vo.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
                     vo.setLastQuiteTime(new Date());
                     _autoScalePolicyDao.persist(vo);
                     break;

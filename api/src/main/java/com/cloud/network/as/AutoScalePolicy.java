@@ -19,10 +19,29 @@ package com.cloud.network.as;
 
 import java.util.Date;
 
+import com.cloud.exception.InvalidParameterValueException;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
+
+    enum Action {
+        ScaleUp, ScaleDown;
+
+        public static Action fromValue(String action) {
+            if (StringUtils.isBlank(action)) {
+                return null;
+            } else if (action.equalsIgnoreCase("ScaleUp")) {
+                return ScaleUp;
+            } else if (action.equalsIgnoreCase("ScaleDown")) {
+                return ScaleDown;
+            } else {
+                throw new InvalidParameterValueException("Unexpected AutoScale action : " + action);
+            }
+        }
+    }
 
     @Override
     long getId();
@@ -35,6 +54,6 @@ public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
     public Date getLastQuiteTime();
 
-    public String getAction();
+    public Action getAction();
 
 }

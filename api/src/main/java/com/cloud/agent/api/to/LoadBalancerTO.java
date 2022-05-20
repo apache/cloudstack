@@ -420,11 +420,11 @@ public class LoadBalancerTO {
         private final long id;
         private final int duration;
         private final int quietTime;
-        private String action;
+        private AutoScalePolicy.Action action;
         boolean revoked;
         private final List<ConditionTO> conditions;
 
-        public AutoScalePolicyTO(long id, int duration, int quietTime, String action, List<ConditionTO> conditions, boolean revoked) {
+        public AutoScalePolicyTO(long id, int duration, int quietTime, AutoScalePolicy.Action action, List<ConditionTO> conditions, boolean revoked) {
             this.id = id;
             this.duration = duration;
             this.quietTime = quietTime;
@@ -445,7 +445,7 @@ public class LoadBalancerTO {
             return quietTime;
         }
 
-        public String getAction() {
+        public AutoScalePolicy.Action getAction() {
             return action;
         }
 

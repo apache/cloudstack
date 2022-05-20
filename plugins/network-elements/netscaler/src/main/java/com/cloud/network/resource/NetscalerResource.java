@@ -115,6 +115,7 @@ import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -3512,11 +3513,11 @@ public class NetscalerResource implements ServerResource {
     }
 
     private boolean isScaleUpPolicy(final AutoScalePolicyTO autoScalePolicyTO) {
-        return autoScalePolicyTO.getAction().equals("scaleup");
+        return autoScalePolicyTO.getAction().equals(AutoScalePolicy.Action.ScaleUp);
     }
 
     private boolean isScaleDownPolicy(final AutoScalePolicyTO autoScalePolicyTO) {
-        return autoScalePolicyTO.getAction().equals("scaledown");
+        return autoScalePolicyTO.getAction().equals(AutoScalePolicy.Action.ScaleDown);
     }
 
     private void saveConfiguration() throws ExecutionException {

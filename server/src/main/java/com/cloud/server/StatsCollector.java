@@ -108,6 +108,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
+import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
 import com.cloud.network.as.AutoScalePolicyVO;
 import com.cloud.network.as.AutoScaleVmGroup;
@@ -1881,10 +1882,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         }
                                     }
 
-                                    String scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM, params);
+                                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM, params);
                                     if (scaleAction != null) {
                                         LOGGER.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
-                                        if (scaleAction.equals("scaleup")) {
+                                        if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
                                             _asManager.doScaleUp(asGroup.getId(), 1);
                                         } else {
                                             _asManager.doScaleDown(asGroup.getId());
@@ -1920,7 +1921,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return false;
         }
 
-        private String getAutoscaleAction(HashMap<Long, Double> avgCounter, long groupId, long currentVM, Map<String, String> params) {
+        private AutoScalePolicy.Action getAutoscaleAction(HashMap<Long, Double> avgCounter, long groupId, long currentVM, Map<String, String> params) {
 
             List<AutoScaleVmGroupPolicyMapVO> listMap = _asGroupPolicyDao.listByVmGroupId(groupId);
             if ((listMap == null) || (listMap.size() == 0))
