@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class LibvirtVMDef {
@@ -1764,7 +1764,7 @@ public class LibvirtVMDef {
                 graphicBuilder.append(" listen=''");
             }
             if (_passwd != null) {
-                graphicBuilder.append(" passwd='" + _passwd + "'");
+                graphicBuilder.append(" passwd='" + StringUtils.truncate(_passwd, 8) + "'");
             } else if (_keyMap != null) {
                 graphicBuilder.append(" _keymap='" + _keyMap + "'");
             }
