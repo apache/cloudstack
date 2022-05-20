@@ -313,6 +313,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
     public final static String CONFIG_DIR = "config";
+    private Boolean enableIoUring;
+    private final static String ENABLE_IO_URING_PROPERTY = "enable.io.uring";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -815,6 +817,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         directDownloadTemporaryDownloadPath = (String) params.get("direct.download.temporary.download.location");
         if (org.apache.commons.lang.StringUtils.isBlank(directDownloadTemporaryDownloadPath)) {
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
+        }
+
+        String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
+        if (enableIoUringConfig != null) {
+            enableIoUring = Boolean.parseBoolean(enableIoUringConfig);
         }
 
         cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
@@ -2994,8 +3001,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
      */
     private boolean isIoUringEnabled() {
-        Boolean propertyValue = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
-        return propertyValue != null ? propertyValue: (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+        return enableIoUring != null ? enableIoUring: (isBaseOsUbuntu() || isIoUringSupportedByQemu());
     }
 
     private boolean isBaseOsUbuntu() {
