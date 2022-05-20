@@ -820,6 +820,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
+        // Do not remove - switching it to AgentProperties.Property may require accepting null values for the properties default value
         String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
         enableIoUring = isIoUringEnabled(enableIoUringConfig);
 
