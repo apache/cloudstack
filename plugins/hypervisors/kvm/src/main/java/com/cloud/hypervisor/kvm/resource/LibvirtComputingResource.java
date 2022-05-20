@@ -2995,15 +2995,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     private boolean isIoUringEnabled() {
         Boolean propertyValue = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
-        return BooleanUtils.isTrue(propertyValue) || isBaseOsUbuntu() || isIoUringSupportedByQemu();
+        return propertyValue != null ? propertyValue: (isBaseOsUbuntu() || isIoUringSupportedByQemu());
     }
 
     private boolean isBaseOsUbuntu() {
         Map<String, String> versionString = getVersionStrings();
-        if (MapUtils.isEmpty(versionString) || !versionString.containsKey("Host.OS") || versionString.get("Host.OS") == null) {
+        String hostKey = "Host.OS";
+        if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
             return false;
         }
-        return versionString.get("Host.OS").equalsIgnoreCase("ubuntu");
+        return versionString.get(hostKey).equalsIgnoreCase("ubuntu");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
