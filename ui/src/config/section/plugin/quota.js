@@ -25,7 +25,7 @@ export default {
   children: [
     {
       name: 'quotasummary',
-      title: 'label.summary',
+      title: 'label.quota.summary',
       icon: 'bars-outlined',
       permission: ['quotaSummary'],
       columns: ['account', 'domain', 'state', 'currency', 'balance', 'quota'],

@@ -1033,6 +1033,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+        enableSSLForKvmAgent(params);
         configureLocalStorage(params);
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
@@ -1350,6 +1351,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 continue;
             }
             s_logger.debug(String.format("Skipping the memory balloon stats period setting for the VM (Libvirt Domain) with ID [%s] because this VM has no memory balloon.", vmId));
+        }
+    }
+
+    private void enableSSLForKvmAgent(final Map<String, Object> params) {
+        final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
+        if (keyStoreFile == null) {
+            s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        String keystorePass = (String)params.get(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+        if (StringUtils.isBlank(keystorePass)) {
+            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        if (keyStoreFile.exists() && !keyStoreFile.isDirectory()) {
+            System.setProperty("javax.net.ssl.trustStore", keyStoreFile.getAbsolutePath());
+            System.setProperty("javax.net.ssl.trustStorePassword", keystorePass);
         }
     }
 
