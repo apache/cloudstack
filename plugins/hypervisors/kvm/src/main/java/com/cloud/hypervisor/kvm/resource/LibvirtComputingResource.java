@@ -819,11 +819,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             directDownloadTemporaryDownloadPath = getDefaultDirectDownloadTemporaryPath();
         }
 
-        // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
-        // Do not remove - switching it to AgentProperties.Property may require accepting null values for the properties default value
-        String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
-        enableIoUring = isIoUringEnabled(enableIoUringConfig);
-
         cachePath = (String) params.get(HOST_CACHE_PATH_PARAMETER);
         if (org.apache.commons.lang.StringUtils.isBlank(cachePath)) {
             cachePath = getDefaultCachePath();
@@ -1138,6 +1133,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
+
+        // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
+        // Do not remove - switching it to AgentProperties.Property may require accepting null values for the properties default value
+        String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
+        enableIoUring = isIoUringEnabled(enableIoUringConfig);
 
         final String cpuArchOverride = (String)params.get("guest.cpu.arch");
         if (!Strings.isNullOrEmpty(cpuArchOverride)) {
