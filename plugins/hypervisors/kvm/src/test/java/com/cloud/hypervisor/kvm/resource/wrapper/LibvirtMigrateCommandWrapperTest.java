@@ -790,4 +790,20 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertFalse(replaced.contains("csdpdk-1"));
     }
 
+    private void testReplaceVNCPassworBaseCase(String xml, String password) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
+        String replaced = lw.replaceVncPassword(xml, password);
+        String expectedAttr = String.format("passwd=\"'%s'\"", password);
+        Assert.assertTrue(replaced.contains(expectedAttr));
+    }
+
+    @Test
+    public void testReplaceVNCPasswordAttributeNotPresent() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        testReplaceVNCPassworBaseCase(sourceDPDKVMToMigrate, "ABCD1234");
+    }
+
+    @Test
+    public void testReplaceVNCPasswordAttributePresent() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        testReplaceVNCPassworBaseCase(sourceMultidiskDomainXml, "ABCD1234");
+    }
 }
