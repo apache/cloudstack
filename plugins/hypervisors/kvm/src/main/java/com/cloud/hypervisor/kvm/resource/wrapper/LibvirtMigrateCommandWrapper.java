@@ -356,7 +356,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     if ("graphics".equals(deviceChildNode.getNodeName())) {
                         NamedNodeMap graphicAttributes = deviceChildNode.getAttributes();
                         Node passwdNode = graphicAttributes.getNamedItem("passwd");
-                        String vncPasswordValue = String.format("'%s'", vncPassword);
+                        String vncPasswordValue = String.format("%s", vncPassword);
                         if (passwdNode == null) {
                             Attr passwd = doc.createAttribute("passwd");
                             passwd.setValue(vncPasswordValue);

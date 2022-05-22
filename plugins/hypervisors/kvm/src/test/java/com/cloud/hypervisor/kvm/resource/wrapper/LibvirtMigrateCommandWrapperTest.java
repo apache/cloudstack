@@ -793,7 +793,7 @@ public class LibvirtMigrateCommandWrapperTest {
     private void testReplaceVNCPassworBaseCase(String xml, String password) throws ParserConfigurationException, IOException, SAXException, TransformerException {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         String replaced = lw.replaceVncPassword(xml, password);
-        String expectedAttr = String.format("passwd=\"'%s'\"", password);
+        String expectedAttr = String.format("passwd=\"%s\"", password);
         Assert.assertTrue(replaced.contains(expectedAttr));
     }
 
