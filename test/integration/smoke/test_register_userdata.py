@@ -19,19 +19,63 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Account,
-                             UserData)
+                             UserData,
+                             NetworkOffering,
+                             Network,
+                             Router,
+                             EgressFireWallRule,
+                             PublicIPAddress,
+                             NATRule)
 from marvin.lib.common import get_test_template, get_zone, list_virtual_machines
-from marvin.lib.utils import cleanup_resources
+from marvin.lib.utils import (validateList, cleanup_resources)
 from nose.plugins.attrib import attr
+from marvin.codes import PASS,FAIL
+
 
 from marvin.lib.common import (get_domain, get_template)
 
+class Services:
+    def __init__(self):
+        self.services = {
+            "virtual_machine": {
+                "displayname": "TesVM1",
+                "username": "root",
+                "password": "password",
+                "ssh_port": 22,
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": 'TCP',
+            },
+            "ostype": 'CentOS 5.5 (64-bit)',
+            "service_offering": {
+                "name": "Tiny Instance",
+                "displaytext": "Tiny Instance",
+                "cpunumber": 1,
+                "cpuspeed": 100,
+                "memory": 256,
+            },
+            "egress": {
+                "name": 'web',
+                "protocol": 'TCP',
+                "startport": 80,
+                "endport": 80,
+                "cidrlist": '0.0.0.0/0',
+            },
+            "natrule": {
+                "privateport": 22,
+                "publicport": 22,
+                "protocol": "TCP"
+            },
+        }
 
 class TestRegisteredUserdata(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         super(TestRegisteredUserdata, cls)
+        cls.api_client = cls.testClient.getApiClient()
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services = Services().services
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -53,15 +97,31 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
         #create a service offering
         small_service_offering = self.testdata["service_offerings"]["small"]
-        small_service_offering['storagetype'] = 'local'
         self.service_offering = ServiceOffering.create(
             self.apiclient,
             small_service_offering
         )
+
+        self.no_isolate = NetworkOffering.create(
+            self.apiclient,
+            self.testdata["isolated_network_offering"]
+        )
+        self.no_isolate.update(self.apiclient, state='Enabled')
+        self.isolated_network = Network.create(
+            self.apiclient,
+            self.testdata["network"],
+            networkofferingid=self.no_isolate.id,
+            zoneid=self.zone.id,
+            accountid="admin",
+            domainid=1
+        )
+
         #build cleanup list
         self.cleanup = [
             self.service_offering,
-            self.account
+            self.isolated_network,
+            self.no_isolate,
+            self.account,
         ]
 
 
@@ -78,22 +138,12 @@ class TestRegisteredUserdata(cloudstackTestCase):
         self.userdata1 = UserData.register(
             self.apiclient,
             name="UserdataName",
-            userdata="testUserdata1",
+            userdata="VGVzdFVzZXJEYXRh", #TestUserData
             account=self.account.name,
             domainid=self.account.domainid
         )
 
-        list_userdata = UserData.list(self.apiclient, id=self.userdata1.userdata.id)
-
-        self.debug(
-            "List userdata response : %s" \
-            % list_userdata
-        )
-
-        self.debug(
-            "Verify listUserData response with id: %s" \
-            % self.userdata1.userdata.id
-        )
+        list_userdata = UserData.list(self.apiclient, id=self.userdata1.userdata.id, listall=True)
 
         self.assertNotEqual(
             len(list_userdata),
@@ -108,49 +158,64 @@ class TestRegisteredUserdata(cloudstackTestCase):
             "userdata ids do not match"
         )
 
-        deleteResponse = UserData.delete(
+        UserData.delete(
             self.apiclient,
-            id=self.userdata1.userdata.id,
-            account=self.account.name,
-            domainid=self.account.domainid
-        )
-
-        list_userdata = UserData.list(self.apiclient, id=self.userdata1.userdata.id)
-
-        self.assertEqual(
-            len(list_userdata),
-            0,
-            "List userdata was empty"
+            id=self.userdata1.userdata.id
         )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
     def test_deploy_vm_with_registerd_userdata(self):
 
-        self.userdata = UserData.register(
+        self.userdata2 = UserData.register(
             self.apiclient,
-            name="UserdataName",
-            userdata="testUserdata",
+            name="testUserData2",
+            userdata="VGVzdFVzZXJEYXRh", #TestUserData
             account=self.account.name,
             domainid=self.account.domainid
         )
 
         self.virtual_machine = VirtualMachine.create(
             self.apiclient,
-            self.testdata["virtual_machine"],
-            accountid=self.account.name,
+            self.services["virtual_machine"],
             zoneid=self.zone.id,
-            domainid=self.account.domainid,
+            accountid="admin",
+            domainid=1,
             serviceofferingid=self.service_offering.id,
             templateid=self.template.id,
-            userdataid=self.userdata.id
+            networkids=[self.isolated_network.id],
+            userdataid=self.userdata2.userdata.id
         )
+        self.cleanup.append(self.virtual_machine)
+        self.cleanup.append(self.userdata2)
+
+        networkid = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=networkid,
+            account="admin",
+            domainid=1,
+            listall=True,
+            issourcenat=True,
+        )
+        src_nat = src_nat_list[0]
+
+        NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            src_nat.id
+        )
+
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if self.zone.networktype.lower() == 'advanced':
+            EgressFireWallRule.create(self.api_client,
+                                      networkid=networkid,
+                                      protocol=self.testdata["egress_80"]["protocol"],
+                                      startport=self.testdata["egress_80"]["startport"],
+                                      endport=self.testdata["egress_80"]["endport"],
+                                      cidrlist=self.testdata["egress_80"]["cidrlist"])
 
         list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
-
-        self.debug(
-            "Verify listVirtualMachines response for virtual machine: %s" \
-            % self.virtual_machine.id
-        )
 
         self.assertEqual(
             isinstance(list_vms, list),
@@ -176,6 +241,42 @@ class TestRegisteredUserdata(cloudstackTestCase):
         )
         self.assertEqual(
             vm.userdataid,
-            self.userdata.id,
+            self.userdata2.userdata.id,
             "Virtual Machine names do not match"
         )
+
+        # Verify the retrieved ip address in listNICs API response
+        self.list_nics(vm.id)
+        vr_res = Router.list(
+            self.apiclient,
+            networkid=self.isolated_network.id,
+            listAll=True
+        )
+        self.assertEqual(validateList(vr_res)[0], PASS, "List Routers returned invalid response")
+        vr_ip = vr_res[0].guestipaddress
+        ssh = self.virtual_machine.get_ssh_client(ipaddress=src_nat.ipaddress)
+        cmd = "curl http://%s/latest/user-data" % vr_ip
+        res = ssh.execute(cmd)
+        self.debug("Verifying userdata in the VR")
+        self.assertEqual(
+            str(res[0]),
+            "TestUserData",
+            "Failed to match userdata"
+        )
+
+    def list_nics(self, vm_id):
+        list_vm_res = VirtualMachine.list(self.apiclient, id=vm_id)
+        self.assertEqual(validateList(list_vm_res)[0], PASS, "List vms returned invalid response")
+        nics = list_vm_res[0].nic
+        for nic in nics:
+            if nic.type == "Shared":
+                nic_res = NIC.list(
+                    self.apiclient,
+                    virtualmachineid=vm_id,
+                    nicid=nic.id
+                )
+                nic_ip = nic_res[0].ipaddress
+                self.assertIsNotNone(nic_ip, "listNics API response does not have the ip address")
+            else:
+                continue
+        return

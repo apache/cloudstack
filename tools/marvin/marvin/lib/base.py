@@ -615,7 +615,7 @@ class VirtualMachine:
         if userdataid is not None:
             cmd.userdataid = userdataid
 
-        if userdataid is not None:
+        if userdatadetails is not None:
             cmd.userdatadetails = userdatadetails
 
         if "dhcpoptionsnetworklist" in services:
@@ -5040,15 +5040,16 @@ class UserData:
 
         return (apiclient.registerUserData(cmd))
 
-    def delete(self, apiclient):
+    @classmethod
+    def delete(cls, apiclient, id):
         """Delete Userdata"""
         cmd = deleteUserData.deleteUserDataCmd()
-        cmd.id = self.id
+        cmd.id = id
         apiclient.deleteUserData(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
-        """List all SSH key pairs"""
+        """List all UserData"""
         cmd = listUserData.listUserDataCmd()
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         if 'account' in list(kwargs.keys()) and 'domainid' in list(kwargs.keys()):
