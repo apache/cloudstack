@@ -681,7 +681,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-                return String.format("Host %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "type"));
+        return String.format("Host %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {
