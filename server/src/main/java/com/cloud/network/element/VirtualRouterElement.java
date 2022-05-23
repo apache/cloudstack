@@ -124,6 +124,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
     public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
+    public static final AutoScaleCounterType AutoScaleCounterVirtualRouter = new AutoScaleCounterType("virtualrouter");
+
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
@@ -544,6 +546,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         counter = new AutoScaleCounter(AutoScaleCounterCpu);
         counterList.add(counter);
         counter = new AutoScaleCounter(AutoScaleCounterMemory);
+        counterList.add(counter);
+        counter = new AutoScaleCounter(AutoScaleCounterVirtualRouter);
         counterList.add(counter);
         final Gson gson = new Gson();
         final String autoScaleCounterList = gson.toJson(counterList);
@@ -1401,4 +1405,20 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             _routerDao.persist(router);
         }
     }
+
+    enum AutoScaleCounterVirtualRouterValue {
+        NetworkReceive ("virtual.network.receive"),
+        NetworkTransmit ("virtual.network.transmit"),
+        LbAverageConnections ("virtual.network.lb.average.connections");
+
+        String _value;
+        AutoScaleCounterVirtualRouterValue(String value) {
+            _value = value;
+        }
+        @Override
+        public String toString() {
+            return _value;
+        }
+    }
+
 }

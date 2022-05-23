@@ -27,7 +27,7 @@ public interface Counter extends InternalIdentity, Identity {
         snmp,
         cpu,
         memory,
-        cloudstack
+        virtualrouter
     }
 
     String getName();

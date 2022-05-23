@@ -1370,20 +1370,21 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
             UserVm vm = null;
             IpAddresses addrs = new IpAddresses(null, null);
+            HypervisorType hypervisorType = template.getHypervisorType();
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
-                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null, null,
+                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, hypervisorType, HTTPMethod.GET, null, null, null,
                     null, true, null, null, null, null, null, null, null, true, null);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, null, null,
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null,null, null, true, null, null, null, null, null, null, null, true, null, null);
+                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, hypervisorType, HTTPMethod.GET, null, null,null, null, true, null, null, null, null, null, null, null, true, null, null);
                 } else {
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        null, null, null, HypervisorType.XenServer, HTTPMethod.GET, null, null, null, addrs, true, null, null, null, null, null, null, null, true, null, null);
+                        null, null, null, hypervisorType, HTTPMethod.GET, null, null, null, addrs, true, null, null, null, null, null, null, null, true, null, null);
 
                 }
             }
@@ -1599,7 +1600,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             if (Network.Provider.Netscaler.equals(provider)) {
                 monitorNetScalerAsGroup(asGroup);
             } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
-                monitorCloudStackAsGroup(asGroup);
+                monitorVirtualRouterAsGroup(asGroup);
             }
         }
     }
@@ -1877,7 +1878,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
     }
 
-    private void monitorCloudStackAsGroup(AutoScaleVmGroupVO asGroup) {
+    private void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
         //TODO
     }
 }
