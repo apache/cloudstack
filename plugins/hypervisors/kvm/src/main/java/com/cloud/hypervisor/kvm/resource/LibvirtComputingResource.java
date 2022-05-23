@@ -1138,6 +1138,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Do not remove - switching it to AgentProperties.Property may require accepting null values for the properties default value
         String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
         enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = (String)params.get("guest.cpu.arch");
         if (!Strings.isNullOrEmpty(cpuArchOverride)) {
