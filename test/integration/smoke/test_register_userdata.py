@@ -25,7 +25,8 @@ from marvin.lib.base import (ServiceOffering,
                              Router,
                              EgressFireWallRule,
                              PublicIPAddress,
-                             NATRule)
+                             NATRule,
+                             Template)
 from marvin.lib.common import get_test_template, get_zone, list_virtual_machines
 from marvin.lib.utils import (validateList, cleanup_resources)
 from nose.plugins.attrib import attr
@@ -164,7 +165,7 @@ class TestRegisteredUserdata(cloudstackTestCase):
         )
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
-    def test_deploy_vm_with_registerd_userdata(self):
+    def test_deploy_vm_with_registered_userdata(self):
 
         self.userdata2 = UserData.register(
             self.apiclient,
@@ -280,3 +281,441 @@ class TestRegisteredUserdata(cloudstackTestCase):
             else:
                 continue
         return
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
+    def test_deploy_vm_with_registered_userdata_with_params(self):
+
+        self.userdata2 = UserData.register(
+            self.apiclient,
+            name="testUserData2",
+            userdata="IyMgdGVtcGxhdGU6IGppbmphCiNjbG91ZC1jb25maWcKcnVuY21kOgogICAgLSBlY2hvICdrZXkge3sgZHMubWV0YV9kYXRhLmtleTEgfX0nID4+IC9yb290L2luc3RhbmNlX21ldGFkYXRh",
+            #    ## template: jinja
+            #    #cloud-config
+            #    runcmd:
+            #        - echo 'key {{ ds.meta_data.key1 }}' >> /root/instance_metadata
+
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            accountid="admin",
+            domainid=1,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            networkids=[self.isolated_network.id],
+            userdataid=self.userdata2.userdata.id,
+            userdatadetails=[{"key1": "value1"}]
+        )
+        self.cleanup.append(self.virtual_machine)
+        self.cleanup.append(self.userdata2)
+
+        networkid = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=networkid,
+            account="admin",
+            domainid=1,
+            listall=True,
+            issourcenat=True,
+        )
+        src_nat = src_nat_list[0]
+
+        NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            src_nat.id
+        )
+
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if self.zone.networktype.lower() == 'advanced':
+            EgressFireWallRule.create(self.api_client,
+                                      networkid=networkid,
+                                      protocol=self.testdata["egress_80"]["protocol"],
+                                      startport=self.testdata["egress_80"]["startport"],
+                                      endport=self.testdata["egress_80"]["endport"],
+                                      cidrlist=self.testdata["egress_80"]["cidrlist"])
+
+        list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vms),
+            0,
+            "List VM response was empty"
+        )
+
+        vm = list_vms[0]
+        self.assertEqual(
+            vm.id,
+            self.virtual_machine.id,
+            "Virtual Machine ids do not match"
+        )
+        self.assertEqual(
+            vm.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertEqual(
+            vm.userdataid,
+            self.userdata2.userdata.id,
+            "Userdata ids do not match"
+        )
+
+        # Verify the retrieved ip address in listNICs API response
+        self.list_nics(vm.id)
+        vr_res = Router.list(
+            self.apiclient,
+            networkid=self.isolated_network.id,
+            listAll=True
+        )
+        self.assertEqual(validateList(vr_res)[0], PASS, "List Routers returned invalid response")
+        vr_ip = vr_res[0].guestipaddress
+        ssh = self.virtual_machine.get_ssh_client(ipaddress=src_nat.ipaddress)
+        cmd = "curl http://%s/latest/meta-data/key1" % vr_ip
+        res = ssh.execute(cmd)
+        self.debug("Verifying userdata in the VR")
+        self.assertEqual(
+            str(res[0]),
+            "value1",
+            "Failed to match userdata"
+        )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_link_and_unlink_userdata_to_template(self):
+        self.userdata3 = UserData.register(
+            self.apiclient,
+            name="testUserData2",
+            userdata="VGVzdFVzZXJEYXRh", #TestUserData
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.userdata3.userdata.id
+        )
+
+        self.assertEqual(
+            self.userdata3.userdata.id,
+            self.template.userdataid,
+            "Match userdata id in template response"
+        )
+
+        self.assertEqual(
+            self.template.userdatapolicy,
+            "allowoverride",
+            "Match default userdata override policy in template response"
+        )
+
+        self.debug("Verifying unlinking of userdata from template " + self.template.id)
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+
+        self.assertEqual(
+            self.template.userdataid,
+            None,
+            "Check userdata id in template response is None"
+        )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
+    def test_deploy_vm_with_registered_userdata_with_override_policy_allow(self):
+
+        self.apiUserdata = UserData.register(
+            self.apiclient,
+            name="ApiUserdata",
+            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.templateUserdata = UserData.register(
+            self.apiclient,
+            name="TemplateUserdata",
+            userdata="VGVtcGxhdGVVc2VyRGF0YQ==", #TemplateUserData
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.templateUserdata.userdata.id,
+            userdatapolicy="allowoverride"
+        )
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            accountid="admin",
+            domainid=1,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            networkids=[self.isolated_network.id],
+            userdataid=self.apiUserdata.userdata.id
+        )
+        self.cleanup.append(self.virtual_machine)
+        self.cleanup.append(self.apiUserdata)
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+
+        networkid = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=networkid,
+            account="admin",
+            domainid=1,
+            listall=True,
+            issourcenat=True,
+        )
+        src_nat = src_nat_list[0]
+
+        NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            src_nat.id
+        )
+
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if self.zone.networktype.lower() == 'advanced':
+            EgressFireWallRule.create(self.api_client,
+                                      networkid=networkid,
+                                      protocol=self.testdata["egress_80"]["protocol"],
+                                      startport=self.testdata["egress_80"]["startport"],
+                                      endport=self.testdata["egress_80"]["endport"],
+                                      cidrlist=self.testdata["egress_80"]["cidrlist"])
+
+        list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vms),
+            0,
+            "List VM response was empty"
+        )
+
+        vm = list_vms[0]
+        self.assertEqual(
+            vm.id,
+            self.virtual_machine.id,
+            "Virtual Machine ids do not match"
+        )
+        self.assertEqual(
+            vm.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+        self.assertEqual(
+            vm.userdataid,
+            self.apiUserdata.userdata.id,
+            "Virtual Machine names do not match"
+        )
+
+        # Verify the retrieved ip address in listNICs API response
+        self.list_nics(vm.id)
+        vr_res = Router.list(
+            self.apiclient,
+            networkid=self.isolated_network.id,
+            listAll=True
+        )
+        self.assertEqual(validateList(vr_res)[0], PASS, "List Routers returned invalid response")
+        vr_ip = vr_res[0].guestipaddress
+        ssh = self.virtual_machine.get_ssh_client(ipaddress=src_nat.ipaddress)
+        cmd = "curl http://%s/latest/user-data" % vr_ip
+        res = ssh.execute(cmd)
+        self.debug("Verifying userdata in the VR")
+        self.assertEqual(
+            str(res[0]),
+            "APIuserdata",
+            "Failed to match userdata"
+        )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
+    def test_deploy_vm_with_registered_userdata_with_override_policy_append(self):
+
+        self.apiUserdata = UserData.register(
+            self.apiclient,
+            name="ApiUserdata",
+            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.templateUserdata = UserData.register(
+            self.apiclient,
+            name="TemplateUserdata",
+            userdata="VGVtcGxhdGVVc2VyRGF0YQ==", #TemplateUserData
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.templateUserdata.userdata.id,
+            userdatapolicy="append"
+        )
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            zoneid=self.zone.id,
+            accountid="admin",
+            domainid=1,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            networkids=[self.isolated_network.id],
+            userdataid=self.apiUserdata.userdata.id
+        )
+        self.cleanup.append(self.virtual_machine)
+        self.cleanup.append(self.apiUserdata)
+        self.cleanup.append(self.templateUserdata)
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+
+        networkid = self.virtual_machine.nic[0].networkid
+        src_nat_list = PublicIPAddress.list(
+            self.apiclient,
+            associatednetworkid=networkid,
+            account="admin",
+            domainid=1,
+            listall=True,
+            issourcenat=True,
+        )
+        src_nat = src_nat_list[0]
+
+        NATRule.create(
+            self.apiclient,
+            self.virtual_machine,
+            self.services["natrule"],
+            src_nat.id
+        )
+
+        # create egress rule to allow wget of my cloud-set-guest-password script
+        if self.zone.networktype.lower() == 'advanced':
+            EgressFireWallRule.create(self.api_client,
+                                      networkid=networkid,
+                                      protocol=self.testdata["egress_80"]["protocol"],
+                                      startport=self.testdata["egress_80"]["startport"],
+                                      endport=self.testdata["egress_80"]["endport"],
+                                      cidrlist=self.testdata["egress_80"]["cidrlist"])
+
+        list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(
+            isinstance(list_vms, list),
+            True,
+            "List VM response was not a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vms),
+            0,
+            "List VM response was empty"
+        )
+
+        vm = list_vms[0]
+        self.assertEqual(
+            vm.id,
+            self.virtual_machine.id,
+            "Virtual Machine ids do not match"
+        )
+        self.assertEqual(
+            vm.state,
+            "Running",
+            msg="VM is not in Running state"
+        )
+
+        # Verify the retrieved ip address in listNICs API response
+        self.list_nics(vm.id)
+        vr_res = Router.list(
+            self.apiclient,
+            networkid=self.isolated_network.id,
+            listAll=True
+        )
+        self.assertEqual(validateList(vr_res)[0], PASS, "List Routers returned invalid response")
+        vr_ip = vr_res[0].guestipaddress
+        ssh = self.virtual_machine.get_ssh_client(ipaddress=src_nat.ipaddress)
+        cmd = "curl http://%s/latest/user-data" % vr_ip
+        res = ssh.execute(cmd)
+        self.debug("Verifying userdata in the VR")
+        self.assertEqual(
+            str(res[0]),
+            "TemplateUserDataAPIuserdata",
+            "Failed to match userdata"
+        )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)
+    def test_deploy_vm_with_registered_userdata_with_override_policy_deny(self):
+
+        self.apiUserdata = UserData.register(
+            self.apiclient,
+            name="ApiUserdata",
+            userdata="QVBJdXNlcmRhdGE=", #APIuserdata
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.templateUserdata = UserData.register(
+            self.apiclient,
+            name="TemplateUserdata",
+            userdata="VGVtcGxhdGVVc2VyRGF0YQ==", #TemplateUserData
+            account=self.account.name,
+            domainid=self.account.domainid
+        )
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id,
+            userdataid=self.templateUserdata.userdata.id,
+            userdatapolicy="denyoverride"
+        )
+
+        with self.assertRaises(Exception) as e:
+            self.virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                zoneid=self.zone.id,
+                accountid="admin",
+                domainid=1,
+                serviceofferingid=self.service_offering.id,
+                templateid=self.template.id,
+                networkids=[self.isolated_network.id],
+                userdataid=self.apiUserdata.userdata.id
+            )
+            self.cleanup.append(self.virtual_machine)
+            self.debug("Deploy VM with userdata passed during deployment failed as expected because template userdata override policy is deny. Exception here is : %s" %
+                       e.exception)
+
+        self.cleanup.append(self.apiUserdata)
+        self.cleanup.append(self.templateUserdata)
+
+        self.template = Template.linkUserDataToTemplate(
+            self.apiclient,
+            templateid=self.template.id
+        )
+
+
