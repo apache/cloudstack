@@ -20,15 +20,20 @@ package com.cloud.network.as;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import java.util.Arrays;
+import java.util.List;
+
 public interface Counter extends InternalIdentity, Identity {
 
-    public static enum Source {
+    static enum Source {
         netscaler,
         snmp,
         cpu,
         memory,
         virtualrouter
     }
+
+    static final List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory, Source.virtualrouter);
 
     String getName();
 

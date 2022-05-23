@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.as.Counter;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,9 +123,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 StaticNatServiceProvider, FirewallServiceProvider, LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer,
 NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
-    public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType("cpu");
-    public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType("memory");
-    public static final AutoScaleCounterType AutoScaleCounterVirtualRouter = new AutoScaleCounterType("virtualrouter");
+    public static final AutoScaleCounterType AutoScaleCounterCpu = new AutoScaleCounterType(Counter.Source.cpu.name());
+    public static final AutoScaleCounterType AutoScaleCounterMemory = new AutoScaleCounterType(Counter.Source.memory.name());
+    public static final AutoScaleCounterType AutoScaleCounterVirtualRouter = new AutoScaleCounterType(Counter.Source.virtualrouter.name());
 
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 

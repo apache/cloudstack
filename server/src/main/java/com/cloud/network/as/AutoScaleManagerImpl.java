@@ -1376,20 +1376,33 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             UserVm vm = null;
             IpAddresses addrs = new IpAddresses(null, null);
             HypervisorType hypervisorType = template.getHypervisorType();
+            final Network network = getNetwork(asGroup);
+            final List<Long> networkIds = new ArrayList<>();
+            networkIds.add(network.getId());
+            Map<String, String> customParameters = new HashMap<String, String>();
+            List<String> sshKeyPairs = new ArrayList<>();
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
-                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, hypervisorType, HTTPMethod.GET, null, null, null,
-                    null, true, null, null, null, null, null, null, null, true, null);
+                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null,
+                    hypervisorType, HTTPMethod.GET, null, sshKeyPairs, null,
+                    null, true, null, null, customParameters, null, null, null,
+                    null, true, null);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
-                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, null, null,
+                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null, hypervisorType, HTTPMethod.GET, null, null,null, null, true, null, null, null, null, null, null, null, true, null, null);
+                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null,
+                        hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
+                        null, true, null, null, customParameters, null, null, null,
+                        null, true, null, null);
                 } else {
-                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        null, null, null, hypervisorType, HTTPMethod.GET, null, null, null, addrs, true, null, null, null, null, null, null, null, true, null, null);
+                        null, null, null,
+                        hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
+                        addrs, true, null, null, customParameters, null, null, null,
+                        null, true, null, null);
 
                 }
             }
@@ -1617,8 +1630,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
                 ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
                 CounterVO counter = _counterDao.findById(condition.getCounterid());
-                if (counter.getSource() == Counter.Source.cpu || counter.getSource() == Counter.Source.memory)
+                if (Counter.NativeSources.contains(counter.getSource())) {
                     return true;
+                }
             }
         }
         return false;
@@ -1743,7 +1757,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return counter.getSource().toString();
     }
 
-    private Network.Provider getLoadBalancerServiceProvider(AutoScaleVmGroup asGroup) {
+    private Network getNetwork(AutoScaleVmGroup asGroup) {
         final LoadBalancerVO loadBalancer = _lbDao.findById(asGroup.getLoadBalancerId());
         if (loadBalancer == null) {
             throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", asGroup.getLoadBalancerId()));
@@ -1752,9 +1766,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (network == null) {
             throw new CloudRuntimeException(String.format("Unable to find network with id: % ", loadBalancer.getNetworkId()));
         }
+        return network;
+    }
+
+    private Network.Provider getLoadBalancerServiceProvider(AutoScaleVmGroup asGroup) {
+        Network network = getNetwork(asGroup);
         List<Network.Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Network.Service.Lb);
         if (providers == null || providers.size() == 0) {
-            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: % ", loadBalancer.getNetworkId()));
+            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: % ", network.getId()));
         }
         return providers.get(0);
     }
@@ -1884,6 +1903,22 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     private void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+        // check minimum vm of group
+        Integer currentVM = _autoScaleVmGroupVmMapDao.countByGroup(asGroup.getId());
+        if (currentVM < asGroup.getMinMembers()) {
+            doScaleUp(asGroup.getId(), asGroup.getMinMembers() - currentVM);
+            return;
+        }
+
+        //check interval
+        long now = (new Date()).getTime();
+        if (asGroup.getLastInterval() != null && (now - asGroup.getLastInterval().getTime()) < asGroup.getInterval()) {
+            return;
+        }
+
+        // update last_interval
+        asGroup.setLastInterval(new Date());
+        _autoScaleVmGroupDao.persist(asGroup);
         //TODO
     }
 }
