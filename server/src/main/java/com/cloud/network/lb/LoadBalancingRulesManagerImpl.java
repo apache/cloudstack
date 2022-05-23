@@ -368,7 +368,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
-        if (!applyLbRules(rules, false)) {
+        if (!applyLbRules(new ArrayList(rules), false)) {
             s_logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
