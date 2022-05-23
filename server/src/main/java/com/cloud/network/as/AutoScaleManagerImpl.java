@@ -352,6 +352,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
         }
 
+        Integer autoScaleStatsInterval = AutoScaleStatsInterval.value();
+        if (autoScaleStatsInterval <= 0) {
+            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to larger than 0", AutoScaleStatsInterval.key()));
+        }
+
         vmProfile = _autoScaleVmProfileDao.persist(vmProfile);
 
         return vmProfile;
