@@ -55,7 +55,6 @@ import org.libvirt.DomainJobInfo;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -150,14 +149,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
-            xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target);
 
             // Limit the VNC password in case the length is greater than 8 characters
             // Since libvirt version 8 VNC passwords are limited to 8 characters
-            if (org.apache.commons.lang3.StringUtils.isNotBlank(to.getVncPassword())) {
-                String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
-                xmlDesc = replaceVncPassword(xmlDesc, vncPassword);
-            }
+            String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
+            xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword);
 
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
@@ -339,38 +335,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return new MigrateAnswer(command, result == null, result, null);
     }
 
-    protected String replaceVncPassword(String xmlDesc, String vncPassword) throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        InputStream in = IOUtils.toInputStream(xmlDesc);
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-        Document doc = docBuilder.parse(in);
-        Node domainNode = doc.getFirstChild();
-        NodeList domainChildNodes = domainNode.getChildNodes();
-
-        for (int i = 0; i < domainChildNodes.getLength(); i++) {
-            Node domainChildNode = domainChildNodes.item(i);
-            if ("devices".equals(domainChildNode.getNodeName())) {
-                NodeList devicesChildNodes = domainChildNode.getChildNodes();
-                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
-                    Node deviceChildNode = devicesChildNodes.item(x);
-                    if ("graphics".equals(deviceChildNode.getNodeName())) {
-                        NamedNodeMap graphicAttributes = deviceChildNode.getAttributes();
-                        Node passwdNode = graphicAttributes.getNamedItem("passwd");
-                        String vncPasswordValue = String.format("%s", vncPassword);
-                        if (passwdNode == null) {
-                            Attr passwd = doc.createAttribute("passwd");
-                            passwd.setValue(vncPasswordValue);
-                            graphicAttributes.setNamedItem(passwd);
-                        } else {
-                            passwdNode.setNodeValue(vncPasswordValue);
-                        }
-                    }
-                }
-            }
-        }
-        return getXml(doc);
-    }
-
     /**
      * Replace DPDK source path and target before migrations
      */
@@ -490,9 +454,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      *     </graphics>
      * @param xmlDesc the qemu xml description
      * @param target the ip address to migrate to
+     * @param vncPassword if set, the VNC password truncated to 8 characters
      * @return the new xmlDesc
      */
-    String replaceIpForVNCInDescFile(String xmlDesc, final String target) {
+    String replaceIpForVNCInDescFileAndNormalizePassword(String xmlDesc, final String target, String vncPassword) {
         final int begin = xmlDesc.indexOf(GRAPHICS_ELEM_START);
         if (begin >= 0) {
             final int end = xmlDesc.lastIndexOf(GRAPHICS_ELEM_END) + GRAPHICS_ELEM_END.length();
@@ -500,6 +465,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 String graphElem = xmlDesc.substring(begin, end);
                 graphElem = graphElem.replaceAll("listen='[a-zA-Z0-9\\.]*'", "listen='" + target + "'");
                 graphElem = graphElem.replaceAll("address='[a-zA-Z0-9\\.]*'", "address='" + target + "'");
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(vncPassword)) {
+                    graphElem = graphElem.replaceAll("passwd='([^\\s]+)'", "passwd='" + vncPassword + "'");
+                }
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
             }
         }
