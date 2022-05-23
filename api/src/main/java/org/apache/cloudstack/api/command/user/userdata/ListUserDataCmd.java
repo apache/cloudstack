@@ -64,14 +64,14 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
     @Override
     public void execute() {
         Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this);
-        List<UserDataResponse> responses = new ArrayList<UserDataResponse>();
+        List<UserDataResponse> responses = new ArrayList<>();
         for (UserData result : resultList.first()) {
             UserDataResponse r = _responseGenerator.createUserDataResponse(result);
             r.setObjectName(ApiConstants.USER_DATA);
             responses.add(r);
         }
 
-        ListResponse<UserDataResponse> response = new ListResponse<UserDataResponse>();
+        ListResponse<UserDataResponse> response = new ListResponse<>();
         response.setResponses(responses, resultList.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);

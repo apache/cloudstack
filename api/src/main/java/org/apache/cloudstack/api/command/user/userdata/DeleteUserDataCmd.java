@@ -104,12 +104,10 @@ public class DeleteUserDataCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
-        if ((account == null) || _accountService.isAdmin(account.getId())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
+        if ((account == null || _accountService.isAdmin(account.getId())) && (domainId != null && accountName != null)) {
+            Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+            if (userAccount != null) {
+                return userAccount.getId();
             }
         }
 

@@ -30,7 +30,6 @@ import javax.inject.Inject;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.user.dao.UserDataDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -94,9 +93,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private VpcDao vpcDao;
     @Inject
     UserStatisticsDao userStatsDao;
-
-    @Inject
-    private UserDataDao _userDataDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;

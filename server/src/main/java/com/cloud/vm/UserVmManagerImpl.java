@@ -572,7 +572,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private StatsCollector statsCollector;
     @Inject
-    private UserDataDao _userDataDao;
+    private UserDataDao userDataDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -4350,7 +4350,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private UserVmVO commitUserVm(final boolean isImport, final DataCenter zone, final Host host, final Host lastHost, final VirtualMachineTemplate template, final String hostName, final String displayName, final Account owner,
-                                  final Long diskOfferingId, final Long diskSize, final String userData, Long userDataId, String userDataDetails, final Account caller, final Boolean isDisplayVm, final String keyboard,
+                                  final Long diskOfferingId, final Long diskSize, final String userData, Long userDataId, String userDataDetails, final Boolean isDisplayVm, final String keyboard,
                                   final long accountId, final long userId, final ServiceOffering offering, final boolean isIso, final String sshPublicKeys, final LinkedHashMap<String, List<NicProfile>> networkNicMap,
                                   final long id, final String instanceName, final String uuidName, final HypervisorType hypervisorType, final Map<String, String> customParameters,
                                   final Map<String, Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
@@ -4579,7 +4579,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Map<Integer, String>> extraDhcpOptionMap, final Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
                                   Map<String, String> userVmOVFPropertiesMap, final boolean dynamicScalingEnabled, String vmType, final Long rootDiskOfferingId, String sshkeypairs) throws InsufficientCapacityException {
         return commitUserVm(false, zone, null, null, template, hostName, displayName, owner,
-                diskOfferingId, diskSize, userData, userDataId, userDataDetails, caller, isDisplayVm, keyboard,
+                diskOfferingId, diskSize, userData, userDataId, userDataDetails, isDisplayVm, keyboard,
                 accountId, userId, offering, isIso, sshPublicKeys, networkNicMap,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 extraDhcpOptionMap, dataDiskTemplateToDiskOfferingMap,
@@ -5707,43 +5707,41 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (StringUtils.isEmpty(userData) && userDataId == null && (template == null || template.getUserDataId() == null)) {
             return null;
         }
+
+        if (userDataId != null && StringUtils.isNotEmpty(userData)) {
+            throw new InvalidParameterValueException("Both userdata and userdata ID inputs are not allowed, please provide only one");
+        }
         if (template != null && template.getUserDataId() != null) {
             switch (template.getUserDataOverridePolicy()) {
-                case denyoverride:
+                case DENYOVERRIDE:
                     if (StringUtils.isNotEmpty(userData) || userDataId != null) {
                         String msg = String.format("UserData input is not allowed here since template %s is configured to deny any userdata", template.getName());
                         throw new CloudRuntimeException(msg);
                     }
-                case allowoverride:
+                case ALLOWOVERRIDE:
                     if (userDataId != null) {
-                        if (StringUtils.isNoneEmpty(userData)) {
-                            s_logger.info("Both userdata and userdata ID are provided, precedence goes to userdata ID");
-                        }
-                        UserData apiUserDataVO = _userDataDao.findById(userDataId);
+                        UserData apiUserDataVO = userDataDao.findById(userDataId);
                         return apiUserDataVO.getUserData();
-                    } else if (StringUtils.isNoneEmpty(userData)) {
+                    } else if (StringUtils.isNotEmpty(userData)) {
                         return userData;
                     } else {
-                        UserData templateUserDataVO = _userDataDao.findById(template.getUserDataId());
+                        UserData templateUserDataVO = userDataDao.findById(template.getUserDataId());
                         if (templateUserDataVO == null) {
                             String msg = String.format("UserData linked to the template %s is not found", template.getName());
                             throw new CloudRuntimeException(msg);
                         }
                         return templateUserDataVO.getUserData();
                     }
-                case append:
-                    UserData templateUserDataVO = _userDataDao.findById(template.getUserDataId());
+                case APPEND:
+                    UserData templateUserDataVO = userDataDao.findById(template.getUserDataId());
                     if (templateUserDataVO == null) {
                         String msg = String.format("UserData linked to the template %s is not found", template.getName());
                         throw new CloudRuntimeException(msg);
                     }
                     if (userDataId != null) {
-                        if (StringUtils.isNoneEmpty(userData)) {
-                            s_logger.info("Both userdata and userdata ID are provided, precedence goes to userdata ID");
-                        }
-                        UserData apiUserDataVO = _userDataDao.findById(userDataId);
+                        UserData apiUserDataVO = userDataDao.findById(userDataId);
                         return doConcateUserDatas(templateUserDataVO.getUserData(), apiUserDataVO.getUserData());
-                    } else if (StringUtils.isNoneEmpty(userData)) {
+                    } else if (StringUtils.isNotEmpty(userData)) {
                         return doConcateUserDatas(templateUserDataVO.getUserData(), userData);
                     } else {
                         return templateUserDataVO.getUserData();
@@ -5753,12 +5751,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new CloudRuntimeException(msg);            }
         } else {
             if (userDataId != null) {
-                if (StringUtils.isNoneEmpty(userData)) {
-                    s_logger.info("Both userdata and userdata ID are provided, precedence goes to userdata ID");
-                }
-                UserData apiUserDataVO = _userDataDao.findById(userDataId);
+                UserData apiUserDataVO = userDataDao.findById(userDataId);
                 return apiUserDataVO.getUserData();
-            } else if (StringUtils.isNoneEmpty(userData)) {
+            } else if (StringUtils.isNotEmpty(userData)) {
                 return userData;
             }
         }
@@ -5772,8 +5767,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         System.arraycopy(userdata1Bytes, 0, finalUserDataBytes, 0, userdata1Bytes.length);
         System.arraycopy(userdata2Bytes, 0, finalUserDataBytes, userdata1Bytes.length, userdata2Bytes.length);
 
-        String finalUserData = Base64.encodeBase64String(finalUserDataBytes);
-        return finalUserData;
+        return Base64.encodeBase64String(finalUserDataBytes);
     }
 
     @Override
@@ -8062,7 +8056,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final Host lastHost = powerState != VirtualMachine.PowerState.PowerOn ? host : null;
         final Boolean dynamicScalingEnabled = checkIfDynamicScalingCanBeEnabled(null, serviceOffering, template, zone.getId());
         return commitUserVm(true, zone, host, lastHost, template, hostName, displayName, owner,
-                null, null, userData, null, null, caller, isDisplayVm, keyboard,
+                null, null, userData, null, null, isDisplayVm, keyboard,
                 accountId, userId, serviceOffering, template.getFormat().equals(ImageFormat.ISO), sshPublicKeys, null,
                 id, instanceName, uuidName, hypervisorType, customParameters,
                 null, null, null, powerState, dynamicScalingEnabled, null, serviceOffering.getDiskOfferingId(), null);

@@ -59,7 +59,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
             type = CommandType.STRING,
-            description = "an optional override policy of the userdata. Possible values are - allowoverride, append, denyoverride. Default policy is allowoverride")
+            description = "an optional override policy of the userdata. Possible values are - ALLOWOVERRIDE, APPEND, DENYOVERRIDE. Default policy is allowoverride")
     private String userdataPolicy;
 
     /////////////////////////////////////////////////////
@@ -76,9 +76,9 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     public UserData.UserDataOverridePolicy getUserdataPolicy() {
         if (userdataPolicy == null) {
-            return UserData.UserDataOverridePolicy.allowoverride;
+            return UserData.UserDataOverridePolicy.ALLOWOVERRIDE;
         }
-        return UserData.UserDataOverridePolicy.valueOf(userdataPolicy.toLowerCase());
+        return UserData.UserDataOverridePolicy.valueOf(userdataPolicy.toUpperCase());
     }
 
     @Override

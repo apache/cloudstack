@@ -20,6 +20,7 @@ import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,6 +70,7 @@ public class DeleteUserDataCmdTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Assert.assertEquals(cmd.getResponseObject().getClass(), SuccessResponse.class);
     }
 
     @Test(expected = ServerApiException.class)
@@ -89,8 +91,8 @@ public class DeleteUserDataCmdTest {
 
         ReflectionTestUtils.setField(cmd, "id", 1L);
 
-        Assert.assertEquals((long)cmd.getId(), 1L);
-        Assert.assertEquals(cmd.getEntityOwnerId(), 2L);
+        Assert.assertEquals(1L, (long)cmd.getId());
+        Assert.assertEquals(2L, cmd.getEntityOwnerId());
     }
 
 }

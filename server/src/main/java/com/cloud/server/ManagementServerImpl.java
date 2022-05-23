@@ -954,9 +954,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     public UUIDManager uuidMgr;
     @Inject
-    protected UserDataDao _userDataDao;
+    protected UserDataDao userDataDao;
     @Inject
-    protected VMTemplateDao _templateDao;
+    protected VMTemplateDao templateDao;
     @Inject
     protected AnnotationDao annotationDao;
 
@@ -4358,9 +4358,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String keyword = cmd.getKeyword();
 
         final Account caller = getCaller();
-        final List<Long> permittedAccounts = new ArrayList<Long>();
+        final List<Long> permittedAccounts = new ArrayList<>();
 
-        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         final Long domainId = domainIdRecursiveListProject.first();
         final Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -4392,7 +4392,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends SSHKeyPair>, Integer>(result.first(), result.second());
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -4430,7 +4430,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        final UserDataVO userData = _userDataDao.findById(cmd.getId());
+        final UserDataVO userData = userDataDao.findById(cmd.getId());
         if (userData == null) {
             final InvalidParameterValueException ex = new InvalidParameterValueException(
                     "A UserData with id '" + cmd.getId() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
@@ -4443,14 +4443,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        List<VMTemplateVO> templatesLinkedToUserData = _templateDao.findTemplatesLinkedToUserdata(userData.getId());
+        List<VMTemplateVO> templatesLinkedToUserData = templateDao.findTemplatesLinkedToUserdata(userData.getId());
         if (CollectionUtils.isNotEmpty(templatesLinkedToUserData)) {
             throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is linked to active template/templates", userData.getName()));
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.USER_DATA.name(), userData.getUuid());
 
-        return _userDataDao.remove(userData.getId());
+        return userDataDao.remove(userData.getId());
     }
 
     @Override
@@ -4467,27 +4467,30 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = domainIdRecursiveListProject.first();
         final Boolean isRecursive = domainIdRecursiveListProject.second();
         final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        final SearchBuilder<UserDataVO> sb = _userDataDao.createSearchBuilder();
+        final SearchBuilder<UserDataVO> sb = userDataDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         final Filter searchFilter = new Filter(UserDataVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.EQ, name);
+            sc.setParameters("name", name);
         }
 
         if (keyword != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.setParameters("name",  "%" + keyword + "%");
         }
 
-        final Pair<List<UserDataVO>, Integer> result = _userDataDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<? extends UserData>, Integer>(result.first(), result.second());
+        final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);
+        return new Pair<>(result.first(), result.second());
     }
 
     @Override
@@ -4523,27 +4526,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             // If GET, use 4K. If POST, support up to 1M.
             if (httpmethod.equals(BaseCmd.HTTPMethod.GET)) {
-                if (userData.length() >= MAX_HTTP_GET_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for an http GET request");
-                }
-                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
-                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
-                }
-                decodedUserData = Base64.decodeBase64(userData.getBytes());
-                if (decodedUserData.length > MAX_HTTP_GET_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for GET request");
-                }
+                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_GET_LENGTH, BaseCmd.HTTPMethod.GET);
             } else if (httpmethod.equals(BaseCmd.HTTPMethod.POST)) {
-                if (userData.length() >= MAX_HTTP_POST_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for an http POST request");
-                }
-                if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
-                    throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
-                }
-                decodedUserData = Base64.decodeBase64(userData.getBytes());
-                if (decodedUserData.length > MAX_HTTP_POST_LENGTH) {
-                    throw new InvalidParameterValueException("User data is too long for POST request");
-                }
+                decodedUserData = validateAndDecodeByHTTPmethod(userData, MAX_HTTP_POST_LENGTH, BaseCmd.HTTPMethod.POST);
             }
 
             if (decodedUserData == null || decodedUserData.length < 1) {
@@ -4555,13 +4540,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return null;
     }
 
+    private byte[] validateAndDecodeByHTTPmethod(String userData, int maxHTTPlength, BaseCmd.HTTPMethod httpMethod) {
+        byte[] decodedUserData = null;
+
+        if (userData.length() >= maxHTTPlength) {
+            throw new InvalidParameterValueException(String.format("User data is too long for an http %s request", httpMethod.toString()));
+        }
+        if (userData.length() > VM_USERDATA_MAX_LENGTH.value()) {
+            throw new InvalidParameterValueException("User data has exceeded configurable max length : " + VM_USERDATA_MAX_LENGTH.value());
+        }
+        decodedUserData = Base64.decodeBase64(userData.getBytes());
+        if (decodedUserData.length > maxHTTPlength) {
+            throw new InvalidParameterValueException(String.format("User data is too long for http %s request", httpMethod.toString()));
+        }
+        return decodedUserData;
+    }
+
     /**
      * @param cmd
      * @param owner
      * @throws InvalidParameterValueException
      */
     private void checkForUserData(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
-        final UserDataVO userData = _userDataDao.findByUserData(owner.getAccountId(), owner.getDomainId(), cmd.getUserData());
+        final UserDataVO userData = userDataDao.findByUserData(owner.getAccountId(), owner.getDomainId(), cmd.getUserData());
         if (userData != null) {
             throw new InvalidParameterValueException(String.format("Userdata %s with same content already exists for this account.", userData.getName()));
         }
@@ -4573,7 +4574,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
      * @throws InvalidParameterValueException
      */
     private void checkForUserDataByName(final RegisterUserDataCmd cmd, final Account owner) throws InvalidParameterValueException {
-        final UserDataVO userData = _userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
+        final UserDataVO userData = userDataDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (userData != null) {
             throw new InvalidParameterValueException(String.format("A userdata with name %s already exists for this account.", cmd.getName()));
         }
@@ -4639,13 +4640,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     /**
      * @param cmd
-     * @return
+     * @return Account
      */
     protected Account getOwner(final RegisterUserDataCmd cmd) {
         final Account caller = getCaller();
-
-        final Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        return owner;
+        return  _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
     }
 
     /**
@@ -4680,7 +4679,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         userDataVO.setUserData(userdata);
         userDataVO.setParams(params);
 
-        _userDataDao.persist(userDataVO);
+        userDataDao.persist(userDataVO);
 
         return userDataVO;
     }

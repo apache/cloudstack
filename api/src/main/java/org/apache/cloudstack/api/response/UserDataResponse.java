@@ -94,14 +94,6 @@ public class UserDataResponse extends BaseResponseWithAnnotations {
         this.domainId = domainId;
     }
 
-    public String getDomain() {
-        return domain;
-    }
-
-    public void setDomain(String domain) {
-        this.domain = domain;
-    }
-
     public String getUserData() {
         return userData;
     }

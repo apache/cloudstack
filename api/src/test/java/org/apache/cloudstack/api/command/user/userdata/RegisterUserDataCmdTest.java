@@ -81,6 +81,7 @@ public class RegisterUserDataCmdTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Assert.assertEquals(response, cmd.getResponseObject());
     }
 
     @Test
@@ -96,9 +97,9 @@ public class RegisterUserDataCmdTest {
 
         when(_accountService.finalyzeAccountId(ACCOUNT_NAME, DOMAIN_ID, PROJECT_ID, true)).thenReturn(200L);
 
-        Assert.assertEquals(cmd.getName(), "testUserdataName");
-        Assert.assertEquals(cmd.getUserData(), "testUserdata");
-        Assert.assertEquals(cmd.getEntityOwnerId(), 200L);
+        Assert.assertEquals("testUserdataName", cmd.getName());
+        Assert.assertEquals("testUserdata", cmd.getUserData());
+        Assert.assertEquals(200L, cmd.getEntityOwnerId());
     }
 
 }

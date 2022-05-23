@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RunWith(PowerMockRunner.class)
@@ -41,14 +42,14 @@ public class CommandSetupHelperTest {
         String[] metadataFile1 = metadata.get(0);
         String[] metadataFile2 = metadata.get(1);
 
-        Assert.assertEquals(metadataFile1[0], "metadata");
-        Assert.assertEquals(metadataFile2[0], "metadata");
+        Assert.assertEquals("metadata", metadataFile1[0]);
+        Assert.assertEquals("metadata", metadataFile2[0]);
 
-        Assert.assertEquals(metadataFile1[1], "test1");
-        Assert.assertEquals(metadataFile2[1], "test2");
+        Assert.assertEquals("test1", metadataFile1[1]);
+        Assert.assertEquals("test2", metadataFile2[1]);
 
-        Assert.assertEquals(metadataFile1[2], "value1");
-        Assert.assertEquals(metadataFile2[2], "value2");
+        Assert.assertEquals("value1", metadataFile1[2]);
+        Assert.assertEquals("value2", metadataFile2[2]);
     }
 
     @Test
@@ -56,6 +57,7 @@ public class CommandSetupHelperTest {
         VmDataCommand vmDataCommand = new VmDataCommand("testVMname");
         String testUserDataDetails = null;
         commandSetupHelper.addUserDataDetailsToCommand(vmDataCommand, testUserDataDetails);
+        Assert.assertEquals(new ArrayList<>(), vmDataCommand.getVmData());
     }
 
     @Test
@@ -68,13 +70,13 @@ public class CommandSetupHelperTest {
         String[] metadataFile1 = metadata.get(0);
         String[] metadataFile2 = metadata.get(1);
 
-        Assert.assertEquals(metadataFile1[0], "metadata");
-        Assert.assertEquals(metadataFile2[0], "metadata");
+        Assert.assertEquals("metadata", metadataFile1[0]);
+        Assert.assertEquals("metadata", metadataFile2[0]);
 
-        Assert.assertEquals(metadataFile1[1], "test1");
-        Assert.assertEquals(metadataFile2[1], "test2");
+        Assert.assertEquals("test1", metadataFile1[1]);
+        Assert.assertEquals("test2", metadataFile2[1]);
 
-        Assert.assertEquals(metadataFile1[2], "value1");
-        Assert.assertEquals(metadataFile2[2], "value2");
+        Assert.assertEquals("value1", metadataFile1[2]);
+        Assert.assertEquals("value2", metadataFile2[2]);
     }
 }

@@ -91,6 +91,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -518,12 +519,14 @@ public class TemplateManagerImplTest {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
         when(cmd.getUserdataId()).thenReturn(2L);
-        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.allowoverride);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(_tmpltDao.findById(1L)).thenReturn(template);
 
-        templateManager.linkUserDataToTemplate(cmd);
+        VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+
+        Assert.assertEquals(template, resultTemplate);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -531,7 +534,7 @@ public class TemplateManagerImplTest {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
         when(cmd.getUserdataId()).thenReturn(2L);
-        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.allowoverride);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         when(_tmpltDao.findById(1L)).thenReturn(null);
 
@@ -543,12 +546,14 @@ public class TemplateManagerImplTest {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
         when(cmd.getUserdataId()).thenReturn(null);
-        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.allowoverride);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
         when(_tmpltDao.findById(1L)).thenReturn(template);
 
-        templateManager.linkUserDataToTemplate(cmd);
+        VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+
+        Assert.assertEquals(template, resultTemplate);
     }
 
     @Configuration

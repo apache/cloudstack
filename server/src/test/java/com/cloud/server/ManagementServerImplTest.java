@@ -26,6 +26,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserData;
 import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.Pair;
@@ -42,6 +43,7 @@ import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,8 +119,8 @@ public class ManagementServerImplTest {
         mockConfig = Mockito.mock(ConfigKey.class);
         Whitebox.setInternalState(ipAddressManagerImpl.getClass(), "SystemVmPublicIpReservationModeStrictness", mockConfig);
         spy._accountMgr = _accountMgr;
-        spy._userDataDao = _userDataDao;
-        spy._templateDao = _templateDao;
+        spy.userDataDao = _userDataDao;
+        spy.templateDao = _templateDao;
         spy.annotationDao = annotationDao;
     }
 
@@ -287,7 +289,11 @@ public class ManagementServerImplTest {
         when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
         when(_userDataDao.findByUserData(account.getAccountId(), account.getDomainId(), "testUserdata")).thenReturn(null);
 
-        spy.registerUserData(cmd);
+        UserData userData = spy.registerUserData(cmd);
+        Assert.assertEquals("testName", userData.getName());
+        Assert.assertEquals("testUserdata", userData.getUserData());
+        Assert.assertEquals(1L, userData.getAccountId());
+        Assert.assertEquals(2L, userData.getDomainId());
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -352,8 +358,10 @@ public class ManagementServerImplTest {
         when(_userDataDao.findById(1L)).thenReturn(userData);
         when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
         when(_templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
+        when(_userDataDao.remove(1L)).thenReturn(true);
 
-        spy.deleteUserData(cmd);
+        boolean result = spy.deleteUserData(cmd);
+        Assert.assertEquals(true, result);
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -401,20 +409,23 @@ public class ManagementServerImplTest {
         when(cmd.getProjectId()).thenReturn(2L);
         when(cmd.getId()).thenReturn(1L);
         when(cmd.isRecursive()).thenReturn(false);
+        UserDataVO userData = Mockito.mock(UserDataVO.class);
 
         SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
         when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(userData);
 
         SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
         when(sb.create()).thenReturn(sc);
 
-        UserDataVO userData = Mockito.mock(UserDataVO.class);
         List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
         userDataList.add(userData);
         Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
         when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-        spy.listUserDatas(cmd);
+        Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+
+        Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
     }
 
     @Test
@@ -433,20 +444,23 @@ public class ManagementServerImplTest {
         when(cmd.getProjectId()).thenReturn(2L);
         when(cmd.getName()).thenReturn("testSearchUserdataName");
         when(cmd.isRecursive()).thenReturn(false);
+        UserDataVO userData = Mockito.mock(UserDataVO.class);
 
         SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
         when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(userData);
 
         SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
         when(sb.create()).thenReturn(sc);
 
-        UserDataVO userData = Mockito.mock(UserDataVO.class);
         List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
         userDataList.add(userData);
         Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
         when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-        spy.listUserDatas(cmd);
+        Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+
+        Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
     }
 
     @Test
@@ -465,20 +479,23 @@ public class ManagementServerImplTest {
         when(cmd.getProjectId()).thenReturn(2L);
         when(cmd.getKeyword()).thenReturn("testSearchUserdataKeyword");
         when(cmd.isRecursive()).thenReturn(false);
+        UserDataVO userData = Mockito.mock(UserDataVO.class);
 
         SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
         when(_userDataDao.createSearchBuilder()).thenReturn(sb);
+        when(sb.entity()).thenReturn(userData);
 
         SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
         when(sb.create()).thenReturn(sc);
 
-        UserDataVO userData = Mockito.mock(UserDataVO.class);
         List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
         userDataList.add(userData);
         Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
         when(_userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
 
-        spy.listUserDatas(cmd);
+        Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd);
+
+        Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
     }
 
 }

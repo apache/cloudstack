@@ -18,27 +18,49 @@ package com.cloud.user.dao;
 
 import com.cloud.user.UserDataVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserDataDaoImpl extends GenericDaoBase<UserDataVO, Long> implements UserDataDao  {
 
+    private final SearchBuilder<UserDataVO> userdataSearch;
+    private final SearchBuilder<UserDataVO> userdataByNameSearch;
+
+    public UserDataDaoImpl() {
+        super();
+
+        userdataSearch = createSearchBuilder();
+        userdataSearch.and("accountId", userdataSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        userdataSearch.and("domainId", userdataSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        userdataSearch.and("userData", userdataSearch.entity().getUserData(), SearchCriteria.Op.EQ);
+        userdataSearch.done();
+
+        userdataByNameSearch = createSearchBuilder();
+        userdataByNameSearch.and("accountId", userdataByNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        userdataByNameSearch.and("domainId", userdataByNameSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        userdataByNameSearch.and("name", userdataByNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        userdataByNameSearch.done();
+
+    }
     @Override
     public UserDataVO findByUserData(long accountId, long domainId, String userData) {
-        SearchCriteria<UserDataVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("userData", SearchCriteria.Op.EQ, userData);
+        SearchCriteria<UserDataVO> sc = userdataSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("userData", userData);
+
         return findOneBy(sc);
     }
 
     @Override
     public UserDataVO findByName(long accountId, long domainId, String name) {
-        SearchCriteria<UserDataVO> sc = createSearchCriteria();
-        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        SearchCriteria<UserDataVO> sc = userdataByNameSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("name", name);
+
         return findOneBy(sc);
     }
 }

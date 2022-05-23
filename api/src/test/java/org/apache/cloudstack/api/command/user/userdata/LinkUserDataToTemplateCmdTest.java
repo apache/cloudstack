@@ -79,6 +79,7 @@ public class LinkUserDataToTemplateCmdTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        Assert.assertEquals(response, cmd.getResponseObject());
     }
 
     @Test
@@ -95,14 +96,14 @@ public class LinkUserDataToTemplateCmdTest {
         Mockito.doReturn(virtualMachineTemplate).when(_entityMgr).findById(VirtualMachineTemplate.class, cmd.getTemplateId());
         PowerMockito.when(virtualMachineTemplate.getAccountId()).thenReturn(1L);
 
-        Assert.assertEquals((long)cmd.getTemplateId(), 1L);
-        Assert.assertEquals((long)cmd.getUserdataId(), 3L);
-        Assert.assertEquals(cmd.getEntityOwnerId(), 1L);
+        Assert.assertEquals(1L, (long)cmd.getTemplateId());
+        Assert.assertEquals(3L, (long)cmd.getUserdataId());
+        Assert.assertEquals(1L, cmd.getEntityOwnerId());
     }
 
     @Test
     public void testDefaultOverridePolicy() {
-        Assert.assertEquals(cmd.getUserdataPolicy(), UserData.UserDataOverridePolicy.allowoverride);
+        Assert.assertEquals(UserData.UserDataOverridePolicy.ALLOWOVERRIDE, cmd.getUserdataPolicy());
     }
 
 }
