@@ -323,6 +323,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
     public final static String CONFIG_DIR = "config";
+    private boolean enableIoUring;
+    private final static String ENABLE_IO_URING_PROPERTY = "enable.io.uring";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -1034,6 +1036,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (final LibvirtException e) {
             s_logger.trace("Ignoring libvirt error.", e);
         }
+
+        // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
+        boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
+        enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
         final String cpuArchOverride = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_CPU_ARCH);
         if (StringUtils.isNotEmpty(cpuArchOverride)) {
@@ -2864,17 +2871,65 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
+     * Check if IO_URING is supported by qemu
+     */
+    protected boolean isIoUringSupportedByQemu() {
+        s_logger.debug("Checking if iouring is supported");
+        String command = getIoUringCheckCommand();
+        if (org.apache.commons.lang3.StringUtils.isBlank(command)) {
+            s_logger.debug("Could not check iouring support, disabling it");
+            return false;
+        }
+        int exitValue = executeBashScriptAndRetrieveExitValue(command);
+        return exitValue == 0;
+    }
+
+    protected String getIoUringCheckCommand() {
+        String[] qemuPaths = { "/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm", "/usr/bin/qemu-kvm" };
+        for (String qemuPath : qemuPaths) {
+            File file = new File(qemuPath);
+            if (file.exists()) {
+                String cmd = String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+                s_logger.debug("Using the check command: " + cmd);
+                return cmd;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
      * IO Driver works for:
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
     protected void setDiskIoDriver(DiskDef disk) {
-        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
-                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING
-                && AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING)) {
+        if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
+    }
+
+    /**
+     * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
+     */
+    private boolean isIoUringEnabled(Boolean enableIoUringConfig) {
+        boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
+                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
+        if (!meetRequirements) {
+            return false;
+        }
+        return enableIoUringConfig != null ?
+                enableIoUringConfig:
+                (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+    }
+
+    private boolean isBaseOsUbuntu() {
+        Map<String, String> versionString = getVersionStrings();
+        String hostKey = "Host.OS";
+        if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
+            return false;
+        }
+        return versionString.get(hostKey).equalsIgnoreCase("ubuntu");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
@@ -3754,10 +3809,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private String executeBashScript(final String script) {
+        return createScript(script).execute();
+    }
+
+    private Script createScript(final String script) {
         final Script command = new Script("/bin/bash", _timeout, s_logger);
         command.add("-c");
         command.add(script);
-        return command.execute();
+        return command;
+    }
+
+    private int executeBashScriptAndRetrieveExitValue(final String script) {
+        Script command = createScript(script);
+        command.execute();
+        return command.getExitValue();
     }
 
     public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {

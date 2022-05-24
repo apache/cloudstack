@@ -563,9 +563,9 @@ public class AgentProperties{
     /**
      * Enable manually IO driver on KVM's VM. <br>
      * Data type: Boolean.<br>
-     * Default value: <code>true</code>
+     * Default value: <code>null</code>
      */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", true);
+    public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", null, Boolean.class);
 
     /**
      * Defines the location for Hypervisor scripts.<br>
