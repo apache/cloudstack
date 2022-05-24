@@ -56,7 +56,6 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -209,8 +208,22 @@ public class VirtualMachineManagerImplTest {
     public void testExeceuteInSequence() {
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.XenServer) == false);
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.KVM) == false);
-        assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware) == HypervisorGuru.VmwareFullClone.value());
         assertTrue(virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.Ovm3) == VirtualMachineManager.ExecuteInSequence.value());
+    }
+    @Test
+    public void testExeceuteInSequenceVmware() {
+        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
+        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+        assertFalse("no full clones so no need to execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
+        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
+        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+        assertTrue("full clones and no explicit parallel execution allowed, should execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
+        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
+        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        assertFalse("execute in sequence should not be needed as parallel is allowed", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
+        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
+        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        assertFalse("double reasons to allow parallel execution", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
     }
 
     @Test

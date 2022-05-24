@@ -92,6 +92,9 @@ public interface CapacityManager {
     static final ConfigKey<Float> SecondaryStorageCapacityThreshold = new ConfigKey<Float>("Advanced", Float.class, "secondary.storage.capacity.threshold", "0.90",
             "Percentage (as a value between 0 and 1) of secondary storage capacity threshold.", true);
 
+    public static final ConfigKey<Boolean> vmwareAllowParallelExecution = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.allow.parallel.copy.command.execution", "false",
+            "allow copy command to be executed in parallel in spite of 'vmware.create.full.clone' being set to false.", true, ConfigKey.Scope.Global);
+
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 
     void allocateVmCapacity(VirtualMachine vm, boolean fromLastHost);
