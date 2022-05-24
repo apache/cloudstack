@@ -1358,6 +1358,11 @@ export default {
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
           params.id = this.resource.id
         }
+
+        if (['updateDiskOffering'].includes(action.api) && values.tags === this.resource.tags) {
+          delete values.tags
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {
