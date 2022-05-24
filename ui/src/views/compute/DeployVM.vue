@@ -586,6 +586,29 @@
                                 </template>
                               </a-table>
                             </a-input-group>
+                          </div>
+                        </div>
+                        <div v-if="this.iso && this.iso.userdataid">
+                          <a-text type="primary">
+                              Userdata "{{ $t(this.iso.userdataname) }}" is linked with ISO "{{ $t(this.iso.name) }}" with override policy "{{ $t(this.iso.userdatapolicy) }}"
+                          </a-text><br/><br/>
+                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
+                            <a-text type="primary" v-if="this.iso && this.iso.userdataid && templateUserDataParams.length > 0">
+                                Enter the values for the variables in userdata
+                            </a-text>
+                            <a-input-group>
+                              <a-table
+                                size="small"
+                                style="overflow-y: auto"
+                                :columns="userDataParamCols"
+                                :dataSource="templateUserDataParams"
+                                :pagination="false"
+                                :rowKey="record => record.key">
+                                <template #value="{ record }">
+                                  <a-input v-model:value="templateUserDataValues[record.key]" />
+                                </template>
+                              </a-table>
+                            </a-input-group>
                           </div><br/><br/>
                         </div>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
@@ -1365,11 +1388,6 @@ export default {
           this.vm.templatename = this.template.displaytext
           this.vm.ostypeid = this.template.ostypeid
           this.vm.ostypename = this.template.ostypename
-
-          if (this.template.userdataid) {
-            this.doUserdataOverride = false
-            this.doUserdataAppend = false
-          }
         }
 
         if (this.iso) {
@@ -1380,11 +1398,6 @@ export default {
           this.vm.ostypename = this.iso.ostypename
           if (this.hypervisor) {
             this.vm.hypervisor = this.hypervisor
-          }
-
-          if (this.iso.userdataid) {
-            this.doUserdataOverride = false
-            this.doUserdataAppend = false
           }
         }
 
@@ -1430,6 +1443,8 @@ export default {
   template (oldValue, newValue) {
     if (oldValue && newValue && oldValue.id !== newValue.id) {
       this.dynamicscalingenabled = this.isDynamicallyScalable()
+      this.doUserdataOverride = false
+      this.doUserdataAppend = false
     }
   },
   created () {
@@ -1756,6 +1771,8 @@ export default {
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
+        this.updateTemplateLinkedUserData(this.iso.userdataid)
+        this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -1842,12 +1859,14 @@ export default {
           }
           var that = this
           that.templateUserDataParams = []
-          dataParams.forEach(function (val, index) {
-            that.templateUserDataParams.push({
-              id: index,
-              key: val
+          if (dataParams) {
+            dataParams.forEach(function (val, index) {
+              that.templateUserDataParams.push({
+                id: index,
+                key: val
+              })
             })
-          })
+          }
         }
       })
     },

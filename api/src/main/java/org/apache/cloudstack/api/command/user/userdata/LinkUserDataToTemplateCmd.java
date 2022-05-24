@@ -54,7 +54,7 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,
-            description = "the ID of the userdata that has to be linked to template")
+            description = "the ID of the userdata that has to be linked to template/ISO")
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
