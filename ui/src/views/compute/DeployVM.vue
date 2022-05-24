@@ -588,12 +588,12 @@
                             </a-input-group>
                           </div><br/><br/>
                         </div>
-                        <div v-if="userdataDefaultOverridePolicy === 'allowoverride' || userdataDefaultOverridePolicy === 'append' || !userdataDefaultOverridePolicy">
-                          <span v-if="userdataDefaultOverridePolicy === 'allowoverride'" >
+                        <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
+                          <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
                             {{ $t('label.userdata.do.override') }}
                             <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
                           </span>
-                          <span v-if="userdataDefaultOverridePolicy === 'append'">
+                          <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
                             {{ $t('label.userdata.do.append') }}
                             <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
                           </span>
@@ -615,7 +615,7 @@
                                             :items="options.userDatas"
                                             :row-count="rowCount.userDatas"
                                             :zoneId="zoneId"
-                                            :disabled="template.userdatapolicy === 'denyoverride'"
+                                            :disabled="template.userdatapolicy === 'DENYOVERRIDE'"
                                             :loading="loading.userDatas"
                                             :preFillContent="dataPreFill"
                                             @select-user-data-item="($event) => updateUserData($event)"
@@ -831,7 +831,7 @@ export default {
       showRegisteredUserdata: true,
       doUserdataOverride: false,
       doUserdataAppend: false,
-      userdataDefaultOverridePolicy: 'allowoverride',
+      userdataDefaultOverridePolicy: 'ALLOWOVERRIDE',
       vm: {
         name: null,
         zoneid: null,
