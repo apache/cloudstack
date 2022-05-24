@@ -33,7 +33,7 @@ public interface Counter extends InternalIdentity, Identity {
         virtualrouter
     }
 
-    static final List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory, Source.virtualrouter);
+    static final List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory);
 
     String getName();
 
