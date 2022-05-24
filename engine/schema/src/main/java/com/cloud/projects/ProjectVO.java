@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
@@ -116,9 +117,7 @@ public class ProjectVO implements Project, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("Project[");
-        buf.append(id).append("|name=").append(name).append("|domainid=").append(domainId).append("]");
-        return buf.toString();
+        return String.format("Project %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid", "domainId"));
     }
 
     @Override
