@@ -530,6 +530,7 @@ import org.apache.cloudstack.api.command.user.vm.RemoveIpFromVmNicCmd;
 import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
@@ -3478,6 +3479,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveNicFromVMCmd.class);
         cmdList.add(ResetVMPasswordCmd.class);
         cmdList.add(ResetVMSSHKeyCmd.class);
+        cmdList.add(ResetVMUserDataCmd.class);
         cmdList.add(RestoreVMCmd.class);
         cmdList.add(StartVMCmd.class);
         cmdList.add(StopVMCmd.class);

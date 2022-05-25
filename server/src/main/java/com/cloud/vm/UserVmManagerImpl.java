@@ -75,6 +75,7 @@ import org.apache.cloudstack.api.command.user.vm.RebootVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RemoveNicFromVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMPasswordCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMSSHKeyCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 import org.apache.cloudstack.api.command.user.vm.SecurityGroupAction;
@@ -901,6 +902,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             return false;
         }
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_RESETUSERDATA, eventDescription = "resetting VM userdata", async = true)
+    public UserVm resetVMUserData(ResetVMUserDataCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
+
+        Account caller = CallContext.current().getCallingAccount();
+        Long vmId = cmd.getId();
+        UserVmVO userVm = _vmDao.findById(cmd.getId());
+
+        if (userVm == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+        }
+        _accountMgr.checkAccess(caller, null, true, userVm);
+
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
+
+        // Do parameters input validation
+
+        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
+            s_logger.error(String.format("VM with id %s is not in the right state", vmId));
+            throw new InvalidParameterValueException(String.format("VM with id %s is not in the right state", vmId));
+        }
+        if (userVm.getState() != State.Stopped) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException(String.format("VM %s should be stopped to do UserData reset", userVm));
+        }
+
+        String userData = cmd.getUserData();
+        Long userDataId = cmd.getUserdataId();
+        String userDataDetails = null;
+        if (MapUtils.isNotEmpty(cmd.getUserdataDetails())) {
+            userDataDetails = cmd.getUserdataDetails().toString();
+        }
+        userData = finalizeUserData(userData, userDataId, template);
+        userData = validateUserData(userData, cmd.getHttpMethod());
+
+        userVm.setUserDataId(userDataId);
+        userVm.setUserData(userData);
+        userVm.setUserDataDetails(userDataDetails);
+        _vmDao.update(userVm.getId(), userVm);
+
+        updateUserData(userVm);
+
+        UserVmVO vm = _vmDao.findById(vmId);
+        _vmDao.loadDetails(vm);
+        return vm;
     }
 
     @Override

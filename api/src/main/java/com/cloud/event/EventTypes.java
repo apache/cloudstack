@@ -101,6 +101,8 @@ public class EventTypes {
     public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
+
+    public static final String EVENT_VM_RESETUSERDATA = "VM.RESETUSERDATA";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
     public static final String EVENT_VM_RESTORE = "VM.RESTORE";

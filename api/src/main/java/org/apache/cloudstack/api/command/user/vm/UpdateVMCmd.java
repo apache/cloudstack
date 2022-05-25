@@ -93,10 +93,10 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                since = "4.16.0")
     private String userData;
 
-    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the ssh keypair", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the userdata", since = "4.18")
     private Long userdataId;
 
-    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the custom parameters. 'extraconfig' is not allowed to be passed in details", since = "4.18")
+    @Parameter(name = ApiConstants.USER_DATA_DETAILS, type = CommandType.MAP, description = "used to specify the parameters values for the variables in userdata.", since = "4.18")
     private Map userdataDetails;
 
     @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vm to the end user or not.", authorized = {RoleType.Admin})
