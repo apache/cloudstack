@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -40,6 +41,7 @@ import com.cloud.user.UserDataVO;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -682,4 +684,134 @@ public class UserVmManagerImplTest {
         Assert.assertEquals(finalUserdata, userData);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    @PrepareForTest(CallContext.class)
+    public void testResetVMUserDataVMStateNotStopped() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+        ResetVMUserDataCmd cmd = Mockito.mock(ResetVMUserDataCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(userVmVoMock.getTemplateId()).thenReturn(2L);
+        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+
+        try {
+            userVmManagerImpl.resetVMUserData(cmd);
+        } catch (ResourceUnavailableException e) {
+            throw new RuntimeException(e);
+        } catch (InsufficientCapacityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    @PrepareForTest(CallContext.class)
+    public void testResetVMUserDataDontAcceptBothUserdataAndUserdataId() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+        ResetVMUserDataCmd cmd = Mockito.mock(ResetVMUserDataCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(userVmVoMock.getTemplateId()).thenReturn(2L);
+        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+
+
+        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+
+        when(cmd.getUserData()).thenReturn("testUserdata");
+        when(cmd.getUserdataId()).thenReturn(1L);
+
+        try {
+            userVmManagerImpl.resetVMUserData(cmd);
+        } catch (ResourceUnavailableException e) {
+            throw new RuntimeException(e);
+        } catch (InsufficientCapacityException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    @PrepareForTest(CallContext.class)
+    public void testResetVMUserDataSuccessResetWithUserdata() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(2L);
+        userVmVO.setState(VirtualMachine.State.Stopped);
+        userVmVO.setUserDataId(100L);
+        userVmVO.setUserData("RandomUserdata");
+
+        ResetVMUserDataCmd cmd = Mockito.mock(ResetVMUserDataCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(userVmDao.findById(1L)).thenReturn(userVmVO);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+        when(template.getUserDataId()).thenReturn(null);
+
+        when(cmd.getUserData()).thenReturn("testUserdata");
+        when(cmd.getUserdataId()).thenReturn(null);
+        when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        try {
+            doNothing().when(userVmManagerImpl).updateUserData(userVmVO);
+            userVmManagerImpl.resetVMUserData(cmd);
+        } catch (ResourceUnavailableException e) {
+            throw new RuntimeException(e);
+        } catch (InsufficientCapacityException e) {
+            throw new RuntimeException(e);
+        }
+
+        Assert.assertEquals("testUserdata", userVmVO.getUserData());
+        Assert.assertEquals(null, userVmVO.getUserDataId());
+    }
+
+    @Test
+    @PrepareForTest(CallContext.class)
+    public void testResetVMUserDataSuccessResetWithUserdataId() {
+        CallContext callContextMock = Mockito.mock(CallContext.class);
+        Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(2L);
+        userVmVO.setState(VirtualMachine.State.Stopped);
+        userVmVO.setUserDataId(100L);
+        userVmVO.setUserData("RandomUserdata");
+
+        ResetVMUserDataCmd cmd = Mockito.mock(ResetVMUserDataCmd.class);
+        when(cmd.getId()).thenReturn(1L);
+        when(userVmDao.findById(1L)).thenReturn(userVmVO);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+        when(template.getUserDataId()).thenReturn(null);
+
+        when(cmd.getUserdataId()).thenReturn(1L);
+        UserDataVO apiUserDataVO = Mockito.mock(UserDataVO.class);
+        when(userDataDao.findById(1L)).thenReturn(apiUserDataVO);
+        when(apiUserDataVO.getUserData()).thenReturn("testUserdata");
+        when(cmd.getHttpMethod()).thenReturn(HTTPMethod.GET);
+
+        try {
+            doNothing().when(userVmManagerImpl).updateUserData(userVmVO);
+            userVmManagerImpl.resetVMUserData(cmd);
+        } catch (ResourceUnavailableException e) {
+            throw new RuntimeException(e);
+        } catch (InsufficientCapacityException e) {
+            throw new RuntimeException(e);
+        }
+
+        Assert.assertEquals("testUserdata", userVmVO.getUserData());
+        Assert.assertEquals(1L, (long)userVmVO.getUserDataId());
+    }
 }

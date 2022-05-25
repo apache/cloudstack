@@ -921,10 +921,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Do parameters input validation
 
-        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
-            s_logger.error(String.format("VM with id %s is not in the right state", vmId));
-            throw new InvalidParameterValueException(String.format("VM with id %s is not in the right state", vmId));
-        }
         if (userVm.getState() != State.Stopped) {
             s_logger.error("vm is not in the right state: " + vmId);
             throw new InvalidParameterValueException(String.format("VM %s should be stopped to do UserData reset", userVm));
@@ -3114,7 +3110,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(id);
     }
 
-    private void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
+    protected void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
         boolean result = updateUserDataInternal(vm);
         if (result) {
             s_logger.debug(String.format("User data successfully updated for vm id:  %s", vm.getId()));
