@@ -40,6 +40,7 @@
             :placeholder="apiParams.scope.description" >
             <a-select-option :value="'cluster'" :label="$t('label.clusterid')"> {{ $t('label.clusterid') }} </a-select-option>
             <a-select-option :value="'zone'" :label="$t('label.zoneid')"> {{ $t('label.zoneid') }} </a-select-option>
+            <a-select-option :value="'host'" :label="$t('label.hostid')"> {{ $t('label.hostid') }} </a-select-option>
           </a-select>
         </a-form-item>
         <div v-if="form.scope === 'zone'">
@@ -168,7 +169,7 @@
             <a-input v-model:value="form.server" :placeholder="$t('message.server.description')" />
           </a-form-item>
         </div>
-        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
+        <div v-if="form.protocol === 'nfs' || form.protocol === 'SMB' || form.protocol === 'ocfs2' || protocolSelected === 'Filesystem' || (form.protocol === 'PreSetup' && hypervisorType !== 'VMware') || form.protocol === 'SharedMountPoint'">
           <a-form-item name="path" ref="path">
             <template #label>
               <tooltip-label :title="$t('label.path')" :tooltip="$t('message.path.description')"/>
@@ -504,6 +505,9 @@ export default {
       this.hypervisorType = cluster.hypervisortype
       if (this.hypervisorType === 'KVM') {
         this.protocols = ['nfs', 'SharedMountPoint', 'RBD', 'CLVM', 'Gluster', 'Linstor', 'custom']
+        if (this.scope === 'host') {
+          this.protocols.push('Filesystem')
+        }
       } else if (this.hypervisorType === 'XenServer') {
         this.protocols = ['nfs', 'PreSetup', 'iscsi', 'custom']
       } else if (this.hypervisorType === 'VMware') {
@@ -523,6 +527,20 @@ export default {
       if (!value) {
         this.form.protocol = this.protocols[0]
       }
+    },
+    filesystemURL (hostId, path) {
+      var url
+      if (path.substring(0, 1) !== '/') {
+        path = '/' + path
+      }
+      var hostName
+      this.hosts.forEach(host => {
+        if (host.id === hostId) {
+          hostName = host.name
+        }
+      })
+      url = 'file://' + hostName + path
+      return url
     },
     nfsURL (server, path) {
       var url
@@ -761,6 +779,8 @@ export default {
           if (values.capacityIops && values.capacityIops.length > 0) {
             params.capacityIops = values.capacityIops.split(',').join('')
           }
+        } else if (values.protocol === 'Filesystem') {
+          url = this.filesystemURL(values.host, path)
         }
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {
