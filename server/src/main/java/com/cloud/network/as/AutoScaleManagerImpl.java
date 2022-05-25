@@ -1665,7 +1665,21 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return false;
     }
 
-    private AutoScalePolicy.Action getAutoscaleAction(HashMap<Long, Double> avgCounter, long groupId, long currentVM, Map<String, String> params) {
+    private Map<Long, CounterVO> getConditionsMap(long groupId) {
+        Map<Long, CounterVO> conditionsMap = new HashMap<>();
+        List<AutoScaleVmGroupPolicyMapVO> vos = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
+        for (AutoScaleVmGroupPolicyMapVO vo : vos) {
+            List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(vo.getPolicyId());
+            for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
+                ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
+                CounterVO counter = _counterDao.findById(condition.getCounterid());
+                conditionsMap.put(condition.getId(), counter);
+            }
+        }
+        return conditionsMap;
+    }
+
+    private AutoScalePolicy.Action getAutoscaleAction(Map<Long, Double> countersMap, Map<Long, Integer> countersNumberMap, long groupId, Map<String, String> params) {
 
         List<AutoScaleVmGroupPolicyMapVO> listMap = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
         if ((listMap == null) || (listMap.size() == 0))
@@ -1706,8 +1720,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                                 counter_count++;
                             } while (true);
 
-                            Double sum = avgCounter.get(counter_count);
-                            Double avg = sum / currentVM;
+                            Double sum = countersMap.get(counter_count);
+                            Integer number = countersNumberMap.get(counter_count);
+                            if (number == null || number == 0) {
+                                bValid = false;
+                                break;
+                            }
+                            Double avg = sum / number;
                             Condition.Operator op = conditionVO.getRelationalOperator();
                             boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent.equals(avg)))
                                     || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg.doubleValue() >= thresholdPercent.doubleValue()))
@@ -1877,7 +1896,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             } else {
                 String result = answer.getDetails();
                 s_logger.debug("[AutoScale] RRDs collection answer: " + result);
-                HashMap<Long, Double> avgCounter = new HashMap<Long, Double>();
+                HashMap<Long, Double> countersMap = new HashMap<Long, Double>();
+                HashMap<Long, Integer> countersNumberMap = new HashMap<Long, Integer>();
 
                 // extract data
                 String[] counterElements = result.split(",");
@@ -1891,14 +1911,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             Long conditionId = Long.parseLong(params.get("con" + counter_vm[1]));
                             Double coVal = Double.parseDouble(counterVals[1]);
 
-                            updateCountersMap(avgCounter, asGroup, counterId, conditionId, coVal);
+                            updateCountersMap(countersMap, countersNumberMap, asGroup, counterId, conditionId, coVal);
 
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
 
-                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM, params);
+                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, asGroup.getId(), params);
                     if (scaleAction != null) {
                         s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
                         if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
@@ -1938,11 +1958,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         params.put("total_counter", String.valueOf(total_counter));
     }
 
-    private void updateCountersMap(Map<Long, Double> avgCounter, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
+    private void updateCountersMap(Map<Long, Double> countersMap, Map<Long, Integer> countersNumberMap, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
         // Summary of all counter by counterId key
-        if (avgCounter.get(counterId) == null) {
+        if (countersMap.get(counterId) == null) {
             /* initialize if data is not set */
-            avgCounter.put(counterId, new Double(0));
+            countersMap.put(counterId, Double.valueOf(0));
+        }
+        if (countersNumberMap.get(counterId) == null) {
+            /* initialize if data is not set */
+            countersNumberMap.put(counterId, 0);
         }
 
         String counterName = getCounternamebyCondition(conditionId.longValue());
@@ -1961,7 +1985,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         // update data entry
-        avgCounter.put(counterId, avgCounter.get(counterId) + coVal);
+        s_logger.debug(String.format("Updating countersMap for counterId = %d from %f to %f", counterId, countersMap.get(counterId), countersMap.get(counterId) + coVal));
+        countersMap.put(counterId, countersMap.get(counterId) + coVal);
+        countersNumberMap.put(counterId, countersNumberMap.get(counterId) + 1);
     }
 
     private void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
@@ -1982,10 +2008,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         asGroup.setLastInterval(new Date());
         _autoScaleVmGroupDao.persist(asGroup);
 
-        s_logger.debug("[AutoScale] Collecting performance data for hosts and virtual routers ...");
+        s_logger.debug("[AutoScale] Collecting performance data ...");
 
-        HashMap<Long, Double> counters = new HashMap<Long, Double>();
+        Map<Long, CounterVO> conditionsMap = getConditionsMap(asGroup.getId());
+
+        Map<Long, Double> countersMap = new HashMap<Long, Double>();
+        Map<Long, Integer> countersNumberMap = new HashMap<Long, Integer>();
+
         if (is_native(asGroup.getId())) {
+            s_logger.debug("[AutoScale] Collecting performance data from hosts ...");
+
             // group vms by host id
             Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<Long, List<Long>>();
 
@@ -2014,12 +2046,20 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                     if (vmStatsById != null) {
                         Set<Long> vmIdSet = vmStatsById.keySet();
+
                         for (Long vmId : vmIdSet) {
                             VmStatsEntry vmStats = vmStatsById.get(vmId);
+                            for (Long conditionId : conditionsMap.keySet()) {
+                                CounterVO counter = conditionsMap.get(conditionId);
+                                if (Counter.NativeSources.contains(counter.getSource())) {
+                                    Double counterValue = Counter.Source.cpu.equals(counter.getSource()) ? vmStats.getCPUUtilization() : vmStats.getMemoryKBs() / 1024;
+                                    updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, counterValue);
+                                }
+                            }
                         }
                     }
                 } catch (Exception e) {
-                    s_logger.debug("Failed to get VM stats for host with ID: " + host.getId());
+                    s_logger.debug("Failed to get VM stats from host : " + host.getName());
                     continue;
                 }
             }
@@ -2028,6 +2068,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         if (has_source_virtual_router(asGroup.getId())) {
+            s_logger.debug("[AutoScale] Collecting performance data from virtual router ...");
+
             // create PerformanceMonitorCommand for the host where is virtual router is running on
 
             // process PerformanceMonitorAnswer from the host
@@ -2041,11 +2083,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         // get scale action
         Map<String, String> params = new HashMap<String, String>();
         setPerformanceMonitorCommandParams(asGroup, params);
-        if (String.valueOf(counters.size()) != params.get("total_counter")) {
-            s_logger.info(String.format("[AutoScale] Skipping AutoScaling action as the size of counter values (%d) is not equals to the total counter number (%s)", counters.size(), params.get("total_counter")));
-            return;
+        if (String.valueOf(countersMap.size()) != params.get("total_counter") || String.valueOf(countersNumberMap.size()) != params.get("total_counter")) {
+            s_logger.warn(String.format("[AutoScale] AutoScaling action might be wrong as the size of counter values (%d) or counter number map (%d) is not equals to the total counter number (%s)",
+                    countersMap.size(), countersNumberMap.size(), params.get("total_counter")));
         }
-        AutoScalePolicy.Action scaleAction = getAutoscaleAction(counters, asGroup.getId(), currentVM, params);
+        AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, asGroup.getId(), params);
         if (scaleAction != null) {
             s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
             if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
