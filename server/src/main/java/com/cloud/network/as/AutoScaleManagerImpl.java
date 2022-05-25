@@ -1069,7 +1069,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroupVO.setMaxMembers(maxMembers);
         }
 
-        if (maxMembers != null) {
+        if (interval != null) {
             vmGroupVO.setInterval(interval);
         }
 
