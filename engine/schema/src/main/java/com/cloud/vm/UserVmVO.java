@@ -26,6 +26,8 @@ import javax.persistence.FetchType;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
 
@@ -140,5 +142,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Override
     public String getName() {
         return instanceName;
+    }
+
+    public String getDisplayNameOrHostName() {
+        return StringUtils.isNotBlank(displayName) ? displayName : getHostName();
     }
 }
