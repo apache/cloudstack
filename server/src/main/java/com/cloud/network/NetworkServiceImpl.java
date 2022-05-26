@@ -74,6 +74,7 @@ import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -1254,6 +1255,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String externalId = cmd.getExternalId();
         String isolatedPvlanType = cmd.getIsolatedPvlanType();
         Long associatedNetworkId = cmd.getAssociatedNetworkId();
+        String ip4Dns1 = cmd.getIp4Dns1();
+        String ip4Dns2 = cmd.getIp4Dns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1467,7 +1472,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 throw new InvalidParameterValueException("Can only support create IPv6 network with advance shared network!");
             }
 
-            if(StringUtils.isAllBlank(zone.getIp6Dns1(), zone.getIp6Dns2())) {
+            if(StringUtils.isAllBlank(ip6Dns1, ip6Dns2, zone.getIp6Dns1(), zone.getIp6Dns2())) {
                 throw new InvalidParameterValueException("Can only create IPv6 network if the zone has IPv6 DNS! Please configure the zone IPv6 DNS1 and/or IPv6 DNS2.");
             }
 
@@ -1590,9 +1595,25 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     cidr, startIP, endIP);
         }
 
+        if (GuestType.L2.equals(ntwkOff.getGuestType()) && ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException(String.format("DNS can not be specified %s networks", GuestType.L2));
+        }
+
+        if (!ipv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
+        }
+
+        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+
+        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIp, routerIpv6, associatedNetwork);
+                externalId, routerIp, routerIpv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1734,7 +1755,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
-                                  final Network associatedNetwork) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Network associatedNetwork, final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1803,7 +1824,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
                     }
 
                     if (createVlan && network != null) {
@@ -1813,6 +1834,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
+                    }
+                    if (StringUtils.isNotEmpty(ip6Dns1)) {
+                        _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), ApiConstants.IP6_DNS1, ip6Dns1, true));
+                        if (StringUtils.isNotEmpty(ip6Dns2)) {
+                            _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), ApiConstants.IP6_DNS2, ip6Dns2, true));
+                        }
                     }
                     return network;
                 }

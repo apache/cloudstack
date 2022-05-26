@@ -28,6 +28,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
@@ -258,6 +259,13 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     network.setPvlanType(userSpecified.getPvlanType());
                 }
             }
+
+            if (StringUtils.isNotBlank(userSpecified.getDns1())) {
+                network.setDns1(userSpecified.getDns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getDns2())) {
+                network.setDns2(userSpecified.getDns2());
+            }
         } else {
             final String guestNetworkCidr = dc.getGuestNetworkCidr();
             if (guestNetworkCidr == null && dc.getNetworkType() == NetworkType.Advanced) {
@@ -437,8 +445,9 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
                 }
 
-                nic.setIPv4Dns1(dc.getDns1());
-                nic.setIPv4Dns2(dc.getDns2());
+                Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+                nic.setIPv4Dns1(dns.first());
+                nic.setIPv4Dns2(dns.second());
                 nic.setFormat(AddressFormat.Ip4);
             }
         }
@@ -458,9 +467,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Override
     public void updateNicProfile(final NicProfile profile, final Network network) {
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
         if (profile != null) {
-            profile.setIPv4Dns1(dc.getDns1());
-            profile.setIPv4Dns2(dc.getDns2());
+            profile.setIPv4Dns1(dns.first());
+            profile.setIPv4Dns2(dns.second());
         }
     }
 
@@ -506,8 +516,10 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     @Override
     public void updateNetworkProfile(final NetworkProfile networkProfile) {
         final DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
-        networkProfile.setDns1(dc.getDns1());
-        networkProfile.setDns2(dc.getDns2());
+        Network network = _networkModel.getNetwork(networkProfile.getId());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        networkProfile.setDns1(dns.first());
+        networkProfile.setDns2(dns.second());
     }
 
     @Override

@@ -79,6 +79,7 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkAccountDao;
 import com.cloud.network.dao.NetworkAccountVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -119,6 +120,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ManagerBase;
@@ -165,6 +167,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao _nicDao = null;
     @Inject
@@ -2636,5 +2640,43 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public String getValidNetworkCidr(Network guestNetwork) {
         String networkCidr = guestNetwork.getNetworkCidr();
         return networkCidr == null ? guestNetwork.getCidr() : networkCidr;
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
+        String dns1 = null;
+        String dns2 = null;
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getDns1())) {
+            dns1 = network.getDns1();
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getDns2())) {
+                dns2 = network.getDns2();
+            }
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+            dns1 = zone.getDns1();
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+            dns2 = zone.getDns2();
+        }
+        return new Pair<>(dns1, dns2);
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
+        String dns1 = null;
+        String dns2 = null;
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getIp6Dns1())) {
+            dns1 = network.getIp6Dns1();
+            if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getIp6Dns2())) {
+                dns2 = network.getIp6Dns2();
+            }
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+            dns1 = zone.getIp6Dns1();
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+            dns2 = zone.getIp6Dns2();
+        }
+        return new Pair<>(dns1, dns2);
     }
 }

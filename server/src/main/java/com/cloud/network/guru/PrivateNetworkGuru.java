@@ -44,6 +44,7 @@ import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -60,7 +61,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     protected PrivateIpDao _privateIpDao;
     @Inject
-    protected NetworkModel _networkMgr;
+    protected NetworkModel _networkModel;
     @Inject
     EntityManager _entityMgr;
 
@@ -199,16 +200,19 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setMacAddress(ip.getMacAddress());
         }
 
-        nic.setIPv4Dns1(dc.getDns1());
-        nic.setIPv4Dns2(dc.getDns2());
+
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        nic.setIPv4Dns1(dns.first());
+        nic.setIPv4Dns2(dns.second());
     }
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
         if (profile != null) {
-            profile.setIPv4Dns1(dc.getDns1());
-            profile.setIPv4Dns2(dc.getDns2());
+            profile.setIPv4Dns1(dns.first());
+            profile.setIPv4Dns2(dns.second());
         }
     }
 
@@ -239,7 +243,9 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, networkProfile.getDataCenterId());
-        networkProfile.setDns1(dc.getDns1());
-        networkProfile.setDns2(dc.getDns2());
+        Network network = _networkModel.getNetwork(networkProfile.getId());
+        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        networkProfile.setDns1(dns.first());
+        networkProfile.setDns2(dns.second());
     }
 }

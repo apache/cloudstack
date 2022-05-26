@@ -1115,18 +1115,17 @@ public class CommandSetupHelper {
 
         if (setupDns) {
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
-            if (guestNic.getIPv4Dns1() != null) {
-                defaultDns1 = guestNic.getIPv4Dns1();
-            } else {
-                defaultDns1 = dcVo.getDns1();
+            Pair<String, String> dns = null;
+            if (org.apache.commons.lang3.StringUtils.isAnyBlank(guestNic.getIPv4Dns1(), guestNic.getIPv4Dns2())) {
+                dns = _networkModel.getNetworkIp4Dns(network, dcVo);
             }
-            if (guestNic.getIPv4Dns2() != null) {
-                defaultDns2 = guestNic.getIPv4Dns2();
-            } else {
-                defaultDns2 = dcVo.getDns2();
+            defaultDns1 = org.apache.commons.lang3.StringUtils.firstNonBlank(guestNic.getIPv4Dns1(), dns.first());
+            defaultDns2 = org.apache.commons.lang3.StringUtils.firstNonBlank(guestNic.getIPv4Dns2(), dns.second());
+            if (org.apache.commons.lang3.StringUtils.isAnyBlank(guestNic.getIPv6Dns1(), guestNic.getIPv6Dns2())) {
+                dns = _networkModel.getNetworkIp6Dns(network, dcVo);
             }
-            defaultIp6Dns1 = dcVo.getIp6Dns1();
-            defaultIp6Dns2 = dcVo.getIp6Dns2();
+            defaultIp6Dns1 = org.apache.commons.lang3.StringUtils.firstNonBlank(guestNic.getIPv6Dns1(), dns.first());
+            defaultIp6Dns2 = org.apache.commons.lang3.StringUtils.firstNonBlank(guestNic.getIPv6Dns2(), dns.second());
         }
 
         final Nic nic = _nicDao.findByNtwkIdAndInstanceId(network.getId(), router.getId());

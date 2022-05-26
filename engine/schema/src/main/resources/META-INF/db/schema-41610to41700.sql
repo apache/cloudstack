@@ -972,3 +972,8 @@ WHERE 	not exists( SELECT  1
 
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (64-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (32-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
+
+-- Alter event table to add resource_id and resource_type
+ALTER TABLE `cloud`.`networks`
+    ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list' AFTER `dns2`,
+    ADD COLUMN `ip6dns2` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list' AFTER `ip6dns1`;

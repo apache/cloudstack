@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -52,6 +53,7 @@ import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -931,6 +933,16 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public String getValidNetworkCidr(Network guestNetwork) {
         return null;
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp4Dns(Network network, DataCenter zone) {
+        return new Pair<>(null, null);
+    }
+
+    @Override
+    public Pair<String, String> getNetworkIp6Dns(Network network, DataCenter zone) {
+        return new Pair<>(null, null);
     }
 
 }
