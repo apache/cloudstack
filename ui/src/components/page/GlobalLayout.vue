@@ -183,6 +183,9 @@ export default {
       if (countNotify && countNotify > 0) {
         this.showClear = true
       }
+    },
+    navTheme () {
+      console.log(this.navTheme)
     }
   },
   provide: function () {
