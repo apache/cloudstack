@@ -51,7 +51,7 @@ public class ResetVMUserDataCmd extends BaseCmd implements UserCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMUserDataCmd.class.getName());
 
-    private static final String s_name = "resetUserDataforvirtualmachineresponse";
+    private static final String s_name = "resetuserdataforvirtualmachineresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

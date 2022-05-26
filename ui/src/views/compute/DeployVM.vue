@@ -2392,6 +2392,7 @@ export default {
     },
     onUserdataTabChange (key, type) {
       this[type] = key
+      this.userDataParams = []
     },
     fetchTemplateNics (template) {
       var nics = []

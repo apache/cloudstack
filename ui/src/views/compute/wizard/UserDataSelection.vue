@@ -28,29 +28,13 @@
       :dataSource="tableSource"
       :rowSelection="rowSelection"
       :customRow="onClickRow"
-      :pagination="false"
+      :pagination="true"
       size="middle"
       :scroll="{ y: 225 }"
     >
       <template #account><user-outlined /> {{ $t('label.account') }}</template>
       <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
     </a-table>
-    <div style="display: block; text-align: right;">
-      <a-pagination
-        size="small"
-        :current="options.page"
-        :pageSize="options.pageSize"
-        :total="rowCount"
-        :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
-        :pageSizeOptions="['10', '20', '40', '80', '100', '200']"
-        @change="onChangePage"
-        @showSizeChange="onChangePageSize"
-        showSizeChanger>
-        <template #buildOptionText="props">
-          <span>{{ props.value }} / {{ $t('label.page') }}</span>
-        </template>
-      </a-pagination>
-    </div>
   </div>
 </template>
 
