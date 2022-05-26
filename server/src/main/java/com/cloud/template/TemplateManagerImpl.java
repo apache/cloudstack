@@ -2306,7 +2306,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
 
         template.setUserDataId(userDataId);
-        template.setUserDataLinkPolicy(overridePolicy);
+        if (userDataId != null) {
+            template.setUserDataLinkPolicy(overridePolicy);
+        } else {
+            template.setUserDataLinkPolicy(null);
+        }
         _tmpltDao.update(templateId, template);
 
         return _tmpltDao.findById(templateId);

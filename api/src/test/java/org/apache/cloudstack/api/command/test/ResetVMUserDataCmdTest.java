@@ -90,7 +90,7 @@ public class ResetVMUserDataCmdTest {
             e.printStackTrace();
         }
         Assert.assertEquals(response, cmd.getResponseObject());
-        Assert.assertEquals("resetUserDataforvirtualmachineresponse", response.getResponseName());
+        Assert.assertEquals("resetuserdataforvirtualmachineresponse", response.getResponseName());
     }
 
     @Test

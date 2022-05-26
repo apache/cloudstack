@@ -246,6 +246,7 @@ export default {
         const templateResponses = json.listtemplatesresponse.template
         this.template = templateResponses[0]
         this.updateTemplateLinkedUserData(this.template.userdataid)
+        this.userdataDefaultOverridePolicy = this.template.userdatapolicy
       })
     },
     updateTemplateLinkedUserData (id) {
