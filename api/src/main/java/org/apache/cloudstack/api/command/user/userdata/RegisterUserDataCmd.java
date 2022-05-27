@@ -18,9 +18,11 @@ package org.apache.cloudstack.api.command.user.userdata;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
 import com.cloud.user.UserData;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +34,12 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @APICommand(name = "registerUserData",
         description = "Register a new userdata.",
@@ -97,7 +104,18 @@ public class RegisterUserDataCmd extends BaseCmd {
     }
 
     public String getParams() {
+        checkForVRMetadataFileNames(params);
         return params;
+    }
+
+    public void checkForVRMetadataFileNames(String params) {
+        if (StringUtils.isNotEmpty(params)) {
+            List<String> keyValuePairs = new ArrayList<>(Arrays.asList(params.split(",")));
+            keyValuePairs.retainAll(NetworkModel.metadataFileNames);
+            if (!keyValuePairs.isEmpty()) {
+                throw new InvalidParameterValueException(String.format("Params passed here have a few virtual router metadata file names %s", keyValuePairs));
+            }
+        }
     }
 
     /////////////////////////////////////////////////////

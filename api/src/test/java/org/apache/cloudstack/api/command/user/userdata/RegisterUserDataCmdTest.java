@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.userdata;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -100,6 +101,13 @@ public class RegisterUserDataCmdTest {
         Assert.assertEquals("testUserdataName", cmd.getName());
         Assert.assertEquals("testUserdata", cmd.getUserData());
         Assert.assertEquals(200L, cmd.getEntityOwnerId());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateIfUserdataParamsHaveMetadataFileNames() {
+        // If the userdata params have any key matched to the VR metadata file names, then it will throw exception
+        ReflectionTestUtils.setField(cmd, "params", "key1,key2,key3,vm-id");
+        cmd.getParams();
     }
 
 }
