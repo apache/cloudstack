@@ -492,9 +492,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 String logMsg = String.format("Could not find a storage pool in the pod/cluster of the provided VM [%s] to create the volume [%s] in.", vm, volumeToString);
 
                 //pool could not be found in the VM's pod/cluster.
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.error(logMsg);
-                }
+                s_logger.error(logMsg);
+
                 StringBuilder addDetails = new StringBuilder(msg);
                 addDetails.append(logMsg);
                 msg = addDetails.toString();
@@ -703,6 +702,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     private String getReflectOnlySelectedFields(Object obj) {
         return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(obj, "uuid", "name");
+    }
+
+    private String getVolumeIdentificationInfos(Volume volume) {
+        return String.format("uuid: %s, name: %s", volume.getUuid(), volume.getName());
     }
 
     public String getRandomVolumeName() {
@@ -1122,14 +1125,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public void release(VirtualMachine vm, Host host) {
-        List<VolumeVO> volumesForVm = _volsDao.findUsableVolumesForInstance(vm.getId());
+    public void release(long vmId, long hostId) {
+        List<VolumeVO> volumesForVm = _volsDao.findUsableVolumesForInstance(vmId);
         if (volumesForVm == null || volumesForVm.isEmpty()) {
             return;
         }
 
+        HostVO host = _hostDao.findById(hostId);
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Releasing [%s] volumes for VM [%s] from host [%s].", volumesForVm.size(), vm, host));
+            s_logger.debug(String.format("Releasing [%s] volumes for VM [%s] from host [%s].", volumesForVm.size(), _userVmDao.findById(vmId), host));
         }
 
         for (VolumeVO volumeForVm : volumesForVm) {
@@ -1139,11 +1144,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (volumeForVm.getPoolId() != null) {
                 DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)dataStore;
-                HostVO hostVO = _hostDao.findById(host.getId());
 
                 // This might impact other managed storages, grant access for PowerFlex storage pool only
                 if (primaryDataStore.isManaged() && primaryDataStore.getPoolType() == Storage.StoragePoolType.PowerFlex) {
-                    volService.revokeAccess(volumeInfo, hostVO, dataStore);
+                    volService.revokeAccess(volumeInfo, host, dataStore);
                 }
             }
         }
@@ -1244,7 +1248,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     @DB
     public Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
-        String volumeToString = String.format("uuid: %s, name: %s", volume.getUuid(), volume.getName());
+        String volumeToString = getVolumeIdentificationInfos(volume);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         if (vol == null){
@@ -1319,7 +1323,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             StoragePool storagePool = entry.getValue();
             StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(storagePool.getId(), DataStoreRole.Primary);
 
-            String volumeToString = String.format("uuid: %s, name: %s", volume.getUuid(), volume.getName());
+            String volumeToString = getVolumeIdentificationInfos(volume);
             String storagePoolToString = getReflectOnlySelectedFields(storagePool);
 
             if (volume.getInstanceId() != vm.getId()) {
@@ -1353,7 +1357,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             Volume volume = entry.getKey();
             StoragePool pool = entry.getValue();
 
-            String volumeToString = String.format("uuid: %s, name: %s", volume.getUuid(), volume.getName());
+            String volumeToString = getVolumeIdentificationInfos(volume);
             String poolToString = getReflectOnlySelectedFields(pool);
 
             if (volume.getState() != Volume.State.Ready) {
@@ -1510,10 +1514,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                                 // Currently migration of local volume is not supported so bail out
                                 String msg = String.format("Local volume [%s] cannot be recreated on storage pool [%s], assigned by deploymentPlanner.", volToString, assignedPoolToString);
 
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.error(msg);
-                                }
+                                s_logger.error(msg);
                                 throw new CloudRuntimeException(msg);
+
                             } else {
                                 //Check if storage migration is enabled in config
                                 Boolean isHAOperation = (Boolean)vm.getParameter(VirtualMachineProfile.Param.HaOperation);
@@ -1697,10 +1700,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public void prepare(VirtualMachineProfile vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException, StorageAccessException {
         if (dest == null) {
             String msg = String.format("Unable to prepare volumes for the VM [%s] because DeployDestination is null.", vm.getVirtualMachine());
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.error(msg);
-            }
+            s_logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
 
@@ -2063,11 +2063,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public void unmanageVolumes(VirtualMachine vm) {
+    public void unmanageVolumes(long vmId) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Unmanaging storage for VM [%s].", vm));
+            s_logger.debug(String.format("Unmanaging storage for VM [%s].", _userVmDao.findById(vmId)));
         }
-        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vm.getId());
+        final List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
