@@ -172,10 +172,10 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.StoragePool,
             null);
     ConfigKey<Boolean> vmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
-            "vmware.allow.parallel.copy.command.execution",
+            "vmware.allow.parallel.command.execution",
             "Advanced",
             "false",
-            "allow copy command to be executed in parallel in spite of 'vmware.create.full.clone' being set to false.",
+            "allow commands to be executed in parallel in spite of 'vmware.create.full.clone' being set to true.",
             true,
             ConfigKey.Scope.Global,
             null);
