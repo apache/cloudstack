@@ -40,7 +40,6 @@ public interface CapacityManager {
     static final String StorageCapacityDisableThresholdCK = "pool.storage.capacity.disablethreshold";
     static final String StorageOverprovisioningFactorCK = "storage.overprovisioning.factor";
     static final String StorageAllocatedCapacityDisableThresholdCK = "pool.storage.allocated.capacity.disablethreshold";
-    static final String VmwareCreateCloneFullCK = "vmware.create.full.clone";
 
     static final ConfigKey<Float> CpuOverprovisioningFactor = new ConfigKey<Float>(Float.class, CpuOverprovisioningFactorCK, "Advanced", "1.0",
         "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", true, ConfigKey.Scope.Cluster, null);
@@ -69,15 +68,6 @@ public interface CapacityManager {
                     true,
                     ConfigKey.Scope.Cluster,
                     null);
-    static final ConfigKey<Boolean> VmwareCreateCloneFull =
-            new ConfigKey<Boolean>(
-                    "Storage",
-                    Boolean.class,
-                    VmwareCreateCloneFullCK,
-                    "false",
-                    "If set to true, creates VMs as full clones on ESX hypervisor",
-                    true,
-                    ConfigKey.Scope.StoragePool);
     static final ConfigKey<String> ImageStoreNFSVersion =
             new ConfigKey<String>(
                     String.class,
@@ -91,9 +81,6 @@ public interface CapacityManager {
 
     static final ConfigKey<Float> SecondaryStorageCapacityThreshold = new ConfigKey<Float>("Advanced", Float.class, "secondary.storage.capacity.threshold", "0.90",
             "Percentage (as a value between 0 and 1) of secondary storage capacity threshold.", true);
-
-    public static final ConfigKey<Boolean> vmwareAllowParallelExecution = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.allow.parallel.copy.command.execution", "false",
-            "allow copy command to be executed in parallel in spite of 'vmware.create.full.clone' being set to false.", true, ConfigKey.Scope.Global);
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 

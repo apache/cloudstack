@@ -163,6 +163,22 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Cluster,
             null);
+    ConfigKey<Boolean> VmwareCreateCloneFull = new ConfigKey<>(Boolean.class,
+            "vmware.create.full.clone",
+            "Storage",
+            "false",
+            "If set to true, creates VMs as full clones on ESX hypervisor",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+    ConfigKey<Boolean> vmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
+            "vmware.allow.parallel.copy.command.execution",
+            "Advanced",
+            "false",
+            "allow copy command to be executed in parallel in spite of 'vmware.create.full.clone' being set to false.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool

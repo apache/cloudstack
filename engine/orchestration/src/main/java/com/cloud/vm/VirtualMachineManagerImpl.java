@@ -1647,12 +1647,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     Boolean getAllowParallelExecutionConfiguration() {
-        final Boolean allowParallel = CapacityManager.vmwareAllowParallelExecution.value();
+        final Boolean allowParallel = StorageManager.vmwareAllowParallelExecution.value();
         return allowParallel;
     }
 
     Boolean getFullCloneConfiguration() {
-        final Boolean fullClone = CapacityManager.VmwareCreateCloneFull.value();
+        final Boolean fullClone = StorageManager.VmwareCreateCloneFull.value();
         return fullClone;
     }
 
