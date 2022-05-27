@@ -566,12 +566,13 @@ public class KubernetesClusterActionWorker {
         sshPort = publicIpSshPort.second();
 
         try {
+            createCloudStackSecret(keys);
             String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
                 pkFile, null, command, 10000, 10000, 60000);
 
-            // Maybe the file isn't present. Try and copy it
             if (!result.first()) {
+                // Maybe the file isn't present. Try and copy it
                 logMessage(Level.INFO, "Provider files missing. Adding them now", null);
                 retrieveScriptFiles();
                 copyScripts(publicIpAddress, sshPort);

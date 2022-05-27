@@ -18,8 +18,8 @@
 
 # Version 1.14 and below needs extra flags with kubeadm upgrade node
 if [ $# -lt 4 ]; then
-    echo "Invalid input. Valid usage: ./upgrade-kubernetes.sh UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO"
-    echo "eg: ./upgrade-kubernetes.sh 1.16.3 true false false"
+    echo "Invalid input. Valid usage: ./upgrade-kubernetes UPGRADE_VERSION IS_CONTROL_NODE IS_OLD_VERSION IS_EJECT_ISO"
+    echo "eg: ./upgrade-kubernetes 1.16.3 true false false"
     exit 1
 fi
 UPGRADE_VERSION="${1}"
@@ -144,6 +144,10 @@ if [ -d "$BINARIES_DIR" ]; then
     /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
     /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
+
+  set +e
+  cp $ISO_MOUNT_DIR/scripts/* /opt/bin/
+  echo "Done copying scripts"
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
   if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then

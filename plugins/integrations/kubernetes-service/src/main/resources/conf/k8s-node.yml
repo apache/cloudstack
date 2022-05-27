@@ -25,35 +25,98 @@ users:
       {{ k8s.ssh.pub.key }}
 
 write_files:
-  - path: /opt/bin/setup-kube-system
-    permissions: '0700'
+
+  # Control plane specific
+  - path: /etc/conf.d/nfs
+    permissions: '0644'
+    content: |
+      OPTS_RPC_MOUNTD=""
+
+  - path: /etc/kubernetes/pki/cloudstack/apiserver.crt
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.apiserver.crt }}
+
+  - path: /etc/kubernetes/pki/cloudstack/apiserver.key
+    permissions: '0600'
+    content: |
+      {{ k8s_control_node.apiserver.key }}
+
+  - path: /etc/kubernetes/pki/cloudstack/ca.crt
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.ca.crt }}
+
+  # Kubeadm extra args
+  - path: /opt/cks/cluster_token
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.cluster.token }}
+
+  - path: /opt/cks/cluster_init_args
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.cluster.initargs }}
+
+  - path: /opt/cks/cluster_join_ip
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.join_ip }}
+
+  - path: /opt/cks/cluster_ha_cert_key
+    permissions: '0644'
+    content: |
+      {{ k8s_control_node.cluster.ha.certificate.key }}
+
+  # Custom registry
+  - path: /opt/cks/registry_url
+    permissions: '0644'
+    content: |
+      {{ k8s.registry.url }}
+
+  - path: /opt/cks/registry_url_endpoint
+    permissions: '0644'
+    content: |
+      {{ k8s.registry.url.endpoint }}
+
+  - path: /opt/cks/registry_username
+    permissions: '0644'
+    content: |
+      {{ k8s.registry.username }}
+
+  - path: /opt/cks/registry_password
+    permissions: '0644'
+    content: |
+      {{ k8s.registry.password }}
+
+  - path: /opt/cks/registry_token
+    permissions: '0644'
+    content: |
+      {{ k8s.registry.token }}
+
+  # Misc settings
+  - path: /opt/cks/node_type
+    permissions: '0644'
+    content: |
+      {{ k8s.node.type }}
+
+  - path: /opt/cks/eject_iso
+    permissions: '0644'
+    content: |
+      {{ k8s.eject.iso }}
+
+  # To get things started
+  - path: /opt/bin/mount_cks_iso
+    permissions: '0755'
     owner: root:root
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/cloud/success" ]]; then
-      echo "Already provisioned!"
-      exit 0
-      fi
-
       ISO_MOUNT_DIR=/mnt/k8sdisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
-      K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
-      ATTEMPT_ONLINE_INSTALL=false
-      setup_complete=false
-
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=30
-      MAX_OFFLINE_INSTALL_ATTEMPTS=40
-      offline_attempts=1
-      MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
-      EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
-      crucial_cmd_attempts=1
-      iso_drive_path=""
+      MOUNT_ATTEMPT_SLEEP=15
+      MOUNT_ATTEMPTS=1
       while true; do
-        if (( "$offline_attempts" > "$MAX_OFFLINE_INSTALL_ATTEMPTS" )); then
-          echo "Warning: Offline install timed out!"
-          break
-        fi
         set +e
         output=`blkid -o device -t TYPE=iso9660`
         set -e
@@ -69,7 +132,6 @@ write_files:
             set -e
             if [ $retval -eq 0 ]; then
               if [ -d "$BINARIES_DIR" ]; then
-                iso_drive_path="${line}"
                 break
               else
                 umount "${line}" && rmdir "${ISO_MOUNT_DIR}"
@@ -80,168 +142,17 @@ write_files:
         if [ -d "$BINARIES_DIR" ]; then
           break
         fi
-        echo "Waiting for Binaries directory $BINARIES_DIR to be available, sleeping for $OFFLINE_INSTALL_ATTEMPT_SLEEP seconds, attempt: $offline_attempts"
-        sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
-        offline_attempts=$[$offline_attempts + 1]
+        echo "Waiting for Binaries directory $BINARIES_DIR to be available, sleeping for $MOUNT_ATTEMPT_SLEEP seconds, attempt: $MOUNT_ATTEMPTS"
+        sleep $MOUNT_ATTEMPT_SLEEP
+        MOUNT_ATTEMPTS=$[$MOUNT_ATTEMPTS + 1]
       done
+      echo "Done mounting iso"
 
-      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
-        export PATH=$PATH:/opt/bin
-      fi
+      set +e
+      cp $ISO_MOUNT_DIR/scripts/* /opt/bin/
+      echo "Done copying scripts"
 
-      if [ -d "$BINARIES_DIR" ]; then
-        ### Binaries available offline ###
-        echo "Installing binaries from ${BINARIES_DIR}"
-        mkdir -p /opt/cni/bin
-        tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
-
-        mkdir -p /opt/bin
-        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
-
-        mkdir -p /opt/bin
-        cd /opt/bin
-        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
-        chmod +x {kubeadm,kubelet,kubectl}
-
-        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
-        mkdir -p /etc/systemd/system/kubelet.service.d
-        sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-
-        echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
-
-        output=`ls ${BINARIES_DIR}/docker/`
-        if [ "$output" != "" ]; then
-          while read -r line; do
-            crucial_cmd_attempts=1
-            while true; do
-              if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
-                echo "Loading docker image ${BINARIES_DIR}/docker/$line failed!"
-                break;
-              fi
-              retval=0
-              set +e
-              ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
-              retval=$?
-              set -e
-              if [ $retval -eq 0 ]; then
-                break;
-              fi
-              crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
-            done
-          done <<< "$output"
-          setup_complete=true
-        fi
-        if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
-          mkdir -p /opt/autoscaler
-          cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
-        fi
-        if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
-          mkdir -p /opt/provider
-          cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
-        fi
-
-        PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
-        echo $PAUSE_IMAGE
-        if [ -n "$PAUSE_IMAGE" ]; then
-          sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
-        fi
-        systemctl daemon-reload
-        systemctl restart containerd
-
-        umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
-        if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
-          eject "${iso_drive_path}"
-        fi
-      fi
-      if [ "$setup_complete" = false ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
-        ###  Binaries not available offline ###
-        RELEASE="v1.16.3"
-        CNI_VERSION="v0.7.5"
-        CRICTL_VERSION="v1.16.0"
-        echo "Warning: ${BINARIES_DIR} not found. Will get binaries and docker images from Internet."
-        mkdir -p /opt/cni/bin
-        curl -L "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-amd64-${CNI_VERSION}.tgz" | tar -C /opt/cni/bin -xz
-
-        mkdir -p /opt/bin
-        curl -L "https://github.com/kubernetes-incubator/cri-tools/releases/download/${CRICTL_VERSION}/crictl-${CRICTL_VERSION}-linux-amd64.tar.gz" | tar -C /opt/bin -xz
-
-        mkdir -p /opt/bin
-        cd /opt/bin
-        curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/{kubeadm,kubelet,kubectl}
-        chmod +x {kubeadm,kubelet,kubectl}
-
-        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service
-        mkdir -p /etc/systemd/system/kubelet.service.d
-        curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-      fi
-
-      systemctl enable kubelet && systemctl start kubelet
-      modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
-
-      if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
-        crucial_cmd_attempts=1
-        while true; do
-          if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
-            echo "Warning: kubeadm pull images failed after multiple tries!"
-            break;
-          fi
-          retval=0
-          set +e
-          kubeadm config images pull --cri-socket /run/containerd/containerd.sock
-          retval=$?
-          set -e
-          if [ $retval -eq 0 ]; then
-            break;
-          fi
-          crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
-        done
-      fi
-
-  - path: /opt/bin/deploy-kube-system
-    permissions: '0700'
-    owner: root:root
-    content: |
-      #!/bin/bash -e
-
-      if [[ -f "/home/cloud/success" ]]; then
-      echo "Already provisioned!"
-      exit 0
-      fi
-
-      if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
-        echo "setup-kube-system is running!"
-        exit 1
-      fi
-      modprobe ip_vs
-      modprobe ip_vs_wrr
-      modprobe ip_vs_sh
-      modprobe nf_conntrack
-      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
-        export PATH=$PATH:/opt/bin
-      fi
-      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
-
-      sudo touch /home/cloud/success
-      echo "true" > /home/cloud/success
-
-  - path: /opt/bin/setup-containerd
-    permissions: '0755'
-    owner: root:root
-    content: |
-      #!/bin/bash -e
-
-      export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
-      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n\tusername = \"{{registry.username}}\" \n\tpassword = \"{{registry.password}}\" \n\tidentitytoken = \"{{registry.token}}\""
-
-      echo "creating config file for containerd"
-      containerd config default > /etc/containerd/config.toml
-      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry\]/a '"${registryCredentials}"'' /etc/containerd/config.toml
-      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]/a '"${registryConfig}"'' /etc/containerd/config.toml
-
-      echo "Restarting containerd service"
-      systemctl daemon-reload
-      systemctl restart containerd
-
+  # Service files
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'
     owner: root:root
@@ -254,14 +165,15 @@ write_files:
       Type=simple
       StartLimitInterval=0
       Restart=on-failure
-      ExecStartPre=/usr/bin/curl -k https://{{ k8s_control_node.join_ip }}:6443/version
       ExecStart=/opt/bin/deploy-kube-system
 
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
+  - until [ -f /opt/bin/mount_cks_iso ]; do sleep 5; done
+  - /opt/bin/mount_cks_iso
   - containerd config default > /etc/containerd/config.toml
   - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
   - until [ -f /opt/bin/setup-kube-system ]; do sleep 5; done
+  - until [ -f /opt/bin/deploy-kube-system ]; do sleep 5; done
   - /opt/bin/setup-kube-system
-  - until [ -f /etc/systemd/system/deploy-kube-system.service ]; do sleep 5; done
   - systemctl start deploy-kube-system

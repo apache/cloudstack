@@ -133,14 +133,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     private String getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
                                                   final String hostName, final boolean haSupported,
                                                   final boolean ejectIso) throws IOException {
-        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node.yml");
-        final String apiServerCert = "{{ k8s_control_node.apiserver.crt }}";
-        final String apiServerKey = "{{ k8s_control_node.apiserver.key }}";
-        final String caCert = "{{ k8s_control_node.ca.crt }}";
-        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String clusterToken = "{{ k8s_control_node.cluster.token }}";
-        final String clusterInitArgsKey = "{{ k8s_control_node.cluster.initargs }}";
-        final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        String k8sControlNodeConfig = readResourceFile(cksUserdataFile);
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
         if (!serverIp.equals(controlNodeIp)) {
@@ -152,9 +145,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCert, tlsClientCert.replace("\n", "\n      "));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKey, tlsPrivateKey.replace("\n", "\n      "));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(caCert, tlsCaCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCertPlaceholder, tlsClientCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKeyPlaceholder, tlsPrivateKey.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(caCertPlaceholder, tlsCaCert.replace("\n", "\n      "));
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -163,8 +156,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterToken, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(nodeTypePlaceholder, "control-plane");
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
@@ -174,8 +168,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsKey, initArgs);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsPlaceholder, initArgs);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;
@@ -237,12 +231,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private String getKubernetesAdditionalControlNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node-add.yml");
-        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
-        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String clusterHACertificateKey = "{{ k8s_control_node.cluster.ha.certificate.key }}";
-        final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        String k8sControlNodeConfig = readResourceFile(cksUserdataFile);
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -251,11 +240,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKey, pubKey);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpKey, joinIp);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKey, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(nodeTypePlaceholder, "control-plane-add");
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpPlaceholder, joinIp);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKeyPlaceholder, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;

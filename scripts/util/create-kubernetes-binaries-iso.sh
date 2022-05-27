@@ -76,6 +76,17 @@ else
   curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
 fi
 
+echo "Downloading scripts"
+script_files="autoscale-kube-cluster deploy-cloudstack-secret deploy-kube-system deploy-provider mount-cks-iso setup-containerd-registry setup-kube-system upgrade-kubernetes"
+scripts_dir="${working_dir}/scripts"
+mkdir -p ${scripts_dir}
+for file in ${script_files}
+do
+  curl -sSL "https://raw.githubusercontent.com/apache/cloudstack/main/plugins/integrations/kubernetes-service/src/main/resources/script/${file}" -o "${scripts_dir}/${file}"
+done
+chmod +x ${scripts_dir}/*
+
+
 NETWORK_CONFIG_URL="${5}"
 echo "Downloading network config ${NETWORK_CONFIG_URL}"
 network_conf_file="${working_dir}/network.yaml"
@@ -138,6 +149,8 @@ while read -r line; do
     sudo ctr image export "${working_dir}/docker/$image_name.tar" "$line"
     sudo ctr image rm "$line"
 done <<< "$output"
+
+sed -i 's|imagePullPolicy.*|imagePullPolicy: IfNotPresent|g' ${working_dir}/*.yaml | grep imagePullPolicy
 
 echo "Restore kubeadm permissions..."
 if [ -z "${kubeadm_file_permissions}" ]; then

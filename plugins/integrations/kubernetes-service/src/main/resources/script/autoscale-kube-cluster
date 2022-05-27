@@ -34,6 +34,9 @@ Examples:
 USAGE
     exit 0
 }
+
+/opt/bin/kubectl -n kube-system get secret cloudstack-secret || exit 1
+
 ID=""
 ENABLE=""
 MINSIZE=""

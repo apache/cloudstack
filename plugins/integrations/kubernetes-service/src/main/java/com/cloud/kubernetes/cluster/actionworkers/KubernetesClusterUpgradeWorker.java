@@ -42,7 +42,7 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
 
     private List<UserVm> clusterVMs = new ArrayList<>();
     private KubernetesSupportedVersion upgradeVersion;
-    private final String upgradeScriptFilename = "upgrade-kubernetes.sh";
+    private final String upgradeScriptFilename = "upgrade-kubernetes";
     private File upgradeScriptFile;
     private long upgradeTimeoutTime;
 
@@ -62,15 +62,25 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
 
     private Pair<Boolean, String> runInstallScriptOnVM(final UserVm vm, final int index) throws Exception {
         int nodeSshPort = sshPort == 22 ? sshPort : sshPort + index;
+        String upgradeScriptPath = String.format("%s/%s", scriptPath, upgradeScriptFilename);
         String nodeAddress = (index > 0 && sshPort == 22) ? vm.getPrivateIpAddress() : publicIpAddress;
-        SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
+        String cmdStr = String.format("sudo ls %s", upgradeScriptPath);
+        Pair<Boolean, String> result = SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
+            cmdStr, 10000, 10000, 10 * 60 * 1000);
+        if (!result.first()) {
+            // Script is missing, copy it
+            logMessage(Level.INFO, "Upgrade script missing. Adding it now", null);
+            retrieveScriptFiles();
+            SshHelper.scpTo(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", upgradeScriptFile.getAbsolutePath(), "0755");
-        String cmdStr = String.format("sudo ./%s %s %s %s %s",
-                upgradeScriptFile.getName(),
-                upgradeVersion.getSemanticVersion(),
-                index == 0 ? "true" : "false",
-                KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
-                Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
+            upgradeScriptPath = "~/" + upgradeScriptFile.getName();
+        }
+        cmdStr = String.format("sudo %s %s %s %s %s",
+            upgradeScriptPath,
+            upgradeVersion.getSemanticVersion(),
+            index == 0 ? "true" : "false",
+            KubernetesVersionManagerImpl.compareSemanticVersions(upgradeVersion.getSemanticVersion(), "1.15.0") < 0 ? "true" : "false",
+            Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType()));
         return SshHelper.sshExecute(nodeAddress, nodeSshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr,
                 10000, 10000, 10 * 60 * 1000);
@@ -103,8 +113,8 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, upgrade action timed out", kubernetesCluster.getName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, null);
             }
             try {
-                deployProvider();
                 result = runInstallScriptOnVM(vm, i);
+                deployProvider();
             } catch (Exception e) {
                 logTransitStateDetachIsoAndThrow(Level.ERROR, String.format("Failed to upgrade Kubernetes cluster : %s, unable to upgrade Kubernetes node on VM : %s", kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster, clusterVMs, KubernetesCluster.Event.OperationFailed, e);
             }
@@ -145,7 +155,6 @@ public class KubernetesClusterUpgradeWorker extends KubernetesClusterActionWorke
         if (CollectionUtils.isEmpty(clusterVMs)) {
             logAndThrow(Level.ERROR, String.format("Upgrade failed for Kubernetes cluster : %s, unable to retrieve VMs for cluster", kubernetesCluster.getName()));
         }
-        retrieveScriptFiles();
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.UpgradeRequested);
         attachIsoKubernetesVMs(clusterVMs, upgradeVersion);
         upgradeKubernetesClusterNodes();
