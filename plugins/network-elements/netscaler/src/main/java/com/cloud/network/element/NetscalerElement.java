@@ -159,8 +159,6 @@ implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, Ex
 IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
-    public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
-    public static final AutoScaleCounterType AutoScaleCounterNetscaler = new AutoScaleCounterType("netscaler");
 
     @Inject
     NetworkModel _networkManager;
@@ -514,13 +512,13 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         // list of counters it supports
         AutoScaleCounter counter;
         List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
-        counter = new AutoScaleCounter(AutoScaleCounterSnmp);
+        counter = new AutoScaleCounter(AutoScaleCounterType.Snmp);
         counterList.add(counter);
         counter.addParam("snmpcommunity", true,
                 "the community string that has to be used to do a SNMP GET on the AutoScaled Vm", false);
         counter.addParam("snmpport", false, "the port at which SNMP agent is running on the AutoScaled Vm", false);
 
-        counter = new AutoScaleCounter(AutoScaleCounterNetscaler);
+        counter = new AutoScaleCounter(AutoScaleCounterType.Netscaler);
         counterList.add(counter);
 
         Gson gson = new Gson();
