@@ -135,6 +135,22 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VolumeDao volumeDao;
 
     protected String kubernetesClusterNodeNamePrefix;
+    protected static final String apiServerCertPlaceholder = "{{ k8s_control_node.apiserver.crt }}";
+    protected static final String apiServerKeyPlaceholder = "{{ k8s_control_node.apiserver.key }}";
+    protected static final String caCertPlaceholder = "{{ k8s_control_node.ca.crt }}";
+    protected static final String sshPubKeyPlaceholder = "{{ k8s.ssh.pub.key }}";
+    protected static final String clusterTokenPlaceholder = "{{ k8s_control_node.cluster.token }}";
+    protected static final String clusterInitArgsPlaceholder = "{{ k8s_control_node.cluster.initargs }}";
+    protected static final String ejectIsoPlaceholder = "{{ k8s.eject.iso }}";
+    protected static final String joinIpPlaceholder = "{{ k8s_control_node.join_ip }}";
+    protected static final String nodeTypePlaceholder = "{{ k8s.node.type }}";
+    protected static final String clusterHACertificateKeyPlaceholder = "{{ k8s_control_node.cluster.ha.certificate.key }}";
+    protected static final String registryUrlPlaceholder = "{{ k8s.registry.url }}";
+    protected static final String registryUrlEndpointPlaceholder = "{{ k8s.registry.url.endpoint }}";
+    protected static final String registryUsernamePlaceholder = "{{ k8s.registry.username }}";
+    protected static final String registryPasswordPlaceholder = "{{ k8s.registry.password }}";
+    protected static final String registryTokenPlaceholder = "{{ k8s.registry.token }}";
+    protected static final String cksUserdataFile = "/conf/k8s-node.yml";
 
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -146,11 +162,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
-        final String sshPubKey = "{{ k8s.ssh.pub.key }}";
-        final String joinIpKey = "{{ k8s_control_node.join_ip }}";
-        final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
-        final String ejectIsoKey = "{{ k8s.eject.iso }}";
+        String k8sNodeConfig = readResourceFile(cksUserdataFile);
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -159,10 +171,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sNodeConfig = k8sNodeConfig.replace(sshPubKey, pubKey);
-        k8sNodeConfig = k8sNodeConfig.replace(joinIpKey, joinIp);
-        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenKey, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoKey, String.valueOf(ejectIso));
+        k8sNodeConfig = k8sNodeConfig.replace(nodeTypePlaceholder, "worker");
+        k8sNodeConfig = k8sNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
+        k8sNodeConfig = k8sNodeConfig.replace(joinIpPlaceholder, joinIp);
+        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
 
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 
@@ -191,23 +204,18 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
         if (StringUtils.isNoneEmpty(registryUsername, registryPassword, registryUrl)) {
             // Update runcmd in the cloud-init configuration to run a script that updates the containerd config with provided registry details
-            String runCmd = "- bash -x /opt/bin/setup-containerd";
+            String runCmd = "- bash -x /opt/bin/setup-containerd-registry";
 
-            String registryEp = registryUrl.split("://")[1];
+            String registryEndpoint = registryUrl.split("://")[1];
             k8sConfig = k8sConfig.replace("- containerd config default > /etc/containerd/config.toml", runCmd);
-            final String registryUrlKey = "{{registry.url}}";
-            final String registryUrlEpKey = "{{registry.url.endpoint}}";
-            final String registryAuthKey = "{{registry.token}}";
-            final String registryUname = "{{registry.username}}";
-            final String registryPsswd = "{{registry.password}}";
 
             final String usernamePasswordKey = registryUsername + ":" + registryPassword;
             String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            k8sConfig = k8sConfig.replace(registryUrlKey,   registryUrl);
-            k8sConfig = k8sConfig.replace(registryUrlEpKey, registryEp);
-            k8sConfig = k8sConfig.replace(registryUname, registryUsername);
-            k8sConfig = k8sConfig.replace(registryPsswd, registryPassword);
-            k8sConfig = k8sConfig.replace(registryAuthKey, base64Auth);
+            k8sConfig = k8sConfig.replace(registryUrlPlaceholder,   registryUrl);
+            k8sConfig = k8sConfig.replace(registryUrlEndpointPlaceholder, registryEndpoint);
+            k8sConfig = k8sConfig.replace(registryUsernamePlaceholder, registryUsername);
+            k8sConfig = k8sConfig.replace(registryPasswordPlaceholder, registryPassword);
+            k8sConfig = k8sConfig.replace(registryTokenPlaceholder, base64Auth);
         }
         return k8sConfig;
     }

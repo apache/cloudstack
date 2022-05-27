@@ -1,0 +1,104 @@
+#!/bin/bash -e
+
+if [[ -f "/home/cloud/success" ]]; then
+echo "Already provisioned!"
+exit 0
+fi
+
+set +e
+CLUSTER_TOKEN=`cat /opt/cks/cluster_token`
+INIT_ARGS=`cat /opt/cks/cluster_init_args`
+NODE_TYPE=`cat /opt/cks/node_type`
+CLUSTER_JOIN_IP=`cat /opt/cks/cluster_join_ip`
+CLUSTER_HA_CERT_KEY=`cat /opt/cks/cluster_ha_cert_key`
+set -e
+
+if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+  export PATH=$PATH:/opt/bin
+fi
+
+MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=15
+case $NODE_TYPE in
+
+  control-plane)
+    crucial_cmd_attempts=1
+    while true; do
+      if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
+        echo "Error: kubeadm init failed!"
+        exit 1
+      fi
+      retval=0
+      set +e
+      kubeadm init --token $CLUSTER_TOKEN --token-ttl 0 $INIT_ARGS --cri-socket /run/containerd/containerd.sock
+      retval=$?
+      set -e
+      if [ $retval -eq 0 ]; then
+        break;
+      fi
+      crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
+    done
+
+    if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+      export PATH=$PATH:/opt/bin
+    fi
+    export KUBECONFIG=/etc/kubernetes/admin.conf
+
+    mkdir -p /root/.kube
+    cp -i /etc/kubernetes/admin.conf /root/.kube/config
+    chown $(id -u):$(id -g) /root/.kube/config
+    echo export PATH=\$PATH:/opt/bin >> /root/.bashrc
+
+    K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
+    if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
+      ### Network, dashboard configs available offline ###
+      echo "Offline configs are available!"
+      /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+      /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+      rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+    else
+      /opt/bin/kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(/opt/bin/kubectl version | base64 | tr -d '\n')"
+      /opt/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+    fi
+
+    /opt/bin/kubectl create rolebinding admin-binding --role=admin --user=admin || true
+    /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
+    /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
+    ;;
+
+  control-plane-add)
+    modprobe ip_vs
+    modprobe ip_vs_wrr
+    modprobe ip_vs_sh
+    modprobe nf_conntrack
+    if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+      export PATH=$PATH:/opt/bin
+    fi
+    rm -rf /etc/kubernetes/pki
+    /usr/bin/curl -k https://$CLUSTER_JOIN_IP:6443/version
+    kubeadm join $CLUSTER_JOIN_IP:6443 --token $CLUSTER_TOKEN --control-plane --certificate-key $CLUSTER_HA_CERT_KEY --discovery-token-unsafe-skip-ca-verification
+        export KUBECONFIG=/etc/kubernetes/admin.conf
+
+    set +e
+    mkdir -p /root/.kube
+    cp -i /etc/kubernetes/admin.conf /root/.kube/config
+    chown $(id -u):$(id -g) /root/.kube/config
+    echo export PATH=\$PATH:/opt/bin >> /root/.bashrc
+    set -e
+    ;;
+
+  worker)
+      modprobe ip_vs
+      modprobe ip_vs_wrr
+      modprobe ip_vs_sh
+      modprobe nf_conntrack
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
+      rm -rf /etc/kubernetes/pki
+      /usr/bin/curl -k https://$CLUSTER_JOIN_IP:6443/version
+      kubeadm join $CLUSTER_JOIN_IP:6443 --token $CLUSTER_TOKEN --discovery-token-unsafe-skip-ca-verification
+
+esac
+
+sudo touch /home/cloud/success
+echo "true" > /home/cloud/success
