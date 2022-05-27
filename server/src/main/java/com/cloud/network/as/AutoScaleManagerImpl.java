@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import com.cloud.offering.DiskOffering;
+import com.cloud.server.ResourceTag;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -95,6 +96,7 @@ import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupStatisticsDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
@@ -216,6 +218,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private UserVmDao _userVmDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private AutoScaleVmGroupStatisticsDao _asGroupStatisticsDao;
 
     public List<AutoScaleCounter> getSupportedAutoScaleCounters(long networkid) {
         String capability = _lbRulesMgr.getLBCapability(networkid, Capability.AutoScaleCounters.getName());
@@ -1679,6 +1683,26 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return conditionsMap;
     }
 
+    private List<CounterVO> getCounters(long groupId) {
+        List<Long> counterIds = new ArrayList<>();
+        List<AutoScaleVmGroupPolicyMapVO> vos = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
+        for (AutoScaleVmGroupPolicyMapVO vo : vos) {
+            List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(vo.getPolicyId());
+            for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
+                ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
+                CounterVO counter = _counterDao.findById(condition.getCounterid());
+                if (!counterIds.contains(counter.getId())) {
+                    counterIds.add(counter.getId());
+                }
+            }
+        }
+        List<CounterVO> counters = new ArrayList<>();
+        for (Long counterId : counterIds) {
+            counters.add(_counterDao.findById(counterId));
+        }
+        return counters;
+    }
+
     private AutoScalePolicy.Action getAutoscaleAction(Map<Long, Double> countersMap, Map<Long, Integer> countersNumberMap, long groupId, Map<String, String> params) {
         s_logger.debug("[AutoScale] Getting autoscale action for group : " + groupId);
 
@@ -2012,59 +2036,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         s_logger.debug("[AutoScale] Collecting performance data ...");
 
-        Map<Long, CounterVO> conditionsMap = getConditionsMap(asGroup.getId());
-
         Map<Long, Double> countersMap = new HashMap<Long, Double>();
         Map<Long, Integer> countersNumberMap = new HashMap<Long, Integer>();
 
         if (is_native(asGroup.getId())) {
             s_logger.debug("[AutoScale] Collecting performance data from hosts ...");
 
-            // group vms by host id
-            Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<Long, List<Long>>();
-
-            List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(asGroup.getId());
-            for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
-                Long vmId = asGroupVmVO.getInstanceId();
-                UserVmVO vm = _userVmDao.findById(vmId);
-                if (vm.getHostId() != null) {
-                    List<Long> vmIds = hostAndVmIdsMap.get(vm.getHostId());
-                    if (vmIds == null) {
-                        vmIds = new ArrayList<Long>();
-                    }
-                    vmIds.add(vmId);
-                    hostAndVmIdsMap.put(vm.getHostId(), vmIds);
-                }
-            }
-
-            // get vm stats from each host and update database
-            for (Long hostId : hostAndVmIdsMap.keySet()) {
-                Date timestamp = new Date();
-                HostVO host = _hostDao.findById(hostId);
-                List<Long> vmIds = hostAndVmIdsMap.get(hostId);
-
-                try {
-                    Map<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
-
-                    if (vmStatsById != null) {
-                        Set<Long> vmIdSet = vmStatsById.keySet();
-
-                        for (Long vmId : vmIdSet) {
-                            VmStatsEntry vmStats = vmStatsById.get(vmId);
-                            for (Long conditionId : conditionsMap.keySet()) {
-                                CounterVO counter = conditionsMap.get(conditionId);
-                                if (Counter.NativeSources.contains(counter.getSource())) {
-                                    Double counterValue = Counter.Source.cpu.equals(counter.getSource()) ? vmStats.getCPUUtilization() / 100: vmStats.getMemoryKBs() / 1024;
-                                    updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, counterValue);
-                                }
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    s_logger.debug("Failed to get VM stats from host : " + host.getName());
-                    continue;
-                }
-            }
+            getVmStatsFromHosts(asGroup);
 
             // update counter with average percentage
         }
@@ -2097,5 +2075,57 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         // remove old records from database
+    }
+
+    private void getVmStatsFromHosts(AutoScaleVmGroupVO asGroup) {
+        // group vms by host id
+        Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<Long, List<Long>>();
+
+        List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(asGroup.getId());
+        for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
+            Long vmId = asGroupVmVO.getInstanceId();
+            UserVmVO vm = _userVmDao.findById(vmId);
+            if (vm.getHostId() != null) {
+                List<Long> vmIds = hostAndVmIdsMap.get(vm.getHostId());
+                if (vmIds == null) {
+                    vmIds = new ArrayList<Long>();
+                }
+                vmIds.add(vmId);
+                hostAndVmIdsMap.put(vm.getHostId(), vmIds);
+            }
+        }
+
+        List<CounterVO> counters = getCounters(asGroup.getId());
+
+        // get vm stats from each host and update database
+        for (Long hostId : hostAndVmIdsMap.keySet()) {
+            Date timestamp = new Date();
+            HostVO host = _hostDao.findById(hostId);
+            List<Long> vmIds = hostAndVmIdsMap.get(hostId);
+
+            try {
+                Map<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+
+                if (vmStatsById != null) {
+                    Set<Long> vmIdSet = vmStatsById.keySet();
+
+                    for (Long vmId : vmIdSet) {
+                        VmStatsEntry vmStats = vmStatsById.get(vmId);
+                        for (CounterVO counter : counters) {
+                            if (Counter.Source.cpu.equals(counter.getSource())) {
+                                Double counterValue = vmStats.getCPUUtilization() / 100;
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm, counterValue, timestamp));
+                            } else if (Counter.Source.memory.equals(counter.getSource())) {
+                                Double counterValue = vmStats.getMemoryKBs() / 1024;
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm, counterValue, timestamp));
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.debug("Failed to get VM stats from host : " + host.getName());
+                continue;
+            }
+        }
     }
 }
