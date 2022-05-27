@@ -2294,13 +2294,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public VirtualMachineTemplate linkUserDataToTemplate(LinkUserDataToTemplateCmd cmd) {
         Long templateId = cmd.getTemplateId();
+        Long isoId = cmd.getIsoId();
         Long userDataId = cmd.getUserdataId();
         UserData.UserDataOverridePolicy overridePolicy = cmd.getUserdataPolicy();
         Account caller = CallContext.current().getCallingAccount();
 
-        VMTemplateVO template = _tmpltDao.findById(templateId);
+        if (templateId != null && isoId != null) {
+            throw new InvalidParameterValueException("Both template ID and ISO ID are passed, API accepts only one");
+        }
+        if (templateId == null && isoId == null) {
+            throw new InvalidParameterValueException("Atleast one of template ID or ISO ID needs to be passed");
+        }
+
+        VMTemplateVO template = null;
+        if (templateId != null) {
+            template = _tmpltDao.findById(templateId);
+        } else {
+            template = _tmpltDao.findById(isoId);
+        }
         if (template == null) {
-            throw new InvalidParameterValueException(String.format("unable to find template with id %s", templateId));
+            throw new InvalidParameterValueException(String.format("unable to find template/ISO with id %s", templateId == null? isoId : templateId));
         }
 
         _accountMgr.checkAccess(caller, AccessType.OperateEntry, true, template);
@@ -2311,8 +2324,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         } else {
             template.setUserDataLinkPolicy(null);
         }
-        _tmpltDao.update(templateId, template);
+        _tmpltDao.update(template.getId(), template);
 
-        return _tmpltDao.findById(templateId);
+        return _tmpltDao.findById(template.getId());
     }
 }

@@ -518,11 +518,12 @@ public class TemplateManagerImplTest {
     public void testLinkUserDataToTemplate() {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
         when(cmd.getUserdataId()).thenReturn(2L);
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
-        when(_tmpltDao.findById(1L)).thenReturn(template);
+        when(_tmpltDao.findById(anyLong())).thenReturn(template);
 
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
 
@@ -530,13 +531,42 @@ public class TemplateManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testLinkUserDataToTemplateWhenNoTemplate() {
+    public void testLinkUserDataToTemplateByProvidingBothISOAndTemplateId() {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(1L);
         when(cmd.getUserdataId()).thenReturn(2L);
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
-        when(_tmpltDao.findById(1L)).thenReturn(null);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_tmpltDao.findById(1L)).thenReturn(template);
+
+        templateManager.linkUserDataToTemplate(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testLinkUserDataToTemplateByNotProvidingBothISOAndTemplateId() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(null);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(_tmpltDao.findById(1L)).thenReturn(template);
+
+        templateManager.linkUserDataToTemplate(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testLinkUserDataToTemplateWhenNoTemplate() {
+        LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
+        when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
+        when(cmd.getUserdataId()).thenReturn(2L);
+        when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+
+        when(_tmpltDao.findById(anyLong())).thenReturn(null);
 
         templateManager.linkUserDataToTemplate(cmd);
     }
@@ -545,10 +575,12 @@ public class TemplateManagerImplTest {
     public void testUnLinkUserDataToTemplate() {
         LinkUserDataToTemplateCmd cmd = Mockito.mock(LinkUserDataToTemplateCmd.class);
         when(cmd.getTemplateId()).thenReturn(1L);
+        when(cmd.getIsoId()).thenReturn(null);
         when(cmd.getUserdataId()).thenReturn(null);
         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
 
         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        when(template.getId()).thenReturn(1L);
         when(_tmpltDao.findById(1L)).thenReturn(template);
 
         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);

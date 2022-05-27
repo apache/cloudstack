@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 
-@APICommand(name = "deleteUserData", description = "Deletes a keypair by name", responseObject = SuccessResponse.class, entityType = {UserData.class},
+@APICommand(name = "deleteUserData", description = "Deletes a userdata", responseObject = SuccessResponse.class, entityType = {UserData.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18")
 public class DeleteUserDataCmd extends BaseCmd {
 
@@ -54,10 +54,10 @@ public class DeleteUserDataCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the ssh key. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the ssh key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
     private Long projectId;
 
     /////////////////////////////////////////////////////

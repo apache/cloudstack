@@ -2585,6 +2585,7 @@
 "message.success.update.kubeversion": "Successfully updated Kubernetes supported version",
 "message.success.update.network": "Successfully updated network",
 "message.success.update.template": "Successfully updated Template",
+"message.success.update.iso": "Successfully updated ISO",
 "message.success.update.user": "Successfully updated user",
 "message.success.upgrade.kubernetes": "Successfully upgraded Kubernetes cluster",
 "message.success.upload": "Successfully uploaded",

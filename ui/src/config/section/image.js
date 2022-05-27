@@ -101,7 +101,7 @@ export default {
         {
           api: 'updateTemplate',
           icon: 'edit-outlined',
-          label: 'label.edit',
+          label: 'label.action.edit.template',
           dataView: true,
           show: (record, store) => {
             return (['Admin'].includes(store.userInfo.roletype) || // If admin or owner or belongs to current project
@@ -250,7 +250,8 @@ export default {
               !(record.account === 'system' && record.domainid === 1) &&
               record.isready
           },
-          args: ['name', 'displaytext', 'bootable', 'ostypeid']
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateISO.vue')))
         },
         {
           api: 'updateIsoPermissions',

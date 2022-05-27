@@ -47,14 +47,20 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            required = true,
             description = "the ID of the template for the virtual machine")
     private Long templateId;
+
+    @Parameter(name = ApiConstants.ISO_ID,
+            type = CommandType.UUID,
+            entityType = TemplateResponse.class,
+            required = true,
+            description = "the ID of the ISO for the virtual machine")
+    private Long isoId;
 
     @Parameter(name = ApiConstants.USER_DATA_ID,
             type = CommandType.UUID,
             entityType = UserDataResponse.class,
-            description = "the ID of the userdata that has to be linked to template/ISO")
+            description = "the ID of the userdata that has to be linked to template/ISO. If not provided existing userdata will be unlinked from the template/ISO")
     private Long userdataId;
 
     @Parameter(name = ApiConstants.USER_DATA_POLICY,
@@ -68,6 +74,10 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Long getIsoId() {
+        return isoId;
     }
 
     public Long getUserdataId() {
@@ -91,7 +101,11 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
         }
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(getResponseView(), result);
-            response.setObjectName("template");
+            if (getTemplateId() != null) {
+                response.setObjectName("template");
+            } else {
+                response.setObjectName("iso");
+            }
             response.setTemplateType(result.getTemplateType().toString());//Template can be either USER or ROUTING type
             response.setResponseName(getCommandName());
             setResponseObject(response);
