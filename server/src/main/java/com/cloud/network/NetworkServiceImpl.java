@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.alert.AlertManager;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -240,6 +241,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
+    public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<Integer>("VirtualRouter", Integer.class,
+            "vr.public.interface.mtu", "1500", "MTU set on the VR's public facing interfaces",
+            true, ConfigKey.Scope.Zone);
+    public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<Integer>("VirtualRouter", Integer.class,
+            "vr.private.interface.mtu", "1500", "MTU set on the VR's private interfaces",
+            true, ConfigKey.Scope.Zone);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
     private static final long MIN_GRE_KEY = 0L;
@@ -364,6 +371,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     Ipv6Service ipv6Service;
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
+    @Inject
+    private AlertManager alertManager;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1254,7 +1263,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String externalId = cmd.getExternalId();
         String isolatedPvlanType = cmd.getIsolatedPvlanType();
         Long associatedNetworkId = cmd.getAssociatedNetworkId();
-
+        Integer publicMtu = cmd.getPublicMtu();
+        Integer privateMtu = cmd.getPrivateMtu();
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         if (ntwkOff == null || ntwkOff.isSystemOnly()) {
@@ -1576,6 +1586,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
         }
 
+        Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zoneId);
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
             if (vlanId != null) {
@@ -1592,7 +1603,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIp, routerIpv6, associatedNetwork);
+                externalId, routerIp, routerIpv6, associatedNetwork, interfaceMTUs);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
@@ -1607,6 +1618,29 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             return implementedNetworkInCreation(caller, zone, network);
         }
         return network;
+    }
+
+    private Pair<Integer, Integer> validateMtuConfig(Integer publicMtu, Integer privateMtu, Long zoneId) {
+        Integer vrMaxMtuForPublicIfaces = VRPublicInterfaceMtu.valueIn(zoneId);
+        Integer vrMaxMtuForPrivateIfaces = VRPrivateInterfaceMtu.valueIn(zoneId);
+        if (publicMtu > vrMaxMtuForPublicIfaces) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VR";
+            String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
+                    "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", VRPublicInterfaceMtu.key(), VRPublicInterfaceMtu.valueIn(zoneId));
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            publicMtu = vrMaxMtuForPublicIfaces;
+        }
+
+        if (privateMtu > vrMaxMtuForPrivateIfaces) {
+            String subject = "Incorrect MTU configured on network for private interface of the VR";
+            String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
+                    "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", VRPublicInterfaceMtu.key(), VRPublicInterfaceMtu.valueIn(zoneId));
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            privateMtu = vrMaxMtuForPrivateIfaces;
+        }
+        return new Pair<>(publicMtu, privateMtu);
     }
 
     private Network implementAssociatedNetwork(Long associatedNetworkId, Account caller, Account owner, DataCenter zone, Long domainId, Long accountId,
@@ -1734,7 +1768,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway, final String ip6Cidr,
                                   final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final PVlanType isolatedPvlanType, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk, final ACLType aclType, final Account ownerFinal,
                                   final String cidr, final boolean createVlan, final String externalId, String routerIp, String routerIpv6,
-                                  final Network associatedNetwork) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final Network associatedNetwork, Pair<Integer, Integer> vrIfaceMTUs) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1793,7 +1827,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, vrIfaceMTUs);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1801,9 +1835,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         if (ntwkOff.isInternalLb()) {
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
-
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk,
-                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6);
+                                zoneId, aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, isolatedPvlanType, externalId, routerIp, routerIpv6, vrIfaceMTUs);
                     }
 
                     if (createVlan && network != null) {
@@ -5384,6 +5417,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress};
+        return new ConfigKey<?>[] {AllowDuplicateNetworkName, AllowEmptyStartEndIpAddress, VRPrivateInterfaceMtu, VRPublicInterfaceMtu};
     }
 }

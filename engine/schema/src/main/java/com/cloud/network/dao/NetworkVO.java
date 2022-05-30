@@ -38,6 +38,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.log4j.Logger;
 
 /**
  * NetworkConfigurationVO contains information about a specific network.
@@ -46,6 +47,7 @@ import com.cloud.utils.net.NetUtils;
 @Entity
 @Table(name = "networks")
 public class NetworkVO implements Network {
+    static final Logger s_logger = Logger.getLogger(NetworkVO.class);
     @Id
     @TableGenerator(name = "networks_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "networks_seq", allocationSize = 1)
     @Column(name = "id")
@@ -190,6 +192,12 @@ public class NetworkVO implements Network {
     @Transient
     PVlanType pVlanType;
 
+    @Column(name = "public_iface_mtu")
+    Integer publicIfaceMtu;
+
+    @Column(name = "private_iface_mtu")
+    Integer privateIfaceMtu;
+
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -256,6 +264,8 @@ public class NetworkVO implements Network {
         ip6Gateway = that.getIp6Gateway();
         ip6Cidr = that.getIp6Cidr();
         this.externalId = externalId;
+        this.publicIfaceMtu = that.getPublicIfaceMtu();
+        this.privateIfaceMtu = that.getPrivateIfaceMtu();
     }
 
     /**
@@ -691,5 +701,21 @@ public class NetworkVO implements Network {
 
     public void setRouterIpv6(String routerIpv6) {
         this.routerIpv6 = routerIpv6;
+    }
+
+    public Integer getPublicIfaceMtu() {
+        return publicIfaceMtu;
+    }
+
+    public void setPublicIfaceMtu(Integer publicIfaceMtu) {
+        this.publicIfaceMtu = publicIfaceMtu;
+    }
+
+    public Integer getPrivateIfaceMtu() {
+        return privateIfaceMtu;
+    }
+
+    public void setPrivateIfaceMtu(Integer privateIfaceMtu) {
+        this.privateIfaceMtu = privateIfaceMtu;
     }
 }

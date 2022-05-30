@@ -62,6 +62,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
     private final SearchBuilder<DomainRouterJoinVO> vrIdSearch;
+    private final SearchBuilder<DomainRouterJoinVO> vrIdTrafficSearch;
 
     protected DomainRouterJoinDaoImpl() {
 
@@ -72,6 +73,11 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         vrIdSearch = createSearchBuilder();
         vrIdSearch.and("id", vrIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         vrIdSearch.done();
+
+        vrIdTrafficSearch = createSearchBuilder();
+        vrIdTrafficSearch.and("id", vrIdTrafficSearch.entity().getId(), SearchCriteria.Op.EQ);
+        vrIdTrafficSearch.and("trafficType", vrIdTrafficSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        vrIdTrafficSearch.done();
 
         _count = "select count(distinct id) from domain_router_view WHERE ";
     }
@@ -325,6 +331,14 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             }
         }
         return uvList;
+    }
+
+    @Override
+    public List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, TrafficType trafficType) {
+        SearchCriteria<DomainRouterJoinVO> sc = vrIdTrafficSearch.create();
+        sc.setParameters("id", id);
+        sc.setParameters("trafficType", trafficType);
+        return searchIncludingRemoved(sc, null, null, false);
     }
 
     @Override

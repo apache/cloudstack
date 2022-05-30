@@ -93,6 +93,14 @@ setup_interface() {
        echo "  address $ip " >> /etc/network/interfaces
        echo "  netmask $mask" >> /etc/network/interfaces
      fi
+
+     if [ ! -z "$PUBLICMTU" ] && [ $intf == "eth0" ]; then
+       echo "  mtu $PUBLICMTU" >> /etc/network/interfaces
+     fi
+
+     if [ ! -z "$PRIVATEMTU" ] && [ $intf == "eth2" ]; then
+       echo "  mtu $PRIVATEMTU" >> /etc/network/interfaces
+     fi
   fi
 
   if [ "$ip" == "0.0.0.0" -o "$ip" == "" ]
@@ -881,6 +889,12 @@ parse_cmd_line() {
           ;;
         privatekey)
           export PRIVATEKEY=$VALUE
+          ;;
+        publicMtu)
+          export PUBLICMTU=$VALUE
+          ;;
+        privateMtu)
+          export PRIVATEMTU=$VALUE
           ;;
       esac
   done

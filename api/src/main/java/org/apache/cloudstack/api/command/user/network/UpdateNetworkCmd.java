@@ -84,6 +84,14 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     @Parameter(name= ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "Setting this to true will cause a forced network update,", authorized = {RoleType.Admin})
     private Boolean forced;
 
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces")
+    private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces")
+    private Integer privateMtu;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -136,6 +144,23 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         }
         return forced;
     }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu;
+    }
+
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

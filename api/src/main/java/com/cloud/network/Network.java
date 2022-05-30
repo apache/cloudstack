@@ -484,4 +484,8 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     String getRouterIpv6();
 
     Date getCreated();
+
+    Integer getPublicIfaceMtu();
+
+    Integer getPrivateIfaceMtu();
 }

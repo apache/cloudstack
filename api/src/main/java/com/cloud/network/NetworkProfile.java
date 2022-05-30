@@ -22,8 +22,10 @@ import java.util.Date;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.log4j.Logger;
 
 public class NetworkProfile implements Network {
+    static final Logger s_logger = Logger.getLogger(NetworkProfile.class);
     private final long id;
     private final String uuid;
     private final long dataCenterId;
@@ -332,6 +334,16 @@ public class NetworkProfile implements Network {
 
     @Override
     public Date getCreated() {
+        return null;
+    }
+
+    @Override
+    public Integer getPublicIfaceMtu() {
+        return null;
+    }
+
+    @Override
+    public Integer getPrivateIfaceMtu() {
         return null;
     }
 

@@ -70,6 +70,9 @@ public class NicProfile implements InternalIdentity, Serializable {
     String iPv6Dns1;
     String iPv6Dns2;
     String requestedIPv6;
+    Integer mtu;
+//    Integer vrPublicIfaceMtu;
+//    Integer vrPrivateIfaceMtu;
 
     //
     // CONSTRUCTORS
@@ -396,6 +399,31 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.orderIndex = orderIndex;
     }
 
+//    public Integer getVrPublicIfaceMtu() {
+//        return vrPublicIfaceMtu;
+//    }
+//
+//    public void setVrPublicIfaceMtu(Integer vrPublicIfaceMtu) {
+//        this.vrPublicIfaceMtu = vrPublicIfaceMtu;
+//    }
+//
+//    public Integer getVrPrivateIfaceMtu() {
+//        return vrPrivateIfaceMtu;
+//    }
+//
+//    public void setVrPrivateIfaceMtu(Integer vrPrivateIfaceMtu) {
+//        this.vrPrivateIfaceMtu = vrPrivateIfaceMtu;
+//    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
+    }
+
+
     //
     // OTHER METHODS
     //
@@ -426,6 +454,10 @@ public class NicProfile implements InternalIdentity, Serializable {
         isolationUri = null;
 
         orderIndex = null;
+        mtu = null;
+
+//        vrPrivateIfaceMtu = null;
+//        vrPublicIfaceMtu = null;
 
     }
 

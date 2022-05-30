@@ -258,6 +258,8 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     network.setPvlanType(userSpecified.getPvlanType());
                 }
             }
+            network.setPublicIfaceMtu(userSpecified.getPublicIfaceMtu());
+            network.setPrivateIfaceMtu(userSpecified.getPrivateIfaceMtu());
         } else {
             final String guestNetworkCidr = dc.getGuestNetworkCidr();
             if (guestNetworkCidr == null && dc.getNetworkType() == NetworkType.Advanced) {

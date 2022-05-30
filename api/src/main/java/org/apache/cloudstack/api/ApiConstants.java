@@ -909,6 +909,9 @@ public class ApiConstants {
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
 
+    public static final String PUBLIC_MTU = "publicmtu";
+    public static final String PRIVATE_MTU = "privatemtu";
+
     public enum BootType {
         UEFI, BIOS;
 

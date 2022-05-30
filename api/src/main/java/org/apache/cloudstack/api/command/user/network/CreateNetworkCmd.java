@@ -157,6 +157,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
 
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer publicMtu;
+
+    @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer privateMtu;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -324,6 +332,22 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public Long getAclId() {
         return aclId;
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu != null ? publicMtu : 0;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu != null ? privateMtu : 0;
+    }
+
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
     }
 
     /////////////////////////////////////////////////////

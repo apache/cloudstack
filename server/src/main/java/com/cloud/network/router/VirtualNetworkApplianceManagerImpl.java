@@ -2028,13 +2028,19 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
+                s_logger.info("Guest IP : " + nic.getIPv4Address());
                 dnsProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
                 dhcpProvided = _networkModel.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
+                buf.append(" privateMtu=").append(nic.getMtu());
                 // build bootloader parameter for the guest
                 buf.append(createGuestBootLoadArgs(nic, defaultDns1, defaultDns2, router));
             } else if (nic.getTrafficType() == TrafficType.Public) {
+                s_logger.info("Public IP : " + nic.getIPv4Address());
                 publicNetwork = true;
+                buf.append(" publicMtu=").append(nic.getMtu());
             }
+                // todo: check all implementations of addnic (NicProfile) - and add the mtu details to the profile
+
         }
 
         if (controlNic == null) {
