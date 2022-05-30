@@ -21,7 +21,6 @@ package org.apache.cloudstack.kvm.ha;
 
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -125,7 +124,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 LOG.warn("pool = "+pool);
                 LOG.warn("volume_list = "+volume_list);
                 LOG.warn("=========================");
-            }    
+            }
 
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
                 final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
@@ -169,7 +168,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
         }
         return poolVolMap;
     }
-    
+
     @Override
     public HAResource.ResourceSubType resourceSubType() {
         return HAResource.ResourceSubType.KVM;
