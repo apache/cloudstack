@@ -42,8 +42,8 @@ write_files:
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
 
-      OFFLINE_INSTALL_ATTEMPT_SLEEP=30
-      MAX_OFFLINE_INSTALL_ATTEMPTS=40
+      OFFLINE_INSTALL_ATTEMPT_SLEEP=15
+      MAX_OFFLINE_INSTALL_ATTEMPTS=100
       offline_attempts=1
       MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       EJECT_ISO_FROM_OS={{ k8s.eject.iso }}
@@ -195,8 +195,8 @@ write_files:
       #!/bin/bash -e
 
       if [[ -f "/home/cloud/success" ]]; then
-      echo "Already provisioned!"
-      exit 0
+        echo "Already provisioned!"
+        exit 0
       fi
 
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
@@ -210,7 +210,7 @@ write_files:
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi
-      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --discovery-token-unsafe-skip-ca-verification
+      kubeadm join {{ k8s_control_node.join_ip }}:6443 --token {{ k8s_control_node.cluster.token }} --control-plane --certificate-key {{ k8s_control_node.cluster.ha.certificate.key }} --discovery-token-unsafe-skip-ca-verification
 
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
@@ -269,3 +269,4 @@ runcmd:
   - until [ -f /etc/systemd/system/setup-kube-system.service ]; do sleep 5; done
   - [ systemctl, start, setup-kube-system ]
   - [ systemctl, start, deploy-kube-system ]
+
