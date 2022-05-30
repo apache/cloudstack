@@ -226,7 +226,7 @@ backup_snapshot() {
       return 2
     fi
   elif [ -f ${disk} ]; then
-    if [[ $disk == *"\/snapshots\/"* ]]; then
+    if [[ $disk == *"/snapshots/"* ]]; then
       #Backup volume snapshot
       cp "$disk" "${destPath}/${destName}"
       ret_code=$?
