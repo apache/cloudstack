@@ -32,7 +32,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import com.cloud.offering.DiskOffering;
-import com.cloud.server.ResourceTag;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -112,6 +111,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.template.TemplateManager;
@@ -123,6 +123,7 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -221,6 +222,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private HostDao _hostDao;
     @Inject
     private AutoScaleVmGroupStatisticsDao _asGroupStatisticsDao;
+
+    private long autoScaleStatsInterval = -1L;
+    private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
+
+    @Override
+    public boolean start() {
+        autoScaleStatsInterval = NumbersUtil.parseLong(_configDao.getValue("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+        return true;
+    }
 
     public List<AutoScaleCounter> getSupportedAutoScaleCounters(long networkid) {
         String capability = _lbRulesMgr.getLBCapability(networkid, Capability.AutoScaleCounters.getName());
@@ -1743,7 +1753,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                                 counter_count++;
                             } while (true);
 
-                            String key = generateKey(conditionVO.getId(), counterVO.getId());
+                            String key = generateKeyFromConditionAndCounter(conditionVO.getId(), counterVO.getId());
                             Double sum = countersMap.get(key);
                             Integer number = countersNumberMap.get(key);
                             s_logger.debug(String.format("policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyVO.getId(), conditionVO.getId(), counterVO.getSource(), sum, number));
@@ -1985,7 +1995,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void updateCountersMap(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
         // Summary of all counter by counterId key
-        String key = generateKey(conditionId, counterId);
+        String key = generateKeyFromConditionAndCounter(conditionId, counterId);
         if (countersMap.get(key) == null) {
             /* initialize if data is not set */
             countersMap.put(key, Double.valueOf(0));
@@ -2077,7 +2087,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
 
-        // remove old records from database
+        // Remove old statistics from database
+        cleanupAsVmGroupStatistics(asGroup);
     }
 
     private void getVmStatsFromHosts(AutoScaleVmGroupVO asGroup) {
@@ -2133,17 +2144,24 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     private void  updateCountersMap(AutoScaleVmGroupVO asGroup, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
+        s_logger.debug("Updating countersMap for as group: " + asGroup.getId());
         List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
         for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+            s_logger.debug(String.format("Updating countersMap for policy %d in as group %d: ", groupPolicyVO.getPolicyId(), asGroup.getId()));
             AutoScalePolicyVO vo = _autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
             Map<Long, CounterVO> conditionsMap = getConditionsMap(groupPolicyVO.getPolicyId());
             for (Long conditionId : conditionsMap.keySet()) {
+                Date afterDate = new Date(System.currentTimeMillis() - ((long)vo.getDuration() << 10));
+                s_logger.debug(String.format("Updating countersMap for condition %d in policy %d in as group %d: ", conditionId, groupPolicyVO.getPolicyId(), asGroup.getId()));
+                s_logger.debug(String.format("Updating countersMap with stats in %d seconds : between %s and %s", vo.getDuration(), new Date(), afterDate));
                 CounterVO counter = conditionsMap.get(conditionId);
-                List<AutoScaleVmGroupStatisticsVO> stats = _asGroupStatisticsDao.listByVmGroupIdAndCounterId(asGroup.getId(), counter.getId(), new Date(System.currentTimeMillis() - ((long)vo.getDuration() << 10)));
+                List<AutoScaleVmGroupStatisticsVO> stats = _asGroupStatisticsDao.listByVmGroupIdAndCounterId(asGroup.getId(), counter.getId(), afterDate);
                 if (CollectionUtils.isEmpty(stats)) {
                     continue;
                 }
+                s_logger.debug(String.format("Updating countersMap with %d stats", stats.size()));
                 for (AutoScaleVmGroupStatisticsVO stat : stats) {
+                    s_logger.debug(String.format("Updating countersMap with %s (%s): %f, created on %s", counter.getSource(), counter.getValue(), stat.getRawValue(), stat.getCreated()));
                     updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, stat.getRawValue());
                 }
             }
@@ -2151,7 +2169,21 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
     }
 
-    private String generateKey(Long conditionId, Long counterId) {
+    private String generateKeyFromConditionAndCounter(Long conditionId, Long counterId) {
         return conditionId + "-" + counterId;
+    }
+
+    private void cleanupAsVmGroupStatistics(AutoScaleVmGroup asGroup) {
+        List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
+        for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+            AutoScalePolicyVO vo = _autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
+            Date beforeDate = new Date(System.currentTimeMillis() - ((long)vo.getDuration() << 10) - autoScaleStatsInterval);
+            s_logger.debug(String.format("Removing stats for policy %d in as group %d, before %s", groupPolicyVO.getPolicyId(), asGroup.getId(), beforeDate));
+            Map<Long, CounterVO> conditionsMap = getConditionsMap(groupPolicyVO.getPolicyId());
+            for (Long conditionId : conditionsMap.keySet()) {
+                CounterVO counter = conditionsMap.get(conditionId);
+                _asGroupStatisticsDao.removeByGroupAndCounter(asGroup.getId(), counter.getId(), beforeDate);
+            }
+        }
     }
 }
