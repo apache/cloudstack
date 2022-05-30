@@ -23,11 +23,6 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.response.OutOfBandManagementResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -43,16 +38,13 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerState;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.List;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
     private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
@@ -63,12 +55,6 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     protected OutOfBandManagementService outOfBandManagementService;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
-    @Inject
-    private VolumeDao volumeDao;
-    @Inject
-    private VMInstanceDao vmInstanceDao;
-    @Inject
-    private PrimaryDataStoreDao storagePool;
 
     @Override
     public boolean isEligible(final Host host) {
@@ -117,7 +103,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     public boolean fence(Host r) throws HAFenceException {
         try {
             //INVALIDATE CACHE Test
-            HashMap<StoragePool, List<Volume>> poolVolMap = getVolumeUuidOnHost(r);
+            HashMap<StoragePool, List<Volume>> poolVolMap = hostActivityChecker.getVolumeUuidOnHost(r);
             for (StoragePool pool : poolVolMap.keySet()) {
                 List<Volume> volume_list = poolVolMap.get(pool);
                 LOG.warn("=====================KVMHAProvider.java====");
@@ -142,31 +128,6 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HAFenceException("OOBM service is not configured or enabled for this host " + r.getName() , e);
         }
-    }
-
-    private HashMap<StoragePool, List<Volume>> getVolumeUuidOnHost(Host r) {
-        List<VMInstanceVO> vm_list = vmInstanceDao.listByHostId(r.getId());
-        List<VolumeVO> volume_list = new ArrayList<VolumeVO>();
-        for (VirtualMachine vm : vm_list) {
-            LOG.debug(String.format("Retrieving volumes of VM [%s]...", vm.getId()));
-            List<VolumeVO> vm_volume_list = volumeDao.findByInstance(vm.getId());
-            volume_list.addAll(vm_volume_list);
-        }
-
-        HashMap<StoragePool, List<Volume>> poolVolMap = new HashMap<StoragePool, List<Volume>>();
-        for (Volume vol : volume_list) {
-            LOG.debug(String.format("Retrieving storage pool [%s] of volume [%s]...", vol.getPoolId(), vol.getId()));
-            StoragePool sp = storagePool.findById(vol.getPoolId());
-            if (!poolVolMap.containsKey(sp)) {
-                List<Volume> list = new ArrayList<Volume>();
-                list.add(vol);
-
-                poolVolMap.put(sp, list);
-            } else {
-                poolVolMap.get(sp).add(vol);
-            }
-        }
-        return poolVolMap;
     }
 
     @Override
