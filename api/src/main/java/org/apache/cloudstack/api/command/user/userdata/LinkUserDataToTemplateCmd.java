@@ -53,7 +53,6 @@ public class LinkUserDataToTemplateCmd extends BaseCmd implements AdminCmd {
     @Parameter(name = ApiConstants.ISO_ID,
             type = CommandType.UUID,
             entityType = TemplateResponse.class,
-            required = true,
             description = "the ID of the ISO for the virtual machine")
     private Long isoId;
 
