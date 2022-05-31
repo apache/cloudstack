@@ -822,8 +822,6 @@ public class CommandSetupHelper {
 
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
-                s_logger.info("PEARL - ip address assoc network id : " + ipAddr.getAssociatedWithNetworkId() + " network id: " + ipAddr.getNetworkId() + " ip range : " + ipAddr.getIpRange() + " vmIp: " + ipAddr.getVmIp() );
-
                 setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
@@ -951,8 +949,6 @@ public class CommandSetupHelper {
                 if (networkVO.getPublicIfaceMtu() != null) {
                     ip.setMtu(networkVO.getPublicIfaceMtu());
                 }
-                s_logger.info("PEARL - mtu: " + networkVO.getPublicIfaceMtu());
-                s_logger.info("PEARL - ip address assoc network id : " + ipAddr.getAssociatedWithNetworkId() + " network id: " + ipAddr.getNetworkId() + " ip range : " + ipAddr.getIpRange() + " vmIp: " + ipAddr.getVmIp() + " pub ip:" + ip.getPublicIp());
                 setIpAddressNetworkParams(ip, network, router);
                 if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     Map<String, String> details = new HashMap<>();
@@ -1288,7 +1284,6 @@ public class CommandSetupHelper {
             ipAddress.setPrivateGateway(false);
         }
         ipAddress.setNetworkName(_networkModel.getNetworkTag(router.getHypervisorType(), network));
-        s_logger.info("PEARL - network name: " + network.getName() + " ip net name: " + ipAddress.getNetworkName());
         final NetworkOfferingVO networkOfferingVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
         NicTO nicTO = new NicTO();
         nicTO.setMac(ipAddress.getVifMacAddress());

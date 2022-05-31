@@ -1001,7 +1001,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         deviceId = applyProfileToNic(vo, profile, deviceId);
-        s_logger.info("PEARL - vpc id: " + network.getVpcId());
         if (vm.getType() == Type.DomainRouter) {
             setMtuDetailsInVRNic(vm.getId(), network, vo);
         }

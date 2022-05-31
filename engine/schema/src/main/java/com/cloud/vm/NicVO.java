@@ -127,12 +127,6 @@ public class NicVO implements Nic {
     @Column(name = "mtu")
     Integer mtu;
 
-//    @Column(name = "vr_public_iface_mtu")
-//    Integer vrPublicIfaceMtu;
-//
-//    @Column(name = "vr_private_iface_mtu")
-//    Integer vrPrivateIfaceMtu;
-
     @Transient
     transient String nsxLogicalSwitchUuid;
 
@@ -403,23 +397,6 @@ public class NicVO implements Nic {
     public void setNsxLogicalSwitchPortUuid(String nsxLogicalSwitchPortUuid) {
         this.nsxLogicalSwitchPortUuid = nsxLogicalSwitchPortUuid;
     }
-
-//    public Integer getVrPublicIfaceMtu() {
-//        return vrPublicIfaceMtu;
-//    }
-//
-//    public void setVrPublicIfaceMtu(Integer vrPublicIfaceMtu) {
-//        this.vrPublicIfaceMtu = vrPublicIfaceMtu;
-//    }
-//
-//    public Integer getVrPrivateIfaceMtu() {
-//        return vrPrivateIfaceMtu;
-//    }
-//
-//    public void setVrPrivateIfaceMtu(Integer vrPrivateIfaceMtu) {
-//        this.vrPrivateIfaceMtu = vrPrivateIfaceMtu;
-//    }
-
 
     @Override
     public Integer getMtu() {

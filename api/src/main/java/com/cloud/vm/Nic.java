@@ -161,8 +161,5 @@ public interface Nic extends Identity, InternalIdentity {
 
     String getIPv6Address();
 
-//    Integer getVrPublicIfaceMtu();
-//
-//    Integer getVrPrivateIfaceMtu();
     Integer getMtu();
 }

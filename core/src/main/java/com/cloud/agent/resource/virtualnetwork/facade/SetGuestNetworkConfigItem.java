@@ -73,7 +73,7 @@ public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
         if (nic.getIp6Cidr() != null) {
             guestNetwork.setCidr6(String.valueOf(NetUtils.getIp6CidrSize(nic.getIp6Cidr())));
         }
-
+        guestNetwork.setMtu(nic.getMtu());
         guestNetwork.setRouterIp6(command.getRouterIpv6());
         guestNetwork.setRouterIp6Gateway(command.getRouterIpv6Gateway());
         guestNetwork.setRouterIp6Cidr(command.getRouterIpv6Cidr());
