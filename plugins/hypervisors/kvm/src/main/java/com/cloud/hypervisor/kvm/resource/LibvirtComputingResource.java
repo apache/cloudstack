@@ -1415,7 +1415,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean isUefiPropertiesFileLoaded() {
-        return _uefiProperties != null && _uefiProperties.getProperty("guest.loader.legacy") != null;
+        return !_uefiProperties.isEmpty();
     }
 
     private void loadUefiProperties() throws FileNotFoundException {
