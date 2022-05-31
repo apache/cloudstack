@@ -1414,13 +1414,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("agent.hooks.libvirt_vm_on_stop.method is " + _agentHooksVmOnStopMethod);
     }
 
-    public boolean isUefiPropertiesFileSet() {
-        return PropertiesUtil.findConfigFile("uefi.properties") != null;
+    public boolean isUefiPropertiesFileLoaded() {
+        return _uefiProperties != null && _uefiProperties.getProperty("guest.loader.legacy") != null;
     }
 
     private void loadUefiProperties() throws FileNotFoundException {
 
-        if (_uefiProperties != null && _uefiProperties.getProperty("guest.loader.legacy") != null) {
+        if (isUefiPropertiesFileLoaded()) {
             return;
         }
         final File file = PropertiesUtil.findConfigFile("uefi.properties");
