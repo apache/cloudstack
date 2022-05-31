@@ -188,7 +188,7 @@ public class KVMHostActivityChecker extends AdapterBase implements ActivityCheck
         return activityStatus;
     }
 
-    public HashMap<StoragePool, List<Volume>> getVolumeUuidOnHost(Host agent) {
+    private HashMap<StoragePool, List<Volume>> getVolumeUuidOnHost(Host agent) {
         List<VMInstanceVO> vm_list = vmInstanceDao.listByHostId(agent.getId());
         List<VolumeVO> volume_list = new ArrayList<VolumeVO>();
         for (VirtualMachine vm : vm_list) {

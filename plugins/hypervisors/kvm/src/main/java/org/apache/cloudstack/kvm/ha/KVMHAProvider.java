@@ -21,8 +21,6 @@ package org.apache.cloudstack.kvm.ha;
 
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 
 import org.apache.cloudstack.api.response.OutOfBandManagementResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -43,8 +41,6 @@ import org.joda.time.DateTime;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
-import java.util.HashMap;
-import java.util.List;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
     private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
@@ -102,16 +98,6 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
     @Override
     public boolean fence(Host r) throws HAFenceException {
         try {
-            //INVALIDATE CACHE Test
-            HashMap<StoragePool, List<Volume>> poolVolMap = hostActivityChecker.getVolumeUuidOnHost(r);
-            for (StoragePool pool : poolVolMap.keySet()) {
-                List<Volume> volume_list = poolVolMap.get(pool);
-                LOG.warn("=====================KVMHAProvider.java====");
-                LOG.warn("pool = "+pool);
-                LOG.warn("volume_list = "+volume_list);
-                LOG.warn("=========================");
-            }
-
             if (outOfBandManagementService.isOutOfBandManagementEnabled(r)){
                 final OutOfBandManagement oobm = outOfBandManagementDao.findByHost(r.getId());
                 if (oobm.getPowerState() == PowerState.Unknown){
