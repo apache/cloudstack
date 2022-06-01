@@ -198,4 +198,8 @@ public class GuestNetwork extends ConfigBase {
     public void setMtu(Integer mtu) {
         this.mtu = mtu;
     }
+
+    public Integer getMtu() {
+        return mtu;
+    }
 }

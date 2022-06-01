@@ -823,6 +823,9 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
                 setIpAddressNetworkParams(ip, network, router);
+                if (network.getPublicIfaceMtu() != null) {
+                    ip.setMtu(network.getPublicIfaceMtu());
+                }
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
@@ -1086,7 +1089,9 @@ public class CommandSetupHelper {
                 final Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
                 final IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, ipAddr.getSourceNat(), ipAddr.getBroadcastUri(),
                         ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(), null, false);
-
+                if (network.getPrivateIfaceMtu() != null) {
+                    ip.setMtu(network.getPublicIfaceMtu());
+                }
                 setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;
 
@@ -1143,6 +1148,10 @@ public class CommandSetupHelper {
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
             updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);
+        }
+
+        if (nic.getMtu() != null) {
+            setupCmd.setMtu(nic.getMtu());
         }
 
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));

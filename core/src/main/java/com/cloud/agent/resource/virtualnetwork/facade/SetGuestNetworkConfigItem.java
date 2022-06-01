@@ -31,13 +31,13 @@ import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.model.ConfigBase;
 import com.cloud.agent.resource.virtualnetwork.model.GuestNetwork;
 import com.cloud.utils.net.NetUtils;
+import org.apache.log4j.Logger;
 
 public class SetGuestNetworkConfigItem extends AbstractConfigItemFacade {
-
+    private static final Logger LOG = Logger.getLogger(SetGuestNetworkConfigItem.class);
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {
         final SetupGuestNetworkCommand command = (SetupGuestNetworkCommand) cmd;
-
         final NicTO nic = command.getNic();
         final String routerGIP = command.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         final String gateway = command.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);

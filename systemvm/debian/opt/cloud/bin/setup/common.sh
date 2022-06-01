@@ -94,12 +94,12 @@ setup_interface() {
        echo "  netmask $mask" >> /etc/network/interfaces
      fi
 
-     if [ ! -z "$PUBLICMTU" ] && [ $intf == "eth0" ]; then
-       echo "  mtu $PUBLICMTU" >> /etc/network/interfaces
+     if [ ! -z "$PRIVATEMTU" ] && [ $intf == "eth0" ]; then
+       echo "  mtu $PRIVATEMTU" >> /etc/network/interfaces
      fi
 
-     if [ ! -z "$PRIVATEMTU" ] && [ $intf == "eth2" ]; then
-       echo "  mtu $PRIVATEMTU" >> /etc/network/interfaces
+     if [ ! -z "$PUBLICMTU" ] && [ $intf == "eth2" ]; then
+       echo "  mtu $PUBLICMTU" >> /etc/network/interfaces
      fi
   fi
 
