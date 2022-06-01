@@ -534,9 +534,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
@@ -593,9 +595,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
+        Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
+
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap);
         boolean useHostCacheOnUnsupportedPool = VirtualMachineManager.VmConfigDriveUseHostCacheOnUnsupportedPool.valueIn(dest.getDataCenter().getId());
         boolean preferHostCache = VirtualMachineManager.VmConfigDriveForceHostCacheUse.valueIn(dest.getDataCenter().getId());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), useHostCacheOnUnsupportedPool, preferHostCache, true);
@@ -609,6 +613,23 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
+        UserVmVO userVm = _userVmDao.findById(vmId);
+        String userDataDetails = userVm.getUserDataDetails();
+        Map<String,String> customUserdataParamMap = new HashMap<>();
+        if(userDataDetails != null && !userDataDetails.isEmpty()) {
+            userDataDetails = userDataDetails.substring(1, userDataDetails.length()-1);
+            String[] keyValuePairs = userDataDetails.split(",");
+            for(String pair : keyValuePairs)
+            {
+                String[] entry = pair.split("=");
+                customUserdataParamMap.put(entry[0].trim(), entry[1].trim());
+            }
+        }
+
+        return customUserdataParamMap;
     }
 
     private DataStore getDatastoreForConfigDriveIso(DiskTO disk, VirtualMachineProfile profile, DeployDestination dest) {
