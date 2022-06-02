@@ -25,11 +25,6 @@ setup_vpcrouter() {
     grep -q $NAME /etc/hosts || echo "127.0.0.1 $NAME" >> /etc/hosts;
   fi
 
-    cat > /etc/network/interfaces << EOF
-auto lo eth0
-iface lo inet loopback
-EOF
-
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostnamectl set-hostname $NAME
