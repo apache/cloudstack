@@ -2221,7 +2221,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             outcome.get();
         } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId, deviceId, e.getMessage()), e);
+            throw new CloudRuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId, deviceId, e.getMessage()), e);
         }
 
         Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());

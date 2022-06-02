@@ -162,6 +162,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.jetbrains.annotations.Nullable;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -336,15 +337,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
-        Long podId = null;
-        if (pod != null) {
-            podId = pod.getId();
-        } else if (clusterId != null) {
-            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
-            if (cluster != null) {
-                podId = cluster.getPodId();
-            }
-        }
+        Long podId = retrievePod(pod, clusterId);
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -371,7 +364,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return null;
     }
 
-    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+    @Nullable
+    private Long retrievePod(Pod pod, Long clusterId) {
         Long podId = null;
         if (pod != null) {
             podId = pod.getId();
@@ -381,6 +375,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 podId = cluster.getPodId();
             }
         }
+        return podId;
+    }
+
+    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+        Long podId = retrievePod(pod, clusterId);
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         List<StoragePool> suitablePools = new ArrayList<>();
@@ -403,15 +402,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId) {
-        Long podId = null;
-        if (pod != null) {
-            podId = pod.getId();
-        } else if (clusterId != null) {
-            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
-            if (cluster != null) {
-                podId = cluster.getPodId();
-            }
-        }
+        Long podId = retrievePod(pod, clusterId);
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterId);
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
