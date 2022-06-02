@@ -2874,10 +2874,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
 
                     // rbd image-cache invalidate
-                    if (data instanceof VolumeObjectTO) {
-                        final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
-                        Script.runSimpleBashScript("rbd image-cache invalidate " + volumeObjectTO.getUuid());
-                    }
+                    Script.runSimpleBashScript("rbd image-cache invalidate " + data.getPath());
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
                 } else if (pool.getType() == StoragePoolType.Gluster) {
