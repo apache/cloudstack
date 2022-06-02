@@ -413,7 +413,7 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
         self.assertEqual(
             self.template.userdatapolicy,
-            "allowoverride",
+            "ALLOWOVERRIDE",
             "Match default userdata override policy in template response"
         )
 
