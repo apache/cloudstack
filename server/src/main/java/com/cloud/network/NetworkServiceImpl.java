@@ -1814,7 +1814,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType,
-                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr);
+                                subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId, ip6Gateway, ip6Cidr, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1834,12 +1834,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
-                    }
-                    if (StringUtils.isNotEmpty(ip6Dns1)) {
-                        _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), ApiConstants.IP6_DNS1, ip6Dns1, true));
-                        if (StringUtils.isNotEmpty(ip6Dns2)) {
-                            _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), ApiConstants.IP6_DNS2, ip6Dns2, true));
-                        }
                     }
                     return network;
                 }

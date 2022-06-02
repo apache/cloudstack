@@ -1984,13 +1984,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     buf.append(" gateway=").append(nic.getIPv4Gateway());
                 }
                 if (ipv6) {
-                    Pair<String, String> dns = null;
-                    if (StringUtils.isAnyBlank(nic.getIPv6Dns1(), nic.getIPv6Dns2())) {
-                        Network network = _networkModel.getNetwork(nic.getNetworkId());
-                        dns = _networkModel.getNetworkIp6Dns(network, dc);
-                    }
-                    defaultIp6Dns1 = StringUtils.firstNonBlank(nic.getIPv6Dns1(), dns.first());
-                    defaultIp6Dns2 = StringUtils.firstNonBlank(nic.getIPv6Dns2(), dns.second());
+                    defaultIp6Dns1 = nic.getIPv6Dns1();
+                    defaultIp6Dns2 = nic.getIPv6Dns2();
                     buf.append(" ip6gateway=").append(nic.getIPv6Gateway());
                 }
                 defaultDns1 = nic.getIPv4Dns1();

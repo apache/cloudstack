@@ -266,6 +266,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (StringUtils.isNotBlank(userSpecified.getDns2())) {
                 network.setDns2(userSpecified.getDns2());
             }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns1())) {
+                network.setIp6Dns1(userSpecified.getIp6Dns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns2())) {
+                network.setIp6Dns2(userSpecified.getIp6Dns2());
+            }
         } else {
             final String guestNetworkCidr = dc.getGuestNetworkCidr();
             if (guestNetworkCidr == null && dc.getNetworkType() == NetworkType.Advanced) {

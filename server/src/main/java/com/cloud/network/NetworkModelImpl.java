@@ -2655,7 +2655,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
             dns1 = zone.getDns1();
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns2)) {
             dns2 = zone.getDns2();
         }
         return new Pair<>(dns1, dns2);
@@ -2674,7 +2674,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
             dns1 = zone.getIp6Dns1();
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns2)) {
             dns2 = zone.getIp6Dns2();
         }
         return new Pair<>(dns1, dns2);
