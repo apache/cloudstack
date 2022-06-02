@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -214,7 +215,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
         if (cmd instanceof StorageSubSystemCommand) {
-            Boolean fullCloneEnabled = VmwareFullClone.value();
+            Boolean fullCloneEnabled = StorageManager.VmwareCreateCloneFull.value();
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(fullCloneEnabled);
         }
@@ -235,7 +236,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 inSeq = false;
             } else if ((destStoreTO.getRole() == DataStoreRole.Image) || (destStoreTO.getRole() == DataStoreRole.ImageCache)) {
                 inSeq = false;
-            } else if (!VmwareFullClone.value()) {
+            } else if (!StorageManager.VmwareCreateCloneFull.value()) {
                 inSeq = false;
             }
             cpyCommand.setExecuteInSequence(inSeq);
