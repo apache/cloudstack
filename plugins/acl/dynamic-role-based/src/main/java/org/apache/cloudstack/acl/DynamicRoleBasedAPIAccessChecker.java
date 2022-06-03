@@ -27,7 +27,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 
@@ -87,8 +86,9 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         for (final RolePermission permission : allPermissions) {
             if (permission.getRule().matches(apiName)) {
                 if (Permission.ALLOW.equals(permission.getPermission())) {
-                    LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName,
-                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(role, "name", "uuid"), permission.getRule().toString()));
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
+                    }
                     return true;
                 }
                 return false;
@@ -115,13 +115,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     public boolean checkAccess(Account account, String commandName) {
         final Role accountRole = roleService.findRole(account.getRoleId());
         if (accountRole == null || accountRole.getId() < 1L) {
-            throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.", account));
         }
 
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
-            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
             return true;
         }
 
@@ -129,8 +127,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }
-        throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account %s.", commandName,
-            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+        throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account %s.", commandName, account));
     }
 
     /**

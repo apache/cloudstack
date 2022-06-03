@@ -84,7 +84,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
             if (projectUser.getAccountRole() != ProjectAccount.Role.Admin) {
                 apiNames.removeIf(apiName -> !isPermitted(project, projectUser, apiName));
             }
-            LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+            }
             return apiNames;
         }
 
@@ -96,7 +98,9 @@ public class ProjectRoleBasedApiAccessChecker  extends AdapterBase implements AP
         if (projectAccount.getAccountRole() != ProjectAccount.Role.Admin) {
             apiNames.removeIf(apiName -> !isPermitted(project, projectAccount, apiName));
         }
-        LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("Returning APIs [%s] as allowed for user [%s].", apiNames, user));
+        }
         return apiNames;
     }
 
