@@ -79,13 +79,15 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (LOG.isDebugEnabled()) {
             printCertificateChain(certificates, s);
         }
-        if (!authStrictness) {
+
+        final X509Certificate primaryClientCertificate = (certificates != null && certificates.length > 0 && certificates[0] != null) ? certificates[0] : null;
+        String exceptionMsg = "";
+
+        if (authStrictness && primaryClientCertificate == null) {
+            throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
+        } else if (primaryClientCertificate == null) {
             return;
         }
-        if (certificates == null || certificates.length < 1 || certificates[0] == null) {
-            throw new CertificateException("In strict auth mode, certificate(s) are expected from client:" + clientAddress);
-        }
-        final X509Certificate primaryClientCertificate = certificates[0];
 
         // Revocation check
         final BigInteger serialNumber = primaryClientCertificate.getSerialNumber();
@@ -93,18 +95,19 @@ public final class RootCACustomTrustManager implements X509TrustManager {
             final String errorMsg = String.format("Client is using revoked certificate of serial=%x, subject=%s from address=%s",
                     primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
             LOG.error(errorMsg);
-            throw new CertificateException(errorMsg);
+            exceptionMsg = (Strings.isNullOrEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
 
         // Validity check
-        if (!allowExpiredCertificate) {
-            try {
-                primaryClientCertificate.checkValidity();
-            } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
-                final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
-                        primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
-                LOG.error(errorMsg);
-                throw new CertificateException(errorMsg);                }
+        try {
+            primaryClientCertificate.checkValidity();
+        } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
+            final String errorMsg = String.format("Client certificate has expired with serial=%x, subject=%s from address=%s",
+                    primaryClientCertificate.getSerialNumber(), primaryClientCertificate.getSubjectDN(), clientAddress);
+            LOG.error(errorMsg);
+            if (!allowExpiredCertificate) {
+                throw new CertificateException(errorMsg);
+            }
         }
 
         // Ownership check
@@ -122,13 +125,21 @@ public final class RootCACustomTrustManager implements X509TrustManager {
         if (!certMatchesOwnership) {
             final String errorMsg = "Certificate ownership verification failed for client: " + clientAddress;
             LOG.error(errorMsg);
-            throw new CertificateException(errorMsg);
+            exceptionMsg = (Strings.isNullOrEmpty(exceptionMsg)) ? errorMsg : (exceptionMsg + ". " + errorMsg);
         }
-        if (activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
-            activeCertMap.put(clientAddress, primaryClientCertificate);
+        if (authStrictness && !Strings.isNullOrEmpty(exceptionMsg)) {
+            throw new CertificateException(exceptionMsg);
         }
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
+            if (authStrictness) {
+                LOG.debug("Client/agent connection from ip=" + clientAddress + " has been validated and trusted.");
+            } else {
+                LOG.debug("Client/agent connection from ip=" + clientAddress + " accepted without certificate validation.");
+            }
+        }
+
+        if (primaryClientCertificate != null && activeCertMap != null && !Strings.isNullOrEmpty(clientAddress)) {
+            activeCertMap.put(clientAddress, primaryClientCertificate);
         }
     }
 
@@ -138,9 +149,6 @@ public final class RootCACustomTrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        if (!authStrictness) {
-            return null;
-        }
         return new X509Certificate[]{caCertificate};
     }
 }

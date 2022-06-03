@@ -41,7 +41,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.Mockito;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RootCAProviderTest {
@@ -133,17 +135,20 @@ public class RootCAProviderTest {
 
     @Test
     public void testCreateSSLEngineWithoutAuthStrictness() throws Exception {
-        overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "false");
+        provider.rootCAAuthStrictness = Mockito.mock(ConfigKey.class);
+        Mockito.when(provider.rootCAAuthStrictness.value()).thenReturn(Boolean.FALSE);
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
-        Assert.assertFalse(e.getUseClientMode());
+
+        Assert.assertTrue(e.getWantClientAuth());
         Assert.assertFalse(e.getNeedClientAuth());
     }
 
     @Test
     public void testCreateSSLEngineWithAuthStrictness() throws Exception {
-        overrideDefaultConfigValue(RootCAProvider.rootCAAuthStrictness, "_defaultValue", "true");
+        provider.rootCAAuthStrictness = Mockito.mock(ConfigKey.class);
+        Mockito.when(provider.rootCAAuthStrictness.value()).thenReturn(Boolean.TRUE);
         final SSLEngine e = provider.createSSLEngine(SSLUtils.getSSLContext(), "/1.2.3.4:5678", null);
-        Assert.assertFalse(e.getUseClientMode());
+
         Assert.assertTrue(e.getNeedClientAuth());
     }
 
