@@ -135,6 +135,11 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_CRUD_operations_userdata(self):
+        """Test register, list, update operations on userdata
+            1. Register a userdata
+            2. List the registered userdata
+            3. Delete the registered userdata
+        """
 
         self.userdata1 = UserData.register(
             self.apiclient,
@@ -166,6 +171,12 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
     def test_deploy_vm_with_registered_userdata(self):
+        """Test deploy VM with registered userdata
+            1. Register a userdata
+            2. Deploy a VM by passing the userdata id
+            3. Test the VM response
+            4. SSH into VM and access the userdata
+        """
 
         self.userdata2 = UserData.register(
             self.apiclient,
@@ -284,7 +295,12 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
     def test_deploy_vm_with_registered_userdata_with_params(self):
-
+        """Test deploy VM with registered userdata with variables
+            1. Register a userdata having variables
+            2. Deploy a VM by passing the userdata id and custom userdata params map with values
+            3. Test the VM response
+            4. SSH into VM and access the userdata, check if values got rendered for the decalared variables in userdata
+        """
         self.userdata2 = UserData.register(
             self.apiclient,
             name="testUserData2",
@@ -391,6 +407,14 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_link_and_unlink_userdata_to_template(self):
+        """Test link and unlink of userdata to a template
+            1. Register a userdata
+            2. Link the registered userdata to a template
+            3. Verify the template response and check userdata details in it
+            4. Unlink the registered userdata from template
+            5. Verify the template response
+        """
+
         self.userdata3 = UserData.register(
             self.apiclient,
             name="testUserData2",
@@ -432,6 +456,13 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
     def test_deploy_vm_with_registered_userdata_with_override_policy_allow(self):
+        """Test deploy VM with registered userdata with variables
+            1. Register two userdata, one to link to template and another to pass while deploying VM
+            2. Link a userdata to template, default override policy is allow override
+            3. Deploy a VM with that template and also by passing another userdata id
+            4. Since the override policy is allow override, userdata id passed during VM deployment will be consider.
+                Verify the same by SSH into VM.
+        """
 
         self.apiUserdata = UserData.register(
             self.apiclient,
@@ -553,6 +584,13 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=True)
     def test_deploy_vm_with_registered_userdata_with_override_policy_append(self):
+        """Test deploy VM with registered userdata with variables
+            1. Register two userdata, one to link to template and another to pass while deploying VM
+            2. Link a userdata to template with override policy is append
+            3. Deploy a VM with that template and also by passing another userdata id
+            4. Since the override policy is append, userdata passed during VM deployment will be appended to template's
+            userdata and configured to VM. Verify the same by SSH into VM.
+        """
 
         self.apiUserdata = UserData.register(
             self.apiclient,
@@ -670,6 +708,13 @@ class TestRegisteredUserdata(cloudstackTestCase):
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg', 'testnow'], required_hardware=True)
     def test_deploy_vm_with_registered_userdata_with_override_policy_deny(self):
+        """Test deploy VM with registered userdata with variables
+            1. Register two userdata, one to link to template and another to pass while deploying VM
+            2. Link a userdata to template with override policy is deny override
+            3. Deploy a VM with that template and also by passing another userdata id
+            4. Since the override policy is deny override, userdata passed during VM deployment will not be accepted.
+            So expect an exception.
+        """
 
         self.apiUserdata = UserData.register(
             self.apiclient,
