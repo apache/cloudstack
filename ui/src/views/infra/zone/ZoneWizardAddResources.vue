@@ -826,6 +826,17 @@ export default {
       }
     }
   },
+  watch: {
+    'prefillContent.provider' (newVal, oldVal) {
+      if (['SolidFire', 'PowerFlex'].includes(newVal) && !['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      } else if (!['SolidFire', 'PowerFlex'].includes(newVal) && ['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      }
+
+      this.fetchProtocol()
+    }
+  },
   methods: {
     nextPressed () {
       if (this.currentStep === this.steps.length - 1) {
@@ -905,8 +916,11 @@ export default {
     },
     fetchProtocol () {
       const hypervisor = this.prefillContent?.hypervisor || null
+      const provider = this.prefillContent?.provider || null
       const protocols = []
-      if (hypervisor === 'KVM') {
+      if (['SolidFire', 'PowerFlex'].includes(provider)) {
+        protocols.push({ id: 'custom', description: 'custom' })
+      } else if (hypervisor === 'KVM') {
         protocols.push({
           id: 'nfs',
           description: 'nfs'

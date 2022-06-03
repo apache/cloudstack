@@ -142,6 +142,9 @@ export default {
         const fieldsChanged = toRaw(changedFields)
         this.$emit('fieldsChanged', fieldsChanged)
       }
+    },
+    'prefillContent.primaryStorageProtocol' (val) {
+      this.form.primaryStorageProtocol = val
     }
   },
   methods: {
