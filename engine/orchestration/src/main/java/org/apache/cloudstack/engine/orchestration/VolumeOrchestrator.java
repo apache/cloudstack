@@ -670,7 +670,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         for (int i = 0; i < 2; i++) {
             // retry one more time in case of template reload is required for Vmware case
             AsyncCallFuture<VolumeApiResult> future = null;
-            boolean isNotCreatedFromTemplate = volumeInfo.getTemplateId() == null ? true : false;
+            boolean isNotCreatedFromTemplate = (volumeInfo.getTemplateId() == null);
             if (isNotCreatedFromTemplate) {
                 future = volService.createVolumeAsync(volumeInfo, store);
             } else {
@@ -1034,10 +1034,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     volumeToString, vm, volumeInfo.getFormat().getFileExtension(), rootDiskHyperType.toString()));
         }
 
-        VolumeInfo volumeOnPrimary = copyVolumeFromSecToPrimary(volumeInfo, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePool>(), volumeInfo.getSize(),
+        return copyVolumeFromSecToPrimary(volumeInfo, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePool>(), volumeInfo.getSize(),
                 rootDiskHyperType);
-
-        return volumeOnPrimary;
     }
 
     @Override
