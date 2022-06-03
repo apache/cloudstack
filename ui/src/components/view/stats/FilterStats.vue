@@ -55,7 +55,7 @@
   </a-form>
   <div :span="24" class="action-button">
     <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-    <a-button type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+    <a-button type="primary" @click="handleSubmit">{{ submitButtonLabel }}</a-button>
   </div>
 </template>
 
@@ -73,7 +73,8 @@ export default {
       showAllDataAlert: false,
       showAllData: true,
       showStartDate: true,
-      showEndDate: true
+      showEndDate: true,
+      submitButtonLabel: this.$t('label.ok')
     }
   },
   created () {
@@ -90,6 +91,7 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       this.formRef.value.validate().then(() => {
+        this.submitButtonLabel = this.$t('label.refresh')
         const values = toRaw(this.form)
         this.$emit('onSubmit', values)
       }).catch(error => {
@@ -108,18 +110,24 @@ export default {
         this.showStartDate = true
         this.showEndDate = true
       }
+      this.resetSubmitButton()
     },
     onToggleStartDate () {
       this.showEndDate = !this.showEndDate
       if (this.showEndDate === false) {
         this.form.endDate = null
       }
+      this.resetSubmitButton()
     },
     onToggleEndDate () {
       this.showStartDate = !this.showStartDate
       if (this.showStartDate === false) {
         this.form.startDate = null
       }
+      this.resetSubmitButton()
+    },
+    resetSubmitButton () {
+      this.submitButtonLabel = this.$t('label.ok')
     }
   }
 }
