@@ -232,11 +232,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             DataStoreTO destStoreTO = destData.getDataStore();
 
             boolean inSeq = true;
-            if ((srcData.getObjectType() == DataObjectType.SNAPSHOT) || (destData.getObjectType() == DataObjectType.SNAPSHOT)) {
-                inSeq = false;
-            } else if ((destStoreTO.getRole() == DataStoreRole.Image) || (destStoreTO.getRole() == DataStoreRole.ImageCache)) {
-                inSeq = false;
-            } else if (!StorageManager.VmwareCreateCloneFull.value()) {
+            if ((srcData.getObjectType() == DataObjectType.SNAPSHOT)
+                    || (destData.getObjectType() == DataObjectType.SNAPSHOT)
+                    || (destStoreTO.getRole() == DataStoreRole.Image)
+                    || (destStoreTO.getRole() == DataStoreRole.ImageCache)
+                    || (Boolean.FALSE.equals(StorageManager.VmwareCreateCloneFull.value()))) {
                 inSeq = false;
             }
             cpyCommand.setExecuteInSequence(inSeq);
