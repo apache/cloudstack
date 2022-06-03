@@ -1339,7 +1339,7 @@ export default {
         const rbdmonitor = this.prefillContent?.primaryStorageRADOSMonitor || ''
         const rbdpool = this.prefillContent?.primaryStorageRADOSPool || ''
         const rbdid = this.prefillContent?.primaryStorageRADOSUser || ''
-        const rbdsecret = this.prefillContent?.primaryStorage || ''
+        const rbdsecret = this.prefillContent?.primaryStorageRADOSSecret || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)

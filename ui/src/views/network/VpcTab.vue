@@ -156,7 +156,7 @@
               :model="form"
               :rules="rules"
              >
-              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork">
+              <a-form-item :label="$t('label.physicalnetworkid')" ref="physicalnetwork" name="physicalnetwork" v-if="this.isAdmin()">
                 <a-select
                   v-model:value="form.physicalnetwork"
                   v-focus="true"
@@ -684,10 +684,19 @@ export default {
 
       switch (e) {
         case 'privateGateways':
-          this.rules = {
-            ipaddress: [{ required: true, message: this.$t('label.required') }],
-            gateway: [{ required: true, message: this.$t('label.required') }],
-            netmask: [{ required: true, message: this.$t('label.required') }]
+          if (this.isAdmin()) {
+            this.rules = {
+              ipaddress: [{ required: true, message: this.$t('label.required') }],
+              gateway: [{ required: true, message: this.$t('label.required') }],
+              netmask: [{ required: true, message: this.$t('label.required') }]
+            }
+          } else {
+            this.rules = {
+              ipaddress: [{ required: true, message: this.$t('label.required') }],
+              gateway: [{ required: true, message: this.$t('label.required') }],
+              netmask: [{ required: true, message: this.$t('label.required') }],
+              associatednetworkid: [{ required: true, message: this.$t('label.required') }]
+            }
           }
           this.modals.gateway = true
           this.fetchAclList()
