@@ -422,6 +422,34 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
+    private void updateGuestNetworkVRDefaultDns(final VirtualMachineProfile vmProfile, final NicProfile nicProfile) {
+        if (!Type.DomainRouter.equals(vmProfile.getType()) || !nicProfile.isDefaultNic()) {
+            return;
+        }
+        boolean ip4DnsUpdated = false;
+        boolean ip6DnsUpdated = false;
+        List<Long> networkIds = routerNetworkDao.getRouterNetworks(vmProfile.getId());
+        for (Long networkId : networkIds) {
+            NetworkVO routerNetwork = _networksDao.findById(networkId);
+            if (StringUtils.isAllBlank(routerNetwork.getDns1(), routerNetwork.getDns2(), routerNetwork.getIp6Dns1(),routerNetwork.getIp6Dns2())) {
+                continue;
+            }
+            if (!ip4DnsUpdated && StringUtils.isNotBlank(routerNetwork.getDns1())) {
+                nicProfile.setIPv4Dns1(routerNetwork.getDns1());
+                nicProfile.setIPv4Dns2(routerNetwork.getDns2());
+                ip4DnsUpdated = true;
+            }
+            if (!ip6DnsUpdated && StringUtils.isNotBlank(routerNetwork.getIp6Dns1())) {
+                nicProfile.setIPv6Dns1(routerNetwork.getIp6Dns1());
+                nicProfile.setIPv6Dns2(routerNetwork.getIp6Dns2());
+                ip6DnsUpdated = true;
+            }
+            if (ip4DnsUpdated && ip6DnsUpdated) {
+                break;
+            }
+        }
+    }
+
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -1892,31 +1920,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final NicVO nic = _nicDao.findById(nicId);
 
         NicProfile profile = null;
-        String defaultIp4Dns1 = null;
-        String defaultIp4Dns2 = null;
-        String defaultIp6Dns1 = null;
-        String defaultIp6Dns2 = null;
-        if (Type.DomainRouter.equals(vmProfile.getType())) {
-            List<Long> networkIds = routerNetworkDao.getRouterNetworks(vmProfile.getId());
-            for (Long networkId : networkIds) {
-                NetworkVO routerNetwork = _networksDao.findById(networkId);
-                if (StringUtils.isNotBlank(routerNetwork.getDns1())) {
-                    defaultIp4Dns1 = routerNetwork.getDns1();
-                }
-                if (StringUtils.isNotBlank(routerNetwork.getDns2())) {
-                    defaultIp4Dns2 = routerNetwork.getDns2();
-                }
-                if (StringUtils.isNotBlank(routerNetwork.getIp6Dns1())) {
-                    defaultIp6Dns1 = routerNetwork.getIp6Dns1();
-                }
-                if (StringUtils.isNotBlank(routerNetwork.getIp6Dns2())) {
-                    defaultIp6Dns2 = routerNetwork.getIp6Dns2();
-                }
-                if (!StringUtils.isAllBlank(defaultIp4Dns1, defaultIp4Dns2, defaultIp6Dns1, defaultIp6Dns2)) {
-                    break;
-                }
-            }
-        }
         if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
             nic.setState(Nic.State.Reserving);
             nic.setReservationId(context.getReservationId());
@@ -1976,18 +1979,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
         guru.updateNicProfile(profile, network);
-        if (StringUtils.isNotBlank(defaultIp4Dns1)) {
-            profile.setIPv4Dns1(defaultIp4Dns1);
-        }
-        if (StringUtils.isNotBlank(defaultIp4Dns2)) {
-            profile.setIPv4Dns2(defaultIp4Dns2);
-        }
-        if (StringUtils.isNotBlank(defaultIp6Dns1)) {
-            profile.setIPv6Dns1(defaultIp6Dns1);
-        }
-        if (StringUtils.isNotBlank(defaultIp6Dns2)) {
-            profile.setIPv6Dns2(defaultIp6Dns2);
-        }
+        updateGuestNetworkVRDefaultDns(vmProfile, profile);
         configureExtraDhcpOptions(network, nicId);
         return profile;
     }
