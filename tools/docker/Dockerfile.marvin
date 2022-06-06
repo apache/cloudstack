@@ -20,7 +20,7 @@
 FROM python:2
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.17.0.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.17.1.0-SNAPSHOT"
 
 ENV WORK_DIR=/marvin
 
