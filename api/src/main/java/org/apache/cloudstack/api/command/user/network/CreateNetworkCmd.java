@@ -157,16 +157,16 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
 
-    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, required = true, description = "the first DNS for the network", since = "4.17.0")
+    @Parameter(name = ApiConstants.DNS1, type = CommandType.STRING, description = "the first DNS for the network", since = "4.18.0")
     private String ip4Dns1;
 
-    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second DNS for the network", since = "4.17.0")
+    @Parameter(name = ApiConstants.DNS2, type = CommandType.STRING, description = "the second DNS for the network", since = "4.18.0")
     private String ip4Dns2;
 
-    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first DNS for IPv6 network", since = "4.17.0")
+    @Parameter(name = ApiConstants.IP6_DNS1, type = CommandType.STRING, description = "the first DNS for IPv6 network", since = "4.18.0")
     private String ip6Dns1;
 
-    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second DNS for IPv6 network", since = "4.17.0")
+    @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second DNS for IPv6 network", since = "4.18.0")
     private String ip6Dns2;
 
     /////////////////////////////////////////////////////

@@ -188,7 +188,7 @@
               <a-col :md="12" :lg="12">
                 <a-form-item v-if="'dns1' in apiParams" name="dns1" ref="dns1">
                   <template #label>
-                    <tooltip-label :title="$t('label.dns2')" :tooltip="apiParams.dns1.description"/>
+                    <tooltip-label :title="$t('label.dns1')" :tooltip="apiParams.dns1.description"/>
                   </template>
                   <a-input
                     v-model:value="form.dns1"

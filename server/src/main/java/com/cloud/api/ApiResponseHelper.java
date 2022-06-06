@@ -2310,6 +2310,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setReservedIpRange(reservation);
 
+        response.setIpv4Dns1(network.getDns1());
+        response.setIpv4Dns2(network.getDns2());
+        response.setIpv6Dns1(network.getIp6Dns1());
+        response.setIpv6Dns2(network.getIp6Dns2());
+
         // return vlan information only to Root admin
         if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();

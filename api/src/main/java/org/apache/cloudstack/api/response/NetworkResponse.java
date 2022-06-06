@@ -287,6 +287,22 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
 
+    @SerializedName(ApiConstants.DNS1)
+    @Param(description = "The first DNS for the network", since = "4.18.0")
+    private String ipv4Dns1;
+
+    @SerializedName(ApiConstants.DNS2)
+    @Param(description = "The second DNS for the network", since = "4.18.0")
+    private String ipv4Dns2;
+
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "The first IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns1;
+
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "The second IPv6 DNS for the network", since = "4.18.0")
+    private String ipv6Dns2;
+
     public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
@@ -585,5 +601,21 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
+    }
+
+    public void setIpv4Dns1(String ipv4Dns1) {
+        this.ipv4Dns1 = ipv4Dns1;
+    }
+
+    public void setIpv4Dns2(String ipv4Dns2) {
+        this.ipv4Dns2 = ipv4Dns2;
+    }
+
+    public void setIpv6Dns1(String ipv6Dns1) {
+        this.ipv6Dns1 = ipv6Dns1;
+    }
+
+    public void setIpv6Dns2(String ipv6Dns2) {
+        this.ipv6Dns2 = ipv6Dns2;
     }
 }
