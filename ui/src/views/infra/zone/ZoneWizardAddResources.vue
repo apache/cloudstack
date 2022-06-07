@@ -916,11 +916,8 @@ export default {
     },
     fetchProtocol () {
       const hypervisor = this.prefillContent?.hypervisor || null
-      const provider = this.prefillContent?.provider || null
       const protocols = []
-      if (['SolidFire', 'PowerFlex'].includes(provider)) {
-        protocols.push({ id: 'custom', description: 'custom' })
-      } else if (hypervisor === 'KVM') {
+      if (hypervisor === 'KVM') {
         protocols.push({
           id: 'nfs',
           description: 'nfs'
@@ -1005,6 +1002,7 @@ export default {
         })
       }
 
+      protocols.push({ id: 'custom', description: 'custom' })
       this.primaryStorageProtocols = protocols
     },
     async fetchConfigurationSwitch () {
