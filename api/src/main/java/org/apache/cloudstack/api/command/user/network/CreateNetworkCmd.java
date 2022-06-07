@@ -16,9 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.network.NetworkService;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,6 +43,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.net.NetUtils;
@@ -162,6 +163,12 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.17.0",
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to a router in a shared network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIp;
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to a router in a shared network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIpv6;
 
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
@@ -377,6 +384,14 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     public String getIp6Dns2() {
         return ip6Dns2;
+    }
+
+    public String getRouterIp() {
+        return routerIp;
+    }
+
+    public String getRouterIpv6() {
+        return routerIpv6;
     }
 
     /////////////////////////////////////////////////////

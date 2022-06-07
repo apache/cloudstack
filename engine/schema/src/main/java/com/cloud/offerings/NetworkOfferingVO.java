@@ -168,6 +168,17 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="service_package_id")
     String servicePackageUuid = null;
 
+    @Column(name = "select_snat_address_allowed")
+    boolean selectSnatIpAllowed = false;
+
+    public boolean isSelectSnatIpAllowed() {
+        return selectSnatIpAllowed;
+    }
+
+    public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
+        this.selectSnatIpAllowed = selectSnatIpAllowed;
+    }
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
