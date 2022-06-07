@@ -18,3 +18,8 @@
 --;
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
+
+-- Alter event table to add resource_id and resource_type
+ALTER TABLE `cloud`.`networks`
+    ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list' AFTER `dns2`,
+    ADD COLUMN `ip6dns2` varchar(255) DEFAULT NULL COMMENT 'comma separated DNS list' AFTER `ip6dns1`;
