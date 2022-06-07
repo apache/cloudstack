@@ -2644,39 +2644,17 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Pair<String, String> getNetworkIp4Dns(final Network network, final DataCenter zone) {
-        String dns1 = null;
-        String dns2 = null;
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getDns1())) {
-            dns1 = network.getDns1();
-            if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getDns2())) {
-                dns2 = network.getDns2();
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getDns1())) {
+            return new Pair<>(network.getDns1(), network.getDns2());
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
-            dns1 = zone.getDns1();
-        }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns2)) {
-            dns2 = zone.getDns2();
-        }
-        return new Pair<>(dns1, dns2);
+        return new Pair<>(zone.getDns1(), zone.getDns2());
     }
 
     @Override
     public Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone) {
-        String dns1 = null;
-        String dns2 = null;
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getIp6Dns1())) {
-            dns1 = network.getIp6Dns1();
-            if (org.apache.commons.lang3.StringUtils.isNotEmpty(network.getIp6Dns2())) {
-                dns2 = network.getIp6Dns2();
-            }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(network.getIp6Dns1())) {
+            return new Pair<>(network.getIp6Dns1(), network.getIp6Dns2());
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1)) {
-            dns1 = zone.getIp6Dns1();
-        }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns2)) {
-            dns2 = zone.getIp6Dns2();
-        }
-        return new Pair<>(dns1, dns2);
+        return new Pair<>(zone.getIp6Dns1(), zone.getIp6Dns2());
     }
 }

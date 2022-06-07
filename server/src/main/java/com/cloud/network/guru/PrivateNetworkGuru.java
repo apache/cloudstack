@@ -61,7 +61,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     protected PrivateIpDao _privateIpDao;
     @Inject
-    protected NetworkModel _networkModel;
+    protected NetworkModel networkModel;
     @Inject
     EntityManager _entityMgr;
 
@@ -201,7 +201,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
 
-        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
         nic.setIPv4Dns1(dns.first());
         nic.setIPv4Dns2(dns.second());
     }
@@ -209,7 +209,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
         if (profile != null) {
             profile.setIPv4Dns1(dns.first());
             profile.setIPv4Dns2(dns.second());
@@ -243,9 +243,12 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, networkProfile.getDataCenterId());
-        Network network = _networkModel.getNetwork(networkProfile.getId());
-        Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        Network network = networkModel.getNetwork(networkProfile.getId());
+        Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
         networkProfile.setDns1(dns.first());
         networkProfile.setDns2(dns.second());
+        dns = networkModel.getNetworkIp6Dns(network, dc);
+        networkProfile.setIp6Dns1(dns.first());
+        networkProfile.setIp6Dns2(dns.second());
     }
 }

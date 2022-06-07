@@ -420,5 +420,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
         networkProfile.setDns1(dns.first());
         networkProfile.setDns2(dns.second());
+        dns = _networkModel.getNetworkIp6Dns(network, dc);
+        networkProfile.setIp6Dns1(dns.first());
+        networkProfile.setIp6Dns2(dns.second());
     }
 }

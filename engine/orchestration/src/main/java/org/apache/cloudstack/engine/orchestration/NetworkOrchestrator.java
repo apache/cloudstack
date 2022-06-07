@@ -431,9 +431,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         List<Long> networkIds = routerNetworkDao.getRouterNetworks(vmProfile.getId());
         for (Long networkId : networkIds) {
             NetworkVO routerNetwork = _networksDao.findById(networkId);
-            if (StringUtils.isAllBlank(routerNetwork.getDns1(), routerNetwork.getDns2(), routerNetwork.getIp6Dns1(),routerNetwork.getIp6Dns2())) {
-                continue;
-            }
             if (!ip4DnsUpdated && StringUtils.isNotBlank(routerNetwork.getDns1())) {
                 nicProfile.setIPv4Dns1(routerNetwork.getDns1());
                 nicProfile.setIPv4Dns2(routerNetwork.getDns2());

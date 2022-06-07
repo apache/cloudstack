@@ -247,6 +247,9 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
         networkProfile.setDns1(dns.first());
         networkProfile.setDns2(dns.second());
+        dns = networkModel.getNetworkIp6Dns(network, dc);
+        networkProfile.setIp6Dns1(dns.first());
+        networkProfile.setIp6Dns2(dns.second());
     }
 
 }
