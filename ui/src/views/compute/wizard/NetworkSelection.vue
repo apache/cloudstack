@@ -271,9 +271,12 @@ export default {
   created () {
     this.vpcs = []
     const projectId = store?.getters?.project?.id || null
-    if (!projectId) return
+    var params = {}
+    if (projectId) {
+      params.projectid = projectId
+    }
     api('listVPCs', {
-      projectid: projectId
+      params
     }).then((response) => {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
     })

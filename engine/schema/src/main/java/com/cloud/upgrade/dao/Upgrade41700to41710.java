@@ -21,26 +21,21 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.UUID;
 
-public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate {
+public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41700to41710.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41610to41700.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.16.1.0", "4.17.0.0"};
+        return new String[] {"4.17.0.0", "4.17.1.0"};
     }
 
     @Override
     public String getUpgradedVersion() {
-        return "4.17.0.0";
+        return "4.17.1.0";
     }
 
     @Override
@@ -50,7 +45,7 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41610to41700.sql";
+        final String scriptFile = "META-INF/db/schema-41700to41710.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -61,12 +56,11 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
-        fixWrongPoolUuid(conn);
     }
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41610to41700-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41700to41710-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -87,28 +81,6 @@ public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
-        }
-    }
-
-    public void fixWrongPoolUuid(Connection conn) {
-        LOG.debug("Replacement of faulty pool uuids");
-        try (PreparedStatement pstmt = conn.prepareStatement("SELECT id,uuid FROM storage_pool "
-                + "WHERE uuid NOT LIKE \"%-%-%-%\" AND removed IS NULL;"); ResultSet rs = pstmt.executeQuery()) {
-            PreparedStatement updateStmt = conn.prepareStatement("update storage_pool set uuid = ? where id = ?");
-            while (rs.next()) {
-                    UUID poolUuid = new UUID(
-                            new BigInteger(rs.getString(2).substring(0, 16), 16).longValue(),
-                            new BigInteger(rs.getString(2).substring(16), 16).longValue()
-                    );
-                    updateStmt.setLong(2, rs.getLong(1));
-                    updateStmt.setString(1, poolUuid.toString());
-                    updateStmt.addBatch();
-            }
-            updateStmt.executeBatch();
-        } catch (SQLException ex) {
-            String errorMsg = "fixWrongPoolUuid:Exception while updating faulty pool uuids";
-            LOG.error(errorMsg,ex);
-            throw new CloudRuntimeException(errorMsg, ex);
         }
     }
 }
