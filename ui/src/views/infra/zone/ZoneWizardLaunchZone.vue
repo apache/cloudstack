@@ -1325,6 +1325,7 @@ export default {
         }
         url = this.ocfs2URL(server, path)
       } else if (protocol === 'SharedMountPoint') {
+        server = 'localhost'
         let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
