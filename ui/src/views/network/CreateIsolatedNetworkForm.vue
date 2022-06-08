@@ -105,14 +105,14 @@
             </a-select>
           </a-form-item>
           <a-form-item
-            ref="vlanid"
-            name="vlanid"
+            ref="vlan"
+            name="vlan"
             v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             </template>
             <a-input
-             v-model:value="form.vlanid"
+             v-model:value="form.vlan"
               :placeholder="apiParams.vlan.description"/>
           </a-form-item>
           <a-form-item
@@ -167,20 +167,20 @@
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startipv4" ref="startipv4">
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
             <template #label>
               <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
             </template>
             <a-input
-              v-model:value="form.startipv4"
+              v-model:value="form.startip"
               :placeholder="apiParams.startip.description"/>
           </a-form-item>
-          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="endipv4" ref="endipv4">
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="endip" ref="endip">
             <template #label>
-              <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+              <tooltip-label :title="$t('label.endip')" :tooltip="apiParams.endip.description"/>
             </template>
             <a-input
-              v-model:value="form.endipv4"
+              v-model:value="form.endip"
               :placeholder="apiParams.endip.description"/>
           </a-form-item>
           <div v-if="selectedNetworkOfferingSupportsDns">
@@ -514,7 +514,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startipv4', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'externalid', 'vpcid', 'vlanid', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]

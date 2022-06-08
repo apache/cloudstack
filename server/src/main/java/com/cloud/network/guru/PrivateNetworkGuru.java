@@ -210,9 +210,12 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     public void updateNicProfile(NicProfile profile, Network network) {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         Pair<String, String> dns = networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip6Dns = networkModel.getNetworkIp6Dns(network, dc);
         if (profile != null) {
             profile.setIPv4Dns1(dns.first());
             profile.setIPv4Dns2(dns.second());
+            profile.setIPv6Dns1(ip6Dns.first());
+            profile.setIPv6Dns2(ip6Dns.second());
         }
     }
 

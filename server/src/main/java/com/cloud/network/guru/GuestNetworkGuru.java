@@ -474,9 +474,12 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     public void updateNicProfile(final NicProfile profile, final Network network) {
         final DataCenter dc = _dcDao.findById(network.getDataCenterId());
         Pair<String, String> dns = _networkModel.getNetworkIp4Dns(network, dc);
+        Pair<String, String> ip6Dns = _networkModel.getNetworkIp6Dns(network, dc);
         if (profile != null) {
             profile.setIPv4Dns1(dns.first());
             profile.setIPv4Dns2(dns.second());
+            profile.setIPv6Dns1(ip6Dns.first());
+            profile.setIPv6Dns2(ip6Dns.second());
         }
     }
 

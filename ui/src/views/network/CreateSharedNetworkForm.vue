@@ -85,12 +85,12 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()" name="vlanid" ref="vlanid">
+          <a-form-item v-if="!this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyvlan && isAdmin()" name="vlan" ref="vlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="apiParams.vlan.description"/>
             </template>
             <a-input
-              v-model:value="form.vlanid"
+              v-model:value="form.vlan"
               :placeholder="apiParams.vlan.description"/>
           </a-form-item>
           <a-form-item name="bypassvlanoverlapcheck" ref="bypassvlanoverlapcheck" v-if="isAdmin()">
@@ -268,44 +268,44 @@
           <a-card size="small" :title="$t('label.ip.v4')" style="margin-top: 15px">
             <a-row :gutter="12">
               <a-col :md="12" :lg="12">
-                <a-form-item name="ip4gateway" ref="ip4gateway">
+                <a-form-item name="gateway" ref="gateway">
                   <template #label>
                     <tooltip-label :title="$t('label.ip4gateway')" :tooltip="apiParams.gateway.description"/>
                   </template>
                   <a-input
-                    v-model:value="form.ip4gateway"
+                    v-model:value="form.gateway"
                     :placeholder="apiParams.gateway.description"/>
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item name="ip4netmask" ref="ip4netmask">
+                <a-form-item name="netmask" ref="netmask">
                   <template #label>
                     <tooltip-label :title="$t('label.ip4netmask')" :tooltip="apiParams.netmask.description"/>
                   </template>
                   <a-input
-                    v-model:value="form.ip4netmask"
+                    v-model:value="form.netmask"
                     :placeholder="apiParams.netmask.description"/>
                 </a-form-item>
               </a-col>
             </a-row>
             <a-row :gutter="12">
               <a-col :md="12" :lg="12">
-                <a-form-item name="startipv4" ref="startipv4">
+                <a-form-item name="startip" ref="startip">
                   <template #label>
                     <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
                   </template>
                   <a-input
-                    v-model:value="form.startipv4"
+                    v-model:value="form.startip"
                     :placeholder="apiParams.startip.description"/>
                 </a-form-item>
               </a-col>
               <a-col :md="12" :lg="12">
-                <a-form-item name="endipv4" ref="endipv4">
+                <a-form-item name="endip" ref="endip">
                   <template #label>
                     <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
                   </template>
                   <a-input
-                    v-model:value="form.endipv4"
+                    v-model:value="form.endip"
                     :placeholder="apiParams.endip.description"/>
                 </a-form-item>
               </a-col>
@@ -553,7 +553,7 @@ export default {
         name: [{ required: true, message: this.$t('message.error.name') }],
         displaytext: [{ required: true, message: this.$t('message.error.display.text') }],
         zoneid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
-        vlanid: [{ required: true, message: this.$t('message.please.enter.value') }],
+        vlan: [{ required: true, message: this.$t('message.please.enter.value') }],
         networkofferingid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         domainid: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         account: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
@@ -955,8 +955,8 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
         if (
-          (!this.isValidTextValueForKey(values, 'ip4gateway') && !this.isValidTextValueForKey(values, 'ip4netmask') &&
-            !this.isValidTextValueForKey(values, 'startipv4') && !this.isValidTextValueForKey(values, 'endipv4') &&
+          (!this.isValidTextValueForKey(values, 'gateway') && !this.isValidTextValueForKey(values, 'netmask') &&
+            !this.isValidTextValueForKey(values, 'startip') && !this.isValidTextValueForKey(values, 'endip') &&
             !this.isValidTextValueForKey(values, 'ip6gateway') && !this.isValidTextValueForKey(values, 'ip6cidr') &&
             !this.isValidTextValueForKey(values, 'startipv6') && !this.isValidTextValueForKey(values, 'endipv6'))
         ) {
@@ -976,8 +976,8 @@ export default {
         if (this.selectedNetworkOffering.guestiptype === 'Shared') {
           params.physicalnetworkid = this.formSelectedPhysicalNetwork.id
         }
-        if (this.isValidTextValueForKey(values, 'vlanid')) {
-          params.vlan = values.vlanid
+        if (this.isValidTextValueForKey(values, 'vlan')) {
+          params.vlan = values.vlan
         }
         if (this.isValidValueForKey(values, 'bypassvlanoverlapcheck')) {
           params.bypassvlanoverlapcheck = values.bypassvlanoverlapcheck
@@ -1010,43 +1010,19 @@ export default {
           params.acltype = 'account' // acl type is "account" for regular users
         }
         // IPv4 (begin)
-        if (this.isValidTextValueForKey(values, 'ip4gateway')) {
-          params.gateway = values.ip4gateway
-        }
-        if (this.isValidTextValueForKey(values, 'ip4netmask')) {
-          params.netmask = values.ip4netmask
-        }
-        if (this.isValidTextValueForKey(values, 'startipv4')) {
-          params.startip = values.startipv4
-        }
-        if (this.isValidTextValueForKey(values, 'endipv4')) {
-          params.endip = values.endipv4
-        }
-        if (this.isValidTextValueForKey(values, 'routerip')) {
-          params.routerip = values.routerip
-        }
+        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'routerip']
         // IPv4 (end)
 
         // IPv6 (begin)
-        if (this.isValidTextValueForKey(values, 'ip6gateway')) {
-          params.ip6gateway = values.ip6gateway
-        }
-        if (this.isValidTextValueForKey(values, 'ip6cidr')) {
-          params.ip6cidr = values.ip6cidr
-        }
-        if (this.isValidTextValueForKey(values, 'startipv6')) {
-          params.startipv6 = values.startipv6
-        }
-        if (this.isValidTextValueForKey(values, 'endipv6')) {
-          params.endipv6 = values.endipv6
-        }
-        if (this.isValidTextValueForKey(values, 'routeripv6')) {
-          params.routeripv6 = values.routeripv6
-        }
+        usefulFields = [...usefulFields, 'ip6gateway', 'ip6cidr', 'startipv6', 'endipv6', 'routeripv6']
         // IPv6 (end)
 
-        if (this.isValidTextValueForKey(values, 'networkdomain')) {
-          params.networkdomain = values.networkdomain
+        usefulFields.push('networkdomain')
+
+        for (var field of usefulFields) {
+          if (this.isValidTextValueForKey(values, field)) {
+            params[field] = values[field]
+          }
         }
         var hideipaddressusage = this.parseBooleanValueForKey(values, 'hideipaddressusage')
         if (hideipaddressusage) {
