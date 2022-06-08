@@ -118,11 +118,6 @@ public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.None;
-    }
-
-    @Override
     public void validateSpecificParameters(final Map<String, String> params){
         super.validateSpecificParameters(params);
 

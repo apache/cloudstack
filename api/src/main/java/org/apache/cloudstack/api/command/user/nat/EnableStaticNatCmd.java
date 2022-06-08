@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.nat;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -144,4 +145,13 @@ public class EnableStaticNatCmd extends BaseCmd {
         }
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getVirtualMachineId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
+    }
 }

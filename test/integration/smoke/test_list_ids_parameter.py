@@ -192,9 +192,9 @@ class TestListIdsParams(cloudstackTestCase):
                                          )
 
         cls._cleanup = [
-                        cls.snapshot_1,
-                        cls.snapshot_2,
                         cls.snapshot_3,
+                        cls.snapshot_2,
+                        cls.snapshot_1,
                         cls.account,
                         cls.disk_offering,
                         cls.service_offering

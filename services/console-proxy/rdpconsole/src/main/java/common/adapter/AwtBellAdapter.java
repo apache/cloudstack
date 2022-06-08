@@ -61,7 +61,7 @@ public class AwtBellAdapter extends BaseElement {
 
         Element source = new FakeSource("source") {
             {
-                incommingBufLength = 0;
+                incomingBufLength = 0;
                 delay = 1000;
                 numBuffers = 3;
             }

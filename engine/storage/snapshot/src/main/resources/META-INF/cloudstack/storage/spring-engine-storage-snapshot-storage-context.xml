@@ -42,6 +42,9 @@
     <bean id="DefaultVMSnapshotStrategy"
         class="org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy" />
 
+	<bean id="StorageVMSnapshotStrategy"
+        class="org.apache.cloudstack.storage.vmsnapshot.StorageVMSnapshotStrategy" />
+
     <bean id="ScaleIOVMSnapshotStrategy"
           class="org.apache.cloudstack.storage.vmsnapshot.ScaleIOVMSnapshotStrategy" />
 

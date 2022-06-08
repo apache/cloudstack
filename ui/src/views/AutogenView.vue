@@ -33,7 +33,7 @@
                   {{ $t('label.refresh') }}
                 </a-button>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
                   style="margin-left: 8px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -56,8 +56,8 @@
                     :value="$route.query.filter || (projectView && $route.name === 'vm' ||
                       ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
                       ? 'all' : ['publicip'].includes($route.name)
-                        ? 'allocated': ['guestnetwork'].includes($route.name) ? 'all' : 'self')"
-                    style="min-width: 100px; margin-left: 10px"
+                        ? 'allocated' : ['guestnetwork', 'guestvlans'].includes($route.name) ? 'all' : 'self')"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -589,8 +589,10 @@ export default {
           var objIndex = 0
           if (this.$route.path.includes('/template') || this.$route.path.includes('/iso')) {
             objIndex = selectedItems.findIndex(obj => (obj.zoneid === tempResource[r]))
+          } else if (this.$route.path.includes('/router')) {
+            objIndex = selectedItems.findIndex(obj => (obj.guestnetworkid === tempResource[r]))
           } else {
-            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r]))
+            objIndex = selectedItems.findIndex(obj => (obj.id === tempResource[r] || obj.username === tempResource[r] || obj.name === tempResource[r]))
           }
           if (state && objIndex !== -1) {
             this.selectedItems[objIndex].status = state
@@ -750,7 +752,7 @@ export default {
       }
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
-      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event'].includes(this.$route.name)
+      this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'volume', 'snapshot', 'vmsnapshot', 'guestnetwork', 'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -802,10 +804,10 @@ export default {
       const customRender = {}
       for (var columnKey of this.columnKeys) {
         let key = columnKey
-        let title = columnKey
+        let title = columnKey === 'cidr' && this.columnKeys.includes('ip6cidr') ? 'ipv4.cidr' : columnKey
         if (typeof columnKey === 'object') {
           if ('customTitle' in columnKey && 'field' in columnKey) {
-            key = columnKey.field
+            key = columnKey.customTitle
             title = columnKey.customTitle
             customRender[key] = columnKey[key]
           } else {
@@ -1064,10 +1066,10 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        this.setRules(param)
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
+        this.setRules(param)
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }
@@ -1261,7 +1263,7 @@ export default {
           this.items.map(x => {
             itemsNameMap[x.id] = x.name || x.displaytext || x.id
           })
-          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values)
+          const paramsList = this.currentAction.groupMap(this.selectedRowKeys, values, this.items)
           for (const params of paramsList) {
             var resourceName = itemsNameMap[params.id]
             // Using a method for this since it's an async call and don't want wrong prarms to be passed
@@ -1455,7 +1457,7 @@ export default {
     },
     getColumnKey (name) {
       if (typeof name === 'object') {
-        name = Object.keys(name)[0]
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
       }
       return name
     },
@@ -1497,9 +1499,9 @@ export default {
         query.isofilter = filter
       } else if (this.$route.name === 'guestnetwork') {
         if (filter === 'all') {
-          delete query.type
+          delete query.networkfilter
         } else {
-          query.type = filter
+          query.networkfilter = filter
         }
       } else if (this.$route.name === 'publicip') {
         query.state = filter
@@ -1512,6 +1514,12 @@ export default {
         }
       } else if (this.$route.name === 'comment') {
         query.annotationfilter = filter
+      } else if (this.$route.name === 'guestvlans') {
+        if (filter === 'all') {
+          query.allocatedonly = 'false'
+        } else if (filter === 'allocatedonly') {
+          query.allocatedonly = 'true'
+        }
       }
       query.filter = filter
       query.page = '1'

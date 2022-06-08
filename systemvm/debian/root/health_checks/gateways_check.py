@@ -44,7 +44,7 @@ def main():
             unreachableGateWays.append(gw)
 
     if len(unreachableGateWays) == 0:
-        print "All " + str(len(gws)) + " gateways are reachable via ping"
+        print "All " + str(len(gwsList)) + " gateways are reachable via ping"
         exit(0)
     else:
         print "Unreachable gateways found-"

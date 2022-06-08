@@ -146,6 +146,7 @@
                           :selected="tabKey"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
+                          :key="templateKey"
                           @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
                          <div>
@@ -246,7 +247,7 @@
                       memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
-                      :isConstrained="'serviceofferingdetails' in serviceOffering"
+                      :isConstrained="isOfferingConstrained(serviceOffering)"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
@@ -736,6 +737,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       dynamicscalingenabled: true,
+      templateKey: 0,
       vm: {
         name: null,
         zoneid: null,
@@ -1285,6 +1287,9 @@ export default {
     }
   },
   methods: {
+    updateTemplateKey () {
+      this.templateKey += 1
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1463,7 +1468,6 @@ export default {
           }
         })
       }
-
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1476,6 +1480,11 @@ export default {
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
+    },
+    isOfferingConstrained (serviceOffering) {
+      return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
+        'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
+        'minmemory' in serviceOffering.serviceofferingdetails
     },
     getImg (image) {
       return 'data:image/png;charset=utf-8;base64, ' + image
@@ -2112,6 +2121,7 @@ export default {
       } else {
         this.fetchAllIsos()
       }
+      this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
     onSelectPodId (value) {

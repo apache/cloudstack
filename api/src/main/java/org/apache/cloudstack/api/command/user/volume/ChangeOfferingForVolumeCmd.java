@@ -117,7 +117,7 @@ public class ChangeOfferingForVolumeCmd extends BaseAsyncCmd implements UserCmd 
     }
 
     public boolean getAutoMigrate() {
-        return autoMigrate == null ? true : autoMigrate;
+        return autoMigrate == null ? false : autoMigrate;
     }
 
     public boolean isShrinkOk() {

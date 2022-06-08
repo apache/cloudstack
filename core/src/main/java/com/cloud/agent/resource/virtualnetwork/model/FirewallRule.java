@@ -38,6 +38,7 @@ public class FirewallRule {
     private String guestCidr;
     private boolean defaultEgressPolicy;
     private String type;
+    private String guestIp6Cidr;
 
     public FirewallRule() {
         // Empty constructor for (de)serialization
@@ -174,4 +175,11 @@ public class FirewallRule {
         this.defaultEgressPolicy = defaultEgressPolicy;
     }
 
+    public String getGuestIp6Cidr() {
+        return guestIp6Cidr;
+    }
+
+    public void setGuestIp6Cidr(String guestIp6Cidr) {
+        this.guestIp6Cidr = guestIp6Cidr;
+    }
 }

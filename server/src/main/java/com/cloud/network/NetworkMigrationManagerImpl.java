@@ -582,10 +582,9 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
         //For each nic in the old network check if the nic belongs to a guest vm and migrate it to the new network.
         for (NicVO originalNic : nics) {
-            if (originalNic.getVmType() != VirtualMachine.Type.User) {
+            if (!VirtualMachine.Type.User.equals(originalNic.getVmType())) {
                 continue;
             }
-
             Transaction.execute((TransactionCallback<Boolean>)
                                             (status) -> migrateNicsInDB(originalNic, networkInNewPhysicalNet, dc, context));
         }

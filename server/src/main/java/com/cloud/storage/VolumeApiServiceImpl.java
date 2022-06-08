@@ -33,13 +33,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.server.ManagementService;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmDetailVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -57,10 +50,12 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -83,6 +78,7 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -99,6 +95,9 @@ import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -109,6 +108,8 @@ import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -137,8 +138,11 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -178,6 +182,8 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -202,7 +208,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.commons.lang3.StringUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
@@ -304,6 +309,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private ManagementService managementService;
 
+    @Inject
+    protected SnapshotHelper snapshotHelper;
+
     protected Gson _gson;
 
     private static final List<HypervisorType> SupportedHypervisorsForVolResize = Arrays.asList(HypervisorType.KVM, HypervisorType.XenServer,
@@ -350,22 +358,38 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long zoneId = cmd.getZoneId();
         String volumeName = cmd.getVolumeName();
         String url = cmd.getUrl();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
 
         validateVolume(caller, ownerId, zoneId, volumeName, url, format, diskOfferingId);
 
-        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, cmd.getFormat(), diskOfferingId, Volume.State.Allocated);
+        VolumeVO volume = persistVolume(owner, zoneId, volumeName, url, format, diskOfferingId, Volume.State.Allocated);
 
         VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), cmd.getFormat());
+        RegisterVolumePayload payload = new RegisterVolumePayload(cmd.getUrl(), cmd.getChecksum(), format);
         vol.addPayload(payload);
 
         volService.registerVolume(vol, store);
         return volume;
+    }
+
+    private String sanitizeFormat(String format) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(format)) {
+            throw new CloudRuntimeException("Please provide a format");
+        }
+
+        String uppercase = format.toUpperCase();
+        try {
+            ImageFormat.valueOf(uppercase);
+        } catch (IllegalArgumentException e) {
+            String msg = "Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values());
+            s_logger.error("ImageFormat IllegalArgumentException: " + e.getMessage(), e);
+            throw new IllegalArgumentException(msg);
+        }
+        return uppercase;
     }
 
     @Override
@@ -376,7 +400,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final Account owner = _entityMgr.findById(Account.class, ownerId);
         final Long zoneId = cmd.getZoneId();
         final String volumeName = cmd.getName();
-        String format = cmd.getFormat();
+        String format = sanitizeFormat(cmd.getFormat());
         final Long diskOfferingId = cmd.getDiskOfferingId();
         String imageStoreUuid = cmd.getImageStoreUuid();
         final DataStore store = _tmpltMgr.getImageStore(imageStoreUuid, zoneId);
@@ -387,11 +411,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             @Override
             public GetUploadParamsResponse doInTransaction(TransactionStatus status) throws MalformedURLException {
 
-                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, cmd.getFormat(), diskOfferingId, Volume.State.NotUploaded);
+                VolumeVO volume = persistVolume(owner, zoneId, volumeName, null, format, diskOfferingId, Volume.State.NotUploaded);
 
                 VolumeInfo vol = volFactory.getVolume(volume.getId());
 
-                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), cmd.getFormat());
+                RegisterVolumePayload payload = new RegisterVolumePayload(null, cmd.getChecksum(), format);
                 vol.addPayload(payload);
 
                 Pair<EndPoint, DataObject> pair = volService.registerVolumeForPostUpload(vol, store);
@@ -479,12 +503,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(ownerId), ResourceType.secondary_storage);
         }
 
-        try {
-            ImageFormat.valueOf(format.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            s_logger.debug("ImageFormat IllegalArgumentException: " + e.getMessage());
-            throw new IllegalArgumentException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
-        }
+        sanitizeFormat(format);
 
         // Check that the the disk offering specified is valid
         if (diskOfferingId != null) {
@@ -574,6 +593,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
+                CallContext.current().putContextParameter(Volume.class, volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
@@ -889,7 +909,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
-
+                CallContext.current().putContextParameter(Volume.class, volume.getId());
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
                 _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume, displayVolume);
@@ -1697,6 +1717,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean volumeMigrateRequired = false;
         boolean volumeResizeRequired = false;
 
+        // Skip the Disk offering change on Volume if Disk Offering is the same and is linked to a custom Service Offering
+        if(isNewDiskOfferingTheSameAndCustomServiceOffering(existingDiskOffering, newDiskOffering)) {
+            s_logger.debug(String.format("Scaling CPU and/or Memory of VM with custom service offering. New disk offering stills the same. Skipping the Disk offering change on Volume %s.", volume.getUuid()));
+            return volume;
+        }
+
         // VALIDATIONS
         Long[] updateNewSize = {newSize};
         Long[] updateNewMinIops = {newMinIops};
@@ -1739,7 +1765,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         StoragePoolVO existingStoragePool = _storagePoolDao.findById(volume.getPoolId());
 
-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true);
+        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(volume.getId(), newDiskOffering.getId(), newSize, newMinIops, newMaxIops, true, false);
         List<? extends StoragePool> suitableStoragePools = poolsPair.second();
 
         if (!suitableStoragePools.stream().anyMatch(p -> (p.getId() == existingStoragePool.getId()))) {
@@ -1786,6 +1812,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return volume;
+    }
+
+    /**
+     * Returns true if the new disk offering is the same than current offering, and the respective Service offering is a custom (constraint or unconstraint) offering.
+     */
+    protected boolean isNewDiskOfferingTheSameAndCustomServiceOffering(DiskOfferingVO existingDiskOffering, DiskOfferingVO newDiskOffering) {
+        if (newDiskOffering.getId() == existingDiskOffering.getId()) {
+            ServiceOfferingVO serviceOffering = _serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(newDiskOffering.getId());
+            if (serviceOffering != null && serviceOffering.isCustomized()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private VolumeVO resizeVolumeInternal(VolumeVO volume, DiskOfferingVO newDiskOffering, Long currentSize, Long newSize, Long newMinIops, Long newMaxIops, Integer newHypervisorSnapshotReserve, boolean shrinkOk) throws ResourceAllocationException {
@@ -1888,11 +1927,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (newDiskOffering.getId() == existingDiskOffering.getId()) {
-            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided", volume.getUuid(), existingDiskOffering.getUuid()));
+            throw new InvalidParameterValueException(String.format("Volume %s already have the new disk offering %s provided.", volume.getUuid(), existingDiskOffering.getUuid()));
         }
 
         if (existingDiskOffering.getDiskSizeStrictness() != newDiskOffering.getDiskSizeStrictness()) {
-            throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering");
+            throw new InvalidParameterValueException("Disk offering size strictness does not match with new disk offering.");
         }
 
         if (MatchStoragePoolTagsWithDiskOffering.valueIn(volume.getDataCenterId())) {
@@ -2633,6 +2672,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (volume.getPoolId() != null) {
                 DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
                 volService.revokeAccess(volFactory.getVolume(volume.getId()), host, dataStore);
+                provideVMInfo(dataStore, vmId, volumeId);
             }
             if (volumePool != null && hostId != null) {
                 handleTargetsForVMware(hostId, volumePool.getHostAddress(), volumePool.getPort(), volume.get_iScsiName());
@@ -2802,6 +2842,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
         } else if (destPool.isInMaintenance()) {
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
+        }
+
+        try {
+            snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(vol, _volsDao.getHypervisorType(vol.getId()));
+        } catch (CloudRuntimeException ex) {
+            throw new CloudRuntimeException(String.format("Unable to migrate %s to the destination storage pool [%s] due to [%s]", vol,
+                    new ToStringBuilder(destPool, ToStringStyle.JSON_STYLE).append("uuid", destPool.getUuid()).append("name", destPool.getName()).toString(), ex.getMessage()), ex);
         }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
@@ -3289,7 +3336,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
 
-        return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName, locationType);
+        return snapshotMgr.allocSnapshot(volumeId, policyId, snapshotName, locationType, false);
     }
 
     @Override
@@ -3345,7 +3392,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot perform this operation, unsupported on storage pool type " + storagePool.getPoolType());
         }
 
-        return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null);
+        return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null, true);
     }
 
     @Override
@@ -3819,6 +3866,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         _volsDao.update(volumeToAttach.getId(), volumeToAttach);
                     }
 
+                    if (answer.getContextParam("vdiskUuid") != null) {
+                        volumeToAttach = _volsDao.findById(volumeToAttach.getId());
+                        volumeToAttach.setExternalUuid(answer.getContextParam("vdiskUuid"));
+                        _volsDao.update(volumeToAttach.getId(), volumeToAttach);
+                    }
+
                     String chainInfo = answer.getContextParam("chainInfo");
                     if (chainInfo != null) {
                         volumeToAttach = _volsDao.findById(volumeToAttach.getId());
@@ -3871,12 +3924,24 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (attached) {
                 ev = Volume.Event.OperationSucceeded;
                 s_logger.debug("Volume: " + volInfo.getName() + " successfully attached to VM: " + volInfo.getAttachedVmName());
+                provideVMInfo(dataStore, vm.getId(), volInfo.getId());
             } else {
                 s_logger.debug("Volume: " + volInfo.getName() + " failed to attach to VM: " + volInfo.getAttachedVmName());
             }
             volInfo.stateTransit(ev);
         }
         return _volsDao.findById(volumeToAttach.getId());
+    }
+
+    private void provideVMInfo(DataStore dataStore, long vmId, Long volumeId) {
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
+
+        if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver storageDriver = (PrimaryDataStoreDriver)dataStoreDriver;
+            if (storageDriver.isVmInfoNeeded()) {
+                storageDriver.provideVmInfo(vmId, volumeId);
+            }
+        }
     }
 
     private int getMaxDataVolumesSupported(UserVmVO vm) {

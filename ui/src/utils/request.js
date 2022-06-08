@@ -167,6 +167,9 @@ const sourceToken = {
   isCancel: (e) => {
     return axios.isCancel(e)
   },
+  checkExistSource: () => {
+    return source
+  },
   getSource: () => {
     if (!source) sourceToken.init()
     return source

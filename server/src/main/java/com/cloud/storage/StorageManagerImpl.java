@@ -79,6 +79,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -230,6 +231,8 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
+import java.math.BigInteger;
+import java.util.UUID;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -359,7 +362,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
-    // protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
     private long _serverId;
 
     private final Map<String, HypervisorHostListener> hostListeners = new HashMap<String, HypervisorHostListener>();
@@ -1120,6 +1122,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public void enableHost(long hostId) {
+        List<DataStoreProvider> providers = _dataStoreProviderMgr.getProviders();
+        if (providers != null) {
+            for (DataStoreProvider provider : providers) {
+                if (provider instanceof PrimaryDataStoreProvider) {
+                    try {
+                        HypervisorHostListener hypervisorHostListener = provider.getHostListener();
+                        if (hypervisorHostListener != null) {
+                            hypervisorHostListener.hostEnabled(hostId);
+                        }
+                    }
+                    catch (Exception ex) {
+                        s_logger.error("hostEnabled(long) failed for storage provider " + provider.getName(), ex);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
     public BigDecimal getStorageOverProvisioningFactor(Long poolId) {
         return new BigDecimal(CapacityManager.StorageOverprovisioningFactor.valueIn(poolId));
     }
@@ -1798,7 +1820,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         for (ModifyStoragePoolAnswer childDataStoreAnswer : childDatastoreAnswerList) {
             StoragePoolInfo childStoragePoolInfo = childDataStoreAnswer.getPoolInfo();
-            StoragePoolVO dataStoreVO = _storagePoolDao.findPoolByUUID(childStoragePoolInfo.getUuid());
+            StoragePoolVO dataStoreVO = getExistingPoolByUuid(childStoragePoolInfo.getUuid());
             if (dataStoreVO == null && childDataStoreAnswer.getPoolType().equalsIgnoreCase("NFS")) {
                 List<StoragePoolVO> nfsStoragePools = _storagePoolDao.findPoolsByStorageType(StoragePoolType.NetworkFilesystem.toString());
                 for (StoragePoolVO storagePool : nfsStoragePools) {
@@ -1842,6 +1864,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         handleRemoveChildStoragePoolFromDatastoreCluster(childDatastoreUUIDs);
+    }
+
+    private StoragePoolVO getExistingPoolByUuid(String uuid){
+        if(!uuid.contains("-")){
+            UUID poolUuid = new UUID(
+                new BigInteger(uuid.substring(0, 16), 16).longValue(),
+                new BigInteger(uuid.substring(16), 16).longValue()
+            );
+            uuid = poolUuid.toString();
+        }
+        return _storagePoolDao.findByUuid(uuid);
     }
 
     private void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList) {
@@ -2500,8 +2533,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
+            s_logger.debug("Found storage pool " + pool.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
+            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + toHumanReadableSize(pool.getCapacityBytes()));
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
 

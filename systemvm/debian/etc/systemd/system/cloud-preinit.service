@@ -1,0 +1,18 @@
+[Unit]
+Description=CloudStack service to initialize interfaces
+DefaultDependencies=no
+
+Before=network-pre.target
+Wants=network-pre.target
+
+Requires=local-fs.target
+After=local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cloud/bin/setup/init.sh
+RemainAfterExit=true
+TimeoutStartSec=5min

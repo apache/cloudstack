@@ -118,7 +118,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
+    public UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
         if (userVm.getHypervisorType() != null) {
@@ -128,7 +128,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setName(userVm.getName());
 
         if (userVm.getDisplayName() != null) {
-        userVmResponse.setDisplayName(userVm.getDisplayName());
+            userVmResponse.setDisplayName(userVm.getDisplayName());
         } else {
             userVmResponse.setDisplayName(userVm.getName());
         }
@@ -228,7 +228,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             // stats calculation
-            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
+            VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId(), accumulateStats);
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
                 userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());

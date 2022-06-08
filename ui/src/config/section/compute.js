@@ -31,6 +31,13 @@ export default {
       docHelp: 'adminguide/virtual_machines.html',
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
+      params: () => {
+        var params = {}
+        if (store.getters.metrics) {
+          params = { state: 'running' }
+        }
+        return params
+      },
       filters: () => {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {
@@ -43,11 +50,13 @@ export default {
         const metricsFields = ['cpunumber', 'cpuused', 'cputotal',
           {
             memoryused: (record) => {
-              return record.memorykbs && record.memoryintfreekbs ? parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%' : '0.0%'
+              if (record.memoryintfreekbs <= 0 || record.memorykbs <= 0) {
+                return '-'
+              }
+              return parseFloat(100.0 * (record.memorykbs - record.memoryintfreekbs) / record.memorykbs).toFixed(2) + '%'
             }
           },
-          'memorytotal', 'networkread', 'networkwrite', 'diskkbsread', 'diskkbswrite', 'diskiopstotal'
-        ]
+          'memorytotal', 'networkread', 'networkwrite', 'diskread', 'diskwrite', 'diskiopstotal']
 
         if (store.getters.metrics) {
           fields.push(...metricsFields)
@@ -615,9 +624,9 @@ export default {
           popup: true,
           groupMap: (selection, values, record) => {
             return selection.map(x => {
-              const data = record.filter(y => { return y.name === x })
+              const data = record.filter(y => { return y.id === x })
               return {
-                name: x, account: data[0].account, domainid: data[0].domainid
+                name: data[0].name, account: data[0].account, domainid: data[0].domainid
               }
             })
           }

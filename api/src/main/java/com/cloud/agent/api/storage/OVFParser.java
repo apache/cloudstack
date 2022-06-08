@@ -103,7 +103,7 @@ public class OVFParser {
             Node value = childNodes.item(i);
             // Also match if the child's name has a suffix:
             // Example: <rasd:AllocationUnits>
-            if (value != null && (value.getNodeName().equals(childNodeName)) || value.getNodeName().endsWith(":" + childNodeName)) {
+            if (value != null && (value.getNodeName().equals(childNodeName) || value.getNodeName().endsWith(":" + childNodeName))) {
                 return value.getTextContent();
             }
         }

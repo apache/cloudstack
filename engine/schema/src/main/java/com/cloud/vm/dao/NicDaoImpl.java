@@ -70,6 +70,8 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
         AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
         AllFieldsSearch.and("deviceid", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
+        AllFieldsSearch.and("ipv6Gateway", AllFieldsSearch.entity().getIPv6Gateway(), Op.EQ);
+        AllFieldsSearch.and("ipv6Cidr", AllFieldsSearch.entity().getIPv6Cidr(), Op.EQ);
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
@@ -371,5 +373,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("instance", instanceId);
         sc.setParameters("macAddress", macAddress);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<NicVO> findNicsByIpv6GatewayIpv6CidrAndReserver(String ipv6Gateway, String ipv6Cidr, String reserverName) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipv6Gateway", ipv6Gateway);
+        sc.setParameters("ipv6Cidr", ipv6Cidr);
+        sc.setParameters("reserverName", reserverName);
+        return listBy(sc);
     }
 }
