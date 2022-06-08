@@ -1357,7 +1357,7 @@ export default {
         if (protocol === 'datastorecluster') {
           url = this.datastoreclusterURL('dummy', path)
         }
-      } else {
+      } else if (protocol === 'iscsi') {
         let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
         if (iqn.substring(0, 1) !== '/') {
           iqn = '/' + iqn

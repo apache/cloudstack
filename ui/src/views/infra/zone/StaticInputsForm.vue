@@ -143,9 +143,6 @@ export default {
         this.$emit('fieldsChanged', fieldsChanged)
       }
     },
-    'prefillContent.primaryStorageProtocol' (val) {
-      this.form.primaryStorageProtocol = val
-    },
     'prefillContent.provider' (val) {
       if (['SolidFire', 'PowerFlex'].includes(val)) {
         this.form.primaryStorageProtocol = 'custom'
