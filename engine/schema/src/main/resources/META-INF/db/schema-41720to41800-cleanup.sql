@@ -18,3 +18,5 @@
 --;
 -- Schema upgrade cleanup from 4.17.2.0 to 4.18.0.0
 --;
+
+ALTER TABLE cloud.network_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this network on creation';

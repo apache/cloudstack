@@ -19,3 +19,5 @@
 -- Schema upgrade from 4.18.1.0 to 4.19.0.0
 --;
 
+-- select initial ip for VPCs --
+ALTER TABLE cloud.network_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this network on creation';
