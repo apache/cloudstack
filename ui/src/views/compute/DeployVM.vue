@@ -1975,9 +1975,9 @@ export default {
             this.options[name] = response
 
             if (name === 'hypervisors') {
-              const hw = response[0] && response[0].name ? response[0].name : null
-              this.dataPreFill.hypervisor = hw
-              this.form.hypervisor = hw
+              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+              this.dataPreFill.hypervisor = hypervisorFromResponse
+              this.form.hypervisor = hypervisorFromResponse
             }
 
             if (param.field) {
