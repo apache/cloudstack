@@ -22,6 +22,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -217,6 +218,19 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             }
             if (userSpecified.getRouterIpv6() != null) {
                 config.setRouterIpv6(userSpecified.getRouterIpv6());
+            }
+
+            if (StringUtils.isNotBlank(userSpecified.getDns1())) {
+                config.setDns1(userSpecified.getDns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getDns2())) {
+                config.setDns2(userSpecified.getDns2());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns1())) {
+                config.setIp6Dns1(userSpecified.getIp6Dns1());
+            }
+            if (StringUtils.isNotBlank(userSpecified.getIp6Dns2())) {
+                config.setIp6Dns2(userSpecified.getIp6Dns2());
             }
         }
 

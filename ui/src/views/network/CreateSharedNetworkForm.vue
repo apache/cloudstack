@@ -1010,11 +1010,11 @@ export default {
           params.acltype = 'account' // acl type is "account" for regular users
         }
         // IPv4 (begin)
-        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'routerip']
+        var usefulFields = ['gateway', 'netmask', 'startip', 'endip', 'routerip', 'dns1', 'dns2']
         // IPv4 (end)
 
         // IPv6 (begin)
-        usefulFields = [...usefulFields, 'ip6gateway', 'ip6cidr', 'startipv6', 'endipv6', 'routeripv6']
+        usefulFields = [...usefulFields, 'ip6gateway', 'ip6cidr', 'startipv6', 'endipv6', 'routeripv6', 'ip6dns1', 'ip6dns2']
         // IPv6 (end)
 
         usefulFields.push('networkdomain')
