@@ -23,3 +23,43 @@
 UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
+
+-- VM autoscaling
+
+-- Add column 'provider' and update values
+
+ALTER TABLE `cloud`.`counter` ADD COLUMN `provider` varchar(255) NOT NULL COMMENT 'Network provider name' AFTER `uuid`;
+
+UPDATE `cloud`.`counter` SET provider = 'Netscaler';
+
+-- Add new counters for VM autoscaling
+
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Receive (in Bytes)', 'virtual.network.receive', NOW());
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes)', 'virtual.network.transmit', NOW());
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
+
+-- Update autoscale_vmgroups to new state
+
+UPDATE `cloud`.`autoscale_vmgroups` SET state='New' WHERE state='new';
+UPDATE `cloud`.`autoscale_vmgroups` SET state='Enabled' WHERE state='enabled';
+UPDATE `cloud`.`autoscale_vmgroups` SET state='Disabled' WHERE state='disabled';
+UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
+
+-- Create table for VM autoscaling historic data
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `counter_id` bigint unsigned NOT NULL,
+  `resource_id` bigint unsigned NOT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `raw_value` double NOT NULL,
+  `created` datetime NOT NULL COMMENT 'Date this data is created',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_statistics__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_statistics__counter_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__counter_id` (`counter_id`) REFERENCES `counter` (`id`),
+  INDEX `i_autoscale_vmgroup_statistics__vmgroup_id`(`vmgroup_id`),
+  INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
