@@ -16,18 +16,81 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.HashMap;
+import java.util.UUID;
+
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(ComponentContext.class)
 public class NetworkServiceImplTest {
+    @Mock
+    AccountManager accountManager;
+    @Mock
+    NetworkOfferingDao networkOfferingDao;
+    @Mock
+    PhysicalNetworkDao physicalNetworkDao;
+    @Mock
+    DataCenterDao dataCenterDao;
+    @Mock
+    NetworkOrchestrationService networkOrchestrationService;
+    @Mock
+    Ipv6Service ipv6Service;
+    @Mock
+    NetworkModel networkModel;
 
+    @InjectMocks
     private NetworkServiceImpl service = new NetworkServiceImpl();
 
     private static final String VLAN_ID_900 = "900";
     private static final String VLAN_ID_901 = "901";
     private static final String VLAN_ID_902 = "902";
+    public static final long ACCOUNT_ID = 1;
+
+    private static final String IP4_GATEWAY = "10.0.16.1";
+    private static final String IP4_NETMASK = "255.255.255.0";
+    private static final String IP6_GATEWAY = "fd17:ac56:1234:2000::1";
+    private static final String IP6_CIDR = "fd17:ac56:1234:2000::/64";
+
+    private AccountVO account;
+    private UserVO user;
+
+    private void registerCallContext() {
+        account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+        account.setId(ACCOUNT_ID);
+        user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+                UUID.randomUUID().toString(), User.Source.UNKNOWN);
+        CallContext.register(user, account);
+    }
 
     @Test
     public void testGetPrivateVlanPairNoVlans() {
@@ -117,4 +180,106 @@ public class NetworkServiceImplTest {
         service.performBasicPrivateVlanChecks(VLAN_ID_900, VLAN_ID_901, Network.PVlanType.Promiscuous);
     }
 
+    private void prepareCreateNetworkDnsMocks(CreateNetworkCmd cmd, Network.GuestType guestType, boolean ipv6) {
+        long networkOfferingId = 1L;
+        Mockito.when(cmd.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        NetworkOfferingVO networkOfferingVO = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(networkOfferingVO.getId()).thenReturn(networkOfferingId);
+        Mockito.when(networkOfferingVO.getGuestType()).thenReturn(guestType);
+        Mockito.when(networkOfferingVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        Mockito.when(networkOfferingVO.isSpecifyIpRanges()).thenReturn(true);
+        Mockito.when(networkOfferingDao.findById(networkOfferingId)).thenReturn(networkOfferingVO);
+        Mockito.when(accountManager.finalizeOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(account);
+        if (Network.GuestType.Shared.equals(guestType)) {
+            Mockito.when(networkModel.isProviderForNetworkOffering(Mockito.any(), Mockito.anyLong())).thenReturn(true);
+            Mockito.when(cmd.getGateway()).thenReturn(IP4_GATEWAY);
+            Mockito.when(cmd.getNetmask()).thenReturn(IP4_NETMASK);
+        }
+        Mockito.when(accountManager.isNormalUser(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(PhysicalNetworkVO.class));
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
+        Mockito.when(networkOrchestrationService.finalizeServicesAndProvidersForNetwork(Mockito.any(), Mockito.anyLong())).thenReturn(new HashMap<>());
+        if(ipv6 && Network.GuestType.Isolated.equals(guestType)) {
+            Mockito.when(networkOfferingDao.isIpv6Supported(networkOfferingId)).thenReturn(true);
+            try {
+                Mockito.when(ipv6Service.preAllocateIpv6SubnetForNetwork(Mockito.anyLong())).thenReturn(new Pair<>(IP6_GATEWAY, IP6_CIDR));
+            } catch (ResourceAllocationException e) {
+                Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+            }
+        }
+        Mockito.when(cmd.getSubdomainAccess()).thenReturn(null);
+        Mockito.when(cmd.getAssociatedNetworkId()).thenReturn(null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateL2NetworkDnsFailure() {
+        registerCallContext();
+        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.L2, false);
+        Mockito.when(cmd.getIp4Dns1()).thenReturn("5.5.5.5");
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateNetworkIp4Dns1Failure() {
+        registerCallContext();
+        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false);
+        Mockito.when(cmd.getIp4Dns1()).thenReturn(null);
+        Mockito.when(cmd.getIp4Dns2()).thenReturn("4.4.4.4");
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateNetworkIp6Dns1Failure() {
+        registerCallContext();
+        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, true);
+        Mockito.when(cmd.getIp6Dns1()).thenReturn(null);
+        Mockito.when(cmd.getIp6Dns2()).thenReturn("2001:4860:4860::8877");
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateIP4NetworkIp6DnsFailure() {
+        registerCallContext();
+        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false);
+        Mockito.when(cmd.getIp6Dns1()).thenReturn("2001:4860:4860::8877");
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateSharedNetworkIp6Dns1Failure() {
+        registerCallContext();
+        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Shared, false);
+        Mockito.when(cmd.getIp6Dns1()).thenReturn(null);
+        Mockito.when(cmd.getIp6Cidr()).thenReturn(IP6_CIDR);
+        Mockito.when(cmd.getIp6Gateway()).thenReturn(IP6_GATEWAY);
+        Mockito.when(cmd.getIp6Dns2()).thenReturn("2001:4860:4860::8877");
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+    }
 }
