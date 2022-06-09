@@ -335,7 +335,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public Integer getPublicMtu() {
-        return publicMtu != null ? publicMtu : 0;
+        return publicMtu != null ? publicMtu : ApiConstants.DEFAULT_MTU;
     }
 
     public void setPublicMtu(Integer publicMtu) {
@@ -343,7 +343,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public Integer getPrivateMtu() {
-        return privateMtu != null ? privateMtu : 0;
+        return privateMtu != null ? privateMtu : ApiConstants.DEFAULT_MTU;
     }
 
     public void setPrivateMtu(Integer privateMtu) {

@@ -58,6 +58,12 @@ public class IpAddressTO {
         this.oneToOneNat = isOneToOneNat;
     }
 
+    public IpAddressTO(String ipAddress, Integer mtu, String vlanNetmask ) {
+        this.publicIp = ipAddress;
+        this.mtu = mtu;
+        this.vlanNetmask = vlanNetmask;
+    }
+
     protected IpAddressTO() {
     }
 

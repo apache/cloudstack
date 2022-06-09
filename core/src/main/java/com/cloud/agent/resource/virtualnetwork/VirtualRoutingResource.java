@@ -34,6 +34,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.UpdateNetworkCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
@@ -134,6 +136,10 @@ public class VirtualRoutingResource {
                 return execute((AggregationControlCommand)cmd);
             }
 
+            if (cmd instanceof UpdateNetworkCommand) {
+                return execute((UpdateNetworkCommand) cmd);
+            }
+
             if (_vrAggregateCommandsSet.containsKey(routerName)) {
                 _vrAggregateCommandsSet.get(routerName).add(cmd);
                 aggregated = true;
@@ -214,6 +220,44 @@ public class VirtualRoutingResource {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
+    }
+
+    private static String getRouterSshControlIp(NetworkElementCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (s_logger.isDebugEnabled())
+            s_logger.debug("Use router's private IP for SSH control. IP : " + routerIp);
+        return routerIp;
+    }
+
+    private Answer execute(UpdateNetworkCommand cmd) {
+        IpAddressTO[] ipAddresses = cmd.getIpAddresses();
+        String routerIp = getRouterSshControlIp(cmd);
+        boolean finalResult = true;
+        for (IpAddressTO ipAddressTO : ipAddresses) {
+            try {
+                ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.VR_UPDATE_MTU,
+                        ipAddressTO.getPublicIp() + " " + ipAddressTO.getVlanNetmask() + " " + ipAddressTO.getMtu() + " " + 15);
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("result: " + result.isSuccess() + ", output: " + result.getDetails());
+                if (!result.isSuccess()) {
+                    s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
+                            ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
+                    finalResult = false;
+                    continue;
+                }
+                s_logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
+                        ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
+                finalResult &= true;
+            } catch (Exception e) {
+                String msg = "Prepare UpdateNetwork failed due to " + e.toString();
+                s_logger.error(msg, e);
+                return new Answer(cmd, e);
+            }
+        }
+        if (finalResult) {
+            return new Answer(cmd, true, null);
+        }
+        return new Answer(cmd, new CloudRuntimeException("Failed to update interface mtu"));
     }
 
     private ExecutionResult applyConfigToVR(String routerAccessIp, ConfigItem c) {

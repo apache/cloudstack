@@ -912,6 +912,7 @@ public class ApiConstants {
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
 
+    public static final Integer DEFAULT_MTU = 1500;
     public enum BootType {
         UEFI, BIOS;
 

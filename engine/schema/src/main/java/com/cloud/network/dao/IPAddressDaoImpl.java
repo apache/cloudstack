@@ -500,4 +500,11 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
+
+    @Override
+    public List<IPAddressVO> listByNetworkId(long networkId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        return listBy(sc);
+    }
 }

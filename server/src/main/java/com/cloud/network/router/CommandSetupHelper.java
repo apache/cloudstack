@@ -26,6 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.routing.UpdateNetworkCommand;
+import com.cloud.network.dao.VirtualRouterProviderDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -197,6 +199,8 @@ public class CommandSetupHelper {
     private NetworkDetailsDao networkDetailsDao;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    VirtualRouterProviderDao vrProviderDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -1141,17 +1145,12 @@ public class CommandSetupHelper {
         final String dhcpRange = getGuestDhcpRange(guestNic, network, _entityMgr.findById(DataCenter.class, network.getDataCenterId()));
 
         final NicProfile nicProfile = _networkModel.getNicProfile(router, nic.getNetworkId(), null);
-
         final SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, router.getIsRedundantRouter(), defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile,
                 router.getHypervisorType()));
 
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {
             updateSetupGuestNetworkCommandIpv6(setupCmd, network, publicNic, defaultIp6Dns1, defaultIp6Dns2);
-        }
-
-        if (nic.getMtu() != null) {
-            setupCmd.setMtu(nic.getMtu());
         }
 
         final String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIPv4Address()) | ~NetUtils.ip2Long(guestNic.getIPv4Netmask()));
@@ -1163,8 +1162,10 @@ public class CommandSetupHelper {
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         if (network.getBroadcastDomainType() == BroadcastDomainType.Vlan) {
-            final long guestVlanTag = Long.parseLong(BroadcastDomainType.Vlan.getValueFrom(network.getBroadcastUri()));
-            setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
+            if (network.getBroadcastUri() != null) {
+                final long guestVlanTag = Long.parseLong(BroadcastDomainType.Vlan.getValueFrom(network.getBroadcastUri()));
+                setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
+            }
         }
 
         return setupCmd;
@@ -1329,4 +1330,16 @@ public class CommandSetupHelper {
         return details;
     }
 
+    public void setupUpdateNetworkCommands(final VirtualRouter router, final List<IpAddressTO> ips, Commands cmds) {
+        IpAddressTO[] ipsToSend = ips.toArray(new IpAddressTO[0]);
+        if (!ips.isEmpty()) {
+            UpdateNetworkCommand cmd = new UpdateNetworkCommand(ipsToSend);
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+            cmd.setHypervisorType(router.getHypervisorType());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
+            cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+            cmds.addCommand("updateNetwork", cmd);
+        }
+    }
 }

@@ -36,8 +36,6 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String routerIpv6Gateway = null;
     String routerIpv6Cidr = null;
 
-    Integer mtu = null;
-
     public NicTO getNic() {
         return nic;
     }
@@ -115,13 +113,5 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
 
     public void setDefaultIp6Dns2(String defaultIp6Dns2) {
         this.defaultIp6Dns2 = defaultIp6Dns2;
-    }
-
-    public Integer getMtu() {
-        return mtu;
-    }
-
-    public void setMtu(Integer mtu) {
-        this.mtu = mtu;
     }
 }

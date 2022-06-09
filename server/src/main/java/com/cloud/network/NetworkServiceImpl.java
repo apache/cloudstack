@@ -41,7 +41,18 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.utils.net.Ip;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -229,6 +240,8 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -373,6 +386,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Inject
     private AlertManager alertManager;
+    @Inject
+    VirtualRouterProviderDao vrProviderDao;
+    @Inject
+    DomainRouterDao routerDao;
+    @Inject
+    CommandSetupHelper commandSetupHelper;
+    @Inject
+    AgentManager agentManager;
+
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper networkHelper;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -2600,6 +2625,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Boolean displayNetwork = cmd.getDisplayNetwork();
         String customId = cmd.getCustomId();
         boolean updateInSequence = cmd.getUpdateInSequence();
+        Integer publicMtu = cmd.getPublicMtu();
+        Integer privateMtu = cmd.getPrivateMtu();
         boolean forced = cmd.getForced();
 
         boolean restartNetwork = false;
@@ -2731,7 +2758,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         final Map<String, String> newSvcProviders = networkOfferingChanged
                 ? _networkMgr.finalizeServicesAndProvidersForNetwork(_entityMgr.findById(NetworkOffering.class, networkOfferingId), network.getPhysicalNetworkId())
-                        : new HashMap<String, String>();
+                : new HashMap<String, String>();
 
         // don't allow to modify network domain if the service is not supported
         if (domainSuffix != null) {
@@ -2850,6 +2877,89 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             network.setCidr(guestVmCidr);
             _networksDao.update(networkId, network);
             s_logger.info("IP Reservation has been applied. The new CIDR for Guests Vms is " + guestVmCidr);
+        }
+
+        if (publicMtu != null && publicMtu > VRPublicInterfaceMtu.valueIn(dc.getId())) {
+            publicMtu = VRPublicInterfaceMtu.valueIn(dc.getId());
+        }
+
+        if (privateMtu != null && privateMtu > VRPrivateInterfaceMtu.valueIn(dc.getId())) {
+            privateMtu = VRPrivateInterfaceMtu.valueIn(dc.getId());
+        }
+
+        List<IpAddressTO> ips = new ArrayList<>();
+
+        if (publicMtu != null) {
+            if (!publicMtu.equals(network.getPublicIfaceMtu())) {
+                List<IPAddressVO> ipAddresses = _ipAddressDao.listByNetworkId(networkId);
+                for (IPAddressVO ip : ipAddresses) {
+                    VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+                    s_logger.info("PEARL - vlan id = : " + vlan.getUuid() + " " + vlan.getVlanNetmask());
+                    String vlanNetmask = vlan.getVlanNetmask();
+                    IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), publicMtu, vlanNetmask);
+                    ips.add(to);
+                }
+            } else {
+                s_logger.info(String.format("Network's public Interfaces MTU is already set to %s ", publicMtu));
+            }
+        }
+
+        if (privateMtu != null) {
+            if (!privateMtu.equals(network.getPrivateIfaceMtu())) {
+                network.setPrivateIfaceMtu(privateMtu);
+                List<IPAddressVO> ipAddresses = new ArrayList<>();
+                if (network.getGuestType() == GuestType.Isolated) {
+                    NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+                    IPAddressVO ipAddressVO = new IPAddressVO(new Ip(nic.getIPv4Address()), network.getDataCenterId(), 0, 0, false);
+                    ipAddressVO.setSourceNetworkId(networkId);
+                    ipAddresses.add(ipAddressVO);
+                } else {
+                    ipAddresses.addAll(_ipAddressDao.listByNetworkId(networkId));
+                }
+
+                for (IPAddressVO ip : ipAddresses) {
+                    NicVO vo = _nicDao.findByIp4AddressAndNetworkId(ip.getAddress().addr(), networkId);
+                    if (vo != null) {
+                        IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), privateMtu, vo.getIPv4Netmask());
+                        ips.add(to);
+                    }
+                }
+            } else {
+                s_logger.info(String.format("Network's private Interfaces MTU is already set to %s ", privateMtu));
+            }
+        }
+
+        boolean success = false;
+        if (!ips.isEmpty() && !restartNetwork) {
+            List<DomainRouterVO> routers = routerDao.findByNetwork(networkId);
+            for (DomainRouterVO router : routers) {
+                Commands cmds = new Commands(Command.OnError.Stop);
+                commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
+                try {
+                    networkHelper.sendCommandsToRouter(router, cmds);
+                    final Answer updateNetworkAnswer = cmds.getAnswer("updateNetwork");
+                    if (!(updateNetworkAnswer != null && updateNetworkAnswer.getResult())) {
+                        s_logger.warn("Unable to update guest network on router " + router);
+                        throw new CloudRuntimeException("Failed to update guest network with new mtu: " + privateMtu);
+                    }
+                    success = true;
+                } catch (ResourceUnavailableException e) {
+                    s_logger.error(String.format("Failed to update network MTU for router %s due to %s", router, e.getMessage()));
+                }
+            }
+        }
+
+        if (success) {
+            for (IpAddressTO ipAddress : ips) {
+                NicVO nicVO = _nicDao.findByIp4AddressAndNetworkId(ipAddress.getPublicIp(), networkId);
+                if (nicVO != null) {
+                    nicVO.setMtu(privateMtu);
+                    _nicDao.update(nicVO.getId(), nicVO);
+                }
+            }
+            network.setPublicIfaceMtu(publicMtu);
+            network.setPrivateIfaceMtu(privateMtu);
+            _networksDao.update(networkId, network);
         }
 
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);

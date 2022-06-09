@@ -217,6 +217,14 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             if (userSpecified.getRouterIpv6() != null) {
                 config.setRouterIpv6(userSpecified.getRouterIpv6());
             }
+
+            if (userSpecified.getPublicIfaceMtu() != null) {
+                config.setPublicIfaceMtu(userSpecified.getPublicIfaceMtu());
+            }
+
+            if (userSpecified.getPrivateIfaceMtu() != null) {
+                config.setPrivateIfaceMtu(userSpecified.getPrivateIfaceMtu());
+            }
         }
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);

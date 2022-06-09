@@ -35,7 +35,6 @@ public class IpAddress {
     private boolean isPrivateGateway;
 
     private  Integer mtu;
-
     public IpAddress() {
         // Empty constructor for (de)serialization
     }
