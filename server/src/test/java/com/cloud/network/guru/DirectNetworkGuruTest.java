@@ -16,31 +16,32 @@
 // under the License.
 package com.cloud.network.guru;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 public class DirectNetworkGuruTest {
 
@@ -127,5 +128,29 @@ public class DirectNetworkGuruTest {
         when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(true);
 
         assertNotNull(guru.design(offering, plan, network, owner));
+    }
+
+    @Test
+    public void testDesignDns() {
+        final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
+        final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
+        when(dcDao.findById(dc.getId())).thenReturn(dc);
+        when(plan.getDataCenterId()).thenReturn(1l);
+        when(plan.getPhysicalNetworkId()).thenReturn(1l);
+        when(physicalNetworkDao.findById(physicalNetwork.getId())).thenReturn(physicalNetwork);
+        when(offering.isRedundantRouter()).thenReturn(false);
+        when(network.getDns1()).thenReturn(ip4Dns[0]);
+        when(network.getDns2()).thenReturn(ip4Dns[1]);
+        when(network.getIp6Dns1()).thenReturn(ip6Dns[0]);
+        when(network.getIp6Dns2()).thenReturn(ip6Dns[1]);
+
+        when(networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SecurityGroup)).thenReturn(false);
+
+        Network config = guru.design(offering, plan, network, owner);
+        assertNotNull(config);
+        assertEquals(ip4Dns[0], config.getDns1());
+        assertEquals(ip4Dns[1], config.getDns2());
+        assertEquals(ip6Dns[0], config.getIp6Dns1());
+        assertEquals(ip6Dns[1], config.getIp6Dns2());
     }
 }
