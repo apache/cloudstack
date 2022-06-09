@@ -180,6 +180,7 @@
                         <a-form-item :label="$t('label.hypervisor')">
                           <a-select
                             v-model:value="form.hypervisor"
+                            :preFillContent="dataPreFill"
                             :options="hypervisorSelectOptions"
                             @change="value => hypervisor = value"
                             showSearch
@@ -1974,7 +1975,9 @@ export default {
             this.options[name] = response
 
             if (name === 'hypervisors') {
-              this.hypervisor = response[0] && response[0].name ? response[0].name : null
+              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+              this.dataPreFill.hypervisor = hypervisorFromResponse
+              this.form.hypervisor = hypervisorFromResponse
             }
 
             if (param.field) {
