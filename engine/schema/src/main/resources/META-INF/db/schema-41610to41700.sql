@@ -972,10 +972,3 @@ WHERE 	not exists( SELECT  1
 
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (64-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (32-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
-
-
--- TODO: Need to move to 4.17.0 -> 4.18.0 upgrade path
-
-ALTER TABLE `cloud`.`networks` ADD COLUMN `public_iface_mtu` bigint unsigned comment "MTU for VR public interface" ;
-ALTER TABLE `cloud`.`networks` ADD COLUMN `private_iface_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
-ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;

@@ -18,3 +18,8 @@
 --;
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
+
+
+ALTER TABLE `cloud`.`networks` ADD COLUMN `public_iface_mtu` bigint unsigned comment "MTU for VR public interface" ;
+ALTER TABLE `cloud`.`networks` ADD COLUMN `private_iface_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
+ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;
