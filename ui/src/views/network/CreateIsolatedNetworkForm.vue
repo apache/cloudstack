@@ -104,6 +104,32 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item
             ref="vlanid"
             name="vlanid"
@@ -481,6 +507,12 @@ export default {
         }
         if (this.isValidTextValueForKey(values, 'networkdomain')) {
           params.networkdomain = values.networkdomain
+        }
+        if (this.isValidTextValueForKey(values, 'publicmtu')) {
+          params.publicmtu = values.publicmtu
+        }
+        if (this.isValidTextValueForKey(values, 'privatemtu')) {
+          params.publicmtu = values.privatemtu
         }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id

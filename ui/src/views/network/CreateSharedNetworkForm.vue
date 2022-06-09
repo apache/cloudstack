@@ -243,6 +243,32 @@
               <template #message>{{ $t('message.shared.network.offering.warning') }}</template>
             </a-alert>
           </a-form-item>
+          <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.specifyvlan" name="associatednetworkid" ref="associatednetworkid">
             <template #label>
               <tooltip-label :title="$t('label.associatednetwork')" :tooltip="apiParams.associatednetworkid.description"/>
@@ -969,6 +995,12 @@ export default {
         var hideipaddressusage = this.parseBooleanValueForKey(values, 'hideipaddressusage')
         if (hideipaddressusage) {
           params.hideipaddressusage = true
+        }
+        if (this.isValidTextValueForKey(values, 'publicmtu')) {
+          params.publicmtu = values.publicmtu
+        }
+        if (this.isValidTextValueForKey(values, 'privatemtu')) {
+          params.publicmtu = values.privatemtu
         }
         api('createNetwork', params).then(json => {
           this.$notification.success({

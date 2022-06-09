@@ -17,12 +17,9 @@
 package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.hypervisor.Hypervisor;
 
 public class UpdateNetworkCommand extends NetworkElementCommand{
     IpAddressTO[] ipAddresses;
-
-    Hypervisor.HypervisorType hypervisorType;
 
     public UpdateNetworkCommand(IpAddressTO[] ips) {
         this.ipAddresses = ips;
@@ -42,11 +39,4 @@ public class UpdateNetworkCommand extends NetworkElementCommand{
         return ipAddresses.length;
     }
 
-    public Hypervisor.HypervisorType getHypervisorType() {
-        return hypervisorType;
-    }
-
-    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
-        this.hypervisorType = hypervisorType;
-    }
 }

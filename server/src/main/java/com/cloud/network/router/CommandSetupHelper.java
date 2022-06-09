@@ -1333,7 +1333,6 @@ public class CommandSetupHelper {
         if (!ips.isEmpty()) {
             UpdateNetworkCommand cmd = new UpdateNetworkCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-            cmd.setHypervisorType(router.getHypervisorType());
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());

@@ -41,7 +41,6 @@ import javax.naming.ConfigurationException;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.network.NetworkServiceImpl;
-import com.cloud.network.guru.GuestNetworkGuru;
 import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -364,7 +363,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     List<IpDeployer> ipDeployers;
 
-    private static final String guestNetworkReserver = GuestNetworkGuru.class.getSimpleName();
     public List<IpDeployer> getIpDeployers() {
         return ipDeployers;
     }
