@@ -1161,11 +1161,9 @@ public class CommandSetupHelper {
         setupCmd.setAccessDetail(NetworkElementCommand.GUEST_BRIDGE, brd);
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        if (network.getBroadcastDomainType() == BroadcastDomainType.Vlan) {
-            if (network.getBroadcastUri() != null) {
-                final long guestVlanTag = Long.parseLong(BroadcastDomainType.Vlan.getValueFrom(network.getBroadcastUri()));
-                setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
-            }
+        if (network.getBroadcastDomainType() == BroadcastDomainType.Vlan && network.getBroadcastUri() != null) {
+            final long guestVlanTag = Long.parseLong(BroadcastDomainType.Vlan.getValueFrom(network.getBroadcastUri()));
+            setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
         }
 
         return setupCmd;

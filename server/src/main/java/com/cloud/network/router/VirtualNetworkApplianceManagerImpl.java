@@ -2039,8 +2039,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 publicNetwork = true;
                 buf.append(" publicMtu=").append(nic.getMtu());
             }
-                // todo: check all implementations of addnic (NicProfile) - and add the mtu details to the profile
-
         }
 
         if (controlNic == null) {

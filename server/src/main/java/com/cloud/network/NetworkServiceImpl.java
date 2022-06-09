@@ -55,6 +55,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
@@ -249,15 +250,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
 public class NetworkServiceImpl extends ManagerBase implements NetworkService, Configurable {
     private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
 
-    private static final ConfigKey<Boolean> AllowDuplicateNetworkName = new ConfigKey<Boolean>("Advanced", Boolean.class,
+    private static final ConfigKey<Boolean> AllowDuplicateNetworkName = new ConfigKey<>("Advanced", Boolean.class,
             "allow.duplicate.networkname", "true", "Allow creating networks with same name in account", true, ConfigKey.Scope.Account);
-    private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<Boolean>("Advanced", Boolean.class,
+    private static final ConfigKey<Boolean> AllowEmptyStartEndIpAddress = new ConfigKey<>("Advanced", Boolean.class,
             "allow.empty.start.end.ipaddress", "true", "Allow creating network without mentioning start and end IP address",
             true, ConfigKey.Scope.Account);
-    public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<Integer>("VirtualRouter", Integer.class,
+    public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.public.interface.mtu", "1500", "MTU set on the VR's public facing interfaces",
             true, ConfigKey.Scope.Zone);
-    public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<Integer>("VirtualRouter", Integer.class,
+    public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.private.interface.mtu", "1500", "MTU set on the VR's private interfaces",
             true, ConfigKey.Scope.Zone);
     private static final long MIN_VLAN_ID = 0L;
@@ -1653,7 +1654,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
                     "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", VRPublicInterfaceMtu.key(), VRPublicInterfaceMtu.valueIn(zoneId));
             s_logger.warn(message);
-            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             publicMtu = vrMaxMtuForPublicIfaces;
         }
 
@@ -1662,7 +1663,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
                     "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", VRPublicInterfaceMtu.key(), VRPublicInterfaceMtu.valueIn(zoneId));
             s_logger.warn(message);
-            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             privateMtu = vrMaxMtuForPrivateIfaces;
         }
         return new Pair<>(publicMtu, privateMtu);

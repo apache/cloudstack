@@ -239,7 +239,7 @@ public class VirtualRoutingResource {
                         ipAddressTO.getPublicIp() + " " + ipAddressTO.getVlanNetmask() + " " + ipAddressTO.getMtu() + " " + 15);
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("result: " + result.isSuccess() + ", output: " + result.getDetails());
-                if (!result.isSuccess()) {
+                if (!Boolean.TRUE.equals(result.isSuccess())) {
                     s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
                             ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                     finalResult = false;

@@ -137,8 +137,4 @@ public interface NetworkElement extends Adapter {
      * @return true/false
      */
     boolean verifyServicesCombination(Set<Service> services);
-
-//    default boolean update(Network network) throws ResourceUnavailableException {
-//        return true;
-//    }
 }

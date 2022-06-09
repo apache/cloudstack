@@ -42,7 +42,6 @@ import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.guru.GuestNetworkGuru;
-import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -365,8 +364,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     List<IpDeployer> ipDeployers;
 
-    private static final String s_publicNetworkReserver = PublicNetworkGuru.class.getSimpleName();
-    private static final String s_guestNetworkReserver = GuestNetworkGuru.class.getSimpleName();
+    private static final String guestNetworkReserver = GuestNetworkGuru.class.getSimpleName();
     public List<IpDeployer> getIpDeployers() {
         return ipDeployers;
     }
@@ -1028,12 +1026,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private void setMtuInVRNicProfile(final long vmId, TrafficType trafficType, NicProfile vmNic) {
         NetworkVO networkVO = getGuestNetworkRouter(vmId);
-        if (TrafficType.Public == trafficType) {
-            if (networkVO != null) {
+        if (networkVO != null) {
+            if (TrafficType.Public == trafficType) {
                 vmNic.setMtu(networkVO.getPublicIfaceMtu());
-            }
-        } else if (TrafficType.Guest == trafficType) {
-            if (networkVO != null) {
+            } else if (TrafficType.Guest == trafficType) {
                 vmNic.setMtu(networkVO.getPrivateIfaceMtu());
             }
         }
@@ -1046,8 +1042,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
         DomainRouterJoinVO guestRouterDetails = routerVo.get(0);
         long networkId = guestRouterDetails.getNetworkId();
-        NetworkVO networkVO = _networksDao.findById(networkId);
-        return networkVO;
+        return _networksDao.findById(networkId);
     }
 
     /**
@@ -1901,7 +1896,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public void prepare(final VirtualMachineProfile vmProfile, final DeployDestination dest, final ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException {
         final List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
-        List<NicVO> guestNics = nics.stream().filter(nic -> s_guestNetworkReserver.equals(nic.getReserver())).collect(Collectors.toList());
         // we have to implement default nics first - to ensure that default network elements start up first in multiple
         //nics case
         // (need for setting DNS on Dhcp to domR's Ip4 address)
@@ -2504,7 +2498,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                        boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                        final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
                                        final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, Network.PVlanType isolatedPvlanType, String externalId,
-                                       final Boolean isPrivateNetwork, String routerIp, String routerIpv6, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                       final Boolean isPrivateNetwork, String routerIp, String routerIpv6, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         final DataCenterVO zone = _dcDao.findById(zoneId);
@@ -2780,13 +2774,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (vrIfaceMTUs != null) {
-                    if (vrIfaceMTUs.first() != null & vrIfaceMTUs.first() > 0) {
+                    if (vrIfaceMTUs.first() != null && vrIfaceMTUs.first() > 0) {
                         userNetwork.setPublicIfaceMtu(vrIfaceMTUs.first());
                     } else {
                         userNetwork.setPublicIfaceMtu(Integer.valueOf(NetworkServiceImpl.VRPublicInterfaceMtu.defaultValue()));
                     }
 
-                    if (vrIfaceMTUs.second() != null & vrIfaceMTUs.second() > 0) {
+                    if (vrIfaceMTUs.second() != null && vrIfaceMTUs.second() > 0) {
                         userNetwork.setPrivateIfaceMtu(vrIfaceMTUs.second());
                     } else {
                         userNetwork.setPrivateIfaceMtu(Integer.valueOf(NetworkServiceImpl.VRPrivateInterfaceMtu.defaultValue()));

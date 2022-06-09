@@ -507,57 +507,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return new ExecutionResult(true, null);
     }
 
-//    private String findRouterEthDeviceIndexGivenIpAndNetmask(String routerIp, String ip, String netmask) throws Exception {
-//        File keyFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-//        // when we dynamically plug in a new NIC into virtual router, it may take time to show up in guest OS
-//        // we use a waiting loop here as a workaround to synchronize activities in systems
-//        long startTick = System.currentTimeMillis();
-//        long waitTimeoutMillis = 15000;
-//        while (System.currentTimeMillis() - startTick < waitTimeoutMillis) {
-//            SubnetUtils util = new SubnetUtils(ip, netmask);
-//            String address = util.getInfo().getCidrSignature();
-//            String subnet = address.split("/")[1];
-//            String cmd = String.format("ip route list %s/%s | awk '{print $3}'", ip, subnet);
-//            if (s_logger.isDebugEnabled())
-//                s_logger.debug("Run domr script " + cmd);
-//            Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), "root", keyFile, null, cmd);
-//            if (s_logger.isDebugEnabled())
-//                s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
-//            if (result2.first() && StringUtils.isNotEmpty(result2.second())) {
-//                return result2.second().trim();
-//            }
-//            s_logger.warn("can not find interface associated with ip : " + ip + ", guest OS may still at loading state, retry...");
-//            try {
-//                Thread.currentThread();
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                s_logger.debug("[ignored] interrupted while trying to get mac.");
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private ExecutionResult prepareNetworkElementCommand(UpdateNetworkCommand cmd) {
-//        IpAddressTO[] ipAddresses = cmd.getIpAddresses();
-//        String routerName =  cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-//        String routerIp =cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-//
-//        for (IpAddressTO ipAddressTO : ipAddresses) {
-//            try {
-//                String ethDeviceNum = findRouterEthDeviceIndexGivenIpAndNetmask(routerIp, ipAddressTO.getPublicIp(), ipAddressTO.getVlanNetmask());
-//                if (ethDeviceNum != null) {
-//                    String numberOnly = ethDeviceNum.replaceAll("[^0-9]", "");
-//                    ipAddressTO.setNicDevId(Integer.valueOf(numberOnly));
-//                }
-//            } catch (Exception e) {
-//                String msg = "Prepare UpdateNetwork failed due to " + e.toString();
-//                s_logger.error(msg, e);
-//                return new ExecutionResult(false, msg);
-//            }
-//        }
-//        return new ExecutionResult(true, null);
-//    }
-
     @Override
     public ExecutionResult cleanupCommand(final NetworkElementCommand cmd) {
         if (cmd instanceof IpAssocCommand && !(cmd instanceof IpAssocVpcCommand)) {
