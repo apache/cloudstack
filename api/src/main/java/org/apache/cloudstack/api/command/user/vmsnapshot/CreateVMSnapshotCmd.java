@@ -93,6 +93,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
         VMSnapshot vmsnapshot = _vmSnapshotService.allocVMSnapshot(getVmId(), getDisplayName(), getDescription(), snapshotMemory());
         if (vmsnapshot != null) {
             setEntityId(vmsnapshot.getId());
+            setEntityUuid(vmsnapshot.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot");
         }
