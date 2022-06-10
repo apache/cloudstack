@@ -2054,24 +2054,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (is_native(asGroup.getId())) {
             s_logger.debug("[AutoScale] Collecting performance data from hosts ...");
-
             getVmStatsFromHosts(asGroup);
-
-            updateCountersMap(asGroup, countersMap, countersNumberMap);
         }
 
         if (has_source_virtual_router(asGroup.getId())) {
             s_logger.debug("[AutoScale] Collecting performance data from virtual router ...");
-
-            // create PerformanceMonitorCommand for the host where is virtual router is running on
-
-            // process PerformanceMonitorAnswer from the host
-            // 1. update database (aggregation or average or instant)
-            // 2. get data in this period
-            // average: do nothing
-            // aggregation: end - start
-            // instant: calculate the average
+            getVmStatsFromVirtualRouter(asGroup);
         }
+
+        // update counter maps in memory
+        updateCountersMap(asGroup, countersMap, countersNumberMap);
 
         // get scale action
         Map<String, String> params = new HashMap<String, String>();
@@ -2141,6 +2133,18 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 continue;
             }
         }
+    }
+
+    private void getVmStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
+        // create GetAutoScaleMetricsCommand for the host where is virtual router is running on
+
+        // process GetAutoScaleMetricsAnswer from the host
+
+        // 1. update database (aggregation or average or instant)
+        // 2. get data in this period
+        // average: do nothing
+        // aggregation: end - start
+        // instant: calculate the average
     }
 
     private void  updateCountersMap(AutoScaleVmGroupVO asGroup, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {

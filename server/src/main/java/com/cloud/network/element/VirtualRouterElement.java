@@ -1401,20 +1401,4 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             _routerDao.persist(router);
         }
     }
-
-    enum AutoScaleCounterVirtualRouterValue {
-        NetworkReceive ("virtual.network.receive"),
-        NetworkTransmit ("virtual.network.transmit"),
-        LbAverageConnections ("virtual.network.lb.average.connections");
-
-        String _value;
-        AutoScaleCounterVirtualRouterValue(String value) {
-            _value = value;
-        }
-        @Override
-        public String toString() {
-            return _value;
-        }
-    }
-
 }
