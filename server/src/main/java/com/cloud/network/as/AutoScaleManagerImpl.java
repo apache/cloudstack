@@ -1633,7 +1633,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
-                AutoScaleStatsInterval
+                AutoScaleStatsInterval,
+                AutoScaleStatsCleanupDelay
         };
     }
 
@@ -2137,6 +2138,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void getVmStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
         // create GetAutoScaleMetricsCommand for the host where is virtual router is running on
+        // which virtual router ? PRIMARY or both ?
 
         // process GetAutoScaleMetricsAnswer from the host
 
@@ -2181,7 +2183,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
         for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
             AutoScalePolicyVO vo = _autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
-            Date beforeDate = new Date(System.currentTimeMillis() - ((long)vo.getDuration() << 10) - autoScaleStatsInterval);
+            Date beforeDate = new Date(System.currentTimeMillis() - ((long)AutoScaleStatsCleanupDelay.value() << 10));
             s_logger.debug(String.format("Removing stats for policy %d in as group %d, before %s", groupPolicyVO.getPolicyId(), asGroup.getId(), beforeDate));
             Map<Long, CounterVO> conditionsMap = getConditionsMap(groupPolicyVO.getPolicyId());
             for (Long conditionId : conditionsMap.keySet()) {

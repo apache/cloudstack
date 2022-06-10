@@ -1732,6 +1732,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("AutoScaling Monitor is running...");
                 }
+                //msHost in UP state with min id should run the job
+                ManagementServerHostVO msHost = managementServerHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                if (msHost == null || (msHost.getMsid() != mgmtSrvrId)) {
+                    LOGGER.debug("Skipping AutoScaling Monitor");
+                    return;
+                }
                 // list all AS VMGroups
                 List<AutoScaleVmGroupVO> asGroups = _asGroupDao.listAll();
                 for (AutoScaleVmGroupVO asGroup : asGroups) {

@@ -23,7 +23,14 @@ public interface AutoScaleManager extends AutoScaleService {
     ConfigKey<Integer> AutoScaleStatsInterval = new ConfigKey<>("Advanced", Integer.class,
             "autoscale.stats.interval",
             "0",
-            "The interval (in milliseconds) when VM auto scaling stats retrieved from agents and/or other resources. Less than 1 means disabled.",
+            "The interval (in milliseconds) when VM auto scaling statistics are retrieved from hypervisors and/or other resources. Less than 1 means disabled.",
+            false);
+
+    ConfigKey<Integer> AutoScaleStatsCleanupDelay = new ConfigKey<>(Integer.class,
+            "autoscale.stats.cleanup.delay",
+            "Advanced",
+            "86400",
+            "Determines how long (in seconds) to wait before actually removing auto scaling statistics from database.",
             false);
 
     void cleanUpAutoScaleResources(Long accountId);
