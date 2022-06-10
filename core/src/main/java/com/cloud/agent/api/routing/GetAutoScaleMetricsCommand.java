@@ -23,6 +23,9 @@ import java.util.List;
 
 public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
 
+    private String privateIP;
+    boolean forVpc = false;
+    private String publicIP;
     private List<AutoScaleMetrics> metrics;
 
     @Override
@@ -30,8 +33,23 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
         return true;
     }
 
-    public GetAutoScaleMetricsCommand(List<AutoScaleMetrics> metrics) {
+    public GetAutoScaleMetricsCommand(String privateIP, boolean forVpc, String publicIP, List<AutoScaleMetrics> metrics) {
+        this.privateIP = privateIP;
+        this.forVpc = forVpc;
+        this.publicIP = publicIP;
         this.metrics = metrics;
+    }
+
+    public String getPrivateIP() {
+        return privateIP;
+    }
+
+    public boolean isForVpc() {
+        return forVpc;
+    }
+
+    public String getPublicIP() {
+        return publicIP;
     }
 
     public List<AutoScaleMetrics> getMetrics() {
