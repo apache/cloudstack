@@ -18,6 +18,7 @@ package com.cloud.network.guru;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.cloud.dc.DataCenter.NetworkType;
@@ -35,6 +37,7 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -42,6 +45,8 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.vm.NicProfile;
 
 public class DirectNetworkGuruTest {
 
@@ -76,6 +81,9 @@ public class DirectNetworkGuruTest {
 
     @Mock
     Account owner;
+
+    final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
+    final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
 
     @Before
     public void setup() {
@@ -132,8 +140,6 @@ public class DirectNetworkGuruTest {
 
     @Test
     public void testDesignDns() {
-        final String[] ip4Dns = {"5.5.5.5", "6.6.6.6"};
-        final String[] ip6Dns = {"2001:4860:4860::5555", "2001:4860:4860::6666"};
         when(dcDao.findById(dc.getId())).thenReturn(dc);
         when(plan.getDataCenterId()).thenReturn(1l);
         when(plan.getPhysicalNetworkId()).thenReturn(1l);
@@ -152,5 +158,34 @@ public class DirectNetworkGuruTest {
         assertEquals(ip4Dns[1], config.getDns2());
         assertEquals(ip6Dns[0], config.getIp6Dns1());
         assertEquals(ip6Dns[1], config.getIp6Dns2());
+    }
+
+    @Test
+    public void testUpdateNicProfile() {
+        NicProfile nicProfile = new NicProfile();
+        when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+        when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
+        when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
+        guru.updateNicProfile(nicProfile, network);
+        assertNotNull(nicProfile);
+        assertEquals(ip4Dns[0], nicProfile.getIPv4Dns1());
+        assertEquals(ip4Dns[1], nicProfile.getIPv4Dns2());
+        assertEquals(ip6Dns[0], nicProfile.getIPv6Dns1());
+        assertEquals(ip6Dns[1], nicProfile.getIPv6Dns2());
+    }
+
+    @Test
+    public void testUpdateNetworkProfile() {
+        NetworkProfile profile = new NetworkProfile(network);
+        when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+        when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
+        when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], null));
+        when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], null));
+        guru.updateNetworkProfile(profile);
+        assertNotNull(profile);
+        assertEquals(ip4Dns[0], profile.getDns1());
+        assertNull(profile.getDns2());
+        assertEquals(ip6Dns[0], profile.getIp6Dns1());
+        assertNull(profile.getIp6Dns2());
     }
 }
