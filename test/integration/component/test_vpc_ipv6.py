@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT test for IPv6 VPC"""
+""" BVT tests for IPv6 VPC"""
 
 #Import Local Modules
 from marvin.codes import FAILED
@@ -909,3 +909,128 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.checkIpv6VpcNetworking()
         self.checkVpcRouting()
         self.checkIpv6AclRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_02_verify_ipv6_vpc_redundant(self):
+        """Test to verify redundant IPv6 VPC
+
+        # Validate the following:
+        # 1. Create redundant IPv6 VPC, add tiers, deploy VM
+        # 2. Verify VPC, tier has required IPv6 details
+        # 3. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 4. SSH into VR(s) and verify correct details are present for its NICs
+        # 5. Verify VM in network tier has required IPv6 details
+        # 6. Restart VPC with cleanup and re-verify VPC networking
+        # 7. Update network tier with a new offering and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6VpcOffering(True)
+        self.deployVpc()
+        self.createIpv6NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.checkIpv6VpcNetworking(True)
+        self.prepareRoutingTestResourcesInBackground()
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+        self.checkVpcVRRedundancy()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_03_verify_upgraded_ipv6_vpc(self):
+        """Test to verify IPv4 VPC tier upgraded to IPv6 VPC tier
+
+        # Validate the following:
+        # 1. Create IPv4 VPC, add tiers, deploy VM
+        # 2. Update VPC tier to IPv6 offering
+        # 3. Verify VPC, tier has required IPv6 details
+        # 4. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network tier has required IPv6 details
+        # 7. Restart VPC with cleanup and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        """
+
+        self.createIpv6VpcOffering()
+        self.deployVpc()
+        self.prepareRoutingTestResourcesInBackground()
+        self.createIpv4NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking(True)
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_04_verify_upgraded_ipv6_vpc_redundant(self):
+        """Test to verify redunadnt IPv4 VPC tier upgraded to IPv6 VPC tier
+
+        # Validate the following:
+        # 1. Create redundant IPv4 VPC, add tiers, deploy VM
+        # 2. Update VPC tier to IPv6 offering
+        # 3. Verify VPC, tier has required IPv6 details
+        # 4. List router for the VPC and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network tier has required IPv6 details
+        # 7. Restart VPC with cleanup and re-verify VPC networking
+        # 8. Deploy another IPv6 VPC with tier and check routing between two VPC and their VM
+        # 9. Create IPv6 ACL rules in two different VPC tiers and verify in VR if they get implemented correctly
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6VpcOffering(True)
+        self.deployVpc()
+        self.prepareRoutingTestResourcesInBackground()
+        self.createIpv4NetworkTierOffering()
+        self.createIpv6NetworkTierOfferingForUpdate()
+        self.createTinyServiceOffering()
+        self.deployNetworkTier()
+        self.deployNetworkTierVm()
+        self.updateNetworkTierWithOffering()
+        self.checkIpv6VpcNetworking(True)
+        self.restartVpcWithCleanup()
+        self.checkIpv6VpcNetworking()
+        self.checkVpcRouting()
+        self.checkIpv6AclRule()
+        self.checkVpcVRRedundancy()
