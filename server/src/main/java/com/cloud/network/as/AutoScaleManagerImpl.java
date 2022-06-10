@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.offering.DiskOffering;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -2121,10 +2122,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                         for (CounterVO counter : counters) {
                             if (Counter.Source.cpu.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getCPUUtilization() / 100;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm, counterValue, timestamp));
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                        counterValue, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
                             } else if (Counter.Source.memory.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getMemoryKBs() / 1024;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm, counterValue, timestamp));
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                        counterValue, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
                             }
                         }
                     }

@@ -29,6 +29,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.server.ResourceTag;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -56,6 +57,10 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     @Column(name = "raw_value")
     private Double rawValue = null;
 
+    @Column(name = "value_type")
+    @Enumerated(value = EnumType.STRING)
+    private VirtualRouterAutoScale.AutoScaleValueType valueType;
+
     @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
@@ -63,12 +68,14 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     public AutoScaleVmGroupStatisticsVO() {
     }
 
-    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long counterId, long resourceId, ResourceTag.ResourceObjectType resourceType, Double rawValue, Date created) {
+    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long counterId, long resourceId, ResourceTag.ResourceObjectType resourceType,
+                                        Double rawValue, VirtualRouterAutoScale.AutoScaleValueType valueType, Date created) {
         this.vmGroupId = vmGroupId;
         this.counterId = counterId;
         this.resourceId = resourceId;
         this.resourceType = resourceType;
         this.rawValue = rawValue;
+        this.valueType = valueType;
         this.created = created;
     }
 
@@ -95,6 +102,10 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
     public Double getRawValue() {
         return rawValue;
+    }
+
+    public VirtualRouterAutoScale.AutoScaleValueType getValueType() {
+        return valueType;
     }
 
     public Date getCreated() {
