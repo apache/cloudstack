@@ -100,6 +100,7 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
 
         if (vmsnapshot != null) {
             setEntityId(vmsnapshot.getId());
+            setEntityUuid(vmsnapshot.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm snapshot");
         }
