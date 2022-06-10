@@ -565,7 +565,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String message = String.format("Failed to create volume from snapshot [%s] due to [%s].", snapshotToString, e.getMessage());
-            s_logger.error(message, e);
+            s_logger.error(message);
+            s_logger.debug("Exception: ", e);
             throw new CloudRuntimeException(message, e);
         } finally {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
@@ -620,7 +621,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String msg = String.format("Failed to copy the volume [%s] due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg, e);
+            s_logger.error(msg);
+            s_logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -693,7 +695,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 return result.getVolume();
             } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Failed to create volume [%s] due to [%s].", volumeToString, e.getMessage());
-                s_logger.error(msg, e);
+                s_logger.error(msg);
+                s_logger.debug("Exception: ", e);
                 throw new CloudRuntimeException(msg, e);
             }
         }
@@ -1105,7 +1108,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     try {
                         future.get();
                     } catch (Exception e) {
-                        s_logger.error(String.format("Failed to expunge volume [%s] from primary data storage due to [%s].", volumeToString, e.getMessage()), e);
+                        s_logger.error(String.format("Failed to expunge volume [%s] from primary data storage due to [%s].", volumeToString, e.getMessage()));
+                        s_logger.debug("Exception: ", e);
                     }
                 }
 
@@ -1198,7 +1202,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
-                s_logger.error(String.format("Failed to expunge volume [%s] due to [%s].", expungeToString, e.getMessage()), e);
+                s_logger.error(String.format("Failed to expunge volume [%s] due to [%s].", expungeToString, e.getMessage()));
+                s_logger.debug("Exception: ", e);
             }
         }
     }
@@ -1282,7 +1287,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
             String msg = String.format("Volume [%s] migration failed due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg, e);
+            s_logger.error(msg);
+            s_logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -1304,7 +1310,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             return result.getVolume();
         } catch (InterruptedException | ExecutionException e) {
-            s_logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, e.getMessage()), e);
+            s_logger.error(String.format("Volume [%s] migration failed due to [%s].", volToString, e.getMessage()));
+            s_logger.debug("Exception: ", e);
             return null;
         }
     }
@@ -1344,7 +1351,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw new CloudRuntimeException(msg);
             }
         } catch (InterruptedException |  ExecutionException e) {
-            s_logger.error(String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, e.getMessage()), e);
+            s_logger.error(String.format("Failed to migrate VM [%s] along with its volumes due to [%s].", vm, e.getMessage()));
+            s_logger.debug("Exception: ", e);
         }
     }
 
@@ -1686,7 +1694,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 throw e;
             } catch (InterruptedException | ExecutionException e) {
                 String msg = String.format("Unable to create volume [%s] due to [%s].", newVolToString, e.toString());
-                s_logger.error(msg, e);
+                s_logger.error(msg);
+                s_logger.debug("Exception: ", e);
                 throw new StorageUnavailableException(msg, destPool.getId());
             }
         }
@@ -1917,7 +1926,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     cleanupVolumeDuringSnapshotFailure(work.getVolumeId(), work.getSnapshotId());
                 }
             } catch (Exception e) {
-                s_logger.error(String.format("Clean up job failed due to [%s]. Will continue with other clean up jobs.", e.getMessage()), e);
+                s_logger.error(String.format("Clean up job failed due to [%s]. Will continue with other clean up jobs.", e.getMessage()));
+                s_logger.debug("Exception: ", e);
             }
         }
     }
@@ -1952,7 +1962,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     volume.getUuid(), volume.isDisplayVolume());
         } catch (Exception e) {
             String msg = String.format("Failed to destroy volume [%s] due to [%s].", volumeToString, e.getMessage());
-            s_logger.error(msg, e);
+            s_logger.error(msg);
+            s_logger.debug("Exception: ", e);
             throw new CloudRuntimeException(msg, e);
         }
     }
