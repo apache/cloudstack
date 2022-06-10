@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -114,6 +115,7 @@ import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleValueType;
 import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 import com.cloud.offering.DiskOffering;
@@ -2075,7 +2077,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (has_source_virtual_router(asGroup.getId())) {
             s_logger.debug("[AutoScale] Collecting performance data from virtual router ...");
-            getVmStatsFromVirtualRouter(asGroup);
+            getNetworkStatsFromVirtualRouter(asGroup);
         }
 
         // update counter maps in memory
@@ -2153,7 +2155,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
     }
 
-    private void getVmStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
+    private void getNetworkStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
         Network network = getNetwork(asGroup);
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
         if (CollectionUtils.isEmpty(routers)) {
@@ -2171,16 +2173,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     s_logger.error("Failed to get autoscale metrics from virtual router " + router.getName());
                     continue;
                 }
-                // process GetAutoScaleMetricsAnswer from the host
-                // TODO
+                processGetAutoScaleMetricsAnswer(asGroup, answer.getValues(), router.getId());
             }
         }
-
-        // 1. update database (aggregation or average or instant)
-        // 2. get data in this period
-        // average: do nothing
-        // aggregation: end - start
-        // instant: calculate the average
     }
 
     private List<AutoScaleMetrics> setGetAutoScaleMetricsCommandMetrics(AutoScaleVmGroupVO asGroup) {
@@ -2205,6 +2200,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return metrics;
     }
 
+    private void processGetAutoScaleMetricsAnswer(AutoScaleVmGroupVO asGroup, List<AutoScaleMetricsValue> values, Long routerId) {
+        Date timestamp = new Date();
+        for (AutoScaleMetricsValue value : values) {
+            AutoScaleMetrics metrics = value.getMetrics();
+            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), metrics.getCounterId(), routerId, ResourceTag.ResourceObjectType.DomainRouter,
+                    value.getValue(), value.getType(), timestamp));
+        }
+    }
+
     private void  updateCountersMap(AutoScaleVmGroupVO asGroup, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
         s_logger.debug("Updating countersMap for as group: " + asGroup.getId());
         List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
@@ -2222,9 +2226,41 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     continue;
                 }
                 s_logger.debug(String.format("Updating countersMap with %d stats", stats.size()));
+                Map<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecords = new HashMap<>();
+                List<String> incorrectRecords = new ArrayList<>();
                 for (AutoScaleVmGroupStatisticsVO stat : stats) {
-                    s_logger.debug(String.format("Updating countersMap with %s (%s): %f, created on %s", counter.getSource(), counter.getValue(), stat.getRawValue(), stat.getCreated()));
-                    updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, stat.getRawValue());
+                    if (AutoScaleValueType.INSTANT.equals(stat.getValueType())) {
+                        s_logger.debug(String.format("Updating countersMap with %s (%s): %f, created on %s", counter.getSource(), counter.getValue(), stat.getRawValue(), stat.getCreated()));
+                        updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, stat.getRawValue());
+                    } else if (AutoScaleValueType.AGGREGATED.equals(stat.getValueType())) {
+                        String key = stat.getCounterId() + "-" + stat.getResourceId();
+                        if (incorrectRecords.contains(key)) {
+                            continue;
+                        }
+                        if (!aggregatedRecords.containsKey(key)) {
+                            List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = new ArrayList<>();
+                            aggregatedRecordList.add(stat);
+                            aggregatedRecords.put(key, aggregatedRecordList);
+                            continue;
+                        }
+                        List<AutoScaleVmGroupStatisticsVO> aggregatedRecordList = aggregatedRecords.get(key);
+                        AutoScaleVmGroupStatisticsVO lastRecord = aggregatedRecordList.get(aggregatedRecordList.size() - 1);
+                        if (stat.getCreated().after(lastRecord.getCreated())) {
+                            if (stat.getRawValue() >= lastRecord.getRawValue()) {
+                                aggregatedRecordList.add(stat);
+                            } else {
+                                s_logger.info("The new raw value is less than the previous raw value, which means the data is incorrect. The key is " + key);
+                                aggregatedRecords.remove(key);
+                                incorrectRecords.add(key);
+                            }
+                        }
+                    }
+                }
+                if (MapUtils.isNotEmpty(aggregatedRecords)) {
+                    s_logger.debug("Processing aggregated data");
+                    for (List<AutoScaleVmGroupStatisticsVO> records : aggregatedRecords.values()) {
+                        //TODO
+                    }
                 }
             }
 
