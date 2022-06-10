@@ -21,22 +21,22 @@ package com.cloud.network.router;
  */
 public interface VirtualRouterAutoScale {
 
-    enum AutoScaleCounter {
+    enum VirtualRouterAutoScaleCounter {
         NetworkReceive ("virtual.network.receive"),
         NetworkTransmit ("virtual.network.transmit"),
         LbAverageConnections ("virtual.network.lb.average.connections");
 
         String _value;
-        AutoScaleCounter(String value) {
+        VirtualRouterAutoScaleCounter(String value) {
             _value = value;
         }
 
         String getValue() {
             return _value;
         }
-        public AutoScaleCounter fromValue(String value) {
-            AutoScaleCounter[] values = AutoScaleCounter.values();
-            for(AutoScaleCounter v : values) {
+        public static VirtualRouterAutoScaleCounter fromValue(String value) {
+            VirtualRouterAutoScaleCounter[] values = VirtualRouterAutoScaleCounter.values();
+            for(VirtualRouterAutoScaleCounter v : values) {
                 if(v.getValue().equals(value)) {
                     return v;
                 }
@@ -55,19 +55,19 @@ public interface VirtualRouterAutoScale {
     }
 
     public class AutoScaleMetrics {
-        AutoScaleCounter counter;
+        VirtualRouterAutoScaleCounter counter;
         Long conditionId;
         Long counterId;
         Integer duration;
 
-        public AutoScaleMetrics(AutoScaleCounter counter, Long conditionId, Long counterId, Integer duration) {
+        public AutoScaleMetrics(VirtualRouterAutoScaleCounter counter, Long conditionId, Long counterId, Integer duration) {
             this.counter = counter;
             this.conditionId = conditionId;
             this.counterId = counterId;
             this.duration = duration;
         }
 
-        public AutoScaleCounter getCounter() {
+        public VirtualRouterAutoScaleCounter getCounter() {
             return counter;
         }
 

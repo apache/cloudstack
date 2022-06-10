@@ -30,7 +30,7 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
         return true;
     }
 
-    protected GetAutoScaleMetricsCommand(List<AutoScaleMetrics> metrics) {
+    public GetAutoScaleMetricsCommand(List<AutoScaleMetrics> metrics) {
         this.metrics = metrics;
     }
 

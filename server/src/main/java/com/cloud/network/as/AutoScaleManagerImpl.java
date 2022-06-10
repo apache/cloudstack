@@ -31,8 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import com.cloud.network.router.VirtualRouterAutoScale;
-import com.cloud.offering.DiskOffering;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -70,6 +68,9 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
 import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
@@ -110,6 +111,12 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRulesService;
+import com.cloud.network.router.RouterControlHelper;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleValueType;
+import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag;
@@ -142,10 +149,13 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -223,6 +233,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private HostDao _hostDao;
     @Inject
     private AutoScaleVmGroupStatisticsDao _asGroupStatisticsDao;
+    @Inject
+    private DomainRouterDao _routerDao;
+    @Inject
+    protected RouterControlHelper _routerControlHelper;
 
     private long autoScaleStatsInterval = -1L;
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
@@ -2123,11 +2137,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             if (Counter.Source.cpu.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getCPUUtilization() / 100;
                                 _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                        counterValue, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
+                                        counterValue, AutoScaleValueType.INSTANT, timestamp));
                             } else if (Counter.Source.memory.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getMemoryKBs() / 1024;
                                 _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(asGroup.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                        counterValue, VirtualRouterAutoScale.AutoScaleValueType.INSTANT, timestamp));
+                                        counterValue, AutoScaleValueType.INSTANT, timestamp));
                             }
                         }
                     }
@@ -2140,16 +2154,55 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     private void getVmStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
-        // create GetAutoScaleMetricsCommand for the host where is virtual router is running on
-        // which virtual router ? PRIMARY or both ?
-
-        // process GetAutoScaleMetricsAnswer from the host
+        Network network = getNetwork(asGroup);
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
+        if (CollectionUtils.isEmpty(routers)) {
+            return;
+        }
+        List<AutoScaleMetrics> metrics = setGetAutoScaleMetricsCommandMetrics(asGroup);
+        final GetAutoScaleMetricsCommand command = new GetAutoScaleMetricsCommand(metrics);
+        for (DomainRouterVO router : routers) {
+            if (VirtualMachine.State.Running.equals(router.getState())) {
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
+                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                command.setWait(30);
+                GetAutoScaleMetricsAnswer answer = (GetAutoScaleMetricsAnswer) _agentMgr.easySend(router.getHostId(), command);
+                if (answer == null || !answer.getResult()) {
+                    s_logger.error("Failed to get autoscale metrics from virtual router " + router.getName());
+                    continue;
+                }
+                // process GetAutoScaleMetricsAnswer from the host
+                // TODO
+            }
+        }
 
         // 1. update database (aggregation or average or instant)
         // 2. get data in this period
         // average: do nothing
         // aggregation: end - start
         // instant: calculate the average
+    }
+
+    private List<AutoScaleMetrics> setGetAutoScaleMetricsCommandMetrics(AutoScaleVmGroupVO asGroup) {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+        List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
+        for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
+            AutoScalePolicyVO vo = _autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
+            Map<Long, CounterVO> conditionsMap = getConditionsMap(groupPolicyVO.getPolicyId());
+            for (Long conditionId : conditionsMap.keySet()) {
+                CounterVO counter = conditionsMap.get(conditionId);
+                String provider = counter.getProvider();
+                if (! Network.Provider.VirtualRouter.getName().equals(provider) && ! Network.Provider.VPCVirtualRouter.getName().equals(provider)) {
+                    continue;
+                }
+                VirtualRouterAutoScaleCounter vrCounter = VirtualRouterAutoScaleCounter.fromValue(counter.getValue());
+                if (vrCounter == null) {
+                    continue;
+                }
+                metrics.add(new AutoScaleMetrics(vrCounter, conditionId, counter.getId(), vo.getDuration()));
+            }
+        }
+        return metrics;
     }
 
     private void  updateCountersMap(AutoScaleVmGroupVO asGroup, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
