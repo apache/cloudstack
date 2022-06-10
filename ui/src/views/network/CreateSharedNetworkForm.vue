@@ -1000,7 +1000,7 @@ export default {
           params.publicmtu = values.publicmtu
         }
         if (this.isValidTextValueForKey(values, 'privatemtu')) {
-          params.publicmtu = values.privatemtu
+          params.privatemtu = values.privatemtu
         }
         api('createNetwork', params).then(json => {
           this.$notification.success({

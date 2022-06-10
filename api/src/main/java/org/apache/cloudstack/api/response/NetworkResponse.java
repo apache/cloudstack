@@ -287,6 +287,14 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
 
+    @SerializedName(ApiConstants.PUBLIC_MTU)
+    @Param(description = "MTU configured on the network VR's public facing interfaces")
+    private Integer publicMtu;
+
+    @SerializedName(ApiConstants.PRIVATE_MTU)
+    @Param(description = "MTU configured on the network VR's private interfaces")
+    private Integer privateMtu;
+
     public NetworkResponse() {}
 
     public Boolean getDisplayNetwork() {
@@ -585,5 +593,21 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void addIpv6Route(Ipv6RouteResponse ipv6Route) {
         this.ipv6Routes.add(ipv6Route);
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
+    }
+
+    public Integer getPrivateMtu() {
+        return privateMtu;
+    }
+
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
     }
 }

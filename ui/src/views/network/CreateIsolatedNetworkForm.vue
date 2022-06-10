@@ -512,7 +512,7 @@ export default {
           params.publicmtu = values.publicmtu
         }
         if (this.isValidTextValueForKey(values, 'privatemtu')) {
-          params.publicmtu = values.privatemtu
+          params.privatemtu = values.privatemtu
         }
         if ('domainid' in values && values.domainid > 0) {
           params.domainid = this.selectedDomain.id

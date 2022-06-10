@@ -43,6 +43,34 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
+        <a-row :gutter="12">
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.publicmtu"
+                  :defaultValue="resource.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.privatemtu"
+                  :defaultValue="resource.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"/>
+              </a-form-item>
+            </a-col>
+          </a-row>
         <a-form-item name="networkofferingid" ref="networkofferingid" v-if="isUpdatingIsolatedNetwork">
           <template #label>
             <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>

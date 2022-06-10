@@ -2370,7 +2370,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setRelated(nw.getUuid());
         }
         response.setNetworkDomain(network.getNetworkDomain());
-
+        response.setPublicMtu(network.getPublicIfaceMtu());
+        response.setPrivateMtu(network.getPrivateIfaceMtu());
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         // populate capability
