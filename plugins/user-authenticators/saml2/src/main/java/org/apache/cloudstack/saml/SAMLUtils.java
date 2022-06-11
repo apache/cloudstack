@@ -150,6 +150,9 @@ public class SAMLUtils {
             if (spMetadata.getKeyPair() != null) {
                 privateKey = spMetadata.getKeyPair().getPrivate();
             }
+            if (idpMetadata.getEntityId().startsWith("https://accounts.google.com/o/saml2?idpid=")) {
+                redirectUrl = idpMetadata.getSsoUrl() + SAMLUtils.generateSAMLRequestSignature(SAMLUtils.encodeSAMLRequest(authnRequest), privateKey, signatureAlgorithm);
+            }
             redirectUrl = idpMetadata.getSsoUrl() + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest), privateKey, signatureAlgorithm);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
             s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
