@@ -1890,7 +1890,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return network;
     }
 
-    private String getPublicIp(AutoScaleVmGroup asGroup) {
+    private Pair<String, Integer> getPublicIpAndPort(AutoScaleVmGroup asGroup) {
         final LoadBalancerVO loadBalancer = _lbDao.findById(asGroup.getLoadBalancerId());
         if (loadBalancer == null) {
             throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", asGroup.getLoadBalancerId()));
@@ -1899,7 +1899,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (ipAddress == null) {
             throw new CloudRuntimeException(String.format("Unable to find IP Address with id: % ", loadBalancer.getSourceIpAddressId()));
         }
-        return ipAddress.getAddress().addr();
+        return new Pair<>(ipAddress.getAddress().addr(), loadBalancer.getSourcePortStart());
     }
 
     private Network.Provider getLoadBalancerServiceProvider(AutoScaleVmGroup asGroup) {
@@ -2170,7 +2170,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void getNetworkStatsFromVirtualRouter(AutoScaleVmGroupVO asGroup) {
         Network network = getNetwork(asGroup);
-        String publicIpAddr = getPublicIp(asGroup);
+        Pair<String, Integer> publicIpAddr = getPublicIpAndPort(asGroup);
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
         if (CollectionUtils.isEmpty(routers)) {
             return;
@@ -2178,7 +2178,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<AutoScaleMetrics> metrics = setGetAutoScaleMetricsCommandMetrics(asGroup);
         for (DomainRouterVO router : routers) {
             if (VirtualMachine.State.Running.equals(router.getState())) {
-                final GetAutoScaleMetricsCommand command = new GetAutoScaleMetricsCommand(router.getPrivateIpAddress(), network.getVpcId() != null, publicIpAddr, metrics);
+                final GetAutoScaleMetricsCommand command = new GetAutoScaleMetricsCommand(router.getPrivateIpAddress(), network.getVpcId() != null, publicIpAddr.first(), publicIpAddr.second(), metrics);
                 command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
                 command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                 command.setWait(30);

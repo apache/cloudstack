@@ -2289,6 +2289,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return stats;
     }
 
+    public String getHaproxyStats(final String privateIP, final String publicIp, final Integer port) {
+        final Script getHaproxyStatsScript = new Script(_routerProxyPath, s_logger);
+        getHaproxyStatsScript.add("get_haproxy_stats.sh");
+        getHaproxyStatsScript.add(privateIP);
+        getHaproxyStatsScript.add(publicIp);
+        getHaproxyStatsScript.add(String.valueOf(port));
+
+        final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
+        final String result = getHaproxyStatsScript.execute(statsParser);
+        if (result != null) {
+            s_logger.debug("Failed to execute haproxy stats:" + result);
+            return null;
+        }
+        return statsParser.getLine();
+    }
+
+    public long[] getNetworkLbStats(final String privateIP, final String publicIp, final Integer port) {
+        final String result = getHaproxyStats(privateIP, publicIp, port);
+        final long[] stats = new long[1];
+        if (result != null) {
+            final String[] splitResult = result.split(",");
+            int i = 0;
+            while (i < splitResult.length - 1) {
+                stats[0] += Long.parseLong(splitResult[i++]);
+            }
+        }
+        return stats;
+    }
+
     public String configureVPCNetworkUsage(final String privateIpAddress, final String publicIp, final String option, final String vpcCIDR) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("vpc_netusage.sh");

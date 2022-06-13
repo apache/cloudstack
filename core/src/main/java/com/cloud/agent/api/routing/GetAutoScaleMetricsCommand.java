@@ -26,6 +26,7 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
     private String privateIP;
     boolean forVpc = false;
     private String publicIP;
+    private Integer port;
     private List<AutoScaleMetrics> metrics;
 
     @Override
@@ -33,10 +34,11 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
         return true;
     }
 
-    public GetAutoScaleMetricsCommand(String privateIP, boolean forVpc, String publicIP, List<AutoScaleMetrics> metrics) {
+    public GetAutoScaleMetricsCommand(String privateIP, boolean forVpc, String publicIP, Integer port, List<AutoScaleMetrics> metrics) {
         this.privateIP = privateIP;
         this.forVpc = forVpc;
         this.publicIP = publicIP;
+        this.port = port;
         this.metrics = metrics;
     }
 
@@ -50,6 +52,10 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
 
     public String getPublicIP() {
         return publicIP;
+    }
+
+    public Integer getPort() {
+        return port;
     }
 
     public List<AutoScaleMetrics> getMetrics() {
