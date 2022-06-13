@@ -29,7 +29,7 @@ import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.net.NetUtils;
 
 /**
- * This VO represent Public Load Balancer
+ * This VO represents Public Load Balancer
  * It references source ip address by its Id.
  * To get the VO for Internal Load Balancer rule, please refer to LoadBalancerRuleVO
  *
@@ -62,11 +62,14 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Column(name = "lb_protocol")
     String lbProtocol;
 
+    @Column(name = "cidr_list")
+    String cidrList;
+
     public LoadBalancerVO() {
     }
 
     public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId,
-            long domainId, String lbProtocol) {
+            long domainId, String lbProtocol, String cidrList) {
         super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null, null, null);
         this.name = name;
         this.description = description;
@@ -75,6 +78,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
         this.defaultPortEnd = dstPort;
         this.scheme = Scheme.Public;
         this.lbProtocol = lbProtocol;
+        this.cidrList = cidrList;
     }
 
     @Override
@@ -126,5 +130,10 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Override
     public Scheme getScheme() {
         return scheme;
+    }
+
+    @Override
+    public String getCidrList() {
+        return cidrList;
     }
 }

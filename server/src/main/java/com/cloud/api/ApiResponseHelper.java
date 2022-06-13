@@ -1088,6 +1088,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         Network ntwk = ApiDBUtils.findNetworkById(loadBalancer.getNetworkId());
         lbResponse.setNetworkId(ntwk.getUuid());
 
+        lbResponse.setCidrList(loadBalancer.getCidrList());
+
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
     }

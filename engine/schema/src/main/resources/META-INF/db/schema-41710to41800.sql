@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
+
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+    ADD cidr_list VARCHAR(4096);
