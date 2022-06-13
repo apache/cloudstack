@@ -1163,6 +1163,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
+            _asGroupStatisticsDao.removeByGroupId(id);
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             _autoScaleVmGroupDao.persist(vmGroup);
