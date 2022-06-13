@@ -1977,7 +1977,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             Long conditionId = Long.parseLong(params.get("con" + counter_vm[1]));
                             Double coVal = Double.parseDouble(counterVals[1]);
 
-                            updateCountersMap(countersMap, countersNumberMap, asGroup, counterId, conditionId, coVal);
+                            updateCountersMapWithInstantData(countersMap, countersNumberMap, asGroup, counterId, conditionId, coVal);
 
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -2024,7 +2024,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         params.put("total_counter", String.valueOf(total_counter));
     }
 
-    private void updateCountersMap(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
+    private void updateCountersMapWithInstantData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
         // Summary of all counter by counterId key
         String key = generateKeyFromConditionAndCounter(conditionId, counterId);
         if (countersMap.get(key) == null) {
@@ -2058,6 +2058,18 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         s_logger.debug(String.format("Updating countersMap for conditionId = %s, counterId = %d from %f to %f", conditionId, counterId, countersMap.get(key), countersMap.get(key) + coVal));
         countersMap.put(key, countersMap.get(key) + coVal);
         countersNumberMap.put(key, countersNumberMap.get(key) + 1);
+    }
+
+    private void updateCountersMapWithAggregatedData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupVO asGroup, Long counterId, Long conditionId, Double coVal) {
+        // Summary of all counter by counterId key
+        String key = generateKeyFromConditionAndCounter(conditionId, counterId);
+        CounterVO counter = _counterDao.findById(counterId);
+        if (counter == null) {
+            return;
+        }
+        s_logger.debug(String.format("Updating countersMap for conditionId = %s, counterId = %d to %f", conditionId, counterId, coVal));
+        countersMap.put(key, coVal);
+        countersNumberMap.put(key, 1);
     }
 
     private void monitorVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
@@ -2245,7 +2257,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 for (AutoScaleVmGroupStatisticsVO stat : stats) {
                     if (AutoScaleValueType.INSTANT.equals(stat.getValueType())) {
                         s_logger.debug(String.format("Updating countersMap with %s (%s): %f, created on %s", counter.getSource(), counter.getValue(), stat.getRawValue(), stat.getCreated()));
-                        updateCountersMap(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, stat.getRawValue());
+                        updateCountersMapWithInstantData(countersMap, countersNumberMap, asGroup, counter.getId(), conditionId, stat.getRawValue());
                     } else if (AutoScaleValueType.AGGREGATED.equals(stat.getValueType())) {
                         String key = stat.getCounterId() + "-" + stat.getResourceId();
                         if (incorrectRecords.contains(key)) {
@@ -2272,8 +2284,18 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
                 if (MapUtils.isNotEmpty(aggregatedRecords)) {
                     s_logger.debug("Processing aggregated data");
-                    for (List<AutoScaleVmGroupStatisticsVO> records : aggregatedRecords.values()) {
-                        //TODO
+                    for (String recordKey : aggregatedRecords.keySet()) {
+                        Long counterId = Long.valueOf(recordKey.split("-")[0]);
+                        Long resourceId = Long.valueOf(recordKey.split("-")[1]);
+                        List<AutoScaleVmGroupStatisticsVO> records = aggregatedRecords.get(recordKey);
+                        if (records.size() <= 1) {
+                            s_logger.info(String.format("Ignoring aggregated records, conditionId = %s, counterId = %s", conditionId, counterId));
+                            continue;
+                        }
+                        AutoScaleVmGroupStatisticsVO firstRecord = records.get(0);
+                        AutoScaleVmGroupStatisticsVO lastRecord = records.get(records.size() - 1);
+                        Double coVal = (lastRecord.getRawValue() - firstRecord.getRawValue()) * 1000 / (lastRecord.getCreated().getTime() - firstRecord.getCreated().getTime());
+                        updateCountersMapWithAggregatedData(countersMap, countersNumberMap, asGroup, conditionId, counterId, coVal);
                     }
                 }
             }
