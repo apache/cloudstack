@@ -200,7 +200,7 @@ export default {
           icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
-          args: ['name', 'displaytext']
+          args: ['name', 'displaytext', 'publicmtu']
         },
         {
           api: 'restartVPC',

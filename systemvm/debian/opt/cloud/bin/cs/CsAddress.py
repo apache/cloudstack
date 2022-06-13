@@ -115,9 +115,6 @@ class CsAddress(CsDataBag):
                     logging.info(
                         "Address %s on device %s already configured", ip.ip(), dev)
 
-                    # re-apply mtu:
-                    cmd = "ifconfig %s mtu %s up"  % (ip.dev, ip.mtu())
-                    CsHelper.execute(cmd)
                     ip.post_configure(address)
                 else:
                     logging.info(

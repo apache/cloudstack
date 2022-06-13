@@ -22,4 +22,5 @@
 
 ALTER TABLE `cloud`.`networks` ADD COLUMN `public_iface_mtu` bigint unsigned comment "MTU for VR public interface" ;
 ALTER TABLE `cloud`.`networks` ADD COLUMN `private_iface_mtu` bigint unsigned comment "MTU for VR private interfaces" ;
+ALTER TABLE `cloud`.`vpc` ADD COLUMN `public_mtu` bigint unsigned comment "MTU for VPC VR public interface" ;
 ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` bigint unsigned comment "MTU for the VR interface" ;

@@ -195,6 +195,16 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+          <a-form-item
+            ref="privatemtu"
+            name="privatemtu">
+            <template #label>
+              <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+            </template>
+            <a-input
+              v-model:value="form.privatemtu"
+              :placeholder="apiParams.privatemtu.description"/>
+          </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
@@ -657,6 +667,10 @@ export default {
 
         if (values.vlan) {
           params.vlan = values.vlan
+        }
+
+        if (values.privatemtu) {
+          params.privatemtu = values.privatemtu
         }
 
         api('createNetwork', params).then(() => {

@@ -46,19 +46,6 @@
         <a-row :gutter="12">
             <a-col :md="12" :lg="12">
               <a-form-item
-                ref="publicmtu"
-                name="publicmtu">
-                <template #label>
-                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
-                </template>
-                <a-input
-                v-model:value="form.publicmtu"
-                  :defaultValue="resource.publicmtu"
-                  :placeholder="apiParams.publicmtu.description"/>
-              </a-form-item>
-            </a-col>
-            <a-col :md="12" :lg="12">
-              <a-form-item
                 ref="privatemtu"
                 name="privatemtu">
                 <template #label>
@@ -68,6 +55,20 @@
                 v-model:value="form.privatemtu"
                   :defaultValue="resource.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+              v-if="!resource.vpcid"
+                ref="publicmtu"
+                name="publicmtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+                </template>
+                <a-input
+                v-model:value="form.publicmtu"
+                  :defaultValue="resource.publicmtu"
+                  :placeholder="apiParams.publicmtu.description"/>
               </a-form-item>
             </a-col>
           </a-row>

@@ -95,6 +95,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpc to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+    private Integer publicMtu;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -131,6 +135,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
         return networkDomain;
     }
 
+    public Integer getPublicMtu() {
+        return publicMtu != null ? publicMtu : ApiConstants.DEFAULT_MTU;
+    }
+
     public boolean isStart() {
         if (start != null) {
             return start;
@@ -144,7 +152,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain(), getDisplayVpc());
+        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain(), getDisplayVpc(), getPublicMtu());
         if (vpc != null) {
             setEntityId(vpc.getId());
             setEntityUuid(vpc.getUuid());

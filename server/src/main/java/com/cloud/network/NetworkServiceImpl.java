@@ -50,7 +50,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
-import com.cloud.utils.net.Ip;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -1613,6 +1613,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zoneId);
+        if (vpcId != null) {
+            if (publicMtu != null) {
+                VpcVO vpc = _vpcDao.findById(vpcId);
+                if (vpc == null) {
+                    throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
+                }
+                s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
+                        "passed during VPC network tier creation ", vpc.getPublicMtu()));
+            }
+        }
+
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
             if (vlanId != null) {
@@ -2888,9 +2899,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             privateMtu = VRPrivateInterfaceMtu.valueIn(dc.getId());
         }
 
+        if (publicMtu != null && network.getVpcId() != null) {
+            s_logger.warn("Cannot update VPC public interface MTU via network tiers. " +
+                    "Please update the public interface MTU via the VPC. Skipping.. ");
+        }
+
         List<IpAddressTO> ips = new ArrayList<>();
         Map<String, Boolean> publicIpAddressMap = new HashMap<>();
-        if (publicMtu != null) {
+        if (publicMtu != null && network.getVpcId() == null) {
             if (!publicMtu.equals(network.getPublicIfaceMtu())) {
                 List<IPAddressVO> ipAddresses = _ipAddressDao.listByNetworkId(networkId);
                 for (IPAddressVO ip : ipAddresses) {
@@ -2908,39 +2924,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (privateMtu != null) {
             if (!privateMtu.equals(network.getPrivateIfaceMtu())) {
                 network.setPrivateIfaceMtu(privateMtu);
-                List<IPAddressVO> ipAddresses = new ArrayList<>();
-                if (network.getGuestType() == GuestType.Isolated) {
-                    NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
-                    IPAddressVO ipAddressVO = new IPAddressVO(new Ip(nic.getIPv4Address()), network.getDataCenterId(), 0, 0, false);
-                    publicIpAddressMap.put(nic.getIPv4Address(), false);
-                    ipAddressVO.setSourceNetworkId(networkId);
-                    ipAddresses.add(ipAddressVO);
-                } else {
-                    ipAddresses.addAll(_ipAddressDao.listByNetworkId(networkId));
+                NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+                if (nic != null) {
+                    IpAddressTO to = new IpAddressTO(nic.getIPv4Address(), privateMtu, nic.getIPv4Netmask());
+                    ips.add(to);
                 }
-
-                for (IPAddressVO ip : ipAddresses) {
-                    NicVO vo = _nicDao.findByIpAddressAndVmType(ip.getAddress().addr(), VirtualMachine.Type.DomainRouter);
-                    if (vo != null) {
-                        IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), privateMtu, vo.getIPv4Netmask());
-                        ips.add(to);
-                    }
-                    publicIpAddressMap.put(ip.getAddress().addr(), false);
-                }
+                publicIpAddressMap.put(nic.getIPv4Address(), false);
             } else {
                 s_logger.info(String.format("Network's private Interfaces MTU is already set to %s ", privateMtu));
             }
         }
 
-        boolean success = false;
         if (!ips.isEmpty() && !restartNetwork) {
-            success = updateMtuOnVr(networkId, ips);
-        }
-
-        if (success) {
-            updateNetworkDetails(ips, network, publicIpAddressMap, publicMtu, privateMtu);
-        } else {
-            throw new CloudRuntimeException("Failed to update MTU on the network");
+            boolean success = updateMtuOnVr(networkId, ips);
+            if (success) {
+                updateNetworkDetails(ips, network, publicIpAddressMap, publicMtu, privateMtu);
+            } else {
+                throw new CloudRuntimeException("Failed to update MTU on the network");
+            }
         }
 
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);

@@ -39,7 +39,19 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
+import com.cloud.network.NetworkServiceImpl;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -156,6 +168,8 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -177,7 +191,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     VpcOfferingServiceMapDao _vpcOffSvcMapDao;
     @Inject
-    VpcDao _vpcDao;
+    VpcDao vpcDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -227,13 +241,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     VpcVirtualNetworkApplianceManager _routerService;
     @Inject
-    DomainRouterDao _routerDao;
+    DomainRouterDao routerDao;
     @Inject
     DomainDao domainDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    NicDao nicDao;
+    @Inject
+    private AlertManager alertManager;
+    @Inject
+    CommandSetupHelper commandSetupHelper;
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper networkHelper;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -645,7 +668,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public Vpc getActiveVpc(final long vpcId) {
-        return _vpcDao.getActiveVpcById(vpcId);
+        return vpcDao.getActiveVpcById(vpcId);
     }
 
     @Override
@@ -809,7 +832,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // don't allow to delete vpc offering if it's in use by existing vpcs
         // (the offering can be disabled though)
-        final int vpcCount = _vpcDao.getVpcCountByOfferingId(offId);
+        final int vpcCount = vpcDao.getVpcCountByOfferingId(offId);
         if (vpcCount > 0) {
             throw new InvalidParameterValueException("Can't delete vpc offering " + offId + " as its used by " + vpcCount + " vpcs. "
                     + "To make the network offering unavaiable, disable it");
@@ -968,8 +991,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
-    public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
-            final Boolean displayVpc) throws ResourceAllocationException {
+    public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final
+    String displayText, final String cidr, String networkDomain,
+            final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1021,9 +1045,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        if (publicMtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
+            publicMtu = NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId);
+        }
+
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
                 vpcOff.isRedundantRouter());
+        vpc.setPublicMtu(publicMtu);
 
         return createVpc(displayVpc, vpc);
     }
@@ -1055,7 +1084,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     vpc.setDisplay(displayVpc);
                 }
 
-                final VpcVO persistedVpc = _vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
+                final VpcVO persistedVpc = vpcDao.persist(vpc, finalizeServicesAndProvidersForVpc(vpc.getZoneId(), vpc.getVpcOfferingId()));
                 _resourceLimitMgr.incrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
                 s_logger.debug("Created VPC " + persistedVpc);
                 CallContext.current().putContextParameter(Vpc.class, persistedVpc.getUuid());
@@ -1101,7 +1130,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final CallContext ctx = CallContext.current();
 
         // Verify vpc id
-        final Vpc vpc = _vpcDao.findById(vpcId);
+        final Vpc vpc = vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("unable to find VPC id=" + vpcId);
         }
@@ -1130,13 +1159,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // mark VPC as inactive
         if (vpc.getState() != Vpc.State.Inactive) {
             s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
-            final VpcVO vpcVO = _vpcDao.findById(vpc.getId());
+            final VpcVO vpcVO = vpcDao.findById(vpc.getId());
             vpcVO.setState(Vpc.State.Inactive);
 
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    _vpcDao.update(vpc.getId(), vpcVO);
+                    vpcDao.update(vpc.getId(), vpcVO);
 
                     // decrement resource count
                     _resourceLimitMgr.decrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
@@ -1158,7 +1187,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // update the instance with removed flag only when the cleanup is
         // executed successfully
-        if (_vpcDao.remove(vpc.getId())) {
+        if (vpcDao.remove(vpc.getId())) {
             s_logger.debug("Vpc " + vpc + " is destroyed successfully");
             return true;
         } else {
@@ -1169,19 +1198,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
-    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc) {
+    public Vpc updateVpc(final long vpcId, final String vpcName, final String displayText, final String customId, final Boolean displayVpc, Integer mtu) {
         CallContext.current().setEventDetails(" Id: " + vpcId);
         final Account caller = CallContext.current().getCallingAccount();
 
         // Verify input parameters
-        final VpcVO vpcToUpdate = _vpcDao.findById(vpcId);
+        final VpcVO vpcToUpdate = vpcDao.findById(vpcId);
         if (vpcToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
 
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
-        final VpcVO vpc = _vpcDao.createForUpdate(vpcId);
+        final VpcVO vpc = vpcDao.createForUpdate(vpcId);
 
         if (vpcName != null) {
             vpc.setName(vpcName);
@@ -1199,12 +1228,76 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             vpc.setDisplay(displayVpc);
         }
 
-        if (_vpcDao.update(vpcId, vpc)) {
+        if (mtu != null) {
+            Long zoneId = vpcToUpdate.getZoneId();
+            if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
+                String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
+                String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
+                        "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
+                        NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId));
+                s_logger.warn(message);
+                alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            }
+        }
+
+        List<IPAddressVO> ipAddresses = _ipAddressDao.listByAssociatedVpc(vpcToUpdate.getId(), null);
+        List<IpAddressTO> ips = new ArrayList<>(ipAddresses.size());
+        for (IPAddressVO ip : ipAddresses) {
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            String vlanNetmask = vlan.getVlanNetmask();
+            IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), mtu, vlanNetmask);
+            ips.add(to);
+        }
+
+        boolean success = false;
+        if (!ips.isEmpty()) {
+            success = updateMtuOnVpcVr(vpcId, ips);
+        }
+
+        if (success) {
+            updateVpcMtu(ips,mtu);
+            vpc.setPublicMtu(mtu);
+        } else {
+            throw new CloudRuntimeException("Failed to update MTU on the network");
+        }
+
+        if (vpcDao.update(vpcId, vpc)) {
             s_logger.debug("Updated VPC id=" + vpcId);
-            return _vpcDao.findById(vpcId);
+            return vpcDao.findById(vpcId);
         } else {
             return null;
         }
+    }
+
+    private void updateVpcMtu(List<IpAddressTO> ips, Integer publicMtu) {
+        for (IpAddressTO ipAddress : ips) {
+            NicVO nicVO = nicDao.findByIpAddressAndVmType(ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
+            if (nicVO != null) {
+                nicVO.setMtu(publicMtu);
+                nicDao.update(nicVO.getId(), nicVO);
+            }
+        }
+    }
+
+    private boolean updateMtuOnVpcVr(Long vpcId, List<IpAddressTO> ips) {
+        boolean success = false;
+        List<DomainRouterVO> routers = routerDao.listByVpcId(vpcId);
+        for (DomainRouterVO router : routers) {
+            Commands cmds = new Commands(Command.OnError.Stop);
+            commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
+            try {
+                networkHelper.sendCommandsToRouter(router, cmds);
+                final Answer updateNetworkAnswer = cmds.getAnswer("updateNetwork");
+                if (!(updateNetworkAnswer != null && updateNetworkAnswer.getResult())) {
+                    s_logger.warn("Unable to update guest network on router " + router);
+                    throw new CloudRuntimeException("Failed to update guest network with new MTU");
+                }
+                success = true;
+            } catch (ResourceUnavailableException e) {
+                s_logger.error(String.format("Failed to update network MTU for router %s due to %s", router, e.getMessage()));
+            }
+        }
+        return success;
     }
 
     @Override
@@ -1222,7 +1315,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         final Filter searchFilter = new Filter(VpcVO.class, "created", false, null, null);
 
-        final SearchBuilder<VpcVO> sb = _vpcDao.createSearchBuilder();
+        final SearchBuilder<VpcVO> sb = vpcDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -1252,7 +1345,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (keyword != null) {
-            final SearchCriteria<VpcVO> ssc = _vpcDao.createSearchCriteria();
+            final SearchCriteria<VpcVO> ssc = vpcDao.createSearchCriteria();
             ssc.addOr("displayText", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -1304,7 +1397,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
         }
 
-        final List<VpcVO> vpcs = _vpcDao.search(sc, searchFilter);
+        final List<VpcVO> vpcs = vpcDao.search(sc, searchFilter);
 
         // filter by supported services
         final boolean listBySupportedServices = supportedServicesStr != null && !supportedServicesStr.isEmpty() && !vpcs.isEmpty();
@@ -1433,7 +1526,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Account caller = ctx.getCallingAccount();
 
         // check if vpc exists
-        final Vpc vpc = _vpcDao.findById(vpcId);
+        final Vpc vpc = vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
         }
@@ -1565,7 +1658,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                final Vpc locked = _vpcDao.acquireInLockTable(vpc.getId());
+                final Vpc locked = vpcDao.acquireInLockTable(vpc.getId());
                 if (locked == null) {
                     throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
                 }
@@ -1613,7 +1706,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                 } finally {
                     s_logger.debug("Releasing lock for " + locked);
-                    _vpcDao.releaseFromLockTable(locked.getId());
+                    vpcDao.releaseFromLockTable(locked.getId());
                 }
             }
         });
@@ -1636,7 +1729,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public List<? extends Vpc> getVpcsForAccount(final long accountId) {
         final List<Vpc> vpcs = new ArrayList<Vpc>();
-        vpcs.addAll(_vpcDao.listByAccountId(accountId));
+        vpcs.addAll(vpcDao.listByAccountId(accountId));
         return vpcs;
     }
 
@@ -1717,7 +1810,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        VpcVO vpc = _vpcDao.findById(vpcId);
+        VpcVO vpc = vpcDao.findById(vpcId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());
         return success;
     }
@@ -1756,13 +1849,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (!vpc.isRedundant() && makeRedundant) {
                 final VpcOfferingVO redundantOffering = _vpcOffDao.findByUniqueName(VpcOffering.redundantVPCOfferingName);
 
-                final VpcVO entity = _vpcDao.findById(vpcId);
+                final VpcVO entity = vpcDao.findById(vpcId);
                 entity.setRedundant(true);
                 entity.setVpcOfferingId(redundantOffering.getId());
 
                 // Change the VPC in order to get it updated after the end of
                 // the restart procedure.
-                if (_vpcDao.update(vpc.getId(), entity)) {
+                if (vpcDao.update(vpc.getId(), entity)) {
                     vpc = entity;
                 }
 
@@ -1796,9 +1889,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return true;
         } finally {
             s_logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
-            final VpcVO vo = _vpcDao.findById(vpcId);
+            final VpcVO vo = vpcDao.findById(vpcId);
             vo.setRestartRequired(restartRequired);
-            _vpcDao.update(vpc.getId(), vo);
+            vpcDao.update(vpc.getId(), vo);
         }
     }
 
@@ -2313,7 +2406,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             s_logger.debug("No static routes to apply");
             return true;
         }
-        final Vpc vpc = _vpcDao.findById(routes.get(0).getVpcId());
+        final Vpc vpc = vpcDao.findById(routes.get(0).getVpcId());
 
         s_logger.debug("Applying static routes for vpc " + vpc);
         final String staticNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.StaticNat);
@@ -2579,7 +2672,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 try {
                     // Cleanup inactive VPCs
-                    final List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
+                    final List<VpcVO> inactiveVpcs = vpcDao.listInactiveVpcs();
                     if (inactiveVpcs != null) {
                         s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
                         for (final VpcVO vpc : inactiveVpcs) {
@@ -2615,7 +2708,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return null;
         }
 
-        final Vpc vpc = _vpcDao.findById(vpcId);
+        final Vpc vpc = vpcDao.findById(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("Invalid VPC id provided");
         }
@@ -2829,10 +2922,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
         s_logger.debug("Performing rolling restart of routers of VPC " + vpc);
-        _ntwkMgr.destroyExpendableRouters(_routerDao.listByVpcId(vpc.getId()), context);
+        _ntwkMgr.destroyExpendableRouters(routerDao.listByVpcId(vpc.getId()), context);
 
         final DeployDestination dest = new DeployDestination(_dcDao.findById(vpc.getZoneId()), null, null, null);
-        final List<DomainRouterVO> oldRouters = _routerDao.listByVpcId(vpc.getId());
+        final List<DomainRouterVO> oldRouters = routerDao.listByVpcId(vpc.getId());
 
         // Create a new router
         if (oldRouters.size() > 0) {
@@ -2863,7 +2956,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
 
-        return _ntwkMgr.areRoutersRunning(_routerDao.listByVpcId(vpc.getId()));
+        return _ntwkMgr.areRoutersRunning(routerDao.listByVpcId(vpc.getId()));
     }
 
     private List<Long> filterChildSubDomains(final List<Long> domainIds) {

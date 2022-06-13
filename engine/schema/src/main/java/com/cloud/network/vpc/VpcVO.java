@@ -89,6 +89,9 @@ public class VpcVO implements Vpc {
     @Column(name = "region_level_vpc")
     boolean regionLevelVpc = false;
 
+    @Column(name = "public_mtu")
+    Integer publicMtu;
+
     @Transient
     boolean rollingRestart = false;
 
@@ -254,5 +257,13 @@ public class VpcVO implements Vpc {
     @Override
     public boolean usesDistributedRouter() {
         return usesDistributedRouter;
+    }
+
+    public Integer getPublicMtu() {
+        return publicMtu;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
     }
 }

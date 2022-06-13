@@ -95,6 +95,16 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item
+          ref="publicmtu"
+          name="publicmtu">
+          <template #label>
+            <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
+          </template>
+          <a-input
+            v-model:value="form.publicmtu"
+            :placeholder="apiParams.publicmtu.description"/>
+        </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
