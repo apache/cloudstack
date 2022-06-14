@@ -54,6 +54,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -422,28 +423,35 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
-    private void updateGuestNetworkVRDefaultDns(final VirtualMachineProfile vmProfile, final NicProfile nicProfile) {
+    private void updateRouterDefaultDns(final VirtualMachineProfile vmProfile, final NicProfile nicProfile) {
         if (!Type.DomainRouter.equals(vmProfile.getType()) || !nicProfile.isDefaultNic()) {
             return;
         }
-        boolean ip4DnsUpdated = false;
-        boolean ip6DnsUpdated = false;
+        DomainRouterVO router = routerDao.findById(vmProfile.getId());
+        if (router != null && router.getVpcId() != null) {
+            final Vpc vpc = _vpcMgr.getActiveVpc(router.getVpcId());
+            if (StringUtils.isNotBlank(vpc.getDns1())) {
+                nicProfile.setIPv4Dns1(vpc.getDns1());
+                nicProfile.setIPv4Dns2(vpc.getDns2());
+            }
+            if (StringUtils.isNotBlank(vpc.getIp6Dns1())) {
+                nicProfile.setIPv6Dns1(vpc.getIp6Dns1());
+                nicProfile.setIPv6Dns2(vpc.getIp6Dns2());
+            }
+            return;
+        }
         List<Long> networkIds = routerNetworkDao.getRouterNetworks(vmProfile.getId());
-        for (Long networkId : networkIds) {
-            NetworkVO routerNetwork = _networksDao.findById(networkId);
-            if (!ip4DnsUpdated && StringUtils.isNotBlank(routerNetwork.getDns1())) {
-                nicProfile.setIPv4Dns1(routerNetwork.getDns1());
-                nicProfile.setIPv4Dns2(routerNetwork.getDns2());
-                ip4DnsUpdated = true;
-            }
-            if (!ip6DnsUpdated && StringUtils.isNotBlank(routerNetwork.getIp6Dns1())) {
-                nicProfile.setIPv6Dns1(routerNetwork.getIp6Dns1());
-                nicProfile.setIPv6Dns2(routerNetwork.getIp6Dns2());
-                ip6DnsUpdated = true;
-            }
-            if (ip4DnsUpdated && ip6DnsUpdated) {
-                break;
-            }
+        if (CollectionUtils.isEmpty(networkIds) || networkIds.size() > 1) {
+            return;
+        }
+        final NetworkVO routerNetwork = _networksDao.findById(networkIds.get(0));
+        if (StringUtils.isNotBlank(routerNetwork.getDns1())) {
+            nicProfile.setIPv4Dns1(routerNetwork.getDns1());
+            nicProfile.setIPv4Dns2(routerNetwork.getDns2());
+        }
+        if (StringUtils.isNotBlank(routerNetwork.getIp6Dns1())) {
+            nicProfile.setIPv6Dns1(routerNetwork.getIp6Dns1());
+            nicProfile.setIPv6Dns2(routerNetwork.getIp6Dns2());
         }
     }
 
@@ -1976,7 +1984,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         profile.setSecurityGroupEnabled(_networkModel.isSecurityGroupSupportedInNetwork(network));
         guru.updateNicProfile(profile, network);
-        updateGuestNetworkVRDefaultDns(vmProfile, profile);
+        updateRouterDefaultDns(vmProfile, profile);
         configureExtraDhcpOptions(network, nicId);
         return profile;
     }

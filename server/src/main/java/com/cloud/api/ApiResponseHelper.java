@@ -3236,6 +3236,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setHasAnnotation(annotationDao.hasAnnotations(vpc.getUuid(), AnnotationService.EntityType.VPC.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
         ipv6Service.updateIpv6RoutesForVpcResponse(vpc, response);
+        response.setDns1(vpc.getDns1());
+        response.setDns2(vpc.getDns2());
+        response.setIpv6Dns1(vpc.getIp6Dns1());
+        response.setIpv6Dns2(vpc.getIp6Dns2());
         response.setObjectName("vpc");
         return response;
     }

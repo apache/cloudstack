@@ -288,11 +288,11 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private Set<Ipv6RouteResponse> ipv6Routes;
 
     @SerializedName(ApiConstants.IP6_DNS1)
-    @Param(description = "The first IPv6 DNS for the network", since = "4.18.0")
+    @Param(description = "the first IPv6 DNS for the network", since = "4.18.0")
     private String ipv6Dns1;
 
     @SerializedName(ApiConstants.IP6_DNS2)
-    @Param(description = "The second IPv6 DNS for the network", since = "4.18.0")
+    @Param(description = "the second IPv6 DNS for the network", since = "4.18.0")
     private String ipv6Dns2;
 
     public NetworkResponse() {}

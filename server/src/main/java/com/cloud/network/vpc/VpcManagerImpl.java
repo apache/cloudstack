@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayByAdminCm
 import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.admin.vpc.UpdateVPCOfferingCmd;
 import org.apache.cloudstack.api.command.user.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.api.command.user.vpc.CreateVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListVPCOfferingsCmd;
@@ -969,7 +970,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
-            final Boolean displayVpc) throws ResourceAllocationException {
+            final String dns1, final String dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1021,11 +1022,41 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
+        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (_vpcOffDao.isIpv6Supported(vpcOffId) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(dns1) && !NetUtils.isValidIp4(dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(dns2) && !NetUtils.isValidIp4(dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
+        }
+
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
-                vpcOff.isRedundantRouter());
+                vpcOff.isRedundantRouter(), dns1, dns2, ip6Dns1, ip6Dns2);
 
         return createVpc(displayVpc, vpc);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
+    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
+        return createVpc(cmd.getZoneId(), cmd.getVpcOffering(), cmd.getEntityOwnerId(), cmd.getVpcName(), cmd.getDisplayText(),
+            cmd.getCidr(), cmd.getNetworkDomain(), cmd.getIp4Dns1(), cmd.getIp4Dns2(), cmd.getIp6Dns1(),
+            cmd.getIp6Dns2(), cmd.isDisplay());
     }
 
     @DB

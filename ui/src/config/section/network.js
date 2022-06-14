@@ -166,7 +166,7 @@ export default {
       permission: ['listVPCs'],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',

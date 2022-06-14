@@ -89,6 +89,18 @@ public class VpcVO implements Vpc {
     @Column(name = "region_level_vpc")
     boolean regionLevelVpc = false;
 
+    @Column(name = "dns1")
+    String dns1;
+
+    @Column(name = "dns2")
+    String dns2;
+
+    @Column(name = "ip6Dns1")
+    String ip6Dns1;
+
+    @Column(name = "ip6Dns2")
+    String ip6Dns2;
+
     @Transient
     boolean rollingRestart = false;
 
@@ -98,7 +110,8 @@ public class VpcVO implements Vpc {
 
     public VpcVO(final long zoneId, final String name, final String displayText, final long accountId, final long domainId,
             final long vpcOffId, final String cidr, final String networkDomain, final boolean useDistributedRouter,
-            final boolean regionLevelVpc, final boolean isRedundant) {
+            final boolean regionLevelVpc, final boolean isRedundant, final String dns1, final String dns2,
+            final String ip6Dns1, final String ip6Dns2) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -112,6 +125,10 @@ public class VpcVO implements Vpc {
         usesDistributedRouter = useDistributedRouter;
         this.regionLevelVpc = regionLevelVpc;
         redundant = isRedundant;
+        this.dns1 = dns1;
+        this.dns2 = dns2;
+        this.ip6Dns1 = ip6Dns1;
+        this.ip6Dns2 = ip6Dns2;
     }
 
     @Override
@@ -254,5 +271,25 @@ public class VpcVO implements Vpc {
     @Override
     public boolean usesDistributedRouter() {
         return usesDistributedRouter;
+    }
+
+    @Override
+    public String getDns1() {
+        return dns1;
+    }
+
+    @Override
+    public String getDns2() {
+        return dns2;
+    }
+
+    @Override
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
+
+    @Override
+    public String getIp6Dns2() {
+        return ip6Dns2;
     }
 }
