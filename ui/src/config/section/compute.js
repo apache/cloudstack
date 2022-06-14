@@ -650,7 +650,7 @@ export default {
       name: 'userdata',
       title: 'label.user.data',
       icon: 'solution-outlined',
-      docHelp: 'adminguide/virtual_machines.html#using-ssh-keys-for-authentication',
+      docHelp: 'adminguide/virtual_machines.html#user-data-and-meta-data',
       permission: ['listUserData'],
       columns: () => {
         var fields = ['name', 'id']
