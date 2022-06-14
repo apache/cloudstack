@@ -2305,15 +2305,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return statsParser.getLine();
     }
 
-    public long[] getNetworkLbStats(final String privateIP, final String publicIp, final Integer port) {
-        final String result = getHaproxyStats(privateIP, publicIp, port);
+    public long[] getNetworkLbStats(final String privateIp, final String publicIp, final Integer port) {
+        final String result = getHaproxyStats(privateIp, publicIp, port);
         final long[] stats = new long[1];
         if (result != null) {
             final String[] splitResult = result.split(",");
-            int i = 0;
-            while (i < splitResult.length - 1) {
-                stats[0] += Long.parseLong(splitResult[i++]);
-            }
+            stats[0] += Long.parseLong(splitResult[0]);
         }
         return stats;
     }

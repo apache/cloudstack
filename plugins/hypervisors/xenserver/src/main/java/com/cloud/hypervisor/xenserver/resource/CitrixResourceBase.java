@@ -2991,6 +2991,40 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return stats;
     }
 
+    public long[] getVPCNetworkStats(final Connection conn, final String privateIP, final String publicIp) {
+        String args = " -l " + publicIp + " -g";
+        final ExecutionResult result = executeInVR(privateIP, "vpc_netusage.sh", args);
+        final String detail = result.getDetails();
+        final long[] stats = new long[2];
+        if (detail != null) {
+            final String[] splitResult = detail.split(":");
+            int i = 0;
+            while (i < splitResult.length - 1) {
+                stats[0] += Long.parseLong(splitResult[i++]);
+                stats[1] += Long.parseLong(splitResult[i++]);
+            }
+        }
+        return stats;
+    }
+
+    public long[] getNetworkLbStats(final Connection conn, final String privateIp, final String publicIp, final Integer port) {
+        String args = publicIp + " " + port;
+        ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
+
+        if (!callResult.isSuccess()) {
+            s_logger.error("Unable to execute GetAutoScaleMetricsCommand on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
+        }
+        String result = callResult.getDetails();
+        if (result == null || result.isEmpty()) {
+            s_logger.error("Get autoscale metrics returns empty ");
+        }
+        final long[] stats = new long[1];
+        if (result != null) {
+            final String[] splitResult = result.split(",");
+            stats[0] += Long.parseLong(splitResult[0]);
+        }
+        return stats;
+    }
     public SR getNfsSR(final Connection conn, final String poolid, final String uuid, final String server, String serverpath, final String pooldesc) {
         final Map<String, String> deviceConfig = new HashMap<String, String>();
         try {
