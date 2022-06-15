@@ -199,11 +199,11 @@
             ref="privatemtu"
             name="privatemtu">
             <template #label>
-              <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+              <tooltip-label :title="$t('label.privatemtu')" :tooltip="$t('label.privatemtu')"/>
             </template>
             <a-input
               v-model:value="form.privatemtu"
-              :placeholder="apiParams.privatemtu.description"/>
+              :placeholder="$t('label.privatemtu')"/>
           </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>

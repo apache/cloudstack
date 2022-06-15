@@ -3222,6 +3222,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
+        response.setPublicMtu(vpc.getPublicMtu());
         populateOwner(response, vpc);
 
         // set tag information

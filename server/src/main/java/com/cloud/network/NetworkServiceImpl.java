@@ -50,6 +50,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.router.CommandSetupHelper;
 import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -1613,15 +1614,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zoneId);
-        if (vpcId != null) {
-            if (publicMtu != null) {
-                VpcVO vpc = _vpcDao.findById(vpcId);
-                if (vpc == null) {
-                    throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
-                }
-                s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
-                        "passed during VPC network tier creation ", vpc.getPublicMtu()));
+        if (vpcId != null && publicMtu != null) {
+            VpcVO vpc = _vpcDao.findById(vpcId);
+            if (vpc == null) {
+                throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
             }
+            s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
+                "passed during VPC network tier creation ", vpc.getPublicMtu()));
+            interfaceMTUs.set(vpc.getPublicMtu(), privateMtu);
         }
 
         Network associatedNetwork = null;
@@ -2904,6 +2904,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     "Please update the public interface MTU via the VPC. Skipping.. ");
         }
 
+        if (privateMtu != null && network.getGuestType() == GuestType.Shared) {
+            s_logger.warn("Shared network VRs have no private interfaces, ignoring private MTU");
+        }
+
         List<IpAddressTO> ips = new ArrayList<>();
         Map<String, Boolean> publicIpAddressMap = new HashMap<>();
         if (publicMtu != null && network.getVpcId() == null) {
@@ -2916,6 +2920,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), publicMtu, vlanNetmask);
                     ips.add(to);
                 }
+                if (GuestType.Shared == network.getGuestType()) {
+                    IpAddressTO to = getIpTo(networkId, publicMtu);
+                    if (to != null) {
+                        ips.add(to);
+                        publicIpAddressMap.put(to.getPublicIp(), true);
+                    }
+                }
             } else {
                 s_logger.info(String.format("Network's public Interfaces MTU is already set to %s ", publicMtu));
             }
@@ -2924,12 +2935,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (privateMtu != null) {
             if (!privateMtu.equals(network.getPrivateIfaceMtu())) {
                 network.setPrivateIfaceMtu(privateMtu);
-                NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
-                if (nic != null) {
-                    IpAddressTO to = new IpAddressTO(nic.getIPv4Address(), privateMtu, nic.getIPv4Netmask());
+                IpAddressTO to = getIpTo(networkId, privateMtu);
+                if (to != null) {
                     ips.add(to);
+                    publicIpAddressMap.put(to.getPublicIp(), false);
                 }
-                publicIpAddressMap.put(nic.getIPv4Address(), false);
             } else {
                 s_logger.info(String.format("Network's private Interfaces MTU is already set to %s ", privateMtu));
             }
@@ -3123,12 +3133,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return getNetwork(network.getId());
     }
 
+    private IpAddressTO getIpTo(Long networkId, Integer mtu) {
+        NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+        if (nic != null) {
+            return new IpAddressTO(nic.getIPv4Address(), mtu, nic.getIPv4Netmask());
+        }
+        return null;
+    }
+
     private void updateNetworkDetails(List<IpAddressTO> ips, NetworkVO network,
                                       Map<String, Boolean>publicIpAddressMap, Integer publicMtu, Integer privateMtu) {
         for (IpAddressTO ipAddress : ips) {
             NicVO nicVO = _nicDao.findByIpAddressAndVmType(ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
             if (nicVO != null) {
-                if (!publicIpAddressMap.get(nicVO.getIPv4Address())) {
+                if (Boolean.FALSE.equals(publicIpAddressMap.get(nicVO.getIPv4Address()))) {
                     nicVO.setMtu(privateMtu);
                 } else {
                     nicVO.setMtu(publicMtu);
@@ -3150,6 +3168,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<DomainRouterVO> routers = routerDao.findByNetwork(networkId);
         for (DomainRouterVO router : routers) {
             Commands cmds = new Commands(Command.OnError.Stop);
+            Map<String, String> state = new HashMap<>();
+            state.put(ApiConstants.REDUNDANT_STATE, router.getRedundantState() != null ? router.getRedundantState().name() : VirtualRouter.RedundantState.UNKNOWN.name());
+            ips.forEach(ip -> ip.setDetails(state));
             commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
             try {
                 networkHelper.sendCommandsToRouter(router, cmds);

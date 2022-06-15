@@ -39,7 +39,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'publicmtu', 'privatemtu']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -166,7 +166,7 @@ export default {
       permission: ['listVPCs'],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',

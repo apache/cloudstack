@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.network.dao.VirtualRouterProviderDao;
+import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -830,6 +831,12 @@ public class CommandSetupHelper {
                 if (network.getPublicIfaceMtu() != null) {
                     ip.setMtu(network.getPublicIfaceMtu());
                 }
+                if (router.getVpcId() != null) {
+                    VpcVO vpc = _vpcDao.findById(router.getVpcId());
+                    if (vpc != null) {
+                        ip.setMtu(vpc.getPublicMtu());
+                    }
+                }
                 ipsToSend[i++] = ip;
                 if (ipAddr.isSourceNat()) {
                     sourceNatIpAdd = new Pair<IpAddressTO, Long>(ip, ipAddr.getNetworkId());
@@ -956,6 +963,13 @@ public class CommandSetupHelper {
                 if (networkVO.getPublicIfaceMtu() != null) {
                     ip.setMtu(networkVO.getPublicIfaceMtu());
                 }
+                if (router.getVpcId() != null) {
+                    VpcVO vpc = _vpcDao.findById(router.getVpcId());
+                    if (vpc != null) {
+                        ip.setMtu(vpc.getPublicMtu());
+                    }
+                }
+
                 setIpAddressNetworkParams(ip, network, router);
                 if (router.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
                     Map<String, String> details = new HashMap<>();

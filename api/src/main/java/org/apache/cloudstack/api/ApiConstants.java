@@ -902,6 +902,7 @@ public class ApiConstants {
     public static final String DYNAMIC_SCALING_ENABLED = "dynamicscalingenabled";
 
     public static final String POOL_TYPE = "pooltype";
+    public static final String REDUNDANT_STATE = "redundantstate";
 
     public static final String ADMINS_ONLY = "adminsonly";
     public static final String ANNOTATION_FILTER = "annotationfilter";

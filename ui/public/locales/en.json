@@ -1763,7 +1763,7 @@
 "label.primary.storage.used": "Primary storage used",
 "label.primarystoragelimit": "Primary storage limits (GiB)",
 "label.primarystoragetotal": "Primary storage",
-"label.privatemtu": "Private interface MTU",
+"label.privatemtu": "Private Interface MTU",
 "label.private.gateway": "Private gateway",
 "label.private.interface": "Private interface",
 "label.private.ip.range": "Private IP range",

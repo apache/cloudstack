@@ -18,7 +18,7 @@
 
 # used as a proxy to call script inside virtual router
 
-#set -x
+set -x
 
 ip=$1
 netmask=$2
@@ -30,7 +30,8 @@ i=0
 get_interface() {
   for i in `seq 1 $(($timeout))`
   do
-    inf=$(ip route list ${1}/${2} | awk '{print $3}')
+    #inf=$(ip route list ${1}/${2} | awk '{print $3}')
+    inf=$(ip addr show|egrep '^ *inet'|grep ${1}/${2} |grep brd|awk -- '{ print $NF; }')
     if [ ! -z $inf ]; then
       echo $inf
       break
@@ -43,8 +44,15 @@ get_interface() {
 interfaceName=$(get_interface $ip $netmask)
 echo $interfaceName
 if [ ! -z $interfaceName ]; then
-  ifconfig $interfaceName mtu $mtu
-  exit $?
+  state=$(cat /sys/class/net/${interfaceName}/operstate)
+  if [[ "$state" == "up" ]]; then
+	  ifconfig $interfaceName mtu $mtu up
+    exit $?
+  else
+    ifconfig $interfaceName mtu $mtu
+    exit $?
+  fi
 fi
 
+echo "Interface with IP ${ip} not found"
 exit 1

@@ -46,6 +46,7 @@
         <a-row :gutter="12">
             <a-col :md="12" :lg="12">
               <a-form-item
+                v-if="resource.type !== 'Shared'"
                 ref="privatemtu"
                 name="privatemtu">
                 <template #label>
@@ -57,7 +58,7 @@
                   :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>
             </a-col>
-            <a-col :md="12" :lg="12">
+            <a-col :md="12" :lg="resource.type !== 'Shared' ? 12 : 24">
               <a-form-item
               v-if="!resource.vpcid"
                 ref="publicmtu"

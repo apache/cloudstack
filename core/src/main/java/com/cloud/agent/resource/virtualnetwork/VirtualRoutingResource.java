@@ -36,7 +36,9 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.PasswordGenerator;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
@@ -48,6 +50,7 @@ import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
 import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
@@ -235,15 +238,22 @@ public class VirtualRoutingResource {
         boolean finalResult = true;
         for (IpAddressTO ipAddressTO : ipAddresses) {
             try {
+                SubnetUtils util = new SubnetUtils(ipAddressTO.getPublicIp(), ipAddressTO.getVlanNetmask());
+                String address = util.getInfo().getCidrSignature();
+                String subnet = address.split("/")[1];
                 ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.VR_UPDATE_MTU,
-                        ipAddressTO.getPublicIp() + " " + ipAddressTO.getVlanNetmask() + " " + ipAddressTO.getMtu() + " " + 15);
+                        ipAddressTO.getPublicIp() + " " + subnet + " " + ipAddressTO.getMtu() + " " + 15);
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("result: " + result.isSuccess() + ", output: " + result.getDetails());
                 if (!Boolean.TRUE.equals(result.isSuccess())) {
-                    s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
-                            ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
-                    finalResult = false;
-                    continue;
+                    if (result.getDetails().contains(String.format("Interface with IP: %s not found", ipAddressTO.getPublicIp()))) {
+                        s_logger.warn(String.format("Skipping IP: %s as it isn't configured on router interface", ipAddressTO.getPublicIp()));
+                    } else if (ipAddressTO.getDetails().get(ApiConstants.REDUNDANT_STATE).equals(VirtualRouter.RedundantState.PRIMARY.name())) {
+                        s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
+                                ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
+                        finalResult = false;
+                        continue;
+                    }
                 }
                 s_logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
                         ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));

@@ -95,4 +95,6 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     void setRollingRestart(boolean rollingRestart);
 
     Date getCreated();
+
+    Integer getPublicMtu();
 }

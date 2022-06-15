@@ -41,6 +41,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.network.NetworkServiceImpl;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ManagementServer;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -1013,8 +1014,15 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     private void setMtuDetailsInVRNic(final long vmId, Network network, NicVO vo) {
         if (TrafficType.Public == network.getTrafficType()) {
-            NetworkVO networkVO = getGuestNetworkRouter(vmId);
-            if (networkVO != null) {
+            Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmId);
+            if (networks == null) {
+                return;
+            }
+            NetworkVO networkVO = networks.first();
+            VpcVO vpcVO = networks.second();
+            if (vpcVO != null) {
+                vo.setMtu(vpcVO.getPublicMtu());
+            } else {
                 vo.setMtu(networkVO.getPublicIfaceMtu());
             }
         } else if (TrafficType.Guest == network.getTrafficType()) {
@@ -1023,24 +1031,40 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void setMtuInVRNicProfile(final long vmId, TrafficType trafficType, NicProfile vmNic) {
-        NetworkVO networkVO = getGuestNetworkRouter(vmId);
+        Pair<NetworkVO, VpcVO> networks = getGuestNetworkRouterAndVpcDetails(vmId);
+        if (networks == null) {
+            return;
+        }
+        NetworkVO networkVO = networks.first();
+        VpcVO vpcVO = networks.second();
         if (networkVO != null) {
             if (TrafficType.Public == trafficType) {
-                vmNic.setMtu(networkVO.getPublicIfaceMtu());
+                if (vpcVO != null) {
+                    vmNic.setMtu(vpcVO.getPublicMtu());
+                } else {
+                    vmNic.setMtu(networkVO.getPublicIfaceMtu());
+                }
             } else if (TrafficType.Guest == trafficType) {
                 vmNic.setMtu(networkVO.getPrivateIfaceMtu());
             }
         }
     }
 
-    private NetworkVO getGuestNetworkRouter(long routerId) {
+    private Pair<NetworkVO, VpcVO> getGuestNetworkRouterAndVpcDetails(long routerId) {
         List<DomainRouterJoinVO> routerVo = routerJoinDao.getRouterByIdAndTrafficType(routerId, TrafficType.Guest);
         if (routerVo.isEmpty()) {
-            return  null;
+            routerVo = routerJoinDao.getRouterByIdAndTrafficType(routerId, TrafficType.Public);
+            if (routerVo.isEmpty()) {
+                return null;
+            }
         }
         DomainRouterJoinVO guestRouterDetails = routerVo.get(0);
+        VpcVO vpc = null;
+        if (guestRouterDetails.getVpcId() != 0)  {
+            vpc = _entityMgr.findById(VpcVO.class, guestRouterDetails.getVpcId());
+        }
         long networkId = guestRouterDetails.getNetworkId();
-        return _networksDao.findById(networkId);
+        return new Pair<>(_networksDao.findById(networkId), vpc);
     }
 
     /**

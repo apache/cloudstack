@@ -136,6 +136,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
     private Set<Ipv6RouteResponse> ipv6Routes;
 
+    @SerializedName(ApiConstants.PUBLIC_MTU)
+    @Param(description = "MTU configured on the public interfaces of the VPC VR")
+    private Integer publicMtu;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -252,5 +256,9 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
 
     public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
         this.ipv6Routes = ipv6Routes;
+    }
+
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
     }
 }

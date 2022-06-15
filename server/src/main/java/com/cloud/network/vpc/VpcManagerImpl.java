@@ -254,6 +254,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
+    @Inject
+    NetworkDao networkDao;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
@@ -1257,6 +1259,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (success) {
             updateVpcMtu(ips,mtu);
             vpc.setPublicMtu(mtu);
+            List<NetworkVO> vpcTierNetworks = networkDao.listByVpc(vpcId);
+            for(NetworkVO network : vpcTierNetworks) {
+                network.setPublicIfaceMtu(mtu);
+                networkDao.update(network.getId(), network);
+            }
         } else {
             throw new CloudRuntimeException("Failed to update MTU on the network");
         }
