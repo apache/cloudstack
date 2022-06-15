@@ -586,7 +586,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
         }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
             throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
         }
     }
