@@ -2809,7 +2809,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 } else {
                     userNetwork.setPublicIfaceMtu(Integer.valueOf(NetworkServiceImpl.VRPublicInterfaceMtu.defaultValue()));
-                    userNetwork.setPrivateIfaceMtu(Integer.valueOf(NetworkServiceImpl.VRPrivateInterfaceMtu.defaultValue()));
+                    if (userNetwork.getGuestType() != GuestType.Shared) {
+                        userNetwork.setPrivateIfaceMtu(Integer.valueOf(NetworkServiceImpl.VRPrivateInterfaceMtu.defaultValue()));
+                    }
                 }
 
                 if (vlanIdFinal != null) {

@@ -387,7 +387,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
     @Inject
-    private AlertManager alertManager;
+    AlertManager alertManager;
     @Inject
     VirtualRouterProviderDao vrProviderDao;
     @Inject
@@ -1614,15 +1614,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zoneId);
-        if (vpcId != null && publicMtu != null) {
-            VpcVO vpc = _vpcDao.findById(vpcId);
-            if (vpc == null) {
-                throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
-            }
-            s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
-                "passed during VPC network tier creation ", vpc.getPublicMtu()));
-            interfaceMTUs.set(vpc.getPublicMtu(), privateMtu);
-        }
+        mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu, privateMtu);
 
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
@@ -1657,7 +1649,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return network;
     }
 
-    private Pair<Integer, Integer> validateMtuConfig(Integer publicMtu, Integer privateMtu, Long zoneId) {
+    protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu, Integer privateMtu) {
+        if (vpcId != null && publicMtu != null) {
+            VpcVO vpc = _vpcDao.findById(vpcId);
+            if (vpc == null) {
+                throw new CloudRuntimeException(String.format("VPC with id %s not found", vpcId));
+            }
+            s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
+                    "passed during VPC network tier creation ", vpc.getPublicMtu()));
+            interfaceMTUs.set(vpc.getPublicMtu(), privateMtu);
+        }
+    }
+
+    protected Pair<Integer, Integer> validateMtuConfig(Integer publicMtu, Integer privateMtu, Long zoneId) {
         Integer vrMaxMtuForPublicIfaces = VRPublicInterfaceMtu.valueIn(zoneId);
         Integer vrMaxMtuForPrivateIfaces = VRPrivateInterfaceMtu.valueIn(zoneId);
         if (publicMtu > vrMaxMtuForPublicIfaces) {
@@ -2891,22 +2895,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             s_logger.info("IP Reservation has been applied. The new CIDR for Guests Vms is " + guestVmCidr);
         }
 
-        if (publicMtu != null && publicMtu > VRPublicInterfaceMtu.valueIn(dc.getId())) {
-            publicMtu = VRPublicInterfaceMtu.valueIn(dc.getId());
-        }
-
-        if (privateMtu != null && privateMtu > VRPrivateInterfaceMtu.valueIn(dc.getId())) {
-            privateMtu = VRPrivateInterfaceMtu.valueIn(dc.getId());
-        }
-
-        if (publicMtu != null && network.getVpcId() != null) {
-            s_logger.warn("Cannot update VPC public interface MTU via network tiers. " +
-                    "Please update the public interface MTU via the VPC. Skipping.. ");
-        }
-
-        if (privateMtu != null && network.getGuestType() == GuestType.Shared) {
-            s_logger.warn("Shared network VRs have no private interfaces, ignoring private MTU");
-        }
+        Pair<Integer, Integer> mtus = validateMtuOnUpdate(network, dc.getId(), publicMtu, privateMtu);
+        publicMtu = mtus.first();
+        privateMtu = mtus.second();
 
         List<IpAddressTO> ips = new ArrayList<>();
         Map<String, Boolean> publicIpAddressMap = new HashMap<>();
@@ -3133,6 +3124,28 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return getNetwork(network.getId());
     }
 
+    protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
+        if (publicMtu != null && publicMtu > VRPublicInterfaceMtu.valueIn(zoneId)) {
+            publicMtu = VRPublicInterfaceMtu.valueIn(zoneId);
+        }
+
+        if (privateMtu != null && privateMtu > VRPrivateInterfaceMtu.valueIn(zoneId)) {
+            privateMtu = VRPrivateInterfaceMtu.valueIn(zoneId);
+        }
+
+        if (publicMtu != null && network.getVpcId() != null) {
+            s_logger.warn("Cannot update VPC public interface MTU via network tiers. " +
+                    "Please update the public interface MTU via the VPC. Skipping.. ");
+            publicMtu = null;
+        }
+
+        if (privateMtu != null && network.getGuestType() == GuestType.Shared) {
+            s_logger.warn("Shared network VRs have no private interfaces, ignoring private MTU");
+            privateMtu = null;
+        }
+        return new Pair<>(publicMtu, privateMtu);
+    }
+
     private IpAddressTO getIpTo(Long networkId, Integer mtu) {
         NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
         if (nic != null) {
@@ -3163,7 +3176,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _networksDao.update(network.getId(), network);
     }
 
-    private boolean updateMtuOnVr(Long networkId, List<IpAddressTO> ips) {
+    protected boolean updateMtuOnVr(Long networkId, List<IpAddressTO> ips) {
         boolean success = false;
         List<DomainRouterVO> routers = routerDao.findByNetwork(networkId);
         for (DomainRouterVO router : routers) {
@@ -3174,7 +3187,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
             try {
                 networkHelper.sendCommandsToRouter(router, cmds);
-                final Answer updateNetworkAnswer = cmds.getAnswer("updateNetwork");
+                Answer updateNetworkAnswer = cmds.getAnswer("updateNetwork");
                 if (!(updateNetworkAnswer != null && updateNetworkAnswer.getResult())) {
                     s_logger.warn("Unable to update guest network on router " + router);
                     throw new CloudRuntimeException("Failed to update guest network with new MTU");

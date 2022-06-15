@@ -149,16 +149,8 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
         return publicMtu;
     }
 
-    public void setPublicMtu(Integer publicMtu) {
-        this.publicMtu = publicMtu;
-    }
-
     public Integer getPrivateMtu() {
         return privateMtu;
-    }
-
-    public void setPrivateMtu(Integer privateMtu) {
-        this.privateMtu = privateMtu;
     }
 
     /////////////////////////////////////////////////////

@@ -21,8 +21,12 @@ package com.cloud.network.vpc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.NetworkElement;
 
 import com.cloud.network.Network;
@@ -33,9 +37,23 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.EntityManager;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.cloud.network.Network.Provider;
@@ -43,14 +61,35 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import org.powermock.reflect.Whitebox;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 public class VpcManagerImplTest {
 
     @Mock
     VpcOfferingServiceMapDao vpcOffSvcMapDao;
+    @Mock
+    VpcDao vpcDao;
+    @Mock
+    NetworkOrchestrationService networkMgr;
+    @Mock
+    AccountManager accountManager;
     VpcManagerImpl manager;
+    @Mock
+    EntityManager entityMgr;
+    @Mock
+    NetworkDao networkDao;
+    @Mock
+    NetworkModel networkModel;
+    @Mock
+    NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     @Before
     public void setup()
@@ -58,6 +97,13 @@ public class VpcManagerImplTest {
         MockitoAnnotations.initMocks(this);
         manager = new VpcManagerImpl();
         manager._vpcOffSvcMapDao = vpcOffSvcMapDao;
+        manager.vpcDao = vpcDao;
+        manager._ntwkMgr = networkMgr;
+        manager._accountMgr = accountManager;
+        manager._entityMgr = entityMgr;
+        manager._ntwkDao = networkDao;
+        manager._ntwkModel = networkModel;
+        manager._ntwkOffServiceDao = networkOfferingServiceMapDao;
     }
 
     @Test
@@ -161,5 +207,46 @@ public class VpcManagerImplTest {
         capabilitiesService1.put(service, capabilities);
 
         return providers;
+    }
+
+    @Test
+    public void testCreateVpcNetwork() throws InsufficientCapacityException, ResourceAllocationException {
+        final long VPC_ID = 201L;
+        manager._maxNetworks = 3;
+        VpcVO vpcMockVO = Mockito.mock(VpcVO.class);
+        Vpc vpcMock = Mockito.mock(Vpc.class);
+        Account accountMock = Mockito.mock(Account.class);
+        PhysicalNetwork physicalNetwork = Mockito.mock(PhysicalNetwork.class);
+        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+        List<Network.Service> services = new ArrayList<>();
+        services.add(Service.SourceNat);
+        List<NetworkOfferingServiceMapVO> serviceMap = new ArrayList<>();
+
+        Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcMockVO);
+        Mockito.when(manager.getActiveVpc(anyLong())).thenReturn(vpcMock);
+        lenient().doNothing().when(accountManager).checkAccess(any(Account.class), nullable(SecurityChecker.AccessType.class), anyBoolean(), any(Vpc.class));
+        Mockito.when(vpcMock.isRegionLevelVpc()).thenReturn(true);
+        Mockito.when(entityMgr.findById(NetworkOffering.class, 1L)).thenReturn(offering);
+        Mockito.when(vpcMock.getId()).thenReturn(VPC_ID);
+        Mockito.when(vpcDao.acquireInLockTable(VPC_ID)).thenReturn(vpcMockVO);
+        Mockito.when(networkDao.countVpcNetworks(anyLong())).thenReturn(1L);
+        Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+        Mockito.when(networkOfferingServiceMapDao.listByNetworkOfferingId(anyLong())).thenReturn(serviceMap);
+        Mockito.when(vpcMock.getCidr()).thenReturn("10.0.0.0/8");
+        Mockito.when(vpcMock.getNetworkDomain()).thenReturn("cs1cloud.internal");
+
+        manager.validateNewVpcGuestNetwork("10.10.10.0/24", "10.10.10.1", accountMock, vpcMock, "cs1cloud.internal");
+        manager.validateNtwkOffForNtwkInVpc(2L, 1, "10.10.10.0/24", "111-", vpcMock, "10.1.1.1", new AccountVO(), null);
+        manager.validateNtwkOffForVpc(offering, services);
+        manager.createVpcGuestNetwork(1L, "vpcNet1", "vpc tier 1", null,
+                "10.10.10.0/24", null, null, accountMock, null, physicalNetwork,
+                1L, null, null, 1L, null, accountMock,
+                true, null, null, null, new Pair<>(1000, 1000));
+        Mockito.verify(networkMgr, times(1)).createGuestNetwork(anyLong(), anyString(), anyString(), nullable(String.class),
+                nullable(String.class), nullable(String.class), anyBoolean(), nullable(String.class), any(Account.class), nullable(Long.class), any(PhysicalNetwork.class),
+                anyLong(), nullable(ControlledEntity.ACLType.class), nullable(Boolean.class), nullable(Long.class), nullable(String.class), nullable(String.class),
+                anyBoolean(), nullable(String.class), nullable(Network.PVlanType.class), nullable(String.class), nullable(String.class), nullable(String.class), any(Pair.class));
+
     }
 }
