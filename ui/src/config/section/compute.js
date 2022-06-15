@@ -512,6 +512,70 @@ export default {
       ]
     },
     {
+      name: 'autoscalevmgroup',
+      title: 'label.autoscale.vm.groups',
+      icon: 'ordered-list-outlined',
+      docHelp: 'adminguide/autoscale_without_netscaler.html',
+      resourceType: 'AutoScaleVmGroup',
+      permission: ['listAutoScaleVmGroups'],
+      columns: ['id', 'account', 'networkname', 'minmembers', 'maxmembers', 'state'],
+      details: ['id', 'account', 'domain', 'networkname', 'minmembers', 'maxmembers', 'state', 'created'],
+      tabs: [
+        {
+          name: 'details',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+        },
+        {
+          name: 'comments',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
+        }
+      ],
+      actions: [
+        {
+          api: 'createAutoScaleVmGroup',
+          icon: 'plus-outlined',
+          label: 'label.new.autoscale.vmgroup',
+          listView: true,
+          component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
+        },
+        {
+          api: 'enableAutoScaleVmGroup',
+          icon: 'play-circle-outlined',
+          label: 'label.enable.autoscale.vmgroup',
+          message: 'message.confirm.enable.autoscale.vmgroup',
+          dataView: true,
+          show: (record) => { return record.state === 'Disabled' }
+        },
+        {
+          api: 'disableAutoScaleVmGroup',
+          icon: 'pause-circle-outlined',
+          label: 'label.disable.autoscale.vmgroup',
+          message: 'message.confirm.disable.autoscale.vmgroup',
+          dataView: true,
+          show: (record) => { return record.state === 'Enabled' }
+        },
+        {
+          api: 'updateAutoScaleVmGroup',
+          icon: 'edit-outlined',
+          label: 'label.update.autoscale.vmgroup',
+          dataView: true,
+          show: (record) => { return record.state === 'Disabled' },
+          component: () => import('@/views/compute/UpdateAutoScaleVmGroup.vue')
+        },
+        {
+          api: 'deleteAutoScaleVmGroup',
+          icon: 'delete-outlined',
+          label: 'label.delete.autoscale.vmgroup',
+          message: 'message.action.delete.autoscale.vmgroup',
+          dataView: true,
+          show: (record) => { return record.state === 'Disabled' },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
       name: 'vmgroup',
       title: 'label.instance.groups',
       icon: 'gold-outlined',
