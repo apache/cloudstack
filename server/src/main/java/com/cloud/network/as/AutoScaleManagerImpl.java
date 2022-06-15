@@ -1567,6 +1567,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (!checkConditionUp(asGroup, numVm)) {
             return;
         }
+        AutoScaleVmGroup.State oldState = asGroup.getState();
+        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.Scaling;
+        if (!_autoScaleVmGroupDao.updateState(groupId, oldState, newState)) {
+            s_logger.error(String.format("Can not update vmgroup state from %s to %s, groupId: %s", oldState, newState, groupId));
+            return;
+        }
         for (int i = 0; i < numVm; i++) {
             long vmId = createNewVM(asGroup);
             if (vmId == -1) {
@@ -1602,6 +1608,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 break;
             }
         }
+        if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
+            s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
+        }
     }
 
     @Override
@@ -1612,6 +1621,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             return;
         }
         if (!checkConditionDown(asGroup)) {
+            return;
+        }
+        AutoScaleVmGroup.State oldState = asGroup.getState();
+        AutoScaleVmGroup.State newState = AutoScaleVmGroup.State.Scaling;
+        if (!_autoScaleVmGroupDao.updateState(groupId, oldState, newState)) {
+            s_logger.error(String.format("Can not update vmgroup state from %s to %s, groupId: %s", oldState, newState, groupId));
             return;
         }
         final long vmId = removeLBrule(asGroup);
@@ -1652,6 +1667,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         } else {
             s_logger.error("Can not remove LB rule for the VM being destroyed. Do nothing more.");
+        }
+        if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
+            s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
         }
     }
 

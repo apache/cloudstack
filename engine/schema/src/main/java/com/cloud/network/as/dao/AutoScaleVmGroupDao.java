@@ -18,6 +18,7 @@ package com.cloud.network.as.dao;
 
 import java.util.List;
 
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -27,4 +28,6 @@ public interface AutoScaleVmGroupDao extends GenericDao<AutoScaleVmGroupVO, Long
     boolean isProfileInUse(long profileId);
 
     boolean isAutoScaleLoadBalancer(Long loadBalancerId);
+
+    boolean updateState(long groupId, AutoScaleVmGroup.State oldState, AutoScaleVmGroup.State newState);
 }

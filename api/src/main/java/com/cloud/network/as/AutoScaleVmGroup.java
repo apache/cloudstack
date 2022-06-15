@@ -29,7 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Displayable {
 
     enum State {
-        New, Revoke, Enabled, Disabled;
+        New, Revoke, Enabled, Disabled, Scaling;
 
         public static State fromValue(String state) {
             if (StringUtils.isBlank(state)) {
@@ -42,6 +42,8 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
                 return Enabled;
             } else if (state.equalsIgnoreCase("disabled")) {
                 return Disabled;
+            } else if (state.equalsIgnoreCase("scaling")) {
+                return Scaling;
             } else {
                 throw new InvalidParameterValueException("Unexpected AutoScale VM group state : " + state);
             }

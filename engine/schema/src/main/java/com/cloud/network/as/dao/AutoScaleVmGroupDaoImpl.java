@@ -19,6 +19,7 @@ package com.cloud.network.as.dao;
 import java.util.List;
 
 
+import com.cloud.network.as.AutoScaleVmGroup;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.as.AutoScaleVmGroupVO;
@@ -59,5 +60,18 @@ public class AutoScaleVmGroupDaoImpl extends GenericDaoBase<AutoScaleVmGroupVO, 
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("loadBalancerId", loadBalancerId);
         return customSearch(sc, null).get(0) > 0;
+    }
+
+    @Override
+    public boolean updateState(long groupId, AutoScaleVmGroup.State oldState, AutoScaleVmGroup.State newState) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = createSearchCriteria();
+        sc.addAnd("id", SearchCriteria.Op.EQ, groupId);
+        sc.addAnd("state", SearchCriteria.Op.EQ, oldState);
+        AutoScaleVmGroupVO group = findOneBy(sc);
+        if (group == null) {
+            return false;
+        }
+        group.setState(newState);
+        return update(groupId, group);
     }
 }
