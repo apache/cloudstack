@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.api.response;
 
-import java.util.List;
-
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -45,7 +43,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
 
     @SerializedName("counter")
     @Param(description = "Details of the Counter.")
-    private List<CounterResponse> counterResponse;
+    private CounterResponse counterResponse;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain id of the Condition owner")
@@ -92,7 +90,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
         this.relationalOperator = relationalOperator;
     }
 
-    public void setCounterResponse(List<CounterResponse> counterResponse) {
+    public void setCounterResponse(CounterResponse counterResponse) {
         this.counterResponse = counterResponse;
     }
 

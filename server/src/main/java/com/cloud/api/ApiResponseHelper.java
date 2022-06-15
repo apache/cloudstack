@@ -3299,9 +3299,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConditionResponse createConditionResponse(Condition condition) {
         ConditionResponse response = new ConditionResponse();
         response.setId(condition.getUuid());
-        List<CounterResponse> counterResponseList = new ArrayList<CounterResponse>();
-        counterResponseList.add(createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid())));
-        response.setCounterResponse(counterResponseList);
+        CounterResponse counterResponse = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
+        response.setCounterResponse(counterResponse);
         response.setRelationalOperator(condition.getRelationalOperator().toString());
         response.setThreshold(condition.getThreshold());
         response.setObjectName("condition");
