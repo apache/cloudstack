@@ -262,6 +262,30 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         hTypes.add(HypervisorType.Ovm3);
     }
 
+    private void checkVpcDns(VpcOffering vpcOffering, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (_vpcOffDao.isIpv6Supported(vpcOffering.getId()) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
+        }
+    }
+
     @Override
     @DB
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -1022,27 +1046,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        if (org.apache.commons.lang3.StringUtils.isEmpty(dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(dns2)) {
-            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
-        }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
-        }
-        if (_vpcOffDao.isIpv6Supported(vpcOffId) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(dns1) && !NetUtils.isValidIp4(dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(dns2) && !NetUtils.isValidIp4(dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
-        }
+        checkVpcDns(vpcOff, dns1, dns2, ip6Dns1, ip6Dns2);
 
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,

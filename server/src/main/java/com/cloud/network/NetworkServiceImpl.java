@@ -558,6 +558,39 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return result;
     }
 
+    private void checkNetworkDns(boolean isIpv6, NetworkOffering networkOffering, Long vpcId,
+         String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2)) {
+            if (GuestType.L2.equals(networkOffering.getGuestType())) {
+                throw new InvalidParameterValueException(String.format("DNS can not be specified %s networks", GuestType.L2));
+            }
+            if (vpcId != null) {
+                throw new InvalidParameterValueException("DNS can not be specified for a VPC tier");
+            }
+        }
+        if (!isIpv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
+        }
+        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
+            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
+        }
+        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
+            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
+        }
+        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
+            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
+        }
+    }
+
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
 
@@ -1595,35 +1628,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     cidr, startIP, endIP);
         }
 
-        if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2)) {
-            if (GuestType.L2.equals(ntwkOff.getGuestType())) {
-                throw new InvalidParameterValueException(String.format("DNS can not be specified %s networks", GuestType.L2));
-            }
-            if (vpcId != null) {
-                throw new InvalidParameterValueException("DNS can not be specified for a VPC tier");
-            }
-        }
-        if (!ipv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
-            throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
-        }
-        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
-            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
-        }
-        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp4(ip6Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
-        }
+        checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
