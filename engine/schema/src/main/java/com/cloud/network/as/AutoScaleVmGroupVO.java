@@ -30,6 +30,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.GenericDao;
@@ -37,7 +38,7 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name = "autoscale_vmgroups")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
+public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, Identity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

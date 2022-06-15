@@ -3341,6 +3341,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setObjectName("autoscalevmprofile");
 
+        response.setHasAnnotation(annotationDao.hasAnnotations(profile.getUuid(), AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
+
         // Populates the account information in the response
         populateOwner(response, profile);
         return response;

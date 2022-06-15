@@ -190,6 +190,7 @@ export default {
         case 'SecondaryStorage': return 'SECONDARY_STORAGE'
         case 'SystemVm': return 'SYSTEM_VM'
         case 'VirtualRouter': return 'VR'
+        case 'AutoScaleVmGroup': return 'AUTOSCALE_VM_GROUP'
         default: return ''
       }
     },

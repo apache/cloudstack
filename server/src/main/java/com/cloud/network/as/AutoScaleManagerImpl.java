@@ -39,6 +39,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
@@ -238,6 +240,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private AutoScaleVmGroupStatisticsDao _asGroupStatisticsDao;
     @Inject
     private DomainRouterDao _routerDao;
+    @Inject
+    private AnnotationDao _annotationDao;
     @Inject
     protected RouterControlHelper _routerControlHelper;
 
@@ -516,6 +520,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (_autoScaleVmGroupDao.isProfileInUse(id)) {
             throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
         }
+
+        // Remove comments (if any)
+        AutoScaleVmGroup group = _autoScaleVmGroupDao.findById(id);
+        if (group != null) {
+            _annotationDao.removeByEntityType(AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(), group.getUuid());
+        }
+
         boolean success = _autoScaleVmProfileDao.remove(id);
         if (success) {
             s_logger.info("Successfully deleted AutoScale Vm Profile with Id: " + id);

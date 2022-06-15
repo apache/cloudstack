@@ -44,7 +44,8 @@ public interface AnnotationService {
         TEMPLATE(true), ISO(true), KUBERNETES_CLUSTER(true),
         SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
         ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
-        PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false);
+        PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false),
+        AUTOSCALE_VM_GROUP(true);
 
         private final boolean usersAllowed;
 
