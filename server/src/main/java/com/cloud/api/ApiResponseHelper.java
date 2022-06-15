@@ -296,7 +296,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
@@ -3384,10 +3383,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (profile != null) {
             response.setProfileId(profile.getUuid());
         }
-        FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(vmGroup.getLoadBalancerId());
+        LoadBalancerVO fw = ApiDBUtils.findLoadBalancerById(vmGroup.getLoadBalancerId());
         if (fw != null) {
             response.setLoadBalancerId(fw.getUuid());
         }
+        NetworkVO network = ApiDBUtils.findNetworkById(fw.getNetworkId());
+        response.setNetworkName(network.getName());
+        response.setNetworkId(network.getUuid());
+
+        IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
+        response.setPublicIpId(publicIp.getUuid());
+        response.setPublicIp(publicIp.getAddress().addr());
+        response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
+        response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
 
         List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
         List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
@@ -3407,6 +3415,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             scaleDownPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
         }
 
+        populateOwner(response, vmGroup);
         return response;
     }
 

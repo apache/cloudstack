@@ -167,7 +167,8 @@
       <span>{{ ipV6Address(text, record) }}</span>
     </template>
     <template #publicip="{ text, record }">
-      <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
+      <router-link v-if="['/autoscalevmgroup'].includes($route.path)" :to="{ path: '/publicip' + '/' + record.publicipid }">{{ text }}</router-link>
+      <router-link v-else :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
     </template>
     <template #traffictype="{ text }" href="javascript:;">
       {{ text }}

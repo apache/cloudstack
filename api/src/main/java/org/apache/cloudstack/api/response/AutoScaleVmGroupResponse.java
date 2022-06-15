@@ -39,6 +39,30 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Param(description = "the load balancer rule ID")
     private String loadBalancerId;
 
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
+    @Param(description = "the name of the guest network the lb rule belongs to")
+    private String networkName;
+
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the id of the guest network the lb rule belongs to")
+    private String networkId;
+
+    @SerializedName(ApiConstants.PUBLIC_IP_ID)
+    @Param(description = "the public ip address id")
+    private String publicIpId;
+
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    @Param(description = "the public ip address")
+    private String publicIp;
+
+    @SerializedName(ApiConstants.PUBLIC_PORT)
+    @Param(description = "the public port")
+    private String publicPort;
+
+    @SerializedName(ApiConstants.PRIVATE_PORT)
+    @Param(description = "the private port")
+    private String privatePort;
+
     @SerializedName(ApiConstants.VMPROFILE_ID)
     @Param(description = "the autoscale profile that contains information about the vms in the vm group.")
     private String profileId;
@@ -110,6 +134,30 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     public void setLoadBalancerId(String loadBalancerId) {
         this.loadBalancerId = loadBalancerId;
+    }
+
+    public void setNetworkName(String networkName) {
+        this.networkName = networkName;
+    }
+
+    public void setNetworkId(String networkId) {
+        this.networkId = networkId;
+    }
+
+    public void setPublicIpId(String publicIpId) {
+        this.publicIpId = publicIpId;
+    }
+
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
+
+    public void setPublicPort(String publicPort) {
+        this.publicPort = publicPort;
+    }
+
+    public void setPrivatePort(String privatePort) {
+        this.privatePort = privatePort;
     }
 
     public void setProfileId(String profileId) {

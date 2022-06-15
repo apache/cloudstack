@@ -518,8 +518,8 @@ export default {
       docHelp: 'adminguide/autoscale_without_netscaler.html',
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
-      columns: ['id', 'account', 'networkname', 'publicip', 'publicport', 'minmembers', 'maxmembers', 'state'],
-      details: ['id', 'account', 'domain', 'networkname', 'minmembers', 'maxmembers', 'state', 'created'],
+      columns: ['id', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state'],
+      details: ['id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state', 'created'],
       tabs: [
         {
           name: 'details',
