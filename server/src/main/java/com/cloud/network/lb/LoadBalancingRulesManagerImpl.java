@@ -302,7 +302,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             List<LbCondition> lbConditions = new ArrayList<LbCondition>();
             for (AutoScalePolicyConditionMapVO autoScalePolicyConditionMap : autoScalePolicyConditionMapList) {
                 Condition condition = _conditionDao.findById(autoScalePolicyConditionMap.getConditionId());
-                Counter counter = _counterDao.findById(condition.getCounterid());
+                Counter counter = _counterDao.findById(condition.getCounterId());
                 lbConditions.add(new LbCondition(counter, condition));
             }
             autoScalePolicies.add(new LbAutoScalePolicy(autoScalePolicy, lbConditions));

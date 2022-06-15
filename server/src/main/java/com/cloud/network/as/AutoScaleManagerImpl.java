@@ -357,7 +357,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             for (AutoScalePolicyConditionMapVO policyConditionMapVO : policyConditionMapVOs) {
                 long conditionid = policyConditionMapVO.getConditionId();
                 Condition condition = _conditionDao.findById(conditionid);
-                Counter counter = _counterDao.findById(condition.getCounterid());
+                Counter counter = _counterDao.findById(condition.getCounterId());
                 counters.add(counter);
             }
         }
@@ -617,11 +617,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                     ArrayList<Long> counterIds = new ArrayList<Long>();
                     for (ConditionVO condition : conditions) {
-                        if (counterIds.contains(condition.getCounterid())) {
+                        if (counterIds.contains(condition.getCounterId())) {
                             throw new InvalidParameterValueException(
                                 "at least two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
                         }
-                        counterIds.add(condition.getCounterid());
+                        counterIds.add(condition.getCounterId());
                     }
 
                     /* For update case remove the existing mappings and create fresh ones */
@@ -1286,7 +1286,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("counterId", sb.entity().getCounterid(), SearchCriteria.Op.EQ);
+        sb.and("counterId", sb.entity().getCounterId(), SearchCriteria.Op.EQ);
 
         // now set the SC criteria...
         SearchCriteria<ConditionVO> sc = searchWrapper.buildSearchCriteria();
@@ -1705,7 +1705,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(vo.getPolicyId());
             for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
                 ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
-                CounterVO counter = _counterDao.findById(condition.getCounterid());
+                CounterVO counter = _counterDao.findById(condition.getCounterId());
                 if (Counter.NativeSources.contains(counter.getSource())) {
                     return true;
                 }
@@ -1720,7 +1720,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(vo.getPolicyId());
             for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
                 ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
-                CounterVO counter = _counterDao.findById(condition.getCounterid());
+                CounterVO counter = _counterDao.findById(condition.getCounterId());
                 if (Counter.Source.virtualrouter.equals(counter.getSource())) {
                     return true;
                 }
@@ -1734,7 +1734,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(policyId);
         for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
             ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
-            CounterVO counter = _counterDao.findById(condition.getCounterid());
+            CounterVO counter = _counterDao.findById(condition.getCounterId());
             conditionsMap.put(condition.getId(), counter);
         }
         return conditionsMap;
@@ -1747,7 +1747,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<AutoScalePolicyConditionMapVO> ConditionPolicies = _autoScalePolicyConditionMapDao.findByPolicyId(vo.getPolicyId());
             for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
                 ConditionVO condition = _conditionDao.findById(ConditionPolicy.getConditionId());
-                CounterVO counter = _counterDao.findById(condition.getCounterid());
+                CounterVO counter = _counterDao.findById(condition.getCounterId());
                 if (!counterIds.contains(counter.getId())) {
                     counterIds.add(counter.getId());
                 }
@@ -1788,7 +1788,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                         for (ConditionVO conditionVO : lstConditions) {
                             long thresholdValue = conditionVO.getThreshold();
                             Double thresholdPercent = (double)thresholdValue;
-                            CounterVO counterVO = _counterDao.findById(conditionVO.getCounterid());
+                            CounterVO counterVO = _counterDao.findById(conditionVO.getCounterId());
                             Counter.Source counter_source = counterVO.getSource();
                             String counter_value = counterVO.getValue();
                             long counter_count = 1;
@@ -1890,7 +1890,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (condition == null)
             return "";
 
-        long counterId = condition.getCounterid();
+        long counterId = condition.getCounterId();
         CounterVO counter = _counterDao.findById(counterId);
         if (counter == null)
             return "";
@@ -1904,7 +1904,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (condition == null)
             return "";
 
-        long counterId = condition.getCounterid();
+        long counterId = condition.getCounterId();
         CounterVO counter = _counterDao.findById(counterId);
         if (counter == null)
             return "";
