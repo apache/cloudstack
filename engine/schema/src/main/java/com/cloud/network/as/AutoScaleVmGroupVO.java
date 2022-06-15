@@ -175,6 +175,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
         return removed;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

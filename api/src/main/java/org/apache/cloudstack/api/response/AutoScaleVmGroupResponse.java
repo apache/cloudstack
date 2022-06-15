@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
 import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -67,28 +68,32 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     private List<AutoScalePolicyResponse> scaleDownPolicies;
 
     @SerializedName(ApiConstants.ACCOUNT)
-    @Param(description = "the account owning the instance group")
+    @Param(description = "the account owning the vm group")
     private String accountName;
 
     @SerializedName(ApiConstants.PROJECT_ID)
-    @Param(description = "the project id vm profile")
+    @Param(description = "the project id of the vm group")
     private String projectId;
 
     @SerializedName(ApiConstants.PROJECT)
-    @Param(description = "the project name of the vm profile")
+    @Param(description = "the project name of the vm group")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the vm profile")
+    @Param(description = "the domain ID of the vm group")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the vm profile")
+    @Param(description = "the domain name of the vm group")
     private String domainName;
 
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is group for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date when this vm group was created")
+    private Date created;
 
     public AutoScaleVmGroupResponse() {
 
@@ -162,5 +167,9 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }
