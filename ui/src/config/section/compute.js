@@ -519,7 +519,7 @@ export default {
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
       columns: ['id', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state'],
-      details: ['id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state', 'created'],
+      details: ['id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'interval', 'state', 'created'],
       tabs: [
         {
           name: 'details',
@@ -563,8 +563,8 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.autoscale.vmgroup',
           dataView: true,
-          show: (record) => { return record.state === 'Disabled' },
-          component: () => import('@/views/compute/UpdateAutoScaleVmGroup.vue')
+          args: ['maxmembers', 'minmembers', 'interval'],
+          show: (record) => { return record.state === 'Disabled' }
         },
         {
           api: 'deleteAutoScaleVmGroup',

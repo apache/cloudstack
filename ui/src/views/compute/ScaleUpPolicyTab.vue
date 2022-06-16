@@ -24,6 +24,26 @@
           v-html="$t('message.autoscale.policies.update')" />
         </template>
       </a-alert>
+
+      <a-divider/>
+      <div class="form" v-ctrl-enter="updateAutoScalePolicy">
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.duration') }}</div>
+          <a-input v-model:value="duration"></a-input>
+        </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.quiettime') }}</div>
+          <a-input v-model:value="quiettime"></a-input>
+        </div>
+        <div class="form__item">
+          <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="updateAutoScalePolicy(null, null)">
+            <template #icon><edit-outlined /></template>
+            {{ $t('label.edit') }}
+          </a-button>
+        </div>
+      </div>
+
+      <a-divider/>
       <div class="form" v-ctrl-enter="addCondition">
         <div class="form__item">
           <div class="form__label">{{ $t('label.counterid') }}</div>
@@ -95,7 +115,7 @@
           type="primary"
           :danger="true"
           icon="delete-outlined"
-          @onClick="deleteConditionFromScalePolicy(record.id)" />
+          @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
       </template>
     </a-table>
   </div>
@@ -123,6 +143,8 @@ export default {
       filterColumns: ['Action'],
       loading: true,
       policyid: null,
+      duration: null,
+      quiettime: null,
       conditions: [],
       newCondition: {
         counterid: null,
@@ -173,6 +195,8 @@ export default {
         id: this.resource.id
       }).then(response => {
         this.policyid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaleuppolicies?.[0]?.id
+        this.duration = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaleuppolicies?.[0]?.duration
+        this.quiettime = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaleuppolicies?.[0]?.quiettime
         this.conditions = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaleuppolicies?.[0]?.conditions || []
         const lbruleid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.lbruleid
         api('listLoadBalancerRules', {
@@ -246,8 +270,8 @@ export default {
         this.loading = false
       })
     },
-    deleteConditionFromScalePolicy (conditionId) {
-      this.updateScalePolicy(null, conditionId)
+    deleteConditionFromAutoScalePolicy (conditionId) {
+      this.updateAutoScalePolicy(null, conditionId)
     },
     addCondition () {
       if (this.loading) return
@@ -266,7 +290,7 @@ export default {
           jobId: response.conditionresponse.jobid,
           successMethod: (result) => {
             const newConditionId = result.jobresult.condition?.id
-            this.updateScalePolicy(newConditionId, null)
+            this.updateAutoScalePolicy(newConditionId, null)
           },
           errorMessage: this.$t('message.create.condition.failed'),
           errorMethod: () => {
@@ -278,7 +302,7 @@ export default {
         this.loading = false
       })
     },
-    updateScalePolicy (conditionIdToAdd, conditionIdToRemove) {
+    updateAutoScalePolicy (conditionIdToAdd, conditionIdToRemove) {
       if (this.loading) return
       this.loading = true
 
@@ -291,6 +315,8 @@ export default {
 
       api('updateAutoScalePolicy', {
         id: this.policyid,
+        duration: this.duration,
+        quiettime: this.quiettime,
         conditionids: newConditionIds
       }).then(response => {
         this.$pollJob({
