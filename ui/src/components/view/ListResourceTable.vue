@@ -50,6 +50,10 @@
         <status :text="text ? text : ''" />{{ text }}
       </template>
 
+      <template slot="created" slot-scope="item">
+        {{ $toLocaleDate(item) }}
+      </template>
+
     </a-table>
 
     <div v-if="!defaultPagination" style="display: block; text-align: right; margin-top: 10px;">
