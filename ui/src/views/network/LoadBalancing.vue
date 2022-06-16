@@ -66,8 +66,29 @@
           </a-select>
         </div>
         <div class="form__item">
+          <div class="form__label">{{ $t('label.autoscale') }}</div>
+          <a-select
+            v-model:value="newRule.autoscale"
+            defaultValue="no"
+            style="min-width: 100px"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="yes">{{ $t('label.yes') }}</a-select-option>
+            <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no'">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
+            {{ $t('label.add') }}
+          </a-button>
+        </div>
+        <div class="form__item" v-if="newRule.autoscale === 'yes'">
+          <div class="form__label" style="white-space: nowrap;">{{ $t('label.add') }}</div>
+          <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleAddNewRule">
             {{ $t('label.add') }}
           </a-button>
         </div>
@@ -1201,8 +1222,7 @@ export default {
         this.loading = false
       })
     },
-    handleOpenAddVMModal () {
-      if (this.addVmModalLoading) return
+    checkNewRule () {
       if (!this.selectedRule) {
         if (!this.newRule.name) {
           this.$refs.newRuleName.classList.add('error')
@@ -1219,7 +1239,14 @@ export default {
         } else {
           this.$refs.newRulePrivatePort.classList.remove('error')
         }
-        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return
+        if (!this.newRule.name || !this.newRule.publicport || !this.newRule.privateport) return false
+      }
+      return true
+    },
+    handleOpenAddVMModal () {
+      if (this.addVmModalLoading) return
+      if (!this.checkNewRule()) {
+        return
       }
       this.addVmModalVisible = true
       this.fetchVirtualMachines()
@@ -1348,6 +1375,9 @@ export default {
 
       if (this.selectedRule) {
         this.handleAssignToLBRule(this.selectedRule.id)
+        return
+      } else if (!this.checkNewRule()) {
+        this.loading = false
         return
       }
 
