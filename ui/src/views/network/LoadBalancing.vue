@@ -104,8 +104,18 @@
           {{ returnStickinessLabel(record.id) }}
         </a-button>
       </template>
+      <template #autoscale="{record}">
+        <div>
+          <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
+              <a-button>{{ $t('label.view') }}</a-button>
+          </router-link>
+          <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
+              <a-button>{{ $t('label.new') }}</a-button>
+          </router-link>
+        </div>
+      </template>
       <template #add="{record}">
-        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }" v-if='!record.autoscalevmgroup'>
           <template #icon><plus-outlined /></template>
             {{ $t('label.add') }}
         </a-button>
@@ -123,6 +133,7 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
+                :disabled='record.autoscalevmgroup'
                 :tooltip="$t('label.action.delete.load.balancer')"
                 type="primary"
                 :danger="true"
@@ -144,7 +155,7 @@
           >
             <tooltip-button
               :tooltip="$t('label.delete')"
-              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis)"
+              :disabled="!('deleteLoadBalancerRule' in $store.getters.apis) || record.autoscalevmgroup"
               type="primary"
               :danger="true"
               icon="delete-outlined" />
@@ -594,6 +605,10 @@ export default {
           slots: { customRender: 'stickiness' }
         },
         {
+          title: this.$t('label.autoscale'),
+          slots: { customRender: 'autoscale' }
+        },
+        {
           title: this.$t('label.add.vms'),
           slots: { customRender: 'add' }
         },
@@ -707,6 +722,7 @@ export default {
             this.fetchLBRuleInstances()
           }, 100)
           this.fetchLBStickinessPolicies()
+          this.fetchAutoScaleVMgroups()
           return
         }
         this.loading = false
@@ -741,6 +757,19 @@ export default {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)
         }).catch(error => {
           this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
+    fetchAutoScaleVMgroups () {
+      this.loading = true
+      this.lbRules.forEach(rule => {
+        api('listAutoScaleVmGroups', {
+          listAll: true,
+          lbruleid: rule.id
+        }).then(response => {
+          rule.autoscalevmgroup = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]
         }).finally(() => {
           this.loading = false
         })
@@ -1257,6 +1286,7 @@ export default {
     handleAssignToLBRule (data) {
       const vmIDIpMap = {}
 
+      let selectedVmCount = 0
       let count = 0
       let innerCount = 0
       this.newRule.vmguestip.forEach(ip => {
@@ -1271,8 +1301,16 @@ export default {
           vmIDIpMap[`vmidipmap[${innerCount}].vmip`] = ip
           innerCount++
         }
+        if (this.newRule.virtualmachineid[count]) {
+          selectedVmCount++
+        }
         count++
       })
+
+      if (selectedVmCount === 0) {
+        this.fetchData()
+        return
+      }
 
       this.loading = true
       api('assignToLoadBalancerRule', {

@@ -1153,6 +1153,7 @@
 "label.networktype": "Network type",
 "label.networkwrite": "Network write",
 "label.new": "New",
+"label.new.autoscale.vmgroup": "New AutoScale VM Group",
 "label.new.instance.group": "New instance group",
 "label.new.password": "New password",
 "label.new.project": "New project",
