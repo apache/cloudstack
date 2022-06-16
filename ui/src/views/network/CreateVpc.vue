@@ -155,6 +155,22 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item v-if="selectedVpcOffering && selectedVpcOffering.selectsnatipallowed" name="routerip" ref="routerip">
+          <template #label>
+            <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+          </template>
+          <a-input
+            v-model:value="form.routerip"
+            :placeholder="apiParams.routerip.description"/>
+        </a-form-item>
+        <a-form-item v-if="selectedVpcOffering && selectedVpcOffering.selectsnatipallowed" name="routeripv6" ref="routeripv6">
+          <template #label>
+            <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+          </template>
+          <a-input
+            v-model:value="form.routeripv6"
+            :placeholder="apiParams.routeripv6.description"/>
+        </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
             <tooltip-label :title="$t('label.start')" :tooltip="apiParams.start.description"/>
@@ -274,6 +290,10 @@ export default {
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
         this.loadingOffering = false
+        if (this.arrayHasItems(this.vpcOfferings)) {
+          this.form.networkofferingid = 0
+          this.handleVpcOfferingChange(this.networkOfferings[0])
+        }
       })
     },
     handleVpcOfferingChange (value) {
@@ -284,6 +304,7 @@ export default {
       for (var offering of this.vpcOfferings) {
         if (offering.id === value) {
           this.selectedVpcOffering = offering
+          this.form.vpcofferingid = offering.id
           return
         }
       }

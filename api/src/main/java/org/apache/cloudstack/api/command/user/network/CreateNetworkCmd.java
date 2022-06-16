@@ -163,10 +163,12 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             since = "4.17.0",
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
-    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to a router in a shared network", since = "4.16",
+
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the router of the network", since = "4.16",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIp;
-    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to a router in a shared network", since = "4.16",
+
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to the router of the network", since = "4.16",
             validations = {ApiArgValidator.NotNullOrEmpty})
     private String routerIpv6;
 

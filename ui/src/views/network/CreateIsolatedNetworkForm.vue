@@ -291,6 +291,44 @@
               </a-col>
             </a-row>
           </div>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.selectsnatipallowed" name="routerip" ref="routerip">
+            <template #label>
+              <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.routerip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.routerip"
+              :placeholder="apiParams.routerip.description"/>
+          </a-form-item>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.selectsnatipallowed" name="routeripv6" ref="routeripv6">
+            <template #label>
+              <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
+            </template>
+            <a-input
+              v-model:value="form.routeripv6"
+              :placeholder="apiParams.routeripv6.description"/>
+          </a-form-item>
+          <a-form-item
+            ref="networkdomain"
+            name="networkdomain"
+            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
+            <template #label>
+              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
+            </template>
+            <a-input
+             v-model:value="form.networkdomain"
+              :placeholder="apiParams.networkdomain.description"/>
+          </a-form-item>
+          <a-form-item
+            ref="account"
+            name="account"
+            v-if="accountVisible">
+            <template #label>
+              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
+            </template>
+            <a-input
+             v-model:value="form.account"
+              :placeholder="apiParams.account.description"/>
+          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"

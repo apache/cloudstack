@@ -79,6 +79,9 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "sort_key")
     int sortKey;
 
+    @Column(name = "select_snat_address_allowed")
+    boolean selectSnatIpAllowed = false;
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -202,6 +205,14 @@ public class VpcOfferingVO implements VpcOffering {
 
     public int getSortKey() {
         return sortKey;
+    }
+
+    public boolean isSelectSnatIpAllowed() {
+        return selectSnatIpAllowed;
+    }
+
+    public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
+        this.selectSnatIpAllowed = selectSnatIpAllowed;
     }
 
 }

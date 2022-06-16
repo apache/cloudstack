@@ -101,6 +101,9 @@ public class VpcOfferingJoinVO implements VpcOffering {
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
 
+    @Column(name = "select_snat_address_allowed")
+    boolean selectSnatIpAllowed = false;
+
     public VpcOfferingJoinVO() {
     }
 
@@ -202,6 +205,14 @@ public class VpcOfferingJoinVO implements VpcOffering {
 
     public String getInternetProtocol() {
         return internetProtocol;
+    }
+
+    public boolean isSelectSnatIpAllowed() {
+        return selectSnatIpAllowed;
+    }
+
+    public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
+        this.selectSnatIpAllowed = selectSnatIpAllowed;
     }
 
     @Override

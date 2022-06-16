@@ -147,6 +147,10 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the internet protocol of the network offering")
     private String internetProtocol;
 
+    @SerializedName(ApiConstants.IS_SELECTION_OF_STATIC_NAT_ALLOWED)
+    @Param(description = "Are users allowed to select a primarey SNAT public address")
+    boolean selectSnatIpAllowed;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -281,5 +285,9 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setInternetProtocol(String internetProtocol) {
         this.internetProtocol = internetProtocol;
+    }
+
+    public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
+        this.selectSnatIpAllowed = selectSnatIpAllowed;
     }
 }

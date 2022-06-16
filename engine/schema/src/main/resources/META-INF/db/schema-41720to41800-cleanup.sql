@@ -20,6 +20,7 @@
 --;
 
 ALTER TABLE cloud.network_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this network on creation';
+ALTER TABLE cloud.vpc_offerings ADD select_snat_address_allowed tinyint(1) DEFAULT 0 NOT NULL COMMENT 'true if it is allowed to spicify the primary public ip for this vpc on creation';
 
 -- cloud.network_offering_view source
 
@@ -90,3 +91,49 @@ left join `network_offering_details` `offering_details` on
         and (`offering_details`.`name` = 'internetProtocol'))))
 group by
     `network_offerings`.`id`;
+
+-- cloud.vpc_offering_view source
+
+CREATE OR REPLACE
+ALGORITHM = UNDEFINED VIEW `vpc_offering_view` AS
+select
+    `vpc_offerings`.`id` AS `id`,
+    `vpc_offerings`.`uuid` AS `uuid`,
+    `vpc_offerings`.`name` AS `name`,
+    `vpc_offerings`.`unique_name` AS `unique_name`,
+    `vpc_offerings`.`display_text` AS `display_text`,
+    `vpc_offerings`.`state` AS `state`,
+    `vpc_offerings`.`default` AS `default`,
+    `vpc_offerings`.`created` AS `created`,
+    `vpc_offerings`.`removed` AS `removed`,
+    `vpc_offerings`.`service_offering_id` AS `service_offering_id`,
+    `vpc_offerings`.`supports_distributed_router` AS `supports_distributed_router`,
+    `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
+    `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
+    `vpc_offerings`.`sort_key` AS `sort_key`,
+    `vpc_offerings`.`select_snat_address_allowed` as `select_snat_address_allowed`,
+    group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
+    group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
+    group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,
+    group_concat(distinct `domain`.`path` separator ',') AS `domain_path`,
+    group_concat(distinct `zone`.`id` separator ',') AS `zone_id`,
+    group_concat(distinct `zone`.`uuid` separator ',') AS `zone_uuid`,
+    group_concat(distinct `zone`.`name` separator ',') AS `zone_name`,
+    `offering_details`.`value` AS `internet_protocol`
+from
+    (((((`vpc_offerings`
+left join `vpc_offering_details` `domain_details` on
+    (((`domain_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`domain_details`.`name` = 'domainid'))))
+left join `domain` on
+    ((0 <> find_in_set(`domain`.`id`, `domain_details`.`value`))))
+left join `vpc_offering_details` `zone_details` on
+    (((`zone_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`zone_details`.`name` = 'zoneid'))))
+left join `data_center` `zone` on
+    ((0 <> find_in_set(`zone`.`id`, `zone_details`.`value`))))
+left join `vpc_offering_details` `offering_details` on
+    (((`offering_details`.`offering_id` = `vpc_offerings`.`id`)
+        and (`offering_details`.`name` = 'internetprotocol'))))
+group by
+    `vpc_offerings`.`id`;
