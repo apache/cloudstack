@@ -773,7 +773,7 @@ class TestResizeVolume(cloudstackTestCase):
         return
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_05_vmdeployment_with_size(self):
+    def test_5_vmdeployment_with_size(self):
         """Test vm deployment with new rootdisk size parameter
 
         # Validate the following
@@ -855,7 +855,7 @@ class TestResizeVolume(cloudstackTestCase):
 
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_06_resized_rootvolume_with_lessvalue(self):
+    def test_6_resized_rootvolume_with_lessvalue(self):
         """Test resize root volume with less than original volume size
 
         # Validate the following
@@ -939,7 +939,7 @@ class TestResizeVolume(cloudstackTestCase):
 
     # @attr(tags=["advanced"], required_hrdware="true")
     @attr(tags=["TODO"], required_hrdware="true")
-    def test_07_usage_events_after_rootvolume_resized_(self):
+    def test_7_usage_events_after_rootvolume_resized_(self):
         """Test check usage events after root volume resize
 
         # Validate the following
