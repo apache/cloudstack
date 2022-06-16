@@ -39,17 +39,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.manager.Commands;
-import com.cloud.alert.AlertManager;
-import com.cloud.network.NetworkServiceImpl;
-import com.cloud.network.router.CommandSetupHelper;
-import com.cloud.network.router.NetworkHelper;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -70,7 +59,14 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.VpcOfferingJoinDao;
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
 import com.cloud.configuration.Config;
@@ -104,6 +100,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
@@ -116,6 +113,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
@@ -165,11 +164,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.cloud.vm.dao.NicDao;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -254,8 +254,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     private AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
-    @Inject
-    NetworkDao networkDao;
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper networkHelper;
@@ -369,7 +367,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch
-        .join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
+                .join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
 
         return true;
@@ -434,7 +432,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
-            final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
+                                         final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId, List<Long> domainIds, List<Long> zoneIds, State state) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
             throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for creating IPv6 supported VPC offering", Ipv6Service.Ipv6OfferingCreationEnabled.key()));
@@ -546,8 +544,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
-            final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-            final boolean redundantRouter) {
+                                              final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
+                                              final boolean redundantRouter) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
@@ -995,7 +993,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final
     String displayText, final String cidr, String networkDomain,
-            final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
+                         final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1235,7 +1233,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
                 String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
                 String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
-                        "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
+                                "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
                         NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId));
                 s_logger.warn(message);
                 alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
@@ -1259,10 +1257,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (success) {
             updateVpcMtu(ips,mtu);
             vpc.setPublicMtu(mtu);
-            List<NetworkVO> vpcTierNetworks = networkDao.listByVpc(vpcId);
+            List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
             for(NetworkVO network : vpcTierNetworks) {
                 network.setPublicIfaceMtu(mtu);
-                networkDao.update(network.getId(), network);
+                _ntwkDao.update(network.getId(), network);
             }
         } else {
             throw new CloudRuntimeException("Failed to update MTU on the network");
@@ -1309,9 +1307,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public Pair<List<? extends Vpc>, Integer> listVpcs(final Long id, final String vpcName, final String displayText, final List<String> supportedServicesStr, final String cidr,
-            final Long vpcOffId, final String state, final String accountName, Long domainId, final String keyword, final Long startIndex, final Long pageSizeVal,
-            final Long zoneId, Boolean isRecursive, final Boolean listAll, final Boolean restartRequired, final Map<String, String> tags, final Long projectId,
-            final Boolean display) {
+                                                       final Long vpcOffId, final String state, final String accountName, Long domainId, final String keyword, final Long startIndex, final Long pageSizeVal,
+                                                       final Long zoneId, Boolean isRecursive, final Boolean listAll, final Boolean restartRequired, final Map<String, String> tags, final Long projectId,
+                                                       final Boolean display) {
         final Account caller = CallContext.current().getCallingAccount();
         final List<Long> permittedAccounts = new ArrayList<Long>();
         final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
@@ -1510,7 +1508,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean startVpc(final Vpc vpc, final DeployDestination dest, final ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
+            InsufficientCapacityException {
         // deploy provider
         boolean success = true;
         final List<Provider> providersToImplement = getVpcProviders(vpc.getId());
@@ -1565,7 +1563,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     public void validateNtwkOffForNtwkInVpc(final Long networkId, final long newNtwkOffId, final String newCidr, final String newNetworkDomain, final Vpc vpc,
-            final String gateway, final Account networkOwner, final Long aclId) {
+                                            final String gateway, final Account networkOwner, final Long aclId) {
 
         final NetworkOffering guestNtwkOff = _entityMgr.findById(NetworkOffering.class, newNtwkOffId);
 
@@ -1826,7 +1824,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
     public boolean restartVpc(final RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException,
-    InsufficientCapacityException {
+            InsufficientCapacityException {
         final long vpcId = cmd.getId();
         final boolean cleanUp = cmd.getCleanup();
         final boolean makeRedundant = cmd.getMakeredundant();
@@ -1966,7 +1964,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     private PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
-            final String netmask, final long gatewayOwnerId, final Long networkOfferingIdPassed, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId) throws ResourceAllocationException,
+                                                   final String netmask, final long gatewayOwnerId, final Long networkOfferingIdPassed, final Boolean isSourceNat, final Long aclId, final Boolean bypassVlanOverlapCheck, final Long associatedNetworkId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
 
         // Validate parameters
@@ -2702,7 +2700,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIPToVpc(final long ipId, final long vpcId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException,
-    ConcurrentOperationException {
+            ConcurrentOperationException {
         final Account caller = CallContext.current().getCallingAccount();
         Account owner = null;
 
@@ -2786,8 +2784,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
-            String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException,
+                                         String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
+                                         final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr, Pair<Integer, Integer> vrIfaceMTUs) throws ConcurrentOperationException, InsufficientCapacityException,
             ResourceAllocationException {
 
         final Vpc vpc = getActiveVpc(vpcId);
@@ -2812,7 +2810,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                                                                 subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, vrIfaceMTUs);
+                subdomainAccess, vpcId, ip6Gateway, ip6Cidr, isDisplayNetworkEnabled, null, null, externalId, null, null, vrIfaceMTUs);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);
