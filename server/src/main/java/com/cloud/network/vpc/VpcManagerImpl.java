@@ -1286,7 +1286,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    private boolean updateMtuOnVpcVr(Long vpcId, List<IpAddressTO> ips) {
+    protected boolean updateMtuOnVpcVr(Long vpcId, List<IpAddressTO> ips) {
         boolean success = false;
         List<DomainRouterVO> routers = routerDao.listByVpcId(vpcId);
         for (DomainRouterVO router : routers) {

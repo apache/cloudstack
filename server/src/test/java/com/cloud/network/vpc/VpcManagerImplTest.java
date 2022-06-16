@@ -21,11 +21,18 @@ package com.cloud.network.vpc;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.routing.UpdateNetworkCommand;
+import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.manager.Commands;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.NetworkElement;
 
@@ -38,6 +45,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.router.CommandSetupHelper;
+import com.cloud.network.router.NetworkHelper;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -45,11 +55,17 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.events.Event;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -59,6 +75,7 @@ import org.mockito.MockitoAnnotations;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import org.mockito.invocation.InvocationOnMock;
 import org.powermock.reflect.Whitebox;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -90,6 +107,16 @@ public class VpcManagerImplTest {
     NetworkModel networkModel;
     @Mock
     NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
+    @Mock
+    private CallContext callContextMock;
+    @Mock
+    IPAddressDao ipAddressDao;
+    @Mock
+    DomainRouterDao routerDao;
+    @Mock
+    CommandSetupHelper commandSetupHelper;
+    @Mock
+    NetworkHelper networkHelper;
 
     @Before
     public void setup()
@@ -104,8 +131,17 @@ public class VpcManagerImplTest {
         manager._ntwkDao = networkDao;
         manager._ntwkModel = networkModel;
         manager._ntwkOffServiceDao = networkOfferingServiceMapDao;
+        manager._ipAddressDao = ipAddressDao;
+        manager.routerDao = routerDao;
+        manager.commandSetupHelper = commandSetupHelper;
+        manager.networkHelper = networkHelper;
+        CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
     }
 
+    @After
+    public void tearDown() {
+        CallContext.unregister();
+    }
     @Test
     public void getVpcOffSvcProvidersMapForEmptyServiceTest() {
         long vpcOffId = 1L;
@@ -247,6 +283,43 @@ public class VpcManagerImplTest {
                 nullable(String.class), nullable(String.class), anyBoolean(), nullable(String.class), any(Account.class), nullable(Long.class), any(PhysicalNetwork.class),
                 anyLong(), nullable(ControlledEntity.ACLType.class), nullable(Boolean.class), nullable(Long.class), nullable(String.class), nullable(String.class),
                 anyBoolean(), nullable(String.class), nullable(Network.PVlanType.class), nullable(String.class), nullable(String.class), nullable(String.class), any(Pair.class));
+    }
+
+    @Test
+    public void testUpdateVpcNetwork() throws ResourceUnavailableException {
+        long vpcId = 1L;
+        Integer publicMtu = 1450;
+        Account accountMock = Mockito.mock(Account.class);
+        VpcVO vpcVO = Mockito.mock(VpcVO.class);
+        Commands cmds = Mockito.mock(Commands.class);
+
+        Answer answer = Mockito.mock(Answer.class);
+        VirtualRouter routerMock = Mockito.mock(VirtualRouter.class);
+        List<IPAddressVO> ipAddresses = new ArrayList<>();
+        List<IpAddressTO> ips = new ArrayList<>();
+        List<DomainRouterVO> routers = new ArrayList<>();
+        DomainRouterVO router = Mockito.mock(DomainRouterVO.class);
+        routers.add(router);
+
+        IpAddressTO[] ipsToSend = ips.toArray(new IpAddressTO[0]);
+
+        Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+        Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+        Mockito.when(vpcDao.createForUpdate(anyLong())).thenReturn(vpcVO);
+        Mockito.when(ipAddressDao.listByAssociatedVpc(anyLong(), nullable(Boolean.class))).thenReturn(ipAddresses);
+        Mockito.when(routerDao.listByVpcId(anyLong())).thenReturn(routers);
+        Mockito.when(cmds.getAnswer("updateNetwork")).thenReturn(answer);
+        Mockito.doAnswer(new org.mockito.stubbing.Answer<Commands>() {
+                    @Override
+                    public Commands answer(InvocationOnMock invocation) throws Throwable {
+                        cmds.addCommand(new UpdateNetworkCommand(ipsToSend));
+                        return cmds;
+                    }
+                }).when(commandSetupHelper).setupUpdateNetworkCommands(routerMock, ips, cmds);
+        Mockito.when(networkHelper.sendCommandsToRouter(routerMock, cmds)).thenReturn(true);
+
+        boolean result = manager.updateMtuOnVpcVr(1L, ips);
+        manager.updateVpc(vpcId, null, null, null, true, publicMtu);
 
     }
 }
