@@ -817,7 +817,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean areServicesSupportedByVpcOffering(final long vpcOffId, final Service... services) {
-        return _vpcOffSvcMapDao.areServicesSupportedByNetworkOffering(vpcOffId, services);
+        return _vpcOffSvcMapDao.areServicesSupportedByVpcOffering(vpcOffId, services);
     }
 
     @Override
@@ -1008,9 +1008,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // check resource limit
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
 
+        // Validate zone
+        final DataCenter zone = _dcDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Can't find zone by id specified");
+        }
+
         // Validate vpc offering
         final VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
-        _accountMgr.checkAccess(owner, vpcOff, _dcDao.findById(zoneId));
+        _accountMgr.checkAccess(owner, vpcOff, zone);
         if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             final InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled + " state by specified id");
             if (vpcOff == null) {
@@ -1024,12 +1030,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean isRegionLevelVpcOff = vpcOff.isOffersRegionLevelVPC();
         if (isRegionLevelVpcOff && networkDomain == null) {
             throw new InvalidParameterValueException("Network domain must be specified for region level VPC");
-        }
-
-        // Validate zone
-        final DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Can't find zone by id specified");
         }
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
