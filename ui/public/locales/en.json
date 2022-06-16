@@ -2558,6 +2558,7 @@
 "message.template.type.change.warning": "WARNING: Changing the template type to SYSTEM will disable further changes to the template.",
 "message.tooltip.reserved.system.netmask": "The network prefix that defines the pod subnet. Uses CIDR notation.",
 "message.traffic.type.to.basic.zone": "traffic type to basic zone",
+"message.update.autoscale.policy.failed": "Failed to update autoscale policy",
 "message.update.ipaddress.processing": "Updating IP Address...",
 "message.update.resource.count": "Please confirm that you want to update resource counts for this account.",
 "message.update.resource.count.domain": "Please confirm that you want to update resource counts for this domain.",

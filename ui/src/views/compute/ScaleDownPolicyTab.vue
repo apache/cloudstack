@@ -36,6 +36,7 @@
           <a-input v-model:value="quiettime"></a-input>
         </div>
         <div class="form__item">
+          <div class="form__label">{{ $t('label.action') }}</div>
           <a-button ref="submit" :disabled="!('updateAutoScalePolicy' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="updateAutoScalePolicy(null, null)">
             <template #icon><edit-outlined /></template>
             {{ $t('label.edit') }}
@@ -45,8 +46,8 @@
 
       <a-divider/>
       <div class="form" v-ctrl-enter="addCondition">
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.counterid') }}</div>
+        <div class="form__item" ref="newConditionCounterId">
+          <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
           <a-select
             style="width: 100%"
             showSearch
@@ -60,9 +61,10 @@
               {{ counter.name }}
             </a-select-option>
           </a-select>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.relationaloperator') }}</div>
+        <div class="form__item" ref="newConditionRelationalOperator">
+          <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
           <a-select
             v-model:value="newCondition.relationaloperator"
             style="width: 100%;"
@@ -76,12 +78,15 @@
             <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
             <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
           </a-select>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.threshold') }}</div>
+        <div class="form__item" ref="newConditionThreshold">
+          <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
           <a-input v-model:value="newCondition.threshold"></a-input>
+          <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item">
+          <div class="form__label">{{ $t('label.action') }}</div>
           <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addCondition">
             <template #icon><plus-outlined /></template>
             {{ $t('label.add') }}
@@ -159,7 +164,7 @@ export default {
         },
         {
           title: this.$t('label.relationaloperator'),
-          dataIndex: 'relationaloperator'
+          slots: { customRender: 'relationaloperator' }
         },
         {
           title: this.$t('label.threshold'),
@@ -238,11 +243,11 @@ export default {
       this.parentFetchData()
     },
     getOperator (val) {
-      if (val === 'GT') return this.$t('label.operator.greater')
-      if (val === 'GE') return this.$t('label.operator.greater.or.equal')
-      if (val === 'LT') return this.$t('label.operator.less')
-      if (val === 'LE') return this.$t('label.operator.less.or.equal')
-      if (val === 'EQ') return this.$t('label.operator.equal')
+      if (val === 'GT' || val === 'gt') return this.$t('label.operator.greater')
+      if (val === 'GE' || val === 'ge') return this.$t('label.operator.greater.or.equal')
+      if (val === 'LT' || val === 'lt') return this.$t('label.operator.less')
+      if (val === 'LE' || val === 'le') return this.$t('label.operator.less.or.equal')
+      if (val === 'EQ' || val === 'eq') return this.$t('label.operator.equal')
       return val
     },
     deleteCondition (conditionId) {
@@ -276,10 +281,25 @@ export default {
     addCondition () {
       if (this.loading) return
 
+      if (!this.newCondition.counterid) {
+        this.$refs.newConditionCounterId.classList.add('error')
+      } else {
+        this.$refs.newConditionCounterId.classList.remove('error')
+      }
+
+      if (!this.newCondition.relationaloperator) {
+        this.$refs.newConditionRelationalOperator.classList.add('error')
+      } else {
+        this.$refs.newConditionRelationalOperator.classList.remove('error')
+      }
+
+      if (!this.newCondition.threshold) {
+        this.$refs.newConditionThreshold.classList.add('error')
+      } else {
+        this.$refs.newConditionThreshold.classList.remove('error')
+      }
+
       if (!this.newCondition.counterid || !this.newCondition.relationaloperator || !this.newCondition.threshold) {
-        this.$notification.error({
-          message: `${this.$t('label.error')}: ${this.$t('error.empty.counter.operator.threshold')}`
-        })
         return
       }
 
@@ -402,7 +422,7 @@ export default {
     margin-right: -20px;
     margin-bottom: 20px;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
 
     @media (min-width: 760px) {
       flex-direction: row;
@@ -428,6 +448,29 @@ export default {
 
     &__label {
       font-weight: bold;
+    }
+
+    &__required {
+      margin-right: 5px;
+      color: red;
+    }
+
+    .error-text {
+      display: none;
+      color: red;
+      font-size: 0.8rem;
+    }
+
+    .error {
+
+      input {
+        border-color: red;
+      }
+
+      .error-text {
+        display: block;
+      }
+
     }
 
   }
