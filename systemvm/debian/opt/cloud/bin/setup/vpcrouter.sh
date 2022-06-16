@@ -59,6 +59,18 @@ EOF
     echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
     echo "nameserver $NS2" >> /etc/resolv.conf
   fi
+
+  if [ -n "$IP6_NS1" ]
+  then
+    echo "nameserver $IP6_NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS1" >> /etc/resolv.conf
+  fi
+  if [ -n "$IP6_NS2" ]
+  then
+    echo "nameserver $IP6_NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $IP6_NS2" >> /etc/resolv.conf
+  fi
+
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
      if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];

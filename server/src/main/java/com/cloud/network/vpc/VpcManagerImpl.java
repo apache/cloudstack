@@ -58,6 +58,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.dao.VpcOfferingJoinDao;
@@ -263,13 +264,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     private void checkVpcDns(VpcOffering vpcOffering, String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2) && !areServicesSupportedByVpcOffering(vpcOffering.getId(), Service.Dns)) {
+            throw new InvalidParameterValueException("DNS can not be specified for VPCs with offering that do not support DNS service");
+        }
         if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
             throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
+        if (!_vpcOffDao.isIpv6Supported(vpcOffering.getId()) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
+            throw new InvalidParameterValueException("IPv6 DNS can be specified for IPv6 enabled VPC");
         }
-        if (_vpcOffDao.isIpv6Supported(vpcOffering.getId()) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
+        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
             throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
         }
         if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {

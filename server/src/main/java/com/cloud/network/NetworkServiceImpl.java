@@ -567,6 +567,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (vpcId != null) {
                 throw new InvalidParameterValueException("DNS can not be specified for a VPC tier");
             }
+            if (!areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.Dns)) {
+                throw new InvalidParameterValueException("DNS can not be specified for networks with network offering that do not support DNS service");
+            }
         }
         if (!isIpv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
             throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
