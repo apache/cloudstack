@@ -35,7 +35,7 @@
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true"
-            v-model:value="newCondition.counterId">
+            v-model:value="newCondition.counterid">
             <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
               {{ counter.name }}
             </a-select-option>
@@ -62,7 +62,7 @@
           <a-input v-model:value="newCondition.threshold"></a-input>
         </div>
         <div class="form__item">
-          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis)" type="primary" @click="addCondition">
+          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addCondition">
             <template #icon><plus-outlined /></template>
             {{ $t('label.add') }}
           </a-button>
@@ -71,15 +71,6 @@
     </div>
 
     <a-divider/>
-    <a-button
-      v-if="(('deleteCondition' in $store.getters.apis) && this.selectedRowKeys.length > 0)"
-      type="primary"
-      danger
-      style="width: 100%; margin-bottom: 15px"
-      @click="bulkActionConfirmation()">
-      <template #icon><delete-outlined /></template>
-      {{ $t('label.action.bulk.delete.conditions') }}
-    </a-button>
     <a-table
       size="small"
       style="overflow-y: auto"
@@ -87,7 +78,6 @@
       :columns="columns"
       :dataSource="conditions"
       :pagination="false"
-      :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
       :rowKey="record => record.id">
       <template #name="{ record }">
         {{ record.name }}
@@ -101,29 +91,13 @@
       <template #actions="{ record }">
         <tooltip-button
           :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis)"
+          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
           type="primary"
           :danger="true"
           icon="delete-outlined"
           @onClick="deleteConditionFromScalePolicy(record.id)" />
       </template>
     </a-table>
-
-    <bulk-action-view
-      v-if="showConfirmationAction || showGroupActionModal"
-      :showConfirmationAction="showConfirmationAction"
-      :showGroupActionModal="showGroupActionModal"
-      :items="conditions"
-      :selectedRowKeys="selectedRowKeys"
-      :selectedItems="selectedItems"
-      :columns="columns"
-      :selectedColumns="selectedColumns"
-      action="deleteCondition"
-      :loading="loading"
-      :message="message"
-      @group-action="deleteConditions"
-      @handle-cancel="handleCancel"
-      @close-modal="closeModal" />
   </div>
 </template>
 
@@ -131,15 +105,12 @@
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
-import BulkActionView from '@/components/view/BulkActionView'
-import eventBus from '@/config/eventBus'
 
 export default {
   name: 'conditionsTab',
   components: {
     Status,
-    TooltipButton,
-    BulkActionView
+    TooltipButton
   },
   props: {
     resource: {
@@ -149,16 +120,7 @@ export default {
   },
   data () {
     return {
-      selectedRowKeys: [],
-      showGroupActionModal: false,
-      selectedItems: [],
-      selectedColumns: [],
       filterColumns: ['Action'],
-      showConfirmationAction: false,
-      message: {
-        title: this.$t('label.action.bulk.delete.conditions'),
-        confirmMessage: this.$t('label.confirm.delete.conditions')
-      },
       loading: true,
       policyid: null,
       conditions: [],
@@ -186,11 +148,6 @@ export default {
           slots: { customRender: 'actions' }
         }
       ]
-    }
-  },
-  computed: {
-    hasSelected () {
-      return this.selectedRowKeys.length > 0
     }
   },
   created () {
@@ -253,52 +210,8 @@ export default {
         this.loading = false
       })
     },
-    setSelection (selection) {
-      this.selectedRowKeys = selection
-      this.$emit('selection-change', this.selectedRowKeys)
-      this.selectedItems = (this.conditions.filter(function (item) {
-        return selection.indexOf(item.id) !== -1
-      }))
-    },
-    resetSelection () {
-      this.setSelection([])
-    },
-    onSelectChange (selectedRowKeys, selectedRows) {
-      this.setSelection(selectedRowKeys)
-    },
-    bulkActionConfirmation () {
-      this.showConfirmationAction = true
-      this.selectedColumns = this.columns.filter(column => {
-        return !this.filterColumns.includes(column.title)
-      })
-      this.selectedItems = this.selectedItems.map(v => ({ ...v, status: 'InProgress' }))
-    },
     handleCancel () {
-      eventBus.emit('update-bulk-job-status', { items: this.selectedItems, action: false })
-      this.showGroupActionModal = false
-      this.selectedItems = []
-      this.selectedColumns = []
-      this.selectedRowKeys = []
       this.parentFetchData()
-    },
-    deleteConditions (e) {
-      this.showConfirmationAction = false
-      this.selectedColumns.splice(0, 0, {
-        dataIndex: 'status',
-        title: this.$t('label.operation.status'),
-        slots: { customRender: 'status' },
-        filters: [
-          { text: 'In Progress', value: 'InProgress' },
-          { text: 'Success', value: 'success' },
-          { text: 'Failed', value: 'failed' }
-        ]
-      })
-      if (this.selectedRowKeys.length > 0) {
-        this.showGroupActionModal = true
-      }
-      for (const condition of this.selectedItems) {
-        this.deleteConditionFromScalePolicy(condition.id)
-      }
     },
     getOperator (val) {
       if (val === 'GT') return this.$t('label.operator.greater')
@@ -312,28 +225,20 @@ export default {
       this.loading = true
       api('deleteCondition', { id: conditionId }).then(response => {
         const jobId = response.deleteconditionresponse.jobid
-        eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
           title: this.$t('label.action.delete.condition'),
           description: conditionId,
           jobId: jobId,
           successMethod: () => {
-            if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: conditionId, state: 'success' })
-            }
             this.fetchData()
           },
           errorMessage: this.$t('message.delete.condition.failed'),
           errorMethod: () => {
-            if (this.selectedItems.length > 0) {
-              eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: conditionId, state: 'failed' })
-            }
             this.fetchData()
           },
           loadingMessage: this.$t('message.delete.condition.processing'),
           catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => this.fetchData(),
-          bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal
+          catchMethod: () => this.fetchData()
         })
       }).catch(error => {
         this.$notifyError(error)
@@ -346,6 +251,14 @@ export default {
     },
     addCondition () {
       if (this.loading) return
+
+      if (!this.newCondition.counterid || !this.newCondition.relationaloperator || !this.newCondition.threshold) {
+        this.$notification.error({
+          message: `${this.$t('label.error')}: ${this.$t('error.empty.counter.operator.threshold')}`
+        })
+        return
+      }
+
       this.loading = true
 
       api('createCondition', { ...this.newCondition }).then(response => {
