@@ -530,6 +530,10 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleUpPolicyTab.vue')))
         },
         {
+          name: 'scaledown.policy',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleDownPolicyTab.vue')))
+        },
+        {
           name: 'comments',
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
