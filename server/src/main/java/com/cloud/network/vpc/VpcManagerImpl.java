@@ -1249,23 +1249,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             ips.add(to);
         }
 
-        boolean success = false;
         if (!ips.isEmpty()) {
-            success = updateMtuOnVpcVr(vpcId, ips);
-        }
-
-        if (success) {
-            updateVpcMtu(ips,mtu);
-            vpc.setPublicMtu(mtu);
-            List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
-            for(NetworkVO network : vpcTierNetworks) {
-                network.setPublicIfaceMtu(mtu);
-                _ntwkDao.update(network.getId(), network);
+            boolean success = updateMtuOnVpcVr(vpcId, ips);
+            if (success) {
+                updateVpcMtu(ips, mtu);
+                vpc.setPublicMtu(mtu);
+                List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
+                for (NetworkVO network : vpcTierNetworks) {
+                    network.setPublicIfaceMtu(mtu);
+                    _ntwkDao.update(network.getId(), network);
+                }
+            } else {
+                throw new CloudRuntimeException("Failed to update MTU on the network");
             }
-        } else {
-            throw new CloudRuntimeException("Failed to update MTU on the network");
         }
-
         if (vpcDao.update(vpcId, vpc)) {
             s_logger.debug("Updated VPC id=" + vpcId);
             return vpcDao.findById(vpcId);
