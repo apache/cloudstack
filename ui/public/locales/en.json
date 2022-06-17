@@ -2272,6 +2272,7 @@
 "message.error.size.for.cluster": "Please enter size for Kubernetes cluster.",
 "message.error.smb.password": "Please enter SMB password.",
 "message.error.smb.username": "Please enter SMB username.",
+"message.error.specify.stickiness.method": "Please specify a stickiness method",
 "message.error.specify.sticky.name": "Please specify a sticky name.",
 "message.error.sr.namelabel": "Please enter SR Name-Label.",
 "message.error.startip": "Please enter start IP.",
