@@ -2131,8 +2131,8 @@ class TestNetworkWithMtuConfiguration(cloudstackTestCase):
     1. creates an Isolated network with Public and Private MTUs being configured on the respective interfaces
         a. Set one of the MTUs to a value greater that the configured max - 1500 and observe that it gets set
         to the maximum configurable value
-    2. Check router nic MTUs 
-    2. Validates that the network has the right MTU set in the DB
+    2. Check router nic MTUs
+    3. Validates that the network has the right MTU set in the DB
     '''
 
     @attr(tags=["advanced", "isolated", "network"], required_hardware="false")
@@ -2273,7 +2273,7 @@ class TestNetworkWithMtuConfiguration(cloudstackTestCase):
                 if nic.traffictype == 'Public':
                     self.assertEqual(public_mtu, nic.mtu, "MTU not properly configured on public interface of VR")
 
-    def checkNetworkMtu(self, network, expectedPublicMtu, expectedPrivateMtu):
-        self.assertEqual(expectedPublicMtu, network.publicmtu)
-        self.assertEqual(expectedPrivateMtu, network.privatemtu)
+    def checkNetworkMtu(self, network, expected_public_mtu, expected_private_mtu):
+        self.assertEqual(expected_public_mtu, network.publicmtu)
+        self.assertEqual(expected_private_mtu, network.privatemtu)
 
