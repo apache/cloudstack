@@ -526,7 +526,7 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
-          name: 'load.balancer',
+          name: 'loadbalancerrule',
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
         },
         {
