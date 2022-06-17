@@ -215,9 +215,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Override @DB public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
         if (cmd instanceof StorageSubSystemCommand) {
-            Boolean fullCloneEnabled = StorageManager.VmwareCreateCloneFull.value();
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
-            c.setExecuteInSequence(fullCloneEnabled);
+            c.setExecuteInSequence(StorageManager.shouldExecuteInSequenceOnVmware());
         }
         if (cmd instanceof DownloadCommand) {
             cmd.setContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key(), String.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.value()));
@@ -236,8 +235,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     || (destData.getObjectType() == DataObjectType.SNAPSHOT)
                     || (destStoreTO.getRole() == DataStoreRole.Image)
                     || (destStoreTO.getRole() == DataStoreRole.ImageCache)
-                    || Boolean.FALSE.equals(StorageManager.VmwareCreateCloneFull.value())
-                    || Boolean.TRUE.equals(StorageManager.VmwareAllowParallelExecution.value())) {
+                    || ! StorageManager.shouldExecuteInSequenceOnVmware()) {
                 inSeq = false;
             }
             cpyCommand.setExecuteInSequence(inSeq);
@@ -270,6 +268,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     needDelegation = true;
                 }
             }
+        }
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Command of type %s is going to be executed in sequence? %b", cmd.getClass(), cmd.executeInSequence()));
         }
 
         if (!needDelegation) {

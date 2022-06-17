@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.storage.StorageManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -212,17 +213,17 @@ public class VirtualMachineManagerImplTest {
     }
     @Test
     public void testExeceuteInSequenceVmware() {
-        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
-        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+        when(StorageManager.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
+        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
         assertFalse("no full clones so no need to execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
-        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
+        when(StorageManager.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
+        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.FALSE);
         assertTrue("full clones and no explicit parallel execution allowed, should execute in sequence", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
-        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        when(StorageManager.getFullCloneConfiguration()).thenReturn(Boolean.TRUE);
+        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
         assertFalse("execute in sequence should not be needed as parallel is allowed", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
-        when(virtualMachineManagerImpl.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
-        when(virtualMachineManagerImpl.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
+        when(StorageManager.getFullCloneConfiguration()).thenReturn(Boolean.FALSE);
+        when(StorageManager.getAllowParallelExecutionConfiguration()).thenReturn(Boolean.TRUE);
         assertFalse("double reasons to allow parallel execution", virtualMachineManagerImpl.getExecuteInSequence(HypervisorType.VMware));
     }
 

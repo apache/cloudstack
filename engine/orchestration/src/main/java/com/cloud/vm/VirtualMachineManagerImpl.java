@@ -1557,9 +1557,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             case LXC:
                 return false;
             case VMware:
-                final Boolean fullClone = getFullCloneConfiguration();
-                final Boolean allowParallel = getAllowParallelExecutionConfiguration();
-                return fullClone && !allowParallel;
+                return StorageManager.shouldExecuteInSequenceOnVmware();
             default:
                 return ExecuteInSequence.value();
         }
@@ -1644,14 +1642,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             profile.setParameter(VirtualMachineProfile.Param.PreserveNics, true);
         }
         _networkMgr.unmanageNics(profile);
-    }
-
-    Boolean getAllowParallelExecutionConfiguration() {
-        return StorageManager.VmwareAllowParallelExecution.value();
-    }
-
-    Boolean getFullCloneConfiguration() {
-        return StorageManager.VmwareCreateCloneFull.value();
     }
 
     private List<Map<String, String>> getVolumesToDisconnect(VirtualMachine vm) {

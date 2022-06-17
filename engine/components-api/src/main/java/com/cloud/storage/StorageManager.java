@@ -180,6 +180,20 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
+    static boolean shouldExecuteInSequenceOnVmware() {
+                final Boolean fullClone = getFullCloneConfiguration();
+                final Boolean allowParallel = getAllowParallelExecutionConfiguration();
+                return fullClone && !allowParallel;
+            }
+
+    static Boolean getAllowParallelExecutionConfiguration() {
+        return VmwareAllowParallelExecution.value();
+    }
+
+    static Boolean getFullCloneConfiguration() {
+        return VmwareCreateCloneFull.value();
+    }
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
