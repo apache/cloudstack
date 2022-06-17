@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
@@ -154,6 +155,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("vspherestoragepolicy")
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "additional key/value details tied with this disk offering", since = "4.16.1")
+    private Map<String, String> details;
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -362,5 +367,9 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
         this.vsphereStoragePolicy = vsphereStoragePolicy;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }
