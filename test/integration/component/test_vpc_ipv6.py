@@ -23,7 +23,6 @@ from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listGuestNetworkIpv6Prefixes,
                                   deleteGuestNetworkIpv6Prefix)
 from marvin.lib.utils import (isAlmostEqual,
-                              cleanup_resources,
                               random_gen,
                               get_process_status,
                               get_host_credentials)
@@ -172,11 +171,13 @@ class TestIpv6Vpc(cloudstackTestCase):
             Configurations.update(cls.apiclient,
                 ipv6_offering_config_name,
                 cls.initial_ipv6_offering_enabled)
-        super(TestIpv6Vpc, cls).tearDownClass()
-        if cls.test_ipv6_guestprefix != None:
-            cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
-            cmd.id = cls.test_ipv6_guestprefix.id
-            cls.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+        try:
+            super(TestIpv6Vpc, cls).tearDownClass()
+        finally:
+            if cls.test_ipv6_guestprefix != None:
+                cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
+                cmd.id = cls.test_ipv6_guestprefix.id
+                cls.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
 
     @classmethod
     def getGuestIpv6Prefix(cls):
@@ -234,11 +235,10 @@ class TestIpv6Vpc(cloudstackTestCase):
         try:
             if self.thread and self.thread.is_alive():
                 self.thread.join(5*60)
-            #Clean up, terminate the created templates
-            # cleanup_resources(self.apiclient, reversed(self.cleanup))
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+        finally:
+            super(TestIpv6Vpc, self).tearDown()
         return
 
     def getRandomIpv6Cidr(self):

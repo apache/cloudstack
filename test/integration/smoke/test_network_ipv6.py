@@ -25,8 +25,7 @@ from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listIpv6FirewallRules,
                                   createIpv6FirewallRule,
                                   deleteIpv6FirewallRule)
-from marvin.lib.utils import (cleanup_resources,
-                              random_gen,
+from marvin.lib.utils import (random_gen,
                               get_process_status,
                               get_host_credentials)
 from marvin.lib.base import (Configurations,
@@ -155,11 +154,13 @@ class TestIpv6Network(cloudstackTestCase):
             Configurations.update(cls.apiclient,
                 ipv6_offering_config_name,
                 cls.initial_ipv6_offering_enabled)
-        super(TestIpv6Network, cls).tearDownClass()
-        if cls.test_ipv6_guestprefix != None:
-            cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
-            cmd.id = cls.test_ipv6_guestprefix.id
-            cls.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
+        try:
+            super(TestIpv6Network, cls).tearDownClass()
+        finally:
+            if cls.test_ipv6_guestprefix != None:
+                cmd = deleteGuestNetworkIpv6Prefix.deleteGuestNetworkIpv6PrefixCmd()
+                cmd.id = cls.test_ipv6_guestprefix.id
+                cls.apiclient.deleteGuestNetworkIpv6Prefix(cmd)
 
     @classmethod
     def getGuestIpv6Prefix(cls):
@@ -217,10 +218,10 @@ class TestIpv6Network(cloudstackTestCase):
         try:
             if self.thread and self.thread.is_alive():
                 self.thread.join(5*60)
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+        finally:
+            super(TestIpv6Network, self).tearDown()
         return
 
     def getRandomIpv6Cidr(self):
