@@ -236,7 +236,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                     || (destData.getObjectType() == DataObjectType.SNAPSHOT)
                     || (destStoreTO.getRole() == DataStoreRole.Image)
                     || (destStoreTO.getRole() == DataStoreRole.ImageCache)
-                    || (Boolean.FALSE.equals(StorageManager.VmwareCreateCloneFull.value()))) {
+                    || Boolean.FALSE.equals(StorageManager.VmwareCreateCloneFull.value())
+                    || Boolean.TRUE.equals(StorageManager.VmwareAllowParallelExecution.value())) {
                 inSeq = false;
             }
             cpyCommand.setExecuteInSequence(inSeq);
