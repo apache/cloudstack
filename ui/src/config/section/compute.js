@@ -526,12 +526,22 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'load.balancer',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
+        },
+        {
           name: 'scaleup.policy',
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleUpPolicyTab.vue')))
         },
         {
           name: 'scaledown.policy',
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleDownPolicyTab.vue')))
+        },
+        {
+          name: 'events',
+          resourceType: 'AutoScaleVmGroup',
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+          show: () => { return 'listEvents' in store.getters.apis }
         },
         {
           name: 'comments',
