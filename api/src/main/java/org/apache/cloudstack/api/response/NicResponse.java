@@ -134,6 +134,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "IP addresses associated with NIC found for unmanaged VM", since="4.14.0")
     private List<String> ipAddresses;
 
+    @SerializedName(ApiConstants.MTU)
+    @Param(description = "MTU configured on the NIC", since="4.18.0")
+    private Integer mtu;
+
     public void setVmId(String vmId) {
         this.vmId = vmId;
     }
@@ -363,5 +367,13 @@ public class NicResponse extends BaseResponse {
 
     public void setIpAddresses(List<String> ipAddresses) {
         this.ipAddresses = ipAddresses;
+    }
+
+    public Integer getMtu() {
+        return mtu;
+    }
+
+    public void setMtu(Integer mtu) {
+        this.mtu = mtu;
     }
 }

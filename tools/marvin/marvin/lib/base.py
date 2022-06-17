@@ -4750,9 +4750,7 @@ class VPC:
         if displaytext:
             cmd.displaytext = displaytext
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
-        return apiclient.updateVPC(cmd).
-        return apiclient.updateVPC(cmd).
-        return apiclient.updateVPC(cmd).
+        return apiclient.updateVPC(cmd)
 
     def migrate(self, apiclient, vpc_offering_id, vpc_network_offering_ids, resume=False):
         cmd = migrateVPC.migrateVPCCmd()

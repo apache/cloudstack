@@ -1,4 +1,5 @@
 # Licensed to the Apache Software Foundation (ASF) under one
+# Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -49,7 +50,9 @@ from marvin.lib.common import (get_domain,
                                list_virtual_machines,
                                list_lb_rules,
                                list_configurations,
-                               verifyGuestTrafficPortGroups)
+                               verifyGuestTrafficPortGroups,
+                               verifyNetworkState)
+
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 from ddt import ddt, data
@@ -64,6 +67,7 @@ logger = logging.getLogger('TestNetworkOps')
 stream_handler = logging.StreamHandler()
 logger.setLevel(logging.DEBUG)
 logger.addHandler(stream_handler)
+
 
 class TestPublicIP(cloudstackTestCase):
 
@@ -233,9 +237,9 @@ class TestPublicIP(cloudstackTestCase):
         if list_pub_ip_addr_resp is None:
             return
         if (list_pub_ip_addr_resp) and (
-            isinstance(
-                list_pub_ip_addr_resp,
-                list)) and (
+                isinstance(
+                    list_pub_ip_addr_resp,
+                    list)) and (
                 len(list_pub_ip_addr_resp) > 0):
             self.fail("list public ip response is not empty")
         return
@@ -441,10 +445,10 @@ class TestPortForwarding(cloudstackTestCase):
         # SSH virtual machine to test port forwarding
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                       (
-                           self.virtual_machine.ipaddress,
-                           src_nat_ip_addr.ipaddress
-                       ))
+                         (
+                             self.virtual_machine.ipaddress,
+                             src_nat_ip_addr.ipaddress
+                         ))
 
             self.virtual_machine.get_ssh_client(src_nat_ip_addr.ipaddress)
             vm_response = VirtualMachine.list(
@@ -569,10 +573,10 @@ class TestPortForwarding(cloudstackTestCase):
 
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                       (
-                           self.virtual_machine.ipaddress,
-                           ip_address.ipaddress.ipaddress
-                       ))
+                         (
+                             self.virtual_machine.ipaddress,
+                             ip_address.ipaddress.ipaddress
+                         ))
             self.virtual_machine.get_ssh_client(ip_address.ipaddress.ipaddress)
         except Exception as e:
             self.fail(
@@ -1087,7 +1091,8 @@ class TestRouterRules(cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
-        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
         template = get_test_template(
             cls.apiclient,
             cls.zone.id,
@@ -1279,10 +1284,10 @@ class TestRouterRules(cloudstackTestCase):
 
         try:
             logger.debug("SSHing into VM with IP address %s with NAT IP %s" %
-                       (
-                           self.virtual_machine.ipaddress,
-                           self.ipaddress.ipaddress.ipaddress
-                       ))
+                         (
+                             self.virtual_machine.ipaddress,
+                             self.ipaddress.ipaddress.ipaddress
+                         ))
             self.virtual_machine.get_ssh_client(
                 self.ipaddress.ipaddress.ipaddress)
         except Exception as e:
@@ -1318,6 +1323,7 @@ class TestRouterRules(cloudstackTestCase):
                 delay=0
             )
         return
+
 
 class TestL2Networks(cloudstackTestCase):
 
@@ -1411,7 +1417,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id = self.virtual_machine.id
+            id=self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1456,7 +1462,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id = self.virtual_machine.id
+            id=self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1512,7 +1518,7 @@ class TestL2Networks(cloudstackTestCase):
 
         list_vm = list_virtual_machines(
             self.apiclient,
-            id = self.virtual_machine.id
+            id=self.virtual_machine.id
         )
         self.assertEqual(
             isinstance(list_vm, list),
@@ -1541,6 +1547,7 @@ class TestL2Networks(cloudstackTestCase):
         )
 
         return
+
 
 class TestPrivateVlansL2Networks(cloudstackTestCase):
 
@@ -1580,16 +1587,17 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         # Supported hypervisor = KVM using OVS
         isKVM = cls.hypervisor.lower() in ["kvm"]
         isOVSEnabled = False
-        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
-        if isKVM :
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
+        if isKVM:
             # Test only if all the hosts use OVS
             grepCmd = 'grep "network.bridge.type=openvswitch" /etc/cloudstack/agent/agent.properties'
             hosts = list_hosts(cls.apiclient, type='Routing', hypervisor='kvm')
-            if len(hosts) > 0 :
+            if len(hosts) > 0:
                 isOVSEnabled = True
-            for host in hosts :
+            for host in hosts:
                 isOVSEnabled = isOVSEnabled and len(SshClient(host.ipaddress, port=22, user=hostConfig["username"],
-                    passwd=hostConfig["password"]).execute(grepCmd)) != 0
+                                                              passwd=hostConfig["password"]).execute(grepCmd)) != 0
 
         supported = isVmware and isDvSwitch or isKVM and isOVSEnabled
         cls.unsupportedHardware = not supported
@@ -1597,7 +1605,6 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
         cls._cleanup = []
 
         if supported:
-
             cls.account = Account.create(
                 cls.apiclient,
                 cls.services["account"],
@@ -1635,16 +1642,16 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
                 "name": "Test Network L2 PVLAN Promiscuous",
                 "displaytext": "Test Network L2 PVLAN Promiscuous",
                 "vlan": 900,
-                "isolatedpvlan" : "900",
+                "isolatedpvlan": "900",
                 "isolatedpvlantype": "promiscuous"
             }
             cls.services["l2-network-pvlan-isolated"] = {
-                 "name": "Test Network L2 PVLAN Isolated",
-                 "displaytext": "Test Network L2 PVLAN Isolated",
-                 "vlan": 900,
-                 "isolatedpvlan": "903",
-                 "isolatedpvlantype": "isolated"
-             }
+                "name": "Test Network L2 PVLAN Isolated",
+                "displaytext": "Test Network L2 PVLAN Isolated",
+                "vlan": 900,
+                "isolatedpvlan": "903",
+                "isolatedpvlantype": "isolated"
+            }
 
             cls.l2_network_offering = NetworkOffering.create(
                 cls.apiclient,
@@ -1780,10 +1787,15 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             vm_promiscuous2_ip, vm_promiscuous2_eth = self.enable_l2_nic(vm_promiscuous2)
 
             # Community PVLAN checks
-            different_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community2_ip)
-            same_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_community1_two_ip)
-            community_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_promiscuous1_ip)
-            community_to_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth, vm_isolated1_ip)
+            different_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
+                                                                            vm_community2_ip)
+            same_community_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
+                                                                       vm_community1_two_ip)
+            community_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one,
+                                                                                 vm_community1_one_eth,
+                                                                                 vm_promiscuous1_ip)
+            community_to_isolated = self.is_vm_l2_isolated_from_dest(vm_community1_one, vm_community1_one_eth,
+                                                                     vm_isolated1_ip)
 
             self.assertTrue(
                 different_community_isolated,
@@ -1807,8 +1819,10 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
 
             # Isolated PVLAN checks
             same_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_isolated2_ip)
-            isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_community1_one_ip)
-            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth, vm_promiscuous1_ip)
+            isolated_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth,
+                                                                              vm_community1_one_ip)
+            isolated_to_promiscuous_isolated = self.is_vm_l2_isolated_from_dest(vm_isolated1, vm_isolated1_eth,
+                                                                                vm_promiscuous1_ip)
 
             self.assertTrue(
                 same_isolated,
@@ -1824,8 +1838,10 @@ class TestPrivateVlansL2Networks(cloudstackTestCase):
             )
 
             # Promiscuous PVLAN checks
-            same_promiscuous = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_promiscuous2_ip)
-            prom_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_community1_one_ip)
+            same_promiscuous = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth,
+                                                                vm_promiscuous2_ip)
+            prom_to_community_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth,
+                                                                          vm_community1_one_ip)
             prom_to_isolated = self.is_vm_l2_isolated_from_dest(vm_promiscuous1, vm_promiscuous1_eth, vm_isolated1_ip)
 
             self.assertFalse(
@@ -2044,3 +2060,220 @@ class TestSharedNetwork(cloudstackTestCase):
             0,
             "Failed to find the placeholder IP"
         )
+
+
+class TestNetworkWithMtuConfiguration(cloudstackTestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestNetworkWithMtuConfiguration, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.dbclient = cls.testClient.getDbConnection()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
+
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
+        # Get Zone and templates
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.services["ostype"]
+        )
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+        cls.service_offering = ServiceOffering.create(
+            cls.api_client,
+            cls.services["service_offering"]
+        )
+        cls.isolated_network_offering = NetworkOffering.create(
+            cls.api_client,
+            cls.services["network_offering"]
+        )
+        cls.isolated_network_offering.update(cls.api_client, state='Enabled')
+
+        cls._cleanup = [
+            cls.service_offering,
+            cls.isolated_network_offering
+        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the resources created
+            cleanup_resources(self.apiclient, self.cleanup)
+            self.cleanup[:] = []
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    '''
+    This test performs the following:
+    1. creates an Isolated network with Public and Private MTUs being configured on the respective interfaces
+        a. Set one of the MTUs to a value greater that the configured max - 1500 and observe that it gets set
+        to the maximum configurable value
+    2. Check router nic MTUs 
+    2. Validates that the network has the right MTU set in the DB
+    '''
+
+    @attr(tags=["advanced", "isolated", "network"], required_hardware="false")
+    def test_01_create_isolated_network_with_mtu(self):
+        public_mtu = 1450
+        private_mtu = 2000
+        logger.debug("Creating an isolated network with MTU defined for both public and private interfaces")
+        self.isolated_network = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            networkofferingid=self.isolated_network_offering.id,
+            zoneid=self.zone.id,
+            publicmtu=public_mtu,
+            privatemtu=private_mtu)
+
+        logger.debug("Deploying VM")
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(self.isolated_network.id)])
+        self.cleanup.append(virtual_machine)
+        self.cleanup.append(self.isolated_network)
+
+        # Validate network is in the Implemented state
+
+        response = verifyNetworkState(
+            self.apiclient,
+            virtual_machine.nic[0].networkid,
+            "implemented")
+        exceptionOccurred = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
+            self.fail(exceptionMessage)
+        # Verify network mtu set
+        result = self.dbclient.execute("select public_iface_mtu, private_iface_mtu from networks where uuid='%s'"
+                                       % str(self.isolated_network.id))
+        self.assertEqual(isinstance(result, list),
+                         True,
+                         "Check DB query result set for valid data")
+
+        self.assertNotEqual(len(result),
+                            0,
+                            "Check DB Query result set")
+        self.assertEqual(result[0][0],
+                         public_mtu if public_mtu < 1500 else 1500,
+                         "DB results not matching, expected: %s found: %s " % (public_mtu, result[0][0]))
+        self.assertEqual(result[0][1],
+                         private_mtu if private_mtu < 1500 else 1500,
+                         "DB results not matching, expected: %s found: %s " % (private_mtu, result[0][1]))
+
+        self.checkRouterNicMtus(self.isolated_network, public_mtu, 1500)
+        self.checkNetworkMtu(self.isolated_network, public_mtu, 1500)
+
+    @attr(tags=["advanced", "isolated", "network", "xx"], required_hardware="false")
+    def test_02_update_isolated_network_with_mtu(self):
+        public_mtu = 1200
+        private_mtu = 1100
+        logger.debug("Creating an isolated network with MTU defined for both public and private interfaces")
+        isolated_network1 = Network.create(
+            self.apiclient,
+            self.services["isolated_network"],
+            networkofferingid=self.isolated_network_offering.id,
+            zoneid=self.zone.id,
+            publicmtu=public_mtu,
+            privatemtu=private_mtu)
+
+        logger.debug("Deploying VM")
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.service_offering.id,
+            networkids=[str(isolated_network1.id)])
+        self.cleanup.append(virtual_machine)
+        self.cleanup.append(isolated_network1)
+
+        # Validate network is in the Implemented state
+
+        response = verifyNetworkState(
+            self.apiclient,
+            virtual_machine.nic[0].networkid,
+            "implemented")
+        exceptionOccurred = response[0]
+        isNetworkInDesiredState = response[1]
+        exceptionMessage = response[2]
+
+        if (exceptionOccurred or (not isNetworkInDesiredState)):
+            self.fail(exceptionMessage)
+        # Verify network mtu set
+        result = self.dbclient.execute("select public_iface_mtu, private_iface_mtu from networks where uuid='%s'"
+                                       % str(isolated_network1.id))
+        self.assertEqual(isinstance(result, list),
+                         True,
+                         "Check DB query result set for valid data")
+
+        self.assertNotEqual(len(result),
+                            0,
+                            "Check DB Query result set")
+        self.assertEqual(result[0][0],
+                         public_mtu,
+                         "DB results not matching, expected: %s found: %s " % (public_mtu, result[0][0]))
+        self.assertEqual(result[0][1],
+                         private_mtu,
+                         "DB results not matching, expected: %s found: %s " % (private_mtu, result[0][1]))
+
+        self.checkRouterNicMtus(isolated_network1, public_mtu, private_mtu)
+        self.checkNetworkMtu(isolated_network1, public_mtu, private_mtu)
+
+        logger.debug("Update the network's MTU")
+        updated_network = isolated_network1.update(self.apiclient, id=isolated_network1.id, public_mtu=1450)
+        self.checkRouterNicMtus(updated_network, public_mtu, private_mtu)
+        self.checkNetworkMtu(updated_network, public_mtu, private_mtu)
+
+    def checkRouterNicMtus(self, network, public_mtu, private_mtu):
+        self.debug("Listing routers for network: %s" % network.name)
+        self.routers = Router.list(
+            self.apiclient,
+            networkid=network.id,
+            listall=True
+        )
+        self.assertTrue(
+            isinstance(self.routers, list),
+            "Check listRouters response returns a valid list"
+        )
+        self.assertTrue(
+            len(self.routers) > 0,
+            "Router for the network isn't found"
+        )
+        for router in self.routers:
+            nics = router.nic
+            for nic in nics:
+                if nic.traffictype == 'Guest':
+                    self.assertEqual(private_mtu, nic.mtu, "MTU not properly configured on private interface of VR")
+                if nic.traffictype == 'Public':
+                    self.assertEqual(public_mtu, nic.mtu, "MTU not properly configured on public interface of VR")
+
+    def checkNetworkMtu(self, network, expectedPublicMtu, expectedPrivateMtu):
+        self.assertEqual(expectedPublicMtu, network.publicmtu)
+        self.assertEqual(expectedPrivateMtu, network.privatemtu)
+

@@ -76,7 +76,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         vrIdTrafficSearch = createSearchBuilder();
         vrIdTrafficSearch.and("id", vrIdTrafficSearch.entity().getId(), SearchCriteria.Op.EQ);
-        vrIdTrafficSearch.and("trafficType", vrIdTrafficSearch.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        vrIdTrafficSearch.and("trafficType", vrIdTrafficSearch.entity().getTrafficType(), SearchCriteria.Op.IN);
         vrIdTrafficSearch.done();
 
         _count = "select count(distinct id) from domain_router_view WHERE ";
@@ -189,6 +189,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
                 if (router.getGuestType() != null) {
                     nicResponse.setType(router.getGuestType().toString());
                 }
+                if (router.getMtu() != null){
+                    nicResponse.setMtu(router.getMtu());
+                }
                 nicResponse.setIsDefault(router.isDefaultNic());
                 nicResponse.setObjectName("nic");
                 routerResponse.addNic(nicResponse);
@@ -282,6 +285,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             if (vr.getGuestType() != null) {
                 nicResponse.setType(vr.getGuestType().toString());
             }
+            if (vr.getMtu() != null) {
+                nicResponse.setMtu(vr.getMtu());
+            }
             nicResponse.setIsDefault(vr.isDefaultNic());
             nicResponse.setObjectName("nic");
             vrData.addNic(nicResponse);
@@ -334,10 +340,10 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     }
 
     @Override
-    public List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, TrafficType trafficType) {
+    public List<DomainRouterJoinVO> getRouterByIdAndTrafficType(Long id, TrafficType... trafficType) {
         SearchCriteria<DomainRouterJoinVO> sc = vrIdTrafficSearch.create();
         sc.setParameters("id", id);
-        sc.setParameters("trafficType", trafficType);
+        sc.setParameters("trafficType", (Object[])trafficType);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
