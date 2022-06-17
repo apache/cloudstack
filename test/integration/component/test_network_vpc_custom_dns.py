@@ -24,8 +24,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (createGuestNetworkIpv6Prefix,
                                   listGuestNetworkIpv6Prefixes,
                                   deleteGuestNetworkIpv6Prefix)
-from marvin.lib.utils import (cleanup_resources,
-                              get_process_status,
+from marvin.lib.utils import (get_process_status,
                               get_host_credentials)
 from marvin.lib.base import (Configurations,
                              Domain,
@@ -53,7 +52,6 @@ from ipaddress import IPv6Network
 from random import getrandbits
 import time
 import logging
-import threading
 
 IP6_OFFERING_CONFIG_NAME = "ipv6.offering.enabled"
 
@@ -225,18 +223,11 @@ class TestNetworkCustomDns(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.thread = None
         self.cleanup = []
         return
 
     def tearDown(self):
-        try:
-            if self.thread and self.thread.is_alive():
-                self.thread.join(5*60)
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNetworkCustomDns, self).tearDown()
 
     def createTinyServiceOffering(self):
         self.service_offering = ServiceOffering.create(
@@ -493,18 +484,11 @@ class TestVpcCustomDns(cloudstackTestCase):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.thread = None
         self.cleanup = []
         return
 
     def tearDown(self):
-        try:
-            if self.thread and self.thread.is_alive():
-                self.thread.join(5*60)
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestVpcCustomDns, self).tearDown()
 
     def createTinyServiceOffering(self):
         self.service_offering = ServiceOffering.create(
