@@ -171,7 +171,7 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.StoragePool,
             null);
-    ConfigKey<Boolean> vmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
+    ConfigKey<Boolean> VmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
             "vmware.allow.parallel.command.execution",
             "Advanced",
             "false",
