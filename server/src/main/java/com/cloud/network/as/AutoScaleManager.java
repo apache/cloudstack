@@ -33,11 +33,19 @@ public interface AutoScaleManager extends AutoScaleService {
             "Determines how long (in seconds) to wait before actually removing auto scaling statistics from database.",
             false);
 
+    ConfigKey<Integer> AutoScaleStatsWorker = new ConfigKey<>("Advanced", Integer.class,
+            "autoscale.stats.worker",
+            "10",
+            "The Number of worker threads to scan the autoscale vm groups.",
+            false);
+
     void cleanUpAutoScaleResources(Long accountId);
 
     void doScaleUp(long groupId, Integer numVm);
 
     void doScaleDown(long groupId);
+
+    void checkAllAutoScaleVmGroups();
 
     void checkAutoScaleVmGroup(AutoScaleVmGroupVO asGroup);
 }

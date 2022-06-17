@@ -114,7 +114,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
 
     @Override
     public String toString() {
-        return new StringBuilder("AutoScaleVmGroupVO[").append("id").append("]").toString();
+        return new StringBuilder("AutoScaleVmGroupVO[").append("id=").append(id)
+                .append("|loadBalancerId=").append(loadBalancerId)
+                .append("|profileId=").append(profileId)
+                .append("]").toString();
     }
 
     @Override

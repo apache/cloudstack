@@ -25,7 +25,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -248,9 +256,32 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private long autoScaleStatsInterval = -1L;
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
 
+    ExecutorService _groupExecutor;
+
+    CompletionService<Pair<Long, Boolean>> _completionService;
+
     @Override
     public boolean start() {
         autoScaleStatsInterval = NumbersUtil.parseLong(_configDao.getValue("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
+
+        // create thread pool and blocking queue
+        final int workersCount = AutoScaleStatsWorker.value();
+        _groupExecutor = Executors.newFixedThreadPool(workersCount);
+        s_logger.info("AutoScale Manager created a thread pool to scan autoscale vm groups. The pool size is : " + workersCount);
+
+        final BlockingQueue<Future<Pair<Long, Boolean>>> queue = new LinkedBlockingQueue<>(workersCount);
+        s_logger.info("AutoScale Manager  created a blocking queue to scan autoscale vm groups. The queue size is : " + workersCount);
+
+        _completionService = new ExecutorCompletionService<>(_groupExecutor, queue);
+
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        if (_groupExecutor != null) {
+            _groupExecutor.shutdown();
+        }
         return true;
     }
 
@@ -1682,8 +1713,49 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
                 AutoScaleStatsInterval,
-                AutoScaleStatsCleanupDelay
+                AutoScaleStatsCleanupDelay,
+                AutoScaleStatsWorker
         };
+    }
+
+    @Override
+    public void checkAllAutoScaleVmGroups() {
+        // list all AS VMGroups
+        List<AutoScaleVmGroupVO> asGroups = _autoScaleVmGroupDao.listAll();
+        for (AutoScaleVmGroupVO asGroup : asGroups) {
+            _completionService.submit(new CheckAutoScaleVmGroupAsync(asGroup));
+        }
+        try {
+            for (AutoScaleVmGroupVO asGroup : asGroups) {
+                Future<Pair<Long, Boolean>> future = _completionService.take();
+                Pair<Long, Boolean> result = future.get();
+                s_logger.debug("Checked AutoScale vm group " + result.first() + " with result: " + result.second());
+            }
+        } catch (ExecutionException ex) {
+            s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
+        } catch (InterruptedException ex) {
+            s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
+        }
+    }
+
+    protected class CheckAutoScaleVmGroupAsync implements Callable<Pair<Long, Boolean>> {
+        AutoScaleVmGroupVO asGroup;
+
+        public CheckAutoScaleVmGroupAsync(AutoScaleVmGroupVO asGroup) {
+            this.asGroup = asGroup;
+        }
+
+        @Override
+        public Pair<Long, Boolean> call() {
+            try {
+                s_logger.debug("Checking AutoScale vm group " + asGroup);
+                checkAutoScaleVmGroup(asGroup);
+            } catch (Exception ex) {
+                s_logger.warn("Failed to check AutoScale vm group " + asGroup + " due to Exception: " , ex);
+                return new Pair<>(asGroup.getId(), false);
+            }
+            return new Pair<>(asGroup.getId(), true);
+        }
     }
 
     @Override

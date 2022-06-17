@@ -107,8 +107,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.as.AutoScaleManager;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
@@ -317,8 +315,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private NicDao _nicDao;
     @Inject
     private VlanDao _vlanDao;
-    @Inject
-    private AutoScaleVmGroupDao _asGroupDao;
     @Inject
     private AutoScaleManager _asManager;
     @Inject
@@ -1738,11 +1734,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     LOGGER.debug("Skipping AutoScaling Monitor");
                     return;
                 }
-                // list all AS VMGroups
-                List<AutoScaleVmGroupVO> asGroups = _asGroupDao.listAll();
-                for (AutoScaleVmGroupVO asGroup : asGroups) {
-                    _asManager.checkAutoScaleVmGroup(asGroup);
-                }
+
+                _asManager.checkAllAutoScaleVmGroups();
 
             } catch (Throwable t) {
                 LOGGER.error("Error trying to monitor autoscaling", t);
