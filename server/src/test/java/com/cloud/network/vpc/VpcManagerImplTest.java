@@ -37,8 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.alert.AlertManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.After;
@@ -124,6 +126,8 @@ public class VpcManagerImplTest {
     VlanDao vlanDao;
     @Mock
     NicDao nicDao;
+    @Mock
+    AlertManager alertManager;
 
     @Before
     public void setup()
@@ -144,6 +148,7 @@ public class VpcManagerImplTest {
         manager.networkHelper = networkHelper;
         manager._vlanDao = vlanDao;
         manager.nicDao = nicDao;
+        manager.alertManager = alertManager;
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
     }
 
@@ -342,5 +347,20 @@ public class VpcManagerImplTest {
         manager.updateVpc(vpcId, null, null, null, true, publicMtu);
         Assert.assertEquals(publicMtu, vpcVO.getPublicMtu());
 
+    }
+
+    @Test
+    public void testUpdatePublicMtuToGreaterThanThreshold() {
+        Integer publicMtu = 2500;
+        Integer expectedMtu = 1500;
+        Long vpcId = 1L;
+
+        VpcVO vpcVO = new VpcVO();
+
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpcVO);
+        Mockito.when(vpcDao.createForUpdate(anyLong())).thenReturn(vpcVO);
+        lenient().doNothing().when(alertManager).sendAlert(any(AlertService.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
+        Integer mtu = manager.validateMtu(vpcVO, publicMtu);
+        Assert.assertEquals(expectedMtu, mtu);
     }
 }

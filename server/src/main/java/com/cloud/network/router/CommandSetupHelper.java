@@ -960,10 +960,9 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask,
                         vifMacAddress, networkRate, ipAddr.isOneToOneNat());
                 NetworkVO networkVO = _networkDao.findById(ipAddr.getAssociatedWithNetworkId());
-                if (networkVO.getPublicIfaceMtu() != null) {
+                if (networkVO != null && networkVO.getPublicIfaceMtu() != null) {
                     ip.setMtu(networkVO.getPublicIfaceMtu());
-                }
-                if (router.getVpcId() != null) {
+                } else if (router.getVpcId() != null) {
                     VpcVO vpc = _vpcDao.findById(router.getVpcId());
                     if (vpc != null) {
                         ip.setMtu(vpc.getPublicMtu());

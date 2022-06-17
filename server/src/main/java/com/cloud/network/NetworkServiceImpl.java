@@ -2912,11 +2912,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     ips.add(to);
                 }
                 if (GuestType.Shared == network.getGuestType()) {
-                    IpAddressTO to = getIpTo(networkId, publicMtu);
-                    if (to != null) {
-                        ips.add(to);
-                        publicIpAddressMap.put(to.getPublicIp(), true);
-                    }
+                    getIpTo(networkId, publicIpAddressMap, publicMtu, ips, true);
                 }
             } else {
                 s_logger.info(String.format("Network's public Interfaces MTU is already set to %s ", publicMtu));
@@ -2926,11 +2922,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (privateMtu != null) {
             if (!privateMtu.equals(network.getPrivateIfaceMtu())) {
                 network.setPrivateIfaceMtu(privateMtu);
-                IpAddressTO to = getIpTo(networkId, privateMtu);
-                if (to != null) {
-                    ips.add(to);
-                    publicIpAddressMap.put(to.getPublicIp(), false);
-                }
+                getIpTo(networkId, publicIpAddressMap,privateMtu,ips,false);
             } else {
                 s_logger.info(String.format("Network's private Interfaces MTU is already set to %s ", privateMtu));
             }
@@ -3146,12 +3138,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return new Pair<>(publicMtu, privateMtu);
     }
 
-    private IpAddressTO getIpTo(Long networkId, Integer mtu) {
-        NicVO nic = _nicDao.findByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
-        if (nic != null) {
-            return new IpAddressTO(nic.getIPv4Address(), mtu, nic.getIPv4Netmask());
+    private void getIpTo(Long networkId, Map<String, Boolean> publicIpAddressMap, Integer mtu, List<IpAddressTO> ips, boolean isPublic) {
+        List<NicVO> nics = _nicDao.listByNetworkIdAndType(networkId, VirtualMachine.Type.DomainRouter);
+        if (nics != null && !nics.isEmpty()) {
+            for (NicVO nic : nics) {
+                ips.add(new IpAddressTO(nic.getIPv4Address(), mtu, nic.getIPv4Netmask()));
+                publicIpAddressMap.put(nic.getIPv4Address(), isPublic);
+            }
         }
-        return null;
     }
 
     private void updateNetworkDetails(List<IpAddressTO> ips, NetworkVO network,

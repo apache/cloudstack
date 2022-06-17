@@ -246,7 +246,7 @@ public class VirtualRoutingResource {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("result: " + result.isSuccess() + ", output: " + result.getDetails());
                 if (!Boolean.TRUE.equals(result.isSuccess())) {
-                    if (result.getDetails().contains(String.format("Interface with IP: %s not found", ipAddressTO.getPublicIp()))) {
+                    if (result.getDetails().contains(String.format("Interface with IP %s not found", ipAddressTO.getPublicIp()))) {
                         s_logger.warn(String.format("Skipping IP: %s as it isn't configured on router interface", ipAddressTO.getPublicIp()));
                     } else if (ipAddressTO.getDetails().get(ApiConstants.REDUNDANT_STATE).equals(VirtualRouter.RedundantState.PRIMARY.name())) {
                         s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",

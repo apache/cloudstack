@@ -391,4 +391,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("address", ip);
         return  findOneBy(sc);
     }
+
+    @Override
+    public List<NicVO> listByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("vmType", vmType);
+        return listBy(sc);
+    }
 }

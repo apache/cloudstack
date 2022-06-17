@@ -18,7 +18,7 @@
 
 # used as a proxy to call script inside virtual router
 
-set -x
+#set -x
 
 ip=$1
 netmask=$2

@@ -406,7 +406,7 @@ public class NetworkServiceImplTest {
         Mockito.when(offering.isSystemOnly()).thenReturn(false);
         Mockito.when(networkVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         Mockito.when(networkVO.getGuestType()).thenReturn(Network.GuestType.Shared);
-        Mockito.when(nicDao.findByNetworkIdAndType(anyLong(), any(VirtualMachine.Type.class))).thenReturn(nicVO);
+        Mockito.when(nicDao.listByNetworkIdAndType(anyLong(), any(VirtualMachine.Type.class))).thenReturn(List.of(Mockito.mock(NicVO.class)));
         Mockito.when(networkVO.getVpcId()).thenReturn(null);
         Mockito.when(ipAddressDao.listByNetworkId(anyLong())).thenReturn(addresses);
 
@@ -440,6 +440,4 @@ public class NetworkServiceImplTest {
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
     }
-
-
 }

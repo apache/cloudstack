@@ -251,7 +251,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Inject
     NicDao nicDao;
     @Inject
-    private AlertManager alertManager;
+    AlertManager alertManager;
     @Inject
     CommandSetupHelper commandSetupHelper;
     @Autowired
@@ -1229,15 +1229,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         if (mtu != null) {
-            Long zoneId = vpcToUpdate.getZoneId();
-            if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
-                String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
-                String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
-                                "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
-                        NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId));
-                s_logger.warn(message);
-                alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
-            }
+            mtu = validateMtu(vpcToUpdate, mtu);
         }
 
         List<IPAddressVO> ipAddresses = _ipAddressDao.listByAssociatedVpc(vpcToUpdate.getId(), null);
@@ -1269,6 +1261,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         } else {
             return null;
         }
+    }
+
+    protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
+        Long zoneId = vpcToUpdate.getZoneId();
+        if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
+            String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
+                            "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
+                    NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId));
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            mtu = NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId);
+        }
+        return mtu;
     }
 
     private void updateVpcMtu(List<IpAddressTO> ips, Integer publicMtu) {

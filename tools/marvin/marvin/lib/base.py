@@ -3187,7 +3187,7 @@ class Network:
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
                gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
-               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None):
+               externalid=None, bypassvlanoverlapcheck=None, associatednetworkid=None, publicmtu=None, privatemtu=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -3257,6 +3257,10 @@ class Network:
             cmd.bypassvlanoverlapcheck = bypassvlanoverlapcheck
         if associatednetworkid:
             cmd.associatednetworkid = associatednetworkid
+        if publicmtu:
+            cmd.publicmtu = publicmtu
+        if privatemtu:
+            cmd.privatemtu = privatemtu
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -4736,7 +4740,7 @@ class VPC:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return VPC(apiclient.createVPC(cmd).__dict__)
 
-    def update(self, apiclient, name=None, displaytext=None):
+    def update(self, apiclient, name=None, displaytext=None, **kwargs):
         """Updates VPC configurations"""
 
         cmd = updateVPC.updateVPCCmd()
@@ -4745,7 +4749,10 @@ class VPC:
             cmd.name = name
         if displaytext:
             cmd.displaytext = displaytext
-        return (apiclient.updateVPC(cmd))
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return apiclient.updateVPC(cmd).
+        return apiclient.updateVPC(cmd).
+        return apiclient.updateVPC(cmd).
 
     def migrate(self, apiclient, vpc_offering_id, vpc_network_offering_ids, resume=False):
         cmd = migrateVPC.migrateVPCCmd()
