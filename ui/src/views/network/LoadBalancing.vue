@@ -1054,6 +1054,7 @@ export default {
     handleStickinessMethodSelectChange (e) {
       if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
+      this.form.methodname = e
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
