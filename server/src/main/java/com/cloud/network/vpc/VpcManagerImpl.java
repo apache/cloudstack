@@ -1229,10 +1229,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             vpc.setDisplay(displayVpc);
         }
 
-        if (mtu != null) {
-            mtu = validateMtu(vpcToUpdate, mtu);
-        }
-
+        mtu = validateMtu(vpcToUpdate, mtu);
         if (mtu != null) {
             updateMtuOfVpcNetwork(vpcToUpdate, vpc, mtu);
         }
@@ -1246,6 +1243,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
+        if (mtu == null) {
+            return null;
+        }
         Long zoneId = vpcToUpdate.getZoneId();
         if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
             String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";

@@ -18,6 +18,8 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.IpAddressTO;
 
+import java.util.Arrays;
+
 public class UpdateNetworkCommand extends NetworkElementCommand{
     IpAddressTO[] ipAddresses;
 
@@ -39,4 +41,19 @@ public class UpdateNetworkCommand extends NetworkElementCommand{
         return ipAddresses.length;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UpdateNetworkCommand command = (UpdateNetworkCommand) o;
+        return Arrays.equals(ipAddresses, command.ipAddresses);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + Arrays.hashCode(ipAddresses);
+        return result;
+    }
 }

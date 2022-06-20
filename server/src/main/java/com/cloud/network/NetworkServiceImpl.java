@@ -2931,7 +2931,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (!routersToIpList.isEmpty() && !restartNetwork) {
-            boolean success = updateMtuOnVr(networkId, routersToIpList);
+            boolean success = updateMtuOnVr(routersToIpList);
             if (success) {
                 updateNetworkDetails(routersToIpList, network, publicMtu, privateMtu);
             } else {
@@ -3141,8 +3141,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private void updateNetworkDetails(Map<Long, List<IpAddressTO>> routerToIpList, NetworkVO network, Integer publicMtu, Integer privateMtu) {
-        for (Long routerId : routerToIpList.keySet()) {
-            for (IpAddressTO ipAddress : routerToIpList.get(routerId)) {
+        for (Map.Entry<Long, List<IpAddressTO>> routerEntrySet : routerToIpList.entrySet()) {
+            for (IpAddressTO ipAddress : routerEntrySet.getValue()) {
                 NicVO nicVO = _nicDao.findByIpAddressAndVmType(ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
                 if (nicVO != null) {
                     if (ipAddress.getTrafficType() == TrafficType.Guest) {
@@ -3164,13 +3164,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _networksDao.update(network.getId(), network);
     }
 
-    protected boolean updateMtuOnVr(Long networkId, Map<Long, List<IpAddressTO>> routersToIpList) {
+    protected boolean updateMtuOnVr(Map<Long, List<IpAddressTO>> routersToIpList) {
         boolean success = false;
-        for (Long routerId : routersToIpList.keySet()) {
+        for (Map.Entry<Long, List<IpAddressTO>> routerEntrySet : routersToIpList.entrySet()) {
+            Long routerId = routerEntrySet.getKey();
             DomainRouterVO router = routerDao.findById(routerId);
+            if (router == null) {
+                s_logger.error(String.format("Failed to find router with id: %s", routerId));
+                continue;
+            }
             Commands cmds = new Commands(Command.OnError.Stop);
             Map<String, String> state = new HashMap<>();
-            List<IpAddressTO> ips = routersToIpList.get(routerId);
+            List<IpAddressTO> ips = routerEntrySet.getValue();
             state.put(ApiConstants.REDUNDANT_STATE, router.getRedundantState() != null ? router.getRedundantState().name() : VirtualRouter.RedundantState.UNKNOWN.name());
             ips.forEach(ip -> ip.setDetails(state));
             commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
@@ -3184,6 +3189,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 success = true;
             } catch (ResourceUnavailableException e) {
                 s_logger.error(String.format("Failed to update network MTU for router %s due to %s", router, e.getMessage()));
+                success = false;
             }
         }
         return success;

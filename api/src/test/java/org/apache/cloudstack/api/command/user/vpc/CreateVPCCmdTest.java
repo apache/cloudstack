@@ -106,7 +106,7 @@ public class CreateVPCCmdTest extends TestCase {
     public void testGetPublicMtuWhenNotSet() {
         Integer publicMtu = null;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
-        Assert.assertEquals(cmd.getPublicMtu(), ApiConstants.DEFAULT_MTU);
+        Assert.assertEquals(ApiConstants.DEFAULT_MTU, cmd.getPublicMtu());
     }
 
     public void testGetPublicMtuWhenSet() {

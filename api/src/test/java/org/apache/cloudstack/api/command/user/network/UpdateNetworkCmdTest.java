@@ -156,14 +156,21 @@ public class UpdateNetworkCmdTest extends TestCase {
 
     public void testExecute() throws InsufficientCapacityException {
         long networkId = 1L;
+        Integer publicmtu = 1200;
         ReflectionTestUtils.setField(cmd, "id", networkId);
+        ReflectionTestUtils.setField(cmd, "publicMtu", publicmtu);
         Network network = Mockito.mock(Network.class);
         responseGenerator = Mockito.mock(ResponseGenerator.class);
         NetworkResponse response = Mockito.mock(NetworkResponse.class);
+        response.setPublicMtu(publicmtu);
         Mockito.when(networkService.getNetwork(networkId)).thenReturn(network);
         Mockito.when(networkService.updateGuestNetwork(cmd)).thenReturn(network);
         cmd._responseGenerator = responseGenerator;
         Mockito.when(responseGenerator.createNetworkResponse(ResponseObject.ResponseView.Restricted, network)).thenReturn(response);
         cmd.execute();
+        Mockito.verify(responseGenerator).createNetworkResponse(Mockito.any(ResponseObject.ResponseView.class), Mockito.any(Network.class));
+        NetworkResponse actualResponse = (NetworkResponse) cmd.getResponseObject();
+
+        Assert.assertEquals(response, actualResponse);
     }
 }
