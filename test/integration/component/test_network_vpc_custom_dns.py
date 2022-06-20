@@ -244,8 +244,8 @@ class TestNetworkCustomDns(cloudstackTestCase):
             self.apiclient,
             off_service
         )
-        self.network_offering.update(self.apiclient, state='Enabled')
         self.cleanup.append(self.network_offering)
+        self.network_offering.update(self.apiclient, state='Enabled')
 
 
     def deployNetwork(self):
@@ -511,12 +511,12 @@ class TestVpcCustomDns(cloudstackTestCase):
             self.apiclient,
             off_service
         )
+        self.cleanup.append(vpc_offering)
         vpc_offering.update(self.apiclient, state='Enabled')
         return vpc_offering
 
     def createVpcOffering(self, is_redundant=False):
         self.vpc_offering = self.createVpcOfferingInternal(is_redundant, self.ipv6NotSupported == False)
-        self.cleanup.append(self.vpc_offering)
 
     def deployAllowAllVpcInternal(self, cidr):
         service = self.services["vpc"]
@@ -539,6 +539,7 @@ class TestVpcCustomDns(cloudstackTestCase):
             ip6dns1=ip6Dns1,
             ip6dns2=ip6Dns2
         )
+        self.cleanup.append(vpc)
         acl = NetworkACLList.create(
             self.apiclient,
             services={},
@@ -564,7 +565,6 @@ class TestVpcCustomDns(cloudstackTestCase):
 
     def deployVpc(self):
         self.vpc = self.deployAllowAllVpcInternal(VPC_DATA["cidr"])
-        self.cleanup.append(self.vpc)
 
     def createNetworkTierOfferingInternal(self, is_ipv6, remove_lb=True):
         off_service = self.services["nw_offering_isolated_vpc"]
@@ -584,12 +584,12 @@ class TestVpcCustomDns(cloudstackTestCase):
             off_service,
             conservemode=False
         )
+        self.cleanup.append(network_offering)
         network_offering.update(self.apiclient, state='Enabled')
         return network_offering
 
     def createNetworkTierOffering(self):
         self.network_offering = self.createNetworkTierOfferingInternal(self.ipv6NotSupported == False)
-        self.cleanup.append(self.network_offering)
 
     def deployNetworkTierInternal(self, network_offering_id, vpc_id, tier_gateway, tier_netmask, acl_id=None, tier_name=None):
         if not acl_id and vpc_id in self.vpcAllowAllAclDetailsMap:
@@ -610,6 +610,7 @@ class TestVpcCustomDns(cloudstackTestCase):
             netmask=tier_netmask,
             aclid=acl_id
         )
+        self.cleanup.append(network)
         return network
 
     def deployNetworkTier(self):
@@ -619,7 +620,6 @@ class TestVpcCustomDns(cloudstackTestCase):
             VPC_DATA["tier1_gateway"],
             VPC_DATA["tier_netmask"]
         )
-        self.cleanup.append(self.network)
 
     def deployNetworkTierVmInternal(self, network):
         if self.template == FAILED:
@@ -634,11 +634,11 @@ class TestVpcCustomDns(cloudstackTestCase):
             networkids=network,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(virtual_machine)
         return virtual_machine
 
     def deployNetworkTierVm(self):
         self.virtual_machine = self.deployNetworkTierVmInternal(self.network.id)
-        self.cleanup.append(self.virtual_machine)
 
     def checkVpcBasic(self):
         self.debug("Listing VPC: %s" % (self.vpc.name))
