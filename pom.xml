@@ -764,6 +764,10 @@
             <id>repo.jenkins-ci.org.public</id>
             <url>https://repo.jenkins-ci.org/public/</url>
         </repository>
+        <repository>
+            <id>libvirt.org.maven2</id>
+            <url>https://libvirt.org/maven2/</url>
+        </repository>
     </repositories>
 
     <build>
