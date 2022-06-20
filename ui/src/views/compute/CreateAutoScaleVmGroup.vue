@@ -29,7 +29,7 @@
             layout="vertical"
           >
             <a-steps direction="vertical" size="small">
-              <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
+              <a-step :title="$t('label.select.a.zone')" status="process">
                 <template #description>
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
@@ -82,55 +82,11 @@
                         </a-select-option>
                       </a-select>
                     </a-form-item>
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.podid')"
-                      name="podid"
-                      ref="podid">
-                      <a-select
-                        v-model:value="form.podid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="podSelectOptions"
-                        :loading="loading.pods"
-                        @change="onSelectPodId"
-                      ></a-select>
-                    </a-form-item>
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.clusterid')"
-                      name="clusterid"
-                      ref="clusterid">
-                      <a-select
-                        v-model:value="form.clusterid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="clusterSelectOptions"
-                        :loading="loading.clusters"
-                        @change="onSelectClusterId"
-                      ></a-select>
-                    </a-form-item>
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.hostid')"
-                      name="hostid"
-                      ref="hostid">
-                      <a-select
-                        v-model:value="form.hostid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="hostSelectOptions"
-                        :loading="loading.hosts"
-                      ></a-select>
-                    </a-form-item>
                   </div>
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.templateiso')"
+                :title="$t('label.template')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 15px">
@@ -167,33 +123,9 @@
                           @update-disk-size="updateFieldValue"
                           style="margin-top: 10px;"/>
                       </div>
-                      <div v-else>
-                        {{ $t('message.iso.desc') }}
-                        <template-iso-selection
-                          input-decorator="isoid"
-                          :items="options.isos"
-                          :selected="tabKey"
-                          :loading="loading.isos"
-                          :preFillContent="dataPreFill"
-                          @handle-search-filter="($event) => fetchAllIsos($event)"
-                          @update-template-iso="updateFieldValue" />
-                        <a-form-item :label="$t('label.hypervisor')">
-                          <a-select
-                            v-model:value="form.hypervisor"
-                            :preFillContent="dataPreFill"
-                            :options="hypervisorSelectOptions"
-                            @change="value => hypervisor = value"
-                            showSearch
-                            optionFilterProp="label"
-                            :filterOption="filterOption" />
-                        </a-form-item>
-                      </div>
                     </a-card>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.templateid" />
-                    </a-form-item>
-                    <a-form-item class="form-item-hidden">
-                      <a-input v-model:value="form.isoid" />
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.rootdisksize" />
@@ -275,7 +207,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="tabKey!=='isoid'">
+                    <span>
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -284,7 +216,7 @@
                         @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
+                    <span v-if="serviceOffering && !serviceOffering.diskofferingstrictness">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -385,7 +317,7 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.networks')"
+                :title="$t('label.select.network')"
                 :status="zoneSelected ? 'process' : 'wait'"
                 v-if="zone && zone.networktype !== 'Basic'">
                 <template #description>
@@ -403,18 +335,11 @@
                         :value="networkOfferingIds"
                         :loading="loading.networks"
                         :zoneId="zoneId"
+                        :autoscale=true
                         :preFillContent="dataPreFill"
                         @select-network-item="($event) => updateNetworks($event)"
                         @handle-search-filter="($event) => handleSearchFilter('networks', $event)"
                       ></network-selection>
-                      <network-configuration
-                        v-if="networks.length > 0"
-                        :items="networks"
-                        :preFillContent="dataPreFill"
-                        @update-network-config="($event) => updateNetworkConfig($event)"
-                        @handler-error="($event) => hasError = $event"
-                        @select-default-network-item="($event) => updateDefaultNetworks($event)"
-                      ></network-configuration>
                     </div>
                   </div>
                 </template>
@@ -430,25 +355,6 @@
                     :loading="loading.networks"
                     :preFillContent="dataPreFill"
                     @select-security-group-item="($event) => updateSecurityGroups($event)"></security-group-selection>
-                </template>
-              </a-step>
-              <a-step
-                v-if="isUserAllowedToListSshKeys"
-                :title="$t('label.sshkeypairs')"
-                :status="zoneSelected ? 'process' : 'wait'">
-                <template #description>
-                  <div v-if="zoneSelected">
-                    <ssh-key-pair-selection
-                      :items="options.sshKeyPairs"
-                      :row-count="rowCount.sshKeyPairs"
-                      :zoneId="zoneId"
-                      :value="sshKeyPairs"
-                      :loading="loading.sshKeyPairs"
-                      :preFillContent="dataPreFill"
-                      @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
-                      @handle-search-filter="($event) => handleSearchFilter('sshKeyPairs', $event)"
-                    />
-                  </div>
                 </template>
               </a-step>
               <a-step
@@ -545,13 +451,6 @@
                         </a-select>
                       </a-form-item>
                     </div>
-                    <a-form-item
-                      :label="$t('label.bootintosetup')"
-                      v-if="zoneSelected && ((tabKey === 'isoid' && hypervisor === 'VMware') || (tabKey === 'templateid' && template && template.hypervisor === 'VMware'))"
-                      name="bootintosetup"
-                      ref="bootintosetup">
-                      <a-switch v-model:checked="form.bootintosetup" />
-                    </a-form-item>
                     <a-form-item :label="$t('label.dynamicscalingenabled')" name="dynamicscalingenabled" ref="dynamicscalingenabled">
                       <template #label>
                         <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
@@ -747,7 +646,6 @@ export default {
         templateid: null,
         templatename: null,
         keyboard: null,
-        keypairs: [],
         group: null,
         affinitygroupids: [],
         affinitygroup: [],
@@ -760,14 +658,12 @@ export default {
       },
       options: {
         templates: {},
-        isos: {},
         hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
         zones: [],
         affinityGroups: [],
         networks: [],
-        sshKeyPairs: [],
         pods: [],
         clusters: [],
         hosts: [],
@@ -781,13 +677,11 @@ export default {
       loading: {
         deploy: false,
         templates: false,
-        isos: false,
         hypervisors: false,
         serviceOfferings: false,
         diskOfferings: false,
         affinityGroups: false,
         networks: false,
-        sshKeyPairs: false,
         zones: false,
         pods: false,
         clusters: false,
@@ -803,7 +697,6 @@ export default {
       templateLicenses: [],
       templateProperties: {},
       selectedTemplateConfiguration: {},
-      iso: {},
       hypervisor: '',
       serviceOffering: {},
       diskOffering: {},
@@ -811,16 +704,8 @@ export default {
       networks: [],
       networksAdd: [],
       zone: {},
-      sshKeyPairs: [],
-      sshKeyPair: {},
       overrideDiskOffering: {},
       templateFilter: [
-        'featured',
-        'community',
-        'selfexecutable',
-        'sharedexecutable'
-      ],
-      isoFilter: [
         'featured',
         'community',
         'selfexecutable',
@@ -917,15 +802,6 @@ export default {
             listall: false
           }
         },
-        sshKeyPairs: {
-          list: 'listSSHKeyPairs',
-          options: {
-            page: 1,
-            pageSize: 10,
-            keyword: undefined,
-            listall: false
-          }
-        },
         networks: {
           list: 'listNetworks',
           options: {
@@ -938,42 +814,6 @@ export default {
             pageSize: 10,
             keyword: undefined,
             showIcon: true
-          }
-        },
-        pods: {
-          list: 'listPods',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id')
-          },
-          field: 'podid'
-        },
-        clusters: {
-          list: 'listClusters',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            podid: this.podId
-          },
-          field: 'clusterid'
-        },
-        hosts: {
-          list: 'listHosts',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            podid: this.podId,
-            clusterid: this.clusterId,
-            state: 'Up',
-            type: 'Routing'
-          },
-          field: 'hostid'
-        },
-        dynamicScalingVmConfig: {
-          list: 'listConfigurations',
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            name: 'enable.dynamic.scale.vm'
           }
         }
       }
@@ -1051,35 +891,17 @@ export default {
     templateId () {
       return this.$route.query.templateid || null
     },
-    isoId () {
-      return this.$route.query.isoid || null
-    },
     networkId () {
       return this.$route.query.networkid || null
     },
+    lbRuleId () {
+      return this.$route.query.lbruleid || null
+    },
     tabList () {
-      let tabList = []
-      if (this.templateId) {
-        tabList = [{
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        }]
-      } else if (this.isoId) {
-        tabList = [{
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }]
-      } else {
-        tabList = [{
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        },
-        {
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }]
-      }
-
+      const tabList = [{
+        key: 'templateid',
+        tab: this.$t('label.templates')
+      }]
       return tabList
     },
     showSecurityGroupSection () {
@@ -1120,15 +942,6 @@ export default {
           }
         }
 
-        this.iso = ''
-        for (const key in this.options.isos) {
-          var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === instanceConfig.isoid)
-          if (iso) {
-            this.iso = iso
-            break
-          }
-        }
-
         if (instanceConfig.hypervisor) {
           var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
           this.hypervisor = hypervisorItem ? hypervisorItem.name : null
@@ -1136,13 +949,9 @@ export default {
 
         this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
         if (this.serviceOffering?.diskofferingid) {
-          if (iso) {
-            this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-          } else {
-            instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
-          }
+          instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
         }
-        if (!iso && this.diskSelected) {
+        if (this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
         if (this.rootDiskSelected?.id) {
@@ -1154,7 +963,7 @@ export default {
           this.overrideDiskOffering = null
         }
 
-        if (!iso && this.diskSelected) {
+        if (this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
         if (this.rootDiskSelected?.id) {
@@ -1173,7 +982,6 @@ export default {
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-        this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
@@ -1220,17 +1028,6 @@ export default {
           this.vm.ostypename = this.template.ostypename
         }
 
-        if (this.iso) {
-          this.vm.isoid = this.iso.id
-          this.vm.templateid = this.iso.id
-          this.vm.templatename = this.iso.displaytext
-          this.vm.ostypeid = this.iso.ostypeid
-          this.vm.ostypename = this.iso.ostypename
-          if (this.hypervisor) {
-            this.vm.hypervisor = this.hypervisor
-          }
-        }
-
         if (this.serviceOffering) {
           this.vm.serviceofferingid = this.serviceOffering.id
           this.vm.serviceofferingname = this.serviceOffering.displaytext
@@ -1258,10 +1055,6 @@ export default {
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
         }
-
-        if (this.sshKeyPairs && this.sshKeyPairs.length > 0) {
-          this.vm.keypairs = this.sshKeyPairs
-        }
       }
     }
   },
@@ -1283,7 +1076,6 @@ export default {
   provide () {
     return {
       vmFetchTemplates: this.fetchAllTemplates,
-      vmFetchIsos: this.fetchAllIsos,
       vmFetchNetworks: this.fetchNetwork
     }
   },
@@ -1424,11 +1216,6 @@ export default {
           params.listall = true
           params.templatefilter = 'all'
           params.id = this.templateId
-        } else if (this.isoId) {
-          params.listall = true
-          params.isofilter = 'all'
-          params.id = this.isoId
-          apiName = 'listIsos'
         } else if (this.networkId) {
           params.listall = true
           params.id = this.networkId
@@ -1546,7 +1333,6 @@ export default {
         templateid: null,
         templatename: null,
         keyboard: null,
-        keypair: null,
         group: null,
         affinitygroupids: [],
         affinitygroup: [],
@@ -1565,7 +1351,6 @@ export default {
       if (name === 'templateid') {
         this.tabKey = 'templateid'
         this.form.templateid = value
-        this.form.isoid = null
         this.resetFromTemplateConfiguration()
         let template = ''
         for (const key in this.options.templates) {
@@ -1589,16 +1374,6 @@ export default {
           this.fetchBootModes(this.defaultBootType)
           this.defaultBootMode = this.template?.details?.UEFI
         }
-      } else if (name === 'isoid') {
-        this.templateConfigurations = []
-        this.selectedTemplateConfiguration = {}
-        this.templateNics = []
-        this.templateLicenses = []
-        this.templateProperties = {}
-        this.tabKey = 'isoid'
-        this.resetFromTemplateConfiguration()
-        this.form.isoid = value
-        this.form.templateid = null
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -1642,10 +1417,6 @@ export default {
     updateNetworkConfig (networks) {
       this.networkConfig = networks
     },
-    updateSshKeyPairs (names) {
-      this.form.keypairs = names
-      this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
-    },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
     },
@@ -1666,16 +1437,10 @@ export default {
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
 
-        if (!values.templateid && !values.isoid) {
+        if (!values.templateid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.template.iso')
-          })
-          return
-        } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.step.3.continue')
           })
           return
         }
@@ -1714,11 +1479,7 @@ export default {
           deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
         }
         // step 2: select template/iso
-        if (this.tabKey === 'templateid') {
-          deployVmData.templateid = values.templateid
-        } else {
-          deployVmData.templateid = values.isoid
-        }
+        deployVmData.templateid = values.templateid
 
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
@@ -1827,8 +1588,6 @@ export default {
         if (this.securitygroupids.length > 0) {
           deployVmData.securitygroupids = this.securitygroupids.join(',')
         }
-        // step 7: select ssh key pair
-        deployVmData.keypairs = this.sshKeyPairs.join(',')
 
         if (values.name) {
           deployVmData.name = values.name
@@ -1845,9 +1604,6 @@ export default {
             deployVmData['properties[' + i + '].key'] = propKey
             deployVmData['properties[' + i + '].value'] = values.properties[keys[i]]
           }
-        }
-        if ('bootintosetup' in values) {
-          deployVmData.bootintosetup = values.bootintosetup
         }
 
         const title = this.$t('label.launch.vm')
@@ -2015,31 +1771,9 @@ export default {
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
-      args.id = this.templateId
 
       return new Promise((resolve, reject) => {
         api('listTemplates', args).then((response) => {
-          resolve(response)
-        }).catch((reason) => {
-          // ToDo: Handle errors
-          reject(reason)
-        })
-      })
-    },
-    fetchIsos (isoFilter, params) {
-      const args = Object.assign({}, params)
-      if (args.keyword || args.category !== isoFilter) {
-        args.page = 1
-        args.pageSize = args.pageSize || 10
-      }
-      args.zoneid = _.get(this.zone, 'id')
-      args.isoFilter = isoFilter
-      args.bootable = true
-      args.showicon = 'true'
-      args.id = this.isoId
-
-      return new Promise((resolve, reject) => {
-        api('listIsos', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
@@ -2067,26 +1801,6 @@ export default {
         this.loading.templates = false
       })
     },
-    fetchAllIsos (params) {
-      const promises = []
-      const isos = {}
-      this.loading.isos = true
-      this.isoFilter.forEach((filter) => {
-        isos[filter] = { count: 0, iso: [] }
-        promises.push(this.fetchIsos(filter, params))
-      })
-      this.options.isos = isos
-      Promise.all(promises).then((response) => {
-        response.forEach((resItem, idx) => {
-          isos[this.isoFilter[idx]] = _.isEmpty(resItem.listisosresponse) ? { count: 0, iso: [] } : resItem.listisosresponse
-          this.options.isos = { ...isos }
-        })
-      }).catch((reason) => {
-        console.log(reason)
-      }).finally(() => {
-        this.loading.isos = false
-      })
-    },
     filterOption (input, option) {
       return option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
@@ -2104,11 +1818,7 @@ export default {
       this.form.podid = undefined
       this.form.hostid = undefined
       this.form.templateid = undefined
-      this.form.isoid = undefined
       this.tabKey = 'templateid'
-      if (this.isoId) {
-        this.tabKey = 'isoid'
-      }
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
           param.options = {
@@ -2121,8 +1831,6 @@ export default {
       })
       if (this.tabKey === 'templateid') {
         this.fetchAllTemplates()
-      } else {
-        this.fetchAllIsos()
       }
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
@@ -2141,12 +1849,6 @@ export default {
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
       this.fetchOptions(this.params[name], name)
-    },
-    onTabChange (key, type) {
-      this[type] = key
-      if (key === 'isoid') {
-        this.fetchAllIsos()
-      }
     },
     sanitizeReverse (value) {
       const reversedValue = value
