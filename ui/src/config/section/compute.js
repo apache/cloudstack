@@ -526,6 +526,10 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
+          name: 'autoscale.vm.profile',
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleVmProfile.vue')))
+        },
+        {
           name: 'loadbalancerrule',
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleLoadBalancing.vue')))
         },
