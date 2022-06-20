@@ -519,7 +519,7 @@ export default {
       resourceType: 'AutoScaleVmGroup',
       permission: ['listAutoScaleVmGroups'],
       columns: ['id', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state'],
-      details: ['id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'interval', 'state', 'created'],
+      details: ['id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'interval', 'state', 'created'],
       tabs: [
         {
           name: 'details',

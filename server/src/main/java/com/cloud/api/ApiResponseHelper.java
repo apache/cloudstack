@@ -292,6 +292,7 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.router.VirtualRouter;
@@ -445,6 +446,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     Ipv6Service ipv6Service;
     @Inject
     UserVmJoinDao userVmJoinDao;
+    @Inject
+    NetworkServiceMapDao _ntwkSrvcDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3392,6 +3395,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         NetworkVO network = ApiDBUtils.findNetworkById(fw.getNetworkId());
         response.setNetworkName(network.getName());
         response.setNetworkId(network.getUuid());
+
+        String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+        response.setLbProvider(provider);
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
         response.setPublicIpId(publicIp.getUuid());

@@ -987,6 +987,7 @@
 "label.lbdevicededicated": "Dedicated",
 "label.lbdeviceid": "ID",
 "label.lbdevicestate": "Status",
+"label.lbprovider": "Load balancer provider",
 "label.lbruleid": "Load balancer ID",
 "label.lbtype": "Load balancer type",
 "label.ldap.configuration": "LDAP configuration",

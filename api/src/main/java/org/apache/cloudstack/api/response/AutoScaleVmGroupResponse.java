@@ -47,6 +47,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Param(description = "the id of the guest network the lb rule belongs to")
     private String networkId;
 
+    @SerializedName(ApiConstants.LB_PROVIDER)
+    @Param(description = "the lb provider of the guest network the lb rule belongs to")
+    private String lbProvider;
+
     @SerializedName(ApiConstants.PUBLIC_IP_ID)
     @Param(description = "the public ip address id")
     private String publicIpId;
@@ -142,6 +146,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     public void setNetworkId(String networkId) {
         this.networkId = networkId;
+    }
+
+    public void setLbProvider(String lbProvider) {
+        this.lbProvider = lbProvider;
     }
 
     public void setPublicIpId(String publicIpId) {
