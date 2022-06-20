@@ -320,11 +320,6 @@
           <a-select
             mode="tags"
             v-model:value="selectedTags"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
             :placeholder="apiParams.tags.description">
             <a-select-option v-for="tag in storageTags" :key="tag.name">{{ tag.name }}</a-select-option>
           </a-select>

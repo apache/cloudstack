@@ -19,7 +19,7 @@ from nose.plugins.attrib import attr
 from component.test_vpc_vm_life_cycle import Services
 
 
-class TestVMLifeCycleSharedNwVPC(cloudstackTesTODOtCase):
+class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):

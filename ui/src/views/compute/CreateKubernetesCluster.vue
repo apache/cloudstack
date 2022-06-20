@@ -137,7 +137,7 @@
           </template>
           <a-switch v-model:checked="form.haenable" />
         </a-form-item>
-        <a-form-item v-if="form.haenable">
+        <a-form-item v-if="form.haenable" name="controlnodes" ref="controlnodes">
           <template #label>
             <tooltip-label :title="$t('label.controlnodes')" :tooltip="apiParams.controlnodes.description"/>
           </template>
@@ -145,7 +145,7 @@
             v-model:value="form.controlnodes"
             :placeholder="apiParams.controlnodes.description"/>
         </a-form-item>
-        <a-form-item v-if="form.haenable">
+        <a-form-item v-if="form.haenable" name="externalloadbalanceripaddress" ref="externalloadbalanceripaddress">
           <template #label>
             <tooltip-label :title="$t('label.externalloadbalanceripaddress')" :tooltip="apiParams.externalloadbalanceripaddress.description"/>
           </template>
