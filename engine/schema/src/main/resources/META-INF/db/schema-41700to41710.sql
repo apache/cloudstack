@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.17.0.0 to 4.17.1.0
 --;
+
+UPDATE `cloud`.`configuration` set `value` = 'false' where `name` = 'network.disable.rpfilter' and `value` != 'true';
+UPDATE `cloud`.`configuration` set `value` = 'false' where `name` = 'consoleproxy.disable.rpfilter' and `value` != 'true';
