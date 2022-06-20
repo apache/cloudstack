@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -1232,29 +1233,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             mtu = validateMtu(vpcToUpdate, mtu);
         }
 
-        List<IPAddressVO> ipAddresses = _ipAddressDao.listByAssociatedVpc(vpcToUpdate.getId(), null);
-        List<IpAddressTO> ips = new ArrayList<>(ipAddresses.size());
-        for (IPAddressVO ip : ipAddresses) {
-            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-            String vlanNetmask = vlan.getVlanNetmask();
-            IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), mtu, vlanNetmask);
-            ips.add(to);
+        if (mtu != null) {
+            updateMtuOfVpcNetwork(vpcToUpdate, vpc, mtu);
         }
 
-        if (!ips.isEmpty()) {
-            boolean success = updateMtuOnVpcVr(vpcId, ips);
-            if (success) {
-                updateVpcMtu(ips, mtu);
-                vpc.setPublicMtu(mtu);
-                List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
-                for (NetworkVO network : vpcTierNetworks) {
-                    network.setPublicIfaceMtu(mtu);
-                    _ntwkDao.update(network.getId(), network);
-                }
-            } else {
-                throw new CloudRuntimeException("Failed to update MTU on the network");
-            }
-        }
         if (vpcDao.update(vpcId, vpc)) {
             s_logger.debug("Updated VPC id=" + vpcId);
             return vpcDao.findById(vpcId);
@@ -1274,7 +1256,39 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             mtu = NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId);
         }
+        if (Objects.equals(mtu, vpcToUpdate.getPublicMtu())) {
+            s_logger.info(String.format("Desired MTU of %s already configured on the VPC public interfaces", mtu));
+            mtu = null;
+        }
         return mtu;
+    }
+
+    protected void updateMtuOfVpcNetwork(VpcVO vpcToUpdate, VpcVO vpc, Integer mtu) {
+        List<IPAddressVO> ipAddresses = _ipAddressDao.listByAssociatedVpc(vpcToUpdate.getId(), null);
+        long vpcId = vpcToUpdate.getId();
+        List<IpAddressTO> ips = new ArrayList<>(ipAddresses.size());
+        for (IPAddressVO ip : ipAddresses) {
+            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+            String vlanNetmask = vlan.getVlanNetmask();
+            IpAddressTO to = new IpAddressTO(ip.getAddress().addr(), mtu, vlanNetmask);
+            ips.add(to);
+        }
+
+        if (!ips.isEmpty()) {
+            boolean success = updateMtuOnVpcVr(vpcId, ips);
+            if (success) {
+                updateVpcMtu(ips, mtu);
+                vpc.setPublicMtu(mtu);
+                List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
+                for (NetworkVO network : vpcTierNetworks) {
+                    network.setPublicIfaceMtu(mtu);
+                    _ntwkDao.update(network.getId(), network);
+                }
+                s_logger.info("Successfully update MTU of VPC network");
+            } else {
+                throw new CloudRuntimeException("Failed to update MTU on the network");
+            }
+        }
     }
 
     private void updateVpcMtu(List<IpAddressTO> ips, Integer publicMtu) {
