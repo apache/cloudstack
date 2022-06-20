@@ -90,7 +90,7 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            @change="val => { this.selectedVpcOffering = val }" >
+            @change="handleVpcOfferingChange" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id">
               {{ offering.name }}
             </a-select-option>
@@ -240,8 +240,19 @@ export default {
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
         this.loadingOffering = false
-        console.log(this.selectedVpcOffering, this.selectedVpcOfferingSupportsDns)
       })
+    },
+    handleVpcOfferingChange (value) {
+      this.selectedVpcOffering = {}
+      if (!value) {
+        return
+      }
+      for (var offering of this.vpcOfferings) {
+        if (offering.id === value) {
+          this.selectedVpcOffering = offering
+          return
+        }
+      }
     },
     closeAction () {
       this.$emit('close-action')
