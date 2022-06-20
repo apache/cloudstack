@@ -249,20 +249,18 @@ class TestIpv6Network(cloudstackTestCase):
             self.apiclient,
             off_service
         )
+        self.cleanup.append(network_offering)
         network_offering.update(self.apiclient, state='Enabled')
         return network_offering
 
     def createIpv4NetworkOffering(self, is_redundant=False):
         self.network_offering = self.createNetworkOfferingInternal(is_redundant, False, False)
-        self.cleanup.append(self.network_offering)
 
     def createIpv6NetworkOffering(self, is_redundant=False):
         self.network_offering = self.createNetworkOfferingInternal(is_redundant, True, False)
-        self.cleanup.append(self.network_offering)
 
     def createIpv6NetworkOfferingForUpdate(self, is_redundant=False):
         self.network_offering_update = self.createNetworkOfferingInternal(is_redundant, True)
-        self.cleanup.append(self.network_offering_update)
 
 
     def deployNetwork(self):
@@ -574,7 +572,6 @@ class TestIpv6Network(cloudstackTestCase):
 
     def deployRoutingTestResources(self):
         self.routing_test_network_offering = self.createNetworkOfferingInternal(False, True)
-        self.cleanup.append(self.routing_test_network_offering)
         self.services["network"]["networkoffering"] = self.routing_test_network_offering.id
         self.routing_test_network = Network.create(
             self.apiclient,

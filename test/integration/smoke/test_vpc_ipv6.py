@@ -268,20 +268,18 @@ class TestIpv6Vpc(cloudstackTestCase):
             self.apiclient,
             off_service
         )
+        self.cleanup.append(vpc_offering)
         vpc_offering.update(self.apiclient, state='Enabled')
         return vpc_offering
 
     def createIpv4VpcOffering(self, is_redundant=False):
         self.vpc_offering = self.createVpcOfferingInternal(is_redundant, False)
-        self.cleanup.append(self.vpc_offering)
 
     def createIpv6VpcOffering(self, is_redundant=False):
         self.vpc_offering = self.createVpcOfferingInternal(is_redundant, True)
-        self.cleanup.append(self.vpc_offering)
 
     def createIpv6VpcOfferingForUpdate(self, is_redundant=False):
         self.vpc_offering_update = self.createVpcOfferingInternal(is_redundant, True)
-        self.cleanup.append(self.vpc_offering_update)
 
     def createNetworkTierOfferingInternal(self, is_ipv6, remove_lb=True):
         off_service = self.services["nw_offering_isolated_vpc"]
@@ -302,19 +300,17 @@ class TestIpv6Vpc(cloudstackTestCase):
             conservemode=False
         )
         network_offering.update(self.apiclient, state='Enabled')
+        self.cleanup.append(network_offering)
         return network_offering
 
     def createIpv4NetworkTierOffering(self):
         self.network_offering = self.createNetworkTierOfferingInternal(False)
-        self.cleanup.append(self.network_offering)
 
     def createIpv6NetworkTierOffering(self, remove_lb=True):
         self.network_offering = self.createNetworkTierOfferingInternal(True)
-        self.cleanup.append(self.network_offering)
 
     def createIpv6NetworkTierOfferingForUpdate(self):
         self.network_offering_update = self.createNetworkTierOfferingInternal(True)
-        self.cleanup.append(self.network_offering_update)
 
     def deployAllowAllVpcInternal(self, cidr):
         service = self.services["vpc"]
@@ -327,6 +323,7 @@ class TestIpv6Vpc(cloudstackTestCase):
             account=self.account.name,
             domainid=self.account.domainid
         )
+        self.cleanup.append(vpc)
         acl = NetworkACLList.create(
             self.apiclient,
             services={},
@@ -352,7 +349,6 @@ class TestIpv6Vpc(cloudstackTestCase):
 
     def deployVpc(self):
         self.vpc = self.deployAllowAllVpcInternal(VPC_DATA["cidr"])
-        self.cleanup.append(self.vpc)
 
     def deployNetworkTierInternal(self, network_offering_id, vpc_id, tier_gateway, tier_netmask, acl_id=None, tier_name=None):
         if not acl_id and vpc_id in self.vpcAllowAllAclDetailsMap:
@@ -373,6 +369,7 @@ class TestIpv6Vpc(cloudstackTestCase):
             netmask=tier_netmask,
             aclid=acl_id
         )
+        self.cleanup.append(network)
         return network
 
     def deployNetworkTier(self):
@@ -382,7 +379,6 @@ class TestIpv6Vpc(cloudstackTestCase):
             VPC_DATA["tier1_gateway"],
             VPC_DATA["tier_netmask"]
         )
-        self.cleanup.append(self.network)
 
     def deployNetworkTierVmInternal(self, network):
         if self.template == FAILED:
@@ -397,11 +393,11 @@ class TestIpv6Vpc(cloudstackTestCase):
             networkids=network,
             serviceofferingid=self.service_offering.id
         )
+        self.cleanup.append(virtual_machine)
         return virtual_machine
 
     def deployNetworkTierVm(self):
         self.virtual_machine = self.deployNetworkTierVmInternal(self.network.id)
-        self.cleanup.append(self.virtual_machine)
 
     def checkIpv6Vpc(self):
         self.debug("Listing VPC: %s" % (self.vpc.name))
@@ -680,16 +676,13 @@ class TestIpv6Vpc(cloudstackTestCase):
 
     def deployRoutingTestResources(self):
         self.routing_test_vpc = self.deployAllowAllVpcInternal(ROUTE_TEST_VPC_DATA["cidr"])
-        self.cleanup.append(self.routing_test_vpc)
         self.routing_test_network_offering = self.createNetworkTierOfferingInternal(True)
-        self.cleanup.append(self.routing_test_network_offering)
         self.routing_test_network = self.deployNetworkTierInternal(
             self.routing_test_network_offering.id,
             self.routing_test_vpc.id,
             ROUTE_TEST_VPC_DATA["tier1_gateway"],
             ROUTE_TEST_VPC_DATA["tier_netmask"]
         )
-        self.cleanup.append(self.routing_test_network)
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.routing_test_vm = VirtualMachine.create(
             self.apiclient,
@@ -833,7 +826,6 @@ class TestIpv6Vpc(cloudstackTestCase):
         self.createNetworkAclRule(rule, tier2_acl.id)
 
         self.network_offering_tier2 = self.createNetworkTierOfferingInternal(True, False)
-        self.cleanup.append(self.network_offering_tier2)
         self.tier2_network = self.deployNetworkTierInternal(
             self.network_offering_tier2.id,
             self.vpc.id,
@@ -842,9 +834,7 @@ class TestIpv6Vpc(cloudstackTestCase):
             tier2_acl.id,
             "tier2"
         )
-        self.cleanup.append(self.tier2_network)
         self.tier2_vm = self.deployNetworkTierVmInternal(self.tier2_network.id)
-        self.cleanup.append(self.tier2_vm)
 
         self.verifyAclRulesInRouter("eth3", rules, router)
 
