@@ -264,55 +264,11 @@ public class NetworkServiceImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCreateNetworkIp4Dns1Failure() {
-        registerCallContext();
-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
-        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
-        Mockito.when(cmd.getIp4Dns1()).thenReturn(null);
-        Mockito.when(cmd.getIp4Dns2()).thenReturn(ip4Dns[1]);
-        try {
-            service.createGuestNetwork(cmd);
-        } catch (InsufficientCapacityException | ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateNetworkIp6Dns1Failure() {
-        registerCallContext();
-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
-        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, true, false, true);
-        Mockito.when(cmd.getIp6Dns1()).thenReturn(null);
-        Mockito.when(cmd.getIp6Dns2()).thenReturn(ip6Dns[0]);
-        try {
-            service.createGuestNetwork(cmd);
-        } catch (InsufficientCapacityException | ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
     public void testCreateIp4NetworkIp6DnsFailure() {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         Mockito.when(cmd.getIp6Dns1()).thenReturn(ip4Dns[0]);
-        try {
-            service.createGuestNetwork(cmd);
-        } catch (InsufficientCapacityException | ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateSharedNetworkIp6Dns1Failure() {
-        registerCallContext();
-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
-        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Shared, false, false, true);
-        Mockito.when(cmd.getIp6Dns1()).thenReturn(null);
-        Mockito.when(cmd.getIp6Cidr()).thenReturn(IP6_CIDR);
-        Mockito.when(cmd.getIp6Gateway()).thenReturn(IP6_GATEWAY);
-        Mockito.when(cmd.getIp6Dns2()).thenReturn(ip6Dns[1]);
         try {
             service.createGuestNetwork(cmd);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {

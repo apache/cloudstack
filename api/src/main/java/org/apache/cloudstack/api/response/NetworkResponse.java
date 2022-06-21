@@ -120,11 +120,11 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     private String broadcastUri;
 
     @SerializedName(ApiConstants.DNS1)
-    @Param(description = "the first DNS for the network")
+    @Param(description = "the first IPv4 DNS for the network")
     private String dns1;
 
     @SerializedName(ApiConstants.DNS2)
-    @Param(description = "the second DNS for the network")
+    @Param(description = "the second IPv4 DNS for the network")
     private String dns2;
 
     @SerializedName(ApiConstants.TYPE)

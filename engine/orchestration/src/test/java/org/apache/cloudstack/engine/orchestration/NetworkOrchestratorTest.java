@@ -622,12 +622,12 @@ public class NetworkOrchestratorTest extends TestCase {
             Mockito.when(routerVO.getVpcId()).thenReturn(vpcId);
             VpcVO vpcVO = Mockito.mock(VpcVO.class);
             if (routerResourceHasCustomDns) {
-                Mockito.when(vpcVO.getDns1()).thenReturn(ip4AltDns[0]);
-                Mockito.when(vpcVO.getDns2()).thenReturn(ip4AltDns[1]);
+                Mockito.when(vpcVO.getIp4Dns1()).thenReturn(ip4AltDns[0]);
+                Mockito.when(vpcVO.getIp4Dns2()).thenReturn(ip4AltDns[1]);
                 Mockito.when(vpcVO.getIp6Dns1()).thenReturn(ip6AltDns[0]);
                 Mockito.when(vpcVO.getIp6Dns2()).thenReturn(ip6AltDns[1]);
             } else {
-                Mockito.when(vpcVO.getDns1()).thenReturn(null);
+                Mockito.when(vpcVO.getIp4Dns1()).thenReturn(null);
                 Mockito.when(vpcVO.getIp6Dns1()).thenReturn(null);
             }
             Mockito.when(testOrchastrator._vpcMgr.getActiveVpc(vpcId)).thenReturn(vpcVO);

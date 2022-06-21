@@ -945,4 +945,9 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return new Pair<>(null, null);
     }
 
+    @Override
+    public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {}
+
+    @Override
+    public void verifyIp6DnsPair(String ip4Dns1, String ip4Dns2) {}
 }

@@ -430,9 +430,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         DomainRouterVO router = routerDao.findById(vmProfile.getId());
         if (router != null && router.getVpcId() != null) {
             final Vpc vpc = _vpcMgr.getActiveVpc(router.getVpcId());
-            if (StringUtils.isNotBlank(vpc.getDns1())) {
-                nicProfile.setIPv4Dns1(vpc.getDns1());
-                nicProfile.setIPv4Dns2(vpc.getDns2());
+            if (StringUtils.isNotBlank(vpc.getIp4Dns1())) {
+                nicProfile.setIPv4Dns1(vpc.getIp4Dns1());
+                nicProfile.setIPv4Dns2(vpc.getIp4Dns2());
             }
             if (StringUtils.isNotBlank(vpc.getIp6Dns1())) {
                 nicProfile.setIPv6Dns1(vpc.getIp6Dns1());

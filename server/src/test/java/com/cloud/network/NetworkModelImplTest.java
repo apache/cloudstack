@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 
 public class NetworkModelImplTest {
@@ -99,5 +100,45 @@ public class NetworkModelImplTest {
     @Test
     public void testGetNetworkIp6Dns() {
         testDnsCases(true);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp4DnsPairDns1NullFailure() {
+        networkModel.verifyIp4DnsPair(null, ip4Dns1[1]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp4DnsPairInvalidDns1Failure() {
+        networkModel.verifyIp4DnsPair("invalid", ip4Dns1[1]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp4DnsPairInvalidDns2Failure() {
+        networkModel.verifyIp4DnsPair(ip4Dns1[0], "invalid");
+    }
+
+    @Test
+    public void testVerifyIp4DnsPairValid() {
+        networkModel.verifyIp4DnsPair(ip4Dns1[0], ip4Dns1[1]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp6DnsPairDns1NullFailure() {
+        networkModel.verifyIp6DnsPair(null, ip6Dns1[1]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp6DnsPairInvalidDns1Failure() {
+        networkModel.verifyIp6DnsPair("invalid", ip6Dns1[1]);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testVerifyIp6DnsPairInvalidDns2Failure() {
+        networkModel.verifyIp6DnsPair(ip6Dns1[0], "invalid");
+    }
+
+    @Test
+    public void testVerifyIp6DnsPairValid() {
+        networkModel.verifyIp6DnsPair(ip6Dns1[0], ip6Dns1[1]);
     }
 }

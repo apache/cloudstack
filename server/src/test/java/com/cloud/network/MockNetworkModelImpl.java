@@ -929,4 +929,10 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     public Pair<String, String> getNetworkIp6Dns(Network network, DataCenter zone) {
         return new Pair<>(null, null);
     }
+
+    @Override
+    public void verifyIp4DnsPair(String ip4Dns1, String ip4Dns2) {}
+
+    @Override
+    public void verifyIp6DnsPair(String ip4Dns1, String ip4Dns2) {}
 }

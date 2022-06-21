@@ -248,84 +248,12 @@ public class VpcManagerImplTest {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsIpv4Dns1Failure() {
-        mockVpcDnsResources(true, false);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    null, ip4Dns[1], null, null, true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
     public void testCreateVpcDnsIpv6OfferingFailure() {
         mockVpcDnsResources(true, false);
         try {
             Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
             manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
                     ip4Dns[0], ip4Dns[1], ip6Dns[0], null, true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsIpv6Dns1Failure() {
-        mockVpcDnsResources(true, true);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    null, null, null, ip6Dns[1], true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsInvalidIpv4Dns1Failure() {
-        mockVpcDnsResources(true, true);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    "invalid", null, null, null, true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsInvalidIpv4Dns2Failure() {
-        mockVpcDnsResources(true, true);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], "invalid", null, null, true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsInvalidIpv6Dns1Failure() {
-        mockVpcDnsResources(true, true);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], ip4Dns[1], "invalid", null, true);
-        } catch (ResourceAllocationException e) {
-            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
-        }
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateVpcDnsInvalidIpv6Dns2Failure() {
-        mockVpcDnsResources(true, true);
-        try {
-            Mockito.doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
-            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, ip4Cidr, vpcDomain,
-                    ip4Dns[0], null, ip6Dns[0], "invalid", true);
         } catch (ResourceAllocationException e) {
             Assert.fail(String.format("failure with exception: %s", e.getMessage()));
         }

@@ -329,4 +329,8 @@ public interface NetworkModel {
 
     Pair<String, String> getNetworkIp6Dns(final Network network, final DataCenter zone);
 
+    void verifyIp4DnsPair(final String ip4Dns1, final String ip4Dns2);
+
+    void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
+
 }

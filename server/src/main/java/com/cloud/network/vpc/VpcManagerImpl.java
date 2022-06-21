@@ -267,27 +267,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2) && !areServicesSupportedByVpcOffering(vpcOffering.getId(), Service.Dns)) {
             throw new InvalidParameterValueException("DNS can not be specified for VPCs with offering that do not support DNS service");
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip4Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2)) {
-            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
-        }
         if (!_vpcOffDao.isIpv6Supported(vpcOffering.getId()) && !org.apache.commons.lang3.StringUtils.isAllBlank(ip6Dns1, ip6Dns2)) {
             throw new InvalidParameterValueException("IPv6 DNS can be specified for IPv6 enabled VPC");
         }
-        if (org.apache.commons.lang3.StringUtils.isEmpty(ip6Dns1) && org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
-        }
+        _ntwkModel.verifyIp4DnsPair(ip4Dns1, ip4Dns2);
+        _ntwkModel.verifyIp6DnsPair(ip6Dns1, ip6Dns2);
     }
 
     @Override
@@ -998,7 +982,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
-            final String dns1, final String dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc) throws ResourceAllocationException {
+            final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();
         final Account owner = _accountMgr.getAccount(vpcOwnerId);
 
@@ -1050,11 +1034,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
         }
 
-        checkVpcDns(vpcOff, dns1, dns2, ip6Dns1, ip6Dns2);
+        checkVpcDns(vpcOff, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
         final VpcVO vpc = new VpcVO(zoneId, vpcName, displayText, owner.getId(), owner.getDomainId(), vpcOffId, cidr, networkDomain, useDistributedRouter, isRegionLevelVpcOff,
-                vpcOff.isRedundantRouter(), dns1, dns2, ip6Dns1, ip6Dns2);
+                vpcOff.isRedundantRouter(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
 
         return createVpc(displayVpc, vpc);
     }

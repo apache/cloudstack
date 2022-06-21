@@ -574,24 +574,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (!isIpv6 && !StringUtils.isAllEmpty(ip6Dns1, ip6Dns2)) {
             throw new InvalidParameterValueException("IPv6 DNS cannot be specified for IPv4 only network");
         }
-        if (StringUtils.isEmpty(ip4Dns1) && StringUtils.isNotEmpty(ip4Dns2)) {
-            throw new InvalidParameterValueException("Second IPv4 DNS can be specified only with the first IPv4 DNS");
-        }
-        if (StringUtils.isEmpty(ip6Dns1) && StringUtils.isNotEmpty(ip6Dns2)) {
-            throw new InvalidParameterValueException("Second IPv6 DNS can be specified only with the first IPv6 DNS");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns1) && !NetUtils.isValidIp4(ip4Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip4Dns2) && !NetUtils.isValidIp4(ip4Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv4 for DNS2");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns1) && !NetUtils.isValidIp6(ip6Dns1)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS1");
-        }
-        if (org.apache.commons.lang3.StringUtils.isNotEmpty(ip6Dns2) && !NetUtils.isValidIp6(ip6Dns2)) {
-            throw new InvalidParameterValueException("Invalid IPv6 for IPv6 DNS2");
-        }
+        _networkModel.verifyIp4DnsPair(ip4Dns1, ip4Dns2);
+        _networkModel.verifyIp6DnsPair(ip6Dns1, ip6Dns2);
     }
 
     @Override
