@@ -24,7 +24,7 @@
       v-model:value="filter"
       @search="handleSearch" />
     <a-table
-      :loading="loading || fetchLoading"
+      :loading="loading"
       :columns="columns"
       :dataSource="items"
       :rowKey="record => record.id"
@@ -37,11 +37,11 @@
       <template #privateport>{{ $t('label.privateport') }}</template>
     </a-table>
 
-    <div style="display: block; text-align: right; margin-top: 30px">
+    <div style="display: block; text-align: right;">
       <a-pagination
         size="small"
-        :current="page"
-        :pageSize="pageSize"
+        :current="options.page"
+        :pageSize="options.pageSize"
         :total="rowCount"
         :showTotal="total => `${$t('label.total')} ${total} ${$t('label.items')}`"
         :pageSizeOptions="['10', '20', '40', '80', '100', '200']"
@@ -57,12 +57,23 @@
 </template>
 
 <script>
-import { api } from '@/api'
 import _ from 'lodash'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'LoadBalancerSelection',
+  components: {
+    ResourceIcon
+  },
   props: {
+    items: {
+      type: Array,
+      default: () => []
+    },
+    rowCount: {
+      type: Number,
+      default: () => 0
+    },
     value: {
       type: Array,
       default: () => []
@@ -75,10 +86,6 @@ export default {
       type: String,
       default: () => ''
     },
-    networkId: {
-      type: String,
-      default: () => ''
-    },
     preFillContent: {
       type: Object,
       default: () => {}
@@ -87,8 +94,19 @@ export default {
   data () {
     return {
       filter: '',
-      fetchLoading: false,
-      columns: [
+      selectedRowKeys: [],
+      filteredInfo: null,
+      oldZoneId: null,
+      options: {
+        page: 1,
+        pageSize: 10,
+        keyword: null
+      }
+    }
+  },
+  computed: {
+    columns () {
+      return [
         {
           dataIndex: 'name',
           title: this.$t('label.name'),
@@ -106,16 +124,8 @@ export default {
           title: this.$t('label.privateport'),
           dataIndex: 'privateport'
         }
-      ],
-      items: [],
-      selectedRowKeys: [],
-      page: 1,
-      pageSize: 10,
-      keyword: null,
-      rowCount: 0
-    }
-  },
-  computed: {
+      ]
+    },
     rowSelection () {
       return {
         type: 'radio',
@@ -123,9 +133,6 @@ export default {
         onChange: this.onSelectRow
       }
     }
-  },
-  mounted () {
-    this.fetchData()
   },
   watch: {
     value (newValue, oldValue) {
@@ -135,9 +142,9 @@ export default {
     },
     loading () {
       if (!this.loading) {
-        if (this.preFillContent.lbruleid) {
-          this.selectedRowKeys = this.preFillContent.lbruleid
-          this.$emit('select-load-balancer-item', this.preFillContent.lbruleid)
+        if (this.preFillContent.loadbalancerid) {
+          this.selectedRowKeys = this.preFillContent.loadbalancerid
+          this.$emit('select-load-balancer-item', this.preFillContent.loadbalancerid)
         } else {
           if (this.items && this.items.length > 0) {
             if (this.oldZoneId === this.zoneId) {
@@ -152,65 +159,43 @@ export default {
           }
         }
       }
+    },
+    items: {
+      deep: true,
+      handler () {
+        if (this.items && this.items.length > 0) {
+          this.selectedRowKeys = this.items[0].id
+          this.$emit('select-load-balancer-item', this.selectedRowKeys)
+        } else {
+          this.selectedRowKeys = []
+          this.$emit('select-load-balancer-item', '0')
+        }
+      }
     }
   },
+  created () {
+  },
   methods: {
-    fetchData () {
-      const params = {
-        domainid: this.$store.getters.userInfo.domainid,
-        account: this.$store.getters.userInfo.account,
-        page: this.page,
-        pageSize: this.pageSize
-      }
-
-      if (this.keyword) {
-        params.keyword = this.keyword
-      }
-
-      if (this.networkId) {
-        params.networkId = this.networkId
-      }
-
-      this.items = []
-      this.fetchLoading = true
-
-      api('listLoadBalancerRules', params).then(json => {
-        const items = json.listloadbalancerrulesresponse.loadbalancerrule || []
-        this.rowCount = json.listloadbalancerrulesresponse.count || 0
-        if (items && items.length > 0) {
-          for (let i = 0; i < items.length; i++) {
-            this.items.push(items[i])
-          }
-          this.items.sort((a, b) => {
-            if (a.name < b.name) return -1
-            if (a.name > b.name) return 1
-            return 0
-          })
-        }
-      }).finally(() => {
-        this.fetchLoading = false
-      })
-    },
     onSelectRow (value) {
       this.selectedRowKeys = value
       this.$emit('select-load-balancer-item', value[0])
     },
     handleSearch (value) {
       this.filter = value
-      this.page = 1
-      this.pageSize = 10
-      this.keyword = this.filter
-      this.fetchData()
+      this.options.page = 1
+      this.options.pageSize = 10
+      this.options.keyword = this.filter
+      this.$emit('handle-search-filter', this.options)
     },
     onChangePage (page, pageSize) {
-      this.page = page
-      this.pageSize = pageSize
-      this.fetchData()
+      this.options.page = page
+      this.options.pageSize = pageSize
+      this.$emit('handle-search-filter', this.options)
     },
     onChangePageSize (page, pageSize) {
-      this.page = page
-      this.pageSize = pageSize
-      this.fetchData()
+      this.options.page = page
+      this.options.pageSize = pageSize
+      this.$emit('handle-search-filter', this.options)
     }
   }
 }

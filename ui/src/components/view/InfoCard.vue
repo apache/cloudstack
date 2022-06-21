@@ -317,6 +317,13 @@
             </div>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.loadbalancer">
+          <div class="resource-detail-item__label">{{ $t('label.loadbalancerrule') }}</div>
+          <div class="resource-detail-item__details">
+            <api-outlined />
+            <span>{{ resource.loadbalancer.name }} ( {{ resource.loadbalancer.publicip }}:{{ resource.loadbalancer.publicport }})</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.ipaddress">
           <div class="resource-detail-item__label">{{ $t('label.ip') }}</div>
           <div class="resource-detail-item__details">

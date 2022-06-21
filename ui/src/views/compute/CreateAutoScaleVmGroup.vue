@@ -346,15 +346,16 @@
               </a-step>
               <a-step
                 :title="$t('label.loadbalancing')"
-                :status="zoneSelected ? 'process' : 'wait'">
+                :status="networkSelected ? 'process' : 'wait'">
                 <template #description>
                   <load-balancer-selection
+                    :items="options.loadbalancers"
                     :zoneId="zoneId"
-                    :networkId="networkId"
-                    :value="lbruleid"
                     :loading="loading.networks"
                     :preFillContent="dataPreFill"
-                    @select-load-balancer-item="($event) => updateLoadBalancers($event)"></load-balancer-selection>
+                    @select-load-balancer-item="($event) => updateLoadBalancers($event)"
+                    @handle-search-filter="($event) => handleSearchFilter('loadbalancers', $event)"
+                  ></load-balancer-selection>
                 </template>
               </a-step>
               <a-step
@@ -471,11 +472,6 @@
               </a-step>
             </a-steps>
             <div class="card-footer">
-              <a-form-item name="stayonpage" ref="stayonpage">
-                <a-switch
-                  class="form-item-hidden"
-                  v-model:checked="form.stayonpage" />
-              </a-form-item>
               <!-- ToDo extract as component -->
               <a-button @click="() => $router.back()" :disabled="loading.deploy">
                 {{ $t('label.cancel') }}
@@ -483,15 +479,6 @@
               <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
                 <rocket-outlined />
                 {{ $t('label.launch.vm') }}
-                <template #icon><down-outlined /></template>
-                <template #overlay>
-                  <a-menu type="primary" @click="handleSubmitAndStay" theme="dark" class="btn-stay-on-page">
-                    <a-menu-item type="primary" key="1">
-                      <rocket-outlined />
-                      {{ $t('label.launch.vm.and.stay') }}
-                    </a-menu-item>
-                  </a-menu>
-                </template>
               </a-dropdown-button>
             </div>
           </a-form>
@@ -598,6 +585,7 @@ export default {
         serviceOfferings: false,
         diskOfferings: false,
         networks: false,
+        loadbalancers: false,
         zones: false
       },
       instanceConfig: {},
@@ -613,6 +601,8 @@ export default {
       networks: [],
       networksAdd: [],
       networkSelected: false,
+      selectedNetworkId: null,
+      selectedLbId: null,
       zone: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -622,7 +612,6 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
       tabKey: 'templateid',
@@ -713,6 +702,20 @@ export default {
             keyword: undefined,
             showIcon: true
           }
+        },
+        loadbalancers: {
+          list: 'listLoadBalancerRules',
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            networkid: this.selectedNetworkId,
+            projectid: store.getters.project ? store.getters.project.id : null,
+            domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
+            account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
+            page: 1,
+            pageSize: 10,
+            keyword: undefined,
+            showIcon: true
+          }
         }
       }
     },
@@ -753,9 +756,6 @@ export default {
         tab: this.$t('label.templates')
       }]
       return tabList
-    },
-    showLoadBalancerSection () {
-      return (this.networks.length > 0 && this.networks[0].type === 'Isolated')
     },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
@@ -836,7 +836,13 @@ export default {
 
         if (this.networks) {
           this.vm.networks = this.networks
-          this.vm.defaultnetworkid = this.defaultnetworkid
+        }
+
+        if (this.selectedLbId) {
+          this.loadbalancer = _.find(this.options.loadbalancers, (option) => option.id === this.selectedLbId)
+          this.vm.loadbalancer = this.loadbalancer
+        } else {
+          this.vm.loadbalancer = null
         }
 
         if (this.template) {
@@ -890,7 +896,8 @@ export default {
   provide () {
     return {
       vmFetchTemplates: this.fetchAllTemplates,
-      vmFetchNetworks: this.fetchNetwork
+      vmFetchNetworks: this.fetchNetwork,
+      vmFetchLoadBalancers: this.fetchLoadBalancer
     }
   },
   methods: {
@@ -1092,6 +1099,11 @@ export default {
       const param = this.params.networks
       this.fetchOptions(param, 'networks')
     },
+    fetchLoadBalancer () {
+      this.selectedLbId = null
+      const param = this.params.loadbalancers
+      this.fetchOptions(param, 'loadbalancers')
+    },
     resetData () {
       this.vm = {
         name: null,
@@ -1108,6 +1120,7 @@ export default {
         disksize: null
       }
       this.zoneSelected = false
+      this.networkSelected = false
       this.formRef.value.resetFields()
       this.fetchData()
     },
@@ -1167,33 +1180,31 @@ export default {
     },
     updateNetworks (ids) {
       this.form.networkids = ids
-    },
-    updateDefaultNetworks (id) {
-      this.defaultNetwork = id
-      this.form.defaultnetworkid = id
-    },
-    updateNetworkConfig (networks) {
-      this.networkConfig = networks
+      this.networkSelected = true
+      if (typeof (ids) === 'string') {
+        this.selectedNetworkId = ids
+      } else if (typeof (ids) === 'object') {
+        this.selectedNetworkId = ids[0]
+      }
+      this.fetchLoadBalancer()
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
     },
     updateLoadBalancers (id) {
       if (id === '0') {
-        this.form.lbruleid = undefined
-        return
+        this.form.loadbalancerid = undefined
+        this.selectedLbId = null
+      } else {
+        this.form.loadbalancerid = id
+        this.selectedLbId = id
       }
-      this.form.lbruleid = id
     },
     updateSecurityGroups (securitygroupids) {
       this.securitygroupids = securitygroupids || []
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
-    },
-    handleSubmitAndStay (e) {
-      this.form.stayonpage = true
-      this.handleSubmit(e.domEvent)
     },
     handleSubmit (e) {
       console.log('wizard submit')
@@ -1303,17 +1314,10 @@ export default {
             networkIds = values.networkids
             if (networkIds.length > 0) {
               for (let i = 0; i < networkIds.length; i++) {
-                if (networkIds[i] === this.defaultnetworkid) {
-                  const ipToNetwork = {
-                    networkid: this.defaultnetworkid
-                  }
-                  arrNetwork.unshift(ipToNetwork)
-                } else {
-                  const ipToNetwork = {
-                    networkid: networkIds[i]
-                  }
-                  arrNetwork.push(ipToNetwork)
+                const ipToNetwork = {
+                  networkid: networkIds[i]
                 }
+                arrNetwork.push(ipToNetwork)
               }
             } else {
               this.$notification.error({
@@ -1393,14 +1397,10 @@ export default {
           new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
             eventBus.emit('vm-refresh-data')
           })
-          if (!values.stayonpage) {
-            this.$router.back()
-          }
         }).catch(error => {
           this.$notifyError(error)
           this.loading.deploy = false
         }).finally(() => {
-          this.form.stayonpage = false
           this.loading.deploy = false
         })
       }).catch(err => {
@@ -1844,11 +1844,4 @@ export default {
     display: none;
   }
 
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
-  }
 </style>
