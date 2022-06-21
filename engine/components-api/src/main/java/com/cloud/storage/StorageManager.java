@@ -180,18 +180,29 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Global,
             null);
 
+    /**
+     * should we execute in sequence not involving any storages?
+     * @return tru if commands should execute in sequence
+     */
     static boolean shouldExecuteInSequenceOnVmware() {
-                final Boolean fullClone = getFullCloneConfiguration();
-                final Boolean allowParallel = getAllowParallelExecutionConfiguration();
-                return fullClone && !allowParallel;
-            }
+        return shouldExecuteInSequenceOnVmware(null, null);
+    }
+
+    static boolean shouldExecuteInSequenceOnVmware(Long srcStoreId, Long dstStoreId) {
+        final Boolean fullClone = getFullCloneConfiguration(srcStoreId) || getFullCloneConfiguration(dstStoreId);
+        final Boolean allowParallel = getAllowParallelExecutionConfiguration();
+        return fullClone && !allowParallel;
+    }
 
     static Boolean getAllowParallelExecutionConfiguration() {
         return VmwareAllowParallelExecution.value();
     }
 
-    static Boolean getFullCloneConfiguration() {
-        return VmwareCreateCloneFull.value();
+    static Boolean getFullCloneConfiguration(Long storeId) {
+        if (null == storeId){
+            return VmwareCreateCloneFull.value();
+        }
+        return VmwareCreateCloneFull.valueIn(storeId);
     }
 
     /**
