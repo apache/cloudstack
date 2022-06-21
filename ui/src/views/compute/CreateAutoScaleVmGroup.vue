@@ -430,72 +430,6 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.advanced.mode')"
-                :status="zoneSelected ? 'process' : 'wait'">
-                <template #description v-if="zoneSelected">
-                  <span>
-                    {{ $t('label.isadvanced') }}
-                    <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
-                  </span>
-                  <div style="margin-top: 15px" v-show="showDetails">
-                    <div
-                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
-                      <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
-                        <a-select
-                          v-model:value="form.boottype"
-                          @change="onBootTypeChange"
-                          showSearch
-                          optionFilterProp="label"
-                          :filterOption="filterOption">
-                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
-                            {{ bootType.description }}
-                          </a-select-option>
-                        </a-select>
-                      </a-form-item>
-                      <a-form-item :label="$t('label.bootmode')" name="bootmode" ref="bootmode">
-                        <a-select
-                          v-model:value="form.bootmode"
-                          showSearch
-                          optionFilterProp="label"
-                          :filterOption="filterOption">
-                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
-                            {{ bootMode.description }}
-                          </a-select-option>
-                        </a-select>
-                      </a-form-item>
-                    </div>
-                    <a-form-item :label="$t('label.dynamicscalingenabled')" name="dynamicscalingenabled" ref="dynamicscalingenabled">
-                      <template #label>
-                        <tooltip-label :title="$t('label.dynamicscalingenabled')" :tooltip="$t('label.dynamicscalingenabled.tooltip')"/>
-                      </template>
-                      <a-form-item name="dynamicscalingenabled" ref="dynamicscalingenabled">
-                        <a-switch
-                          v-model:checked="form.dynamicscalingenabled"
-                          :checked="isDynamicallyScalable() && dynamicscalingenabled"
-                          :disabled="!isDynamicallyScalable()"
-                          @change="val => { dynamicscalingenabled = val }"/>
-                      </a-form-item>
-                    </a-form-item>
-                    <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
-                      <a-textarea
-                        v-model:value="form.userdata">
-                      </a-textarea>
-                    </a-form-item>
-                    <a-form-item :label="$t('label.affinity.groups')">
-                      <affinity-group-selection
-                        :items="options.affinityGroups"
-                        :row-count="rowCount.affinityGroups"
-                        :zoneId="zoneId"
-                        :value="affinityGroupIds"
-                        :loading="loading.affinityGroups"
-                        :preFillContent="dataPreFill"
-                        @select-affinity-group-item="($event) => updateAffinityGroups($event)"
-                        @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
-                    </a-form-item>
-                  </div>
-                </template>
-              </a-step>
-              <a-step
                 :title="$t('label.details')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -503,24 +437,6 @@
                     {{ $t('message.vm.review.launch') }}
                     <a-form-item :label="$t('label.name.optional')" name="name" ref="name">
                       <a-input v-model:value="form.name" />
-                    </a-form-item>
-                    <a-form-item :label="$t('label.group.optional')" name="group" ref="group">
-                      <a-auto-complete
-                        v-model:value="form.group"
-                        :filterOption="filterOption"
-                        :options="options.instanceGroups" />
-                    </a-form-item>
-                    <a-form-item :label="$t('label.keyboard')" name="keyboard" ref="keyboard">
-                      <a-select
-                        v-model:value="form.keyboard"
-                        :options="keyboardSelectOptions"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                      ></a-select>
-                    </a-form-item>
-                    <a-form-item :label="$t('label.action.start.instance')" name="startvm" ref="startvm">
-                      <a-switch v-model:checked="form.startvm" />
                     </a-form-item>
                   </div>
                 </template>
@@ -591,7 +507,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw, nextTick } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
@@ -648,8 +564,6 @@ export default {
   data () {
     return {
       zoneId: '',
-      podId: null,
-      clusterId: null,
       zoneSelected: false,
       dynamicscalingenabled: true,
       templateKey: 0,
@@ -660,10 +574,6 @@ export default {
         hypervisor: null,
         templateid: null,
         templatename: null,
-        keyboard: null,
-        group: null,
-        affinitygroupids: [],
-        affinitygroup: [],
         serviceofferingid: null,
         serviceofferingname: null,
         ostypeid: null,
@@ -677,16 +587,8 @@ export default {
         serviceOfferings: [],
         diskOfferings: [],
         zones: [],
-        affinityGroups: [],
         networks: [],
-        pods: [],
-        clusters: [],
-        hosts: [],
-        groups: [],
-        keyboards: [],
-        bootTypes: [],
-        bootModes: [],
-        dynamicScalingVmConfig: false
+        loadbalancers: []
       },
       rowCount: {},
       loading: {
@@ -695,18 +597,11 @@ export default {
         hypervisors: false,
         serviceOfferings: false,
         diskOfferings: false,
-        affinityGroups: false,
         networks: false,
-        zones: false,
-        pods: false,
-        clusters: false,
-        hosts: false,
-        groups: false
+        zones: false
       },
       instanceConfig: {},
       template: {},
-      defaultBootType: '',
-      defaultBootMode: '',
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -715,9 +610,9 @@ export default {
       hypervisor: '',
       serviceOffering: {},
       diskOffering: {},
-      affinityGroups: [],
       networks: [],
       networksAdd: [],
+      networkSelected: false,
       zone: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -772,9 +667,6 @@ export default {
       }
       return size.join(' | ')
     },
-    affinityGroupIds () {
-      return _.map(this.affinityGroups, 'id')
-    },
     params () {
       return {
         serviceOfferings: {
@@ -808,15 +700,6 @@ export default {
           },
           field: 'hypervisor'
         },
-        affinityGroups: {
-          list: 'listAffinityGroups',
-          options: {
-            page: 1,
-            pageSize: 10,
-            keyword: undefined,
-            listall: false
-          }
-        },
         networks: {
           list: 'listNetworks',
           options: {
@@ -849,54 +732,6 @@ export default {
         return {
           label: hypervisor.name,
           value: hypervisor.name
-        }
-      })
-    },
-    podSelectOptions () {
-      const options = this.options.pods.map((pod) => {
-        return {
-          label: pod.name,
-          value: pod.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: undefined
-      })
-      return options
-    },
-    clusterSelectOptions () {
-      const options = this.options.clusters.map((cluster) => {
-        return {
-          label: cluster.name,
-          value: cluster.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: undefined
-      })
-      return options
-    },
-    hostSelectOptions () {
-      const options = this.options.hosts.map((host) => {
-        return {
-          label: host.name,
-          value: host.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: undefined
-      })
-      return options
-    },
-    keyboardSelectOptions () {
-      const keyboardOpts = this.$config.keyboardOptions || {}
-      return Object.keys(keyboardOpts).map((keyboard) => {
-        return {
-          label: this.$t(keyboardOpts[keyboard]),
-          value: keyboard
         }
       })
     },
@@ -981,47 +816,12 @@ export default {
           this.overrideDiskOffering = null
         }
 
-        if (this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
-        if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
-        }
-        if (instanceConfig.overridediskofferingid) {
-          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
-        } else {
-          this.overrideDiskOffering = null
-        }
         this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
-
-        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
           this.vm.zonename = this.zone.name
-        }
-
-        const pod = _.find(this.options.pods, (option) => option.id === instanceConfig.podid)
-        if (pod) {
-          this.vm.podid = pod.id
-          this.vm.podname = pod.name
-        }
-
-        const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
-        if (cluster) {
-          this.vm.clusterid = cluster.id
-          this.vm.clustername = cluster.name
-        }
-
-        const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
-        if (host) {
-          this.vm.hostid = host.id
-          this.vm.hostname = host.name
         }
 
         if (this.serviceOffering?.rootdisksize) {
@@ -1069,10 +869,6 @@ export default {
           this.vm.diskofferingname = this.diskOffering.displaytext
           this.vm.diskofferingsize = this.diskOffering.disksize
         }
-
-        if (this.affinityGroups) {
-          this.vm.affinitygroup = this.affinityGroups
-        }
       }
     }
   },
@@ -1108,10 +904,6 @@ export default {
         zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
         hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }]
       })
-
-      if (this.zoneSelected) {
-        this.form.startvm = true
-      }
 
       if (this.zone && this.zone.networktype !== 'Basic') {
         if (this.zoneSelected && this.vm.templateid && this.templateNics && this.templateNics.length > 0) {
@@ -1274,18 +1066,6 @@ export default {
           }
         })
       }
-      this.fetchBootTypes()
-      this.fetchBootModes()
-      this.fetchInstaceGroups()
-      nextTick().then(() => {
-        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata'].forEach(this.fillValue)
-        this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
-        this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
-        this.instanceConfig = toRaw(this.form)
-      })
-    },
-    isDynamicallyScalable () {
-      return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
     isOfferingConstrained (serviceOffering) {
       return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
@@ -1308,36 +1088,6 @@ export default {
       this.options.zones = await this.fetchZones(zoneId)
       this.onSelectZoneId(zoneId)
     },
-    fetchBootTypes () {
-      this.options.bootTypes = [
-        { id: 'BIOS', description: 'BIOS' },
-        { id: 'UEFI', description: 'UEFI' }
-      ]
-    },
-    fetchBootModes (bootType) {
-      const bootModes = [
-        { id: 'LEGACY', description: 'LEGACY' }
-      ]
-      if (bootType === 'UEFI') {
-        bootModes.unshift(
-          { id: 'SECURE', description: 'SECURE' }
-        )
-      }
-      this.options.bootModes = bootModes
-    },
-    fetchInstaceGroups () {
-      this.options.instanceGroups = []
-      api('listInstanceGroups', {
-        account: this.$store.getters.userInfo.account,
-        domainid: this.$store.getters.userInfo.domainid,
-        listall: true
-      }).then(response => {
-        const groups = response.listinstancegroupsresponse.instancegroup || []
-        groups.forEach(x => {
-          this.options.instanceGroups.push({ label: x.name, value: x.name })
-        })
-      })
-    },
     fetchNetwork () {
       const param = this.params.networks
       this.fetchOptions(param, 'networks')
@@ -1350,10 +1100,6 @@ export default {
         hypervisor: null,
         templateid: null,
         templatename: null,
-        keyboard: null,
-        group: null,
-        affinitygroupids: [],
-        affinitygroup: [],
         serviceofferingid: null,
         serviceofferingname: null,
         ostypeid: null,
@@ -1388,9 +1134,6 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.defaultBootType = this.template?.details?.UEFI ? 'UEFI' : ''
-          this.fetchBootModes(this.defaultBootType)
-          this.defaultBootMode = this.template?.details?.UEFI
         }
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
@@ -1421,9 +1164,6 @@ export default {
     },
     updateMultiDiskOffering (value) {
       this.form.multidiskoffering = value
-    },
-    updateAffinityGroups (ids) {
-      this.form.affinitygroupids = ids
     },
     updateNetworks (ids) {
       this.form.networkids = ids
@@ -1491,18 +1231,6 @@ export default {
         let deployVmData = {}
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
-        deployVmData.podid = values.podid
-        deployVmData.clusterid = values.clusterid
-        deployVmData.hostid = values.hostid
-        deployVmData.keyboard = values.keyboard
-        if (!this.template?.deployasis) {
-          deployVmData.boottype = values.boottype
-          deployVmData.bootmode = values.bootmode
-        }
-        deployVmData.dynamicscalingenabled = values.dynamicscalingenabled
-        if (values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
-        }
         // step 2: select template/iso
         deployVmData.templateid = values.templateid
 
@@ -1515,8 +1243,6 @@ export default {
         if (values.hypervisor && values.hypervisor.length > 0) {
           deployVmData.hypervisor = values.hypervisor
         }
-
-        deployVmData.startvm = values.startvm
 
         // step 3: select service offering
         deployVmData.serviceofferingid = values.computeofferingid
@@ -1563,8 +1289,7 @@ export default {
           deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
           deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
-        // step 5: select an affinity group
-        deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
+
         // step 6: select network
         if (this.zone.networktype !== 'Basic') {
           if (this.nicToNetworkSelection && this.nicToNetworkSelection.length > 0) {
@@ -1832,16 +1557,10 @@ export default {
     onSelectZoneId (value) {
       this.dataPreFill = {}
       this.zoneId = value
-      this.podId = null
-      this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true
-      this.form.startvm = true
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
-      this.form.clusterid = undefined
-      this.form.podid = undefined
-      this.form.hostid = undefined
       this.form.templateid = undefined
       this.tabKey = 'templateid'
       _.each(this.params, (param, name) => {
@@ -1859,17 +1578,6 @@ export default {
       }
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
-    },
-    onSelectPodId (value) {
-      this.podId = value
-
-      this.fetchOptions(this.params.clusters, 'clusters')
-      this.fetchOptions(this.params.hosts, 'hosts')
-    },
-    onSelectClusterId (value) {
-      this.clusterId = value
-
-      this.fetchOptions(this.params.hosts, 'hosts')
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }
@@ -2068,11 +1776,6 @@ export default {
     },
     updateIOPSValue (input, value) {
       this[input] = value
-    },
-    onBootTypeChange (value) {
-      this.fetchBootModes(value)
-      this.defaultBootMode = this.options.bootModes?.[0]?.id || undefined
-      this.updateFieldValue('bootmode', this.defaultBootMode)
     },
     handleNicsNetworkSelection (nicToNetworkSelection) {
       this.nicToNetworkSelection = nicToNetworkSelection
