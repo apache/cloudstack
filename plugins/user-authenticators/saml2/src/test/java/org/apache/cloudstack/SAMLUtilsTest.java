@@ -63,7 +63,7 @@ public class SAMLUtilsTest extends TestCase {
     }
 
     @Test
-    public void testbuildAuthnRequestUrlWithoutQueryParam() throws Exception {
+    public void testBuildAuthnRequestUrlWithoutQueryParam() throws Exception {
         String consumerUrl = "http://someurl.com";
         String idpUrl = "http://idp.domain.example";
         String spId = "cloudstack";
@@ -75,7 +75,7 @@ public class SAMLUtilsTest extends TestCase {
     }
 
     @Test
-    public void testbuildAuthnRequestUrlWithQueryParam() throws Exception {
+    public void testBuildAuthnRequestUrlWithQueryParam() throws Exception {
         String consumerUrl = "http://someurl.com";
         String idpUrl = "http://idp.domain.example?idpid=CX1298373";
         String spId = "cloudstack";
