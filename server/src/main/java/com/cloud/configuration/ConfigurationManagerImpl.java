@@ -3537,7 +3537,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             if (MapUtils.isNotEmpty(details)) {
                 details.forEach((key, value) -> {
-                    boolean displayDetail = !key.equals(Volume.BANDWIDTH_LIMIT_IN_MBPS) && !key.equals(Volume.IOPS_LIMIT);
+                    boolean displayDetail = !StringUtils.equalsAny(key, Volume.BANDWIDTH_LIMIT_IN_MBPS, Volume.IOPS_LIMIT);
                     detailsVO.add(new DiskOfferingDetailVO(offering.getId(), key, value, displayDetail));
                 });
             }
