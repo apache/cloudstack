@@ -2450,6 +2450,7 @@
 "message.select.affinity.groups": "Please select any affinity groups you want this VM to belong to:",
 "message.select.destination.image.stores": "Please select Image Store(s) to which data is to be migrated to",
 "message.select.disk.offering": "Please select a disk offering for disk",
+"message.select.load.balancer.rule": "Please select a load balancer rule for your AutoScale VM group.",
 "message.select.migration.policy": "Please select a migration policy.",
 "message.select.nic.network": "Please select a network for NIC",
 "message.select.security.groups": "Please select security group(s) for your new VM.",

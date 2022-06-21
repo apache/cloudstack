@@ -133,7 +133,7 @@ export default {
     },
     autoscale: {
       type: Boolean,
-      default: false
+      default: () => false
     },
     preFillContent: {
       type: Object,

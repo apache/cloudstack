@@ -335,13 +335,26 @@
                         :value="networkOfferingIds"
                         :loading="loading.networks"
                         :zoneId="zoneId"
-                        :autoscale=true
+                        :autoscale="true"
                         :preFillContent="dataPreFill"
                         @select-network-item="($event) => updateNetworks($event)"
                         @handle-search-filter="($event) => handleSearchFilter('networks', $event)"
                       ></network-selection>
                     </div>
                   </div>
+                </template>
+              </a-step>
+              <a-step
+                :title="$t('label.loadbalancing')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <load-balancer-selection
+                    :zoneId="zoneId"
+                    :networkId="networkId"
+                    :value="lbruleid"
+                    :loading="loading.networks"
+                    :preFillContent="dataPreFill"
+                    @select-load-balancer-item="($event) => updateLoadBalancers($event)"></load-balancer-selection>
                 </template>
               </a-step>
               <a-step
@@ -596,6 +609,7 @@ import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
+import LoadBalancerSelection from '@views/compute/wizard/LoadBalancerSelection'
 import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -607,6 +621,7 @@ export default {
     SshKeyPairSelection,
     NetworkConfiguration,
     NetworkSelection,
+    LoadBalancerSelection,
     AffinityGroupSelection,
     TemplateIsoSelection,
     DiskSizeSelection,
@@ -904,6 +919,9 @@ export default {
       }]
       return tabList
     },
+    showLoadBalancerSection () {
+      return (this.networks.length > 0 && this.networks[0].type === 'Isolated')
+    },
     showSecurityGroupSection () {
       return (this.networks.length > 0 && this.zone.securitygroupsenabled) || (this.zone && this.zone.networktype === 'Basic')
     },
@@ -922,7 +940,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.name === 'deployVirtualMachine') {
+      if (to.name === 'createAutoScaleVmGroup') {
         this.resetData()
       }
     },
@@ -1419,6 +1437,13 @@ export default {
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
+    },
+    updateLoadBalancers (id) {
+      if (id === '0') {
+        this.form.lbruleid = undefined
+        return
+      }
+      this.form.lbruleid = id
     },
     updateSecurityGroups (securitygroupids) {
       this.securitygroupids = securitygroupids || []
