@@ -20,4 +20,4 @@
 --;
 
 UPDATE `cloud`.`configuration` SET `value` = 'false' WHERE `name` = 'network.disable.rpfilter' AND `value` != 'true';
-UPDATE `cloud`.`configuration` set `value` = 'false' where `name` = 'consoleproxy.disable.rpfilter' and `value` != 'true';
+UPDATE `cloud`.`configuration` SET `value` = 'false' WHERE `name` = 'consoleproxy.disable.rpfilter' AND `value` != 'true';
