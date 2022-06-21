@@ -2070,9 +2070,8 @@ class TestNetworkWithMtuConfiguration(cloudstackTestCase):
 		cls.dbclient = cls.testClient.getDbConnection()
 		cls.hypervisor = cls.testClient.getHypervisorInfo()
 		cls.domain = get_domain(cls.api_client)
-		hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
-			0].__dict__
-
+		if cls.hypervisor.lower() == 'simulator':
+			cls.skipTest("Skip test for simulator hypervisor")
 		cls.services = cls.testClient.getParsedTestDataConfig()
 		cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
 			0].__dict__
