@@ -160,7 +160,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // Limit the VNC password in case the length is greater than 8 characters
             // Since libvirt version 8 VNC passwords are limited to 8 characters
             String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
-            xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword);
+            xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword, vmName);
 
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
@@ -481,7 +481,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      * @param vncPassword if set, the VNC password truncated to 8 characters
      * @return the new xmlDesc
      */
-    String replaceIpForVNCInDescFileAndNormalizePassword(String xmlDesc, final String target, String vncPassword) {
+    String replaceIpForVNCInDescFileAndNormalizePassword(String xmlDesc, final String target, String vncPassword, String vmName) {
         final int begin = xmlDesc.indexOf(GRAPHICS_ELEM_START);
         if (begin >= 0) {
             final int end = xmlDesc.lastIndexOf(GRAPHICS_ELEM_END) + GRAPHICS_ELEM_END.length();
