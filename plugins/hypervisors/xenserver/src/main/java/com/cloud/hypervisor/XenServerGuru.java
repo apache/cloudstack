@@ -44,7 +44,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -67,8 +66,6 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     private GuestOSDao guestOsDao;
     @Inject
     private GuestOSHypervisorDao guestOsHypervisorDao;
-    @Inject
-    private HostDao hostDao;
     @Inject
     private VolumeDao volumeDao;
     @Inject

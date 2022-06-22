@@ -22,11 +22,9 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -56,12 +54,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
-    HostDao _hostDao;
-    @Inject
     DpdkHelper dpdkHelper;
 
-    @Inject
-    ServiceOfferingDao serviceOfferingDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -93,7 +87,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
         if (to.getLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
-            HostVO host = _hostDao.findById(vm.getHostId());
+            HostVO host = hostDao.findById(vm.getHostId());
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
@@ -126,7 +120,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         VirtualMachine virtualMachine = vm.getVirtualMachine();
         Long hostId = virtualMachine.getHostId();
-        HostVO host = hostId == null ? null : _hostDao.findById(hostId);
+        HostVO host = hostId == null ? null : hostDao.findById(hostId);
 
         // Determine the VM's OS description
         configureVmOsDescription(virtualMachine, to, host);
@@ -206,7 +200,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Long lastHostId = virtualMachine.getLastHostId();
         s_logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
-        HostVO lastHost = lastHostId == null ? null : _hostDao.findById(lastHostId);
+        HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();

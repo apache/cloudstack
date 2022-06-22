@@ -105,7 +105,6 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -170,7 +169,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject VolumeDataFactory _volFactory;
     @Inject VmwareDatacenterDao vmwareDatacenterDao;
     @Inject VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
-    @Inject ServiceOfferingDao serviceOfferingDao;
     @Inject VMTemplatePoolDao templateStoragePoolDao;
     @Inject VMTemplateDao vmTemplateDao;
     @Inject UserVmDao userVmDao;
@@ -349,12 +347,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override public List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics) {
         List<Command> commands = new ArrayList<Command>();
-        List<NicVO> nicVOs = _nicDao.listByVmId(vm.getId());
+        List<NicVO> nicVOs = nicDao.listByVmId(vm.getId());
         for (NicVO nic : nicVOs) {
-            NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            NetworkVO network = networkDao.findById(nic.getNetworkId());
             if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
                 s_logger.debug("Nic " + nic.toString() + " is connected to an lswitch, cleanup required");
-                NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
+                NetworkVO networkVO = networkDao.findById(nic.getNetworkId());
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
                 PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
@@ -492,7 +490,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
         VolumeVO volumeVO = disksMapping.get(disk);
         if (volumeVO == null) {
-            final VMInstanceVO vm = _virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
+            final VMInstanceVO vm = virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
             if (vm == null) {
                 throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
             }
@@ -659,18 +657,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private VMInstanceVO getVM(String vmInternalName, long templateId, long guestOsId, long serviceOfferingId, long zoneId, long accountId, long userId, long domainId) {
         s_logger.debug(String.format("Trying to get VM with specs: [vmInternalName: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].", vmInternalName,
                 templateId, guestOsId, serviceOfferingId));
-        VMInstanceVO vm = _virtualMachineDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
+        VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
         if (vm != null) {
             s_logger.debug(String.format("Found an existing VM [id: %s, removed: %s] with internalName: [%s].", vm.getUuid(), vm.getRemoved() != null ? "yes" : "no", vmInternalName));
             vm.setState(VirtualMachine.State.Stopped);
             vm.setPowerState(VirtualMachine.PowerState.PowerOff);
-            _virtualMachineDao.update(vm.getId(), vm);
+            virtualMachineDao.update(vm.getId(), vm);
             if (vm.getRemoved() != null) {
-                _virtualMachineDao.unremove(vm.getId());
+                virtualMachineDao.unremove(vm.getId());
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
                         vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
             }
-            return _virtualMachineDao.findById(vm.getId());
+            return virtualMachineDao.findById(vm.getId());
         } else {
             long id = userVmDao.getNextInSequence(Long.class, "id");
             s_logger.debug(String.format("Can't find an existing VM with internalName: [%s]. Creating a new VM with: [id: %s, name: %s, templateId: %s, guestOsId: %s, serviceOfferingId: %s].",
@@ -787,7 +785,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId, long accountId, long instanceId, Long poolId, long templateId, Backup backup, boolean isImport) throws Exception {
-        VMInstanceVO vm = _virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
+        VMInstanceVO vm = virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the backup volume information from the VM backup");
         }
@@ -836,13 +834,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private NetworkVO createNetworkRecord(Long zoneId, String tag, String vlan, long accountId, long domainId) {
         Long physicalNetworkId = getPhysicalNetworkId(zoneId, tag);
-        final long id = _networkDao.getNextInSequence(Long.class, "id");
+        final long id = networkDao.getNextInSequence(Long.class, "id");
         NetworkVO networkVO = new NetworkVO(id, TrafficType.Guest, Networks.Mode.Dhcp, BroadcastDomainType.Vlan, 9L, domainId, accountId, id, "Imported-network-" + id,
                 "Imported-network-" + id, null, Network.GuestType.Isolated, zoneId, physicalNetworkId, ControlledEntity.ACLType.Account, false, null, false);
         networkVO.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan));
         networkVO.setGuruName("ExternalGuestNetworkGuru");
         networkVO.setState(Network.State.Implemented);
-        return _networkDao.persist(networkVO);
+        return networkDao.persist(networkVO);
     }
 
     /**
@@ -856,7 +854,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String tag = parts[parts.length - 1];
         String[] tagSplit = tag.split("-");
         tag = tagSplit[tagSplit.length - 1];
-        NetworkVO networkVO = _networkDao.findByVlan(vlan);
+        NetworkVO networkVO = networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
         }
@@ -898,13 +896,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     private void syncVMNics(VirtualDevice[] nicDevices, DatacenterMO dcMo, Map<String, NetworkVO> networksMapping, VMInstanceVO vm) throws Exception {
         VmwareContext context = dcMo.getContext();
-        List<NicVO> allNics = _nicDao.listByVmId(vm.getId());
+        List<NicVO> allNics = nicDao.listByVmId(vm.getId());
         for (VirtualDevice nicDevice : nicDevices) {
             Pair<String, String> pair = getNicMacAddressAndNetworkName(nicDevice, context);
             String macAddress = pair.first();
             String networkName = pair.second();
             NetworkVO networkVO = networksMapping.get(networkName);
-            NicVO nicVO = _nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
+            NicVO nicVO = nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
             if (nicVO != null) {
                 allNics.remove(nicVO);
             }
@@ -915,7 +913,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private Map<VirtualDisk, VolumeVO> getDisksMapping(Backup backup, List<VirtualDisk> virtualDisks) {
-        final VMInstanceVO vm = _virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
+        final VMInstanceVO vm = virtualMachineDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
         }
