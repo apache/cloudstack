@@ -1875,6 +1875,7 @@
 "label.receivedbytes": "Bytes received",
 "label.recent.errors": "Recent errors",
 "label.recover.vm": "Recover VM",
+"label.redirect": "Redirect to:",
 "label.redundantrouter": "Redundant router",
 "label.redundantrouterstate": "Redundant state",
 "label.redundantstate": "Redundant state",
