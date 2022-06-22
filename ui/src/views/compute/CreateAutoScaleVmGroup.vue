@@ -619,9 +619,23 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
-                    {{ $t('message.vm.review.launch') }}
-                    <a-form-item :label="$t('label.name.optional')" name="name" ref="name">
-                      <a-input v-model:value="form.name" />
+                    <a-form-item :label="$t('label.user')" name="user" ref="user">
+                      <a-select
+                        style="width: 100%"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
+                        v-focus="true"
+                        v-model:value="form.autoscaleuserid">
+                        <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+                          {{ user.username }}
+                        </a-select-option>
+                      </a-select>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.destroyvmgraceperiod')">
+                      <a-input v-model:value="form.destroyvmgraceperiod"></a-input>
                     </a-form-item>
                   </div>
                 </template>
@@ -836,6 +850,7 @@ export default {
           slots: { customRender: 'actions' }
         }
       ],
+      usersList: [],
       zone: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -1306,6 +1321,7 @@ export default {
           }
         })
       }
+      this.fetchUserData()
     },
     isOfferingConstrained (serviceOffering) {
       return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
@@ -1354,6 +1370,14 @@ export default {
         }).then(response => {
           this.countersList = response.counterresponse?.counter || []
         })
+      })
+    },
+    fetchUserData () {
+      api('listUsers', {
+        domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
+        account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account
+      }).then(json => {
+        this.usersList = json.listusersresponse?.user || []
       })
     },
     resetData () {
