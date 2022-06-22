@@ -1083,6 +1083,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 StoragePoolHostVO storagePoolHostVO = storagePoolHostVOs.get(0);
                 HostVO hostVO = _hostDao.findById(storagePoolHostVO.getHostId());
                 hostGuidInTargetCluster = hostVO.getGuid();
+                break;
             }
         }
         return hostGuidInTargetCluster;
