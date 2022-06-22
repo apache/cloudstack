@@ -143,7 +143,7 @@
       </a-button>
     </div>
     <a-modal
-      :visible="showError"
+      v-model:visible="showError"
       :title="`${$t('label.error')}!`"
       :maskClosable="false"
       :closable="true"
@@ -161,7 +161,7 @@
     </a-modal>
     <a-modal
       :title="$t('label.edit.traffic.type')"
-      :visible="showEditTraffic"
+      v-model:visible="showEditTraffic"
       :closable="true"
       :maskClosable="false"
       centered
