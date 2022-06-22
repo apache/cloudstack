@@ -158,7 +158,7 @@
         <cs.json.version>20090211</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
-        <cs.libvirt-java.version>0.5.2</cs.libvirt-java.version>
+        <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
         <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
@@ -763,6 +763,10 @@
         <repository>
             <id>repo.jenkins-ci.org.public</id>
             <url>https://repo.jenkins-ci.org/public/</url>
+        </repository>
+        <repository>
+            <id>libvirt.org.maven2</id>
+            <url>https://libvirt.org/maven2/</url>
         </repository>
     </repositories>
 
