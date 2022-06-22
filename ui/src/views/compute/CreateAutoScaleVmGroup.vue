@@ -431,6 +431,98 @@
                 </template>
               </a-step>
               <a-step
+                :title="$t('label.scaleup.policy')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div class="form">
+                    <div class="form__item">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                      <a-input v-model:value="form.scaleupduration"></a-input>
+                    </div>
+                    <div class="form__item">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.quiettime') }}</div>
+                      <a-input v-model:value="form.scaleupquiettime"></a-input>
+                    </div>
+                  </div>
+                  <a-divider/>
+                  <div class="form">
+                    <div class="form__item" ref="newScaleUpConditionCounterId">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
+                      <a-select
+                        style="width: 100%"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
+                        v-focus="true"
+                        v-model:value="newScaleUpCondition.counterid">
+                        <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+                          {{ counter.name }}
+                        </a-select-option>
+                      </a-select>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item" ref="newScaleUpConditionRelationalOperator">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
+                      <a-select
+                        v-model:value="newScaleUpCondition.relationaloperator"
+                        style="width: 100%;"
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }" >
+                        <a-select-option value="gt">{{ getOperator('GT') }}</a-select-option>
+                        <a-select-option value="ge">{{ getOperator('GE') }}</a-select-option>
+                        <a-select-option value="lt">{{ getOperator('LT') }}</a-select-option>
+                        <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
+                        <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
+                      </a-select>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item" ref="newScaleUpConditionThreshold">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+                      <a-input v-model:value="newScaleUpCondition.threshold"></a-input>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item">
+                      <div class="form__label">{{ $t('label.action') }}</div>
+                      <a-button ref="submit" type="primary" @click="addScaleUpCondition">
+                        <template #icon><plus-outlined /></template>
+                        {{ $t('label.add') }}
+                      </a-button>
+                    </div>
+                  </div>
+                  <a-divider/>
+                  <div>
+                    <a-table
+                      size="small"
+                      style="overflow-y: auto"
+                      :loading="false"
+                      :columns="scaleUpColumns"
+                      :dataSource="scaleUpConditions"
+                      :pagination="false"
+                      :rowKey="record => record.counterid">
+                      <template #countername="{ record }">
+                        {{ record.countername }}
+                      </template>
+                      <template #relationaloperator="{ record }">
+                        {{ getOperator(record.relationaloperator) }}
+                      </template>
+                      <template #threshold="{ record }">
+                        {{ record.threshold }}
+                      </template>
+                      <template #actions="{ record }">
+                          <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleUpCondition(record.counterid)">
+                            <template #icon><delete-outlined /></template>
+                            {{ $t('label.delete') }}
+                          </a-button>
+                      </template>
+                    </a-table>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.details')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -603,6 +695,31 @@ export default {
       networkSelected: false,
       selectedNetworkId: null,
       selectedLbId: null,
+      countersList: [],
+      scaleUpConditions: [],
+      newScaleUpCondition: {
+        counterid: null,
+        relationaloperator: null,
+        threshold: null
+      },
+      scaleUpColumns: [
+        {
+          title: this.$t('label.counter'),
+          dataIndex: 'countername'
+        },
+        {
+          title: this.$t('label.relationaloperator'),
+          slots: { customRender: 'relationaloperator' }
+        },
+        {
+          title: this.$t('label.threshold'),
+          slots: { customRender: 'threshold' }
+        },
+        {
+          title: this.$t('label.action'),
+          slots: { customRender: 'actions' }
+        }
+      ],
       zone: {},
       overrideDiskOffering: {},
       templateFilter: [
@@ -1104,6 +1221,25 @@ export default {
       const param = this.params.loadbalancers
       this.fetchOptions(param, 'loadbalancers')
     },
+    fetchCountersList () {
+      api('listNetworks', {
+        listAll: true,
+        id: this.selectedNetworkId
+      }).then(response => {
+        const services = response.listnetworksresponse?.network?.[0]?.service
+        const index = services.map(svc => { return svc.name }).indexOf('Lb')
+        if (index === -1) {
+          return
+        }
+        const provider = services[index].provider[0].name
+        api('listCounters', {
+          listAll: true,
+          provider: provider
+        }).then(response => {
+          this.countersList = response.counterresponse?.counter || []
+        })
+      })
+    },
     resetData () {
       this.vm = {
         name: null,
@@ -1187,6 +1323,7 @@ export default {
         this.selectedNetworkId = ids[0]
       }
       this.fetchLoadBalancer()
+      this.fetchCountersList()
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
@@ -1202,6 +1339,48 @@ export default {
     },
     updateSecurityGroups (securitygroupids) {
       this.securitygroupids = securitygroupids || []
+    },
+    getOperator (val) {
+      if (val === 'GT' || val === 'gt') return this.$t('label.operator.greater')
+      if (val === 'GE' || val === 'ge') return this.$t('label.operator.greater.or.equal')
+      if (val === 'LT' || val === 'lt') return this.$t('label.operator.less')
+      if (val === 'LE' || val === 'le') return this.$t('label.operator.less.or.equal')
+      if (val === 'EQ' || val === 'eq') return this.$t('label.operator.equal')
+      return val
+    },
+    addScaleUpCondition () {
+      if (!this.newScaleUpCondition.counterid) {
+        this.$refs.newScaleUpConditionCounterId.classList.add('error')
+      } else {
+        this.$refs.newScaleUpConditionCounterId.classList.remove('error')
+      }
+
+      if (!this.newScaleUpCondition.relationaloperator) {
+        this.$refs.newScaleUpConditionRelationalOperator.classList.add('error')
+      } else {
+        this.$refs.newScaleUpConditionRelationalOperator.classList.remove('error')
+      }
+
+      if (!this.newScaleUpCondition.threshold) {
+        this.$refs.newScaleUpConditionThreshold.classList.add('error')
+      } else {
+        this.$refs.newScaleUpConditionThreshold.classList.remove('error')
+      }
+
+      if (!this.newScaleUpCondition.counterid || !this.newScaleUpCondition.relationaloperator || !this.newScaleUpCondition.threshold) {
+        return
+      }
+      const countername = this.countersList.filter(counter => counter.id === this.newScaleUpCondition.counterid).map(counter => { return counter.name }).join(',')
+      this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== this.newScaleUpCondition.counterid)
+      this.scaleUpConditions.push({
+        counterid: this.newScaleUpCondition.counterid,
+        countername: countername,
+        relationaloperator: this.newScaleUpCondition.relationaloperator,
+        threshold: this.newScaleUpCondition.threshold
+      })
+    },
+    deleteScaleUpCondition (counterId) {
+      this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== counterId)
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
@@ -1844,4 +2023,60 @@ export default {
     display: none;
   }
 
+  .form {
+    display: flex;
+    margin-right: -20px;
+    margin-bottom: 20px;
+    flex-direction: column;
+    align-items: flex-start;
+
+    @media (min-width: 760px) {
+      flex-direction: row;
+    }
+
+    &__item {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      padding-right: 20px;
+      margin-bottom: 20px;
+
+      @media (min-width: 760px) {
+        margin-bottom: 0;
+      }
+
+      input,
+      .ant-select {
+        margin-top: auto;
+      }
+
+    }
+
+    &__label {
+      font-weight: bold;
+    }
+
+    &__required {
+      margin-right: 5px;
+      color: red;
+    }
+
+    .error-text {
+      display: none;
+      color: red;
+      font-size: 0.8rem;
+    }
+
+    .error {
+
+      input {
+        border-color: red;
+      }
+      .error-text {
+        display: block;
+      }
+
+    }
+
+  }
 </style>
