@@ -321,7 +321,7 @@ class CsIP:
                 logging.info("Configuring address %s on device %s", self.ip(), self.dev)
                 cmd = "ip addr add dev %s %s brd +" % (self.dev, self.ip())
                 CsHelper.execute(cmd)
-                cmd = "ifconfig %s mtu %s up"  % (self.dev, self.mtu())
+                cmd = "ifconfig %s mtu %s"  % (self.dev, self.mtu())
                 CsHelper.execute(cmd)
             except Exception as e:
                 logging.info("Exception occurred ==> %s" % e)
