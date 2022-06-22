@@ -151,7 +151,7 @@
       @cancel="() => { showError = false }"
       centered
     >
-      <div v-ctrl-enter="showError = false">
+      <div v-ctrl-enter="() => showError = false">
         <span>{{ $t('message.required.traffic.type') }}</span>
         <div :span="24" class="action-button">
           <a-button @click="showError = false">{{ $t('label.cancel') }}</a-button>
