@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
+import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "user_vm")
@@ -140,5 +141,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Override
     public String getName() {
         return instanceName;
+    }
+
+    public String getDisplayNameOrHostName() {
+        return StringUtils.isNotBlank(displayName) ? displayName : getHostName();
     }
 }

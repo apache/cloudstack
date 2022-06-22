@@ -79,6 +79,7 @@ import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.guru.PublicNetworkGuru;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -167,19 +168,55 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return new Pair<>(nic.getIPv6Address(), vlanOptional.get());
     }
 
+    private void publishPublicIpv6AssignActionEvent(final Network network, final String ipv6Address) {
+        String event = EventTypes.EVENT_NET_IP6_ASSIGN;
+        final String description = String.format("Assigned public IPv6 address: %1$s for network ID: %2$s. Subnet: %3$s, gateway: %1$s", ipv6Address,  network.getUuid(), network.getIp6Cidr());
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
+        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+        final String guestType = Vlan.VlanType.VirtualNetwork.toString();
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
+                ipv6Address, false, guestType, false, usageHidden,
+                IPv6Network.class.getName(), null);
+    }
+
+    private void publishPublicIpv6ReleaseActionEvent(Network network, String nicIpv6Address) {
+        String event = EventTypes.EVENT_NET_IP6_RELEASE;
+        String description = String.format("Released public IPv6 address: %1$s from network ID: %2$s. Subnet: %3$s, gateway: %1$s", nicIpv6Address,  network.getUuid(), network.getIp6Cidr());
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
+        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
+                nicIpv6Address, false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                IPv6Address.class.getName(), null);
+    }
+
+    private void processPublicIpv6AddressUpdateForVpcTier(final Network network, final Nic nic) {
+        if (network.getVpcId() == null || !Network.State.Implementing.equals(network.getState())) {
+            return;
+        }
+        DomainRouterVO router = domainRouterDao.findById(nic.getInstanceId());
+        if (router == null) {
+            return;
+        }
+        if (router.getIsRedundantRouter() && !VirtualRouter.RedundantState.PRIMARY.equals(router.getRedundantState())) {
+            return;
+        }
+        networkOrchestrationService.savePlaceholderNic(network, null, nic.getIPv6Address(), nic.getIPv6Cidr(), nic.getIPv6Gateway(), s_publicNetworkReserver, VirtualMachine.Type.DomainRouter);
+        publishPublicIpv6AssignActionEvent(network, nic.getIPv6Address());
+    }
+
     private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
+        final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
+        if (CollectionUtils.isEmpty(ranges)) {
+            s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
+            InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
+            ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+            throw ex;
+        }
+        Pair<String, ? extends Vlan> placeholderResult = getPublicIpv6FromNetworkPlaceholder(network, ranges);
+        if (placeholderResult != null) {
+            return placeholderResult;
+        }
         Pair<String, ? extends Vlan> result = Transaction.execute((TransactionCallbackWithException<Pair<String, ? extends Vlan>, InsufficientAddressCapacityException>) status -> {
-            final List<VlanVO> ranges = vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(network.getPhysicalNetworkId(), vlanId);
-            if (CollectionUtils.isEmpty(ranges)) {
-                s_logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
-                InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
-                ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
-                throw ex;
-            }
-            Pair<String, ? extends Vlan> placeholderResult = getPublicIpv6FromNetworkPlaceholder(network, ranges);
-            if (placeholderResult != null) {
-                return placeholderResult;
-            }
             removePublicIpv6PlaceholderNics(network);
             Collections.shuffle(ranges);
             VlanVO selectedVlan = ranges.get(0);
@@ -195,14 +232,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             return new Pair<>(ipv6Addr.toString(), selectedVlan);
         });
         final String ipv6Address = result.first();
-        final String event = EventTypes.EVENT_NET_IP6_ASSIGN;
-        final String description = String.format("Assigned public IPv6 address: %s for network ID: %s", ipv6Address,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
-        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        final String guestType = result.second().getVlanType().toString();
-        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
-                ipv6Address, false, guestType, false, usageHidden,
-                IPv6Network.class.getName(), null);
+        publishPublicIpv6AssignActionEvent(network, ipv6Address);
         return result;
     }
 
@@ -380,6 +410,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Override
     public Nic assignPublicIpv6ToNetwork(Network network, Nic nic) {
         if (StringUtils.isNotEmpty(nic.getIPv6Address())) {
+            processPublicIpv6AddressUpdateForVpcTier(network, nic);
             return nic;
         }
         try {
@@ -419,17 +450,6 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             nic.setIPv6Dns1(dc.getIp6Dns1());
             nic.setIPv6Dns2(dc.getIp6Dns2());
         }
-    }
-
-    @Override
-    public void releasePublicIpv6ForNic(Network network, String nicIpv6Address) {
-        String event = EventTypes.EVENT_NET_IP6_RELEASE;
-        String description = String.format("Releasing public IPv6 address: %s from network ID: %s", nicIpv6Address,  network.getUuid());
-        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, event, description, network.getId(), ApiCommandResourceType.Network.toString(), 0);
-        final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
-        UsageEventUtils.publishUsageEvent(event, network.getAccountId(), network.getDataCenterId(), 0L,
-                nicIpv6Address, false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
-                IPv6Address.class.getName(), null);
     }
 
     @Override
@@ -656,6 +676,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
                         for (Nic nic : nics) {
                             s_logger.debug("Removing placeholder nic " + nic);
                             nicDao.remove(nic.getId());
+                            publishPublicIpv6ReleaseActionEvent(network, nic.getIPv6Address());
                         }
                     }
                 });
