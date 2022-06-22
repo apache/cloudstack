@@ -323,7 +323,7 @@ export default {
       return traffics
     },
     hypervisor () {
-      return this.prefillContent.hypervisor?.value || null
+      return this.prefillContent.hypervisor || null
     }
   },
   created () {
@@ -477,12 +477,12 @@ export default {
       const fields = {}
       if (this.hypervisor === 'VMware') {
         delete this.trafficInEdit.traffic.label
-        fields.vSwitchName = null
-        fields.vlanId = null
+        fields.vSwitchName = this.trafficInEdit?.traffic?.vSwitchName || null
+        fields.vlanId = this.trafficInEdit?.traffic?.vlanId || null
         if (traffic.type === 'guest') {
           fields.vSwitchName = this.trafficInEdit?.traffic?.vSwitchName || 'vSwitch0'
         }
-        fields.vSwitchType = 'vmwaresvs'
+        fields.vSwitchType = this.trafficInEdit?.traffic?.vSwitchType || 'vmwaresvs'
       } else {
         delete this.trafficInEdit.traffic.vSwitchName
         delete this.trafficInEdit.traffic.vlanId
