@@ -157,7 +157,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 s_logger.debug(String.format("VM [%s] with XML configuration [%s] will be migrated to host [%s].", vmName, xmlDesc, target));
             }
 
-            xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target, vmName);
+            // Limit the VNC password in case the length is greater than 8 characters
+            // Since libvirt version 8 VNC passwords are limited to 8 characters
+            String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
+            xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword);
 
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
@@ -475,9 +478,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      *     </graphics>
      * @param xmlDesc the qemu xml description
      * @param target the ip address to migrate to
+     * @param vncPassword if set, the VNC password truncated to 8 characters
      * @return the new xmlDesc
      */
-    String replaceIpForVNCInDescFile(String xmlDesc, final String target, String vmName) {
+    String replaceIpForVNCInDescFileAndNormalizePassword(String xmlDesc, final String target, String vncPassword) {
         final int begin = xmlDesc.indexOf(GRAPHICS_ELEM_START);
         if (begin >= 0) {
             final int end = xmlDesc.lastIndexOf(GRAPHICS_ELEM_END) + GRAPHICS_ELEM_END.length();
@@ -486,6 +490,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 String graphElem = xmlDesc.substring(begin, end);
                 graphElem = graphElem.replaceAll("listen='[a-zA-Z0-9\\.]*'", "listen='" + target + "'");
                 graphElem = graphElem.replaceAll("address='[a-zA-Z0-9\\.]*'", "address='" + target + "'");
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(vncPassword)) {
+                    graphElem = graphElem.replaceAll("passwd='([^\\s]+)'", "passwd='" + vncPassword + "'");
+                }
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Replaced the VNC IP address [%s] with [%s] in VM [%s].", originalGraphElem, graphElem, vmName));

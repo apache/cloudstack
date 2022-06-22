@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.allocator;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
@@ -73,6 +75,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+
+    /**
+     * make sure shuffled lists of Pools are really shuffled
+     */
+    private SecureRandom secureRandom = new SecureRandom();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -169,25 +176,26 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     @Override
     public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("reordering pools");
+        }
         if (pools == null) {
             return null;
+        }
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("reordering %d pools", pools.size()));
         }
         Account account = null;
         if (vmProfile.getVirtualMachine() != null) {
             account = vmProfile.getOwner();
         }
 
-        if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
-            // Shuffle this so that we don't check the pools in the same order.
-            Collections.shuffle(pools);
-        } else if (allocationAlgorithm.equals("userdispersing")) {
-            pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
-        } else if(allocationAlgorithm.equals("firstfitleastconsumed")){
-            pools = reorderPoolsByCapacity(plan, pools);
-        }
+        pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
 
         if (vmProfile.getVirtualMachine() == null) {
-            s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("The VM is null, skipping pools reordering by disk provisioning type.");
+            }
             return pools;
         }
 
@@ -197,6 +205,33 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
 
         return pools;
+    }
+
+    List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
+        if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+            reorderRandomPools(pools);
+        } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("Using reordering algorithm [%s]", allocationAlgorithm));
+            }
+
+            if (allocationAlgorithm.equals("userdispersing")) {
+                pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
+            } else {
+                pools = reorderPoolsByCapacity(plan, pools);
+            }
+        }
+        return pools;
+    }
+
+    void reorderRandomPools(List<StoragePool> pools) {
+        StorageUtil.traceLogStoragePools(pools, s_logger, "pools to choose from: ");
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)", allocationAlgorithm));
+        }
+        StorageUtil.traceLogStoragePools(pools, s_logger, "pools to shuffle: ");
+        Collections.shuffle(pools, secureRandom);
+        StorageUtil.traceLogStoragePools(pools, s_logger, "shuffled list of pools to choose from: ");
     }
 
     private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile diskProfile) {
