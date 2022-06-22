@@ -414,14 +414,22 @@ export default {
       const shouldHaveLabels = this.physicalNetworks.length > 1
       let isValid = true
       this.requiredTrafficTypes.forEach(type => {
+        if (!isValid) return false
         let foundType = false
         this.physicalNetworks.forEach(net => {
           net.traffics.forEach(traffic => {
+            if (!isValid) return false
             if (traffic.type === type) {
               foundType = true
             }
-            if (shouldHaveLabels && (!traffic.label || traffic.label.length === 0)) {
-              isValid = false
+            if (this.hypervisor !== 'VMware') {
+              if (shouldHaveLabels && (!traffic.label || traffic.label.length === 0)) {
+                isValid = false
+              }
+            } else {
+              if (shouldHaveLabels && (!traffic.vSwitchName || traffic.vSwitchName.length === 0)) {
+                isValid = false
+              }
             }
           })
         })
