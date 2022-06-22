@@ -1363,6 +1363,15 @@ export default {
           delete values.tags
         }
 
+        if (['updateServiceOffering'].includes(action.api)) {
+          if (values.hosttags === this.resource.hosttags) {
+            delete values.hosttags
+          }
+          if (values.storagetags === this.resource.storagetags) {
+            delete values.tags
+          }
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {
