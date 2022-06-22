@@ -340,7 +340,7 @@
         </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
-            {{ $t('label.computeonly.offering') }}
+            <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
@@ -562,7 +562,7 @@
           </span>
           <a-form-item>
             <template #label>
-              <tooltip-label :title="$t('label.diskofferingstrictness')"/>
+              <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
             </template>
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>

@@ -93,7 +93,7 @@ if [ -d "$BINARIES_DIR" ]; then
   output=`ls ${BINARIES_DIR}/docker/`
   if [ "$output" != "" ]; then
     while read -r line; do
-        ctr image import "${BINARIES_DIR}/docker/$line"
+        ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
     done <<< "$output"
   fi
   if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
@@ -105,6 +105,12 @@ if [ -d "$BINARIES_DIR" ]; then
   if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
     mkdir -p /opt/autoscaler
     cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
+
+  PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+  echo $PAUSE_IMAGE
+  if [ -n "$PAUSE_IMAGE" ]; then
+    sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
   fi
 
   tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
@@ -129,6 +135,9 @@ if [ -d "$BINARIES_DIR" ]; then
   systemctl stop kubelet
   cp -a ${BINARIES_DIR}/k8s/{kubelet,kubectl} /opt/bin
   chmod +x {kubelet,kubectl}
+
+  systemctl daemon-reload
+  systemctl restart containerd
   systemctl restart kubelet
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then

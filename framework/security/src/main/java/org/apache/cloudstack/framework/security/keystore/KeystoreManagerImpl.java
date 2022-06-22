@@ -107,16 +107,12 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
 
         try {
             return CertificateHelper.buildAndSaveKeystore(certs, storePassword);
-        } catch (KeyStoreException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to KeyStoreException");
-        } catch (CertificateException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to CertificateException");
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to NoSuchAlgorithmException");
-        } catch (InvalidKeySpecException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to InvalidKeySpecException");
-        } catch (IOException e) {
-            s_logger.warn("Unable to build keystore for " + name + " due to IOException");
+        } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
+            String msg = String.format("Unable to build keystore for %s due to %s", name, e.getClass().getSimpleName());
+            s_logger.warn(msg);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(msg, e);
+            }
         }
         return null;
     }
