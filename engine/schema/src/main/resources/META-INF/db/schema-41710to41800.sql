@@ -25,3 +25,4 @@ WHERE 1;
 
 ALTER TABLE `cloud`.`backups`
 MODIFY COLUMN `date` DATETIME;
+
