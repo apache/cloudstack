@@ -77,7 +77,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
             "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
+    private static ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
             "The Veeam B&R API restore backup timeout in seconds.", true, ConfigKey.Scope.Zone);
 
     @Inject
