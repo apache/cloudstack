@@ -523,6 +523,98 @@
                 </template>
               </a-step>
               <a-step
+                :title="$t('label.scaledown.policy')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div class="form">
+                    <div class="form__item">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                      <a-input v-model:value="form.scaledownduration"></a-input>
+                    </div>
+                    <div class="form__item">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.quiettime') }}</div>
+                      <a-input v-model:value="form.scaledownquiettime"></a-input>
+                    </div>
+                  </div>
+                  <a-divider/>
+                  <div class="form">
+                    <div class="form__item" ref="newScaleDownConditionCounterId">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
+                      <a-select
+                        style="width: 100%"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }"
+                        v-focus="true"
+                        v-model:value="newScaleDownCondition.counterid">
+                        <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+                          {{ counter.name }}
+                        </a-select-option>
+                      </a-select>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item" ref="newScaleDownConditionRelationalOperator">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</div>
+                      <a-select
+                        v-model:value="newScaleDownCondition.relationaloperator"
+                        style="width: 100%;"
+                        optionFilterProp="label"
+                        :filterOption="(input, option) => {
+                          return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                        }" >
+                        <a-select-option value="gt">{{ getOperator('GT') }}</a-select-option>
+                        <a-select-option value="ge">{{ getOperator('GE') }}</a-select-option>
+                        <a-select-option value="lt">{{ getOperator('LT') }}</a-select-option>
+                        <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
+                        <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
+                      </a-select>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item" ref="newScaleDownConditionThreshold">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+                      <a-input v-model:value="newScaleDownCondition.threshold"></a-input>
+                      <span class="error-text">{{ $t('label.required') }}</span>
+                    </div>
+                    <div class="form__item">
+                      <div class="form__label">{{ $t('label.action') }}</div>
+                      <a-button ref="submit" type="primary" @click="addScaleDownCondition">
+                        <template #icon><plus-outlined /></template>
+                        {{ $t('label.add') }}
+                      </a-button>
+                    </div>
+                  </div>
+                  <a-divider/>
+                  <div>
+                    <a-table
+                      size="small"
+                      style="overflow-y: auto"
+                      :loading="false"
+                      :columns="scaleDownColumns"
+                      :dataSource="scaleDownConditions"
+                      :pagination="false"
+                      :rowKey="record => record.counterid">
+                      <template #countername="{ record }">
+                        {{ record.countername }}
+                      </template>
+                      <template #relationaloperator="{ record }">
+                        {{ getOperator(record.relationaloperator) }}
+                      </template>
+                      <template #threshold="{ record }">
+                        {{ record.threshold }}
+                      </template>
+                      <template #actions="{ record }">
+                          <a-button ref="submit" type="primary" :danger="true" @click="deleteScaleDownCondition(record.counterid)">
+                            <template #icon><delete-outlined /></template>
+                            {{ $t('label.delete') }}
+                          </a-button>
+                      </template>
+                    </a-table>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.details')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -703,6 +795,30 @@ export default {
         threshold: null
       },
       scaleUpColumns: [
+        {
+          title: this.$t('label.counter'),
+          dataIndex: 'countername'
+        },
+        {
+          title: this.$t('label.relationaloperator'),
+          slots: { customRender: 'relationaloperator' }
+        },
+        {
+          title: this.$t('label.threshold'),
+          slots: { customRender: 'threshold' }
+        },
+        {
+          title: this.$t('label.action'),
+          slots: { customRender: 'actions' }
+        }
+      ],
+      scaleDownConditions: [],
+      newScaleDownCondition: {
+        counterid: null,
+        relationaloperator: null,
+        threshold: null
+      },
+      scaleDownColumns: [
         {
           title: this.$t('label.counter'),
           dataIndex: 'countername'
@@ -1381,6 +1497,40 @@ export default {
     },
     deleteScaleUpCondition (counterId) {
       this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== counterId)
+    },
+    addScaleDownCondition () {
+      if (!this.newScaleDownCondition.counterid) {
+        this.$refs.newScaleDownConditionCounterId.classList.add('error')
+      } else {
+        this.$refs.newScaleDownConditionCounterId.classList.remove('error')
+      }
+
+      if (!this.newScaleDownCondition.relationaloperator) {
+        this.$refs.newScaleDownConditionRelationalOperator.classList.add('error')
+      } else {
+        this.$refs.newScaleDownConditionRelationalOperator.classList.remove('error')
+      }
+
+      if (!this.newScaleDownCondition.threshold) {
+        this.$refs.newScaleDownConditionThreshold.classList.add('error')
+      } else {
+        this.$refs.newScaleDownConditionThreshold.classList.remove('error')
+      }
+
+      if (!this.newScaleDownCondition.counterid || !this.newScaleDownCondition.relationaloperator || !this.newScaleDownCondition.threshold) {
+        return
+      }
+      const countername = this.countersList.filter(counter => counter.id === this.newScaleDownCondition.counterid).map(counter => { return counter.name }).join(',')
+      this.scaleDownConditions = this.scaleDownConditions.filter(condition => condition.counterid !== this.newScaleDownCondition.counterid)
+      this.scaleDownConditions.push({
+        counterid: this.newScaleDownCondition.counterid,
+        countername: countername,
+        relationaloperator: this.newScaleDownCondition.relationaloperator,
+        threshold: this.newScaleDownCondition.threshold
+      })
+    },
+    deleteScaleDownCondition (counterId) {
+      this.scaleDownConditions = this.scaleDownConditions.filter(condition => condition.counterid !== counterId)
     },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
