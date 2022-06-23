@@ -196,11 +196,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateL2NetworkForm',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -344,15 +346,19 @@ export default {
       } else { // from guest network section
         var params = {}
         this.networkOfferingLoading = true
-        api('listVPCs', params).then(json => {
-          const listVPCs = json.listvpcsresponse.vpc
-          var vpcAvailable = this.arrayHasItems(listVPCs)
-          if (vpcAvailable === false) {
-            this.fetchNetworkOfferingData(false)
-          } else {
-            this.fetchNetworkOfferingData()
-          }
-        })
+        if ('listVPCs' in this.$store.getters.apis) {
+          api('listVPCs', params).then(json => {
+            const listVPCs = json.listvpcsresponse.vpc
+            var vpcAvailable = this.arrayHasItems(listVPCs)
+            if (vpcAvailable === false) {
+              this.fetchNetworkOfferingData(false)
+            } else {
+              this.fetchNetworkOfferingData()
+            }
+          })
+        } else {
+          this.fetchNetworkOfferingData(false)
+        }
       }
     },
     fetchNetworkOfferingData (forVpc) {
@@ -389,7 +395,8 @@ export default {
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,

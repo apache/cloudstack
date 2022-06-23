@@ -35,7 +35,7 @@
           v-model:value="form.name"
           :placeholder="apiParams.name.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid">
+      <a-form-item ref="zoneid" name="zoneid" v-if="!createVolumeFromSnapshot">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -62,7 +62,7 @@
           </a-select-option>
         </a-select>
       </a-form-item>
-      <a-form-item ref="diskofferingid" name="diskofferingid">
+      <a-form-item ref="diskofferingid" name="diskofferingid" v-if="!createVolumeFromSnapshot || (createVolumeFromSnapshot && resource.volumetype === 'ROOT')">
         <template #label>
           <tooltip-label :title="$t('label.diskofferingid')" :tooltip="apiParams.diskofferingid.description || 'Disk Offering'"/>
         </template>
@@ -123,14 +123,22 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateVolume',
+  mixins: [mixinForm],
   components: {
     ResourceIcon,
     TooltipLabel
+  },
+  props: {
+    resource: {
+      type: Object,
+      default: () => {}
+    }
   },
   data () {
     return {
@@ -139,6 +147,11 @@ export default {
       customDiskOffering: false,
       loading: false,
       isCustomizedDiskIOps: false
+    }
+  },
+  computed: {
+    createVolumeFromSnapshot () {
+      return this.$route.path.startsWith('/snapshot')
     }
   },
   beforeCreate () {
@@ -153,9 +166,7 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        name: [{ required: true, message: this.$t('message.error.volume.name') }],
         zoneid: [{ required: true, message: this.$t('message.error.zone') }],
-        diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
         size: [{ required: true, message: this.$t('message.error.custom.disk.size') }],
         miniops: [{
           validator: async (rule, value) => {
@@ -174,6 +185,10 @@ export default {
           }
         }]
       })
+      if (!this.createVolumeFromSnapshot) {
+        this.rules.name = [{ required: true, message: this.$t('message.error.volume.name') }]
+        this.rules.diskofferingid = [{ required: true, message: this.$t('message.error.select') }]
+      }
     },
     fetchData () {
       this.loading = true
@@ -192,7 +207,9 @@ export default {
         listall: true
       }).then(json => {
         this.offerings = json.listdiskofferingsresponse.diskoffering || []
-        this.form.diskofferingid = this.offerings[0].id || ''
+        if (!this.createVolumeFromSnapshot) {
+          this.form.diskofferingid = this.offerings[0].id || ''
+        }
         this.customDiskOffering = this.offerings[0].iscustomized || false
         this.isCustomizedDiskIOps = this.offerings[0]?.iscustomizediops || false
       }).finally(() => {
@@ -202,7 +219,11 @@ export default {
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
+        if (this.createVolumeFromSnapshot) {
+          values.snapshotid = this.resource.id
+        }
         this.loading = true
         api('createVolume', values).then(response => {
           this.$pollJob({

@@ -18,6 +18,7 @@ package org.apache.cloudstack.backup;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.junit.Before;
@@ -48,6 +49,7 @@ public class BackupManagerTest {
         when(offering.getId()).thenReturn(1234l);
         when(offering.getName()).thenCallRealMethod();
         when(offering.getDescription()).thenCallRealMethod();
+        when(offering.isUserDrivenBackupAllowed()).thenCallRealMethod();
 
         BackupOfferingVO offeringUpdate = Mockito.spy(BackupOfferingVO.class);
         when(offeringUpdate.getId()).thenReturn(1234l);
@@ -59,6 +61,7 @@ public class BackupManagerTest {
         when(backupOfferingDao.update(1234l, offeringUpdate)).thenAnswer(answer -> {
             offering.setName("New name");
             offering.setDescription("New description");
+            offering.setUserDrivenBackupAllowed(true);
             return true;
         });
     }
@@ -77,34 +80,26 @@ public class BackupManagerTest {
         }
     }
 
-    @Test
+    @Test (expected = InvalidParameterValueException.class)
     public void testExceptionWhenUpdateWithNonExistentId() {
-        try {
-            Long id = 123l;
+        Long id = 123l;
 
-            UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
-            when(cmd.getId()).thenReturn(id);
+        UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
+        when(cmd.getId()).thenReturn(id);
 
-            backupManager.updateBackupOffering(cmd);
-        } catch (InvalidParameterValueException e) {
-            assertEquals("Unable to find Backup Offering with id: [123].", e.getMessage());
-        }
+        backupManager.updateBackupOffering(cmd);
     }
 
-    @Test
+    @Test (expected = ServerApiException.class)
     public void testExceptionWhenUpdateWithoutChanges() {
-        try {
-            Long id = 1234l;
+        UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
+        when(cmd.getName()).thenReturn(null);
+        when(cmd.getDescription()).thenReturn(null);
+        when(cmd.getAllowUserDrivenBackups()).thenReturn(null);
 
-            UpdateBackupOfferingCmd cmd = Mockito.spy(UpdateBackupOfferingCmd.class);
-            when(cmd.getId()).thenReturn(id);
-            when(cmd.getName()).thenReturn(null);
-            when(cmd.getDescription()).thenReturn(null);
+        Mockito.doCallRealMethod().when(cmd).execute();
 
-            backupManager.updateBackupOffering(cmd);
-        } catch (InvalidParameterValueException e) {
-            assertEquals("Can't update Backup Offering [id: 1234] because there is no change in name or description.", e.getMessage());
-        }
+        cmd.execute();
     }
 
     @Test
@@ -115,9 +110,11 @@ public class BackupManagerTest {
         when(cmd.getId()).thenReturn(id);
         when(cmd.getName()).thenReturn("New name");
         when(cmd.getDescription()).thenReturn("New description");
+        when(cmd.getAllowUserDrivenBackups()).thenReturn(true);
 
         BackupOffering updated = backupManager.updateBackupOffering(cmd);
         assertEquals("New name", updated.getName());
         assertEquals("New description", updated.getDescription());
+        assertEquals(true, updated.isUserDrivenBackupAllowed());
     }
 }

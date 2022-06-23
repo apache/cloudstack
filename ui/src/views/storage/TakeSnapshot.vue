@@ -104,10 +104,12 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'TakeSnapshot',
+  mixins: [mixinForm],
   components: {
     TooltipButton
   },
@@ -155,7 +157,8 @@ export default {
       e.preventDefault()
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         let params = {}
         params.volumeId = this.resource.id

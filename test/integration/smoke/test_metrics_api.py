@@ -30,42 +30,44 @@ _multiprocess_shared_ = True
 
 class TestMetrics(cloudstackTestCase):
 
-    def setUp(self):
-        self.apiclient = self.testClient.getApiClient()
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        self.dbclient = self.testClient.getDbConnection()
-        self.services = self.testClient.getParsedTestDataConfig()
-        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        self.pod = get_pod(self.apiclient, self.zone.id)
-        self.host = list_hosts(self.apiclient,
-            zoneid=self.zone.id,
-            type='Routing')[0]
-        self.cluster = self.apiclient.listClusters(listClusters.listClustersCmd())[0]
-        self.disk_offering = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"]
-                                    )
-        self.service_offering = ServiceOffering.create(
-            self.apiclient,
-            self.services["service_offering"]
+    @classmethod
+    def setUpClass(cls):
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.dbclient = cls.testClient.getDbConnection()
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.pod = get_pod(cls.apiclient, cls.zone.id)
+        cls.host = list_hosts(cls.apiclient,
+                               zoneid=cls.zone.id,
+                               type='Routing')[0]
+        cls.cluster = cls.apiclient.listClusters(listClusters.listClustersCmd())[0]
+        cls._cleanup = []
+        cls.disk_offering = DiskOffering.create(
+            cls.apiclient,
+            cls.services["disk_offering"]
         )
-        self.template = get_test_template(
-            self.apiclient,
-            self.zone.id,
-            self.hypervisor
+        cls._cleanup.append(cls.disk_offering)
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offering"]
         )
+        cls.template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        cls._cleanup.append(cls.service_offering)
 
+    @classmethod
+    def tearDownClass(cls):
+        super(TestMetrics, cls).tearDownClass()
+
+    def setUp(self):
         self.cleanup = []
-        self.cleanup.append(self.disk_offering)
-        self.cleanup.append(self.service_offering)
 
     def tearDown(self):
-        try:
-            #Clean up
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMetrics, self).tearDown();
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_hosts_metrics(self):
@@ -78,6 +80,8 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertEqual(host_metric.cpuallocated, self.host.cpuallocated)
         self.assertEqual(host_metric.memoryallocated, self.host.memoryallocated)
+
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_clusters_metrics(self):
@@ -94,6 +98,8 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(cluster_metric, 'memoryused'))
         self.assertTrue(hasattr(cluster_metric, 'memorymaxdeviation'))
 
+        return
+
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_zones_metrics(self):
         cmd = listZonesMetrics.listZonesMetricsCmd()
@@ -108,6 +114,8 @@ class TestMetrics(cloudstackTestCase):
         self.assertTrue(hasattr(zone_metrics, 'memoryallocated'))
         self.assertTrue(hasattr(zone_metrics, 'memorymaxdeviation'))
         self.assertTrue(hasattr(zone_metrics, 'memoryused'))
+
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_vms_metrics(self):
@@ -151,6 +159,8 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertEqual(sp_metrics.disksizeallocated, sp.disksizeallocated)
         self.assertEqual(sp_metrics.state, sp.state)
+
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_list_volumes_metrics(self):
@@ -208,3 +218,162 @@ class TestMetrics(cloudstackTestCase):
 
         self.assertTrue(hasattr(li, 'systemvms'))
         self.assertTrue(hasattr(li, 'cpusockets'))
+
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "bla"], required_hardware="false")
+    def test_list_management_server_metrics(self):
+        cmd = listManagementServersMetrics.listManagementServersMetricsCmd()
+        listMSMs = self.apiclient.listManagementServersMetrics(cmd)
+        cmd = listManagementServers.listManagementServersCmd()
+        listMSs= self.apiclient.listManagementServers(cmd)
+
+        self.assertEqual(len(listMSMs), len(listMSs))
+
+        metrics = listMSMs[0]
+        self.assertTrue(hasattr(metrics, 'availableprocessors'))
+        self.assertTrue(isinstance(metrics.availableprocessors, int))
+        self.assertTrue(hasattr(metrics, 'agentcount'))
+        self.assertTrue(isinstance(metrics.agentcount, int))
+        self.assertTrue(hasattr(metrics, 'sessions'))
+        self.assertTrue(isinstance(metrics.sessions, int))
+
+        self.assertTrue(hasattr(metrics, 'heapmemoryused'))
+        self.assertTrue(isinstance(metrics.heapmemoryused, int))
+        self.assertTrue(hasattr(metrics, 'heapmemorytotal'))
+        self.assertTrue(isinstance(metrics.heapmemorytotal, int))
+        self.assertTrue(metrics.heapmemoryused <= metrics.heapmemorytotal)
+
+        self.assertTrue(hasattr(metrics, 'threadsblockedcount'))
+        self.assertTrue(isinstance(metrics.threadsblockedcount, int))
+        self.assertTrue(hasattr(metrics, 'threadsdaemoncount'))
+        self.assertTrue(isinstance(metrics.threadsdaemoncount, int))
+        self.assertTrue(hasattr(metrics, 'threadsrunnablecount'))
+        self.assertTrue(isinstance(metrics.threadsrunnablecount, int))
+        self.assertTrue(hasattr(metrics, 'threadsteminatedcount'))
+        self.assertTrue(isinstance(metrics.threadsteminatedcount, int))
+        self.assertTrue(hasattr(metrics, 'threadstotalcount'))
+        self.assertTrue(isinstance(metrics.threadstotalcount, int))
+        self.assertTrue(hasattr(metrics, 'threadswaitingcount'))
+        self.assertTrue(isinstance(metrics.threadswaitingcount, int))
+        self.assertTrue(metrics.threadsblockedcount   <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsdaemoncount    <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsrunnablecount  <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadsteminatedcount <= metrics.threadstotalcount)
+        self.assertTrue(metrics.threadswaitingcount   <= metrics.threadstotalcount)
+
+        self.assertTrue(hasattr(metrics, 'systemmemorytotal'))
+        self.assertTrue(isinstance(metrics.systemmemorytotal, str))
+        self.assertTrue(hasattr(metrics, 'systemmemoryfree'))
+        self.assertTrue(isinstance(metrics.systemmemoryfree, str))
+        self.assertTrue(hasattr(metrics, 'systemmemoryvirtualsize'))
+        self.assertTrue(isinstance(metrics.systemmemoryvirtualsize, str))
+
+        self.assertTrue(hasattr(metrics, 'loginfo'))
+        self.assertTrue(isinstance(metrics.loginfo, str))
+        self.assertTrue(hasattr(metrics, 'systemtotalcpucycles'))
+        self.assertTrue(isinstance(metrics.systemtotalcpucycles, float))
+        self.assertTrue(hasattr(metrics, 'systemloadaverages'))
+        self.assertTrue(isinstance(metrics.systemloadaverages, list))
+        self.assertEqual(len(metrics.systemloadaverages), 3)
+        self.assertTrue(hasattr(metrics, 'systemcycleusage'))
+        self.assertTrue(isinstance(metrics.systemcycleusage, list))
+        self.assertEqual(len(metrics.systemcycleusage), 3)
+        self.assertTrue(hasattr(metrics, 'dbislocal'))
+        self.assertTrue(isinstance(metrics.dbislocal, bool))
+        self.assertTrue(hasattr(metrics, 'usageislocal'))
+        self.assertTrue(isinstance(metrics.usageislocal, bool))
+        self.assertTrue(hasattr(metrics, 'collectiontime'))
+        self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
+        self.assertTrue(hasattr(metrics, 'id'))
+        self.assertTrue(isinstance(metrics.id, str))
+        self.assertTrue(hasattr(metrics, 'name'))
+        self.assertTrue(isinstance(metrics.name, str))
+        self.assertTrue(hasattr(metrics, 'state'))
+        self.assertEqual(metrics.state, 'Up')
+        self.assertTrue(hasattr(metrics, 'version'))
+        self.assertTrue(isinstance(metrics.version, str))
+        self.assertTrue(hasattr(metrics, 'javadistribution'))
+        self.assertTrue(isinstance(metrics.javadistribution, str))
+        self.assertTrue(hasattr(metrics, 'javaversion'))
+        self.assertTrue(isinstance(metrics.javaversion, str))
+        self.assertTrue(hasattr(metrics, 'osdistribution'))
+        self.assertTrue(isinstance(metrics.osdistribution, str))
+        self.assertTrue(hasattr(metrics, 'lastserverstart'))
+        self.assertTrue(isinstance(metrics.lastserverstart, str))
+        self.assertTrue(self.valid_date(metrics.lastserverstart))
+        if hasattr(metrics, 'lastserverstop') and metrics.lastserverstop:
+            self.debug(f"=== lastserverstop {metrics.lastserverstop} ===")
+            self.assertTrue(isinstance(metrics.lastserverstop, str))
+            self.assertTrue(self.valid_date(metrics.lastserverstop))
+        self.assertTrue(hasattr(metrics, 'lastboottime'))
+        self.assertTrue(isinstance(metrics.lastboottime, str))
+        self.assertTrue(self.valid_date(metrics.lastboottime))
+
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_list_usage_server_metrics(self):
+        cmd = listUsageServerMetrics.listUsageServerMetricsCmd()
+        metrics = self.apiclient.listUsageServerMetrics(cmd)
+
+        self.assertTrue(hasattr(metrics,'collectiontime'))
+        self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
+        self.assertTrue(hasattr(metrics, 'hostname'))
+        self.assertTrue(isinstance(metrics.hostname, str))
+        if hasattr(metrics, 'lastheartbeat') and metrics.lastheartbeat :
+            self.debug(f"=== lastheartbeat {metrics.lastheartbeat} ===")
+            self.assertTrue(isinstance(metrics.lastheartbeat, str))
+            self.assertTrue(self.valid_date(metrics.lastheartbeat))
+        if hasattr(metrics, 'lastsuccessfuljob') and metrics.lastsuccessfuljob:
+            self.debug(f"=== lastsuccessfuljob {metrics.lastsuccessfuljob} ===")
+            self.assertTrue(isinstance(metrics.lastsuccessfuljob, str))
+            self.assertTrue(self.valid_date(metrics.lastsuccessfuljob))
+        self.assertTrue(hasattr(metrics, 'state'))
+        self.assertTrue(metrics.state == 'Up' or metrics.state == 'Down')
+
+        return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_list_db_metrics(self):
+        cmd = listDbMetrics.listDbMetricsCmd()
+        metrics = self.apiclient.listDbMetrics(cmd)
+
+        self.assertTrue(hasattr(metrics,'collectiontime'))
+        self.assertTrue(isinstance(metrics.collectiontime, str))
+        self.assertTrue(self.valid_date(metrics.collectiontime))
+        self.assertTrue(hasattr(metrics, 'connections'))
+        self.assertTrue(isinstance(metrics.connections, int))
+
+        cmd = listConfigurations.listConfigurationsCmd()
+        cmd.name = 'database.server.stats.retention'
+        configuration = self.apiclient.listConfigurations(cmd)
+        retention = int(configuration[0].value)
+        self.assertTrue(hasattr(metrics, 'dbloadaverages'))
+        self.assertTrue(isinstance(metrics.dbloadaverages, list))
+        self.assertTrue(len(metrics.dbloadaverages) <= retention)
+
+        self.assertTrue(hasattr(metrics, 'hostname'))
+        self.assertTrue(isinstance(metrics.hostname, str))
+        self.assertTrue(hasattr(metrics, 'queries'))
+        self.assertTrue(isinstance(metrics.queries, int))
+        self.assertTrue(hasattr(metrics, 'replicas'))
+        self.assertTrue(isinstance(metrics.replicas, list))
+        self.assertTrue(hasattr(metrics, 'uptime'))
+        self.assertTrue(isinstance(metrics.uptime, int))
+        self.assertTrue(hasattr(metrics, 'version'))
+        self.assertTrue(isinstance(metrics.version, str))
+        self.assertTrue(hasattr(metrics, 'versioncomment'))
+        self.assertTrue(isinstance(metrics.versioncomment, str))
+
+        return
+
+    def valid_date(cls, date_text):
+        try:
+            datetime.datetime.strptime(date_text, '%Y-%m-%dT%H:%M:%S%z')
+            return True
+        except ValueError:
+            return False
+

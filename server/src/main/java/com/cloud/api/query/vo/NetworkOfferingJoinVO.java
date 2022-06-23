@@ -175,6 +175,9 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "zone_name")
     private String zoneName = null;
 
+    @Column(name = "internet_protocol")
+    private String internetProtocol = null;
+
     public NetworkOfferingJoinVO() {
     }
 
@@ -395,4 +398,7 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         this.zoneName = zoneName;
     }
 
+    public String getInternetProtocol() {
+        return internetProtocol;
+    }
 }

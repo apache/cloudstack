@@ -16,11 +16,16 @@
 // under the License.
 
 <template>
+  <a-alert v-if="ip6routes" type="info" :showIcon="true" :message="$t('label.add.upstream.ipv6.routes')">
+    <template #description>
+      <p v-html="ip6routes" />
+    </template>
+  </a-alert>
   <a-list
     size="small"
     :dataSource="fetchDetails()">
     <template #renderItem="{item}">
-      <a-list-item v-if="item in dataResource">
+      <a-list-item v-if="item in dataResource && !customDisplayItems.includes(item)">
         <div>
           <strong>{{ item === 'service' ? $t('label.supportedservices') : $t('label.' + String(item).toLowerCase()) }}</strong>
           <br/>
@@ -43,7 +48,7 @@
             <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(dataResource[item])">{{ $t(dataResource[item].toLowerCase()) }}</span>
             <span v-else>{{ dataResource[item] }}</span>
           </div>
-          <div v-else-if="['created', 'sent', 'lastannotated'].includes(item)">
+          <div v-else-if="['created', 'sent', 'lastannotated', 'collectiontime', 'lastboottime', 'lastserverstart', 'lastserverstop'].includes(item)">
             {{ $toLocaleDate(dataResource[item]) }}
           </div>
           <div v-else-if="$route.meta.name === 'guestnetwork' && item === 'egressdefaultpolicy'">
@@ -107,11 +112,24 @@ export default {
     this.dedicatedSectionActive = this.dedicatedRoutes.includes(this.$route.meta.name)
   },
   computed: {
+    customDisplayItems () {
+      return ['ip6routes']
+    },
     ipV6Address () {
       if (this.dataResource.nic && this.dataResource.nic.length > 0) {
         return this.dataResource.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ')
       }
 
+      return null
+    },
+    ip6routes () {
+      if (this.resource.ip6routes && this.resource.ip6routes.length > 0) {
+        var routes = []
+        for (var route of this.resource.ip6routes) {
+          routes.push(route.subnet + ' via ' + route.gateway)
+        }
+        return routes.join('<br>')
+      }
       return null
     }
   },

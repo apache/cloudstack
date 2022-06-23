@@ -265,7 +265,7 @@ public enum Config {
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
-            Integer.class,
+            Boolean.class,
             "network.disable.rpfilter",
             "true",
             "disable rp_filter on Domain Router VM public interfaces.",
@@ -446,7 +446,7 @@ public enum Config {
     ConsoleProxyDisableRpFilter(
             "Console Proxy",
             AgentManager.class,
-            Integer.class,
+            Boolean.class,
             "consoleproxy.disable.rpfilter",
             "true",
             "disable rp_filter on console proxy VM public interface",
@@ -984,7 +984,7 @@ public enum Config {
             Integer.class,
             "incorrect.login.attempts.allowed",
             "5",
-            "Incorrect login attempts allowed before the user is disabled",
+            "Incorrect login attempts allowed before the user is disabled (when value > 0). If value <=0 users are not disabled after failed login attempts",
             null),
     // Ovm
     OvmPublicNetwork("Hidden", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),

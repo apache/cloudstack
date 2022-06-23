@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.account;
 import java.util.List;
 
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.ProjectRoleResponse;
 import org.apache.commons.lang3.EnumUtils;
@@ -158,5 +159,15 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         } else {
             return "Sending invitation to email " + email + " to join project: " + getProjectId();
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return projectId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 }

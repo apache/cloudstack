@@ -283,6 +283,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String AARCH64 = "aarch64";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
+    public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
 
     private String _modifyVlanPath;
     private String _versionstringpath;
@@ -306,16 +307,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _hvVersion;
     private Duration _timeout;
-    private static final int NUMMEMSTATS =2;
+    /**
+     * Since the memoryStats method returns an array that isn't ordered, we pass a big number to get all the array and then search for the information we want.
+     * */
+    private static final int NUMMEMSTATS = 20;
+
+    /**
+     * Unused memory's tag to search in the array returned by the Domain.memoryStats() method.
+     * */
+    private static final int UNUSEDMEMORY = 4;
+
 
     private KVMHAMonitor _monitor;
-    public static final String SSHKEYSPATH = "/root/.ssh";
-    public static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
     public static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     public static final String DEFAULTDOMRSSHPORT = "3922";
 
     public final static String HOST_CACHE_PATH_PARAMETER = "host.cache.location";
     public final static String CONFIG_DIR = "config";
+    private boolean enableIoUring;
+    private final static String ENABLE_IO_URING_PROPERTY = "enable.io.uring";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -412,7 +422,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    private VirtualRoutingResource _virtRouterResource;
+    public VirtualRoutingResource _virtRouterResource;
 
     private String _pingTestPath;
 
@@ -472,7 +482,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
         } catch (final Exception e) {
-            s_logger.warn("Fail to create file " + path + filename + " in VR " + routerIp, e);
+            s_logger.warn("Failed to create file " + path + filename + " in VR " + routerIp, e);
             details = e.getMessage();
             success = false;
         }
@@ -1012,6 +1022,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+        enableSSLForKvmAgent(params);
         configureLocalStorage(params);
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
@@ -1133,6 +1144,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.trace("Ignoring libvirt error.", e);
         }
 
+        // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
+        // Do not remove - switching it to AgentProperties.Property may require accepting null values for the properties default value
+        String enableIoUringConfig = (String) params.get(ENABLE_IO_URING_PROPERTY);
+        enableIoUring = isIoUringEnabled(enableIoUringConfig);
+        s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
+
         final String cpuArchOverride = (String)params.get("guest.cpu.arch");
         if (StringUtils.isNotEmpty(cpuArchOverride)) {
             _guestCpuArch = cpuArchOverride;
@@ -1170,20 +1187,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         ha.start();
 
         _storagePoolMgr = new KVMStoragePoolManager(_storage, _monitor);
-
-        _sysvmISOPath = (String)params.get("systemvm.iso.path");
-        if (_sysvmISOPath == null) {
-            final String[] isoPaths = {"/usr/share/cloudstack-common/vms/systemvm.iso"};
-            for (final String isoPath : isoPaths) {
-                if (_storage.exists(isoPath)) {
-                    _sysvmISOPath = isoPath;
-                    break;
-                }
-            }
-            if (_sysvmISOPath == null) {
-                s_logger.debug("Can't find system vm ISO");
-            }
-        }
 
         final Map<String, String> bridges = new HashMap<String, String>();
 
@@ -1286,6 +1289,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return true;
+    }
+
+    private void enableSSLForKvmAgent(final Map<String, Object> params) {
+        final File keyStoreFile = PropertiesUtil.findConfigFile(KeyStoreUtils.KS_FILENAME);
+        if (keyStoreFile == null) {
+            s_logger.info("Failed to find keystore file: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        String keystorePass = (String)params.get(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
+        if (StringUtils.isBlank(keystorePass)) {
+            s_logger.info("Failed to find passphrase for keystore: " + KeyStoreUtils.KS_FILENAME);
+            return;
+        }
+        if (keyStoreFile.exists() && !keyStoreFile.isDirectory()) {
+            System.setProperty("javax.net.ssl.trustStore", keyStoreFile.getAbsolutePath());
+            System.setProperty("javax.net.ssl.trustStorePassword", keystorePass);
+        }
     }
 
     protected void configureLocalStorage(final Map<String, Object> params) throws ConfigurationException {
@@ -1394,9 +1414,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("agent.hooks.libvirt_vm_on_stop.method is " + _agentHooksVmOnStopMethod);
     }
 
+    public boolean isUefiPropertiesFileLoaded() {
+        return !_uefiProperties.isEmpty();
+    }
+
     private void loadUefiProperties() throws FileNotFoundException {
 
-        if (_uefiProperties != null && _uefiProperties.getProperty("guest.loader.legacy") != null) {
+        if (isUefiPropertiesFileLoaded()) {
             return;
         }
         final File file = PropertiesUtil.findConfigFile("uefi.properties");
@@ -2942,14 +2966,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
-            if (_sysvmISOPath != null) {
-                final DiskDef iso = new DiskDef();
-                iso.defISODisk(_sysvmISOPath);
-                if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
-                    iso.setBusType(DiskDef.DiskBus.SCSI);
-                }
-                vm.getDevices().addDevice(iso);
+            final DiskDef iso = new DiskDef();
+            iso.defISODisk(_sysvmISOPath);
+            if (_guestCpuArch != null && _guestCpuArch.equals("aarch64")) {
+                iso.setBusType(DiskDef.DiskBus.SCSI);
             }
+            vm.getDevices().addDevice(iso);
         }
 
         // For LXC, find and add the root filesystem, rbd data disks
@@ -2988,15 +3010,65 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
+     * Check if IO_URING is supported by qemu
+     */
+    protected boolean isIoUringSupportedByQemu() {
+        s_logger.debug("Checking if iouring is supported");
+        String command = getIoUringCheckCommand();
+        if (org.apache.commons.lang3.StringUtils.isBlank(command)) {
+            s_logger.debug("Could not check iouring support, disabling it");
+            return false;
+        }
+        int exitValue = executeBashScriptAndRetrieveExitValue(command);
+        return exitValue == 0;
+    }
+
+    protected String getIoUringCheckCommand() {
+        String[] qemuPaths = { "/usr/bin/qemu-system-x86_64", "/usr/libexec/qemu-kvm", "/usr/bin/qemu-kvm" };
+        for (String qemuPath : qemuPaths) {
+            File file = new File(qemuPath);
+            if (file.exists()) {
+                String cmd = String.format("ldd %s | grep -Eqe '[[:space:]]liburing\\.so'", qemuPath);
+                s_logger.debug("Using the check command: " + cmd);
+                return cmd;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Set Disk IO Driver, if supported by the Libvirt/Qemu version.
      * IO Driver works for:
      * (i) Qemu >= 5.0;
      * (ii) Libvirt >= 6.3.0
      */
     protected void setDiskIoDriver(DiskDef disk) {
-        if (getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING) {
+        if (enableIoUring) {
             disk.setIoDriver(DiskDef.IoDriver.IOURING);
         }
+    }
+
+    /**
+     * IO_URING supported if the property 'enable.io.uring' is set to true OR it is supported by qemu
+     */
+    private boolean isIoUringEnabled(String enableIoUringConfig) {
+        boolean meetRequirements = getHypervisorLibvirtVersion() >= HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING
+                && getHypervisorQemuVersion() >= HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING;
+        if (!meetRequirements) {
+            return false;
+        }
+        return enableIoUringConfig != null ?
+                Boolean.parseBoolean(enableIoUringConfig):
+                (isBaseOsUbuntu() || isIoUringSupportedByQemu());
+    }
+
+    private boolean isBaseOsUbuntu() {
+        Map<String, String> versionString = getVersionStrings();
+        String hostKey = "Host.OS";
+        if (MapUtils.isEmpty(versionString) || !versionString.containsKey(hostKey) || versionString.get(hostKey) == null) {
+            return false;
+        }
+        return versionString.get(hostKey).equalsIgnoreCase("ubuntu");
     }
 
     private KVMPhysicalDisk getPhysicalDiskFromNfsStore(String dataStoreUrl, DataTO data) {
@@ -3876,10 +3948,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private String executeBashScript(final String script) {
+        return createScript(script).execute();
+    }
+
+    private Script createScript(final String script) {
         final Script command = new Script("/bin/bash", _timeout, s_logger);
         command.add("-c");
         command.add(script);
-        return command.execute();
+        return command;
+    }
+
+    private int executeBashScriptAndRetrieveExitValue(final String script) {
+        Script command = createScript(script);
+        command.execute();
+        return command.getExitValue();
     }
 
     public List<VmNetworkStatsEntry> getVmNetworkStat(Connect conn, String vmName) throws LibvirtException {
@@ -4065,17 +4147,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     /**
      * This method retrieves the memory statistics from the domain given as parameters.
-     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_MINUS_ONE} as the value of free memory in the domain.
      * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
      *
      * @return the amount of free memory in KBs
      */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
-        MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
-        if (ArrayUtils.isEmpty(mems)) {
-            return NumberUtils.LONG_ZERO;
+        MemoryStatistic[] memoryStats = dm.memoryStats(NUMMEMSTATS);
+
+        if(s_logger.isTraceEnabled()){
+            s_logger.trace(String.format("Retrieved memory statistics (information about tags can be found on the libvirt documentation):", ArrayUtils.toString(memoryStats)));
         }
-        return mems[0].getValue();
+
+        long freeMemory = NumberUtils.LONG_MINUS_ONE;
+
+        if (ArrayUtils.isEmpty(memoryStats)){
+            return freeMemory;
+        }
+
+        for (int i = 0; i < memoryStats.length; i++) {
+            if(memoryStats[i].getTag() == UNUSEDMEMORY) {
+                freeMemory = memoryStats[i].getValue();
+                break;
+            }
+        }
+
+        if (freeMemory == NumberUtils.LONG_MINUS_ONE){
+            s_logger.warn("Couldn't retrieve free memory, returning -1.");
+        }
+        return freeMemory;
     }
 
     private boolean canBridgeFirewall(final String prvNic) {

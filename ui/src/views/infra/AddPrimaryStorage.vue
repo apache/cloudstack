@@ -320,11 +320,6 @@
           <a-select
             mode="tags"
             v-model:value="selectedTags"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
             :placeholder="apiParams.tags.description">
             <a-select-option v-for="tag in storageTags" :key="tag.name">{{ tag.name }}</a-select-option>
           </a-select>
@@ -343,11 +338,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddPrimaryStorage',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -512,7 +509,9 @@ export default {
       } else {
         this.protocols = ['nfs']
       }
-      this.form.protocol = this.protocols[0]
+      if (!value) {
+        this.form.protocol = this.protocols[0]
+      }
     },
     nfsURL (server, path) {
       var url
@@ -640,7 +639,7 @@ export default {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
       } else {
-        this.fetchHypervisor(null)
+        this.fetchHypervisor(value)
       }
     },
     closeModal () {
@@ -660,7 +659,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           scope: values.scope,
           zoneid: values.zone,

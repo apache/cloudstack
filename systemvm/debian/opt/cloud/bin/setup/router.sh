@@ -43,23 +43,6 @@ setup_router() {
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
 
-  if [ -n "$ETH2_IP" ]; then
-    setup_common eth0 eth1 eth2
-
-    if [ -n "$EXTRA_PUBNICS" ]; then
-      for ((i = 3; i < 3 + $EXTRA_PUBNICS; i++)); do
-        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-      done
-    fi
-  else
-    setup_common eth0 eth1
-    if [ -n "$EXTRA_PUBNICS" ]; then
-      for ((i = 2; i < 2 + $EXTRA_PUBNICS; i++)); do
-        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-      done
-    fi
-  fi
-
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
   then
@@ -88,8 +71,7 @@ setup_router() {
   enable_fwding 1
   enable_rpsrfs 1
   enable_passive_ftp 1
-  cp /etc/iptables/iptables-router /etc/iptables/rules.v4
-  setup_sshd $ETH1_IP "eth1"
+  restore_ipv6
 
   # Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4

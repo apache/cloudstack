@@ -16,6 +16,7 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
 
 export default {
   name: 'systemvm',
@@ -30,6 +31,12 @@ export default {
     {
       name: 'details',
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'events',
+      resourceType: 'SystemVm',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
     },
     {
       name: 'comments',
@@ -99,7 +106,7 @@ export default {
     },
     {
       api: 'migrateSystemVm',
-      icon: 'drag',
+      icon: 'drag-outlined',
       label: 'label.action.migrate.systemvm.to.ps',
       dataView: true,
       show: (record, store) => { return ['Stopped'].includes(record.state) && ['VMware'].includes(record.hypervisor) },
@@ -136,6 +143,18 @@ export default {
         }
       },
       response: (result) => { return result && result.diagnostics && result.diagnostics.url ? `Please click the link to download the retrieved diagnostics: <p><a href='${result.diagnostics.url}'>${result.diagnostics.url}</a></p>` : 'Invalid response' }
+    },
+    {
+      api: 'patchSystemVm',
+      icon: 'diff-outlined',
+      label: 'label.action.patch.systemvm',
+      message: 'message.action.patch.systemvm',
+      dataView: true,
+      show: (record) => { return ['Running'].includes(record.state) },
+      args: ['forced'],
+      groupAction: true,
+      popup: true,
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'destroySystemVm',

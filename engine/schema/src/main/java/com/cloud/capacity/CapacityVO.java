@@ -241,6 +241,7 @@ public class CapacityVO implements Capacity {
         capacityNames.put(CAPACITY_TYPE_LOCAL_STORAGE, "LOCAL_STORAGE");
         capacityNames.put(CAPACITY_TYPE_GPU, "GPU");
         capacityNames.put(CAPACITY_TYPE_CPU_CORE, "CPU_CORE");
+        capacityNames.put(CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, "VIRTUAL_NETWORK_IPV6_SUBNET");
     }
 
     public static String getCapacityName (Short capacityType) {
