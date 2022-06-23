@@ -53,8 +53,8 @@
           </a>
           <a @click="toggleShowShortkey">
             <a-menu-item class="user-menu-item" key="2">
-              <a-icon v-if="$store.getters.showshortkeys" class="user-menu-item-icon" type="eye"/>
-              <a-icon v-else class="user-menu-item-icon" type="eye-invisible"/>
+              <EyeOutlined v-if="$store.getters.showshortkeys" class="user-menu-item-icon" />
+              <EyeInvisibleOutlined v-else class="user-menu-item-icon" />
               <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.keyboard.show') }}</span>
               <a-switch :checked="$store.getters.showshortkeys"/>
             </a-menu-item>

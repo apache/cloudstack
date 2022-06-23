@@ -77,7 +77,7 @@ const user = {
       state.usebrowsertimezone = bool
     },
     SET_SHOW_KEYBOARD_SHORTKEYS: (state, bool) => {
-      Vue.ls.set(SHOW_KEYBOARD_SHORTKEYS, bool)
+      vueProps.$localStorage.set(SHOW_KEYBOARD_SHORTKEYS, bool)
       state.showshortkeys = bool
     },
     SET_PROJECT: (state, project = {}) => {

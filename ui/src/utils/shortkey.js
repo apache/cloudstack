@@ -17,7 +17,7 @@
 
 import 'element-matches'
 import 'custom-event-polyfill'
-import Vue from 'vue'
+import { vueApp } from '@/vue-app'
 
 const ShortKey = {}
 const mapFunctions = {}
@@ -62,7 +62,7 @@ const unbindValue = (value, el) => {
     }
   }
 }
-Vue.directive('shortkey', {
+vueApp.directive('shortkey', {
   bind: (el, binding, vnode) => {
     // Mapping the commands
     const value = parseValue(binding.value)
