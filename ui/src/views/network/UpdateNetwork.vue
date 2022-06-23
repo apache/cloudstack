@@ -43,7 +43,7 @@
             :placeholder="apiParams.displaytext.description"
             autoFocus />
         </a-form-item>
-        <a-row :gutter="12">
+        <a-row :gutter="12" v-if="resource.type !== 'L2'">
             <a-col :md="12" :lg="12">
               <a-form-item
                 v-if="resource.type !== 'Shared'"
