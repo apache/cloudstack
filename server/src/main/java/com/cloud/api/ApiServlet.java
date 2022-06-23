@@ -44,6 +44,7 @@ import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
@@ -66,6 +67,8 @@ public class ApiServlet extends HttpServlet {
     private final static List<String> s_clientAddressHeaders = Collections
             .unmodifiableList(Arrays.asList("X-Forwarded-For",
                     "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR", "Remote_Addr"));
+    private static final String REPLACEMENT = "_";
+    private static final String LOG_REPLACEMENTS = "[\n\r\t]";
 
     @Inject
     ApiServerService apiServer;
@@ -98,6 +101,14 @@ public class ApiServlet extends HttpServlet {
         processRequest(req, resp);
     }
 
+    /**
+     * For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
+     * to unwrap URL encoded content from ISO-9959-1.
+     * After failed in using setCharacterEncoding() to control it, end up with following hacking:
+     * for all GET requests, we will override it with our-own way of UTF-8 based URL decoding.
+     * @param req request containing parameters
+     * @param params output of "our" map of parameters/values
+     */
     void utf8Fixup(final HttpServletRequest req, final Map<String, Object[]> params) {
         if (req.getQueryString() == null) {
             return;
@@ -171,10 +182,6 @@ public class ApiServlet extends HttpServlet {
         checkSingleQueryParameterValue(reqParams);
         params.putAll(reqParams);
 
-        // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
-        // to unwrap URL encoded content from ISO-9959-1.
-        // After failed in using setCharacterEncoding() to control it, end up with following hacking:
-        // for all GET requests, we will override it with our-own way of UTF-8 based URL decoding.
         utf8Fixup(req, params);
 
         // logging the request start and end in management log for easy debugging
@@ -186,22 +193,30 @@ public class ApiServlet extends HttpServlet {
         }
 
         try {
-
-            if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(ApiServer.JSONcontentType.value());
-            } else if (HttpUtils.RESPONSE_TYPE_XML.equalsIgnoreCase(responseType)){
-                resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
-            }
+            resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
 
             HttpSession session = req.getSession(false);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("session found: %s", session));
+            }
             final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
             if (responseTypeParam != null) {
                 responseType = (String)responseTypeParam[0];
             }
 
             final Object[] commandObj = params.get(ApiConstants.COMMAND);
-            if (commandObj != null) {
-                final String command = (String) commandObj[0];
+            final String command = commandObj == null ? null : (String) commandObj[0];
+            final Object[] userObj = params.get(ApiConstants.USERNAME);
+            String username = userObj == null ? null : (String)userObj[0];
+            if (s_logger.isTraceEnabled()) {
+                String logCommand = saveLogString(command);
+                String logName = saveLogString(username);
+                s_logger.trace(String.format("command %s processing for user \"%s\"",
+                        logCommand,
+                        logName));
+            }
+
+            if (command != null) {
 
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
@@ -213,10 +228,7 @@ public class ApiServlet extends HttpServlet {
 
                     if (apiAuthenticator.getAPIType() == APIAuthenticationType.LOGIN_API) {
                         if (session != null) {
-                            try {
-                                session.invalidate();
-                            } catch (final IllegalStateException ise) {
-                            }
+                            invalidateHttpSession(session, "invalidating session for login call");
                         }
                         session = req.getSession(true);
 
@@ -229,6 +241,10 @@ public class ApiServlet extends HttpServlet {
                     }
 
                     try {
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace(String.format("apiAuthenticator.authenticate(%s, params[%d], %s, %s, %s, %s, %s,%s)",
+                                    saveLogString(command), params.size(), session.getId(), remoteAddress.getHostAddress(), saveLogString(responseType), "auditTrailSb", "req", "resp"));
+                        }
                         responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
                             resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
@@ -251,10 +267,7 @@ public class ApiServlet extends HttpServlet {
                             if (userId != null) {
                                 apiServer.logoutUser(userId);
                             }
-                            try {
-                                session.invalidate();
-                            } catch (final IllegalStateException ignored) {
-                            }
+                            invalidateHttpSession(session, "invalidating session after logout call");
                         }
                         final Cookie[] cookies = req.getCookies();
                         if (cookies != null) {
@@ -268,8 +281,9 @@ public class ApiServlet extends HttpServlet {
                     HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
+            } else {
+                s_logger.trace("no command available");
             }
-
             auditTrailSb.append(cleanQueryString);
             final boolean isNew = ((session == null) ? true : session.isNew());
 
@@ -278,52 +292,31 @@ public class ApiServlet extends HttpServlet {
             // if a API key exists
             Long userId = null;
 
+            if (isNew && s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("new session: %s", session));
+            }
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
                 final String account = (String) session.getAttribute("account");
                 final Object accountObj = session.getAttribute("accountobj");
-                if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
-                    try {
-                        session.invalidate();
-                    } catch (final IllegalStateException ise) {
-                    }
-                    auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    final String serializedResponse =
-                            apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-                    return;
-                }
-
-                // Do a sanity check here to make sure the user hasn't already been deleted
-                if ((userId != null) && (account != null) && (accountObj != null) && apiServer.verifyUser(userId)) {
-                    final String[] command = (String[])params.get(ApiConstants.COMMAND);
-                    if (command == null) {
-                        s_logger.info("missing command, ignoring request...");
-                        auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
-                        final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
-                        return;
-                    }
-                    final User user = entityMgr.findById(User.class, userId);
-                    CallContext.register(user, (Account)accountObj);
+                if (account != null) {
+                    if (invalidateHttpSesseionIfNeeded(req, resp, auditTrailSb, responseType, params, session, account)) return;
                 } else {
-                    // Invalidate the session to ensure we won't allow a request across management server
-                    // restarts if the userId was serialized to the stored session
-                    try {
-                        session.invalidate();
-                    } catch (final IllegalStateException ise) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("no account, this request will be validated through apikey(%s)/signature");
                     }
-
-                    auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    final String serializedResponse =
-                            apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-                    return;
                 }
+
+                if (! requestChecksoutAsSane(resp, auditTrailSb, responseType, params, session, command, userId, account, accountObj))
+                    return;
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
             setProjectContext(params);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("verifying request for user %s from %s with %d parameters",
+                        userId, remoteAddress.getHostAddress(), params.size()));
+            }
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
                         " sessionId=" + (session != null ? session.getId() : null) + ")");
@@ -335,10 +328,7 @@ public class ApiServlet extends HttpServlet {
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
                 if (session != null) {
-                    try {
-                        session.invalidate();
-                    } catch (final IllegalStateException ise) {
-                    }
+                    invalidateHttpSession(session, String.format("request verification failed for %s from %s", userId, remoteAddress.getHostAddress()));
                 }
 
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials and/or request signature");
@@ -363,6 +353,63 @@ public class ApiServlet extends HttpServlet {
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
+        }
+    }
+
+    @Nullable
+    private String saveLogString(String stringToLog) {
+        return stringToLog == null ? null : stringToLog.replace(LOG_REPLACEMENTS, REPLACEMENT);
+    }
+
+    /**
+     * Do a sanity check here to make sure the user hasn't already been deleted
+     */
+    private boolean requestChecksoutAsSane(HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String command, Long userId, String account, Object accountObj) {
+        if ((userId != null) && (account != null) && (accountObj != null) && apiServer.verifyUser(userId)) {
+            if (command == null) {
+                s_logger.info("missing command, ignoring request...");
+                auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
+                final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                return true;
+            }
+            final User user = entityMgr.findById(User.class, userId);
+            CallContext.register(user, (Account) accountObj);
+        } else {
+            invalidateHttpSession(session, "Invalidate the session to ensure we won't allow a request across management server restarts if the userId was serialized to the stored session");
+
+            auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
+            final String serializedResponse =
+                    apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            return false;
+        }
+        return true;
+    }
+
+    private boolean invalidateHttpSesseionIfNeeded(HttpServletRequest req, HttpServletResponse resp, StringBuilder auditTrailSb, String responseType, Map<String, Object[]> params, HttpSession session, String account) {
+        if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
+            String msg = String.format("invalidating session %s for account %s", session.getId(), account);
+            invalidateHttpSession(session, msg);
+            auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
+            final String serializedResponse =
+                    apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
+            HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
+            return true;
+        }
+        return false;
+    }
+
+    public static void invalidateHttpSession(HttpSession session, String msg) {
+        try {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(msg);
+            }
+            session.invalidate();
+        } catch (final IllegalStateException ise) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("failed to invalidate session %s", session.getId()));
+            }
         }
     }
 

@@ -146,6 +146,7 @@
                           :selected="tabKey"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
+                          :key="templateKey"
                           @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
                          <div>
@@ -179,6 +180,7 @@
                         <a-form-item :label="$t('label.hypervisor')">
                           <a-select
                             v-model:value="form.hypervisor"
+                            :preFillContent="dataPreFill"
                             :options="hypervisorSelectOptions"
                             @change="value => hypervisor = value"
                             showSearch
@@ -736,6 +738,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       dynamicscalingenabled: true,
+      templateKey: 0,
       vm: {
         name: null,
         zoneid: null,
@@ -1285,6 +1288,9 @@ export default {
     }
   },
   methods: {
+    updateTemplateKey () {
+      this.templateKey += 1
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1463,7 +1469,6 @@ export default {
           }
         })
       }
-
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1970,7 +1975,9 @@ export default {
             this.options[name] = response
 
             if (name === 'hypervisors') {
-              this.hypervisor = response[0] && response[0].name ? response[0].name : null
+              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+              this.dataPreFill.hypervisor = hypervisorFromResponse
+              this.form.hypervisor = hypervisorFromResponse
             }
 
             if (param.field) {
@@ -2117,6 +2124,7 @@ export default {
       } else {
         this.fetchAllIsos()
       }
+      this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
     onSelectPodId (value) {

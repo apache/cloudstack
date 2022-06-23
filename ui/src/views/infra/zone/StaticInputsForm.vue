@@ -35,7 +35,7 @@
           :name="field.key"
           :ref="field.key"
           :label="$t(field.title)"
-          v-if="isDisplayInput(field.display)"
+          v-if="isDisplayInput(field)"
           v-bind="formItemLayout"
           :has-feedback="field.switch ? false : true">
           <a-select
@@ -61,6 +61,11 @@
             v-model:checked="form[field.key]"
             v-focus="index === 0"
           />
+          <a-checkbox
+            v-else-if="field.checkbox"
+            v-model:checked="form[field.key]"
+            v-focus="index === 0">
+          </a-checkbox>
           <a-input
             v-else-if="field.password"
             type="password"
@@ -137,6 +142,11 @@ export default {
         const fieldsChanged = toRaw(changedFields)
         this.$emit('fieldsChanged', fieldsChanged)
       }
+    },
+    'prefillContent.provider' (val) {
+      if (['SolidFire', 'PowerFlex'].includes(val)) {
+        this.form.primaryStorageProtocol = 'custom'
+      }
     }
   },
   methods: {
@@ -148,17 +158,17 @@ export default {
     fillValue () {
       this.fields.forEach(field => {
         this.setRules(field)
-        const fieldExists = this.isDisplayInput(field.display)
+        const fieldExists = this.isDisplayInput(field)
         if (!fieldExists) {
           return
         }
-        if (field.key === 'agentUserName' && !this.getPrefilled(field.key)) {
+        if (field.key === 'agentUserName' && !this.getPrefilled(field)) {
           this.form[field.key] = 'Oracle'
         } else {
-          if (field.switch) {
+          if (field.switch || field.checkbox) {
             this.form[field.key] = this.isChecked(field)
           } else {
-            this.form[field.key] = this.getPrefilled(field.key)
+            this.form[field.key] = this.getPrefilled(field)
           }
         }
       })
@@ -179,8 +189,8 @@ export default {
         })
       }
     },
-    getPrefilled (key) {
-      return this.prefillContent?.[key] || null
+    getPrefilled (field) {
+      return this.prefillContent?.[field.key] || field.value || undefined
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -207,7 +217,11 @@ export default {
         return Promise.resolve()
       }
     },
-    isDisplayInput (conditions) {
+    isDisplayInput (field) {
+      if (!field.display && !field.hidden) {
+        return true
+      }
+      const conditions = field.display || field.hidden
       if (!conditions || Object.keys(conditions).length === 0) {
         return true
       }
@@ -218,10 +232,19 @@ export default {
           const fieldVal = this.form[key]
             ? this.form[key]
             : (this.prefillContent?.[key] || null)
-          if (Array.isArray(condition) && !condition.includes(fieldVal)) {
-            isShow = false
-          } else if (!Array.isArray(condition) && fieldVal !== condition) {
-            isShow = false
+
+          if (field.hidden) {
+            if (Array.isArray(condition) && condition.includes(fieldVal)) {
+              isShow = false
+            } else if (!Array.isArray(condition) && fieldVal === condition) {
+              isShow = false
+            }
+          } else if (field.display) {
+            if (Array.isArray(condition) && !condition.includes(fieldVal)) {
+              isShow = false
+            } else if (!Array.isArray(condition) && fieldVal !== condition) {
+              isShow = false
+            }
           }
         }
       })

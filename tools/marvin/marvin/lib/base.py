@@ -1038,6 +1038,49 @@ class VirtualMachine:
         cmd.name = name
         return apiclient.listUnmanagedInstances(cmd)
 
+    @classmethod
+    def importUnmanagedInstance(cls, apiclient, clusterid, name, serviceofferingid, services, templateid=None,
+                                account=None, domainid=None, projectid=None, migrateallowed=None, forced=None):
+        """Import an unmanaged VM (currently VMware only)"""
+        cmd = importUnmanagedInstance.importUnmanagedInstanceCmd()
+        cmd.clusterid = clusterid
+        cmd.name = name
+        cmd.serviceofferingid = serviceofferingid
+        if templateid:
+            cmd.templateid = templateid
+        elif "templateid" in services:
+            cmd.templateid = services["templateid"]
+        if account:
+            cmd.account = account
+        elif "account" in services:
+            cmd.account = services["account"]
+        if domainid:
+            cmd.domainid = domainid
+        elif "domainid" in services:
+            cmd.domainid = services["domainid"]
+        if projectid:
+            cmd.projectid = projectid
+        elif "projectid" in services:
+            cmd.projectid = services["projectid"]
+        if migrateallowed:
+            cmd.migrateallowed = migrateallowed
+        elif "migrateallowed" in services:
+            cmd.migrateallowed = services["migrateallowed"]
+        if forced:
+            cmd.forced = forced
+        elif "forced" in services:
+            cmd.forced = services["forced"]
+        if "details" in services:
+            cmd.details = services["details"]
+        if "datadiskofferinglist" in services:
+            cmd.datadiskofferinglist = services["datadiskofferinglist"]
+        if "nicnetworklist" in services:
+            cmd.nicnetworklist = services["nicnetworklist"]
+        if "nicipaddresslist" in services:
+            cmd.nicipaddresslist = services["nicipaddresslist"]
+        virtual_machine = apiclient.importUnmanagedInstance(cmd)
+        return VirtualMachine(virtual_machine.__dict__, services)
+
 
 class Volume:
     """Manage Volume Life cycle
@@ -3627,7 +3670,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None, networkid=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3635,15 +3678,18 @@ class PublicIpRange:
             cmd.gateway = services["gateway"]
         if "netmask" in services:
             cmd.netmask = services["netmask"]
-        cmd.forvirtualnetwork = services["forvirtualnetwork"]
+        if "forvirtualnetwork" in services:
+            cmd.forvirtualnetwork = services["forvirtualnetwork"]
         if "startip" in services:
             cmd.startip = services["startip"]
         if "endip" in services:
             cmd.endip = services["endip"]
-        cmd.zoneid = services["zoneid"]
+        if "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
         if "podid" in services:
             cmd.podid = services["podid"]
-        cmd.vlan = services["vlan"]
+        if "vlan" in services:
+            cmd.vlan = services["vlan"]
         if "ip6gateway" in services:
             cmd.ip6gateway = services["ip6gateway"]
         if "ip6cidr" in services:
@@ -3655,6 +3701,8 @@ class PublicIpRange:
             cmd.domainid = domainid
         if forsystemvms:
             cmd.forsystemvms = forsystemvms
+        if networkid:
+            cmd.networkid = networkid
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 

@@ -481,7 +481,6 @@ class CsRedundant(object):
         if dev == '':
             return
         CsHelper.service("radvd", "enable")
-        CsHelper.execute("echo \"radvd\" >> /var/cache/cloud/enabled_svcs")
         CsHelper.start_if_stopped("radvd")
 
     def _disable_radvd(self, dev):
@@ -492,8 +491,6 @@ class CsRedundant(object):
             return
         CsHelper.service("radvd", "stop")
         CsHelper.service("radvd", "disable")
-        CsHelper.execute("sed -i \"s,radvd,,g\" /var/cache/cloud/enabled_svcs")
-        CsHelper.execute("sed -i '/^$/d' /var/cache/cloud/enabled_svcs")
         logging.info(CsHelper.execute("systemctl status radvd"))
 
 

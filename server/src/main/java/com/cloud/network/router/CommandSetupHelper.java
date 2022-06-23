@@ -475,7 +475,7 @@ public class CommandSetupHelper {
                 _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType trafficType = rule.getTrafficType();
                 if (trafficType == FirewallRule.TrafficType.Ingress) {
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, trafficType);
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, trafficType, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, trafficType, defaultEgressPolicy);
@@ -560,7 +560,7 @@ public class CommandSetupHelper {
                 _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
-                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, traffictype);
+                    final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, null, Purpose.Ipv6Firewall, traffictype, defaultEgressPolicy);
                     rulesTO.add(ruleTO);
                 } else if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     final FirewallRuleTO ruleTO = new FirewallRuleTO(rule, null, "", Purpose.Ipv6Firewall, traffictype, defaultEgressPolicy);

@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.DiskOfferingVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -88,6 +90,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     private AnnotationDao annotationDao;
     @Inject
+    private VpcDao vpcDao;
+    @Inject
     UserStatisticsDao userStatsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
@@ -128,7 +132,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         userVmResponse.setName(userVm.getName());
 
         if (userVm.getDisplayName() != null) {
-        userVmResponse.setDisplayName(userVm.getDisplayName());
+            userVmResponse.setDisplayName(userVm.getDisplayName());
         } else {
             userVmResponse.setDisplayName(userVm.getName());
         }
@@ -290,6 +294,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 }
                 if (userVm.getGuestType() != null) {
                     nicResponse.setType(userVm.getGuestType().toString());
+                }
+
+                if (userVm.getVpcUuid() != null) {
+                    nicResponse.setVpcId(userVm.getVpcUuid());
+                    VpcVO vpc = vpcDao.findByUuidIncludingRemoved(userVm.getVpcUuid());
+                    nicResponse.setVpcName(vpc.getName());
                 }
                 nicResponse.setIsDefault(userVm.isDefaultNic());
                 nicResponse.setDeviceId(String.valueOf(userVm.getNicDeviceId()));
