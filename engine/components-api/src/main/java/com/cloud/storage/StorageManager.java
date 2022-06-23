@@ -199,9 +199,6 @@ public interface StorageManager extends StorageService {
     }
 
     static Boolean getFullCloneConfiguration(Long storeId) {
-        if (null == storeId){
-            return VmwareCreateCloneFull.value();
-        }
         return VmwareCreateCloneFull.valueIn(storeId);
     }
 
