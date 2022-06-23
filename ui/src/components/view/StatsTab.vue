@@ -521,16 +521,13 @@ export default {
      * @returns the percentage of used/free memory.
      */
     calculateMemoryPercentage (isUsed, memoryTotalInKB, memoryFreeInKB) {
-      var percentage = -1
-      if (memoryTotalInKB != null && memoryFreeInKB != null) {
-        if (isUsed) {
-          percentage = parseFloat(100.0 * (memoryTotalInKB - memoryFreeInKB) / memoryTotalInKB).toFixed(2)
-          return percentage
-        }
-        percentage = parseFloat(100.0 * memoryFreeInKB / memoryTotalInKB).toFixed(2)
-        return percentage
+      if (memoryTotalInKB == null || memoryFreeInKB == null) {
+        return -1
       }
-      return percentage
+      if (isUsed) {
+        return parseFloat(100.0 * (memoryTotalInKB - memoryFreeInKB) / memoryTotalInKB).toFixed(2)
+      }
+      return parseFloat(100.0 * memoryFreeInKB / memoryTotalInKB).toFixed(2)
     },
     /**
      * Calculates the maximum Y axis and the step size based on the chart data.
