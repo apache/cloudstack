@@ -70,7 +70,8 @@ public class SAMLUtilsTest extends TestCase {
         String authnId = SAMLUtils.generateSecureRandomId();
         DefaultBootstrap.bootstrap();
         AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl);
-        String redirectUrl = idpUrl.contains("?") ? idpUrl + "&" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()) : idpUrl + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
+        String appendOperator = idpUrl.contains("?") ? "&" : "?";
+        String redirectUrl = idpUrl + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
         assertEquals(redirectUrl, idpUrl + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
     }
 
@@ -82,7 +83,8 @@ public class SAMLUtilsTest extends TestCase {
         String authnId = SAMLUtils.generateSecureRandomId();
         DefaultBootstrap.bootstrap();
         AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl);
-        String redirectUrl = idpUrl.contains("?") ? idpUrl + "&" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()) : idpUrl + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
+        String appendOperator = idpUrl.contains("?") ? "&" : "?";
+        String redirectUrl = idpUrl + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
         assertEquals(redirectUrl, idpUrl + "&" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
     }
 
