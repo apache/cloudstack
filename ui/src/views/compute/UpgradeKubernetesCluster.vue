@@ -87,6 +87,7 @@ export default {
     this.apiParams = this.$getApiParams('upgradeKubernetesCluster')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {

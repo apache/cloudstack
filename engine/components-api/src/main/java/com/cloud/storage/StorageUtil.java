@@ -33,12 +33,26 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.log4j.Logger;
+
 public class StorageUtil {
     @Inject private ClusterDao clusterDao;
     @Inject private HostDao hostDao;
     @Inject private PrimaryDataStoreDao storagePoolDao;
     @Inject private VMInstanceDao vmInstanceDao;
     @Inject private VolumeDao volumeDao;
+
+    public static void traceLogStoragePools(List<StoragePool> poolList, Logger logger, String initialMessage) {
+        if (logger.isTraceEnabled()) {
+            StringBuilder pooltable = new StringBuilder();
+            pooltable.append(initialMessage);
+            int i = 1;
+            for (StoragePool pool : poolList) {
+                pooltable.append("\nno ").append(i).append(": ").append(pool.getName()).append("/").append(pool.getUuid());
+            }
+            logger.trace(pooltable.toString());
+        }
+    }
 
     private Long getClusterId(Long hostId) {
         if (hostId == null) {

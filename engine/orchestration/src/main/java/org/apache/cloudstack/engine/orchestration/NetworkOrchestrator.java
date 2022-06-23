@@ -55,7 +55,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.dao.NetworkPermissionDao;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -173,7 +172,6 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.guru.NetworkGuruAdditionalFunctions;
-import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallManager;
@@ -2358,15 +2356,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         s_logger.debug("Removed nic id=" + nic.getId());
         // release assigned IPv6 for Isolated Network VR NIC
-
-        if (Type.DomainRouter.equals(vm.getType()) && PublicNetworkGuru.class.getSimpleName().equals(nic.getReserver())
-                && StringUtils.isNotEmpty(nic.getIPv6Address())) {
-            List<Long> routerNetworks = routerNetworkDao.getRouterNetworks(vm.getId());
-            if (CollectionUtils.isNotEmpty(routerNetworks)) {
-                Network guestNetwork = _networksDao.findById(routerNetworks.get(0));
-                ipv6Service.releasePublicIpv6ForNic(guestNetwork, nic.getIPv6Address());
-            }
-        }
 
         if (Type.User.equals(vm.getType()) && GuestType.Isolated.equals(network.getGuestType())
                 && _networkOfferingDao.isIpv6Supported(network.getNetworkOfferingId()) && StringUtils.isNotEmpty(nic.getIPv6Address())) {

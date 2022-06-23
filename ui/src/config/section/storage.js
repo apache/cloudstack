@@ -332,18 +332,8 @@ export default {
           label: 'label.action.create.volume',
           dataView: true,
           show: (record) => { return record.state === 'BackedUp' },
-          args: (record, store) => {
-            var fields = ['snapshotid', 'name']
-            if (record.volumetype === 'ROOT') {
-              fields.push('diskofferingid')
-            }
-            return fields
-          },
-          mapping: {
-            snapshotid: {
-              value: (record) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
         },
         {
           api: 'revertSnapshot',
