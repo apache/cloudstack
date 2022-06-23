@@ -22,201 +22,105 @@
       style="text-align: justify; margin: 10px 0; padding: 24px;"
       v-html="$t(description)">
     </a-card>
-    <a-form class="form-content" :form="form" @submit="handleSubmit">
+    <a-form
+      class="form-content"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+     >
       <a-form-item
+        name="name"
+        ref="name"
         :label="$t('label.name')"
         v-bind="formItemLayout"
         has-feedback>
         <a-input
-          v-decorator="['name', {
-            rules: [{
-              required: true,
-              message: $t('message.error.zone.name'),
-              initialValue: name
-            }]
-          }]"
-          autoFocus
+          v-model:value="form.name"
+          v-focus="true"
         />
       </a-form-item>
       <a-form-item
+        name="ipv4Dns1"
+        ref="ipv4Dns1"
         :label="$t('label.ipv4.dns1')"
         v-bind="formItemLayout"
         has-feedback>
-        <a-input
-          v-decorator="['ipv4Dns1', {
-            rules: [
-              {
-                required: true,
-                message: $t('message.error.ipv4.dns1'),
-                initialValue: ipv4Dns1
-              },
-              {
-                validator: checkIpFormat,
-                ipV4: true,
-                message: $t('message.error.ipv4.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ipv4Dns1" />
       </a-form-item>
       <a-form-item
+        name="ipv4Dns2"
+        ref="ipv4Dns2"
         :label="$t('label.ipv4.dns2')"
         v-bind="formItemLayout"
         has-feedback>
-        <a-input
-          v-decorator="['ipv4Dns2', {
-            rules: [
-              {
-                message: $t('message.error.ipv4.dns2'),
-                initialValue: ipv4Dns2
-              },
-              {
-                validator: checkIpFormat,
-                ipV4: true,
-                message: $t('message.error.ipv4.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ipv4Dns2" />
       </a-form-item>
       <a-form-item
+        name="ipv6Dns1"
+        ref="ipv6Dns1"
         :label="$t('label.ipv6.dns1')"
         v-bind="formItemLayout"
         v-if="isAdvancedZone"
         has-feedback>
-        <a-input
-          v-decorator="['ipv6Dns1', {
-            rules: [
-              {
-                message: $t('message.error.ipv6.dns1'),
-                initialValue: ipv6Dns1
-              },
-              {
-                validator: checkIpFormat,
-                ipV6: true,
-                message: $t('message.error.ipv6.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ipv6Dns1" />
       </a-form-item>
       <a-form-item
+        name="ipv6Dns2"
+        ref="ipv6Dns2"
         :label="$t('label.ipv6.dns2')"
         v-bind="formItemLayout"
         v-if="isAdvancedZone"
         has-feedback>
-        <a-input
-          v-decorator="['ipv6Dns2', {
-            rules: [
-              {
-                message: $t('message.error.ipv6.dns2'),
-                initialValue: ipv6Dns2
-              },
-              {
-                validator: checkIpFormat,
-                ipV6: true,
-                message: $t('message.error.ipv6.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ipv6Dns2" />
       </a-form-item>
       <a-form-item
+        name="ipv6Cidr"
+        ref="ipv6Cidr"
         :label="$t('label.ip6cidr')"
         v-bind="formItemLayout"
         v-if="isAdvancedZone && securityGroupsEnabled"
         has-feedback>
-        <a-input
-          v-decorator="['ipv6Cidr', {
-            rules: [
-              {
-                message: $t('message.error.ipv6.cidr'),
-                initialValue: ipv6Cidr
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ipv6Cidr" />
       </a-form-item>
       <a-form-item
+        name="ip6gateway"
+        ref="ip6gateway"
         :label="$t('label.ip6gateway')"
         v-bind="formItemLayout"
         v-if="isAdvancedZone && securityGroupsEnabled"
         has-feedback>
-        <a-input
-          v-decorator="['ip6gateway', {
-            rules: [
-              {
-                message: $t('message.error.ipv6.gateway'),
-                initialValue: ip6gateway
-              },
-              {
-                validator: checkIpFormat,
-                ipV6: true,
-                message: $t('message.error.ipv6.gateway.format')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.ip6gateway" />
       </a-form-item>
       <a-form-item
+        name="internalDns1"
+        ref="internalDns1"
         :label="$t('label.internal.dns.1')"
         v-bind="formItemLayout"
         has-feedback>
-        <a-input
-          v-decorator="['internalDns1', {
-            rules: [
-              {
-                required: true,
-                message: $t('message.error.internal.dns1'),
-                initialValue: internalDns1
-              },
-              {
-                validator: checkIpFormat,
-                ipV4: true,
-                message: $t('message.error.ipv4.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.internalDns1" />
       </a-form-item>
       <a-form-item
+        name="internalDns2"
+        ref="internalDns2"
         :label="$t('label.internal.dns.2')"
         v-bind="formItemLayout"
         has-feedback>
-        <a-input
-          v-decorator="['internalDns2', {
-            rules: [
-              {
-                message: $t('message.error.internal.dns2'),
-                initialValue: internalDns2
-              },
-              {
-                validator: checkIpFormat,
-                ipV4: true,
-                message: $t('message.error.ipv4.address')
-              }
-            ]
-          }]"
-        />
+        <a-input v-model:value="form.internalDns2" />
       </a-form-item>
       <a-form-item
+        name="hypervisor"
+        ref="hypervisor"
         :label="$t('label.hypervisor')"
         v-bind="formItemLayout"
         has-feedback>
         <a-select
-          :loading="hypervisors === null"
-          v-decorator="['hypervisor',{
-            rules: [{
-              required: true,
-              message: $t('message.error.hypervisor.type'),
-              initialValue: currentHypervisor
-            }]
-          }]"
+          v-model:value="form.hypervisor"
           :placeholder="$t('message.error.hypervisor.type')"
+          :loading="hypervisors === null"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
@@ -224,23 +128,20 @@
         </a-select>
       </a-form-item>
       <a-form-item
+        name="networkOfferingId"
+        ref="networkOfferingId"
         :label="$t('label.network.offering')"
         v-bind="formItemLayout"
         v-if="!isAdvancedZone || securityGroupsEnabled"
         has-feedback>
         <a-select
           :loading="availableNetworkOfferings === null"
-          v-decorator="['networkOfferingId', {
-            rules: [{
-              message: $t('message.error.network.offering'),
-              initialValue: currentNetworkOfferingId
-            }]
-          }]"
+          v-model:value="form.networkOfferingId"
           :placeholder="$t('message.error.network.offering')"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
@@ -250,56 +151,44 @@
         </a-select>
       </a-form-item>
       <a-form-item
+        name="networkDomain"
+        ref="networkDomain"
         :label="$t('label.network.domain')"
         v-bind="formItemLayout"
         has-feedback>
-        <a-input
-          v-decorator="['networkDomain', {
-            rules: [{
-              message: $t('message.error.network.domain'),
-              intialValue: networkDomain
-            }]
-          }]"
-        />
+        <a-input v-model:value="form.networkDomain" />
       </a-form-item>
       <a-form-item
+        name="guestcidraddress"
+        ref="guestcidraddress"
         :label="$t('label.guest.cidr')"
         v-bind="formItemLayout"
         v-if="isAdvancedZone && !securityGroupsEnabled"
         has-feedback>
-        <a-input
-          v-decorator="['guestcidraddress', {
-            rules: [{
-              intialValue: guestcidraddress
-            }]
-          }]"
-        />
+        <a-input v-model:value="form.guestcidraddress" />
       </a-form-item>
       <a-form-item
+        name="isDedicated"
+        ref="isDedicated"
         :label="$t('label.dedicated')"
         v-bind="formItemLayout">
-        <a-switch
-          v-decorator="['isDedicated', { valuePropName: 'checked' }]"
-          :value="isDedicated"
-        />
+        <a-switch v-model:checked="form.isDedicated" />
       </a-form-item>
       <a-form-item
+        name="domainId"
+        ref="domainId"
         :label="$t('label.domains')"
         v-bind="formItemLayout"
         has-feedback
         v-if="isDedicated">
         <a-select
           :loading="domains === null"
-          v-decorator="['domainId', {
-            rules: [{
-              initialValue: domain
-            }]
-          }]"
+          v-model:value="form.domainId"
           :placeholder="$t('message.error.select.domain.to.dedicate')"
           showSearch
-          optionFilterProp="children"
+          optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="dom in domains" :key="dom.id">
             {{ dom.path }}
@@ -307,32 +196,26 @@
         </a-select>
       </a-form-item>
       <a-form-item
+        name="account"
+        ref="account"
         :label="$t('label.account')"
         v-bind="formItemLayout"
         v-if="isDedicated">
-        <a-input
-          v-decorator="['account', {
-            rules: [{
-              intialValue: guestcidraddress
-            }]
-          }]"
-        />
+        <a-input v-model:value="form.account" />
       </a-form-item>
       <a-form-item
+        name="localstorageenabled"
+        ref="localstorageenabled"
         :label="$t('label.local.storage.enabled')"
         v-bind="formItemLayout">
-        <a-switch
-          v-decorator="['localstorageenabled', { valuePropName: 'checked' }]"
-          :value="localstorageenabled"
-        />
+        <a-switch v-model:checked="form.localstorageenabled" />
       </a-form-item>
       <a-form-item
+        name="localstorageenabledforsystemvm"
+        ref="localstorageenabledforsystemvm"
         :label="$t('label.local.storage.enabled.system.vms')"
         v-bind="formItemLayout">
-        <a-switch
-          v-decorator="['localstorageenabledforsystemvm', { valuePropName: 'checked' }]"
-          :value="localstorageenabledforsystemvm"
-        />
+        <a-switch v-model:checked="form.localstorageenabledforsystemvm" />
       </a-form-item>
     </a-form>
     <div class="form-action">
@@ -351,6 +234,7 @@
 
 <script>
 
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -379,102 +263,108 @@ export default {
     selectedBaremetalProviders: [],
     availableNetworkOfferings: null,
     ipV4Regex: /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/i,
-    ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i
+    ipV6Regex: /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i,
+    formModel: {}
   }),
   created () {
-    this.hypervisors = this.prefillContent.hypervisors?.hypervisors || null
+    this.hypervisors = this.prefillContent?.hypervisors || null
     this.networkOfferings = this.prefillContent?.networkOfferings || null
-    this.form = this.$form.createForm(this, {
-      onFieldsChange: (_, changedFields) => {
-        if (changedFields.networkOfferingId && this.prefillContent.networkOfferingSelected) {
-          if (this.prefillContent.networkOfferingSelected.id !== changedFields.networkOfferingId.value) {
-            changedFields.physicalNetworks = []
-          }
-        }
-        if (this.networkOfferings && changedFields.networkOfferingId) {
-          changedFields.networkOfferings = this.networkOfferings
-          changedFields.networkOfferingSelected = this.networkOfferings[changedFields.networkOfferingId.value]
-        }
-        if (this.hypervisors && changedFields.hypervisor) {
-          changedFields.hypervisors = this.hypervisors
-          this.availableNetworkOfferings = this.getAvailableNetworkOfferings(changedFields.hypervisor)
-        }
-        if (this.domains && changedFields.domain) {
-          changedFields.domains = this.domains
-        }
-        this.$emit('fieldsChanged', changedFields)
-      }
-    })
 
+    this.initForm()
     this.fetchData()
   },
   mounted () {
-    this.form.setFieldsValue({
-      name: this.name,
-      ipv4Dns1: this.ipv4Dns1,
-      ipv4Dns2: this.ipv4Dns2,
-      ipv6Dns1: this.ipv6Dns1,
-      ipv6Dns2: this.ipv6Dns2,
-      internalDns1: this.internalDns1,
-      internalDns2: this.internalDns2,
-      hypervisor: this.currentHypervisor,
-      networkOfferingId: this.currentNetworkOfferingId,
-      networkDomain: this.networkDomain,
-      guestcidraddress: this.isAdvancedZone && !this.securityGroupsEnabled ? this.guestcidraddress : null,
-      isDedicated: this.isDedicated,
-      domain: this.domain,
-      account: this.account,
-      localstorageenabled: this.localstorageenabled,
-      localstorageenabledforsystemvm: this.localstorageenabledforsystemvm
-    })
+    this.form.name = this.name
+    this.form.ipv4Dns1 = this.ipv4Dns1
+    this.form.ipv4Dns2 = this.ipv4Dns2
+    this.form.ipv6Dns1 = this.ipv6Dns1
+    this.form.ipv6Dns2 = this.ipv6Dns2
+    this.form.internalDns1 = this.internalDns1
+    this.form.internalDns2 = this.internalDns2
+    this.form.hypervisor = this.currentHypervisor
+    this.form.networkOfferingId = this.currentNetworkOfferingId
+    this.form.networkDomain = this.networkDomain
+    this.form.guestcidraddress = this.isAdvancedZone && !this.securityGroupsEnabled ? this.guestcidraddress : null
+    this.form.isDedicated = this.isDedicated
+    this.form.domain = this.domain
+    this.form.account = this.account
+    this.form.localstorageenabled = this.localstorageenabled
+    this.form.localstorageenabledforsystemvm = this.localstorageenabledforsystemvm
+
+    this.formModel = toRaw(this.form)
+  },
+  watch: {
+    formModel: {
+      deep: true,
+      handler (changedFields) {
+        const fieldsChanged = toRaw(changedFields)
+        if (fieldsChanged.networkOfferingId && this.prefillContent.networkOfferingSelected) {
+          if (this.prefillContent.networkOfferingSelected.id !== fieldsChanged.networkOfferingId) {
+            fieldsChanged.physicalNetworks = []
+          }
+        }
+        if (this.networkOfferings && fieldsChanged.networkOfferingId) {
+          fieldsChanged.networkOfferings = this.networkOfferings
+          fieldsChanged.networkOfferingSelected = this.networkOfferings[fieldsChanged.networkOfferingId]
+        }
+        if (this.hypervisors && fieldsChanged.hypervisor) {
+          fieldsChanged.hypervisors = this.hypervisors
+          this.availableNetworkOfferings = this.getAvailableNetworkOfferings(fieldsChanged.hypervisor)
+        }
+        if (this.domains && fieldsChanged.domain) {
+          fieldsChanged.domains = this.domains
+        }
+        this.$emit('fieldsChanged', fieldsChanged)
+      }
+    }
   },
   computed: {
     isAdvancedZone () {
       return this.zoneType === 'Advanced'
     },
     zoneType () {
-      return this.prefillContent.zoneType?.value || null
+      return this.prefillContent?.zoneType || null
     },
     securityGroupsEnabled () {
-      return this.isAdvancedZone && (this.prefillContent.securityGroupsEnabled?.value || false)
+      return this.isAdvancedZone && (this.prefillContent?.securityGroupsEnabled || false)
     },
     name () {
-      return this.prefillContent.name?.value || null
+      return this.prefillContent?.name || null
     },
     ipv4Dns1 () {
-      return this.prefillContent.ipv4Dns1?.value || null
+      return this.prefillContent?.ipv4Dns1 || null
     },
     ipv4Dns2 () {
-      return this.prefillContent.ipv4Dns2?.value || null
+      return this.prefillContent?.ipv4Dns2 || null
     },
     ipv6Dns1 () {
-      return this.prefillContent.ipv6Dns1?.value || null
+      return this.prefillContent?.ipv6Dns1 || null
     },
     ipv6Dns2 () {
-      return this.prefillContent.ipv6Dns2?.value || null
+      return this.prefillContent?.ipv6Dns2 || null
     },
     internalDns1 () {
-      return this.prefillContent.internalDns1?.value || null
+      return this.prefillContent?.internalDns1 || null
     },
     internalDns2 () {
-      return this.prefillContent.internalDns2?.value || null
+      return this.prefillContent?.internalDns2 || null
     },
     ipv6Cidr () {
-      return this.prefillContent.ipv6Cidr?.value || null
+      return this.prefillContent?.ipv6Cidr || null
     },
     ip6gateway () {
-      return this.prefillContent.ip6gateway?.value || null
+      return this.prefillContent?.ip6gateway || null
     },
     currentHypervisor () {
       if (this.prefillContent.hypervisor) {
-        return this.prefillContent.hypervisor.value
+        return this.prefillContent.hypervisor
       } else if (this.hypervisors && this.hypervisors.length > 0) {
-        return this.hypervisors[0]
+        return this.hypervisors[0].name
       }
       return null
     },
     currentNetworkOfferingId () {
-      const lastNetworkOfferingId = this.prefillContent.networkOfferingSelected?.id || null
+      const lastNetworkOfferingId = this.prefillContent?.networkOfferingSelected?.id || null
       if (this.networkOfferings) {
         if (lastNetworkOfferingId !== null && this.networkOfferings[lastNetworkOfferingId]) {
           return lastNetworkOfferingId
@@ -484,42 +374,61 @@ export default {
       return null
     },
     networkDomain () {
-      return this.prefillContent.networkDomain?.value || null
+      return this.prefillContent?.networkDomain || null
     },
     guestcidraddress () {
-      return this.prefillContent.guestcidraddress?.value || '10.1.1.0/24'
+      return this.prefillContent?.guestcidraddress || '10.1.1.0/24'
     },
     isDedicated () {
-      return this.prefillContent.isDedicated?.value || false
+      return this.prefillContent?.isDedicated || false
     },
     domain () {
-      const lastDomainId = this.prefillContent.domainId?.value || null
+      const lastDomainId = this.prefillContent?.domainId || null
       if (this.domains !== null && lastDomainId !== null && this.domains[lastDomainId]) {
         return lastDomainId
       }
       return null
     },
     account () {
-      return this.prefillContent.account?.value || null
+      return this.prefillContent?.account || null
     },
     localstorageenabled () {
-      return this.prefillContent.localstorageenabled?.value || false
+      return this.prefillContent?.localstorageenabled || false
     },
     localstorageenabledforsystemvm () {
-      return this.prefillContent.localstorageenabledforsystemvm?.value || false
+      return this.prefillContent?.localstorageenabledforsystemvm || false
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        name: [{ required: true, message: this.$t('message.error.zone.name') }],
+        ipv4Dns1: [
+          { required: true, message: this.$t('message.error.ipv4.dns1') },
+          { ipV4: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv4.address') }
+        ],
+        ipv4Dns2: [{ ipV4: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv4.address') }],
+        ipv6Dns1: [{ ipV6: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv6.address') }],
+        ipv6Dns2: [{ ipV6: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv6.address') }],
+        ip6gateway: [{ ipV6: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv6.gateway.format') }],
+        internalDns1: [
+          { required: true, message: this.$t('message.error.internal.dns1') },
+          { ipV4: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv4.address') }
+        ],
+        internalDns2: [{ ipV4: true, validator: this.checkIpFormat, message: this.$t('message.error.ipv4.address') }],
+        hypervisor: [{ required: true, message: this.$t('message.error.hypervisor.type') }]
+      })
+    },
     fetchData () {
-      const cForm = this.form
       api('listHypervisors', { listAll: true }).then(json => {
         this.hypervisors = json.listhypervisorsresponse.hypervisor
         if ('listSimulatorHAStateTransitions' in this.$store.getters.apis) {
           this.hypervisors.push({ name: 'Simulator' })
         }
-        cForm.setFieldsValue({
-          hypervisor: this.currentHypervisor
-        })
+        this.form.hypervisor = this.currentHypervisor
+        this.formModel = toRaw(this.form)
       })
 
       if (!this.isAdvancedZone || this.securityGroupsEnabled) {
@@ -530,9 +439,8 @@ export default {
             this.networkOfferings[offering.id] = offering
           })
           this.availableNetworkOfferings = this.getAvailableNetworkOfferings(this.currentHypervisor)
-          cForm.setFieldsValue({
-            networkOfferingId: this.currentNetworkOfferingId
-          })
+          this.form.networkOfferingId = this.currentNetworkOfferingId
+          this.formModel = toRaw(this.form)
         })
       }
 
@@ -541,27 +449,23 @@ export default {
         json.listdomainsresponse.domain.forEach(dom => {
           this.domains[dom.id] = dom
         })
-        cForm.setFieldsValue({
-          domain: this.domain
-        })
+        this.form.domain = this.domain
+        this.formModel = toRaw(this.form)
       })
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-
+    handleSubmit () {
+      this.formRef.value.validate().then(() => {
         if (this.isFixError) {
           this.$emit('submitLaunchZone')
           return
         }
 
         this.$emit('nextPressed')
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
-    handleBack (e) {
+    handleBack () {
       this.$emit('backPressed')
     },
     setupNetworkOfferingAdditionalFlags (nOffering) {
@@ -616,15 +520,15 @@ export default {
       }
       return null
     },
-    checkIpFormat (rule, value, callback) {
+    async checkIpFormat (rule, value) {
       if (!value || value === '') {
-        callback()
+        return Promise.resolve()
       } else if (rule.ipV4 && !this.ipV4Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else if (rule.ipV6 && !this.ipV6Regex.test(value)) {
-        callback(rule.message)
+        return Promise.reject(rule.message)
       } else {
-        callback()
+        return Promise.resolve()
       }
     }
   }
@@ -644,13 +548,13 @@ export default {
     max-height: 40vh;
     overflow-y: auto;
 
-    /deep/.has-error {
+    :deep(.has-error) {
       .ant-form-explain {
         text-align: left;
       }
     }
 
-    /deep/.ant-form-item-control {
+    :deep(.ant-form-item-control) {
       text-align: left;
     }
   }

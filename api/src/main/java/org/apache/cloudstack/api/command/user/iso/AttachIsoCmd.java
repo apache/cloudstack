@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -101,6 +102,16 @@ public class AttachIsoCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public String getEventDescription() {
         return  "attaching ISO: " + getId() + " to VM: " + getVirtualMachineId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return virtualMachineId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

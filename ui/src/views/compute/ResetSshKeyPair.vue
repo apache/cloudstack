@@ -24,7 +24,7 @@
         <a-input-search
           style="margin-bottom: 10px;"
           :placeholder="$t('label.search')"
-          v-model="filter"
+          v-model:value="filter"
           @search="handleSearch"
           autoFocus />
       </div>
@@ -42,15 +42,15 @@
           @handle-search-filter="handleTableChange"
           style="overflow-y: auto" >
 
-          <template v-slot:account><a-icon type="user" /> {{ $t('label.account') }}</template>
-          <template v-slot:domain><a-icon type="block" /> {{ $t('label.domain') }}</template>
+          <template #account><user-outlined /> {{ $t('label.account') }}</template>
+          <template #domain><block-outlined /> {{ $t('label.domain') }}</template>
 
         </a-table>
       </div>
 
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-spin>

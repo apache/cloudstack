@@ -264,7 +264,7 @@ public class SyncLink implements Link {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    s_logger.info("[ignored] interupted during pull", e);
+                    s_logger.info("[ignored] interrupted during pull", e);
                 }
             }
 
@@ -357,7 +357,7 @@ public class SyncLink implements Link {
      * must be only one pull loop per thread.
      *
      * Pull loop will start after event STREAM_START. This link and source element
-     * incomming links will be switched to pull mode before pull loop will be
+     * incoming links will be switched to pull mode before pull loop will be
      * started using event LINK_SWITCH_TO_PULL_MODE.
      */
     @Override
@@ -412,7 +412,7 @@ public class SyncLink implements Link {
             throw new RuntimeException("[" + this + "] ERROR: Cannot drop link in pull mode.");
 
         if (cacheBuffer != null)
-            throw new RuntimeException("[" + this + "] ERROR: Cannot drop link when cache conatains data: " + cacheBuffer + ".");
+            throw new RuntimeException("[" + this + "] ERROR: Cannot drop link when cache contains data: " + cacheBuffer + ".");
 
         source.dropLink(this);
         sink.dropLink(this);

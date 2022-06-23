@@ -17,55 +17,58 @@
 
 <template>
   <a-row class="usage-dashboard" :gutter="12">
-    <a-col :xl="16">
-      <a-row :gutter="12">
-        <a-card>
+    <a-col :xl="16" style="padding-left: 0; padding-right: 0;">
+      <a-row>
+        <a-card style="width: 100%">
           <a-tabs
             v-if="showProject"
             :animated="false"
             @change="onTabChange">
-            <a-tab-pane
-              v-for="tab in $route.meta.tabs"
-              :tab="$t('label.' + tab.name)"
-              :key="tab.name"
-              v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true">
-              <component
-                :is="tab.component"
-                :resource="project"
-                :loading="loading"
-                :bordered="false"
-                :stats="stats" />
-            </a-tab-pane>
+            <template v-for="tab in $route.meta.tabs" :key="tab.name">
+              <a-tab-pane
+                v-if="'show' in tab ? tab.show(project, $route, $store.getters.userInfo) : true"
+                :tab="$t('label.' + tab.name)"
+                :key="tab.name">
+                <keep-alive>
+                  <component
+                    :is="tab.component"
+                    :resource="project"
+                    :loading="loading"
+                    :bordered="false"
+                    :stats="stats" />
+                </keep-alive>
+              </a-tab-pane>
+            </template>
           </a-tabs>
-          <a-col
-            v-else
-            class="usage-dashboard-chart-tile"
-            :xs="12"
-            :md="8"
-            v-for="stat in stats"
-            :key="stat.type">
-            <a-card
-              class="usage-dashboard-chart-card"
-              :bordered="false"
-              :loading="loading"
-              :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
-              <router-link :to="{ path: stat.path }">
-                <div
-                  class="usage-dashboard-chart-card-inner">
-                  <h3>{{ stat.name }}</h3>
-                  <h2>
-                    <a-icon :type="stat.icon" />
-                    {{ stat.count == undefined ? 0 : stat.count }}
-                  </h2>
-                </div>
-              </router-link>
-            </a-card>
-          </a-col>
+          <a-row :gutter="24" v-else>
+            <a-col
+              class="usage-dashboard-chart-tile"
+              :xs="12"
+              :md="8"
+              v-for="stat in stats"
+              :key="stat.type">
+              <a-card
+                class="usage-dashboard-chart-card"
+                :bordered="false"
+                :loading="loading"
+                :style="stat.bgcolor ? { 'background': stat.bgcolor } : {}">
+                <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
+                  <div
+                    class="usage-dashboard-chart-card-inner">
+                    <h3>{{ stat.name }}</h3>
+                    <h2>
+                      <render-icon :icon="stat.icon" />
+                      {{ stat.count == undefined ? 0 : stat.count }}
+                    </h2>
+                  </div>
+                </router-link>
+              </a-card>
+            </a-col>
+          </a-row>
         </a-card>
       </a-row>
     </a-col>
-    <a-col
-      :xl="8">
+    <a-col :xl="8">
       <chart-card :loading="loading" >
         <div class="usage-dashboard-chart-card-inner">
           <a-button>
@@ -74,7 +77,7 @@
             </router-link>
           </a-button>
         </div>
-        <template slot="footer">
+        <template #footer>
           <div class="usage-dashboard-chart-footer">
             <a-timeline>
               <a-timeline-item
@@ -82,7 +85,8 @@
                 :key="event.id"
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: 'event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>
@@ -99,18 +103,20 @@ import store from '@/store'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import UsageDashboardChart from '@/views/dashboard/UsageDashboardChart'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'UsageDashboard',
   components: {
     ChartCard,
-    UsageDashboardChart
+    UsageDashboardChart,
+    ResourceLabel
   },
   props: {
     resource: {
       type: Object,
       default () {
-        return []
+        return {}
       }
     },
     showProject: {
@@ -128,31 +134,33 @@ export default {
       project: {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
     this.project = store.getters.project
     this.fetchData()
     this.$store.watch(
       (state, getters) => getters.project,
       (newValue, oldValue) => {
-        if (newValue && (!oldValue || newValue.id !== oldValue.id)) {
+        if (newValue && newValue.id && (!oldValue || newValue.id !== oldValue.id)) {
+          this.fetchData()
+        } else if (store.getters.userInfo.roletype !== 'Admin') {
           this.fetchData()
         }
       }
     )
   },
   watch: {
-    '$route' (to, from) {
+    '$route' (to) {
       if (to.name === 'dashboard') {
         this.fetchData()
       }
     },
-    resource (newData, oldData) {
-      this.project = newData
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        this.project = newData
+      }
     },
-    '$i18n.locale' (to, from) {
+    '$i18n.global.locale' (to, from) {
       if (to !== from) {
         this.fetchData()
       }
@@ -167,7 +175,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-runningvms-bg'] || '#dfe9cc'
-        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop', bgcolor: tileColor, path: '/vm?state=running&filter=running' })
+        this.stats.splice(0, 1, { name: this.$t('label.running'), count: count, icon: 'desktop-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'running', filter: 'running' } })
       })
       api('listVirtualMachines', { state: 'Stopped', listall: true }).then(json => {
         var count = 0
@@ -175,7 +183,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-stoppedvms-bg'] || '#edcbce'
-        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff', bgcolor: tileColor, path: '/vm?state=stopped&filter=stopped' })
+        this.stats.splice(1, 1, { name: this.$t('label.stopped'), count: count, icon: 'poweroff-outlined', bgcolor: tileColor, path: '/vm', query: { state: 'stopped', filter: 'stopped' } })
       })
       api('listVirtualMachines', { listall: true }).then(json => {
         var count = 0
@@ -183,7 +191,7 @@ export default {
           count = json.listvirtualmachinesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-totalvms-bg'] || '#ffffff'
-        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number', bgcolor: tileColor, path: '/vm' })
+        this.stats.splice(2, 1, { name: this.$t('label.total.vms'), count: count, icon: 'number-outlined', bgcolor: tileColor, path: '/vm' })
       })
       api('listVolumes', { listall: true }).then(json => {
         var count = 0
@@ -191,7 +199,7 @@ export default {
           count = json.listvolumesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-totalvolumes-bg'] || '#ffffff'
-        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database', bgcolor: tileColor, path: '/volume' })
+        this.stats.splice(3, 1, { name: this.$t('label.total.volume'), count: count, icon: 'database-outlined', bgcolor: tileColor, path: '/volume' })
       })
       api('listNetworks', { listall: true }).then(json => {
         var count = 0
@@ -199,7 +207,7 @@ export default {
           count = json.listnetworksresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-totalnetworks-bg'] || '#ffffff'
-        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment', bgcolor: tileColor, path: '/guestnetwork' })
+        this.stats.splice(4, 1, { name: this.$t('label.total.network'), count: count, icon: 'apartment-outlined', bgcolor: tileColor, path: '/guestnetwork' })
       })
       api('listPublicIpAddresses', { listall: true }).then(json => {
         var count = 0
@@ -207,7 +215,7 @@ export default {
           count = json.listpublicipaddressesresponse.count
         }
         var tileColor = this.$config.theme['@dashboard-tile-totalips-bg'] || '#ffffff'
-        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment', bgcolor: tileColor, path: '/publicip' })
+        this.stats.splice(5, 1, { name: this.$t('label.public.ip.addresses'), count: count, icon: 'environment-outlined', bgcolor: tileColor, path: '/publicip' })
       })
       this.listEvents()
     },
@@ -247,7 +255,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .usage-dashboard {
+  :deep(.usage-dashboard) {
 
     &-chart-tile {
       margin-bottom: 12px;
@@ -265,6 +273,12 @@ export default {
        padding-top: 12px;
        padding-left: 3px;
        white-space: normal;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .ant-col-xl-8 {
+      width: 100%;
     }
   }
 </style>

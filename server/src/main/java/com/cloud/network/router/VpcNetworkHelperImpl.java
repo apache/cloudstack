@@ -30,7 +30,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.ConcurrentOperationException;

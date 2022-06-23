@@ -24,8 +24,8 @@ import store from '@/store'
 import { sourceToken } from '@/utils/request'
 
 export const pollJobPlugin = {
-  install (Vue) {
-    Vue.prototype.$pollJob = function (options) {
+  install (app) {
+    app.config.globalProperties.$pollJob = function (options) {
       /**
        * @param {String} jobId
        * @param {String} [name='']
@@ -48,13 +48,13 @@ export const pollJobPlugin = {
         name = '',
         title = '',
         description = '',
-        successMessage = i18n.t('label.success'),
+        successMessage = i18n.global.t('label.success'),
         successMethod = () => {},
-        errorMessage = i18n.t('label.error'),
+        errorMessage = i18n.global.t('label.error'),
         errorMethod = () => {},
-        loadingMessage = `${i18n.t('label.loading')}...`,
+        loadingMessage = `${i18n.global.t('label.loading')}...`,
         showLoading = true,
-        catchMessage = i18n.t('label.error.caught'),
+        catchMessage = i18n.global.t('label.error.caught'),
         catchMethod = () => {},
         action = null,
         bulkAction = false,
@@ -68,7 +68,8 @@ export const pollJobPlugin = {
         status: 'progress'
       })
 
-      eventBus.$on('update-job-details', (jobId, resourceId) => {
+      eventBus.on('update-job-details', (args) => {
+        const { jobId, resourceId } = args
         const fullPath = this.$route.fullPath
         const path = this.$route.path
         var jobs = this.$store.getters.headerNotices.map(job => {
@@ -84,14 +85,14 @@ export const pollJobPlugin = {
         this.$store.commit('SET_HEADER_NOTICES', jobs)
       })
 
-      options.originalPage = options.originalPage || this.$router.currentRoute.path
+      options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       api('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
-        eventBus.$emit('update-job-details', jobId, resourceId)
+        eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {
           var content = successMessage
           if (successMessage === 'Success' && action && action.label) {
-            content = i18n.t(action.label)
+            content = i18n.global.t(action.label)
           }
           if (name) {
             content = content + ' - ' + name
@@ -108,12 +109,12 @@ export const pollJobPlugin = {
             status: 'done',
             duration: 2
           })
-          eventBus.$emit('update-job-details', jobId, resourceId)
+          eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
-          const currentPage = this.$router.currentRoute.path
+          const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete', action)
+            eventBus.emit('async-job-complete', action)
           }
           successMethod(result)
         } else if (result.jobstatus === 2) {
@@ -126,29 +127,31 @@ export const pollJobPlugin = {
           }
           var errMessage = errorMessage
           if (action && action.label) {
-            errMessage = i18n.t(action.label)
+            errMessage = i18n.global.t(action.label)
           }
           var desc = result.jobresult.errortext
           if (name) {
             desc = `(${name}) ${desc}`
           }
+          let onClose = () => {}
           if (!bulkAction) {
             let countNotify = store.getters.countNotify
             countNotify++
             store.commit('SET_COUNT_NOTIFY', countNotify)
-            notification.error({
-              top: '65px',
-              message: errMessage,
-              description: desc,
-              key: jobId,
-              duration: 0,
-              onClose: () => {
-                let countNotify = store.getters.countNotify
-                countNotify > 0 ? countNotify-- : countNotify = 0
-                store.commit('SET_COUNT_NOTIFY', countNotify)
-              }
-            })
+            onClose = () => {
+              let countNotify = store.getters.countNotify
+              countNotify > 0 ? countNotify-- : countNotify = 0
+              store.commit('SET_COUNT_NOTIFY', countNotify)
+            }
           }
+          notification.error({
+            top: '65px',
+            message: errMessage,
+            description: desc,
+            key: jobId,
+            duration: 0,
+            onClose: onClose
+          })
           store.dispatch('AddHeaderNotice', {
             key: jobId,
             title,
@@ -156,12 +159,12 @@ export const pollJobPlugin = {
             status: 'failed',
             duration: 2
           })
-          eventBus.$emit('update-job-details', jobId, resourceId)
+          eventBus.emit('update-job-details', { jobId, resourceId })
           // Ensure we refresh on the same / parent page
-          const currentPage = this.$router.currentRoute.path
+          const currentPage = this.$router.currentRoute.value.path
           const samePage = options.originalPage === currentPage || options.originalPage.startsWith(currentPage + '/')
           if (samePage && (!action || !('isFetchData' in action) || (action.isFetchData))) {
-            eventBus.$emit('async-job-complete', action)
+            eventBus.emit('async-job-complete', action)
           }
           errorMethod(result)
         } else if (result.jobstatus === 0) {
@@ -184,7 +187,7 @@ export const pollJobPlugin = {
           store.commit('SET_COUNT_NOTIFY', countNotify)
           notification.error({
             top: '65px',
-            message: i18n.t('label.error'),
+            message: i18n.global.t('label.error'),
             description: catchMessage,
             duration: 0,
             onClose: () => {
@@ -202,14 +205,14 @@ export const pollJobPlugin = {
 }
 
 export const notifierPlugin = {
-  install (Vue) {
-    Vue.prototype.$notifyError = function (error) {
+  install (app) {
+    app.config.globalProperties.$notifyError = function (error) {
       console.log(error)
-      var msg = i18n.t('message.request.failed')
+      var msg = i18n.global.t('message.request.failed')
       var desc = ''
       if (error && error.response) {
         if (error.response.status) {
-          msg = `${i18n.t('message.request.failed')} (${error.response.status})`
+          msg = `${i18n.global.t('message.request.failed')} (${error.response.status})`
         }
         if (error.message) {
           desc = error.message
@@ -240,7 +243,7 @@ export const notifierPlugin = {
       })
     }
 
-    Vue.prototype.$notification = {
+    app.config.globalProperties.$notification = {
       defaultConfig: {
         top: '65px',
         onClose: () => {
@@ -255,28 +258,28 @@ export const notifierPlugin = {
         store.commit('SET_COUNT_NOTIFY', countNotify)
       },
       info: (config) => {
-        Vue.prototype.$notification.setCountNotify()
-        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
         notification.info(config)
       },
       error: (config) => {
-        Vue.prototype.$notification.setCountNotify()
-        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
         notification.error(config)
       },
       success: (config) => {
-        Vue.prototype.$notification.setCountNotify()
-        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
         notification.success(config)
       },
       warning: (config) => {
-        Vue.prototype.$notification.setCountNotify()
-        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
         notification.warning(config)
       },
       warn: (config) => {
-        Vue.prototype.$notification.setCountNotify()
-        config = Object.assign({}, Vue.prototype.$notification.defaultConfig, config)
+        app.config.globalProperties.$notification.setCountNotify()
+        config = Object.assign({}, app.config.globalProperties.$notification.defaultConfig, config)
         notification.warn(config)
       },
       close: (key) => notification.close(key),
@@ -286,8 +289,8 @@ export const notifierPlugin = {
 }
 
 export const toLocaleDatePlugin = {
-  install (Vue) {
-    Vue.prototype.$toLocaleDate = function (date) {
+  install (app) {
+    app.config.globalProperties.$toLocaleDate = function (date) {
       var timezoneOffset = this.$store.getters.timezoneoffset
       if (this.$store.getters.usebrowsertimezone) {
         // Since GMT+530 is returned as -330 (mins to GMT)
@@ -306,8 +309,8 @@ export const toLocaleDatePlugin = {
 }
 
 export const configUtilPlugin = {
-  install (Vue) {
-    Vue.prototype.$applyDocHelpMappings = function (docHelp) {
+  install (app) {
+    app.config.globalProperties.$applyDocHelpMappings = function (docHelp) {
       var docHelpMappings = this.$config.docHelpMappings
       if (docHelp && docHelpMappings &&
         docHelpMappings.constructor === Object && Object.keys(docHelpMappings).length > 0) {
@@ -324,8 +327,8 @@ export const configUtilPlugin = {
 }
 
 export const showIconPlugin = {
-  install (Vue) {
-    Vue.prototype.$showIcon = function (resource) {
+  install (app) {
+    app.config.globalProperties.$showIcon = function (resource) {
       var resourceType = this.$route.path.split('/')[1]
       if (resource) {
         resourceType = resource
@@ -340,8 +343,8 @@ export const showIconPlugin = {
 }
 
 export const resourceTypePlugin = {
-  install (Vue) {
-    Vue.prototype.$getResourceType = function () {
+  install (app) {
+    app.config.globalProperties.$getResourceType = function () {
       const type = this.$route.path.split('/')[1]
       if (type === 'vm') {
         return 'UserVM'
@@ -353,12 +356,68 @@ export const resourceTypePlugin = {
         return type
       }
     }
+
+    app.config.globalProperties.$getRouteFromResourceType = function (resourceType) {
+      switch (resourceType) {
+        case 'VirtualMachine':
+          return 'vm'
+        case 'DomainRouter':
+          return 'router'
+        case 'ConsoleProxy':
+          return 'systemvm'
+        case 'User':
+          return 'accountuser'
+        case 'Network':
+          return 'guestnetwork'
+        case 'ServiceOffering':
+          return 'computeoffering'
+        case 'IpAddress':
+          return 'publicip'
+        case 'NetworkAcl':
+          return 'acllist'
+        case 'SystemVm':
+        case 'PhysicalNetwork':
+        case 'Backup':
+        case 'SecurityGroup':
+        case 'StoragePool':
+        case 'ImageStore':
+        case 'Template':
+        case 'Iso':
+        case 'Host':
+        case 'Volume':
+        case 'Account':
+        case 'Snapshot':
+        case 'Project':
+        case 'Domain':
+        case 'DiskOffering':
+        case 'NetworkOffering':
+        case 'VpcOffering':
+        case 'BackupOffering':
+        case 'Zone':
+        case 'Vpc':
+        case 'VmSnapshot':
+        case 'Pod':
+        case 'Cluster':
+        case 'Role':
+        case 'AffinityGroup':
+        case 'VpnCustomerGateway':
+          return resourceType.toLowerCase()
+      }
+      return ''
+    }
+
+    app.config.globalProperties.$getIconFromResourceType = function (resourceType) {
+      var routePath = this.$getRouteFromResourceType(resourceType)
+      if (!routePath) return ''
+      var route = this.$router.resolve('/' + routePath)
+      return route?.meta?.icon || ''
+    }
   }
 }
 
 export const apiMetaUtilPlugin = {
-  install (Vue) {
-    Vue.prototype.$getApiParams = function () {
+  install (app) {
+    app.config.globalProperties.$getApiParams = function () {
       var apiParams = {}
       for (var argument of arguments) {
         var apiConfig = this.$store.getters.apis[argument] || {}
@@ -373,14 +432,20 @@ export const apiMetaUtilPlugin = {
   }
 }
 
+export const localesPlugin = {
+  install (app) {
+    app.config.globalProperties.$t = i18n.global.t
+  }
+}
+
 const KB = 1024
 const MB = 1024 * KB
 const GB = 1024 * MB
 const TB = 1024 * GB
 
 export const fileSizeUtilPlugin = {
-  install (Vue) {
-    Vue.prototype.$bytesToHumanReadableSize = function (bytes) {
+  install (app) {
+    app.config.globalProperties.$bytesToHumanReadableSize = function (bytes) {
       if (bytes == null) {
         return ''
       }

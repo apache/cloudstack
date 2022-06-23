@@ -18,7 +18,9 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleKeyboardSubmit">
     <a-alert type="warning">
-      <span slot="message" v-html="$t('message.migrate.instance.to.ps')" />
+      <template #message>
+        <span v-html="$t('message.migrate.instance.to.ps')" />
+      </template>
     </a-alert>
     <a-radio-group
       v-if="migrateVmWithVolumeAllowed"
@@ -78,7 +80,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.migrateVmWithVolumeApiParams = this.$getApiParams('migrateVirtualMachineWithVolume')
   },
   computed: {

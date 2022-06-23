@@ -109,7 +109,7 @@ public interface VpcManager {
     Network
         createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled, String externalId)
+            Boolean displayNetworkEnabled, String externalId, String ip6Gateway, String ip6Cidr)
 
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 

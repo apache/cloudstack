@@ -5,16 +5,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" 
+"""
 Test cases relating to listVirtualMachine() relating to parameters - id,listall,isrecursive,account and domainid
 """
 # Import Local Modules
@@ -535,7 +535,7 @@ class TestVMList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## Domain Admin - Test cases  without passing listall paramter
+    ## Domain Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_as_domainadmin(self):
@@ -1281,7 +1281,7 @@ class TestVMList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ## ROOT Admin - Test cases  without passing listall paramter
+    ## ROOT Admin - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_as_rootadmin(self):
@@ -1996,7 +1996,7 @@ class TestVMList(cloudstackTestCase):
                          True,
                          "Account access check failed!!")
 
-    ##  Regular User  - Test cases  without passing listall paramter
+    ##  Regular User  - Test cases  without passing listall parameter
 
     @attr("simulator_only", tags=["advanced"], required_hardware="false")
     def test_listVM_as_regularuser(self):

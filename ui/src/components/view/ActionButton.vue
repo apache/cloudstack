@@ -18,7 +18,7 @@
 <template>
   <span class="row-action-button">
     <a-tooltip arrowPointAtCenter placement="bottomRight" v-if="resource && resource.id && dataView">
-      <template slot="title">
+      <template #title>
         {{ $t('label.view.console') }}
       </template>
       <console :resource="resource" :size="size" />
@@ -28,7 +28,7 @@
       :key="actionIndex"
       arrowPointAtCenter
       placement="bottomRight">
-      <template slot="title">
+      <template #title>
         {{ $t(action.label) }}
       </template>
       <a-badge
@@ -42,17 +42,18 @@
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false" >
         <a-button
-          :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-          :shape="!dataView && action.icon === 'plus' ? 'round' : 'circle'"
+          :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
+          :shape="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon) ? 'round' : 'circle'"
+          :danger="dangerIconList.includes(action.icon)"
           style="margin-left: 5px"
           :size="size"
           v-shortkey="action.shortKey"
           @shortkey="execAction(action)"
           @click="execAction(action)">
-          <span v-if="!dataView && action.icon === 'plus'">
+          <span v-if="!dataView && ['PlusOutlined', 'plus-outlined'].includes(action.icon)">
             {{ $t(action.label) }}
           </span>
-          <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+          <render-icon v-if="(typeof action.icon === 'string')" :icon="action.icon" />
           <font-awesome-icon v-else :icon="action.icon" />
           <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey.length ? action.shortKey[0] : '' }}</span>
         </a-button>
@@ -64,17 +65,18 @@
             (dataView && action.dataView && ('show' in action ? action.show(resource, $store.getters) : true))
           )"
         :disabled="'disabled' in action ? action.disabled(resource, $store.getters) : false"
-        :type="action.icon === 'delete' ? 'danger' : (action.icon === 'plus' ? 'primary' : 'default')"
-        :shape="!dataView && ['plus', 'user-add'].includes(action.icon) ? 'round' : 'circle'"
+        :type="(primaryIconList.includes(action.icon) ? 'primary' : 'default')"
+        :danger="dangerIconList.includes(action.icon)"
+        :shape="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon) ? 'round' : 'circle'"
         style="margin-left: 5px"
         :size="size"
         v-shortkey="action.shortKey"
         @shortkey="execAction(action)"
         @click="execAction(action)">
-        <span v-if="!dataView && ['plus', 'user-add'].includes(action.icon)">
+        <span v-if="!dataView && ['PlusOutlined', 'plus-outlined', 'UserAddOutlined', 'user-add-outlined'].includes(action.icon)">
           {{ $t(action.label) }}
         </span>
-        <a-icon v-if="(typeof action.icon === 'string')" :type="action.icon" />
+        <render-icon v-if="(typeof action.icon === 'string')" :icon="action.icon" />
         <font-awesome-icon v-else :icon="action.icon" />
         <span class="view-shortkey" v-if="$store.getters.showshortkeys">{{ action.shortKey.length ? action.shortKey[0] : '' }}</span>
       </a-button>
@@ -96,7 +98,7 @@ export default {
       actionBadge: {}
     }
   },
-  mounted () {
+  created () {
     this.handleShowBadge()
   },
   props: {
@@ -138,11 +140,22 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (!newItem || !newItem.id) {
-        return
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (!newItem || !newItem.id) {
+          return
+        }
+        this.handleShowBadge()
       }
-      this.handleShowBadge()
+    }
+  },
+  computed: {
+    primaryIconList () {
+      return ['PlusOutlined', 'plus-outlined', 'DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
+    },
+    dangerIconList () {
+      return ['DeleteOutlined', 'delete-outlined', 'UsergroupDeleteOutlined', 'usergroup-delete-outlined']
     }
   },
   methods: {
@@ -192,8 +205,8 @@ export default {
 
         Promise.all(arrAsync).then(response => {
           for (let j = 0; j < response.length; j++) {
-            this.$set(this.actionBadge, response[j].api, {})
-            this.$set(this.actionBadge[response[j].api], 'badgeNum', response[j].count)
+            this.actionBadge[response[j].api] = {}
+            this.actionBadge[response[j].api].badgeNum = response[j].count
           }
         }).catch(() => {})
       }
@@ -203,23 +216,23 @@ export default {
 </script>
 
 <style scoped >
-.button-action-badge {
-  margin-left: 5px;
-}
-.view-shortkey {
- position: absolute;
- bottom: 20px;
- right: 5px;
- font-size: 10px;
- background-color: rgba(0, 0, 0, 0.9);
- padding: 2px 6px 2px 6px;
- border-radius: 4px;
- color: #e9e9e9;
- margin: 5px;
- box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5), -1px 0px 3px  rgba(0, 0, 0, 0.9);
-}
-/deep/.button-action-badge .ant-badge-count {
-  right: 10px;
-  z-index: 8;
-}
+  .button-action-badge {
+    margin-left: 5px;
+  }
+  .view-shortkey {
+    position: absolute;
+    bottom: 20px;
+    right: 5px;
+    font-size: 10px;
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 2px 6px 2px 6px;
+    border-radius: 4px;
+    color: #e9e9e9;
+    margin: 5px;
+    box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5), -1px 0px 3px  rgba(0, 0, 0, 0.9);
+  }
+  :deep(.button-action-badge) .ant-badge-count {
+    right: 10px;
+    z-index: 8;
+  }
 </style>

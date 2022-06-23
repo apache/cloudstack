@@ -794,7 +794,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             LOGGER.debug(String.format("Volume %s needs to be migrated", volumeVO.getUuid()));
-            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(profile.getVolumeId(), null, null, null, null, false);
+            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(profile.getVolumeId(), null, null, null, null, false, true);
             if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
                 cleanupFailedImportVM(vm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool(s) found", userVm.getInstanceName(), volumeVO.getUuid()));
@@ -999,6 +999,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             diskProfileStoragePoolList.add(importDisk(rootDisk, userVm, cluster, diskOffering, Volume.Type.ROOT, String.format("ROOT-%d", userVm.getId()),
                     (rootDisk.getCapacity() / Resource.ResourceType.bytesToGiB), minIops, maxIops,
                     template, owner, null));
+            long deviceId = 1L;
             for (UnmanagedInstanceTO.Disk disk : dataDisks) {
                 if (disk.getCapacity() == null || disk.getCapacity() == 0) {
                     throw new InvalidParameterValueException(String.format("Disk ID: %s size is invalid", rootDisk.getDiskId()));
@@ -1006,7 +1007,8 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 DiskOffering offering = diskOfferingDao.findById(dataDiskOfferingMap.get(disk.getDiskId()));
                 diskProfileStoragePoolList.add(importDisk(disk, userVm, cluster, offering, Volume.Type.DATADISK, String.format("DATA-%d-%s", userVm.getId(), disk.getDiskId()),
                         (disk.getCapacity() / Resource.ResourceType.bytesToGiB), offering.getMinIops(), offering.getMaxIops(),
-                        template, owner, null));
+                        template, owner, deviceId));
+                deviceId++;
             }
         } catch (Exception e) {
             LOGGER.error(String.format("Failed to import volumes while importing vm: %s", instanceName), e);
@@ -1036,7 +1038,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Override
     public ListResponse<UnmanagedInstanceResponse> listUnmanagedInstances(ListUnmanagedInstancesCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
         }
         final Long clusterId = cmd.getClusterId();
@@ -1092,7 +1094,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
     @Override
     public UserVmResponse importUnmanagedInstance(ImportUnmanagedInstanceCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
-        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() != Account.Type.ADMIN) {
             throw new PermissionDeniedException(String.format("Cannot perform this operation, Calling account is not root admin: %s", caller.getUuid()));
         }
         final Long clusterId = cmd.getClusterId();
@@ -1127,7 +1129,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
             if (template == null) {
                 template = createDefaultDummyVmImportTemplate();
                 if (template == null) {
-                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid paramter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
+                    throw new InvalidParameterValueException(String.format("Default VM import template with unique name: %s for hypervisor: %s cannot be created. Please use templateid parameter for import", VM_IMPORT_DEFAULT_TEMPLATE_NAME, cluster.getHypervisorType().toString()));
                 }
             }
         } else {

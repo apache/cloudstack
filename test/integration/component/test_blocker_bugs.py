@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -177,8 +177,8 @@ class TestTemplate(cloudstackTestCase):
         #3. Deploy VM should return password set in template.
 
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
-        self.services["template"]["url"] = builtin_info[0] 
-        self.services["template"]["hypervisor"] = builtin_info[1]     
+        self.services["template"]["url"] = builtin_info[0]
+        self.services["template"]["hypervisor"] = builtin_info[1]
         self.services["template"]["format"] = builtin_info[2]
         temp = self.services["template"]
         self.debug("Registering a new template")
@@ -940,7 +940,7 @@ class TestTemplates(cloudstackTestCase):
         # 2. Perform snapshot on the root disk of this VM.
         # 3. Create a template from snapshot.
         # 4. Delete the template and create a new template with same name
-        # 5. Template should be created succesfully
+        # 5. Template should be created successfully
 
         # Create a snapshot from the ROOTDISK
         if self.hypervisor.lower() in ['hyperv']:

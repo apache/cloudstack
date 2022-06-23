@@ -108,8 +108,8 @@ class TestlistTemplates(cloudstackTestCase):
                               name,value )
         self.RestartServers()
         time.sleep(self.testdata["sleep"])
-      
-      
+
+
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_01_CS40139_listtemplate_with_different_pagesize(self):
         """
@@ -135,7 +135,7 @@ class TestlistTemplates(cloudstackTestCase):
                               domainid=self.domain.id,
                               max=1000
                               )
-        
+
         for i in range(0, 850):
             template_created = Template.register(
                 self.apiclient,
@@ -219,7 +219,7 @@ class TestlistTemplates(cloudstackTestCase):
 
         """
         self.updateConfigurAndRestart("allow.public.user.templates", "false")
-        
+
         user_account = Account.create(
             self.apiclient,
             self.testdata["account2"],

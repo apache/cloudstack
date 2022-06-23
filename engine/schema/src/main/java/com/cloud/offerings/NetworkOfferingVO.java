@@ -402,12 +402,12 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.state = State.Enabled;
     }
 
-    public NetworkOfferingVO(String name, Network.GuestType guestType) {
+    public NetworkOfferingVO(String name, Network.GuestType guestType, boolean specifyVlan) {
         this(name,
             "System Offering for " + name,
             TrafficType.Guest,
             true,
-            true,
+            specifyVlan,
             0,
             0,
             true,

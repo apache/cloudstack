@@ -667,7 +667,6 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
             s_logger.info("Keypairs already in database, updating local copy");
             updateKeyPairsOnDisk(homeDir);
         }
-        s_logger.info("Going to update systemvm iso with generated keypairs if needed");
         try {
             copyPrivateKeyToHosts(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         } catch (CloudRuntimeException e) {
@@ -742,13 +741,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         s_logger.info("Trying to copy private keys to hosts");
         String injectScript = getInjectScript();
         String scriptPath = Script.findScript("", injectScript);
-        String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
         if (scriptPath == null) {
             throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
         }
-        if (systemVmIsoPath == null) {
-            throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
-        }
+
         Script command = null;
         if(isOnWindows()) {
             command = new Script("python", s_logger);
@@ -966,8 +962,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated, true);
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOfferingWithoutVlan = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOfferingWithoutVlan, GuestType.Isolated, false);
+        privateGatewayNetworkOfferingWithoutVlan = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOfferingWithoutVlan);
 
         //populate providers
         final Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();

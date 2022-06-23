@@ -275,7 +275,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while dealing with vm questions.");
+                        s_logger.debug("[ignored] interrupted while dealing with vm questions.");
                     }
                 }
                 s_logger.info("VM Question monitor stopped");
@@ -544,7 +544,7 @@ public class VirtualMachineMO extends BaseMO {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for snapshot to be done.");
+                    s_logger.debug("[ignored] interrupted while waiting for snapshot to be done.");
                 }
             }
 
@@ -1651,7 +1651,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while handling vm question about iso detach.");
+                        s_logger.debug("[ignored] interrupted while handling vm question about iso detach.");
                     }
                 }
                 s_logger.info("VM Question monitor stopped");
@@ -3367,7 +3367,7 @@ public class VirtualMachineMO extends BaseMO {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while handling vm question about umount tools install.");
+                        s_logger.debug("[ignored] interrupted while handling vm question about umount tools install.");
                     }
                 }
 
@@ -3647,6 +3647,24 @@ public class VirtualMachineMO extends BaseMO {
             }
         }
         return count;
+    }
+
+    public String getExternalDiskUUID(String datastoreVolumePath) throws Exception{
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (CollectionUtils.isEmpty(devices) || datastoreVolumePath == null) {
+            return null;
+        }
+
+        for (VirtualDevice device : devices) {
+            if (device instanceof VirtualDisk && device.getBacking() instanceof VirtualDiskFlatVer2BackingInfo){
+                VirtualDiskFlatVer2BackingInfo backingInfo = (VirtualDiskFlatVer2BackingInfo) device.getBacking();
+                if(backingInfo.getFileName().equals(datastoreVolumePath)){
+                   return backingInfo.getUuid();
+                }
+            }
+        }
+
+        return null;
     }
 
     public boolean consolidateVmDisks() throws Exception {

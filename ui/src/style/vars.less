@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+@import "common/function";
+
 @logo-width: 256px;
 @logo-height: 64px;
 @banner-width: 450px;
@@ -44,6 +46,11 @@
 @border-radius-base: 4px;
 @box-shadow-base: 0 2px 8px rgba(0, 0, 0, 0.15);
 @loading-color: @primary-color;
+
+// .ant-layout.ant-layout-has-sider>.ant-layout,
+.ant-layout.ant-layout-has-sider>.ant-layout-content {
+  width: auto;
+}
 
 .ant-layout-sider-children .logo-image {
   width: @logo-width;
@@ -107,6 +114,10 @@ a {
   background: @navigation-background-color;
 }
 
+.ant-menu-submenu-popup {
+  left: 83px !important;
+}
+
 .ant-menu-submenu-popup.ant-menu-light,
 .ant-menu-light > .ant-menu {
   background: @navigation-background-color;
@@ -156,8 +167,33 @@ a {
   }
 }
 
-.kubernet-icon path {
-  color: @navigation-text-color;
+.ant-menu-item .anticon .custom-icon {
+  fill: @navigation-text-color;
+}
+
+.ant-menu-dark .ant-menu-item {
+  .anticon .custom-icon {
+    fill: @project-nav-text-color;
+  }
+
+  &.ant-menu-item-selected {
+    .anticon .custom-icon {
+      fill: #fff;
+    }
+  }
+}
+
+.ant-menu-item a {
+  .anticon .custom-icon {
+    transition: fill 0.3s ease-out;
+  }
+  &:hover .anticon .custom-icon {
+    fill: @primary-color;
+  }
+}
+
+.ant-menu-dark .ant-menu-item:hover .anticon .custom-icon {
+  fill: #fff;
 }
 
 .ant-menu-item:hover,
@@ -167,6 +203,10 @@ a {
 .ant-menu-submenu-title:hover
 {
   color: @primary-color;
+
+  .custom-icon path {
+    color: @primary-color;
+  }
 }
 
 .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
@@ -253,6 +293,44 @@ a {
   .custom-icon path {
     color: @primary-color;
   }
+}
+
+.ant-menu {
+  &-inline-collapsed {
+    .ant-menu-item,
+    .ant-menu-submenu-title {
+      left: 0;
+      text-overflow: clip;
+      margin-right: 10px;
+
+      .ant-menu-submenu-arrow {
+        display: none;
+      }
+    }
+  }
+
+  &-inline-collapsed-tooltip {
+    .ant-tooltip-inner {
+      a {
+        color: #c6c3c3;
+      }
+
+      .anticon {
+        margin-right: 5px;
+      }
+    }
+  }
+}
+
+.ant-menu-item .ant-menu-item-icon + span,
+.ant-menu-item .anticon + span,
+.ant-menu-submenu-title .ant-menu-item-icon + span,
+.ant-menu-submenu-title .anticon + span {
+  margin-left: 0;
+}
+
+.ant-form-item-label > label > .anticon {
+  margin-left: 5px;
 }
 
 .action-button {
@@ -359,6 +437,22 @@ a {
   }
 }
 
+.custom-suffix-icon {
+  color: #999;
+}
+
+.ant-dropdown-menu-item a {
+  color: @text-color;
+}
+
+.ant-list-item-meta-content {
+  width: auto;
+}
+
+.ant-select-arrow .anticon {
+  vertical-align: top;
+}
+
 .button-clear-notification {
   position: fixed;
   right: 287px;
@@ -371,4 +465,22 @@ a {
 .ant-table-thead > tr:hover > td,
 .ant-table-tbody > tr:hover > td {
   background: @primary-color-light !important;
+}
+
+.ant-divider, .ant-card-bordered {
+  border-color: #e8e8e8 !important;
+}
+
+.ant-list-sm .ant-list-item {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
+}
+
+.ant-dropdown-menu-item:hover,
+.ant-dropdown-menu-submenu-title:hover {
+  background-color: color(~`colorPalette("@{primary-color}", 1)`) !important;
 }

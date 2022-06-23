@@ -25,8 +25,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.server.ResourceManagerUtil;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -40,11 +42,14 @@ import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.projects.ProjectVO;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -78,6 +83,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     AccountDao _accountDao;
     @Inject
     ResourceManagerUtil resourceManagerUtil;
+    @Inject
+    VolumeDao volumeDao;
+    @Inject
+    DataStoreManager dataStoreMgr;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -196,6 +205,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                             throw new CloudRuntimeException(String.format("tag %s already on %s with id %s", resourceTag.getKey(), resourceType.toString(), resourceId),e);
                         }
                         resourceTags.add(resourceTag);
+                        if (ResourceObjectType.UserVm.equals(resourceType)) {
+                            informStoragePoolForVmTags(id, key, value);
+                        }
                     }
                 }
             }
@@ -275,6 +287,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                     _resourceTagDao.remove(tagToRemove.getId());
                     s_logger.debug("Removed the tag '" + tagToRemove + "' for resources (" +
                             String.join(", ", resourceIds) + ")");
+                    if (ResourceObjectType.UserVm.equals(resourceType)) {
+                        informStoragePoolForVmTags(tagToRemove.getResourceId(), tagToRemove.getKey(), tagToRemove.getValue());
+                    }
                 }
             }
         });
@@ -291,5 +306,20 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     public Map<String, String> getTagsFromResource(ResourceObjectType type, long resourceId) {
         List<? extends ResourceTag> listResourceTags = listByResourceTypeAndId(type, resourceId);
         return listResourceTags == null ? null : listResourceTags.stream().collect(Collectors.toMap(ResourceTag::getKey, ResourceTag::getValue));
+    }
+
+
+    private void informStoragePoolForVmTags(long vmId, String key, String value) {
+        List<VolumeVO> volumeVos = volumeDao.findByInstance(vmId);
+        for (VolumeVO volume : volumeVos) {
+            DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+            if (dataStore == null || !(dataStore.getDriver() instanceof PrimaryDataStoreDriver)) {
+                continue;
+            }
+            PrimaryDataStoreDriver dataStoreDriver = (PrimaryDataStoreDriver) dataStore.getDriver();
+            if (dataStoreDriver.isVmTagsNeeded(key)) {
+                dataStoreDriver.provideVmTags(vmId, volume.getId(), value);
+            }
+        }
     }
 }

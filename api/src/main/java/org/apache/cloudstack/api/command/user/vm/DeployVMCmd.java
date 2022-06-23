@@ -31,7 +31,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
@@ -607,7 +607,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
         if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
-            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+            throw new InvalidParameterValueException("diskofferingid parameter can't be specified along with datadisktemplatetodiskofferinglist parameter");
         }
         if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
             return new HashMap<Long, DiskOffering>();
@@ -700,8 +700,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.VirtualMachine;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

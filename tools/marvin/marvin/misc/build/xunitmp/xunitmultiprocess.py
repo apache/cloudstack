@@ -137,7 +137,7 @@ class Xunitmp(Plugin):
             taken = time() - self._timer
         else:
             # test died before it ran (probably error in setup())
-            # or success/failure added before test started probably 
+            # or success/failure added before test started probably
             # due to custom TestResult munging
             taken = 0.0
         return taken
@@ -215,7 +215,7 @@ class Xunitmp(Plugin):
             self.xunitstream.append(xml)
         except Exception as e:
             print('xunitmultiprocess add stream len=%d,%s'%(len(xml),str(e)))
-            
+
     def addError(self, test, err, capt=None):
         """Add error output to Xunit report.
         """

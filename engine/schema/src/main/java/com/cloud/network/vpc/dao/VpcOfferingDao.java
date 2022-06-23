@@ -18,6 +18,7 @@ package com.cloud.network.vpc.dao;
 
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.NetUtils;
 
 public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long> {
     /**
@@ -28,4 +29,8 @@ public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long> {
      * @return VpcOfferingVO
      */
     VpcOfferingVO findByUniqueName(String uniqueName);
+
+    NetUtils.InternetProtocol getVpcOfferingInternetProtocol(long offeringId);
+
+    boolean isIpv6Supported(long offeringId);
 }

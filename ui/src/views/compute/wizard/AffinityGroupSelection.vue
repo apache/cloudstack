@@ -21,7 +21,7 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-table
       :loading="loading"
@@ -46,7 +46,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>

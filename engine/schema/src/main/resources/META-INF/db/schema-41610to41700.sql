@@ -220,6 +220,24 @@ CREATE VIEW `cloud`.`service_offering_view` AS
     GROUP BY
         `service_offering`.`id`;
 
+
+--;
+-- Stored procedure to do idempotent column add;
+-- This is copied from schema-41000to41100.sql
+--;
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200),
+    IN in_column_name VARCHAR(200),
+    IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes','external_uuid', 'VARCHAR(40) DEFAULT null ');
+
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
     SELECT
@@ -240,6 +258,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         volumes.format,
         volumes.path,
         volumes.chain_info,
+        volumes.external_uuid,
         account.id account_id,
         account.uuid account_uuid,
         account.account_name account_name,
@@ -539,6 +558,44 @@ FROM
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
 
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+
+-- table for network permissions
+CREATE TABLE  `cloud`.`network_permissions` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  INDEX `i_network_permission_network_id`(`network_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
+    SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
+        FROM `cloud`.`user_vm_details`
+        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
+        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
+        WHERE ssh_keypairs.account_id = vm_instance.account_id;
+
+ALTER TABLE `cloud`.`kubernetes_cluster` ADD COLUMN `security_group_id` bigint unsigned DEFAULT NULL,
+ADD CONSTRAINT `fk_kubernetes_cluster__security_group_id` FOREIGN KEY `fk_kubernetes_cluster__security_group_id`(`security_group_id`) REFERENCES `security_group`(`id`) ON DELETE CASCADE;
+
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`vm_stats`;
+CREATE TABLE `cloud`.`vm_stats` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `vm_id` bigint unsigned NOT NULL,
+  `mgmt_server_id` bigint unsigned NOT NULL,
+  `timestamp` datetime NOT NULL,
+  `vm_stats_data` text NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- PR#5984 Update name for global configuration vm.stats.increment.metrics
+Update configuration set name='vm.stats.increment.metrics' where name='vm.stats.increment.metrics.in.memory';
+
+ALTER TABLE `cloud`.`domain_router` ADD COLUMN `software_version` varchar(100) COMMENT 'Software version';
+
 DROP VIEW IF EXISTS `cloud`.`domain_router_view`;
 CREATE VIEW `cloud`.`domain_router_view` AS
     select
@@ -610,7 +667,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         domain_router.is_redundant_router is_redundant_router,
         domain_router.redundant_state redundant_state,
         domain_router.stop_pending stop_pending,
-        domain_router.role role
+        domain_router.role role,
+        domain_router.software_version software_version
     from
         `cloud`.`domain_router`
             inner join
@@ -642,13 +700,275 @@ CREATE VIEW `cloud`.`domain_router_view` AS
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
 
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'listConfigurations', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) SELECT UUID(), 3, 'updateConfiguration', 'ALLOW', (SELECT MAX(`sort_order`)+1 FROM `cloud`.`role_permissions`) ON DUPLICATE KEY UPDATE rule=rule;
+-- For IPv6 guest prefixes.
+CREATE TABLE `cloud`.`dc_ip6_guest_prefix` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) DEFAULT NULL,
+  `data_center_id` bigint(20) unsigned NOT NULL COMMENT 'zone it belongs to',
+  `prefix` varchar(255) NOT NULL COMMENT 'prefix of the ipv6 network',
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_dc_ip6_guest_prefix__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `uc_dc_ip6_guest_prefix__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`user_vm_details`(`vm_id`, `name`, `value`)
-    SELECT `user_vm_details`.`vm_id`, 'SSH.KeyPairNames', `ssh_keypairs`.`keypair_name`
-        FROM `cloud`.`user_vm_details`
-        INNER JOIN `cloud`.`ssh_keypairs` ON ssh_keypairs.public_key = user_vm_details.value
-        INNER JOIN `cloud`.`vm_instance` ON vm_instance.id = user_vm_details.vm_id
-        WHERE ssh_keypairs.account_id = vm_instance.account_id;
+CREATE TABLE `cloud`.`ip6_guest_prefix_subnet_network_map` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40) DEFAULT NULL,
+  `prefix_id` bigint(20) unsigned NOT NULL COMMENT 'ip6 guest prefix to which subnet belongs to',
+  `subnet` varchar(255) NOT NULL COMMENT 'subnet of the ipv6 network',
+  `network_id` bigint(20) unsigned DEFAULT NULL COMMENT 'network to which subnet is associated to',
+  `state` varchar(255) NOT NULL COMMENT 'state of the subnet network',
+  `updated` datetime default NULL,
+  `created` datetime default NULL,
+  `removed` datetime default NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__prefix_id` FOREIGN KEY (`prefix_id`) REFERENCES `dc_ip6_guest_prefix`(`id`),
+  CONSTRAINT `fk_ip6_guest_prefix_subnet_network_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `uc_ip6_guest_prefix_subnet_network_map__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Network offering with internet protocol
+DROP VIEW IF EXISTS `cloud`.`network_offering_view`;
+CREATE VIEW `cloud`.`network_offering_view` AS
+    SELECT
+        `network_offerings`.`id` AS `id`,
+        `network_offerings`.`uuid` AS `uuid`,
+        `network_offerings`.`name` AS `name`,
+        `network_offerings`.`unique_name` AS `unique_name`,
+        `network_offerings`.`display_text` AS `display_text`,
+        `network_offerings`.`nw_rate` AS `nw_rate`,
+        `network_offerings`.`mc_rate` AS `mc_rate`,
+        `network_offerings`.`traffic_type` AS `traffic_type`,
+        `network_offerings`.`tags` AS `tags`,
+        `network_offerings`.`system_only` AS `system_only`,
+        `network_offerings`.`specify_vlan` AS `specify_vlan`,
+        `network_offerings`.`service_offering_id` AS `service_offering_id`,
+        `network_offerings`.`conserve_mode` AS `conserve_mode`,
+        `network_offerings`.`created` AS `created`,
+        `network_offerings`.`removed` AS `removed`,
+        `network_offerings`.`default` AS `default`,
+        `network_offerings`.`availability` AS `availability`,
+        `network_offerings`.`dedicated_lb_service` AS `dedicated_lb_service`,
+        `network_offerings`.`shared_source_nat_service` AS `shared_source_nat_service`,
+        `network_offerings`.`sort_key` AS `sort_key`,
+        `network_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `network_offerings`.`state` AS `state`,
+        `network_offerings`.`guest_type` AS `guest_type`,
+        `network_offerings`.`elastic_ip_service` AS `elastic_ip_service`,
+        `network_offerings`.`eip_associate_public_ip` AS `eip_associate_public_ip`,
+        `network_offerings`.`elastic_lb_service` AS `elastic_lb_service`,
+        `network_offerings`.`specify_ip_ranges` AS `specify_ip_ranges`,
+        `network_offerings`.`inline` AS `inline`,
+        `network_offerings`.`is_persistent` AS `is_persistent`,
+        `network_offerings`.`internal_lb` AS `internal_lb`,
+        `network_offerings`.`public_lb` AS `public_lb`,
+        `network_offerings`.`egress_default_policy` AS `egress_default_policy`,
+        `network_offerings`.`concurrent_connections` AS `concurrent_connections`,
+        `network_offerings`.`keep_alive_enabled` AS `keep_alive_enabled`,
+        `network_offerings`.`supports_streched_l2` AS `supports_streched_l2`,
+        `network_offerings`.`supports_public_access` AS `supports_public_access`,
+        `network_offerings`.`for_vpc` AS `for_vpc`,
+        `network_offerings`.`service_package_id` AS `service_package_id`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
+    FROM
+        `cloud`.`network_offerings`
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `domain_details` ON `domain_details`.`network_offering_id` = `network_offerings`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `zone_details` ON `zone_details`.`network_offering_id` = `network_offerings`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`network_offering_details` AS `offering_details` ON `offering_details`.`network_offering_id` = `network_offerings`.`id` AND `offering_details`.`name`='internetProtocol'
+    GROUP BY
+        `network_offerings`.`id`;
+
+-- VPC offering with multi-domains and multi-zones
+DROP VIEW IF EXISTS `cloud`.`vpc_offering_view`;
+CREATE VIEW `cloud`.`vpc_offering_view` AS
+    SELECT
+        `vpc_offerings`.`id` AS `id`,
+        `vpc_offerings`.`uuid` AS `uuid`,
+        `vpc_offerings`.`name` AS `name`,
+        `vpc_offerings`.`unique_name` AS `unique_name`,
+        `vpc_offerings`.`display_text` AS `display_text`,
+        `vpc_offerings`.`state` AS `state`,
+        `vpc_offerings`.`default` AS `default`,
+        `vpc_offerings`.`created` AS `created`,
+        `vpc_offerings`.`removed` AS `removed`,
+        `vpc_offerings`.`service_offering_id` AS `service_offering_id`,
+        `vpc_offerings`.`supports_distributed_router` AS `supports_distributed_router`,
+        `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
+        `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
+        `vpc_offerings`.`sort_key` AS `sort_key`,
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name,
+        `offering_details`.value AS internet_protocol
+    FROM
+        `cloud`.`vpc_offerings`
+            LEFT JOIN
+        `cloud`.`vpc_offering_details` AS `domain_details` ON `domain_details`.`offering_id` = `vpc_offerings`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`vpc_offering_details` AS `zone_details` ON `zone_details`.`offering_id` = `vpc_offerings`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+            LEFT JOIN
+        `cloud`.`vpc_offering_details` AS `offering_details` ON `offering_details`.`offering_id` = `vpc_offerings`.`id` AND `offering_details`.`name`='internetprotocol'
+    GROUP BY
+        `vpc_offerings`.`id`;
+
+-- Allow storing IPv6 CIDRs
+ALTER TABLE `cloud`.`firewall_rules_cidrs` MODIFY COLUMN `source_cidr` varchar(43) DEFAULT NULL;
+ALTER TABLE `cloud`.`firewall_rules_dcidrs` MODIFY COLUMN `destination_cidr` varchar(43) DEFAULT NULL;
+
+--
+-- Management Server Status
+--
+ALTER TABLE `cloud`.`mshost` ADD CONSTRAINT `mshost_UUID` UNIQUE KEY (`uuid`);
+CREATE TABLE `cloud`.`mshost_status` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `ms_id` varchar(40) DEFAULT NULL COMMENT 'the uuid of the management server record',
+  `last_jvm_start` datetime DEFAULT NULL COMMENT 'the last start time for this MS',
+  `last_jvm_stop` datetime DEFAULT NULL COMMENT 'the last stop time for this MS',
+  `last_system_boot` datetime DEFAULT NULL COMMENT 'the last system boot time for the host of this MS',
+  `os_distribution` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL COMMENT 'the name of the os type running on the host of this MS',
+  `java_name` varchar(64) DEFAULT NULL COMMENT 'the name of the java distribution running this MS',
+  `java_version` varchar(64) DEFAULT NULL COMMENT 'the version of the java distribution running this MS',
+  `updated` datetime DEFAULT NULL,
+  `created` datetime DEFAULT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_ms_id` UNIQUE (`ms_id`),
+  CONSTRAINT `mshost_status_FK` FOREIGN KEY (`ms_id`) REFERENCES `mshost` (`uuid`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
+
+DROP VIEW IF EXISTS `cloud`.`mshost_view`;
+CREATE VIEW `cloud`.`mshost_view` AS
+select
+    `cloud`.`mshost`.`id` AS `id`,
+    `cloud`.`mshost`.`msid` AS `msid`,
+    `cloud`.`mshost`.`runid` AS `runid`,
+    `cloud`.`mshost`.`name` AS `name`,
+    `cloud`.`mshost`.`uuid` AS `uuid`,
+    `cloud`.`mshost`.`state` AS `state`,
+    `cloud`.`mshost`.`version` AS `version`,
+    `cloud`.`mshost`.`service_ip` AS `service_ip`,
+    `cloud`.`mshost`.`service_port` AS `service_port`,
+    `cloud`.`mshost`.`last_update` AS `last_update`,
+    `cloud`.`mshost`.`removed` AS `removed`,
+    `cloud`.`mshost`.`alert_count` AS `alert_count`,
+    `cloud`.`mshost_status`.`last_jvm_start` AS `last_jvm_start`,
+    `cloud`.`mshost_status`.`last_jvm_stop` AS `last_jvm_stop`,
+    `cloud`.`mshost_status`.`last_system_boot` AS `last_system_boot`,
+    `cloud`.`mshost_status`.`os_distribution` AS `os_distribution`,
+    `cloud`.`mshost_status`.`java_name` AS `java_name`,
+    `cloud`.`mshost_status`.`java_version` AS `java_version`
+from
+    (`cloud`.`mshost`
+left join `cloud`.`mshost_status` on
+    ((`cloud`.`mshost`.`uuid` = `cloud`.`mshost_status`.`ms_id`)));
+
+-- Alter event table to add resource_id and resource_type
+ALTER TABLE `cloud`.`event`
+    ADD COLUMN `resource_id` bigint unsigned COMMENT 'ID of the resource associated with the event' AFTER `domain_id`,
+    ADD COLUMN `resource_type` varchar(32) COMMENT 'Type of the resource associated with the event' AFTER `resource_id`;
+
+DROP VIEW IF EXISTS `cloud`.`event_view`;
+CREATE VIEW `cloud`.`event_view` AS
+    SELECT
+        event.id,
+        event.uuid,
+        event.type,
+        event.state,
+        event.description,
+        event.resource_id,
+        event.resource_type,
+        event.created,
+        event.level,
+        event.parameters,
+        event.start_id,
+        eve.uuid start_uuid,
+        event.user_id,
+        event.archived,
+        event.display,
+        user.username user_name,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name
+    FROM
+        `cloud`.`event`
+            INNER JOIN
+        `cloud`.`account` ON event.account_id = account.id
+            INNER JOIN
+        `cloud`.`domain` ON event.domain_id = domain.id
+            INNER JOIN
+        `cloud`.`user` ON event.user_id = user.id
+            LEFT JOIN
+        `cloud`.`projects` ON projects.project_account_id = event.account_id
+            LEFT JOIN
+        `cloud`.`event` eve ON event.start_id = eve.id;
+
+-- Add XenServer 8.2.1 hypervisor capabilities
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) VALUES (UUID(), 'XenServer', '8.2.1', 1000, 253, 64, 1);
+
+-- Copy XenServer 8.2.0 hypervisor guest OS mappings to XenServer 8.2.1
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.2.1', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.2.0';
+
+DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
+CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
+    IN guest_os_category_id bigint(20) unsigned,
+    IN guest_os_display_name VARCHAR(255),
+    IN guest_os_hypervisor_hypervisor_type VARCHAR(32),
+    IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
+    IN guest_os_hypervisor_guest_os_name VARCHAR(255)
+        )
+BEGIN
+INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created)
+SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
+FROM    DUAL
+WHERE 	not exists( SELECT  1
+                     FROM    cloud.guest_os
+                     WHERE   cloud.guest_os.category_id = guest_os_category_id
+                       AND     cloud.guest_os.display_name = guest_os_display_name)
+
+;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created)
+     SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
+     FROM 	cloud.guest_os
+     WHERE 	guest_os.category_id = guest_os_category_id
+       AND 	guest_os.display_name = guest_os_display_name
+       AND	NOT EXISTS (SELECT  1
+                          FROM    cloud.guest_os_hypervisor as hypervisor
+                          WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type
+                            AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
+                            AND     hypervisor.guest_os_id = guest_os.id
+                            AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)
+;END;
+
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (64-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (32-bit)', 'XenServer', '8.2.1', 'Debian Bullseye 11');

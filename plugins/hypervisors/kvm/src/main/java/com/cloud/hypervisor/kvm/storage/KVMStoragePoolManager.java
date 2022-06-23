@@ -325,7 +325,7 @@ public class KVMStoragePoolManager {
             try {
                 Thread.sleep(3000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] interupted while trying to get storage pool.");
+                s_logger.debug("[ignored] interrupted while trying to get storage pool.");
             }
             cnt++;
         }
@@ -417,11 +417,6 @@ public class KVMStoragePoolManager {
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
         return adaptor.copyPhysicalDisk(disk, name, destPool, timeout);
-    }
-
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.createDiskFromSnapshot(snapshot, snapshotName, name, destPool, timeout);
     }
 
     public KVMPhysicalDisk createDiskWithTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size,

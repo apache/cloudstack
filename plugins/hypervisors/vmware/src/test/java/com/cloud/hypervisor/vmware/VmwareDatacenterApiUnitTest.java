@@ -181,7 +181,7 @@ public class VmwareDatacenterApiUnitTest {
         podId = 1L;
 
         AccountVO acct = new AccountVO(200L);
-        acct.setType(Account.ACCOUNT_TYPE_ADMIN);
+        acct.setType(Account.Type.ADMIN);
         acct.setAccountName("admin");
         acct.setDomainId(domainId);
 

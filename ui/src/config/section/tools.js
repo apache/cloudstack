@@ -19,15 +19,14 @@ import store from '@/store'
 export default {
   name: 'tools',
   title: 'label.tools',
-  icon: 'tool',
   shortKey: ['shift', 'x'],
-  permission: ['listInfrastructure'],
+  icon: 'tool-outlined',
   children: [
     {
       name: 'comment',
       title: 'label.comments',
-      icon: 'message',
       shortKey: ['x', 'c'],
+      icon: 'message-outlined',
       docHelp: 'adminguide/events.html',
       permission: ['listAnnotations'],
       columns: () => {
@@ -46,7 +45,7 @@ export default {
       actions: [
         {
           api: 'removeAnnotation',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.annotation',
           message: 'message.remove.annotation',
           dataView: false,
@@ -66,8 +65,8 @@ export default {
     {
       name: 'manageinstances',
       title: 'label.action.import.export.instances',
-      icon: 'interaction',
       shortKey: ['x', 'a'],
+      icon: 'interaction-outlined',
       docHelp: 'adminguide/virtual_machines.html#importing-and-unmanaging-virtual-machine',
       resourceType: 'UserVm',
       permission: ['listInfrastructure', 'listUnmanagedInstances'],

@@ -21,6 +21,7 @@ import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.net.NetUtils;
 
 @DB()
 public class MockVpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao {
@@ -38,4 +39,13 @@ public class MockVpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> 
         return vo;
     }
 
+    @Override
+    public NetUtils.InternetProtocol getVpcOfferingInternetProtocol(long offeringId) {
+        return null;
+    }
+
+    @Override
+    public boolean isIpv6Supported(long offeringId) {
+        return false;
+    }
 }

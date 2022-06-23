@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,7 +27,7 @@ class OvmVifDecoder(json.JSONDecoder):
         vif.mac = deDict['mac']
         vif.bridge = deDict['bridge']
         return vif
-    
+
 class OvmVifEncoder(json.JSONEncoder):
     def default(self, obj):
         if not isinstance(obj, OvmVif): raise Exception("%s is not instance of OvmVif"%type(obj))
@@ -36,7 +36,7 @@ class OvmVifEncoder(json.JSONEncoder):
         safeDictSet(obj, dct, 'bridge')
         safeDictSet(obj, dct, 'type')
         safeDictSet(obj, dct, 'name')
-        return dct    
+        return dct
 
 def fromOvmVif(vif):
     return normalizeToGson(json.dumps(vif, cls=OvmVifEncoder))
@@ -60,6 +60,6 @@ class OvmVif(OvmObject):
     bridge = ''
     type = ''
     mode = ''
-    
+
     def toXenString(self):
         return "%s,%s,%s"%(self.mac, self.bridge, self.type)

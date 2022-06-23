@@ -18,31 +18,31 @@
 export default {
   name: 'config',
   title: 'label.configuration',
-  icon: 'setting',
   shortKey: ['shift', 'g'],
+  icon: 'setting-outlined',
   permission: ['listConfigurations', 'listInfrastructure'],
   children: [
     {
       name: 'globalsetting',
       title: 'label.global.settings',
-      icon: 'setting',
       shortKey: ['g', 's'],
+      icon: 'setting-outlined',
       permission: ['listConfigurations'],
       columns: ['name', 'description', 'category', 'value', 'actions']
     },
     {
       name: 'ldapsetting',
       title: 'label.ldap.configuration',
-      icon: 'team',
       shortKey: ['g', 'l'],
+      icon: 'team-outlined',
       permission: ['listLdapConfigurations'],
       columns: ['hostname', 'port', 'domainid'],
       details: ['hostname', 'port', 'domainid'],
       actions: [
         {
           api: 'addLdapConfiguration',
-          icon: 'plus',
           shortKey: ['a'],
+          icon: 'plus-outlined',
           label: 'label.configure.ldap',
           listView: true,
           args: [
@@ -51,7 +51,7 @@ export default {
         },
         {
           api: 'deleteLdapConfiguration',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.ldap',
           message: 'message.remove.ldap',
           dataView: true,
@@ -73,15 +73,15 @@ export default {
     {
       name: 'hypervisorcapability',
       title: 'label.hypervisor.capabilities',
-      icon: 'database',
       shortKey: ['g', 'h'],
+      icon: 'database-outlined',
       permission: ['listHypervisorCapabilities'],
       columns: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxhostspercluster'],
       details: ['hypervisor', 'hypervisorversion', 'maxguestslimit', 'maxdatavolumeslimit', 'maxhostspercluster', 'securitygroupenabled', 'storagemotionenabled'],
       actions: [
         {
           api: 'updateHypervisorCapabilities',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           args: ['maxguestslimit']

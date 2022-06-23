@@ -21,7 +21,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -96,8 +96,8 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Backup;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Backup;
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.BaseCmd;
@@ -41,10 +42,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@APICommand(name = "listIdps", description = "Returns list of discovered SAML Identity Providers", responseObject = IdpResponse.class, entityType = {})
+@APICommand(name = ApiConstants.LIST_IDPS, description = "Returns list of discovered SAML Identity Providers", responseObject = IdpResponse.class, entityType = {})
 public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
     public static final Logger s_logger = Logger.getLogger(ListIdpsCmd.class.getName());
-    private static final String s_name = "listidpsresponse";
+    public static final String APINAME = ApiConstants.LIST_IDPS;
 
     @Inject
     ApiServerService _apiServer;
@@ -57,12 +58,12 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

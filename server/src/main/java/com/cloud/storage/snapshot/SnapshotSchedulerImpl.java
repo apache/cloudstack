@@ -27,9 +27,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -38,6 +36,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
@@ -281,7 +281,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     continue;
                 }
                 Account volAcct = _acctDao.findById(volume.getAccountId());
-                if (volAcct == null || volAcct.getState() == Account.State.disabled) {
+                if (volAcct == null || volAcct.getState() == Account.State.DISABLED) {
                     // this account has been removed, so don't trigger recurring snapshot
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Skip snapshot for volume " + volume.getUuid() + " since its account has been removed or disabled");
@@ -301,7 +301,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
                 final Long eventId =
                     ActionEventUtils.onScheduledActionEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:" +
-                        volume.getUuid(), true, 0);
+                        volume.getUuid(), volumeId, ApiCommandResourceType.Volume.toString(), true, 0);
 
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VOLUME_ID, "" + volumeId);
@@ -327,7 +327,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
                 AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(),
                         ApiGsonHelper.getBuilder().create().toJson(params), cmd.getEntityId(),
-                        cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null, null);
+                        cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
                 job.setDispatcher(_asyncDispatcher.getName());
 
                 final long jobId = _asyncMgr.submitAsyncJob(job);

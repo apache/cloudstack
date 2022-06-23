@@ -34,6 +34,7 @@ addVlan() {
 	if [ ! -d /sys/class/net/$vlanDev ]
 	then
 		ip link add link $pif name $vlanDev type vlan id $vlanId > /dev/null
+		echo 1 > /proc/sys/net/ipv6/conf/$vlanDev/disable_ipv6
 		ip link set $vlanDev up
 		
 		if [ $? -gt 0 ]
@@ -47,12 +48,15 @@ addVlan() {
 		fi
 	fi
 	
+	# disable IPv6
+	echo 1 > /proc/sys/net/ipv6/conf/$vlanDev/disable_ipv6
 	# is up?
 	ip link set $vlanDev up > /dev/null 2>/dev/null
 	
 	if [ ! -d /sys/class/net/$vlanBr ]
 	then
 		ip link add name $vlanBr type bridge
+		echo 1 > /proc/sys/net/ipv6/conf/$vlanBr/disable_ipv6
 		ip link set $vlanBr up
 	
 		if [ $? -gt 0 ]
@@ -80,6 +84,8 @@ addVlan() {
 			fi
 		fi
 	fi
+	# disable IPv6
+	echo 1 > /proc/sys/net/ipv6/conf/$vlanBr/disable_ipv6
 	# is vlanBr up?
 	ip link set $vlanBr up > /dev/null 2>/dev/null
 

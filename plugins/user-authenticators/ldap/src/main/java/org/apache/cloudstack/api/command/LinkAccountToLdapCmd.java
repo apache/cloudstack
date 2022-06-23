@@ -18,12 +18,13 @@
  */
 package org.apache.cloudstack.api.command;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.user.UserAccount;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -37,8 +38,10 @@ import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.UUID;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
 @APICommand(name = LinkAccountToLdapCmd.APINAME, description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
@@ -61,9 +64,9 @@ public class LinkAccountToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
     private String admin;
 
-    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.SHORT, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for "
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE, type = CommandType.INTEGER, required = true, description = "Type of the account to auto import. Specify 0 for user and 2 for "
             + "domain admin")
-    private short accountType;
+    private int accountType;
 
     @Inject
     private LdapManager _ldapManager;
@@ -84,7 +87,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                     if (account == null) {
                         try {
                             UserAccount userAccount = _accountService
-                                    .createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(),
+                                    .createUserAccount(admin, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, admin, Account.Type.DOMAIN_ADMIN, RoleType.DomainAdmin.getId(), domainId, null, null, UUID.randomUUID().toString(),
                                             UUID.randomUUID().toString(), User.Source.LDAP);
                             response.setAdminId(String.valueOf(userAccount.getAccountId()));
                             LOGGER.info("created an account with name " + admin + " in the given domain " + domainId);
@@ -136,7 +139,18 @@ public class LinkAccountToLdapCmd extends BaseCmd {
         return admin;
     }
 
-    public short getAccountType() {
-        return accountType;
+    public Account.Type getAccountType() {
+        return Account.Type.getFromValue(accountType);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        Account account = _accountService.getActiveAccountByName(accountName, domainId);
+        return account != null ? account.getAccountId() : null;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

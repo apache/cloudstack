@@ -27,21 +27,31 @@
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >
-    <template slot="footer">
+    <template #filterDropdown>
+      <div style="padding: 8px" class="filter-dropdown">
+        <a-menu>
+          <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
+            <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
+            {{ $t('label.' + String(getColumnKey(column)).toLowerCase()) }}
+          </a-menu-item>
+        </a-menu>
+      </div>
+    </template>
+    <template #footer>
       <span v-if="hasSelected">
         {{ `Selected ${selectedRowKeys.length} items` }}
       </span>
     </template>
 
     <!--
-    <div slot="expandedRowRender" slot-scope="resource">
-      <info-card :resource="resource" style="margin-left: 0px; width: 50%">
-        <div slot="actions" style="padding-top: 12px">
+    <div #expandedRowRender="{ resource }">
+      <info-card :resource="resource style="margin-left: 0px; width: 50%">
+        <div #actions style="padding-top: 12px">
           <a-tooltip
             v-for="(action, actionIndex) in $route.meta.actions"
             :key="actionIndex"
             placement="bottom">
-            <template slot="title">
+            <template #title>
               {{ $t(action.label) }}
             </template>
             <a-button
@@ -60,12 +70,12 @@
     </div>
     -->
 
-    <span slot="name" slot-scope="text, record">
-      <span v-if="['vm'].includes($route.path.split('/')[1])">
+    <template #name="{text, record}">
+      <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
         <span v-if="record.icon && record.icon.base64image">
-          <resource-icon :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <resource-icon :image="record.icon.base64image" size="1x"/>
         </span>
-        <os-logo v-else :osId="record.ostypeid" :osName="record.ostypename" size="lg" style="margin-right: 5px" />
+        <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="lg" />
       </span>
       <span style="min-width: 120px" >
         <QuickView
@@ -75,22 +85,22 @@
           :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'name' "
           @exec-action="$parent.execAction"/>
         <span v-if="$route.path.startsWith('/project')" style="margin-right: 5px">
-          <tooltip-button type="dashed" size="small" icon="login" @click="changeProject(record)" />
+          <tooltip-button type="dashed" size="small" icon="LoginOutlined" @onClick="changeProject(record)" />
         </span>
-        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
-          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
-          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
-          <a-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px; margin-right: 5px" :type="$route.meta.icon"/>
-          <a-icon v-else style="font-size: 16px; margin-right: 5px" :component="$route.meta.icon" />
+        <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+          <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
+          <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="1x" />
+          <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
+          <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
         </span>
-        <span v-else>
-          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" style="margin-right: 5px" />
+        <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
+          <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" />
         </span>
 
         <span v-if="record.hasannotations">
-          <span v-if="record.id">
+          <span v-if="record.id && $route.path !== '/ssh'">
             <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-            <router-link :to="{ path: $route.path + '/' + record.id + '?tab=comments' }"><a-icon style="padding-left: 10px" size="small" type="message" theme="filled"/></router-link>
+            <router-link :to="{ path: $route.path + '/' + record.id, query: { tab: 'comments' } }"><message-filled style="padding-left: 10px" size="small"/></router-link>
           </span>
           <router-link v-else :to="{ path: $route.path + '/' + record.name }" >{{ text }}</router-link>
         </span>
@@ -104,15 +114,15 @@
           <router-link :to="{ path: $route.path + '/' + record.name }" v-else>{{ text }}</router-link>
         </span>
       </span>
-    </span>
-    <a slot="templatetype" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #templatetype="{ text, record }">
       <router-link :to="{ path: $route.path + '/' + record.templatetype }">{{ text }}</router-link>
-    </a>
-    <template slot="type" slot-scope="text">
+    </template>
+    <template #type="{ text }">
       <span v-if="['USER.LOGIN', 'USER.LOGOUT', 'ROUTER.HEALTH.CHECKS', 'FIREWALL.CLOSE', 'ALERT.SERVICE.DOMAINROUTER'].includes(text)">{{ $t(text.toLowerCase()) }}</span>
       <span v-else>{{ text }}</span>
     </template>
-    <a slot="displayname" slot-scope="text, record" href="javascript:;">
+    <template #displayname="{text, record}">
       <QuickView
         style="margin-left: 5px"
         :actions="actions"
@@ -120,92 +130,101 @@
         :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'displayname' "
         @exec-action="$parent.execAction"/>
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-    </a>
-    <span slot="username" slot-scope="text, record" href="javascript:;">
-      <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])">
-        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x" style="margin-right: 5px"/>
-        <a-icon v-else style="font-size: 16px; margin-right: 5px" type="user" />
+    </template>
+    <template #username="{text, record}">
+      <span v-if="$showIcon() && !['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
+        <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="1x"/>
+        <user-outlined v-else style="font-size: 16px;" />
       </span>
       <router-link :to="{ path: $route.path + '/' + record.id }" v-if="['/accountuser', '/vpnuser'].includes($route.path)">{{ text }}</router-link>
       <router-link :to="{ path: '/accountuser', query: { username: record.username, domainid: record.domainid } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
-    <span slot="entityid" slot-scope="text, record" href="javascript:;">
-      <router-link :to="{ path: generateCommentsPath(record) }">{{ record.entityname }}</router-link>
-    </span>
-    <span slot="entitytype" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #entityid="{ record }" href="javascript:;">
+      <router-link :to="{ path: generateCommentsPath(record), query: { tab: 'comments' } }">{{ record.entityname }}</router-link>
+    </template>
+    <template #entitytype="{ record }" href="javascript:;">
       {{ generateHumanReadableEntityType(record) }}
-    </span>
-    <span slot="adminsonly" v-if="['Admin'].includes($store.getters.userInfo.roletype)" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #adminsonly="{ record }" v-if="['Admin'].includes($store.getters.userInfo.roletype)" href="javascript:;">
       <a-checkbox :checked="record.adminsonly" :value="record.id" v-if="record.userid === $store.getters.userInfo.id" @change="e => updateAdminsOnly(e)" />
       <a-checkbox :checked="record.adminsonly" disabled v-else />
-    </span>
-    <span slot="ipaddress" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #ipaddress="{ text, record }" href="javascript:;">
       <router-link v-if="['/publicip', '/privategw'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
       <span v-if="record.issourcenat">
         &nbsp;
         <a-tag>source-nat</a-tag>
       </span>
-    </span>
-    <span slot="ip6address" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #ip6address="{ text, record }" href="javascript:;">
       <span>{{ ipV6Address(text, record) }}</span>
-    </span>
-    <a slot="publicip" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #publicip="{ text, record }">
       <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-    </a>
-    <span slot="traffictype" slot-scope="text" href="javascript:;">
+    </template>
+    <template #traffictype="{ text }" href="javascript:;">
       {{ text }}
-    </span>
-    <a slot="vmname" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #vmname="{ text, record }">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
-    </a>
-    <a slot="virtualmachinename" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #virtualmachinename="{ text, record }">
       <router-link :to="{ path: '/vm/' + record.virtualmachineid }">{{ text }}</router-link>
-    </a>
-    <span slot="hypervisor" slot-scope="text, record">
+    </template>
+    <template #hypervisor="{ text, record }">
       <span v-if="$route.name === 'hypervisorcapability'">
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </span>
       <span v-else>{{ text }}</span>
-    </span>
-    <template slot="state" slot-scope="text, record">
+    </template>
+    <template #state="{ text, record }">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
-      <status v-else :text="text ? text : ''" displayText style="min-width: 80px" />
+      <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
     </template>
-    <template slot="allocationstate" slot-scope="text">
+    <template #allocationstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
-    <template slot="resourcestate" slot-scope="text">
+    <template #resourcestate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
-    <template slot="powerstate" slot-scope="text">
+    <template #powerstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
-    <template slot="agentstate" slot-scope="text">
+    <template #agentstate="{ text }">
       <status :text="text ? text : ''" displayText />
     </template>
-    <a slot="guestnetworkname" slot-scope="text, record" href="javascript:;">
+    <template #vlan="{ text, record }">
+      <a href="javascript:;">
+        <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>
+      </a>
+    </template>
+    <template #guestnetworkname="{ text, record }">
       <router-link :to="{ path: '/guestnetwork/' + record.guestnetworkid }">{{ text }}</router-link>
-    </a>
-    <a slot="associatednetworkname" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #associatednetworkname="{ text, record }">
       <router-link :to="{ path: '/guestnetwork/' + record.associatednetworkid }">{{ text }}</router-link>
-    </a>
-    <a slot="vpcname" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #vpcname="{ text, record }">
       <router-link :to="{ path: '/vpc/' + record.vpcid }">{{ text }}</router-link>
-    </a>
-    <a slot="hostname" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #hostname="{ text, record }">
       <router-link v-if="record.hostid" :to="{ path: '/host/' + record.hostid }">{{ text }}</router-link>
       <router-link v-else-if="record.hostname" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </a>
-    <a slot="storage" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #storage="{ text, record }">
       <router-link v-if="record.storageid" :to="{ path: '/storagepool/' + record.storageid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </a>
+    </template>
 
-    <template v-for="(value, name) in thresholdMapping" :slot="name" slot-scope="text, record" href="javascript:;">
-      <span :key="name">
+    <template
+      v-for="(value, name) in thresholdMapping"
+      :key="name"
+      #[name]="{ text, record }"
+      href="javascript:;">
+      <span>
         <span v-if="record[value.disable]" class="alert-disable-threshold">
           {{ text }}
         </span>
@@ -218,20 +237,20 @@
       </span>
     </template>
 
-    <a slot="level" slot-scope="text, record" href="javascript:;">
+    <template #level="{ text, record }">
       <router-link :to="{ path: '/event/' + record.id }">{{ text }}</router-link>
-    </a>
+    </template>
 
-    <a slot="clustername" slot-scope="text, record" href="javascript:;">
+    <template #clustername="{ text, record }">
       <router-link :to="{ path: '/cluster/' + record.clusterid }">{{ text }}</router-link>
-    </a>
-    <a slot="podname" slot-scope="text, record" href="javascript:;">
+    </template>
+    <template #podname="{ text, record }">
       <router-link :to="{ path: '/pod/' + record.podid }">{{ text }}</router-link>
-    </a>
-    <span slot="account" slot-scope="text, record">
+    </template>
+    <template #account="{ text, record }">
       <template v-if="record.owner">
-        <template v-for="(item,idx) in record.owner">
-          <span style="margin-right:5px" :key="idx">
+        <template v-for="(item, idx) in record.owner" :key="idx">
+          <span style="margin-right:5px">
             <span v-if="$store.getters.userInfo.roletype !== 'User'">
               <router-link v-if="'user' in item" :to="{ path: '/accountuser', query: { username: item.user, domainid: record.domainid }}">{{ item.account + '(' + item.user + ')' }}</router-link>
               <router-link v-else :to="{ path: '/account', query: { name: item.account, domainid: record.domainid, dataView: true } }">{{ item.account }}</router-link>
@@ -242,89 +261,107 @@
       </template>
       <template v-if="text && !text.startsWith('PrjAcct-')">
         <router-link
-          v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`) !== '404'"
+          v-if="'quota' in record && $router.resolve(`${$route.path}/${record.account}`).matched[0].redirect !== '/exception/404'"
           :to="{ path: `${$route.path}/${record.account}`, query: { account: record.account, domainid: record.domainid, quota: true } }">{{ text }}</router-link>
         <router-link :to="{ path: '/account/' + record.accountid }" v-else-if="record.accountid">{{ text }}</router-link>
         <router-link :to="{ path: '/account', query: { name: record.account, domainid: record.domainid, dataView: true } }" v-else-if="$store.getters.userInfo.roletype !== 'User'">{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>
-    </span>
-    <span slot="domain" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+    </template>
+    <template #resource="{ record }">
+      <resource-label :resourceType="record.resourcetype" :resourceId="record.resourceid" :resourceName="record.resourcename" />
+    </template>
+    <template #domain="{ text, record }">
+      <router-link v-if="record.domainid && !record.domainid.toString().includes(',') && $store.getters.userInfo.roletype !== 'User'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
-    <span slot="domainpath" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).route.name !== '404'" :to="{ path: '/domain/' + record.domainid }">{{ text }}</router-link>
+    </template>
+    <template #domainpath="{ text, record }">
+      <router-link v-if="record.domainid && !record.domainid.includes(',') && $router.resolve('/domain/' + record.domainid).matched[0].redirect !== '/exception/404'" :to="{ path: '/domain/' + record.domainid, query: { tab: 'details' } }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
-    <a slot="zone" slot-scope="text, record" href="javascript:;">
-      <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+    </template>
+    <template #zone="{ text, record }">
+      <router-link v-if="record.zoneid && !record.zoneid.includes(',') && $router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </a>
-    <span slot="zonename" slot-scope="text, record">
-      <router-link v-if="$router.resolve('/zone/' + record.zoneid).route.name !== '404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
+    </template>
+    <template #zonename="{ text, record }">
+      <router-link v-if="$router.resolve('/zone/' + record.zoneid).matched[0].redirect !== '/exception/404'" :to="{ path: '/zone/' + record.zoneid }">{{ text }}</router-link>
       <span v-else>{{ text }}</span>
-    </span>
-    <a slot="readonly" slot-scope="text, record">
+    </template>
+    <template #rolename="{ text, record }">
+      <router-link v-if="record.roleid && $router.resolve('/role/' + record.roleid).matched[0].redirect !== '/exception/404'" :to="{ path: '/role/' + record.roleid }">{{ text }}</router-link>
+      <span v-else>{{ text }}</span>
+    </template>
+    <template #templateversion="{ record }">
+      <span>  {{ record.version }} </span>
+    </template>
+    <template #softwareversion="{ record }">
+      <span>  {{ record.softwareversion ? record.softwareversion : 'N/A' }} </span>
+    </template>
+    <template #access="{ record }">
       <status :text="record.readonly ? 'ReadOnly' : 'ReadWrite'" displayText />
-    </a>
-    <span slot="requiresupgrade" slot-scope="text, record">
+    </template>
+    <template #requiresupgrade="{ record }">
       <status :text="record.requiresupgrade ? 'warning' : ''" />
       {{ record.requiresupgrade ? 'Yes' : 'No' }}
-    </span>
-    <span slot="autoscalingenabled" slot-scope="text, record">
+    </template>
+    <template #loadbalancerrule="{ record }">
+      <span>  {{ record.loadbalancerrule }} </span>
+    </template>
+    <template #autoscalingenabled="{ record }">
       <status :text="record.autoscalingenabled ? 'Enabled' : 'Disabled'" />
       {{ record.autoscalingenabled ? 'Enabled' : 'Disabled' }}
-    </span>
-    <span slot="current" slot-scope="text, record">
+    </template>
+    <template #current="{record}">
       <status :text="record.current ? record.current.toString() : 'false'" />
-    </span>
-    <span slot="created" slot-scope="text">
+    </template>
+    <template #created="{ text }">
       {{ $toLocaleDate(text) }}
-    </span>
-    <span slot="sent" slot-scope="text">
+    </template>
+    <template #sent="{ text }">
       {{ $toLocaleDate(text) }}
-    </span>
-    <div slot="order" slot-scope="text, record" class="shift-btns">
-      <a-tooltip placement="top">
-        <template slot="title">{{ $t('label.move.to.top') }}</template>
-        <a-button
-          shape="round"
-          @click="moveItemTop(record)"
-          class="shift-btn">
-          <a-icon type="double-left" class="shift-btn shift-btn--rotated" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template slot="title">{{ $t('label.move.to.bottom') }}</template>
-        <a-button
-          shape="round"
-          @click="moveItemBottom(record)"
-          class="shift-btn">
-          <a-icon type="double-right" class="shift-btn shift-btn--rotated" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template slot="title">{{ $t('label.move.up.row') }}</template>
-        <a-button shape="round" @click="moveItemUp(record)" class="shift-btn">
-          <a-icon type="caret-up" class="shift-btn" />
-        </a-button>
-      </a-tooltip>
-      <a-tooltip placement="top">
-        <template slot="title">{{ $t('label.move.down.row') }}</template>
-        <a-button shape="round" @click="moveItemDown(record)" class="shift-btn">
-          <a-icon type="caret-down" class="shift-btn" />
-        </a-button>
-      </a-tooltip>
-    </div>
+    </template>
+    <template #order="{ text, record }">
+      <div class="shift-btns">
+        <a-tooltip :name="text" placement="top">
+          <template #title>{{ $t('label.move.to.top') }}</template>
+          <a-button
+            shape="round"
+            @click="moveItemTop(record)"
+            class="shift-btn">
+            <DoubleLeftOutlined class="shift-btn shift-btn--rotated" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.to.bottom') }}</template>
+          <a-button
+            shape="round"
+            @click="moveItemBottom(record)"
+            class="shift-btn">
+            <DoubleRightOutlined class="shift-btn shift-btn--rotated" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.up.row') }}</template>
+          <a-button shape="round" @click="moveItemUp(record)" class="shift-btn">
+            <CaretUpOutlined class="shift-btn" />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip placement="top">
+          <template #title>{{ $t('label.move.down.row') }}</template>
+          <a-button shape="round" @click="moveItemDown(record)" class="shift-btn">
+            <CaretDownOutlined class="shift-btn" />
+          </a-button>
+        </a-tooltip>
+      </div>
+    </template>
 
-    <template slot="value" slot-scope="text, record">
+    <template #value="{ text, record }">
       <a-input
         v-if="editableValueKey === record.key"
-        :autoFocus="true"
+        v-focus="true"
         :defaultValue="record.value"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
-        v-model="editableValue"
+        v-model:value="editableValue"
         @keydown.esc="editableValueKey = null"
         @pressEnter="saveValue(record)">
       </a-input>
@@ -332,40 +369,40 @@
         {{ text }}
       </div>
     </template>
-    <template slot="actions" slot-scope="text, record">
+    <template #actions="{ record }">
       <tooltip-button
         :tooltip="$t('label.edit')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
         v-if="editableValueKey !== record.key"
-        icon="edit"
-        @click="editValue(record)" />
+        icon="edit-outlined"
+        @onClick="editValue(record)" />
       <tooltip-button
         :tooltip="$t('label.cancel')"
-        @click="editableValueKey = null"
+        @onClick="editableValueKey = null"
         v-if="editableValueKey === record.key"
-        iconType="close-circle"
+        iconType="CloseCircleTwoTone"
         iconTwoToneColor="#f5222d" />
       <tooltip-button
         :tooltip="$t('label.ok')"
         :disabled="!('updateConfiguration' in $store.getters.apis)"
-        @click="saveValue(record)"
+        @onClick="saveValue(record)"
         v-if="editableValueKey === record.key"
-        iconType="check-circle"
+        iconType="CheckCircleTwoTone"
         iconTwoToneColor="#52c41a" />
       <tooltip-button
         :tooltip="$t('label.reset.config.value')"
-        @click="resetConfig(record)"
+        @onClick="resetConfig(record)"
         v-if="editableValueKey !== record.key"
-        icon="reload"
+        icon="reload-outlined"
         :disabled="!('updateConfiguration' in $store.getters.apis)" />
     </template>
-    <template slot="tariffActions" slot-scope="text, record">
+    <template #tariffActions="{ record }">
       <tooltip-button
         :tooltip="$t('label.edit')"
         v-if="editableValueKey !== record.key"
         :disabled="!('quotaTariffUpdate' in $store.getters.apis)"
-        icon="edit"
-        @click="editTariffValue(record)" />
+        icon="edit-outlined"
+        @onClick="editTariffValue(record)" />
       <slot></slot>
     </template>
   </a-table>
@@ -373,29 +410,35 @@
 
 <script>
 import { api } from '@/api'
-import Console from '@/components/widgets/Console'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
-import InfoCard from '@/components/view/InfoCard'
 import QuickView from '@/components/view/QuickView'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'ListView',
   components: {
-    Console,
     OsLogo,
     Status,
-    InfoCard,
     QuickView,
     TooltipButton,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   props: {
     columns: {
       type: Array,
       required: true
+    },
+    columnKeys: {
+      type: Array,
+      default: () => []
+    },
+    selectedColumns: {
+      type: Array,
+      default: () => []
     },
     items: {
       type: Array,
@@ -656,7 +699,10 @@ export default {
       return record.nic.filter(e => { return e.ip6address }).map(e => { return e.ip6address }).join(', ') || text
     },
     generateCommentsPath (record) {
-      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid + '?tab=comments'
+      if (this.entityTypeToPath(record.entitytype) === 'ssh') {
+        return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityname
+      }
+      return '/' + this.entityTypeToPath(record.entitytype) + '/' + record.entityid
     },
     generateHumanReadableEntityType (record) {
       switch (record.entitytype) {
@@ -734,30 +780,39 @@ export default {
         return 'Unsecure'
       }
       return host.state
+    },
+    getColumnKey (name) {
+      if (typeof name === 'object') {
+        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+      }
+      return name
+    },
+    updateSelectedColumns (name) {
+      this.$emit('update-selected-columns', name)
     }
   }
 }
 </script>
 
-<style scoped>
-/deep/ .ant-table-thead {
+<style>
+:deep(.ant-table-thead) {
   background-color: #f9f9f9;
 }
 
-/deep/ .ant-table-small > .ant-table-content > .ant-table-body {
+:deep(.ant-table-small) > .ant-table-content > .ant-table-body {
   margin: 0;
 }
 
-/deep/ .light-row {
-  background-color: #fff;
-}
-
-/deep/ .dark-row {
-  background-color: #f9f9f9;
-}
-
-/deep/ .ant-table-tbody>tr>td, .ant-table-thead>tr>th {
+:deep(.ant-table-tbody)>tr>td, :deep(.ant-table-thead)>tr>th {
   overflow-wrap: anywhere;
+}
+
+.filter-dropdown .ant-menu-vertical {
+  border: none;
+}
+
+.filter-dropdown .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected {
+  background-color: transparent;
 }
 </style>
 

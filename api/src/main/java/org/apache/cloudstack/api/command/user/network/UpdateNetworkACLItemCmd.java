@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -193,5 +194,15 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
 
     public boolean isPartialUpgrade() {
         return partialUpgrade;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAclItem;
     }
 }

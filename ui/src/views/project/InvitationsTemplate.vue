@@ -23,9 +23,9 @@
           class="input-search-invitation"
           style="width: unset"
           :placeholder="$t('label.search')"
-          v-model="searchQuery"
+          v-model:value="searchQuery"
           @search="onSearch"
-          autoFocus />
+          v-focus="true" />
       </a-col>
       <a-col :md="24" :lg="24">
         <a-table
@@ -36,25 +36,27 @@
           :pagination="false"
           :rowKey="record => record.id || record.account"
           @change="onChangeTable">
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" displayText />
           </template>
-          <span slot="action" v-if="record.state===stateAllow" slot-scope="text, record" class="account-button-action">
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.accept.project.invitation')"
-              type="success"
-              icon="check"
-              size="small"
-              @click="onShowConfirmAcceptInvitation(record)"/>
-            <tooltip-button
-              tooltipPlacement="top"
-              :tooltip="$t('label.decline.invitation')"
-              type="danger"
-              icon="close"
-              size="small"
-              @click="onShowConfirmRevokeInvitation(record)"/>
-          </span>
+          <template #action="{ record }">
+            <div v-if="record.state===stateAllow" class="account-button-action">
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.accept.project.invitation')"
+                icon="check-outlined"
+                size="small"
+                @onClick="onShowConfirmAcceptInvitation(record)"/>
+              <tooltip-button
+                tooltipPlacement="top"
+                :tooltip="$t('label.decline.invitation')"
+                type="primary"
+                :danger="true"
+                icon="close-outlined"
+                size="small"
+                @onClick="onShowConfirmRevokeInvitation(record)"/>
+            </div>
+          </template>
         </a-table>
         <a-pagination
           class="row-element"
@@ -67,7 +69,7 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger>
-          <template slot="buildOptionText" slot-scope="props">
+          <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
         </a-pagination>
@@ -108,23 +110,23 @@ export default {
       {
         title: this.$t('label.project'),
         dataIndex: 'project',
-        scopedSlots: { customRender: 'project' }
+        slots: { customRender: 'project' }
       },
       {
         title: this.$t('label.account'),
         dataIndex: 'account',
-        scopedSlots: { customRender: 'account' }
+        slots: { customRender: 'account' }
       },
       {
         title: this.$t('label.domain'),
         dataIndex: 'domain',
-        scopedSlots: { customRender: 'domain' }
+        slots: { customRender: 'domain' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
         width: 130,
-        scopedSlots: { customRender: 'state' },
+        slots: { customRender: 'state' },
         filters: [
           {
             text: this.$t('state.pending'),
@@ -149,7 +151,7 @@ export default {
         title: this.$t('label.action'),
         dataIndex: 'action',
         width: 80,
-        scopedSlots: { customRender: 'action' }
+        slots: { customRender: 'action' }
       }
     ]
 
@@ -161,7 +163,7 @@ export default {
       this.columns.splice(2, 0, {
         title: this.$t('label.user'),
         dataIndex: 'userid',
-        scopedSlots: { customRender: 'user' }
+        slots: { customRender: 'user' }
       })
     }
     this.fetchData()
@@ -244,12 +246,24 @@ export default {
       params.accept = state
 
       api('updateProjectInvitation', params).then(json => {
-        const hasJobId = this.checkForAddAsyncJob(json, title, record.project)
-
-        if (hasJobId) {
-          this.fetchData()
-          this.$emit('refresh-data')
-        }
+        this.$pollJob({
+          jobId: json.updateprojectinvitationresponse.jobid,
+          title,
+          description: record.project,
+          successMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          },
+          errorMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          },
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchData()
+            this.$emit('refresh-data')
+          }
+        })
       }).catch(error => {
         // show error
         this.$notifyError(error)
@@ -313,7 +327,7 @@ export default {
 </script>
 
 <style scoped>
-  /deep/.ant-table-fixed-right {
+  :deep(.ant-table-fixed-right) {
     z-index: 5;
   }
 

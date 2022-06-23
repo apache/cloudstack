@@ -19,6 +19,7 @@ package com.cloud.api.auth;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.net.InetAddress;
 
-@APICommand(name = "logout", description = "Logs out the user", responseObject = LogoutCmdResponse.class, entityType = {})
+@APICommand(name = ApiConstants.LOGOUT, description = "Logs out the user", responseObject = LogoutCmdResponse.class, entityType = {})
 public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
     public static final Logger s_logger = Logger.getLogger(DefaultLogoutAPIAuthenticatorCmd.class.getName());
@@ -52,7 +53,7 @@ public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuth
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_TYPE_NORMAL;
+        return Account.Type.NORMAL.ordinal();
     }
 
     @Override

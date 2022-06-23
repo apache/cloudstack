@@ -628,7 +628,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
                         self.skipTest(
                             "Marvin configuration has no host credentials to\
                                     check router services")
-            
+
                 if result.count(vals[0]) == 1:
                     cnts[vals.index(vals[0])] += 1
 
@@ -647,7 +647,7 @@ class TestIsolatedNetworks(cloudstackTestCase):
         cls.stream_handler = logging.StreamHandler()
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
-        
+
         cls.testClient = super(TestIsolatedNetworks, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 

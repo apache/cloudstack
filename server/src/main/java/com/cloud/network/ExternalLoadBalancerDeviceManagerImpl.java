@@ -1290,7 +1290,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 return answer == null ? null : answer.getLoadBalancers();
             }
         } catch (Exception ex) {
-            s_logger.error("Exception Occured ", ex);
+            s_logger.error("Exception Occurred ", ex);
         }
         //null return is handled by clients
         return null;
@@ -1300,7 +1300,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         List<NicVO> guestIps = _nicDao.listByNetworkId(network.getId());
         for (NicVO guestIp : guestIps) {
             // only external firewall and external load balancer will create NicVO with PlaceHolder reservation strategy
-            if (guestIp.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && guestIp.getVmType() == null && guestIp.getReserver() == null &&
+            if (ReservationStrategy.PlaceHolder.equals(guestIp.getReservationStrategy()) && guestIp.getVmType() == null && guestIp.getReserver() == null &&
                 !guestIp.getIPv4Address().equals(network.getGateway())) {
                 return guestIp;
             }

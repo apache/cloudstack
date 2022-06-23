@@ -115,7 +115,7 @@ public class DedicatedApiUnitTest {
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account = new AccountVO(accountName, domainId, "networkDomain", Account.Type.NORMAL, "uuid");
         DomainVO domain = new DomainVO("rootDomain", 5L, 5L, "networkDomain");
 
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);

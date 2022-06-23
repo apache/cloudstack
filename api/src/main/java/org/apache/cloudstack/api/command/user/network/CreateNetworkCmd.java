@@ -112,7 +112,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the network")
     private String accountName;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the SSH key")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the network")
     private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a network")
@@ -149,6 +149,13 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL ID associated for the network")
     private Long aclId;
+
+    @Parameter(name = ApiConstants.ASSOCIATED_NETWORK_ID,
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            since = "4.17.0",
+            description = "The network this network is associated to. only available if create a Shared network")
+    private Long associatedNetworkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -225,6 +232,10 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         return isolatedPvlanType;
     }
 
+    public Long getAssociatedNetworkId() {
+        return associatedNetworkId;
+    }
+
     @Override
     public boolean isDisplay() {
         if(displayNetwork == null)
@@ -249,11 +260,31 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             throw new InvalidParameterValueException("Unable to find network offering by ID " + networkOfferingId);
         }
 
+        Network associatedNetwork = null;
+        if (associatedNetworkId != null) {
+            associatedNetwork = _entityMgr.findById(Network.class, associatedNetworkId);
+            if (associatedNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find network by ID " + associatedNetworkId);
+            }
+            if (offering.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Associated network ID can be specified for networks of guest IP type " + GuestType.Shared + " only.");
+            }
+            if (zoneId != null && associatedNetwork.getDataCenterId() != zoneId) {
+                throw new InvalidParameterValueException("The network can only be created in the same zone as the associated network");
+            } else if (zoneId == null) {
+                zoneId = associatedNetwork.getDataCenterId();
+            }
+            if (physicalNetworkId != null && !physicalNetworkId.equals(associatedNetwork.getPhysicalNetworkId())) {
+                throw new InvalidParameterValueException("The network can only be created on the same physical network as the associated network");
+            } else if (physicalNetworkId == null) {
+                physicalNetworkId = associatedNetwork.getPhysicalNetworkId();
+            }
+        }
         if (physicalNetworkId != null) {
             if (offering.getGuestType() == GuestType.Shared) {
                 return physicalNetworkId;
             } else {
-                throw new InvalidParameterValueException("Physical network OD can be specified for networks of guest IP type " + GuestType.Shared + " only.");
+                throw new InvalidParameterValueException("Physical network ID can be specified for networks of guest IP type " + GuestType.Shared + " only.");
             }
         } else {
             if (zoneId == null) {
@@ -315,8 +346,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Override
     // an exception thrown by createNetwork() will be caught by the dispatcher.
-        public
-        void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(getResponseView(), result);

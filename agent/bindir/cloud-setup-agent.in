@@ -80,7 +80,7 @@ def getUserInputs():
     network = input("Please choose which network used to create VM:[%s]"%defNic)
     if network == "":
         if defNic == "":
-            print("You need to specifiy one of Nic or bridge on your system")
+            print("You need to specify one of Nic or bridge on your system")
             exit(1)
         elif network == "":
             network = defNic

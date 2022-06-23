@@ -544,7 +544,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         if (!add) {
             List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
             for (NicVO nic : nics) {
-                if (nic.getVmType() == null && nic.getReservationStrategy().equals(ReservationStrategy.PlaceHolder) && nic.getIPv4Address().equals(network.getGateway())) {
+                if (nic.getVmType() == null && ReservationStrategy.PlaceHolder.equals(nic.getReservationStrategy()) && nic.getIPv4Address().equals(network.getGateway())) {
                     s_logger.debug("Removing placeholder nic " + nic + " for the network " + network);
                     _nicDao.remove(nic.getId());
                 }

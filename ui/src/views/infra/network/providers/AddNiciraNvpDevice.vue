@@ -18,88 +18,86 @@
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       layout="vertical"
-      @submit="handleSubmit">
+      @finish="handleSubmit"
+     >
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.ip')">
+          <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
-              autoFocus
               :placeholder="apiParams.hostname.description"
-              v-decorator="['ip', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-focus="true"
+              v-model:value="form.ip" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.username')">
+          <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
               :placeholder="apiParams.username.description"
-              v-decorator="['username', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-model:value="form.username" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.password')">
+          <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
               :placeholder="apiParams.password.description"
-              v-decorator="['password', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              v-model:value="form.password" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.numretries')">
+          <a-form-item name="numretries" ref="numretries" :label="$t('label.numretries')">
             <a-input-number
               style="width: 100%"
-              v-decorator="['numretries', { initialValue: 2 }]" />
+              v-model:value="form.numretries" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.transportzoneuuid')">
+          <a-form-item name="transportzoneuuid" ref="transportzoneuuid" :label="$t('label.transportzoneuuid')">
             <a-input
               :placeholder="apiParams.transportzoneuuid.description"
-              v-decorator="['transportzoneuuid']" />
+              v-model:value="form.transportzoneuuid" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.l3gatewayserviceuuid')">
+          <a-form-item name="l3gatewayserviceuuid" ref="l3gatewayserviceuuid" :label="$t('label.l3gatewayserviceuuid')">
             <a-input
               :placeholder="apiParams.l3gatewayserviceuuid.description"
-              v-decorator="['l3gatewayserviceuuid']" />
+              v-model:value="form.l3gatewayserviceuuid" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.l2gatewayserviceuuid')">
+          <a-form-item name="l2gatewayserviceuuid" ref="l2gatewayserviceuuid" :label="$t('label.l2gatewayserviceuuid')">
             <a-input
               :placeholder="apiParams.l2gatewayserviceuuid.description"
-              v-decorator="['l2gatewayserviceuuid']" />
+              v-model:value="form.l2gatewayserviceuuid" />
           </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -121,10 +119,8 @@ export default {
       nsp: {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.apiParams = this.$getApiParams('addNiciraNvpDevice')
   },
   mounted () {
@@ -134,16 +130,26 @@ export default {
   },
   inject: ['provideCloseAction', 'provideReload', 'provideCloseAction', 'parentPollActionCompletion'],
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        numretries: 2
+      })
+      this.rules = reactive({
+        ip: [{ required: true, message: this.$t('message.error.required.input') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        numretries: [{ type: 'number' }]
+      })
+    },
     onCloseAction () {
       this.provideCloseAction()
     },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.form.validateFieldsAndScroll(async (err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(async () => {
+        const values = toRaw(this.form)
         const params = {}
         params.physicalnetworkid = this.resource.physicalnetworkid
         params.hostname = values.ip
@@ -175,6 +181,8 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     addNetworkServiceProvider (args) {

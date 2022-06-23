@@ -49,7 +49,7 @@ public class CreateAccountCmdTest {
     private CreateAccountCmd createAccountCmd = new CreateAccountCmd();
 
     private long roleId = 1L;
-    private short accountType = 1;
+    private Integer accountType = 1;
     private Long domainId = 1L;
 
     @Before

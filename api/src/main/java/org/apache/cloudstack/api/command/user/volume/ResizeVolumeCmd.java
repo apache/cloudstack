@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
@@ -133,8 +133,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Volume;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Volume;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
     }
 
     public static String getResultObjectName() {
@@ -151,13 +156,13 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can resize volumes for enabled projects/accounts only
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account.getType() == Account.Type.PROJECT) {
                 Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to  project id=" + project.getId() + " in state=" + project.getState() +
                     " as it's no longer active");
             }
-        } else if (account.getState() == Account.State.disabled) {
+        } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of volume " + id + "  is disabled: " + account);
         }
 

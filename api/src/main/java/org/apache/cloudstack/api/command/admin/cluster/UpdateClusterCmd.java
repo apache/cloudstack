@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.cluster;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -103,6 +104,16 @@ public class UpdateClusterCmd extends BaseCmd {
 
     public void setManagedstate(String managedstate) {
         this.managedState = managedstate;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Cluster;
     }
 
     @Override
