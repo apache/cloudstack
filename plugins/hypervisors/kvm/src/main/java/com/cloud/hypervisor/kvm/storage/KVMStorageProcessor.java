@@ -37,6 +37,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -154,6 +156,11 @@ public class KVMStorageProcessor implements StorageProcessor {
     private static final String CEPH_AUTH_KEY = "key";
     private static final String CEPH_CLIENT_MOUNT_TIMEOUT = "client_mount_timeout";
     private static final String CEPH_DEFAULT_MOUNT_TIMEOUT = "30";
+    /**
+     * Time interval before rechecking virsh commands
+     */
+    private long waitDelayForVirshCommands = 1000l;
+    protected Long waitDetachDevice;
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -169,6 +176,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         storageLayer.configure("StorageLayer", params);
 
         String storageScriptsDir = (String)params.get("storage.scripts.dir");
+        waitDetachDevice = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.WAIT_DETACH_DEVICE);
         if (storageScriptsDir == null) {
             storageScriptsDir = getDefaultStorageScriptsDir();
         }
@@ -1169,7 +1177,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         return store.getUrl();
     }
 
-    protected synchronized String attachOrDetachDevice(final Connect conn, final boolean attach, final String vmName, final String xml) throws LibvirtException, InternalErrorException {
+    protected synchronized String attachOrDetachDevice(final Connect conn, final boolean attach, final String vmName, final String xml)
+            throws LibvirtException, InternalErrorException {
         Domain dm = null;
         try {
             dm = conn.domainLookupByName(vmName);
@@ -1177,18 +1186,28 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (attach) {
                 s_logger.debug("Attaching device: " + xml);
                 dm.attachDevice(xml);
-            } else {
-                s_logger.debug("Detaching device: " + xml);
-                dm.detachDevice(xml);
-                LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-                parser.parseDomainXML(dm.getXMLDesc(0));
-                List<DiskDef> disks = parser.getDisks();
-                for (DiskDef diskDef : disks) {
-                    if (StringUtils.contains(xml, diskDef.getDiskPath())) {
-                        throw new InternalErrorException("Could not detach volume. Probably the VM is in boot state at the moment");
-                    }
+                return null;
+            }
+            s_logger.debug(String.format("Detaching device: [%s].", xml));
+            dm.detachDevice(xml);
+            long wait = waitDetachDevice;
+            while (!checkDetachSucess(xml, dm) && wait > 0) {
+                try {
+                    wait -= waitDelayForVirshCommands;
+                    Thread.sleep(waitDelayForVirshCommands);
+                    s_logger.trace(String.format("Trying to detach device [%s] from VM instance with UUID [%s]. " +
+                            "Waiting [%s] milliseconds before assuming the VM was unable to detach the volume.", xml, dm.getUUIDString(), wait));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             }
+            if (wait <= 0) {
+                throw new InternalErrorException(String.format("Could not detach volume after sending the command and waiting for [%s] milliseconds. Probably the VM does " +
+                                "not support the sent detach command or the device is busy at the moment. Try again in a couple of minutes.",
+                        waitDetachDevice));
+            }
+            s_logger.debug(String.format("The detach command was executed successfully. The device [%s] was removed from the VM instance with UUID [%s].",
+                    xml, dm.getUUIDString()));
         } catch (final LibvirtException e) {
             if (attach) {
                 s_logger.warn("Failed to attach device to " + vmName + ": " + e.getMessage());
@@ -1207,6 +1226,20 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         return null;
+    }
+
+    protected boolean checkDetachSucess(String xml, Domain dm) throws LibvirtException {
+        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+        parser.parseDomainXML(dm.getXMLDesc(0));
+        List<DiskDef> disks = parser.getDisks();
+        for (DiskDef diskDef : disks) {
+            if (StringUtils.contains(xml, diskDef.getDiskPath())) {
+                s_logger.debug(String.format("The hypervisor sent the detach command, but it is still possible to identify the device [%s] in the instance with UUID [%s].",
+                        xml, dm.getUUIDString()));
+                return false;
+            }
+        }
+        return true;
     }
 
     protected synchronized String attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId, final String serial,
@@ -1243,7 +1276,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 }
                 if (diskdef == null) {
-                    throw new InternalErrorException("disk: " + attachingDisk.getPath() + " is not attached before");
+                    s_logger.warn(String.format("Could not find disk [%s] attached to VM instance with UUID [%s]. We will set it as detached in the database to ensure consistency.",
+                            attachingDisk.getPath(), dm.getUUIDString()));
+                    return null;
                 }
             } else {
                 DiskDef.DiskBus busT = DiskDef.DiskBus.VIRTIO;
