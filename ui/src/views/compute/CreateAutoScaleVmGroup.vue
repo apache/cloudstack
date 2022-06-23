@@ -956,6 +956,7 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             networkid: this.selectedNetworkId,
+            id: this.lbRuleId,
             projectid: store.getters.project ? store.getters.project.id : null,
             domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
@@ -1285,6 +1286,10 @@ export default {
           params.listall = true
           params.id = this.networkId
           apiName = 'listNetworks'
+        } else if (this.lbRuleId) {
+          params.listall = true
+          params.id = this.lbRuleId
+          apiName = 'listLoadBalancerRules'
         }
 
         api(apiName, params).then(json => {
@@ -1920,6 +1925,11 @@ export default {
         if (this.networkId && name === 'networks') {
           param.options = {
             id: this.networkId
+          }
+        }
+        if (this.lbRuleId && name === 'loadbalancers') {
+          param.options = {
+            id: this.lbRuleId
           }
         }
         if (!('isLoad' in param) || param.isLoad) {

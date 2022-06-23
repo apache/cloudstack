@@ -130,7 +130,7 @@
           <router-link :to="{ path: '/autoscalevmgroup/' + record.autoscalevmgroup.id }" v-if='record.autoscalevmgroup'>
               <a-button>{{ $t('label.view') }}</a-button>
           </router-link>
-          <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
+          <router-link :to="{ path: '/action/createAutoScaleVmGroup', query: { networkid: record.networkid, lbruleid : record.id } }" v-else-if='!record.ruleInstances'>
               <a-button>{{ $t('label.new') }}</a-button>
           </router-link>
         </div>
