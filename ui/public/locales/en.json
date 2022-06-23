@@ -2904,7 +2904,7 @@
 "message.copy.iso.confirm": "Please confirm that you wish to copy your ISO to",
 "message.copy.template": "Copy template <b id=\"copy_template_name_text\">XXX</b> from zone <b id=\"copy_template_source_zone_text\"></b> to",
 "message.copy.template.confirm": "Are you sure you want to copy template?",
-"message.cpu.usage.info.multi.cpu": "The percentage of CPU usage can go over 100% when a VM has more than 1 vCPU. This happens because the usage of all the vCPUs of the VM are accumulated.",
+"message.cpu.usage.info.multi.cpu": "The CPU usage percentage can exceed 100% if the VM has more than 1 vCPU or when CPU Cap is not enabled. This behavior happens according to how the hypervisor being used accounts the stats.",
 "message.cpu.usage.info.cpu.cap": "If a VM has only 1 vCPU and the CPU Cap on its compute offering is disabled, then the percentage of CPU usage can also go over 100%. This happens because the VM can use more CPUs than it has been allocated.",
 "message.create.compute.offering": "Compute offering created",
 "message.create.internallb": "Creating internal LB",

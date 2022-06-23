@@ -2107,7 +2107,7 @@
 "message.copy.iso.confirm": "Confirme se voc\u00ea deseja copiar a ISO para",
 "message.copy.template": "Copiar template <b id=\"copy_template_name_text\">XXX</b> da zona <b id=\"copy_template_source_zone_text\"></b> para",
 "message.copy.template.confirm": "Voc\u00ea tem certeza que deseja copiar o template ?",
-"message.cpu.usage.info.multi.cpu": "O percentual de uso de CPU pode passar de 100% quando uma VM possui mais de 1 vCPU. Isso ocorre porque \u00e9 feito o somat\u00f3rio do uso de todos os CPUs da VM",
+"message.cpu.usage.info.multi.cpu": "O percentual de uso de CPU pode passar de 100% quando uma VM possui mais de 1 vCPU. Isso pode acontecer dependendo da forma que o virtualizador contabiliza as estat\u00edsticas.",
 "message.cpu.usage.info.cpu.cap": "Se uma VM possui apenas 1 vCPU e o CPU Cap da oferta de computa\u00e7\u00e3o estiver desabilitado, o percentual de uso de CPU tamb\u00e9m pode passar de 100%. Isso porque a VM pode utilizar mais CPUs do que lhe foi atribu\u00eddo",
 "message.create.template": "Voc\u00ea tem certeza que deseja criar um template ?",
 "message.create.template.vm": "Criar VM do template <b id=\"p_name\"></b>",
