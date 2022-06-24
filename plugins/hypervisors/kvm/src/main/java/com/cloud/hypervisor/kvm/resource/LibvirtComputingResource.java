@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -746,6 +747,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _networkDirectDevice;
     }
 
+    /**
+     * Defines resource's public and private network interface according to what is configured in agent.properties.
+     */
+    @Override
+    protected void defineResourceNetworkInterfaces(Map<String, Object> params) {
+        _privBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_NETWORK_DEVICE);
+        _publicBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PUBLIC_NETWORK_DEVICE);
+
+        _privateNic = NetUtils.getNetworkInterface(_privBridgeName);
+        _publicNic = NetUtils.getNetworkInterface(_publicBridgeName);
+    }
+
+    public NetworkInterface getPrivateNic() {
+        return _privateNic;
+    }
+
+    public NetworkInterface getPublicNic() {
+        return _publicNic;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         boolean success = super.configure(name, params);
@@ -922,10 +943,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 _linkLocalBridgeName = "cloud0";
             }
         }
-
-        _publicBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PUBLIC_NETWORK_DEVICE);
-
-        _privBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_NETWORK_DEVICE);
 
         _guestBridgeName = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUEST_NETWORK_DEVICE);
         if (_guestBridgeName == null) {

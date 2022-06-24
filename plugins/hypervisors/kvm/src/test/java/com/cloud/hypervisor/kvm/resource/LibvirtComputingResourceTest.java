@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.NetworkInterface;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -79,6 +81,7 @@ import org.libvirt.NodeInfo;
 import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.jna.virDomainMemoryStats;
+import org.mockito.ArgumentCaptor;
 import org.mockito.BDDMockito;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -5896,6 +5899,35 @@ public class LibvirtComputingResourceTest {
         PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.eq(AgentProperties.LOCAL_STORAGE_UUID))).thenReturn("111111");
 
         libvirtComputingResourceSpy.configureLocalStorage();
+    }
+
+    @Test
+    @PrepareForTest({AgentPropertiesFileHandler.class, NetUtils.class})
+    public void defineResourceNetworkInterfacesTestUseProperties() {
+        NetworkInterface networkInterfaceMock1 = PowerMockito.mock(NetworkInterface.class);
+        NetworkInterface networkInterfaceMock2 = PowerMockito.mock(NetworkInterface.class);
+
+        PowerMockito.mockStatic(AgentPropertiesFileHandler.class);
+        PowerMockito.when(AgentPropertiesFileHandler.getPropertyValue(Mockito.any())).thenReturn("cloudbr15", "cloudbr28");
+
+        PowerMockito.mockStatic(NetUtils.class);
+        PowerMockito.when(NetUtils.getNetworkInterface(Mockito.anyString())).thenReturn(networkInterfaceMock1, networkInterfaceMock2);
+
+        libvirtComputingResourceSpy.defineResourceNetworkInterfaces(null);
+
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
+        PowerMockito.verifyStatic(NetUtils.class, Mockito.times(2));
+        NetUtils.getNetworkInterface(keyCaptor.capture());
+
+        List<String> keys = keyCaptor.getAllValues();
+        Assert.assertEquals("cloudbr15", keys.get(0));
+        Assert.assertEquals("cloudbr28", keys.get(1));
+
+        Assert.assertEquals("cloudbr15", libvirtComputingResourceSpy._privBridgeName);
+        Assert.assertEquals("cloudbr28", libvirtComputingResourceSpy._publicBridgeName);
+
+        Assert.assertEquals(networkInterfaceMock1, libvirtComputingResourceSpy.getPrivateNic());
+        Assert.assertEquals(networkInterfaceMock2, libvirtComputingResourceSpy.getPublicNic());
     }
 
 }
