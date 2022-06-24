@@ -822,7 +822,6 @@ export default {
     handleNetworkAclFormSubmit () {
       if (this.fetchLoading) return
       this.fetchLoading = true
-      //this.modals.networkAcl = false
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
