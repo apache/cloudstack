@@ -179,7 +179,7 @@
                       cpuSpeedInputDecorator="cpuspeed"
                       memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
-                      :computeOfferingId="instanceConfig.computeofferingid"
+                      :computeOfferingId="vmgroupConfig.computeofferingid"
                       :isConstrained="isOfferingConstrained(serviceOffering)"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
@@ -782,7 +782,7 @@ export default {
         loadbalancers: false,
         zones: false
       },
-      instanceConfig: {},
+      vmgroupConfig: {},
       template: {},
       templateConfigurations: [],
       templateNics: [],
@@ -886,8 +886,8 @@ export default {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
     diskSize () {
-      const rootDiskSize = _.get(this.instanceConfig, 'rootdisksize', 0)
-      const customDiskSize = _.get(this.instanceConfig, 'size', 0)
+      const rootDiskSize = _.get(this.vmgroupConfig, 'rootdisksize', 0)
+      const customDiskSize = _.get(this.vmgroupConfig, 'size', 0)
       const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', 0)
       const dataDiskSize = diskOfferingDiskSize > 0 ? diskOfferingDiskSize : customDiskSize
       const size = []
@@ -1010,38 +1010,38 @@ export default {
     },
     formModel: {
       deep: true,
-      handler (instanceConfig) {
-        this.instanceConfig = toRaw(instanceConfig)
-        Object.keys(instanceConfig).forEach(field => {
-          this.vm[field] = this.instanceConfig[field]
+      handler (vmgroupConfig) {
+        this.vmgroupConfig = toRaw(vmgroupConfig)
+        Object.keys(vmgroupConfig).forEach(field => {
+          this.vm[field] = this.vmgroupConfig[field]
         })
         this.template = ''
         for (const key in this.options.templates) {
-          var template = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === instanceConfig.templateid)
+          var template = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === vmgroupConfig.templateid)
           if (template) {
             this.template = template
             break
           }
         }
 
-        this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
+        this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === vmgroupConfig.computeofferingid)
         if (this.serviceOffering?.diskofferingid) {
-          instanceConfig.overridediskofferingid = this.serviceOffering.diskofferingid
+          vmgroupConfig.overridediskofferingid = this.serviceOffering.diskofferingid
         }
         if (this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === vmgroupConfig.diskofferingid)
         }
         if (this.rootDiskSelected?.id) {
-          instanceConfig.overridediskofferingid = this.rootDiskSelected.id
+          vmgroupConfig.overridediskofferingid = this.rootDiskSelected.id
         }
-        if (instanceConfig.overridediskofferingid) {
-          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.overridediskofferingid)
+        if (vmgroupConfig.overridediskofferingid) {
+          this.overrideDiskOffering = _.find(this.options.diskOfferings, (option) => option.id === vmgroupConfig.overridediskofferingid)
         } else {
           this.overrideDiskOffering = null
         }
 
-        this.zone = _.find(this.options.zones, (option) => option.id === instanceConfig.zoneid)
-        this.networks = _.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id))
+        this.zone = _.find(this.options.zones, (option) => option.id === vmgroupConfig.zoneid)
+        this.networks = _.filter(this.options.networks, (option) => _.includes(vmgroupConfig.networkids, option.id))
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
@@ -1643,40 +1643,40 @@ export default {
 
         let networkIds = []
 
-        let deployVmData = {}
+        let createVmGroupData = {}
         // step 1 : select zone
-        deployVmData.zoneid = values.zoneid
+        createVmGroupData.zoneid = values.zoneid
         // step 2: select template/iso
-        deployVmData.templateid = values.templateid
+        createVmGroupData.templateid = values.templateid
 
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
-          deployVmData.rootdisksize = values.rootdisksize
+          createVmGroupData.rootdisksize = values.rootdisksize
         } else if (this.rootDiskSizeFixed > 0 && !this.template.deployasis) {
-          deployVmData.rootdisksize = this.rootDiskSizeFixed
+          createVmGroupData.rootdisksize = this.rootDiskSizeFixed
         }
 
         // step 3: select service offering
-        deployVmData.serviceofferingid = values.computeofferingid
+        createVmGroupData.serviceofferingid = values.computeofferingid
         if (this.serviceOffering && this.serviceOffering.iscustomized) {
           if (values.cpunumber) {
-            deployVmData['details[0].cpuNumber'] = values.cpunumber
+            createVmGroupData['details[0].cpuNumber'] = values.cpunumber
           }
           if (values.cpuspeed) {
-            deployVmData['details[0].cpuSpeed'] = values.cpuspeed
+            createVmGroupData['details[0].cpuSpeed'] = values.cpuspeed
           }
           if (values.memory) {
-            deployVmData['details[0].memory'] = values.memory
+            createVmGroupData['details[0].memory'] = values.memory
           }
         }
         if (this.selectedTemplateConfiguration) {
-          deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
+          createVmGroupData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
         if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
-          deployVmData.overridediskofferingid = values.overridediskofferingid
+          createVmGroupData.overridediskofferingid = values.overridediskofferingid
         }
         if (this.isCustomizedIOPS) {
-          deployVmData['details[0].minIops'] = this.minIops
-          deployVmData['details[0].maxIops'] = this.maxIops
+          createVmGroupData['details[0].minIops'] = this.minIops
+          createVmGroupData['details[0].maxIops'] = this.maxIops
         }
         // step 4: select disk offering
         if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
@@ -1685,20 +1685,20 @@ export default {
             Object.entries(values.multidiskoffering).forEach(([disk, offering]) => {
               const diskKey = `datadiskofferinglist[${i}].datadisktemplateid`
               const offeringKey = `datadiskofferinglist[${i}].diskofferingid`
-              deployVmData[diskKey] = disk
-              deployVmData[offeringKey] = offering
+              createVmGroupData[diskKey] = disk
+              createVmGroupData[offeringKey] = offering
               i++
             })
           }
         } else {
-          deployVmData.diskofferingid = values.diskofferingid
+          createVmGroupData.diskofferingid = values.diskofferingid
           if (values.size) {
-            deployVmData.size = values.size
+            createVmGroupData.size = values.size
           }
         }
         if (this.isCustomizedDiskIOPS) {
-          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
-          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
+          createVmGroupData['details[0].minIopsDo'] = this.diskIOpsMin
+          createVmGroupData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
 
         // step 6: select network
@@ -1706,8 +1706,8 @@ export default {
           if (this.nicToNetworkSelection && this.nicToNetworkSelection.length > 0) {
             for (var j in this.nicToNetworkSelection) {
               var nicNetwork = this.nicToNetworkSelection[j]
-              deployVmData['nicnetworklist[' + j + '].nic'] = nicNetwork.nic
-              deployVmData['nicnetworklist[' + j + '].network'] = nicNetwork.network
+              createVmGroupData['nicnetworklist[' + j + '].nic'] = nicNetwork.nic
+              createVmGroupData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
             const arrNetwork = []
@@ -1728,35 +1728,35 @@ export default {
               return
             }
             for (let j = 0; j < arrNetwork.length; j++) {
-              deployVmData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
+              createVmGroupData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
               if (this.networkConfig.length > 0) {
                 const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
                 if (networkConfig && networkConfig.length > 0) {
-                  deployVmData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                  deployVmData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
+                  createVmGroupData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
+                  createVmGroupData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
                 }
               }
             }
           }
         }
         if (this.securitygroupids.length > 0) {
-          deployVmData.securitygroupids = this.securitygroupids.join(',')
+          createVmGroupData.securitygroupids = this.securitygroupids.join(',')
         }
 
         if (values.name) {
-          deployVmData.name = values.name
-          deployVmData.displayname = values.name
+          createVmGroupData.name = values.name
+          createVmGroupData.displayname = values.name
         }
         if (values.group) {
-          deployVmData.group = values.group
+          createVmGroupData.group = values.group
         }
         // step 8: enter setup
         if ('properties' in values) {
           const keys = Object.keys(values.properties)
           for (var i = 0; i < keys.length; ++i) {
             const propKey = keys[i].split('\\002E').join('.')
-            deployVmData['properties[' + i + '].key'] = propKey
-            deployVmData['properties[' + i + '].value'] = values.properties[keys[i]]
+            createVmGroupData['properties[' + i + '].key'] = propKey
+            createVmGroupData['properties[' + i + '].value'] = values.properties[keys[i]]
           }
         }
 
@@ -1764,10 +1764,10 @@ export default {
         const description = values.name || ''
         const password = this.$t('label.password')
 
-        deployVmData = Object.fromEntries(
-          Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
+        createVmGroupData = Object.fromEntries(
+          Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
-        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
+        api('deployVirtualMachine', {}, 'POST', createVmGroupData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
