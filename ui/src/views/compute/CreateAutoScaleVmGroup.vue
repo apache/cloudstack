@@ -615,7 +615,7 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
-                    <a-form-item :label="$t('label.user')" name="user" ref="user">
+                    <a-form-item :label="$t('label.user')" name="autoscaleuserid" ref="autoscaleuserid">
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -632,6 +632,15 @@
                     </a-form-item>
                     <a-form-item :label="$t('label.destroyvmgraceperiod')" name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
                       <a-input v-model:value="form.destroyvmgraceperiod"></a-input>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.maxmembers')" name="maxmembers" ref="maxmembers">
+                      <a-input v-model:value="form.maxmembers"></a-input>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.minmembers')" name="minmembers" ref="minmembers">
+                      <a-input v-model:value="form.minmembers"></a-input>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.interval')" name="interval" ref="interval">
+                      <a-input v-model:value="form.interval"></a-input>
                     </a-form-item>
                   </div>
                 </template>
@@ -1131,7 +1140,9 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({
-        zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        zoneid: [
+          { required: true, message: `${this.$t('message.error.select')}` }
+        ],
         scaleupduration: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
@@ -1148,8 +1159,22 @@ export default {
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
-        user: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        autoscaleuserid: [
+          { required: true, message: `${this.$t('message.error.select')}` }
+        ],
         destroyvmgraceperiod: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        maxmembers: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        minmembers: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        interval: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ]
@@ -1453,12 +1478,13 @@ export default {
       this.form.multidiskoffering = value
     },
     updateNetworks (ids) {
-      this.form.networkids = ids
       this.networkSelected = true
       if (typeof (ids) === 'string') {
         this.selectedNetworkId = ids
+        this.form.networkids = [ids]
       } else if (typeof (ids) === 'object') {
         this.selectedNetworkId = ids[0]
+        this.form.networkids = ids
       }
       this.fetchLoadBalancer()
       this.fetchCountersList()
@@ -1566,10 +1592,124 @@ export default {
     deleteScaleDownCondition (counterId) {
       this.scaleDownConditions = this.scaleDownConditions.filter(condition => condition.counterid !== counterId)
     },
+    async pollJob (jobId) {
+      return new Promise(resolve => {
+        const asyncJobInterval = setInterval(() => {
+          api('queryAsyncJobResult', { jobId }).then(async json => {
+            const result = json.queryasyncjobresultresponse
+            if (result.jobstatus === 0) {
+              return
+            }
+
+            clearInterval(asyncJobInterval)
+            resolve(result)
+          })
+        }, 1000)
+      })
+    },
+    createVmProfile (createVmGroupData) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          autoscaleuserid: createVmGroupData.autoscaleuserid,
+          destroyvmgraceperiod: createVmGroupData.destroyvmgraceperiod,
+          serviceofferingid: createVmGroupData.serviceofferingid,
+          templateid: createVmGroupData.templateid,
+          zoneid: createVmGroupData.zoneid
+        }
+        var i = 0
+        if (createVmGroupData.snmpcommunity) {
+          params['counterparam[' + i + '].name'] = 'snmpcommunity'
+          params['counterparam[' + i + '].value'] = createVmGroupData.snmpcommunity
+          i++
+        }
+        if (createVmGroupData.snmpport) {
+          params['counterparam[' + i + '].name'] = 'snmpport'
+          params['counterparam[' + i + '].value'] = createVmGroupData.snmpport
+          i++
+        }
+        const otherdeployparams = []
+        if (createVmGroupData.rootdisksize) {
+          otherdeployparams.push('rootdisksize=' + createVmGroupData.rootdisksize)
+        }
+        if (createVmGroupData.diskofferingid) {
+          otherdeployparams.push('diskofferingid=' + createVmGroupData.diskofferingid)
+        }
+        if (createVmGroupData.size) {
+          otherdeployparams.push('datadisksize=' + createVmGroupData.size)
+        }
+        if (createVmGroupData.securitygroupids) {
+          otherdeployparams.push('securitygroupids=' + createVmGroupData.securitygroupids)
+        }
+        if (otherdeployparams.length > 0) {
+          params.otherdeployparams = otherdeployparams.join('&')
+        }
+        api('createAutoScaleVmProfile', params).then(async json => {
+          const jobId = json.autoscalevmprofileresponse.jobid
+          if (jobId) {
+            const result = await this.pollJob(jobId)
+            if (result.jobstatus === 2) {
+              reject(result.jobresult.errortext)
+              return
+            }
+            resolve(result.jobresult.autoscalevmprofile)
+          }
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createCondition (counterid, relationaloperator, threshold) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          counterid: counterid,
+          relationaloperator: relationaloperator,
+          threshold: threshold
+        }
+        api('createCondition', params).then(async json => {
+          const jobId = json.conditionresponse.jobid
+          if (jobId) {
+            const result = await this.pollJob(jobId)
+            if (result.jobstatus === 2) {
+              reject(result.jobresult.errortext)
+              return
+            }
+            resolve(result.jobresult.condition)
+          }
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    createScalePolicy (action, conditionIds, duration, quiettime) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          action: action,
+          duration: duration,
+          quiettime: quiettime,
+          conditionids: conditionIds
+        }
+        api('createAutoScalePolicy', params).then(async json => {
+          const jobId = json.autoscalepolicyresponse.jobid
+          if (jobId) {
+            const result = await this.pollJob(jobId)
+            if (result.jobstatus === 2) {
+              reject(result.jobresult.errortext)
+              return
+            }
+            resolve(result.jobresult.autoscalepolicy)
+          }
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
     getText (option) {
       return _.get(option, 'displaytext', _.get(option, 'name'))
     },
-    handleSubmit (e) {
+    async handleSubmit (e) {
       console.log('wizard submit')
       e.preventDefault()
       if (this.loading.deploy) return
@@ -1631,11 +1771,20 @@ export default {
           return
         }
 
-        if (!values.autoscaleuserid) {
+        if (values.maxmembers < values.minmembers) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
-            description: this.$t('message.error.select.user')
+            description: this.$t('message.error.max.members.less.than.min.members')
           })
+          return
+        }
+
+        if (values.scaleupduration < values.interval || values.scaledownduration < values.interval) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.duration.less.than.interval')
+          })
+          return
         }
 
         this.loading.deploy = true
@@ -1731,51 +1880,62 @@ export default {
             }
           }
         }
+
         if (this.securitygroupids.length > 0) {
           createVmGroupData.securitygroupids = this.securitygroupids.join(',')
         }
 
-        if (values.name) {
-          createVmGroupData.name = values.name
-          createVmGroupData.displayname = values.name
-        }
-        if (values.group) {
-          createVmGroupData.group = values.group
-        }
-        // step 8: enter setup
-        if ('properties' in values) {
-          const keys = Object.keys(values.properties)
-          for (var i = 0; i < keys.length; ++i) {
-            const propKey = keys[i].split('\\002E').join('.')
-            createVmGroupData['properties[' + i + '].key'] = propKey
-            createVmGroupData['properties[' + i + '].value'] = values.properties[keys[i]]
-          }
-        }
+        // vm profile details
+        createVmGroupData.autoscaleuserid = values.autoscaleuserid
+        createVmGroupData.destroyvmgraceperiod = values.destroyvmgraceperiod
 
         const title = this.$t('label.launch.vm')
-        const description = values.name || ''
-        const password = this.$t('label.password')
 
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
-        api('deployVirtualMachine', {}, 'POST', createVmGroupData).then(response => {
-          const jobId = response.deployvirtualmachineresponse.jobid
+        // create autoscale vm profile
+        const vmprofile = await this.createVmProfile(createVmGroupData)
+
+        // create scaleup conditions and policy
+        var scaleUpConditionIds = []
+        for (const condition of this.scaleUpConditions) {
+          const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
+          scaleUpConditionIds.push(newCondition.id)
+        }
+        const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), values.scaleupduration, values.scaleupquiettime)
+
+        // create scaledown conditions and policy
+        var scaleDownConditionIds = []
+        for (const condition of this.scaleDownConditions) {
+          const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
+          scaleDownConditionIds.push(newCondition.id)
+        }
+        const scaleDownPolicy = await this.createScalePolicy('ScaleDown', scaleDownConditionIds.join(','), values.scaledownduration, values.scaledownquiettime)
+
+        // create autoscale vmgroup
+        const params = {
+          vmprofileid: vmprofile.id,
+          scaleuppolicyids: scaleUpPolicy.id,
+          scaledownpolicyids: scaleDownPolicy.id,
+          lbruleid: values.loadbalancerid,
+          maxmembers: values.maxmembers,
+          minmembers: values.minmembers,
+          interval: values.interval
+        }
+        api('createAutoScaleVmGroup', params).then(response => {
+          const jobId = response.autoscalevmgroupresponse.jobid
           if (jobId) {
             this.$pollJob({
               jobId,
               title,
-              description,
               successMethod: result => {
-                const vm = result.jobresult.virtualmachine
-                const name = vm.displayname || vm.name || vm.id
-                if (vm.password) {
-                  this.$notification.success({
-                    message: password + ` ${this.$t('label.for')} ` + name,
-                    description: vm.password,
-                    duration: 0
-                  })
-                }
+                const vmgroup = result.jobresult.autoscalevmgroup
+                this.$notification.success({
+                  message: this.$t('label.new.autoscale.vmgroup'),
+                  description: vmgroup.id,
+                  duration: 0
+                })
                 eventBus.emit('vm-refresh-data')
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
@@ -1785,10 +1945,8 @@ export default {
               }
             })
           }
-          // Sending a refresh in case it hasn't picked up the new VM
-          new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
-            eventBus.emit('vm-refresh-data')
-          })
+          // Back to previous page
+          this.$router.back()
         }).catch(error => {
           this.$notifyError(error)
           this.loading.deploy = false
