@@ -24,7 +24,6 @@ import com.cloud.network.NetworkService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.EntityManager;
 import junit.framework.TestCase;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -255,7 +254,7 @@ public class CreateNetworkCmdTest extends TestCase {
     public void testGetPublicMtuWhenNotSet() {
         Integer publicMtu = null;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, cmd.getPublicMtu());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, cmd.getPublicMtu());
     }
 
     public void testGetPublicMtuWhenSet() {
@@ -267,7 +266,7 @@ public class CreateNetworkCmdTest extends TestCase {
     public void testGetPrivateMtuWhenNotSet() {
         Integer privateMtu = null;
         ReflectionTestUtils.setField(cmd, "privateMtu", privateMtu);
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, cmd.getPrivateMtu());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, cmd.getPrivateMtu());
     }
 
     public void testGetPrivateMtuWhenSet() {

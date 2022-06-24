@@ -192,11 +192,11 @@ public class NetworkVO implements Network {
     @Transient
     PVlanType pVlanType;
 
-    @Column(name = "public_iface_mtu")
-    Integer publicIfaceMtu;
+    @Column(name = "public_mtu")
+    Integer publicMtu;
 
-    @Column(name = "private_iface_mtu")
-    Integer privateIfaceMtu;
+    @Column(name = "private_mtu")
+    Integer privateMtu;
 
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
@@ -264,8 +264,8 @@ public class NetworkVO implements Network {
         ip6Gateway = that.getIp6Gateway();
         ip6Cidr = that.getIp6Cidr();
         this.externalId = externalId;
-        this.publicIfaceMtu = that.getPublicIfaceMtu();
-        this.privateIfaceMtu = that.getPrivateIfaceMtu();
+        this.publicMtu = that.getPublicMtu();
+        this.privateMtu = that.getPrivateMtu();
     }
 
     /**
@@ -703,19 +703,19 @@ public class NetworkVO implements Network {
         this.routerIpv6 = routerIpv6;
     }
 
-    public Integer getPublicIfaceMtu() {
-        return publicIfaceMtu;
+    public Integer getPublicMtu() {
+        return publicMtu;
     }
 
-    public void setPublicIfaceMtu(Integer publicIfaceMtu) {
-        this.publicIfaceMtu = publicIfaceMtu;
+    public void setPublicMtu(Integer publicMtu) {
+        this.publicMtu = publicMtu;
     }
 
-    public Integer getPrivateIfaceMtu() {
-        return privateIfaceMtu;
+    public Integer getPrivateMtu() {
+        return privateMtu;
     }
 
-    public void setPrivateIfaceMtu(Integer privateIfaceMtu) {
-        this.privateIfaceMtu = privateIfaceMtu;
+    public void setPrivateMtu(Integer privateMtu) {
+        this.privateMtu = privateMtu;
     }
 }

@@ -85,11 +85,11 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
     private Boolean forced;
 
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
-            description = "MTU to be configured on the network VR's public facing interfaces")
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer publicMtu;
 
     @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
-            description = "MTU to be configured on the network VR's public facing interfaces")
+            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
     private Integer privateMtu;
 
     /////////////////////////////////////////////////////

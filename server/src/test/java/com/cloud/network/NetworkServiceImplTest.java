@@ -55,7 +55,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.alert.AlertService;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -320,12 +319,12 @@ public class NetworkServiceImplTest {
         Integer publicMtu = 2450;
         Integer privateMtu = 1500;
         Long zoneId = 1L;
-        when(publicMtuKey.valueIn(zoneId)).thenReturn(ApiConstants.DEFAULT_MTU);
-        when(privateMtuKey.valueIn(zoneId)).thenReturn(ApiConstants.DEFAULT_MTU);
+        when(publicMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
+        when(privateMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
         Pair<Integer, Integer> interfaceMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
         Assert.assertNotNull(interfaceMtus);
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, interfaceMtus.first());
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, interfaceMtus.second());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.first());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.second());
         Mockito.verify(alertManager, Mockito.times(1)).sendAlert(Mockito.any(AlertService.AlertType.class),
                 Mockito.anyLong(), nullable(Long.class), Mockito.anyString(), Mockito.anyString());
     }
@@ -335,12 +334,12 @@ public class NetworkServiceImplTest {
         Integer publicMtu = 1500;
         Integer privateMtu = 2500;
         Long zoneId = 1L;
-        when(publicMtuKey.valueIn(zoneId)).thenReturn(ApiConstants.DEFAULT_MTU);
-        when(privateMtuKey.valueIn(zoneId)).thenReturn(ApiConstants.DEFAULT_MTU);
+        when(publicMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
+        when(privateMtuKey.valueIn(zoneId)).thenReturn(NetworkService.DEFAULT_MTU);
         Pair<Integer, Integer> interfaceMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
         Assert.assertNotNull(interfaceMtus);
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, interfaceMtus.first());
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, interfaceMtus.second());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.first());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, interfaceMtus.second());
         Mockito.verify(alertManager, Mockito.times(1)).sendAlert(Mockito.any(AlertService.AlertType.class),
                 Mockito.anyLong(), nullable(Long.class), Mockito.anyString(), Mockito.anyString());
     }
@@ -412,7 +411,7 @@ public class NetworkServiceImplTest {
 
         Pair<Integer, Integer> updatedMtus = service.validateMtuOnUpdate(networkVO, zoneId, publicMtu, privateMtu);
         Assert.assertEquals(publicMtu, updatedMtus.first());
-        Assert.assertNull(updatedMtus.second());
+        Assert.assertEquals(privateMtu, updatedMtus.second());
     }
 
     @Test

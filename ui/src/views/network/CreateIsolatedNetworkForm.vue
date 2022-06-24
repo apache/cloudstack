@@ -112,7 +112,8 @@
                 <template #label>
                   <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
                 </template>
-                <a-input
+                <a-input-number
+                style="width: 100%;"
                 v-model:value="form.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
               </a-form-item>
@@ -124,7 +125,8 @@
                 <template #label>
                   <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
                 </template>
-                <a-input
+                <a-input-number
+                style="width: 100%;"
                 v-model:value="form.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>

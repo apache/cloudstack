@@ -251,9 +251,23 @@
                 <template #label>
                   <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
                 </template>
-                <a-input
+                <a-input-number
+                style="width: 100%;"
                 v-model:value="form.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
+              </a-form-item>
+            </a-col>
+            <a-col :md="12" :lg="12">
+              <a-form-item
+                ref="privatemtu"
+                name="privatemtu">
+                <template #label>
+                  <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
+                </template>
+                <a-input-number
+                style="width: 100%;"
+                v-model:value="form.privatemtu"
+                  :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>
             </a-col>
           </a-row>
@@ -439,6 +453,7 @@ export default {
       networkOfferingLoading: false,
       networkOfferingWarning: false,
       selectedNetworkOffering: {},
+      isRedundant: false,
       networks: [],
       networkLoading: false,
       selectedNetwork: {},

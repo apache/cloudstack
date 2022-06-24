@@ -218,12 +218,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 config.setRouterIpv6(userSpecified.getRouterIpv6());
             }
 
-            if (userSpecified.getPublicIfaceMtu() != null) {
-                config.setPublicIfaceMtu(userSpecified.getPublicIfaceMtu());
+            if (userSpecified.getPublicMtu() != null) {
+                config.setPublicMtu(userSpecified.getPublicMtu());
             }
 
-            if (userSpecified.getPrivateIfaceMtu() != null) {
-                config.setPrivateIfaceMtu(userSpecified.getPrivateIfaceMtu());
+            if (userSpecified.getPrivateMtu() != null) {
+                config.setPrivateMtu(userSpecified.getPrivateMtu());
             }
         }
 

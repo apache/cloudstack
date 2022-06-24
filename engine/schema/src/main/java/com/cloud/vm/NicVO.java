@@ -333,7 +333,7 @@ public class NicVO implements Nic {
             .append(reservationId)
             .append("-")
             .append(iPv4Address)
-            .append(mtu).append("]")
+            .append("]")
             .toString();
     }
 

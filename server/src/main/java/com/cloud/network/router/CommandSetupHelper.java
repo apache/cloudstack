@@ -828,8 +828,8 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, ipAddr.isSourceNat(), BroadcastDomainType.fromString(ipAddr.getVlanTag()).toString(), ipAddr.getGateway(),
                         ipAddr.getNetmask(), macAddress, networkRate, ipAddr.isOneToOneNat());
                 setIpAddressNetworkParams(ip, network, router);
-                if (network.getPublicIfaceMtu() != null) {
-                    ip.setMtu(network.getPublicIfaceMtu());
+                if (network.getPublicMtu() != null) {
+                    ip.setMtu(network.getPublicMtu());
                 }
                 if (router.getVpcId() != null) {
                     VpcVO vpc = _vpcDao.findById(router.getVpcId());
@@ -960,8 +960,8 @@ public class CommandSetupHelper {
                 final IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask,
                         vifMacAddress, networkRate, ipAddr.isOneToOneNat());
                 NetworkVO networkVO = _networkDao.findById(ipAddr.getAssociatedWithNetworkId());
-                if (networkVO != null && networkVO.getPublicIfaceMtu() != null) {
-                    ip.setMtu(networkVO.getPublicIfaceMtu());
+                if (networkVO != null && networkVO.getPublicMtu() != null) {
+                    ip.setMtu(networkVO.getPublicMtu());
                 } else if (router.getVpcId() != null) {
                     VpcVO vpc = _vpcDao.findById(router.getVpcId());
                     if (vpc != null) {
@@ -1106,8 +1106,8 @@ public class CommandSetupHelper {
                 final Network network = _networkModel.getNetwork(ipAddr.getNetworkId());
                 final IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, ipAddr.getSourceNat(), ipAddr.getBroadcastUri(),
                         ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(), null, false);
-                if (network.getPrivateIfaceMtu() != null) {
-                    ip.setMtu(network.getPublicIfaceMtu());
+                if (network.getPrivateMtu() != null) {
+                    ip.setMtu(network.getPublicMtu());
                 }
                 setIpAddressNetworkParams(ip, network, router);
                 ipsToSend[i++] = ip;

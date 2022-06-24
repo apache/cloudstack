@@ -59,6 +59,8 @@ import com.cloud.vm.NicSecondaryIp;
  */
 public interface NetworkService {
 
+    public static final Integer DEFAULT_MTU = 1500;
+
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
     IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId, Boolean displayIp, String ipaddress) throws ResourceAllocationException, InsufficientAddressCapacityException,

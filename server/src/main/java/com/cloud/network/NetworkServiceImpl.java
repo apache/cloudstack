@@ -2916,8 +2916,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 if (router.getTrafficType() == TrafficType.Guest && privateMtu != null) {
                     ip = new IpAddressTO(router.getIpAddress(), privateMtu, router.getNetmask());
                     ip.setTrafficType(TrafficType.Guest);
-                } else if (router.getTrafficType() == TrafficType.Public && publicMtu != null ||
-                        (network.getGuestType() == GuestType.Shared && router.getTrafficType() == TrafficType.Guest)) {
+                } else if (router.getTrafficType() == TrafficType.Public && publicMtu != null) {
                     ip = new IpAddressTO(router.getIpAddress(), publicMtu, router.getNetmask());
                     ip.setTrafficType(TrafficType.Public);
                 }
@@ -3133,17 +3132,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             publicMtu = null;
         }
 
-        if (privateMtu != null && network.getGuestType() == GuestType.Shared) {
-            s_logger.warn("Shared network VRs have no private interfaces, ignoring private MTU");
-            privateMtu = null;
-        }
         return new Pair<>(publicMtu, privateMtu);
     }
 
     private void updateNetworkDetails(Map<Long, List<IpAddressTO>> routerToIpList, NetworkVO network, Integer publicMtu, Integer privateMtu) {
         for (Map.Entry<Long, List<IpAddressTO>> routerEntrySet : routerToIpList.entrySet()) {
             for (IpAddressTO ipAddress : routerEntrySet.getValue()) {
-                NicVO nicVO = _nicDao.findByIpAddressAndVmType(ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
+                NicVO nicVO = _nicDao.findByInstanceIdAndIpAddressAndVmtype(routerEntrySet.getKey(), ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
                 if (nicVO != null) {
                     if (ipAddress.getTrafficType() == TrafficType.Guest) {
                         nicVO.setMtu(privateMtu);
@@ -3156,10 +3151,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (publicMtu != null) {
-            network.setPublicIfaceMtu(publicMtu);
+            network.setPublicMtu(publicMtu);
         }
         if (privateMtu != null) {
-            network.setPrivateIfaceMtu(privateMtu);
+            network.setPrivateMtu(privateMtu);
         }
         _networksDao.update(network.getId(), network);
     }

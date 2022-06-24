@@ -241,7 +241,7 @@ public class VirtualRoutingResource {
                 SubnetUtils util = new SubnetUtils(ipAddressTO.getPublicIp(), ipAddressTO.getVlanNetmask());
                 String address = util.getInfo().getCidrSignature();
                 String subnet = address.split("/")[1];
-                ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.VR_UPDATE_MTU,
+                ExecutionResult result = _vrDeployer.executeInVR(routerIp, VRScripts.VR_UPDATE_INTERFACE_CONFIG,
                         ipAddressTO.getPublicIp() + " " + subnet + " " + ipAddressTO.getMtu() + " " + 15);
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("result: " + result.isSuccess() + ", output: " + result.getDetails());
@@ -252,8 +252,8 @@ public class VirtualRoutingResource {
                         s_logger.warn(String.format("Failed to update interface mtu to %s on interface with ip: %s",
                                 ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));
                         finalResult = false;
-                        continue;
                     }
+                    continue;
                 }
                 s_logger.info(String.format("Successfully updated mtu to %s on interface with ip: %s",
                         ipAddressTO.getMtu(), ipAddressTO.getPublicIp()));

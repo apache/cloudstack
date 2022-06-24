@@ -137,7 +137,7 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     private Set<Ipv6RouteResponse> ipv6Routes;
 
     @SerializedName(ApiConstants.PUBLIC_MTU)
-    @Param(description = "MTU configured on the public interfaces of the VPC VR")
+    @Param(description = "MTU configured on the public interfaces of the VPC VR", since = "4.18.0")
     private Integer publicMtu;
 
     public void setId(final String id) {

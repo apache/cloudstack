@@ -2162,11 +2162,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         NicProfile profile =
             new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
                 vm.getHypervisorType(), network));
-        if (network.getTrafficType() == TrafficType.Public && network.getPublicIfaceMtu() != null) {
-            profile.setMtu(network.getPublicIfaceMtu());
+        if (network.getTrafficType() == TrafficType.Public && network.getPublicMtu() != null) {
+            profile.setMtu(network.getPublicMtu());
         }
-        if (network.getTrafficType() == TrafficType.Guest && network.getPrivateIfaceMtu() != null) {
-            profile.setMtu(network.getPrivateIfaceMtu());
+        if (network.getTrafficType() == TrafficType.Guest && network.getPrivateMtu() != null) {
+            profile.setMtu(network.getPrivateMtu());
         }
 //        guru.updateNicProfile(profile, network);
         return profile;

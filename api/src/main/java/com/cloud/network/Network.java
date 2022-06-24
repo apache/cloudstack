@@ -485,7 +485,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     Date getCreated();
 
-    Integer getPublicIfaceMtu();
+    Integer getPublicMtu();
 
-    Integer getPrivateIfaceMtu();
+    Integer getPrivateMtu();
 }

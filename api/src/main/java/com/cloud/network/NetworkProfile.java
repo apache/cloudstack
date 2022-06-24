@@ -338,12 +338,12 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public Integer getPublicIfaceMtu() {
+    public Integer getPublicMtu() {
         return null;
     }
 
     @Override
-    public Integer getPrivateIfaceMtu() {
+    public Integer getPrivateMtu() {
         return null;
     }
 

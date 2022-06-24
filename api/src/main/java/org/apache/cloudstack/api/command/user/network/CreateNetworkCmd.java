@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import com.cloud.network.NetworkService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -335,11 +336,11 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     }
 
     public Integer getPublicMtu() {
-        return publicMtu != null ? publicMtu : ApiConstants.DEFAULT_MTU;
+        return publicMtu != null ? publicMtu : NetworkService.DEFAULT_MTU;
     }
 
     public Integer getPrivateMtu() {
-        return privateMtu != null ? privateMtu : ApiConstants.DEFAULT_MTU;
+        return privateMtu != null ? privateMtu : NetworkService.DEFAULT_MTU;
     }
 
     /////////////////////////////////////////////////////

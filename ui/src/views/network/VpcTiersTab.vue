@@ -201,7 +201,8 @@
             <template #label>
               <tooltip-label :title="$t('label.privatemtu')" :tooltip="$t('label.privatemtu')"/>
             </template>
-            <a-input
+            <a-input-number
+              style="width: 100%;"
               v-model:value="form.privatemtu"
               :placeholder="$t('label.privatemtu')"/>
           </a-form-item>

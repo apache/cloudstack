@@ -46,19 +46,19 @@
         <a-row :gutter="12" v-if="resource.type !== 'L2'">
             <a-col :md="12" :lg="12">
               <a-form-item
-                v-if="resource.type !== 'Shared'"
                 ref="privatemtu"
                 name="privatemtu">
                 <template #label>
                   <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
                 </template>
-                <a-input
-                v-model:value="form.privatemtu"
+                <a-input-number
+                  v-model:value="form.privatemtu"
+                  style="width: 100%;"
                   :defaultValue="resource.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>
             </a-col>
-            <a-col :md="12" :lg="resource.type !== 'Shared' ? 12 : 24">
+            <a-col :md="12" :lg="12">
               <a-form-item
               v-if="!resource.vpcid"
                 ref="publicmtu"
@@ -66,8 +66,9 @@
                 <template #label>
                   <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
                 </template>
-                <a-input
-                v-model:value="form.publicmtu"
+                <a-input-number
+                  style="width: 100%;"
+                  v-model:value="form.publicmtu"
                   :defaultValue="resource.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
               </a-form-item>

@@ -1281,7 +1281,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 vpc.setPublicMtu(mtu);
                 List<NetworkVO> vpcTierNetworks = _ntwkDao.listByVpc(vpcId);
                 for (NetworkVO network : vpcTierNetworks) {
-                    network.setPublicIfaceMtu(mtu);
+                    network.setPublicMtu(mtu);
                     _ntwkDao.update(network.getId(), network);
                 }
                 s_logger.info("Successfully update MTU of VPC network");

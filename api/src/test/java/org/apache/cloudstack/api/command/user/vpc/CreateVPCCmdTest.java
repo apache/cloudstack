@@ -20,12 +20,12 @@ package org.apache.cloudstack.api.command.user.vpc;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkService;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.user.AccountService;
 import com.cloud.utils.db.EntityManager;
 import junit.framework.TestCase;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -106,7 +106,7 @@ public class CreateVPCCmdTest extends TestCase {
     public void testGetPublicMtuWhenNotSet() {
         Integer publicMtu = null;
         ReflectionTestUtils.setField(cmd, "publicMtu", publicMtu);
-        Assert.assertEquals(ApiConstants.DEFAULT_MTU, cmd.getPublicMtu());
+        Assert.assertEquals(NetworkService.DEFAULT_MTU, cmd.getPublicMtu());
     }
 
     public void testGetPublicMtuWhenSet() {

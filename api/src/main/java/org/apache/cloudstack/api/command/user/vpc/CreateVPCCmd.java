@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import com.cloud.network.NetworkService;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -136,7 +137,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
     }
 
     public Integer getPublicMtu() {
-        return publicMtu != null ? publicMtu : ApiConstants.DEFAULT_MTU;
+        return publicMtu != null ? publicMtu : NetworkService.DEFAULT_MTU;
     }
 
     public boolean isStart() {
