@@ -2126,6 +2126,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
 
+        String routerLogrotateFrequency = RouterLogrotateFrequency.valueIn(router.getDataCenterId());
+        s_logger.debug(String.format("The global setting [%s], with value [%s], will be used to configure the logrotate service frequency on the virtual router.",
+                RouterLogrotateFrequency.key(), routerLogrotateFrequency));
+        buf.append(String.format(" logrotatefrequency=%s", routerLogrotateFrequency));
+
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
         }
@@ -3298,7 +3303,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksFreeDiskSpaceThreshold,
                 RouterHealthChecksMaxCpuUsageThreshold,
                 RouterHealthChecksMaxMemoryUsageThreshold,
-                ExposeDnsAndBootpServer
+                ExposeDnsAndBootpServer,
+                RouterLogrotateFrequency
         };
     }
 

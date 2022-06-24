@@ -882,6 +882,9 @@ parse_cmd_line() {
         privatekey)
           export PRIVATEKEY=$VALUE
           ;;
+        logrotatefrequency)
+          export LOGROTATE_FREQUENCY=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}
