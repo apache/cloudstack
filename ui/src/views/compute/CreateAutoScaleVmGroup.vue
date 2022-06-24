@@ -435,14 +435,12 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div class="form">
-                    <div class="form__item">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                    <a-form-item :label="$t('label.duration')" name="scaleupduration" ref="scaleupduration">
                       <a-input v-model:value="form.scaleupduration"></a-input>
-                    </div>
-                    <div class="form__item">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.quiettime') }}</div>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.quiettime')" name="scaleupquiettime" ref="scaleupquiettime">
                       <a-input v-model:value="form.scaleupquiettime"></a-input>
-                    </div>
+                    </a-form-item>
                   </div>
                   <a-divider/>
                   <div class="form">
@@ -483,13 +481,13 @@
                     <div class="form__item" ref="newScaleUpConditionThreshold">
                       <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
                       <a-input v-model:value="newScaleUpCondition.threshold"></a-input>
-                      <span class="error-text">{{ $t('label.required') }}</span>
+                      <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
                     <div class="form__item">
                       <div class="form__label">{{ $t('label.action') }}</div>
                       <a-button ref="submit" type="primary" @click="addScaleUpCondition">
                         <template #icon><plus-outlined /></template>
-                        {{ $t('label.add') }}
+                        {{ $t('label.add.condition') }}
                       </a-button>
                     </div>
                   </div>
@@ -527,14 +525,12 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div class="form">
-                    <div class="form__item">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                    <a-form-item :label="$t('label.duration')" name="scaledownduration" ref="scaledownduration">
                       <a-input v-model:value="form.scaledownduration"></a-input>
-                    </div>
-                    <div class="form__item">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.quiettime') }}</div>
+                    </a-form-item>
+                    <a-form-item :label="$t('label.quiettime')" name="scaledownquiettime" ref="scaledownquiettime">
                       <a-input v-model:value="form.scaledownquiettime"></a-input>
-                    </div>
+                    </a-form-item>
                   </div>
                   <a-divider/>
                   <div class="form">
@@ -575,13 +571,13 @@
                     <div class="form__item" ref="newScaleDownConditionThreshold">
                       <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
                       <a-input v-model:value="newScaleDownCondition.threshold"></a-input>
-                      <span class="error-text">{{ $t('label.required') }}</span>
+                      <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
                     <div class="form__item">
                       <div class="form__label">{{ $t('label.action') }}</div>
                       <a-button ref="submit" type="primary" @click="addScaleDownCondition">
                         <template #icon><plus-outlined /></template>
-                        {{ $t('label.add') }}
+                        {{ $t('label.add.condition') }}
                       </a-button>
                     </div>
                   </div>
@@ -634,7 +630,7 @@
                         </a-select-option>
                       </a-select>
                     </a-form-item>
-                    <a-form-item :label="$t('label.destroyvmgraceperiod')">
+                    <a-form-item :label="$t('label.destroyvmgraceperiod')" name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
                       <a-input v-model:value="form.destroyvmgraceperiod"></a-input>
                     </a-form-item>
                   </div>
@@ -674,10 +670,9 @@
               <a-button @click="() => $router.back()" :disabled="loading.deploy">
                 {{ $t('label.cancel') }}
               </a-button>
-              <a-dropdown-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                <rocket-outlined />
-                {{ $t('label.launch.vm') }}
-              </a-dropdown-button>
+              <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
+                {{ $t('label.create') }}
+              </a-button>
             </div>
           </a-form>
         </a-card>
@@ -748,6 +743,10 @@ export default {
   mixins: [mixin, mixinDevice],
   data () {
     return {
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
+      },
       zoneId: '',
       zoneSelected: false,
       dynamicscalingenabled: true,
@@ -756,7 +755,6 @@ export default {
         name: null,
         zoneid: null,
         zonename: null,
-        hypervisor: null,
         templateid: null,
         templatename: null,
         serviceofferingid: null,
@@ -768,7 +766,6 @@ export default {
       },
       options: {
         templates: {},
-        hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
         zones: [],
@@ -779,7 +776,6 @@ export default {
       loading: {
         deploy: false,
         templates: false,
-        hypervisors: false,
         serviceOfferings: false,
         diskOfferings: false,
         networks: false,
@@ -793,7 +789,6 @@ export default {
       templateLicenses: [],
       templateProperties: {},
       selectedTemplateConfiguration: {},
-      hypervisor: '',
       serviceOffering: {},
       diskOffering: {},
       networks: [],
@@ -930,13 +925,6 @@ export default {
           isLoad: true,
           field: 'zoneid'
         },
-        hypervisors: {
-          list: 'listHypervisors',
-          options: {
-            zoneid: _.get(this.zone, 'id')
-          },
-          field: 'hypervisor'
-        },
         networks: {
           list: 'listNetworks',
           options: {
@@ -976,14 +964,6 @@ export default {
         return {
           label: zone.name,
           value: zone.id
-        }
-      })
-    },
-    hypervisorSelectOptions () {
-      return this.options.hypervisors.map((hypervisor) => {
-        return {
-          label: hypervisor.name,
-          value: hypervisor.name
         }
       })
     },
@@ -1042,11 +1022,6 @@ export default {
             this.template = template
             break
           }
-        }
-
-        if (instanceConfig.hypervisor) {
-          var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
-          this.hypervisor = hypervisorItem ? hypervisorItem.name : null
         }
 
         this.serviceOffering = _.find(this.options.serviceOfferings, (option) => option.id === instanceConfig.computeofferingid)
@@ -1158,7 +1133,27 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
-        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        scaleupduration: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        scaleupquiettime: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        scaledownduration: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        scaledownquiettime: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ],
+        user: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        destroyvmgraceperiod: [
+          { required: true, message: this.$t('message.error.required.input') },
+          this.naturalNumberRule
+        ]
       })
 
       if (this.zone && this.zone.networktype !== 'Basic') {
@@ -1390,7 +1385,6 @@ export default {
         name: null,
         zoneid: null,
         zonename: null,
-        hypervisor: null,
         templateid: null,
         templatename: null,
         serviceofferingid: null,
@@ -1485,6 +1479,18 @@ export default {
     updateSecurityGroups (securitygroupids) {
       this.securitygroupids = securitygroupids || []
     },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
+    },
+    isNumber (value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return false
+      }
+      return true
+    },
     getOperator (val) {
       if (val === 'GT' || val === 'gt') return this.$t('label.operator.greater')
       if (val === 'GE' || val === 'ge') return this.$t('label.operator.greater.or.equal')
@@ -1506,7 +1512,7 @@ export default {
         this.$refs.newScaleUpConditionRelationalOperator.classList.remove('error')
       }
 
-      if (!this.newScaleUpCondition.threshold) {
+      if (!this.newScaleUpCondition.threshold || !this.isNumber(this.newScaleUpCondition.threshold)) {
         this.$refs.newScaleUpConditionThreshold.classList.add('error')
       } else {
         this.$refs.newScaleUpConditionThreshold.classList.remove('error')
@@ -1540,7 +1546,7 @@ export default {
         this.$refs.newScaleDownConditionRelationalOperator.classList.remove('error')
       }
 
-      if (!this.newScaleDownCondition.threshold) {
+      if (!this.newScaleDownCondition.threshold || !this.isNumber(this.newScaleDownCondition.threshold)) {
         this.$refs.newScaleDownConditionThreshold.classList.add('error')
       } else {
         this.$refs.newScaleDownConditionThreshold.classList.remove('error')
@@ -1585,12 +1591,52 @@ export default {
           })
           return
         }
+
+        if (!this.selectedNetworkId) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.select.network')
+          })
+          return
+        }
+
+        if (!values.loadbalancerid) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.select.load.balancer')
+          })
+          return
+        }
+
         if (this.error) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
           })
           return
+        }
+
+        if (this.scaleUpConditions.length === 0) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.scaleup.policy.continue')
+          })
+          return
+        }
+
+        if (this.scaleDownConditions.length === 0) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.scaledown.policy.continue')
+          })
+          return
+        }
+
+        if (!values.autoscaleuserid) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.error.select.user')
+          })
         }
 
         this.loading.deploy = true
@@ -1607,10 +1653,6 @@ export default {
           deployVmData.rootdisksize = values.rootdisksize
         } else if (this.rootDiskSizeFixed > 0 && !this.template.deployasis) {
           deployVmData.rootdisksize = this.rootDiskSizeFixed
-        }
-
-        if (values.hypervisor && values.hypervisor.length > 0) {
-          deployVmData.hypervisor = values.hypervisor
         }
 
         // step 3: select service offering
@@ -1837,12 +1879,6 @@ export default {
             }
             param.opts = response
             this.options[name] = response
-
-            if (name === 'hypervisors') {
-              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
-              this.dataPreFill.hypervisor = hypervisorFromResponse
-              this.form.hypervisor = hypervisorFromResponse
-            }
 
             if (param.field) {
               this.fillValue(param.field)
