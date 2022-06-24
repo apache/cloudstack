@@ -647,7 +647,7 @@ public class VeeamClient {
             } else if (part.matches("CreationTime(\\s)+:(.)*")) {
                 String [] split = part.split(":", 2);
                 split[1] = StringUtils.trim(split[1]);
-                String [] time = split[1].split(":|/| ");
+                String [] time = split[1].split("[:/ ]");
                 Calendar cal = Calendar.getInstance();
                 cal.set(Integer.parseInt(time[2]), Integer.parseInt(time[0]) - 1, Integer.parseInt(time[1]), Integer.parseInt(time[3]), Integer.parseInt(time[4]), Integer.parseInt(time[5]));
                 created = cal.getTime();
