@@ -49,7 +49,7 @@ public class TemplateOrVolumePostUploadCommand {
 
     String description;
 
-    private String defaultMaxAccountSecondaryStorage;
+    private String defaultMaxSecondaryStorage;
 
     private long processTimeout;
 
@@ -185,12 +185,12 @@ public class TemplateOrVolumePostUploadCommand {
         this.description = description;
     }
 
-    public void setDefaultMaxAccountSecondaryStorage(String defaultMaxAccountSecondaryStorage) {
-        this.defaultMaxAccountSecondaryStorage = defaultMaxAccountSecondaryStorage;
+    public void setDefaultMaxSecondaryStorage(String defaultMaxSecondaryStorage) {
+        this.defaultMaxSecondaryStorage = defaultMaxSecondaryStorage;
     }
 
-    public String getDefaultMaxAccountSecondaryStorage() {
-        return defaultMaxAccountSecondaryStorage;
+    public String getDefaultMaxSecondaryStorage() {
+        return defaultMaxSecondaryStorage;
     }
 
     public void setAccountId(long accountId) {
