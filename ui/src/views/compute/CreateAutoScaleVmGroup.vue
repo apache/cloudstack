@@ -855,7 +855,6 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
-      networkConfig: [],
       dataNetworkCreated: [],
       tabKey: 'templateid',
       dataPreFill: {},
@@ -1729,13 +1728,6 @@ export default {
             }
             for (let j = 0; j < arrNetwork.length; j++) {
               createVmGroupData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
-              if (this.networkConfig.length > 0) {
-                const networkConfig = this.networkConfig.filter((item) => item.key === arrNetwork[j].networkid)
-                if (networkConfig && networkConfig.length > 0) {
-                  createVmGroupData['iptonetworklist[' + j + '].ip'] = networkConfig[0].ipAddress ? networkConfig[0].ipAddress : undefined
-                  createVmGroupData['iptonetworklist[' + j + '].mac'] = networkConfig[0].macAddress ? networkConfig[0].macAddress : undefined
-                }
-              }
             }
           }
         }
