@@ -631,6 +631,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.isOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
+        secStorageVm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
             _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
