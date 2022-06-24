@@ -459,9 +459,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 command.setAccountId(vol.getAccountId());
                 Account account = _accountDao.findById(vol.getAccountId());
                 if (account.getType().equals(Account.Type.PROJECT)) {
-                    command.setDefaultMaxSecondaryStorage(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key()));
+                    command.setDefaultMaxSecondaryStorageInGB(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key()));
                 } else {
-                    command.setDefaultMaxSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                    command.setDefaultMaxSecondaryStorageInGB(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
                 }
                 Gson gson = new GsonBuilder().create();
                 String metadata = EncryptionUtil.encodeData(gson.toJson(command), key);
