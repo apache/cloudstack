@@ -47,7 +47,7 @@
       <a-divider/>
       <div class="form" v-ctrl-enter="addCondition">
         <div class="form__item" ref="newConditionCounterId">
-          <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
+          <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
           <a-select
             style="width: 100%"
             showSearch

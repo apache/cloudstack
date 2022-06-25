@@ -445,7 +445,7 @@
                   <a-divider/>
                   <div class="form">
                     <div class="form__item" ref="newScaleUpConditionCounterId">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -535,7 +535,7 @@
                   <a-divider/>
                   <div class="form">
                     <div class="form__item" ref="newScaleDownConditionCounterId">
-                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counterid') }}</div>
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
                       <a-select
                         style="width: 100%"
                         showSearch
