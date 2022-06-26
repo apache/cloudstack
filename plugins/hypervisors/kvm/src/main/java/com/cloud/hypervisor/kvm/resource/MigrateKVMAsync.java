@@ -20,9 +20,13 @@ package com.cloud.hypervisor.kvm.resource;
 
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
+import org.libvirt.TypedParameter;
+import org.libvirt.TypedStringParameter;
+import org.libvirt.TypedUlongParameter;
 
 public class MigrateKVMAsync implements Callable<Domain> {
 
@@ -33,6 +37,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private String dxml = "";
     private String vmName = "";
     private String destIp = "";
+    private String rootDiskDiskDeviceLabel = null;
     private boolean migrateStorage;
     private boolean migrateNonSharedInc;
     private boolean autoConvergence;
@@ -85,9 +90,11 @@ public class MigrateKVMAsync implements Callable<Domain> {
 
     // Libvirt 1.2.3 supports auto converge.
     private static final int LIBVIRT_VERSION_SUPPORTS_AUTO_CONVERGE = 1002003;
+    private static final String TCP_URI = "tcp:";
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
-            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp) {
+            final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp,
+            final String rootDiskDiskDeviceLabel) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
@@ -98,11 +105,13 @@ public class MigrateKVMAsync implements Callable<Domain> {
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
+        this.rootDiskDiskDeviceLabel = rootDiskDiskDeviceLabel;
     }
 
     @Override
     public Domain call() throws LibvirtException {
         long flags = VIR_MIGRATE_LIVE;
+        String destUri = TCP_URI + destIp;
 
         if (dconn.getLibVirVersion() >= LIBVIRT_VERSION_SUPPORTS_MIGRATE_COMPRESSED) {
             flags |= VIR_MIGRATE_COMPRESSED;
@@ -121,6 +130,25 @@ public class MigrateKVMAsync implements Callable<Domain> {
             flags |= VIR_MIGRATE_AUTO_CONVERGE;
         }
 
-        return dm.migrate(dconn, flags, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
+        if (StringUtils.isNotBlank(rootDiskDiskDeviceLabel) && migrateStorage && !migrateNonSharedInc) {
+            return migrateRootDisk(flags, rootDiskDiskDeviceLabel, destUri);
+        }
+        return dm.migrate(dconn, flags, dxml, vmName, destUri, libvirtComputingResource.getMigrateSpeed());
+    }
+
+    /**
+     * Uses libvirt.virDomainMigrate3 in order to map the root volume to be copied when using the flag VIR_MIGRATE_NON_SHARED_DISK.
+     * VIR_MIGRATE_NON_SHARED_DISK is analagous to "--copy-all" in "virsh".
+     * Binding into: "virsh migrate i-2-13456-VM qemu://<DestHostAddr>/system --live --compressed --copy-storage-all --migrate-disks vda --xml i-2-13456-VM.xml"
+     */
+    private Domain migrateRootDisk(long flags, String diskDeviceName, String uri) throws LibvirtException {
+        int nParams = 5;
+        TypedParameter[] params = new TypedParameter[nParams];
+        params[0] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_XML, dxml);
+        params[1] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_NAME, vmName);
+        params[2] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_URI, uri);
+        params[3] = new TypedUlongParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_BANDWIDTH, (long)libvirtComputingResource.getMigrateSpeed());
+        params[4] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_MIGRATE_DISKS, diskDeviceName);
+        return dm.migrate(dconn, params, flags);
     }
 }

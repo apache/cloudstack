@@ -791,4 +791,43 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertTrue(replaced.contains("csdpdk-7"));
         Assert.assertFalse(replaced.contains("csdpdk-1"));
     }
+
+    @Test
+    public void discoverLocalRootDiskDeviceLabelTestRootDiskFile() {
+        String rootLabel = "vda";
+        DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, DiskDef.DeviceType.DISK);
+        Mockito.when(rootDisk.getDiskLabel()).thenReturn(rootLabel);
+        prepareAndTestDiscoverLocalRootDiskDeviceLabel(rootDisk, rootLabel);
+    }
+
+    @Test
+    public void discoverLocalRootDiskDeviceLabelTestRootDiskFileNotDisk() {
+        String rootLabel = "vda";
+        String expectedLabel = null;
+        for (DiskDef.DeviceType deviceType : DiskDef.DeviceType.values()) {
+            if (DiskDef.DeviceType.DISK != deviceType) {
+                List<DiskDef> disks = new ArrayList<>();
+                DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, deviceType);
+                Mockito.when(rootDisk.getDiskLabel()).thenReturn(rootLabel);
+                prepareAndTestDiscoverLocalRootDiskDeviceLabel(rootDisk, expectedLabel);
+            }
+        }
+    }
+
+    private void prepareAndTestDiscoverLocalRootDiskDeviceLabel(DiskDef rootDisk, String expected) {
+        List<DiskDef> disks = new ArrayList<>();
+        disks.add(rootDisk);
+        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK));
+        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK));
+        disks.add(mockDisk(DiskDef.DiskType.BLOCK, DiskDef.DeviceType.DISK));
+        String diskLabel = libvirtMigrateCmdWrapper.retrieveLocalRootDiskDeviceLabel(disks);
+        Assert.assertEquals(expected, diskLabel);
+    }
+
+    private DiskDef mockDisk(DiskDef.DiskType file, DiskDef.DeviceType diskType) {
+        DiskDef mockedDisk = Mockito.mock(DiskDef.class);
+        Mockito.when(mockedDisk.getDiskType()).thenReturn(file);
+        Mockito.when(mockedDisk.getDeviceType()).thenReturn(diskType);
+        return mockedDisk;
+    }
 }
