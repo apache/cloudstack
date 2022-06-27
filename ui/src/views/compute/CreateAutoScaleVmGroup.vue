@@ -1755,22 +1755,6 @@ export default {
           return
         }
 
-        if (this.scaleUpConditions.length === 0) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.scaleup.policy.continue')
-          })
-          return
-        }
-
-        if (this.scaleDownConditions.length === 0) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.scaledown.policy.continue')
-          })
-          return
-        }
-
         if (values.maxmembers < values.minmembers) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
