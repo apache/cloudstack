@@ -222,7 +222,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             DataStoreTO srcStoreTO = srcData.getDataStore();
             DataTO destData = cpyCommand.getDestTO();
             DataStoreTO destStoreTO = destData.getDataStore();
-            cpyCommand.setExecuteInSequence(StorageManager.shouldExecuteInSequenceOnVmware());
 
             boolean inSeq = true;
             if (parallelExecutionAllowed(srcData, destData, srcStoreTO, destStoreTO)) {
@@ -315,12 +314,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private boolean parallelExecutionAllowed(DataTO srcData, DataTO destData, DataStoreTO srcStoreTO, DataStoreTO destStoreTO) {
-        Long srcId = _storagePoolDao.findByUuid(srcStoreTO.getUuid()).getId();
-        Long dstId = _storagePoolDao.findByUuid(destStoreTO.getUuid()).getId();
+        Long srcId = srcStoreTO == null || srcStoreTO.getUuid() == null ? null : _storagePoolDao.findByUuid(srcStoreTO.getUuid()).getId();
+        Long dstId = destStoreTO == null || destStoreTO.getUuid() == null ? null : _storagePoolDao.findByUuid(destStoreTO.getUuid()).getId();
         return (srcData.getObjectType() == DataObjectType.SNAPSHOT)
                 || (destData.getObjectType() == DataObjectType.SNAPSHOT)
-                || (destStoreTO.getRole() == DataStoreRole.Image)
-                || (destStoreTO.getRole() == DataStoreRole.ImageCache)
+                || (destStoreTO != null && destStoreTO.getRole() == DataStoreRole.Image)
+                || (destStoreTO != null && destStoreTO.getRole() == DataStoreRole.ImageCache)
                 || !StorageManager.shouldExecuteInSequenceOnVmware(srcId, dstId);
     }
 
