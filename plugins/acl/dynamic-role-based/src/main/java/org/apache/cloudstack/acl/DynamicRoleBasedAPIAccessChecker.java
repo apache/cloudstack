@@ -84,15 +84,18 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
      */
     public boolean checkApiPermissionByRole(Role role, String apiName, List<RolePermission> allPermissions) {
         for (final RolePermission permission : allPermissions) {
-            if (permission.getRule().matches(apiName)) {
-                if (Permission.ALLOW.equals(permission.getPermission())) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
-                    }
-                    return true;
-                }
+            if (!permission.getRule().matches(apiName)) {
+                continue;
+            }
+
+            if (!Permission.ALLOW.equals(permission.getPermission())) {
                 return false;
             }
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
+            }
+            return true;
         }
         return annotationRoleBasedApisMap.get(role.getRoleType()) != null &&
                 annotationRoleBasedApisMap.get(role.getRoleType()).contains(apiName);
