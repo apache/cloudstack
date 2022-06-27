@@ -1073,20 +1073,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId);
     }
 
-    private String getHostGuidForLocalStorage(Map<Volume, StoragePool> volumeToPool) {
-        String hostGuidInTargetCluster = null;
-        for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
-            Volume volume = entry.getKey();
-            StoragePool pool = entry.getValue();
-            if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
-                List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
-                StoragePoolHostVO storagePoolHostVO = storagePoolHostVOs.get(0);
-                HostVO hostVO = _hostDao.findById(storagePoolHostVO.getHostId());
-                hostGuidInTargetCluster = hostVO.getGuid();
-                break;
-            }
-        }
-        return hostGuidInTargetCluster;
+    private String getHostGuidForLocalStorage(StoragePool pool) {
+        List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
+        StoragePoolHostVO storagePoolHostVO = storagePoolHostVOs.get(0);
+        HostVO hostVO = _hostDao.findById(storagePoolHostVO.getHostId());
+        return hostVO.getGuid();
     }
 
     private String getHostGuidInTargetCluster(boolean isInterClusterMigration, Long destClusterId) {
@@ -1115,7 +1106,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         // OfflineVmwareMigration: specialised migration command
         List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
         Long poolClusterId = null;
-        boolean isLocalStorageMigration = false;
+        StoragePool targetVmPool = null;
         for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
             Volume volume = entry.getKey();
             StoragePool pool = entry.getValue();
@@ -1125,7 +1116,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 poolClusterId = pool.getClusterId();
             }
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
-                isLocalStorageMigration = true;
+                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+                    targetVmPool = pool;
+                }
             }
             volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
         }
@@ -1133,8 +1126,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
         String targetHostGuid = null;
-        if (isLocalStorageMigration) {
-            targetHostGuid = getHostGuidForLocalStorage(volumeToPool);
+        if (targetVmPool != null && targetVmPool.isLocal()) {
+            targetHostGuid = getHostGuidForLocalStorage(targetVmPool);
         } else {
             targetHostGuid = getHostGuidInTargetCluster(isInterClusterMigration, destClusterId);
         }
