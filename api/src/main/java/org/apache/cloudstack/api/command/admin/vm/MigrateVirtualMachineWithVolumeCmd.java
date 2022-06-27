@@ -193,7 +193,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         }
     }
 
-    void setResponseBasedOnVmType(VirtualMachine userVm, VirtualMachine migratedVm) {
+    private void setResponseBasedOnVmType(VirtualMachine userVm, VirtualMachine migratedVm) {
         if (VirtualMachine.Type.User.equals(userVm.getType())) {
             UserVmResponse userVmResponse = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm) migratedVm).get(0);
             userVmResponse.setResponseName(getCommandName());
