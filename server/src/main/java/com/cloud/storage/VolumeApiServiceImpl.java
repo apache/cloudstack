@@ -92,6 +92,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -99,6 +100,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -339,6 +342,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     private static final String CUSTOM_DISK_OFFERING_UNIQUE_NAME = "Cloud.com-Custom";
+    private static final List<Volume.State> validAttachStates = Arrays.asList(Volume.State.Allocated, Volume.State.Ready, Volume.State.Uploaded);
 
     protected VolumeApiServiceImpl() {
         _volStateMachine = Volume.State.getStateMachine();
@@ -2082,6 +2086,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
         }
+        if (s_logger.isTraceEnabled()) {
+            String msg = "attaching volume %s/%s to a VM (%s/%s) with an existing volume %s/%s on primary storage %s";
+            if (existingVolumeOfVm != null) {
+                s_logger.trace(String.format(msg,
+                        volumeToAttach.getName(), volumeToAttach.getUuid(),
+                        vm.getName(), vm.getUuid(),
+                        existingVolumeOfVm.getName(), existingVolumeOfVm.getUuid(),
+                        existingVolumeOfVm.getPoolId()));
+            }
+        }
 
         HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
@@ -2092,6 +2106,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO destPrimaryStorage = null;
         if (existingVolumeOfVm != null && !existingVolumeOfVm.getState().equals(Volume.State.Allocated)) {
             destPrimaryStorage = _storagePoolDao.findById(existingVolumeOfVm.getPoolId());
+            if (s_logger.isTraceEnabled() && destPrimaryStorage != null) {
+                s_logger.trace(String.format("decided on target storage: %s/%s", destPrimaryStorage.getName(), destPrimaryStorage.getUuid()));
+            }
         }
 
         boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
@@ -2111,6 +2128,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // reload the volume from db
         newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
         boolean moveVolumeNeeded = needMoveVolume(existingVolumeOfVm, newVolumeOnPrimaryStorage);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("is this a new volume: %s == %s ?", volumeToAttach, newVolumeOnPrimaryStorage));
+            s_logger.trace(String.format("is it needed to move the volume: %b?", moveVolumeNeeded));
+        }
 
         if (moveVolumeNeeded) {
             PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)newVolumeOnPrimaryStorage.getDataStore();
@@ -2146,24 +2167,184 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         Account caller = CallContext.current().getCallingAccount();
 
-        // Check that the volume ID is valid
-        VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
-        // Check that the volume is a data volume
-        if (volumeToAttach == null || !(volumeToAttach.getVolumeType() == Volume.Type.DATADISK || volumeToAttach.getVolumeType() == Volume.Type.ROOT)) {
-            throw new InvalidParameterValueException("Please specify a volume with the valid type: " + Volume.Type.ROOT.toString() + " or " + Volume.Type.DATADISK.toString());
+        VolumeInfo volumeToAttach = getAndCheckVolumeInfo(volumeId);
+
+        UserVmVO vm = getAndCheckUserVmVO(vmId, volumeToAttach);
+
+        checkDeviceId(deviceId, volumeToAttach, vm);
+
+        checkNumberOfAttachedVolumes(deviceId, vm);
+
+        excludeLocalStorageIfNeeded(volumeToAttach);
+
+        checkForDevicesInCopies(vmId, vm);
+
+        checkRightsToAttach(caller, volumeToAttach, vm);
+
+        HypervisorType rootDiskHyperType = vm.getHypervisorType();
+        HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
+
+        StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+        if (s_logger.isTraceEnabled() && volumeToAttachStoragePool != null) {
+            s_logger.trace(String.format("volume to attach (%s/%s) has a primary storage assigned to begin with (%s/%s)",
+                    volumeToAttach.getName(), volumeToAttach.getUuid(), volumeToAttachStoragePool.getName(), volumeToAttachStoragePool.getUuid()));
         }
 
-        // Check that the volume is not currently attached to any VM
-        if (volumeToAttach.getInstanceId() != null) {
-            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
+        checkForMatchingHypervisorTypesIf(volumeToAttachStoragePool != null && !volumeToAttachStoragePool.isManaged(), rootDiskHyperType, volumeToAttachHyperType);
+
+        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+
+        AsyncJob job = asyncExecutionContext.getJob();
+
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info(String.format("Trying to attach volume [%s/%s] to VM instance [%s/%s], update async job-%s progress status",
+                    volumeToAttach.getName(),
+                    volumeToAttach.getUuid(),
+                    vm.getName(),
+                    vm.getUuid(),
+                    job.getId()));
         }
 
-        // Check that the volume is not destroyed
-        if (volumeToAttach.getState() == Volume.State.Destroy) {
-            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
+        _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
+
+        if (asyncExecutionContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            return safelyOrchestrateAttachVolume(vmId, volumeId, deviceId);
+        } else {
+            return getVolumeAttachJobResult(vmId, volumeId, deviceId);
+        }
+    }
+
+    @Nullable private Volume getVolumeAttachJobResult(Long vmId, Long volumeId, Long deviceId) {
+        Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
+
+        Volume vol = null;
+        try {
+            outcome.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new CloudRuntimeException(String.format("Could not get attach volume job result for VM [%s], volume[%s] and device [%s], due to [%s].", vmId, volumeId, deviceId, e.getMessage()), e);
         }
 
-        // Check that the virtual machine ID is valid and it's a user vm
+        Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+        if (jobResult != null) {
+            if (jobResult instanceof ConcurrentOperationException) {
+                throw (ConcurrentOperationException)jobResult;
+            } else if (jobResult instanceof InvalidParameterValueException) {
+                throw (InvalidParameterValueException)jobResult;
+            } else if (jobResult instanceof RuntimeException) {
+                throw (RuntimeException)jobResult;
+            } else if (jobResult instanceof Throwable) {
+                throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+            } else if (jobResult instanceof Long) {
+                vol = _volsDao.findById((Long)jobResult);
+            }
+        }
+        return vol;
+    }
+
+    private Volume safelyOrchestrateAttachVolume(Long vmId, Long volumeId, Long deviceId) {
+        // avoid re-entrance
+
+        VmWorkJobVO placeHolder = null;
+        placeHolder = createPlaceHolderWork(vmId);
+        try {
+            return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId);
+        } finally {
+            _workJobDao.expunge(placeHolder.getId());
+        }
+    }
+
+    /**
+     * managed storage can be used for different types of hypervisors
+     * only perform this check if the volume's storage pool is not null and not managed
+     */
+    private void checkForMatchingHypervisorTypesIf(boolean checkNeeded, HypervisorType rootDiskHyperType, HypervisorType volumeToAttachHyperType) {
+        if (checkNeeded && volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
+            throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
+        }
+    }
+
+    private void checkRightsToAttach(Account caller, VolumeInfo volumeToAttach, UserVmVO vm) {
+        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
+
+        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
+
+        if (!Arrays.asList(Volume.State.Allocated, Volume.State.Ready).contains(volumeToAttach.getState())) {
+            try {
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
+            } catch (ResourceAllocationException e) {
+                s_logger.error("primary storage resource limit check failed", e);
+                throw new InvalidParameterValueException(e.getMessage());
+            }
+        }
+    }
+
+    private void checkForDevicesInCopies(Long vmId, UserVmVO vm) {
+        // if target VM has associated VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (vmSnapshots.size() > 0) {
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have VM snapshots", vm.getName(), vm.getUuid()));
+        }
+
+        // if target VM has backups
+        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
+            throw new InvalidParameterValueException(String.format("Unable to attach volume to VM %s/%s, please specify a VM that does not have any backups", vm.getName(), vm.getUuid()));
+        }
+    }
+
+    /**
+     * If local storage is disabled then attaching a volume with a local diskoffering is not allowed
+     */
+    private void excludeLocalStorageIfNeeded(VolumeInfo volumeToAttach) {
+        DataCenterVO dataCenter = _dcDao.findById(volumeToAttach.getDataCenterId());
+        if (!dataCenter.isLocalStorageEnabled()) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
+            if (diskOffering.isUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
+            }
+        }
+    }
+
+    /**
+     * Check that the number of data volumes attached to VM is less than the number that are supported by the hypervisor
+     */
+    private void checkNumberOfAttachedVolumes(Long deviceId, UserVmVO vm) {
+        if (deviceId == null || deviceId.longValue() != 0) {
+            List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
+            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm);
+            if (existingDataVolumes.size() >= maxAttachableDataVolumesSupported) {
+                throw new InvalidParameterValueException(
+                        "The specified VM already has the maximum number of data disks (" + maxAttachableDataVolumesSupported + ") attached. Please specify another VM.");
+            }
+        }
+    }
+
+    /**
+     * validate ROOT volume type;
+     * 1. vm shouldn't have any volume with deviceId 0
+     * 2. volume can't be in Uploaded state
+     *
+     * @param deviceId requested device number to attach as
+     * @param volumeToAttach
+     * @param vm
+     */
+    private void checkDeviceId(Long deviceId, VolumeInfo volumeToAttach, UserVmVO vm) {
+        if (deviceId != null && deviceId.longValue() == 0) {
+            validateRootVolumeDetachAttach(_volsDao.findById(volumeToAttach.getId()), vm);
+            if (!_volsDao.findByInstanceAndDeviceId(vm.getId(), 0).isEmpty()) {
+                throw new InvalidParameterValueException("Vm already has root volume attached to it");
+            }
+            if (volumeToAttach.getState() == Volume.State.Uploaded) {
+                throw new InvalidParameterValueException("No support for Root volume attach in state " + Volume.State.Uploaded);
+            }
+        }
+    }
+
+    /**
+     * Check that the virtual machine ID is valid and it's a user vm
+     *
+     * @return the user vm vo object correcponding to the vmId to attach to
+     */
+    @NotNull private UserVmVO getAndCheckUserVmVO(Long vmId, VolumeInfo volumeToAttach) {
         UserVmVO vm = _userVmDao.findById(vmId);
         if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             throw new InvalidParameterValueException("Please specify a valid User VM.");
@@ -2178,138 +2359,36 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (vm.getDataCenterId() != volumeToAttach.getDataCenterId()) {
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
+        return vm;
+    }
 
-        // Check that the device ID is valid
-        if (deviceId != null) {
-            // validate ROOT volume type
-            if (deviceId.longValue() == 0) {
-                validateRootVolumeDetachAttach(_volsDao.findById(volumeToAttach.getId()), vm);
-                // vm shouldn't have any volume with deviceId 0
-                if (!_volsDao.findByInstanceAndDeviceId(vm.getId(), 0).isEmpty()) {
-                    throw new InvalidParameterValueException("Vm already has root volume attached to it");
-                }
-                // volume can't be in Uploaded state
-                if (volumeToAttach.getState() == Volume.State.Uploaded) {
-                    throw new InvalidParameterValueException("No support for Root volume attach in state " + Volume.State.Uploaded);
-                }
-            }
+    /**
+     * Check that the volume ID is valid
+     * Check that the volume is a data volume
+     * Check that the volume is not currently attached to any VM
+     * Check that the volume is not destroyed
+     *
+     * @param volumeId the id of the volume to attach
+     * @return the volume info object representing the volume to attach
+     */
+    @NotNull private VolumeInfo getAndCheckVolumeInfo(Long volumeId) {
+        VolumeInfo volumeToAttach = volFactory.getVolume(volumeId);
+        if (volumeToAttach == null || !(volumeToAttach.getVolumeType() == Volume.Type.DATADISK || volumeToAttach.getVolumeType() == Volume.Type.ROOT)) {
+            throw new InvalidParameterValueException("Please specify a volume with the valid type: " + Volume.Type.ROOT.toString() + " or " + Volume.Type.DATADISK.toString());
         }
 
-        // Check that the number of data volumes attached to VM is less than
-        // that supported by hypervisor
-        if (deviceId == null || deviceId.longValue() != 0) {
-            List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-            int maxAttachableDataVolumesSupported = getMaxDataVolumesSupported(vm);
-            if (existingDataVolumes.size() >= maxAttachableDataVolumesSupported) {
-                throw new InvalidParameterValueException(
-                        "The specified VM already has the maximum number of data disks (" + maxAttachableDataVolumesSupported + ") attached. Please specify another VM.");
-            }
+        if (volumeToAttach.getInstanceId() != null) {
+            throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
 
-        // If local storage is disabled then attaching a volume with local disk
-        // offering not allowed
-        DataCenterVO dataCenter = _dcDao.findById(volumeToAttach.getDataCenterId());
-        if (!dataCenter.isLocalStorageEnabled()) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
-            if (diskOffering.isUseLocalStorage()) {
-                throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
-            }
+        if (volumeToAttach.getState() == Volume.State.Destroy) {
+            throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
         }
 
-        // if target VM has associated VM snapshots
-        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
-        if (vmSnapshots.size() > 0) {
-            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have VM snapshots");
-        }
-
-        // if target VM has backups
-        if (vm.getBackupOfferingId() != null || vm.getBackupVolumeList().size() > 0) {
-            throw new InvalidParameterValueException("Unable to attach volume, please specify a VM that does not have any backups");
-        }
-
-        // permission check
-        _accountMgr.checkAccess(caller, null, true, volumeToAttach, vm);
-
-        if (!(Volume.State.Allocated.equals(volumeToAttach.getState()) || Volume.State.Ready.equals(volumeToAttach.getState()) || Volume.State.Uploaded.equals(volumeToAttach.getState()))) {
+        if (!validAttachStates.contains(volumeToAttach.getState())) {
             throw new InvalidParameterValueException("Volume state must be in Allocated, Ready or in Uploaded state");
         }
-
-        Account owner = _accountDao.findById(volumeToAttach.getAccountId());
-
-        if (!(volumeToAttach.getState() == Volume.State.Allocated || volumeToAttach.getState() == Volume.State.Ready)) {
-            try {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumeToAttach.getSize());
-            } catch (ResourceAllocationException e) {
-                s_logger.error("primary storage resource limit check failed", e);
-                throw new InvalidParameterValueException(e.getMessage());
-            }
-        }
-
-        HypervisorType rootDiskHyperType = vm.getHypervisorType();
-        HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
-
-        StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
-
-        // managed storage can be used for different types of hypervisors
-        // only perform this check if the volume's storage pool is not null and not managed
-        if (volumeToAttachStoragePool != null && !volumeToAttachStoragePool.isManaged()) {
-            if (volumeToAttachHyperType != HypervisorType.None && rootDiskHyperType != volumeToAttachHyperType) {
-                throw new InvalidParameterValueException("Can't attach a volume created by: " + volumeToAttachHyperType + " to a " + rootDiskHyperType + " vm");
-            }
-        }
-
-        AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-
-        if (asyncExecutionContext != null) {
-            AsyncJob job = asyncExecutionContext.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + " to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
-            }
-
-            _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
-        }
-
-        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
-        if (jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
-            // avoid re-entrance
-
-            VmWorkJobVO placeHolder = null;
-            placeHolder = createPlaceHolderWork(vmId);
-            try {
-                return orchestrateAttachVolumeToVM(vmId, volumeId, deviceId);
-            } finally {
-                _workJobDao.expunge(placeHolder.getId());
-            }
-
-        } else {
-            Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(vmId, volumeId, deviceId);
-
-            Volume vol = null;
-            try {
-                outcome.get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Operation is interrupted", e);
-            } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Execution excetion", e);
-            }
-
-            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-            if (jobResult != null) {
-                if (jobResult instanceof ConcurrentOperationException) {
-                    throw (ConcurrentOperationException)jobResult;
-                } else if (jobResult instanceof InvalidParameterValueException) {
-                    throw (InvalidParameterValueException)jobResult;
-                } else if (jobResult instanceof RuntimeException) {
-                    throw (RuntimeException)jobResult;
-                } else if (jobResult instanceof Throwable) {
-                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
-                } else if (jobResult instanceof Long) {
-                    vol = _volsDao.findById((Long)jobResult);
-                }
-            }
-            return vol;
-        }
+        return volumeToAttach;
     }
 
     @Override
@@ -2497,7 +2576,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             AsyncJob job = asyncExecutionContext.getJob();
 
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
+                s_logger.info(String.format("Trying to attach volume %s to VM instance %s, update async job-%s progress status",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volume, "name", "uuid"),
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "name", "uuid"),
+                        job.getId()));
             }
 
             _jobMgr.updateAsyncJobAttachment(job.getId(), "Volume", volumeId);
@@ -3757,6 +3839,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean sendCommand = vm.getState() == State.Running;
         AttachAnswer answer = null;
         StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+        if (s_logger.isTraceEnabled() && volumeToAttachStoragePool != null) {
+            s_logger.trace(String.format("storage is gotten from volume to attach: %s/%s",volumeToAttachStoragePool.getName(),volumeToAttachStoragePool.getUuid()));
+        }
         HostVO host = getHostForVmVolumeAttach(vm, volumeToAttachStoragePool);
         Long hostId = host == null ? null : host.getId();
         if (host != null && host.getHypervisorType() == HypervisorType.VMware) {

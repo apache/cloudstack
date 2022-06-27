@@ -500,6 +500,81 @@ export default {
           }
         },
         {
+          title: 'label.provider',
+          key: 'provider',
+          placeHolder: 'message.error.select',
+          value: 'DefaultPrimary',
+          select: true,
+          required: true,
+          options: this.primaryStorageProviders
+        },
+        {
+          title: 'label.ismanaged',
+          key: 'managed',
+          checkbox: true,
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.capacitybytes',
+          key: 'capacityBytes',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.capacityiops',
+          key: 'capacityIops',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.url',
+          key: 'url',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.powerflex.gateway',
+          key: 'powerflexGateway',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.gateway.username',
+          key: 'powerflexGatewayUsername',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.gateway.password',
+          key: 'powerflexGatewayPassword',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          password: true,
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.storage.pool',
+          key: 'powerflexStoragePool',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
           title: 'label.storage.tags',
           key: 'primaryStorageTags',
           placeHolder: 'message.error.storage.tags',
@@ -721,9 +796,10 @@ export default {
       currentHypervisor: null,
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
+      primaryStorageProviders: [],
       storageProviders: [],
       currentStep: null,
-      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider']
+      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']
     }
   },
   created () {
@@ -748,6 +824,17 @@ export default {
           primaryStorageScope: null
         })
       }
+    }
+  },
+  watch: {
+    'prefillContent.provider' (newVal, oldVal) {
+      if (['SolidFire', 'PowerFlex'].includes(newVal) && !['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      } else if (!['SolidFire', 'PowerFlex'].includes(newVal) && ['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      }
+
+      this.fetchProtocol()
     }
   },
   methods: {
@@ -799,6 +886,9 @@ export default {
           break
         case 'provider':
           this.fetchProvider()
+          break
+        case 'primaryStorageProvider':
+          this.fetchPrimaryStorageProvider()
           break
         default:
           break
@@ -912,6 +1002,7 @@ export default {
         })
       }
 
+      protocols.push({ id: 'custom', description: 'custom' })
       this.primaryStorageProtocols = protocols
     },
     async fetchConfigurationSwitch () {
@@ -954,6 +1045,13 @@ export default {
           storageProviders.push({ id: 'Swift', description: 'Swift' })
         }
         this.storageProviders = storageProviders
+      })
+    },
+    fetchPrimaryStorageProvider () {
+      this.primaryStorageProviders = []
+      api('listStorageProviders', { type: 'primary' }).then(json => {
+        this.primaryStorageProviders = json.liststorageprovidersresponse.dataStoreProvider || []
+        this.primaryStorageProviders.map((item, idx) => { this.primaryStorageProviders[idx].id = item.name })
       })
     },
     submitLaunchZone () {
