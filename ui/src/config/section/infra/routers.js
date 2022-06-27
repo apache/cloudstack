@@ -174,8 +174,9 @@ export default {
       message: 'message.confirm.upgrade.router.newer.template',
       docHelp: 'adminguide/systemvm.html#upgrading-virtual-routers',
       dataView: true,
-      groupAction: true
-      // show: (record) => { return record.requiresupgrade }
+      groupAction: true,
+      // show: (record) => { return record.requiresupgrade },
+      groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
     },
     {
       api: 'migrateSystemVm',

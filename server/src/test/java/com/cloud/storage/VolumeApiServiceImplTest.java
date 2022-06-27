@@ -276,8 +276,6 @@ public class VolumeApiServiceImplTest {
 
             // managed root volume
             VolumeInfo managedVolume = Mockito.mock(VolumeInfo.class);
-            when(managedVolume.getId()).thenReturn(7L);
-            when(managedVolume.getDataCenterId()).thenReturn(1L);
             when(managedVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
             when(managedVolume.getInstanceId()).thenReturn(null);
             lenient().when(managedVolume.getPoolId()).thenReturn(2L);
@@ -286,7 +284,6 @@ public class VolumeApiServiceImplTest {
             VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             managedVolume1.setPoolId(2L);
             managedVolume1.setDataCenterId(1L);
-            when(volumeDaoMock.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
             UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm");

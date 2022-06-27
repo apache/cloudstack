@@ -3840,6 +3840,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 rootDiskOfferingId = diskOfferingId;
                 diskOfferingId = null;
             }
+            if (!customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+                customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(diskSize));
+            }
         }
         if (!offering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
             rootDiskOfferingId = overrideDiskOfferingId;
