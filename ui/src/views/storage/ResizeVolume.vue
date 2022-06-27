@@ -122,7 +122,7 @@ export default {
             errorMethod: () => {
               this.closeModal()
             },
-            loadingMessage: this.$t('message.resize.volumne.processing'),
+            loadingMessage: this.$t('message.resize.volume.processing'),
             catchMessage: this.$t('error.fetching.async.job.result'),
             catchMethod: () => {
               this.loading = false
