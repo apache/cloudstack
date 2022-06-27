@@ -51,6 +51,8 @@
                 v-ctrl-enter="handleSubmit">
                 <a-form-item
                   v-for="(field, index) in fields"
+                  :ref="field.name"
+                  :name="field.name"
                   :key="index"
                   :label="field.name==='keyword' ?
                     ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
