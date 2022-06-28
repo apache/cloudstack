@@ -571,7 +571,7 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null, "");
         assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
     }
 
@@ -595,7 +595,7 @@ public class LibvirtMigrateCommandWrapperTest {
                 "</domain>";
         final String targetIp = "10.10.10.10";
         final String password = "12345678";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
@@ -619,7 +619,7 @@ public class LibvirtMigrateCommandWrapperTest {
                 "</domain>";
         final String targetIp = "localhost.localdomain";
         final String password = "12345678";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password, "");
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
