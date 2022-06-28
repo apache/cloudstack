@@ -1116,21 +1116,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 poolClusterId = pool.getClusterId();
             }
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
-                if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-                    targetVmPool = pool;
-                }
+                targetVmPool = pool;
             }
             volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
         }
         final Long destClusterId = poolClusterId;
         final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
-        String targetHostGuid = null;
-        if (targetVmPool != null && targetVmPool.isLocal()) {
-            targetHostGuid = getHostGuidForLocalStorage(targetVmPool);
-        } else {
-            targetHostGuid = getHostGuidInTargetCluster(isInterClusterMigration, destClusterId);
-        }
+        String targetHostGuid = getTargetHostGuid(targetVmPool, destClusterId, isInterClusterMigration);
+
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
                 volumeToFilerTo, targetHostGuid, true);
         commands.add(migrateVmToPoolCommand);
@@ -1147,6 +1141,16 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
         return commands;
+    }
+
+    private String getTargetHostGuid(StoragePool targetVmPool, Long destClusterId, boolean isInterClusterMigration) {
+        String targetHostGuid = null;
+        if (targetVmPool != null && targetVmPool.isLocal()) {
+            targetHostGuid = getHostGuidForLocalStorage(targetVmPool);
+        } else {
+            targetHostGuid = getHostGuidInTargetCluster(isInterClusterMigration, destClusterId);
+        }
+        return targetHostGuid;
     }
 
     @Override
