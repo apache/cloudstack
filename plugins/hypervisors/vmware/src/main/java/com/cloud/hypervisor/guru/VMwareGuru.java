@@ -1146,6 +1146,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private String getTargetHostGuid(StoragePool targetLocalPoolForVM, Long destClusterId, boolean isInterClusterMigration) {
         String targetHostGuid = null;
         if (targetLocalPoolForVM != null) {
+            // Get the target host for local storage migration
             targetHostGuid = getHostGuidForLocalStorage(targetLocalPoolForVM);
         } else {
             targetHostGuid = getHostGuidInTargetCluster(isInterClusterMigration, destClusterId);
