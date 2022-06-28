@@ -19,20 +19,22 @@
 
 package org.apache.cloudstack;
 
+import junit.framework.TestCase;
+import org.apache.cloudstack.saml.SAML2AuthManager;
+import org.apache.cloudstack.saml.SAMLProviderMetadata;
+import org.apache.cloudstack.saml.SAMLUtils;
+import org.apache.cloudstack.utils.security.CertUtils;
+import org.junit.Test;
+import org.opensaml.saml2.core.AuthnRequest;
+import org.opensaml.saml2.core.LogoutRequest;
+
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.regex.Pattern;
 
-import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.cloudstack.saml.SAMLUtils;
-import org.apache.cloudstack.utils.security.CertUtils;
-import org.junit.Test;
-import org.opensaml.DefaultBootstrap;
-import org.opensaml.saml2.core.AuthnRequest;
-import org.opensaml.saml2.core.LogoutRequest;
-
-import junit.framework.TestCase;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class SAMLUtilsTest extends TestCase {
 
@@ -64,28 +66,64 @@ public class SAMLUtilsTest extends TestCase {
 
     @Test
     public void testBuildAuthnRequestUrlWithoutQueryParam() throws Exception {
-        String consumerUrl = "http://someurl.com";
-        String idpUrl = "http://idp.domain.example";
-        String spId = "cloudstack";
+        String urlScheme = "http";
+
+        String spDomain = "sp.domain.example";
+        String spUrl = urlScheme + "://" + spDomain;
+        String spId = "serviceProviderId";
+
+        String idpDomain = "idp.domain.example";
+        String idpUrl = urlScheme + "://" + idpDomain;
+        String idpId = "identityProviderId";
+
         String authnId = SAMLUtils.generateSecureRandomId();
-        DefaultBootstrap.bootstrap();
-        AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl);
-        String appendOperator = idpUrl.contains("?") ? "&" : "?";
-        String redirectUrl = idpUrl + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
-        assertEquals(redirectUrl, idpUrl + "?" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+
+        SAMLProviderMetadata spMetadata = new SAMLProviderMetadata();
+        spMetadata.setEntityId(spId);
+        spMetadata.setSsoUrl(spUrl);
+
+        SAMLProviderMetadata idpMetadata = new SAMLProviderMetadata();
+        idpMetadata.setSsoUrl(idpUrl);
+        idpMetadata.setEntityId(idpId);
+
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        assertThat(redirectUrl).hasScheme(urlScheme);
+        assertEquals(urlScheme, redirectUrl.getScheme());
+        assertThat(redirectUrl).hasHost(idpDomain);
+        assertEquals(idpDomain, redirectUrl.getHost());
+        assertThat(redirectUrl).hasParameter("SAMLRequest");
     }
 
     @Test
     public void testBuildAuthnRequestUrlWithQueryParam() throws Exception {
-        String consumerUrl = "http://someurl.com";
-        String idpUrl = "http://idp.domain.example?idpid=CX1298373";
+        String urlScheme = "http";
+
+        String spDomain = "sp.domain.example";
+        String spUrl = urlScheme + "://" + spDomain;
         String spId = "cloudstack";
+
+        String idpDomain = "idp.domain.example";
+        String idpQueryParam = "idpid=CX1298373";
+        String idpUrl = urlScheme + "://" + idpDomain + "?" + idpQueryParam;
+        String idpId = "identityProviderId";
+
         String authnId = SAMLUtils.generateSecureRandomId();
-        DefaultBootstrap.bootstrap();
-        AuthnRequest req = SAMLUtils.buildAuthnRequestObject(authnId, spId, idpUrl, consumerUrl);
-        String appendOperator = idpUrl.contains("?") ? "&" : "?";
-        String redirectUrl = idpUrl + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value());
-        assertEquals(redirectUrl, idpUrl + "&" + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(req), null, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+
+        SAMLProviderMetadata spMetadata = new SAMLProviderMetadata();
+        spMetadata.setEntityId(spId);
+        spMetadata.setSsoUrl(spUrl);
+
+        SAMLProviderMetadata idpMetadata = new SAMLProviderMetadata();
+        idpMetadata.setSsoUrl(idpUrl);
+        idpMetadata.setEntityId(idpId);
+
+        URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
+        assertThat(redirectUrl).hasScheme(urlScheme);
+        assertEquals(urlScheme, redirectUrl.getScheme());
+        assertThat(redirectUrl).hasHost(idpDomain);
+        assertEquals(idpDomain, redirectUrl.getHost());
+        assertThat(redirectUrl).hasParameter("idpid");
+        assertThat(redirectUrl).hasParameter("SAMLRequest");
     }
 
     @Test
