@@ -1345,6 +1345,7 @@ export default {
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
+        params.provider = 'Linstor'
         params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup
       } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
         let path = this.prefillContent.primaryStorageVmfsDatacenter

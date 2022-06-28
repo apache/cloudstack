@@ -209,24 +209,26 @@
             <a-input v-model:value="form.vCenterDataStore" :placeholder="$t('message.datastore.description')"/>
           </a-form-item>
         </div>
-        <a-form-item name="provider" ref="provider">
-          <template #label>
-            <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
-          </template>
-          <a-select
-            v-model:value="form.provider"
-            @change="updateProviderAndProtocol"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.provider.description">
-            <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
-              {{ provider }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+        <div v-if="form.protocol !== 'Linstor'">
+          <a-form-item name="provider" ref="provider">
+            <template #label>
+              <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+            </template>
+            <a-select
+              v-model:value="form.provider"
+              @change="updateProviderAndProtocol"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :placeholder="apiParams.provider.description">
+              <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
+                {{ provider }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </div>
         <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor'">
           <a-form-item name="managed" ref="managed">
             <template #label>

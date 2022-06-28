@@ -38,6 +38,8 @@ public interface ScaleIOGatewayClient {
     String GATEWAY_API_PASSWORD = "powerflex.gw.password";
     String STORAGE_POOL_NAME = "powerflex.storagepool.name";
     String STORAGE_POOL_SYSTEM_ID = "powerflex.storagepool.system.id";
+    String SDC_ID = "powerflex.sdc.id";
+    String SDC_GUID = "powerflex.sdc.guid";
 
     static ScaleIOGatewayClient getClient(final String url, final String username, final String password,
                                           final boolean validateCertificate, final int timeout, final int maxConnections) throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
@@ -81,8 +83,10 @@ public interface ScaleIOGatewayClient {
     // SDC APIs
     List<Sdc> listSdcs();
     Sdc getSdc(String sdcId);
+    String getSdcIdByGuid(String sdcGuid);
     Sdc getSdcByIp(String ipAddress);
     Sdc getConnectedSdcByIp(String ipAddress);
-    List<String> listConnectedSdcIps();
-    boolean isSdcConnected(String ipAddress);
+    boolean haveConnectedSdcs();
+    boolean isSdcConnected(String sdcId);
+    boolean isSdcConnectedByIP(String ipAddress);
 }
