@@ -30,7 +30,7 @@ public interface ResourceLimitService {
     static final ConfigKey<Long> MaxAccountSecondaryStorage = new ConfigKey<Long>("Account Defaults", Long.class, "max.account.secondary.storage", "400",
             "The default maximum secondary storage space (in GiB) that can be used for an account", false);
     static final ConfigKey<Long> MaxProjectSecondaryStorage = new ConfigKey<Long>("Project Defaults", Long.class, "max.project.secondary.storage", "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an project", false);
+            "The default maximum secondary storage space (in GiB) that can be used for a project", false);
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "resourcecount.check.interval", "300",
             "Time (in seconds) to wait before running resource recalculation and fixing task. Default is 300 seconds, Setting this to 0 disables execution of the task", false);
 
