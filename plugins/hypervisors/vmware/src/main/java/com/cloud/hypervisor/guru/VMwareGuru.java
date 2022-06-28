@@ -1106,7 +1106,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         // OfflineVmwareMigration: specialised migration command
         List<Pair<VolumeTO, StorageFilerTO>> volumeToFilerTo = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
         Long poolClusterId = null;
-        StoragePool targetVmPool = null;
+        StoragePool targetLocalPoolForVM = null;
         for (Map.Entry<Volume, StoragePool> entry : volumeToPool.entrySet()) {
             Volume volume = entry.getKey();
             StoragePool pool = entry.getValue();
@@ -1116,14 +1116,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 poolClusterId = pool.getClusterId();
             }
             if (volume.getVolumeType().equals(Volume.Type.ROOT) && pool.isLocal()) {
-                targetVmPool = pool;
+                targetLocalPoolForVM = pool;
             }
             volumeToFilerTo.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
         }
         final Long destClusterId = poolClusterId;
         final Long srcClusterId = vmManager.findClusterAndHostIdForVm(vm.getId()).first();
         final boolean isInterClusterMigration = isInterClusterMigration(destClusterId, srcClusterId);
-        String targetHostGuid = getTargetHostGuid(targetVmPool, destClusterId, isInterClusterMigration);
+        String targetHostGuid = getTargetHostGuid(targetLocalPoolForVM, destClusterId, isInterClusterMigration);
 
         MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(),
                 volumeToFilerTo, targetHostGuid, true);
@@ -1143,10 +1143,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         return commands;
     }
 
-    private String getTargetHostGuid(StoragePool targetVmPool, Long destClusterId, boolean isInterClusterMigration) {
+    private String getTargetHostGuid(StoragePool targetLocalPoolForVM, Long destClusterId, boolean isInterClusterMigration) {
         String targetHostGuid = null;
-        if (targetVmPool != null && targetVmPool.isLocal()) {
-            targetHostGuid = getHostGuidForLocalStorage(targetVmPool);
+        if (targetLocalPoolForVM != null) {
+            targetHostGuid = getHostGuidForLocalStorage(targetLocalPoolForVM);
         } else {
             targetHostGuid = getHostGuidInTargetCluster(isInterClusterMigration, destClusterId);
         }
