@@ -93,6 +93,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
@@ -398,13 +399,12 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateOnStore.getDataStore().getRole().toString());
                     //using the existing max template size configuration
                     payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
-                    payload.setDefaultMaxSecondaryStorageInGB(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
                     payload.setAccountId(template.getAccountId());
                     Account account = _accountDao.findById(template.getAccountId());
                     if (account.getType().equals(Account.Type.PROJECT)) {
-                        payload.setDefaultMaxSecondaryStorageInGB(_configDao.getValue(Config.DefaultMaxProjectSecondaryStorage.key()));
+                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
                     } else {
-                        payload.setDefaultMaxSecondaryStorageInGB(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
+                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
                     }
                     payload.setRemoteEndPoint(ep.getPublicAddr());
                     payload.setRequiresHvm(template.requiresHvm());
