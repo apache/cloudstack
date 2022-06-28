@@ -2411,6 +2411,7 @@
 "message.reset.vpn.connection": "Please confirm that you want to reset VPN connection.",
 "message.linstor.resourcegroup.description": "Linstor resource group to use for primary storage.",
 "message.resize.volume.failed": "Failed to resize volume.",
+"message.resize.volume.processing": "Volume resize is in progress",
 "message.resource.not.found": "Resource not found.",
 "message.restart.mgmt.server": "Please restart your management server(s) for your new settings to take effect.",
 "message.restart.network": "All services provided by this network will be interrupted. Please confirm that you want to restart this network.",
