@@ -1906,6 +1906,156 @@ test_data = {
             "disksize": 3,
         }
     },
+    "vpc_vpn": {
+        "account": {
+            "email": "test@test.com",
+            "firstname": "Test",
+            "lastname": "User",
+            "username": "test",
+            "password": "password",
+        },
+        "host1": None,
+        "host2": None,
+        "compute_offering": {
+            "name": "Tiny Instance",
+            "displaytext": "Tiny Instance",
+            "cpunumber": 1,
+            "cpuspeed": 100,
+            "memory": 128,
+        },
+        "network_offering": {
+            "name": 'VPC Network offering',
+            "displaytext": 'VPC Network',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Vpn,Dhcp,Dns,SourceNat,Lb,PortForwarding,UserData,StaticNat,NetworkACL',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "serviceProviderList": {
+                "Vpn": 'VpcVirtualRouter',
+                "Dhcp": 'VpcVirtualRouter',
+                "Dns": 'VpcVirtualRouter',
+                "SourceNat": 'VpcVirtualRouter',
+                "Lb": 'VpcVirtualRouter',
+                "PortForwarding": 'VpcVirtualRouter',
+                "UserData": 'VpcVirtualRouter',
+                "StaticNat": 'VpcVirtualRouter',
+                "NetworkACL": 'VpcVirtualRouter'
+            },
+        },
+        "network_offering_internal_lb": {
+            "name": 'VPC Network Internal Lb offering',
+            "displaytext": 'VPC Network internal lb',
+            "guestiptype": 'Isolated',
+            "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,UserData,StaticNat,NetworkACL,Lb',
+            "traffictype": 'GUEST',
+            "availability": 'Optional',
+            "useVpc": 'on',
+            "serviceCapabilityList": {
+                "Lb": {
+                    "SupportedLbIsolation": 'dedicated',
+                    "lbSchemes": 'internal'
+                }
+            },
+            "serviceProviderList": {
+                "Dhcp": 'VpcVirtualRouter',
+                "Dns": 'VpcVirtualRouter',
+                "SourceNat": 'VpcVirtualRouter',
+                "PortForwarding": 'VpcVirtualRouter',
+                "UserData": 'VpcVirtualRouter',
+                "StaticNat": 'VpcVirtualRouter',
+                "NetworkACL": 'VpcVirtualRouter',
+                "Lb": 'InternalLbVm'
+            },
+            "egress_policy": "true",
+        },
+        "vpc_offering": {
+            "name": 'VPC off',
+            "displaytext": 'VPC off',
+            "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+        },
+        "redundant_vpc_offering": {
+            "name": 'Redundant VPC off',
+            "displaytext": 'Redundant VPC off',
+            "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat',
+            "serviceProviderList": {
+                "Vpn": 'VpcVirtualRouter',
+                "Dhcp": 'VpcVirtualRouter',
+                "Dns": 'VpcVirtualRouter',
+                "SourceNat": 'VpcVirtualRouter',
+                "PortForwarding": 'VpcVirtualRouter',
+                "Lb": 'VpcVirtualRouter',
+                "UserData": 'VpcVirtualRouter',
+                "StaticNat": 'VpcVirtualRouter',
+                "NetworkACL": 'VpcVirtualRouter'
+            },
+            "serviceCapabilityList": {
+                "SourceNat": {
+                    "RedundantRouter": 'true'
+                }
+            },
+        },
+        "vpc": {
+            "name": "TestVPC",
+            "displaytext": "TestVPC",
+            "cidr": '10.2.0.0/16'
+        },
+        "vpc1": {
+            "name": "TestVPC",
+            "displaytext": "VPC1",
+            "cidr": '10.2.0.0/16'
+        },
+        "vpc2": {
+            "name": "TestVPC",
+            "displaytext": "VPC2",
+            "cidr": '10.3.0.0/16'
+        },
+        "network_1": {
+            "name": "Test Network",
+            "displaytext": "Test Network",
+            "netmask": '255.255.255.0',
+            "gateway": "10.2.1.1"
+        },
+        "network_2": {
+            "name": "Test Network",
+            "displaytext": "Test Network",
+            "netmask": '255.255.255.0',
+            "gateway": "10.3.1.1"
+        },
+        "vpn": {
+            "vpn_user": "root",
+            "vpn_pass": "Md1sdc",
+            "vpn_pass_fail": "abc!123",  # too short
+            "iprange": "10.3.2.1-10.3.2.10",
+            "fordisplay": "true"
+        },
+        "vpncustomergateway": {
+            "esppolicy": "3des-md5;modp1536",
+            "ikepolicy": "3des-md5;modp1536",
+            "ipsecpsk": "ipsecpsk"
+        },
+        "natrule": {
+            "protocol": "TCP",
+            "cidrlist": '0.0.0.0/0',
+        },
+        "http_rule": {
+            "privateport": 80,
+            "publicport": 80,
+            "startport": 80,
+            "endport": 80,
+            "cidrlist": '0.0.0.0/0',
+            "protocol": "TCP"
+        },
+        "virtual_machine": {
+            "displayname": "Test VM",
+            "username": "root",
+            "password": "password",
+            "ssh_port": 22,
+            "privateport": 22,
+            "publicport": 22,
+            "protocol": 'TCP',
+        }
+    },
     "browser_upload_template": {
         "VHD": {
             "templatename": "XenUploadtemplate",
