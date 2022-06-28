@@ -35,7 +35,7 @@ public interface StorageAdaptor {
     // it with info from local disk, and return it
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
 
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type);
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details);
 
     public boolean deleteStoragePool(String uuid);
 
