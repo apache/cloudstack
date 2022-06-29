@@ -1631,6 +1631,9 @@ export default {
         if (createVmGroupData.rootdisksize) {
           otherdeployparams.push('rootdisksize=' + createVmGroupData.rootdisksize)
         }
+        if (createVmGroupData.overridediskofferingid) {
+          otherdeployparams.push('overridediskofferingid=' + createVmGroupData.overridediskofferingid)
+        }
         if (createVmGroupData.diskofferingid) {
           otherdeployparams.push('diskofferingid=' + createVmGroupData.diskofferingid)
         }

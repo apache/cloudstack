@@ -41,6 +41,7 @@ import javax.inject.Inject;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -135,6 +136,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -168,6 +170,7 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -252,6 +255,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private AnnotationDao _annotationDao;
     @Inject
     protected RouterControlHelper _routerControlHelper;
+    @Inject
+    private DiskOfferingDao _diskOfferingDao;
 
     private long autoScaleStatsInterval = -1L;
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
@@ -1422,6 +1427,18 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return true;
     }
 
+    private Map<String, String> getDeployParams (String otherDeployParams) {
+        Map<String, String> deployParams = new HashMap<>();
+        if (StringUtils.isNotBlank(otherDeployParams)) {
+            for (String param : otherDeployParams.split("&")) {
+                if (param.split("=").length >= 2) {
+                    deployParams.put(param.split("=")[0], param.split("=")[1]);
+                }
+            }
+        }
+        return deployParams;
+    }
+
     private long createNewVM(AutoScaleVmGroupVO asGroup) {
         AutoScaleVmProfileVO profileVo = _autoScaleVmProfileDao.findById(asGroup.getProfileId());
         long templateId = profileVo.getTemplateId();
@@ -1469,29 +1486,70 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             networkIds.add(network.getId());
             Map<String, String> customParameters = new HashMap<String, String>();
             List<String> sshKeyPairs = new ArrayList<>();
+
+            Map<String, String> deployParams = getDeployParams(profileVo.getOtherDeployParams());
+            // ROOT disk size
+            if (deployParams.get("rootdisksize") != null) {
+                String value = deployParams.get("rootdisksize");
+                try {
+                    Long rootDiskSize = Long.parseLong(value);
+                    customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSize));
+                } catch (NumberFormatException ex) {
+                    s_logger.warn("Cannot parse rootdisksize from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            Long overrideDiskOfferingId = null; // override ROOT disk offering
+            if (deployParams.get("overridediskofferingid") != null) {
+                String overrideDiskOfferingUuid = deployParams.get("overridediskofferingid");
+                DiskOffering overrideDiskOfferingInParam = _diskOfferingDao.findByUuid(overrideDiskOfferingUuid);
+                if (overrideDiskOfferingInParam != null) {
+                    overrideDiskOfferingId = overrideDiskOfferingInParam.getId();
+                } else {
+                    s_logger.warn("Cannot find disk offering by overridediskofferingid from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            Long diskOfferingId = null; // DATA disk offering ID
+            if (deployParams.get("diskofferingid") != null) {
+                String diskOfferingUuid = deployParams.get("diskofferingid");
+                DiskOffering diskOfferingInParam = _diskOfferingDao.findByUuid(diskOfferingUuid);
+                if (diskOfferingInParam != null) {
+                    diskOfferingId = diskOfferingInParam.getId();
+                } else {
+                    s_logger.warn("Cannot find disk offering by diskofferingid from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            Long dataDiskSize = null; // DATA disk size
+            if (deployParams.get("datadisksize") != null) {
+                String dataDiskSizeInParam = deployParams.get("datadisksize");
+                try {
+                    dataDiskSize = Long.parseLong(dataDiskSizeInParam);
+                } catch (NumberFormatException ex) {
+                    s_logger.warn("Cannot parse datadisksize from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
-                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null,
+                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                     hypervisorType, HTTPMethod.GET, null, sshKeyPairs, null,
                     null, true, null, null, customParameters, null, null, null,
-                    null, true, null);
+                    null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), null, null, null,
+                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
                         null, true, null, null, customParameters, null, null, null,
-                        null, true, null, null);
+                        null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        null, null, null,
+                            diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
                         addrs, true, null, null, customParameters, null, null, null,
-                        null, true, null, null);
-
+                        null, true, null, overrideDiskOfferingId);
                 }
             }
 
