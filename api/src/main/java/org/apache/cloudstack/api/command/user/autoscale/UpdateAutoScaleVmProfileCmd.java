@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -58,6 +59,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
                required = true,
                description = "the ID of the autoscale vm profile")
     private Long id;
+
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            description = "the service offering of the auto deployed virtual machine")
+    private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
                type = CommandType.UUID,
@@ -107,6 +114,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 
     public Long getTemplateId() {

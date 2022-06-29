@@ -501,6 +501,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_UPDATE, eventDescription = "updating autoscale vm profile")
     public AutoScaleVmProfile updateAutoScaleVmProfile(UpdateAutoScaleVmProfileCmd cmd) {
         Long profileId = cmd.getId();
+        Long serviceOfferingId = cmd.getServiceOfferingId();
         Long templateId = cmd.getTemplateId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
         Map counterParamList = cmd.getCounterParamList();
@@ -510,6 +511,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
         boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || destroyVmGraceperiod != null);
+
+        if (serviceOfferingId != null) {
+            ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+            if (serviceOffering == null) {
+                throw new InvalidParameterValueException("Unable to find service offering by id");
+            }
+            vmProfile.setServiceOfferingId(serviceOfferingId);
+        }
 
         if (templateId != null) {
             vmProfile.setTemplateId(templateId);

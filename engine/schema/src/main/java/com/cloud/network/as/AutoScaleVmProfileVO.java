@@ -127,6 +127,10 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return serviceOfferingId;
     }
 
+    public void setServiceOfferingId(Long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
     @Override
     public String getOtherDeployParams() {
         return otherDeployParams;
