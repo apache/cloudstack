@@ -1488,8 +1488,34 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<String> sshKeyPairs = new ArrayList<>();
 
             Map<String, String> deployParams = getDeployParams(profileVo.getOtherDeployParams());
-            // ROOT disk size
-            if (deployParams.get("rootdisksize") != null) {
+            if (deployParams.get("cpunumber") != null) {    // CPU number
+                String value = deployParams.get("cpunumber");
+                try {
+                    Long cpuNumber = Long.parseLong(value);
+                    customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(cpuNumber));
+                } catch (NumberFormatException ex) {
+                    s_logger.warn("Cannot parse cpunumber from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            if (deployParams.get("cpuspeed") != null) {     // CPU speed
+                String value = deployParams.get("cpuspeed");
+                try {
+                    Long cpuSpeed = Long.parseLong(value);
+                    customParameters.put(VmDetailConstants.CPU_SPEED, String.valueOf(cpuSpeed));
+                } catch (NumberFormatException ex) {
+                    s_logger.warn("Cannot parse cpuspeed from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            if (deployParams.get("memory") != null) {       // memory
+                String value = deployParams.get("memory");
+                try {
+                    Long memory = Long.parseLong(value);
+                    customParameters.put(VmDetailConstants.MEMORY, String.valueOf(memory));
+                } catch (NumberFormatException ex) {
+                    s_logger.warn("Cannot parse memory from otherdeployparams in AutoScale Vm profile");
+                }
+            }
+            if (deployParams.get("rootdisksize") != null) {     // ROOT disk size
                 String value = deployParams.get("rootdisksize");
                 try {
                     Long rootDiskSize = Long.parseLong(value);
@@ -1498,7 +1524,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     s_logger.warn("Cannot parse rootdisksize from otherdeployparams in AutoScale Vm profile");
                 }
             }
-            Long overrideDiskOfferingId = null; // override ROOT disk offering
+            Long overrideDiskOfferingId = null;     // override ROOT disk offering
             if (deployParams.get("overridediskofferingid") != null) {
                 String overrideDiskOfferingUuid = deployParams.get("overridediskofferingid");
                 DiskOffering overrideDiskOfferingInParam = _diskOfferingDao.findByUuid(overrideDiskOfferingUuid);
@@ -1508,7 +1534,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     s_logger.warn("Cannot find disk offering by overridediskofferingid from otherdeployparams in AutoScale Vm profile");
                 }
             }
-            Long diskOfferingId = null; // DATA disk offering ID
+            Long diskOfferingId = null;     // DATA disk offering ID
             if (deployParams.get("diskofferingid") != null) {
                 String diskOfferingUuid = deployParams.get("diskofferingid");
                 DiskOffering diskOfferingInParam = _diskOfferingDao.findByUuid(diskOfferingUuid);
@@ -1518,7 +1544,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     s_logger.warn("Cannot find disk offering by diskofferingid from otherdeployparams in AutoScale Vm profile");
                 }
             }
-            Long dataDiskSize = null; // DATA disk size
+            Long dataDiskSize = null;       // DATA disk size
             if (deployParams.get("datadisksize") != null) {
                 String dataDiskSizeInParam = deployParams.get("datadisksize");
                 try {
