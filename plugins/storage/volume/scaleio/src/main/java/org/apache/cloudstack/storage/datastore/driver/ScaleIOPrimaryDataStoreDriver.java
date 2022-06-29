@@ -41,6 +41,7 @@ import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
+import org.apache.cloudstack.storage.command.CreateObjectCommand;
 import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
 import org.apache.cloudstack.storage.datastore.api.VolumeStatistics;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
@@ -53,6 +54,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -64,6 +67,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.server.ManagementServerImpl;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ResizeVolumePayload;
@@ -112,6 +116,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private AlertManager alertMgr;
     @Inject
     private ConfigurationDao configDao;
+    @Inject
+    private HostDao hostDao;
 
     public ScaleIOPrimaryDataStoreDriver() {
 
@@ -187,6 +193,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
+    private boolean grantAccess(DataObject dataObject, EndPoint ep, DataStore dataStore) {
+        Host host = hostDao.findById(ep.getId());
+        return grantAccess(dataObject, host, dataStore);
+    }
+
     @Override
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
         try {
@@ -227,6 +238,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } catch (Exception e) {
             LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
         }
+    }
+
+    private void revokeAccess(DataObject dataObject, EndPoint ep, DataStore dataStore) {
+        Host host = hostDao.findById(ep.getId());
+        revokeAccess(dataObject, host, dataStore);
     }
 
     private String getConnectedSdc(long poolId, long hostId) {
@@ -414,7 +430,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private String createVolume(VolumeInfo volumeInfo, long storagePoolId) {
+    private CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId) {
         LOGGER.debug("Creating PowerFlex volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
@@ -447,7 +463,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volume.setPoolType(Storage.StoragePoolType.PowerFlex);
             volume.setFormat(Storage.ImageFormat.RAW);
             volume.setPoolId(storagePoolId);
-            volumeDao.update(volume.getId(), volume);
+            VolumeObject createdObject = VolumeObject.getVolumeObject(volumeInfo.getDataStore(), volume);
+            createdObject.update();
 
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
@@ -455,7 +472,35 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
             storagePoolDao.update(storagePoolId, storagePool);
 
-            return volumePath;
+            CreateObjectAnswer answer = new CreateObjectAnswer(createdObject.getTO());
+
+            // if volume needs to be set up with encryption, do it now.
+            if (anyVolumeRequiresEncryption(volumeInfo)) {
+                LOGGER.debug(String.format("Setting up encryption for volume %s", volumeInfo));
+                VolumeObjectTO prepVolume = (VolumeObjectTO) createdObject.getTO();
+                prepVolume.setPath(volumePath);
+                prepVolume.setUuid(volumePath);
+                CreateObjectCommand cmd = new CreateObjectCommand(prepVolume);
+                EndPoint ep = selector.select(volumeInfo, true);
+                if (ep == null) {
+                    throw new CloudRuntimeException("No remote endpoint to send PowerFlex volume encryption preparation");
+                } else {
+                    try {
+                        grantAccess(createdObject, ep, volumeInfo.getDataStore());
+                        answer = (CreateObjectAnswer) ep.sendMessage(cmd);
+                        if (!answer.getResult()) {
+                            throw new CloudRuntimeException("Failed to set up encryption on PowerFlex volume: " + answer.getDetails());
+                        }
+                    } finally {
+                        revokeAccess(createdObject, ep, volumeInfo.getDataStore());
+                        prepVolume.clearPassphrase();
+                    }
+                }
+            } else {
+                 LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
+            }
+
+            return answer;
         } catch (Exception e) {
             String errMsg = "Unable to create PowerFlex Volume due to " + e.getMessage();
             LOGGER.warn(errMsg);
@@ -511,16 +556,21 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void createAsync(DataStore dataStore, DataObject dataObject, AsyncCompletionCallback<CreateCmdResult> callback) {
         String scaleIOVolumePath = null;
         String errMsg = null;
+        Answer answer = new Answer(null, false, "not started");
         try {
             if (dataObject.getType() == DataObjectType.VOLUME) {
                 LOGGER.debug("createAsync - creating volume");
-                scaleIOVolumePath = createVolume((VolumeInfo) dataObject, dataStore.getId());
+                CreateObjectAnswer createAnswer = createVolume((VolumeInfo) dataObject, dataStore.getId());
+                scaleIOVolumePath = createAnswer.getData().getPath();
+                answer = createAnswer;
             } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
                 LOGGER.debug("createAsync - creating template");
                 scaleIOVolumePath = createTemplateVolume((TemplateInfo)dataObject, dataStore.getId());
+                answer = new Answer(null, true, "created template");
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
                 LOGGER.error(errMsg);
+                answer = new Answer(null, false, errMsg);
             }
         } catch (Exception ex) {
             errMsg = ex.getMessage();
@@ -528,10 +578,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (callback == null) {
                 throw ex;
             }
+            answer = new Answer(null, false, errMsg);
         }
 
         if (callback != null) {
-            CreateCmdResult result = new CreateCmdResult(scaleIOVolumePath, new Answer(null, errMsg == null, errMsg));
+            CreateCmdResult result = new CreateCmdResult(scaleIOVolumePath, answer);
             result.setResult(errMsg);
             callback.complete(result);
         }
@@ -606,6 +657,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         Answer answer = null;
         String errMsg = null;
+        CopyCommandResult result;
 
         try {
             DataStore srcStore = srcData.getDataStore();
@@ -613,51 +665,72 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (srcStore.getRole() == DataStoreRole.Primary && (destStore.getRole() == DataStoreRole.Primary && destData.getType() == DataObjectType.VOLUME)) {
                 if (srcData.getType() == DataObjectType.TEMPLATE) {
                     answer = copyTemplateToVolume(srcData, destData, destHost);
-                    if (answer == null) {
-                        errMsg = "No answer for copying template to PowerFlex volume";
-                    } else if (!answer.getResult()) {
-                        errMsg = answer.getDetails();
-                    }
                 } else if (srcData.getType() == DataObjectType.VOLUME) {
                     if (isSameScaleIOStorageInstance(srcStore, destStore)) {
                         answer = migrateVolume(srcData, destData);
                     } else {
                         answer = copyVolume(srcData, destData, destHost);
                     }
-
-                    if (answer == null) {
-                        errMsg = "No answer for migrate PowerFlex volume";
-                    } else if (!answer.getResult()) {
-                        errMsg = answer.getDetails();
-                    }
                 } else {
                     errMsg = "Unsupported copy operation from src object: (" + srcData.getType() + ", " + srcData.getDataStore() + "), dest object: ("
                             + destData.getType() + ", " + destData.getDataStore() + ")";
                     LOGGER.warn(errMsg);
+                    answer = new Answer(null, false, errMsg);
                 }
             } else {
                 errMsg = "Unsupported copy operation";
+                LOGGER.warn(errMsg);
+                answer = new Answer(null, false, errMsg);
             }
         } catch (Exception e) {
             LOGGER.debug("Failed to copy due to " + e.getMessage(), e);
             errMsg = e.toString();
+            answer = new Answer(null, false, errMsg);
         }
 
-        CopyCommandResult result = new CopyCommandResult(null, answer);
-        result.setResult(errMsg);
+        result = new CopyCommandResult(null, answer);
         callback.complete(result);
     }
 
+    /**
+     * Responsible for copying template on ScaleIO primary to root disk
+     * @param srcData dataobject representing the template
+     * @param destData dataobject representing the target root disk
+     * @param destHost host to use for copy
+     * @return answer
+     */
     private Answer copyTemplateToVolume(DataObject srcData, DataObject destData, Host destHost) {
+        /* If encryption is requested, since the template object is not encrypted we need to grow the destination disk to accommodate the new headers.
+         * Data stores of file type happen automatically, but block device types have to handle it. Unfortunately for ScaleIO this means we add a whole 8GB to
+         * the original size, but only if we are close to an 8GB boundary.
+         */
+        LOGGER.debug(String.format("Copying template %s to volume %s", srcData.getId(), destData.getId()));
+        VolumeInfo destInfo = (VolumeInfo) destData;
+        boolean encryptionRequired = anyVolumeRequiresEncryption(destData);
+        if (encryptionRequired) {
+            if (needsExpansionForEncryptionHeader(srcData.getSize(), destData.getSize())) {
+                long newSize = destData.getSize() + (1<<30);
+                LOGGER.debug(String.format("Destination volume %s(%s) is configured for encryption. Resizing to fit headers, new size %s will be rounded up to nearest 8Gi", destInfo.getId(), destData.getSize(), newSize));
+                ResizeVolumePayload p = new ResizeVolumePayload(newSize, destInfo.getMinIops(), destInfo.getMaxIops(),
+                    destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
+                destInfo.addPayload(p);
+                resizeVolume(destInfo);
+            } else {
+                LOGGER.debug(String.format("Template %s has size %s, ok for volume %s with size %s", srcData.getId(), srcData.getSize(), destData.getId(), destData.getSize()));
+            }
+        } else {
+            LOGGER.debug(String.format("Destination volume is not configured for encryption, skipping encryption prep. Volume: %s", destData.getId()));
+        }
+
         // Copy PowerFlex/ScaleIO template to volume
         LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
         Answer answer = null;
-        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData.getDataStore());
+        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData, encryptionRequired);
         if (ep == null) {
-            String errorMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            String errorMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
             LOGGER.error(errorMsg);
             answer = new Answer(cmd, false, errorMsg);
         } else {
@@ -676,9 +749,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), copyVolumeWait, VirtualMachineManager.ExecuteInSequence.value());
 
         Answer answer = null;
-        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData.getDataStore());
+        boolean encryptionRequired = anyVolumeRequiresEncryption(srcData, destData);
+        EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData, encryptionRequired);
         if (ep == null) {
-            String errorMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            String errorMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
             LOGGER.error(errorMsg);
             answer = new Answer(cmd, false, errorMsg);
         } else {
@@ -989,5 +1063,28 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void provideVmTags(long vmId, long volumeId, String tagValue) {
+    }
+
+    /**
+     * Does the destination size fit the source size plus an encryption header?
+     * @param srcSize size of source
+     * @param dstSize size of destination
+     * @return true if resize is required
+     */
+    private boolean needsExpansionForEncryptionHeader(long srcSize, long dstSize) {
+        int headerSize = 32<<20; // ensure we have 32MiB for encryption header
+        return srcSize + headerSize > dstSize;
+    }
+
+    /**
+     * Does any object require encryption support?
+     */
+    private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
+        for (DataObject o : objects) {
+            if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

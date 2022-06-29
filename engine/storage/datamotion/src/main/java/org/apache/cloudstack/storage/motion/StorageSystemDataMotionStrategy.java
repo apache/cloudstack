@@ -59,6 +59,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -160,6 +161,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private ClusterDao clusterDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private PassphraseDao _passphraseDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -1735,9 +1738,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
         VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
-        boolean updateBackingFileReference = ref == null;
-        String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
-        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference);
+
+        // if template exists on destination, use it as the backing file
+        if (ref != null) {
+            return new MigrationOptions(destVolumeInfo.getDataStore().getUuid(), destVolumeInfo.getStoragePoolType(), ref.getInstallPath(), false);
+        } else {
+            return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeBackingFile, true);
+        }
     }
 
     /**
@@ -1874,6 +1881,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
+                    prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
                 }
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
@@ -2123,6 +2131,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         newVol.setPoolId(storagePoolVO.getId());
         newVol.setLastPoolId(lastPoolId);
 
+        if (volume.getPassphraseId() != null) {
+            newVol.setPassphraseId(volume.getPassphraseId());
+            newVol.setEncryptFormat(volume.getEncryptFormat());
+        }
+
         return _volumeDao.persist(newVol);
     }
 
@@ -2203,6 +2216,23 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
                 updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
             }
+        }
+    }
+
+    /**
+     * Include some destination volume info in vmTO, required for some PrepareForMigrationCommand processing
+     *
+     */
+    protected void prepareDiskWithSecretConsumerDetail(VirtualMachineTO vmTO, VolumeInfo srcVolume, String destPath) {
+        if (vmTO.getDisks() != null) {
+            LOGGER.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
+            Arrays.stream(vmTO.getDisks()).filter(diskTO -> diskTO.getData().getId() == srcVolume.getId()).forEach( diskTO -> {
+                Map<String, String> details = diskTO.getDetails();
+                if (diskTO.getDetails() == null) {
+                    diskTO.setDetails(new HashMap<>());
+                }
+                diskTO.getDetails().put(DiskTO.SECRET_CONSUMER_DETAIL, destPath);
+            });
         }
     }
 

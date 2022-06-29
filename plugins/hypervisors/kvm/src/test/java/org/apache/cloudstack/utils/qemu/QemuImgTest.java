@@ -18,11 +18,17 @@ package org.apache.cloudstack.utils.qemu;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import com.cloud.utils.script.Script;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,7 +37,6 @@ import org.junit.Test;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.libvirt.LibvirtException;
-
 
 @Ignore
 public class QemuImgTest {
@@ -94,7 +99,34 @@ public class QemuImgTest {
     }
 
     @Test
-    public void testCreateSparseVolume() throws QemuImgException {
+    public void testCreateWithSecretObject() throws QemuImgException, LibvirtException {
+        Path testFile = Paths.get("/tmp/", UUID.randomUUID().toString()).normalize().toAbsolutePath();
+        long size = 1<<30; // 1 Gi
+
+        Map<QemuObject.ObjectParameter, String> objectParams = new HashMap<>();
+        objectParams.put(QemuObject.ObjectParameter.ID, "sec0");
+        objectParams.put(QemuObject.ObjectParameter.DATA, UUID.randomUUID().toString());
+
+        Map<String, String> options = new HashMap<String, String>();
+
+        options.put(QemuImg.ENCRYPT_FORMAT, "luks");
+        options.put(QemuImg.ENCRYPT_KEY_SECRET, "sec0");
+
+        List<QemuObject> qObjects = new ArrayList<>();
+        qObjects.add(new QemuObject(QemuObject.ObjectType.SECRET, objectParams));
+
+        QemuImgFile file = new QemuImgFile(testFile.toString(), size, PhysicalDiskFormat.QCOW2);
+        QemuImg qemu = new QemuImg(0);
+        qemu.create(file, null, options, qObjects);
+
+        Map<String, String> info = qemu.info(file);
+        assertEquals("yes", info.get("encrypted"));
+
+        assertTrue(testFile.toFile().delete());
+    }
+
+    @Test
+    public void testCreateSparseVolume() throws QemuImgException, LibvirtException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
         /* 10TB virtual_size */
@@ -204,7 +236,7 @@ public class QemuImgTest {
     }
 
     @Test(expected = QemuImgException.class)
-    public void testCreateAndResizeFail() throws QemuImgException {
+    public void testCreateAndResizeFail() throws QemuImgException, LibvirtException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
         long startSize = 20480;
@@ -224,7 +256,7 @@ public class QemuImgTest {
     }
 
     @Test(expected = QemuImgException.class)
-    public void testCreateAndResizeZero() throws QemuImgException {
+    public void testCreateAndResizeZero() throws QemuImgException, LibvirtException {
         String filename = "/tmp/" + UUID.randomUUID() + ".qcow2";
 
         long startSize = 20480;

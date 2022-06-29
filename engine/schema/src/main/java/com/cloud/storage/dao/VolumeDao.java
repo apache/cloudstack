@@ -103,6 +103,13 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
     List<VolumeVO> findIncludingRemovedByZone(long zoneId);
 
     /**
+     * Lists all volumes using a given passphrase ID
+     * @param passphraseId
+     * @return list of volumes
+     */
+    List<VolumeVO> listVolumesByPassphraseId(long passphraseId);
+
+    /**
      * Gets the Total Primary Storage space allocated for an account
      *
      * @param list of ids of virtual router VMs under this account
