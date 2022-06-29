@@ -36,7 +36,7 @@ if [ $# -gt 3 ]; then
   EJECT_ISO_FROM_OS="${4}"
 fi
 
-export PATH=$PATH:/opt/bin:
+export PATH=$PATH:/opt/bin
 if [[ "$PATH" != *:/usr/sbin && "$PATH" != *:/usr/sbin:* ]]; then
   export PATH=$PATH:/usr/sbin
 fi
