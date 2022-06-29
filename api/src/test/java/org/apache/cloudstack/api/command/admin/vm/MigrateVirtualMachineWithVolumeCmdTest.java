@@ -111,7 +111,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("VM [%s] is not in the Running state to migrate it to the new host.", virtualMachineMock);
+            String expected = String.format("%s is not in the Running state to migrate it to the new host.", virtualMachineMock);
             Assert.assertEquals(expected , e.getMessage());
         }
     }
@@ -129,7 +129,7 @@ public class MigrateVirtualMachineWithVolumeCmdTest {
             cmdSpy.execute();
         } catch (Exception e) {
             Assert.assertEquals(InvalidParameterValueException.class, e.getClass());
-            String expected = String.format("VM [%s] is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.", virtualMachineMock,
+            String expected = String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.", virtualMachineMock,
                     ApiConstants.HOST_ID);
             Assert.assertEquals(expected , e.getMessage());
         }

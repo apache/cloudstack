@@ -158,11 +158,11 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
 
         VirtualMachine userVm = _userVmService.getVm(getVirtualMachineId());
         if (!VirtualMachine.State.Running.equals(userVm.getState()) && hostId != null) {
-            throw new InvalidParameterValueException(String.format("VM [%s] is not in the Running state to migrate it to the new host.", userVm));
+            throw new InvalidParameterValueException(String.format("%s is not in the Running state to migrate it to the new host.", userVm));
         }
 
         if (!VirtualMachine.State.Stopped.equals(userVm.getState()) && hostId == null) {
-            throw new InvalidParameterValueException(String.format("VM [%s] is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.",
+            throw new InvalidParameterValueException(String.format("%s is not in the Stopped state to migrate, use the %s parameter to migrate it to a new host.",
                     userVm, ApiConstants.HOST_ID));
         }
 
