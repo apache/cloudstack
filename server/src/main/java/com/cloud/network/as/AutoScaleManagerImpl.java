@@ -75,6 +75,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
@@ -151,6 +152,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -177,7 +179,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
-    private ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
 
     @Inject
     protected DispatchChainFactory dispatchChainFactory = null;
@@ -265,6 +267,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     CompletionService<Pair<Long, Boolean>> _completionService;
 
+    Map<Long, ScheduledExecutorService> vmGroupMonitorMaps = new HashMap<>();
+
     @Override
     public boolean start() {
         autoScaleStatsInterval = NumbersUtil.parseLong(_configDao.getValue("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
@@ -272,12 +276,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         // create thread pool and blocking queue
         final int workersCount = AutoScaleStatsWorker.value();
         _groupExecutor = Executors.newFixedThreadPool(workersCount);
-        s_logger.info("AutoScale Manager created a thread pool to scan autoscale vm groups. The pool size is : " + workersCount);
+        s_logger.info("AutoScale Manager created a thread pool to check autoscale vm groups. The pool size is : " + workersCount);
 
         final BlockingQueue<Future<Pair<Long, Boolean>>> queue = new LinkedBlockingQueue<>(workersCount);
-        s_logger.info("AutoScale Manager  created a blocking queue to scan autoscale vm groups. The queue size is : " + workersCount);
+        s_logger.info("AutoScale Manager created a blocking queue to check autoscale vm groups. The queue size is : " + workersCount);
 
         _completionService = new ExecutorCompletionService<>(_groupExecutor, queue);
+
+        scheduleMonitorTasks();
 
         return true;
     }
@@ -924,6 +930,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
         s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
 
+        scheduleMonitorTask(vmGroupVO);
+
         return vmGroupVO;
     }
 
@@ -1192,6 +1200,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Disabled);
+            scheduleMonitorTask(vmGroup);
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             _autoScaleVmGroupDao.persist(vmGroup);
@@ -1220,6 +1229,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
             _asGroupStatisticsDao.removeByGroupId(id);
+            cancelCheckTask(vmGroup);
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             _autoScaleVmGroupDao.persist(vmGroup);
@@ -1857,13 +1867,24 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
             Network.Provider provider = getLoadBalancerServiceProvider(asGroup);
             if (Network.Provider.Netscaler.equals(provider)) {
-                monitorNetScalerAsGroup(asGroup);
+                checkNetScalerAsGroup(asGroup);
+            } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
+                checkVirtualRouterAsGroup(asGroup);
+            }
+        }
+    }
+
+    private void monitorAutoScaleVmGroup(AutoScaleVmGroupVO asGroup) {
+        // check group state
+        if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
+            Network.Provider provider = getLoadBalancerServiceProvider(asGroup);
+            if (Network.Provider.Netscaler.equals(provider)) {
+                s_logger.debug("Skipping the monitoring on AutoScale VmGroup with Netscaler provider: " + asGroup);
             } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
                 monitorVirtualRouterAsGroup(asGroup);
             }
         }
     }
-
     private boolean is_native(long groupId) {
         List<AutoScaleVmGroupPolicyMapVO> vos = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
@@ -2110,7 +2131,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return providers.get(0);
     }
 
-    private void monitorNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {
+    private void checkNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {
         if (!is_native(asGroup.getId())) {
             return;
         }
@@ -2294,9 +2315,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         s_logger.debug("[AutoScale] Collecting performance data ...");
 
-        Map<String, Double> countersMap = new HashMap<>();
-        Map<String, Integer> countersNumberMap = new HashMap<>();
-
         if (is_native(asGroup.getId())) {
             s_logger.debug("[AutoScale] Collecting performance data from hosts ...");
             getVmStatsFromHosts(asGroup);
@@ -2306,6 +2324,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             s_logger.debug("[AutoScale] Collecting performance data from virtual router ...");
             getNetworkStatsFromVirtualRouter(asGroup);
         }
+    }
+
+    private void checkVirtualRouterAsGroup(AutoScaleVmGroupVO asGroup) {
+        Map<String, Double> countersMap = new HashMap<>();
+        Map<String, Integer> countersNumberMap = new HashMap<>();
 
         // update counter maps in memory
         updateCountersMap(asGroup, countersMap, countersNumberMap);
@@ -2510,7 +2533,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return policyId + "-" + conditionId + "-" + counterId;
     }
 
-    private void cleanupAsVmGroupStatistics(AutoScaleVmGroup asGroup) {
+    private void cleanupAsVmGroupStatistics(AutoScaleVmGroupVO asGroup) {
         List<AutoScaleVmGroupPolicyMapVO> groupPolicyVOs = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
         for (AutoScaleVmGroupPolicyMapVO groupPolicyVO : groupPolicyVOs) {
             AutoScalePolicyVO vo = _autoScalePolicyDao.findById(groupPolicyVO.getPolicyId());
@@ -2520,6 +2543,50 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             for (Long conditionId : conditionsMap.keySet()) {
                 CounterVO counter = conditionsMap.get(conditionId);
                 _asGroupStatisticsDao.removeByGroupAndCounter(asGroup.getId(), counter.getId(), beforeDate);
+            }
+        }
+    }
+
+    private void scheduleMonitorTasks() {
+        List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listAll();
+        for (AutoScaleVmGroupVO vmGroup : vmGroups) {
+            if (vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
+                scheduleMonitorTask(vmGroup);
+            }
+        }
+    }
+
+    private void scheduleMonitorTask(AutoScaleVmGroupVO vmGroup) {
+        ScheduledExecutorService executor = vmGroupMonitorMaps.get(vmGroup.getId());
+        if (executor == null) {
+            executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + vmGroup.getId()));
+            executor.scheduleAtFixedRate(new MonitorTask(vmGroup), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
+            vmGroupMonitorMaps.put(vmGroup.getId(), executor);
+        }
+    }
+
+    private void cancelCheckTask(AutoScaleVmGroupVO vmGroup) {
+        ScheduledExecutorService executor = vmGroupMonitorMaps.get(vmGroup.getId());
+        if (executor != null) {
+            executor.shutdown();
+            vmGroupMonitorMaps.remove(vmGroup.getId());
+        }
+    }
+
+    protected class MonitorTask extends ManagedContextRunnable {
+
+        AutoScaleVmGroupVO group;
+
+        public MonitorTask(AutoScaleVmGroupVO group) {
+            this.group = group;
+        }
+
+        @Override
+        protected synchronized void runInContext() {
+            try {
+                monitorAutoScaleVmGroup(group);
+            } catch (final Exception e) {
+                s_logger.warn("Caught the following exception on monitoring AutoScale Vm Group", e);
             }
         }
     }
