@@ -28,6 +28,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -194,6 +195,8 @@ public class VolumeServiceImpl implements VolumeService {
     private StorageManager _storageMgr;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    private PassphraseDao passphraseDao;
 
     private final static String SNAPSHOT_ID = "SNAPSHOT_ID";
 
@@ -443,6 +446,11 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             if (result.isSuccess()) {
                 vo.processEvent(Event.OperationSuccessed);
+
+                if (vo.getPassphraseId() != null) {
+                    vo.deletePassphrase();
+                }
+
                 if (canVolumeBeRemoved(vo.getId())) {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());

@@ -260,6 +260,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.encrypt')" :tooltip="apiParams.encrypt.description"/>
+          <a-switch v-decorator="['isencrypted', { initialValue: isEncrypted }]" :checked="isEncrypted" @change="val => { isEncrypted = val }" />
+        </a-form-item>
         <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :checked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
@@ -375,6 +379,7 @@ export default {
       storagePolicies: null,
       storageTagLoading: false,
       isPublic: true,
+      isEncrypted: false,
       domains: [],
       domainLoading: false,
       zones: [],
@@ -501,7 +506,8 @@ export default {
           storageType: values.storagetype,
           cacheMode: values.writecachetype,
           provisioningType: values.provisioningtype,
-          customized: values.customdisksize
+          customized: values.customdisksize,
+          encrypt: values.isencrypted
         }
         if (values.customdisksize !== true) {
           params.disksize = values.disksize

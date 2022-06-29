@@ -270,6 +270,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if the host has capability to support UEFI boot")
     private Boolean uefiCapabilty;
 
+    @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
+    @Param(description = "true if the host supports encryption")
+    private Boolean encryptionSupported;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -540,6 +544,13 @@ public class HostResponse extends BaseResponseWithAnnotations {
             this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
         }
 
+        if (detailsCopy.containsKey(Host.HOST_VOLUME_ENCRYPTION)) {
+            this.setEncryptionSupported(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_VOLUME_ENCRYPTION)));
+            detailsCopy.remove(Host.HOST_VOLUME_ENCRYPTION);
+        } else {
+            this.setEncryptionSupported(new Boolean(false)); // default
+        }
+
         this.details = detailsCopy;
     }
 
@@ -724,5 +735,9 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setUefiCapabilty(Boolean hostCapability) {
         this.uefiCapabilty = hostCapability;
+    }
+
+    public void setEncryptionSupported(Boolean encryptionSupported) {
+        this.encryptionSupported = encryptionSupported;
     }
 }

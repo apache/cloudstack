@@ -40,6 +40,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.encryptionsupported">
+        <div>
+          <strong>{{ $t('label.volume.encryption.support') }}</strong>
+          <div>
+            {{ host.encryptionsupported }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.hosttags">
         <div>
           <strong>{{ $t('label.hosttags') }}</strong>

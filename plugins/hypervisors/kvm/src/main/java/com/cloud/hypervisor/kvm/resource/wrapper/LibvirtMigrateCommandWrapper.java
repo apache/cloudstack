@@ -46,6 +46,7 @@ import javax.xml.transform.stream.StreamResult;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -273,6 +274,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             if (destDomain != null) {
                 deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
+                libvirtComputingResource.cleanOldSecretsByDiskDef(conn, disks);
             }
 
         } catch (final LibvirtException e) {
@@ -544,6 +546,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     diskNode.appendChild(newChildSourceNode);
                                 } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
+                                } else if ("encryption".equals(diskChildNode.getNodeName())) {
+                                    for (int s = 0; s < diskChildNode.getChildNodes().getLength(); s++) {
+                                        Node encryptionChild = diskChildNode.getChildNodes().item(s);
+                                        if ("secret".equals(encryptionChild.getNodeName())) {
+                                            NamedNodeMap secretAttributes = encryptionChild.getAttributes();
+                                            Node uuidAttribute = secretAttributes.getNamedItem("uuid");
+                                            String volumeFileName = FilenameUtils.getBaseName(migrateDiskInfo.getSourceText());
+                                            String newSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFileName);
+                                            uuidAttribute.setTextContent(newSecretUuid);
+                                        }
+                                    }
                                 }
                             }
                         }

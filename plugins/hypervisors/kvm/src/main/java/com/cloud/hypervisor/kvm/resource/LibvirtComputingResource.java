@@ -24,6 +24,8 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,10 +49,13 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.configuration.Config;
+import com.cloud.utils.UuidUtils;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -59,6 +64,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
@@ -66,6 +72,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.apache.xerces.impl.xpath.regex.Match;
 import org.joda.time.Duration;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -77,6 +84,7 @@ import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.Network;
+import org.libvirt.Secret;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -188,6 +196,8 @@ import com.cloud.vm.VmDetailConstants;
 import com.google.common.base.Strings;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
+
+import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -676,6 +686,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String dpdkOvsPath;
     protected String directDownloadTemporaryDownloadPath;
     protected String cachePath;
+    protected String javaTempDir = System.getProperty("java.io.tmpdir");
 
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
@@ -2926,6 +2937,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (volumeObjectTO.getCacheMode() != null) {
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
+
+                if (volumeObjectTO.getPassphrase() != null && volumeObjectTO.getPassphrase().length > 0) {
+                    String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
+                    DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
+                    disk.setLibvirtDiskEncryptDetails(encryptDetails);
+                }
             }
             if (vm.getDevices() == null) {
                 s_logger.error("There is no devices for" + vm);
@@ -3360,6 +3377,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
+        cmd.getHostDetails().put(HOST_VOLUME_ENCRYPTION, String.valueOf(hostSupportsVolumeEncryption()));
 
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             _hostDistro = cmd.getHostDetails().get("Host.OS");
@@ -4634,6 +4652,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
+    /**
+     * Test host for volume encryption support
+     * @return boolean
+     */
+    public boolean hostSupportsVolumeEncryption() {
+        // test qemu-img
+        Path testFile = Paths.get(javaTempDir, UUID.randomUUID().toString()).normalize().toAbsolutePath();
+        String objectName = "sec0";
+
+        Map<String, String> options = new HashMap<String, String>();
+        List<QemuObject> passphraseObjects = new ArrayList<>();
+        QemuImgFile file = new QemuImgFile(testFile.toString(), 64<<20, PhysicalDiskFormat.QCOW2);
+
+
+        try (KeyFile keyFile = new KeyFile(UUID.randomUUID().toString().getBytes())){
+            QemuImg qemu = new QemuImg(0);
+            passphraseObjects.add(QemuObject.prepareSecretForQemuImg(PhysicalDiskFormat.QCOW2, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
+            qemu.create(file, null, options, passphraseObjects);
+            s_logger.info("Host's qemu install supports encryption");
+        } catch (QemuImgException | IOException | LibvirtException ex) {
+            s_logger.info("Host's qemu install doesn't support encryption", ex);
+            return false;
+        }
+
+        // cleanup
+        try {
+            Files.deleteIfExists(testFile);
+        } catch (IOException ex) {
+            s_logger.warn(String.format("Failed to clean up test file '%s'", testFile.toAbsolutePath()), ex);
+        }
+
+        // test cryptsetup
+        CryptSetup crypt = new CryptSetup();
+        if (!crypt.isSupported()) {
+            s_logger.info("Host can't run cryptsetup");
+            return false;
+        }
+
+        return true;
+    }
+
     public boolean isSecureMode(String bootMode) {
         if (StringUtils.isNotBlank(bootMode) && "secure".equalsIgnoreCase(bootMode)) {
             return true;
@@ -4672,8 +4731,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public void setBackingFileFormat(String volPath) {
         final int timeout = 0;
         QemuImgFile file = new QemuImgFile(volPath);
-        QemuImg qemu = new QemuImg(timeout);
+
         try{
+            QemuImg qemu = new QemuImg(timeout);
             Map<String, String> info = qemu.info(file);
             String backingFilePath = info.get(QemuImg.BACKING_FILE);
             String backingFileFormat = info.get(QemuImg.BACKING_FILE_FORMAT);
@@ -4713,5 +4773,71 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static long countDomainRunningVcpus(Domain dm) throws LibvirtException {
         VcpuInfo vcpus[] = dm.getVcpusInfo();
         return Arrays.stream(vcpus).filter(vcpu -> vcpu.state.equals(VcpuInfo.VcpuState.VIR_VCPU_RUNNING)).count();
+    }
+
+    /**
+     * Set up a libvirt secret for a volume. If Libvirt says that a secret already exists for this volume path, we use its uuid.
+     * The UUID of the secret needs to be prescriptive such that we can register the same UUID on target host during live migration
+     *
+     * @param conn libvirt connection
+     * @param consumer identifier for volume in secret
+     * @param data secret contents
+     * @return uuid of matching secret for volume
+     * @throws LibvirtException
+     */
+    public String createLibvirtVolumeSecret(Connect conn, String consumer, byte[] data) throws LibvirtException {
+        String secretUuid = null;
+        LibvirtSecretDef secretDef = new LibvirtSecretDef(LibvirtSecretDef.Usage.VOLUME, generateSecretUUIDFromString(consumer));
+        secretDef.setVolumeVolume(consumer);
+        secretDef.setPrivate(true);
+        secretDef.setEphemeral(true);
+
+        try {
+            Secret secret = conn.secretDefineXML(secretDef.toString());
+            secret.setValue(data);
+            secretUuid = secret.getUUIDString();
+            secret.free();
+        } catch (LibvirtException ex) {
+            if (ex.getMessage().contains("already defined for use")) {
+                Match match = new Match();
+                if (UuidUtils.REGEX.matches(ex.getMessage(), match)) {
+                    secretUuid = match.getCapturedText(0);
+                    s_logger.info(String.format("Reusing previously defined secret '%s' for volume '%s'", secretUuid, consumer));
+                } else {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
+
+        return secretUuid;
+    }
+
+    public void removeLibvirtVolumeSecret(Connect conn, String secretUuid) throws LibvirtException {
+        try {
+            Secret secret = conn.secretLookupByUUIDString(secretUuid);
+            secret.undefine();
+        } catch (LibvirtException ex) {
+            if (ex.getMessage().contains("Secret not found")) {
+                s_logger.debug(String.format("Secret uuid %s doesn't exist", secretUuid));
+                return;
+            }
+            throw ex;
+        }
+        s_logger.debug(String.format("Undefined secret %s", secretUuid));
+    }
+
+    public void cleanOldSecretsByDiskDef(Connect conn, List<DiskDef> disks) throws LibvirtException {
+        for (DiskDef disk : disks) {
+            DiskDef.LibvirtDiskEncryptDetails encryptDetails = disk.getLibvirtDiskEncryptDetails();
+            if (encryptDetails != null) {
+                removeLibvirtVolumeSecret(conn, encryptDetails.getPassphraseUuid());
+            }
+        }
+    }
+
+    public static String generateSecretUUIDFromString(String seed) {
+        return UUID.nameUUIDFromBytes(seed.getBytes()).toString();
     }
 }

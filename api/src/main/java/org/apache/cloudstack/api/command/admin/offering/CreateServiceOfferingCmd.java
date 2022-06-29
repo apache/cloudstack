@@ -227,6 +227,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "true if virtual machine needs to be dynamically scalable of cpu or memory")
     protected Boolean isDynamicScalingEnabled;
 
+    @Parameter(name = ApiConstants.ENCRYPT_ROOT, type = CommandType.BOOLEAN, description = "VMs using this offering require root volume encryption", since="4.16")
+    private Boolean encryptRoot;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -447,6 +450,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public boolean getDynamicScalingEnabled() {
         return isDynamicScalingEnabled == null ? true : isDynamicScalingEnabled;
+    }
+
+
+    public boolean getEncryptRoot() {
+        if (encryptRoot != null) {
+            return encryptRoot;
+        }
+        return false;
     }
 
     /////////////////////////////////////////////////////

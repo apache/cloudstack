@@ -394,6 +394,12 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                     throw new InvalidParameterValueException("All volumes of the VM: " + userVmVo.getUuid() + " should be on the same PowerFlex storage pool");
                 }
             }
+
+            // disallow KVM snapshots for VMs if root volume is encrypted (Qemu crash)
+            if (rootVolume.getPassphraseId() != null && userVmVo.getState() == State.Running && snapshotMemory) {
+                throw new UnsupportedOperationException("Cannot create VM memory snapshots on KVM from encrypted root volumes");
+            }
+
         }
 
         // check access

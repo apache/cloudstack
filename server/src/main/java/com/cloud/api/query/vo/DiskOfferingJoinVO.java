@@ -162,6 +162,9 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "vsphere_storage_policy")
     String vsphereStoragePolicy;
 
+    @Column(name = "encrypt")
+    private boolean encrypt;
+
     public DiskOfferingJoinVO() {
     }
 
@@ -350,4 +353,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     public String getVsphereStoragePolicy() {
         return vsphereStoragePolicy;
     }
+
+    public boolean getEncrypt() { return encrypt; }
 }

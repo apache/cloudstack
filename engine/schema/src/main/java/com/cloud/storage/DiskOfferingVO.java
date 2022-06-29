@@ -138,6 +138,8 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "iops_write_rate_max_length")
     private Long iopsWriteRateMaxLength;
 
+    @Column(name = "encrypt")
+    private boolean encrypt;
 
     @Column(name = "cache_mode", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
@@ -585,7 +587,14 @@ public class DiskOfferingVO implements DiskOffering {
         return hypervisorSnapshotReserve;
     }
 
+    @Override
+    public boolean getEncrypt() { return encrypt; }
+
+    @Override
+    public void setEncrypt(boolean encrypt) { this.encrypt = encrypt; }
+
     public boolean isShared() {
         return !useLocalStorage;
     }
+
 }

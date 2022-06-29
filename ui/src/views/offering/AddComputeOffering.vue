@@ -425,6 +425,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item>
+          <tooltip-label slot="label" :title="$t('label.encryptroot')" :tooltip="apiParams.encryptroot.description"/>
+          <a-switch v-decorator="['isencrypted', { initialValue: isEncrypted }]" :checked="isEncrypted" @change="val => { isEncrypted = val }" />
+        </a-form-item>
         <a-form-item :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-decorator="['ispublic', {initialValue: isPublic}]" :checked="isPublic" @change="val => { isPublic = val }" />
         </a-form-item>
@@ -552,6 +556,7 @@ export default {
       qosType: '',
       isCustomizedDiskIops: false,
       isPublic: true,
+      isEncrypted: false,
       selectedDomains: [],
       domains: [],
       domainLoading: false,
@@ -751,7 +756,8 @@ export default {
           customized: values.offeringtype !== 'fixed',
           offerha: values.offerha === true,
           limitcpuuse: values.limitcpuuse === true,
-          dynamicscalingenabled: values.dynamicscalingenabled
+          dynamicscalingenabled: values.dynamicscalingenabled,
+          encryptroot: values.isencrypted
         }
 
         // custom fields (begin)

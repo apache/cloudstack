@@ -107,6 +107,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setDomain(offering.getDomainPath());
         diskOfferingResponse.setZoneId(offering.getZoneUuid());
         diskOfferingResponse.setZone(offering.getZoneName());
+        diskOfferingResponse.setEncrypt(offering.getEncrypt());
 
         diskOfferingResponse.setHasAnnotation(annotationDao.hasAnnotations(offering.getUuid(), AnnotationService.EntityType.DISK_OFFERING.name(),
                 accountManager.isRootAdmin(CallContext.current().getCallingAccount().getId())));

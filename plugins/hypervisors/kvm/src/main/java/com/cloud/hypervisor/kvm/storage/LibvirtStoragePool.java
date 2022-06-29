@@ -110,15 +110,15 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public KVMPhysicalDisk createPhysicalDisk(String name,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
+            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return this._storageAdaptor
-                .createPhysicalDisk(name, this, format, provisioningType, size);
+                .createPhysicalDisk(name, this, format, provisioningType, size, passphrase);
     }
 
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size) {
+    public KVMPhysicalDisk createPhysicalDisk(String name, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
         return this._storageAdaptor.createPhysicalDisk(name, this,
-                this.getDefaultFormat(), provisioningType, size);
+                this.getDefaultFormat(), provisioningType, size, passphrase);
     }
 
     @Override
@@ -278,5 +278,10 @@ public class LibvirtStoragePool implements KVMStoragePool {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Map<String, String> getDetails() {
+        return null;
     }
 }

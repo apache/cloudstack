@@ -2925,6 +2925,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean isRootAdmin = _accountMgr.isRootAdmin(account.getAccountId());
         Boolean isRecursive = cmd.isRecursive();
         Long zoneId = cmd.getZoneId();
+        Boolean encrypt = cmd.getEncrypt();
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -2969,6 +2970,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
+        }
+
+        if (encrypt != null) {
+            sc.addAnd("encrypt", SearchCriteria.Op.EQ, encrypt);
         }
 
         if (zoneId != null) {
@@ -3055,6 +3060,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer cpuNumber = cmd.getCpuNumber();
         Integer memory = cmd.getMemory();
         Integer cpuSpeed = cmd.getCpuSpeed();
+        Boolean encryptRoot = cmd.getEncryptRoot();
 
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         if (!_accountMgr.isRootAdmin(caller.getId()) && isSystem) {
@@ -3157,6 +3163,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // note that for non-root users, isSystem is always false when
             // control comes to here
             sc.addAnd("systemUse", SearchCriteria.Op.EQ, isSystem);
+        }
+
+        if (encryptRoot != null) {
+            sc.addAnd("encryptRoot", SearchCriteria.Op.EQ, encryptRoot);
         }
 
         if (name != null) {

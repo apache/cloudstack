@@ -50,6 +50,12 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
             since = "4.13")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.ENCRYPT,
+        type = CommandType.BOOLEAN,
+        description = "listed offerings support disk encryption",
+        since = "4.16")
+    private Boolean encrypt;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -65,6 +71,8 @@ public class ListDiskOfferingsCmd extends BaseListDomainResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
+
+    public Boolean getEncrypt() { return encrypt; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

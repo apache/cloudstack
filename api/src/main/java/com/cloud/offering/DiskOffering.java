@@ -153,4 +153,8 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     void setCacheMode(DiskCacheMode cacheMode);
 
     Type getType();
+
+    boolean getEncrypt();
+
+    void setEncrypt(boolean encrypt);
 }

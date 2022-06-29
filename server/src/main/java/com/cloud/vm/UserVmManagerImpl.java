@@ -3826,6 +3826,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOffering.getId());
+        if (offering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
+            throw new InvalidParameterValueException("Root volume encryption is not supported for hypervisor type " + hypervisorType);
+        }
+
         if (offering.isDynamic()) {
             offering.setDynamicFlag(true);
             validateCustomParameters(offering, customParameters);
@@ -3844,6 +3848,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (diskOffering == null) {
                 throw new InvalidParameterValueException("Specified disk offering cannot be found");
             }
+
+            if (diskOffering.getEncrypt() && hypervisorType != HypervisorType.KVM) {
+                throw new InvalidParameterValueException("Volume encryption is not supported for hypervisor type " + hypervisorType);
+            }
+
             if (diskOffering.isCustomized()) {
                 if (diskSize == null) {
                     throw new InvalidParameterValueException("This disk offering requires a custom size specified");

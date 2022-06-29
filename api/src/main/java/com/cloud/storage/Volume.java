@@ -243,4 +243,12 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     boolean isDisplay();
 
     boolean isDeployAsIs();
+
+    public Long getPassphraseId();
+
+    public void setPassphraseId(Long id);
+
+    public String getEncryptFormat();
+
+    public void setEncryptFormat(String encryptFormat);
 }

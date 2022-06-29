@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 
 public class KVMPhysicalDisk {
     private String path;
@@ -49,6 +50,7 @@ public class KVMPhysicalDisk {
     private PhysicalDiskFormat format;
     private long size;
     private long virtualSize;
+    private QemuObject.EncryptFormat qemuEncryptFormat;
 
     public KVMPhysicalDisk(String path, String name, KVMStoragePool pool) {
         this.path = path;
@@ -99,6 +101,14 @@ public class KVMPhysicalDisk {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public QemuObject.EncryptFormat getQemuEncryptFormat() {
+        return this.qemuEncryptFormat;
+    }
+
+    public void setQemuEncryptFormat(QemuObject.EncryptFormat format) {
+        this.qemuEncryptFormat = format;
     }
 
 }

@@ -226,6 +226,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Snapshot from volume [%s] was not found in database.", getVolumeUuid()));
             }
         } catch (Exception e) {
+            if (e.getCause() instanceof UnsupportedOperationException) {
+                throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, String.format("Failed to create snapshot due to unsupported operation: %s", e.getCause().getMessage()));
+            }
+
             String errorMessage = "Failed to create snapshot due to an internal error creating snapshot for volume " + getVolumeUuid();
             s_logger.error(errorMessage, e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMessage);

@@ -759,6 +759,41 @@ public class LibvirtMigrateCommandWrapperTest {
         assertXpath(doc, "/domain/devices/disk/driver/@type", "raw");
     }
 
+    @Test
+    public void testReplaceStorageWithSecrets() throws Exception {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+
+        final String xmlDesc =
+            "<domain type='kvm' id='3'>" +
+            "  <devices>" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n" +
+            "      <source file='/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048'/>\n" +
+            "      <target dev='vdb' bus='virtio'/>\n" +
+            "      <serial>bf8621b3027c497d963b</serial>\n" +
+            "      <alias name='virtio-disk1'/>\n" +
+            "      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>\n" +
+            "      <encryption format='luks'>\n" +
+            "        <secret type='passphrase' uuid='5644d664-a238-3a9b-811c-961f609d29f4'/>\n" +
+            "      </encryption>\n" +
+            "    </disk>\n" +
+            "  </devices>" +
+            "</domain>";
+
+        final String volumeFile = "3530f749-82fd-458e-9485-a357e6e541db";
+        String newDiskPath = "/mnt/2d0435e1-99e0-4f1d-94c0-bee1f6f8b99e/" + volumeFile;
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, newDiskPath);
+        mapMigrateStorage.put("/mnt/07eb495b-5590-3877-9fb7-23c6e9a40d40/bf8621b3-027c-497d-963b-06319650f048", diskInfo);
+        final String result = libvirtMigrateCmdWrapper.replaceStorage(xmlDesc, mapMigrateStorage, false);
+        final String expectedSecretUuid = LibvirtComputingResource.generateSecretUUIDFromString(volumeFile);
+
+        InputStream in = IOUtils.toInputStream(result);
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+        assertXpath(doc, "/domain/devices/disk/encryption/secret/@uuid", expectedSecretUuid);
+    }
+
     public void testReplaceStorageXmlDiskNotManagedStorage() throws ParserConfigurationException, TransformerException, SAXException, IOException {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         String destDisk1FileName = "XXXXXXXXXXXXXX";

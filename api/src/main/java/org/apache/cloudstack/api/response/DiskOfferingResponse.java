@@ -156,6 +156,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the vsphere storage policy tagged to the disk offering in case of VMware", since = "4.15")
     private String vsphereStoragePolicy;
 
+    @SerializedName(ApiConstants.ENCRYPT)
+    @Param(description = "Whether disks using this offering will be encrypted on primary storage")
+    private Boolean encrypt;
+
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "additional key/value details tied with this disk offering", since = "4.16.1")
     private Map<String, String> details;
@@ -368,6 +372,8 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     public void setVsphereStoragePolicy(String vsphereStoragePolicy) {
         this.vsphereStoragePolicy = vsphereStoragePolicy;
     }
+
+    public void setEncrypt(Boolean encrypt) { this.encrypt = encrypt; }
 
     public void setDetails(Map<String, String> details) {
         this.details = details;

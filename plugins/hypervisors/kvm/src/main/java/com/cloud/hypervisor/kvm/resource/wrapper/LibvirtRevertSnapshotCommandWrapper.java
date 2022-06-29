@@ -20,6 +20,11 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import org.apache.cloudstack.storage.command.RevertSnapshotCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -44,7 +49,6 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles = RevertSnapshotCommand.class)
 public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSnapshotCommand, Answer, LibvirtComputingResource> {
@@ -106,14 +110,12 @@ public final class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<Re
                 String ssPmountPath = secondaryStoragePool.getLocalPath();
                 snapshotPath = ssPmountPath + File.separator + snapshotRelPath;
 
-                Script cmd = new Script(libvirtComputingResource.manageSnapshotPath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
-                cmd.add("-v", snapshotPath);
-                cmd.add("-n", snapshotDisk.getName());
-                cmd.add("-p", snapshotDisk.getPath());
-                String result = cmd.execute();
-                if (result != null) {
-                    s_logger.debug("Failed to revert snaptshot: " + result);
-                    return new Answer(command, false, result);
+                Path destinationPath = Paths.get(snapshotDisk.getPath());
+                Path originalPath = Paths.get(snapshotPath);
+                try {
+                    Files.copy(originalPath, destinationPath, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException ex) {
+                    throw new CloudRuntimeException("Failed to copy snapshot backup from secondary to primary", ex);
                 }
             }
 

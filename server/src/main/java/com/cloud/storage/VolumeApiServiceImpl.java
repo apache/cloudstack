@@ -73,6 +73,7 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -120,6 +121,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -291,6 +293,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public TaggedResourceService taggedResourceService;
     @Inject
     VirtualMachineManager virtualMachineManager;
+    @Inject
+    PassphraseDao _passphraseDao;
 
     protected Gson _gson;
 
@@ -755,6 +759,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
+            // Don't support creating templates from encrypted volumes (yet)
+            if (parentVolume.getPassphraseId() != null) {
+                throw new UnsupportedOperationException("Cannot create new volumes from encrypted volume snapshots");
+            }
+
             if (zoneId == null) {
                 // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
                 zoneId = snapshotCheck.getDataCenterId();
@@ -854,6 +863,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
 
                 volume = _volsDao.persist(volume);
+
                 if (cmd.getSnapshotId() == null && displayVolume) {
                     // for volume created from snapshot, create usage event after volume creation
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size,
@@ -1057,6 +1067,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             if (newDiskOffering.getRemoved() != null) {
                 throw new InvalidParameterValueException("Requested disk offering has been removed.");
+            }
+
+            if (newDiskOffering.getEncrypt() != diskOffering.getEncrypt()) {
+                throw new InvalidParameterValueException(
+                    String.format("Current disk offering's encryption(%s) does not match target disk offering's encryption(%s)", diskOffering.getEncrypt(), newDiskOffering.getEncrypt())
+                );
             }
 
             if (diskOffering.getTags() != null) {
@@ -1763,6 +1779,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
 
+        HypervisorType rootDiskHyperType = vm.getHypervisorType();
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
+        if (diskOffering.getEncrypt() && rootDiskHyperType != HypervisorType.KVM) {
+            throw new InvalidParameterValueException("Volume's disk offering has encryption enabled, but volume encryption is not supported for hypervisor type " + rootDiskHyperType);
+        }
+
         // Check that the device ID is valid
         if (deviceId != null) {
             // validate ROOT volume type
@@ -1794,7 +1816,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // offering not allowed
         DataCenterVO dataCenter = _dcDao.findById(volumeToAttach.getDataCenterId());
         if (!dataCenter.isLocalStorageEnabled()) {
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
             if (diskOffering.isUseLocalStorage()) {
                 throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
             }
@@ -1829,7 +1850,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        HypervisorType rootDiskHyperType = vm.getHypervisorType();
         HypervisorType volumeToAttachHyperType = _volsDao.getHypervisorType(volumeToAttach.getId());
 
         StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
@@ -2364,6 +2384,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             vm = _vmInstanceDao.findById(instanceId);
         }
 
+        if (vol.getPassphraseId() != null) {
+            throw new InvalidParameterValueException("Migration of encrypted volumes is unsupported");
+        }
+
         // Check that Vm to which this volume is attached does not have VM Snapshots
         // OfflineVmwareMigration: consider if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
@@ -2806,6 +2830,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
+        if (volume.getEncryptFormat() != null && volume.getAttachedVM() != null && volume.getAttachedVM().getState() != State.Stopped) {
+            s_logger.debug(String.format("Refusing to take snapshot of encrypted volume (%s) on running VM (%s)", volume, volume.getAttachedVM()));
+            throw new UnsupportedOperationException("Volume snapshots for encrypted volumes are not supported if VM is running");
+        }
+
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
 
         payload.setSnapshotId(snapshotId);
@@ -2980,6 +3009,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             PermissionDeniedException ex = new PermissionDeniedException("Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
             ex.addProxyObject(volume.getUuid(), "volumeId");
             throw ex;
+        }
+
+        if (volume.getPassphraseId() != null) {
+            throw new InvalidParameterValueException("Extraction of encrypted volumes is unsupported");
         }
 
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
@@ -3310,6 +3343,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null && host.getHypervisorType() == HypervisorType.XenServer &&
                 volumeToAttachStoragePool != null && volumeToAttachStoragePool.isManaged()) {
             sendCommand = true;
+        }
+
+        if (host != null) {
+            _hostDao.loadDetails(host);
+            boolean hostSupportsEncryption = Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION));
+            if (volumeToAttach.getPassphraseId() != null) {
+                if (!hostSupportsEncryption) {
+                    throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
+                }
+            }
         }
 
         if (volumeToAttachStoragePool != null) {

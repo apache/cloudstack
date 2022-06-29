@@ -19,6 +19,8 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +28,17 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
+import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
+import org.apache.cloudstack.utils.cryptsetup.CryptSetupException;
+import org.apache.cloudstack.utils.cryptsetup.KeyFile;
+import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
@@ -39,7 +47,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.google.common.base.Strings;
-import org.libvirt.LibvirtException;
 
 @StorageAdaptorInfo(storagePoolType= Storage.StoragePoolType.PowerFlex)
 public class ScaleIOStorageAdaptor implements StorageAdaptor {
@@ -103,11 +110,27 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             }
 
             KVMPhysicalDisk disk = new KVMPhysicalDisk(diskFilePath, volumePath, pool);
-            disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+
+            // try to discover format as written to disk, rather than assuming raw.
+            // We support qcow2 for stored primary templates, disks seen as other should be treated as raw.
+            QemuImg qemu = new QemuImg(0);
+            QemuImgFile qemuFile = new QemuImgFile(diskFilePath);
+            Map<String, String> details = qemu.info(qemuFile);
+            String detectedFormat = details.getOrDefault(QemuImg.FILE_FORMAT, "none");
+            if (detectedFormat.equalsIgnoreCase(QemuImg.PhysicalDiskFormat.QCOW2.toString())) {
+                disk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+            } else {
+                disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+            }
 
             long diskSize = getPhysicalDiskSize(diskFilePath);
             disk.setSize(diskSize);
-            disk.setVirtualSize(diskSize);
+
+            if (details.containsKey(QemuImg.VIRTUAL_SIZE)) {
+                disk.setVirtualSize(Long.parseLong(details.get(QemuImg.VIRTUAL_SIZE)));
+            } else {
+                disk.setVirtualSize(diskSize);
+            }
 
             return disk;
         } catch (Exception e) {
@@ -117,8 +140,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type) {
-        ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, this);
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+        ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
     }
@@ -128,9 +151,37 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
 
+    /**
+     * ScaleIO doesn't need to communicate with the hypervisor normally to create a volume. This is used only to prepare a ScaleIO data disk for encryption.
+     * @param name disk path
+     * @param pool pool
+     * @param format disk format
+     * @param provisioningType provisioning type
+     * @param size disk size
+     * @param passphrase passphrase
+     * @return the disk object
+     */
     @Override
-    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        return null;
+    public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase) {
+        if (passphrase == null || passphrase.length == 0) {
+            return null;
+        }
+
+        if(!connectPhysicalDisk(name, pool, null)) {
+            throw new CloudRuntimeException(String.format("Failed to ensure disk %s was present", name));
+        }
+
+        KVMPhysicalDisk disk = getPhysicalDisk(name, pool);
+
+        try {
+            CryptSetup crypt = new CryptSetup();
+            crypt.luksFormat(passphrase, CryptSetup.LuksType.LUKS, disk.getPath());
+            disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
+        } catch (CryptSetupException ex) {
+            throw new CloudRuntimeException("Failed to set up encryption for block device " + disk.getPath(), ex);
+        }
+
+        return disk;
     }
 
     @Override
@@ -228,7 +279,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, QemuImg.PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
     }
 
@@ -244,6 +295,11 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+    }
+
+    @Override
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[]dstPassphrase) {
         if (Strings.isNullOrEmpty(name) || disk == null || destPool == null) {
             LOGGER.error("Unable to copy physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to copy physical disk due to insufficient data");
@@ -261,18 +317,49 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         destDisk.setVirtualSize(disk.getVirtualSize());
         destDisk.setSize(disk.getSize());
 
-        QemuImg qemu = new QemuImg(timeout);
+        QemuImg qemu = null;
         QemuImgFile srcFile = null;
         QemuImgFile destFile = null;
+        String srcKeyName = "sec0";
+        String destKeyName = "sec1";
+        List<QemuObject> qemuObjects = new ArrayList<>();
+        Map<String, String> options = new HashMap<String, String>();
+        CryptSetup cryptSetup = null;
 
-        try {
-            srcFile = new QemuImgFile(disk.getPath(), disk.getFormat());
-            destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
+        try (KeyFile srcKey = new KeyFile(srcPassphrase); KeyFile dstKey = new KeyFile(dstPassphrase)){
+            qemu = new QemuImg(timeout, true, true);
+            String srcPath = disk.getPath();
+            String destPath = destDisk.getPath();
+            QemuImg.PhysicalDiskFormat destFormat = destDisk.getFormat();
+            QemuImageOptions qemuImageOpts = new QemuImageOptions(srcPath);
 
-            LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-            qemu.convert(srcFile, destFile, true);
+            if (srcKey.isSet()) {
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), null , srcKey.toString(), srcKeyName, options));
+                qemuImageOpts = new QemuImageOptions(disk.getFormat(), srcPath, srcKeyName);
+            }
+
+            if (dstKey.isSet()) {
+                if (qemu.supportsSkipZeros()) {
+                    // format and open luks device rather than letting qemu do a slow copy of full image
+                    cryptSetup = new CryptSetup();
+                    cryptSetup.luksFormat(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath());
+                    cryptSetup.open(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath(),  name);
+                    destPath = String.format("/dev/mapper/%s", name);
+                } else {
+                    qemuObjects.add(QemuObject.prepareSecretForQemuImg(destDisk.getFormat(), null, dstKey.toString(), destKeyName, options));
+                    destFormat = QemuImg.PhysicalDiskFormat.LUKS;
+                }
+                destDisk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
+            }
+
+            srcFile = new QemuImgFile(srcPath, disk.getFormat());
+            destFile = new QemuImgFile(destPath, destFormat);
+
+            boolean forceSourceFormat = srcFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
+            LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcFile.getFileName(), srcFile.getFormat(), destFile.getFileName(), destFile.getFormat(), forceSourceFormat));
+            qemu.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
             LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-        }  catch (QemuImgException | LibvirtException e) {
+        }  catch (QemuImgException | LibvirtException | IOException | CryptSetupException e) {
             try {
                 Map<String, String> srcInfo = qemu.info(srcFile);
                 LOGGER.debug("Source disk info: " + Arrays.asList(srcInfo));
@@ -283,6 +370,14 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             String errMsg = String.format("Unable to convert/copy from %s to %s, due to: %s", disk.getName(), name, ((Strings.isNullOrEmpty(e.getMessage())) ? "an unknown error" : e.getMessage()));
             LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg, e);
+        } finally {
+            if (cryptSetup != null) {
+                try {
+                    cryptSetup.close(name);
+                } catch (CryptSetupException ex) {
+                    LOGGER.warn("Failed to clean up LUKS disk after copying disk", ex);
+                }
+            }
         }
 
         return destDisk;
@@ -309,7 +404,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, QemuImg.PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
+    public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, QemuImg.PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout, byte[] passphrase) {
         return null;
     }
 
@@ -346,6 +441,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         QemuImgFile srcFile = null;
         QemuImgFile destFile = null;
         try {
+            QemuImg qemu = new QemuImg(timeout, true, true);
             destDisk = destPool.getPhysicalDisk(destTemplatePath);
             if (destDisk == null) {
                 LOGGER.error("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
@@ -368,14 +464,21 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             }
 
             srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
-            destFile = new QemuImgFile(destDisk.getPath(), destDisk.getFormat());
+            qemu.info(srcFile);
+            /**
+             * Even though the disk itself is raw, we store templates on ScaleIO the raw volumes in qcow2 format.
+             * This improves performance by reading/writing less data to volume, saves the unused space for encryption header, and
+             * nicely encapsulates VM images that might contain LUKS data (as opposed to converting to raw which would look like a LUKS volume).
+             */
+            destFile = new QemuImgFile(destDisk.getPath(), QemuImg.PhysicalDiskFormat.QCOW2);
+            destFile.setSize(srcFile.getSize());
 
             LOGGER.debug("Starting copy from source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
-            QemuImg qemu = new QemuImg(timeout);
+            qemu.create(destFile);
             qemu.convert(srcFile, destFile);
-            LOGGER.debug("Succesfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
+            LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
-            LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
+            LOGGER.error("Failed to convert. The error was: " + e.getMessage(), e);
             destDisk = null;
         } finally {
             Script.runSimpleBashScript("rm -f " + srcTemplateFilePath);

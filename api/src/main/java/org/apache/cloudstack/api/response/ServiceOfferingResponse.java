@@ -208,6 +208,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if virtual machine needs to be dynamically scalable of cpu or memory", since = "4.16")
     private Boolean dynamicScalingEnabled;
 
+    @SerializedName(ApiConstants.ENCRYPT_ROOT)
+    @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.16")
+    private Boolean encryptRoot;
+
     public ServiceOfferingResponse() {
     }
 
@@ -486,4 +490,6 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     public void setDynamicScalingEnabled(Boolean dynamicScalingEnabled) {
         this.dynamicScalingEnabled = dynamicScalingEnabled;
     }
+
+    public void setEncryptRoot(Boolean encrypt) { this.encryptRoot = encrypt; }
 }
