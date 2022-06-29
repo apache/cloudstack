@@ -124,6 +124,7 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.NetScalerControlCenterResource;
 import com.cloud.network.resource.NetscalerResource;
@@ -208,6 +209,8 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetScalerVMManager _netScalerVMManager;
+    @Inject
+    LoadBalancingRulesManager _lbRulesManager;
 
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
@@ -1126,7 +1129,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
                         false, false, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies(),
                         rule.getLbSslCert(), rule.getLbProtocol());
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
+                    loadBalancer.setAutoScaleVmGroup(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

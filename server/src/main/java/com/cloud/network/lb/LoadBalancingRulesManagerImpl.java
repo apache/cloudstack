@@ -349,6 +349,49 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
+    @Override
+    public LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(LbAutoScaleVmGroup lbAutoScaleVmGroup) {
+        List<LbAutoScalePolicy> lbAutoScalePolicies = lbAutoScaleVmGroup.getPolicies();
+        List<LoadBalancerTO.AutoScalePolicyTO> autoScalePolicyTOs = new ArrayList<LoadBalancerTO.AutoScalePolicyTO>(lbAutoScalePolicies.size());
+        for (LbAutoScalePolicy lbAutoScalePolicy : lbAutoScalePolicies) {
+            List<LbCondition> lbConditions = lbAutoScalePolicy.getConditions();
+            List<LoadBalancerTO.ConditionTO> conditionTOs = new ArrayList<LoadBalancerTO.ConditionTO>(lbConditions.size());
+            for (LbCondition lbCondition : lbConditions) {
+                Counter counter = lbCondition.getCounter();
+                LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getName(), counter.getSource().toString(), "" + counter.getValue());
+                Condition condition = lbCondition.getCondition();
+                LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
+                conditionTOs.add(conditionTO);
+            }
+            AutoScalePolicy autoScalePolicy = lbAutoScalePolicy.getPolicy();
+            autoScalePolicyTOs.add(new LoadBalancerTO.AutoScalePolicyTO(autoScalePolicy.getId(), autoScalePolicy.getDuration(), autoScalePolicy.getQuietTime(),
+                    autoScalePolicy.getAction(), conditionTOs, lbAutoScalePolicy.isRevoked()));
+        }
+        LbAutoScaleVmProfile lbAutoScaleVmProfile = lbAutoScaleVmGroup.getProfile();
+        AutoScaleVmProfile autoScaleVmProfile = lbAutoScaleVmProfile.getProfile();
+
+        LoadBalancerTO.AutoScaleVmProfileTO autoScaleVmProfileTO =
+                new LoadBalancerTO.AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(), lbAutoScaleVmProfile.getCsUrl(),
+                        lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(), lbAutoScaleVmProfile.getServiceOfferingId(),
+                        lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getVmName(), lbAutoScaleVmProfile.getNetworkId(), autoScaleVmProfile.getOtherDeployParams(),
+                        autoScaleVmProfile.getCounterParams(), autoScaleVmProfile.getDestroyVmGraceperiod());
+
+        AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
+        return
+                new LoadBalancerTO.AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
+                        autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
+    }
+
+    @Override
+    public LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(AutoScaleVmGroupVO vmGroup) {
+        final LoadBalancerVO loadBalancer = _lbDao.findById(vmGroup.getLoadBalancerId());
+        if (loadBalancer == null) {
+            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", vmGroup.getLoadBalancerId()));
+        }
+        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, vmGroup.getState(), loadBalancer);
+        return toAutoScaleVmGroupTO(lbAutoScaleVmGroup);
+    }
+
     private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {
         LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState, lb);
         /*

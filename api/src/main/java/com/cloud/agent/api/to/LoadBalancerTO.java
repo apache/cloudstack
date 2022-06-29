@@ -22,13 +22,6 @@ import java.util.List;
 
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.network.as.Condition;
-import com.cloud.network.as.Counter;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScalePolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmProfile;
-import com.cloud.network.lb.LoadBalancingRule.LbCondition;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -551,7 +544,7 @@ public class LoadBalancerTO {
         private final AutoScaleVmGroup.State state;
         private final AutoScaleVmGroup.State currentState;
 
-        AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
+        public AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
                            AutoScaleVmGroup.State state, AutoScaleVmGroup.State currentState) {
             this.uuid = uuid;
             this.minMembers = minMembers;
@@ -601,35 +594,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public void setAutoScaleVmGroup(LbAutoScaleVmGroup lbAutoScaleVmGroup) {
-        List<LbAutoScalePolicy> lbAutoScalePolicies = lbAutoScaleVmGroup.getPolicies();
-        List<AutoScalePolicyTO> autoScalePolicyTOs = new ArrayList<AutoScalePolicyTO>(lbAutoScalePolicies.size());
-        for (LbAutoScalePolicy lbAutoScalePolicy : lbAutoScalePolicies) {
-            List<LbCondition> lbConditions = lbAutoScalePolicy.getConditions();
-            List<ConditionTO> conditionTOs = new ArrayList<ConditionTO>(lbConditions.size());
-            for (LbCondition lbCondition : lbConditions) {
-                Counter counter = lbCondition.getCounter();
-                CounterTO counterTO = new CounterTO(counter.getName(), counter.getSource().toString(), "" + counter.getValue());
-                Condition condition = lbCondition.getCondition();
-                ConditionTO conditionTO = new ConditionTO(condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
-                conditionTOs.add(conditionTO);
-            }
-            AutoScalePolicy autoScalePolicy = lbAutoScalePolicy.getPolicy();
-            autoScalePolicyTOs.add(new AutoScalePolicyTO(autoScalePolicy.getId(), autoScalePolicy.getDuration(), autoScalePolicy.getQuietTime(),
-                autoScalePolicy.getAction(), conditionTOs, lbAutoScalePolicy.isRevoked()));
-        }
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = lbAutoScaleVmGroup.getProfile();
-        AutoScaleVmProfile autoScaleVmProfile = lbAutoScaleVmProfile.getProfile();
-
-        AutoScaleVmProfileTO autoScaleVmProfileTO =
-            new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(), lbAutoScaleVmProfile.getCsUrl(),
-                lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(), lbAutoScaleVmProfile.getServiceOfferingId(),
-                lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getVmName(), lbAutoScaleVmProfile.getNetworkId(), autoScaleVmProfile.getOtherDeployParams(),
-                autoScaleVmProfile.getCounterParams(), autoScaleVmProfile.getDestroyVmGraceperiod());
-
-        AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
-        autoScaleVmGroupTO =
-            new AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
-                autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
+    public void setAutoScaleVmGroup(AutoScaleVmGroupTO autoScaleVmGroupTO) {
+        this.autoScaleVmGroupTO = autoScaleVmGroupTO;
     }
 }

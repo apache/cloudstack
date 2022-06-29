@@ -18,6 +18,8 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.network.as.AutoScaleVmGroupVO;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.NetworkRuleConflictException;
@@ -61,6 +63,10 @@ public interface LoadBalancingRulesManager {
     boolean applyLoadBalancersForNetwork(long networkId, Scheme scheme) throws ResourceUnavailableException;
 
     String getLBCapability(long networkid, String capabilityName);
+
+    LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(LoadBalancingRule.LbAutoScaleVmGroup lbAutoScaleVmGroup);
+
+    LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(AutoScaleVmGroupVO asGroup);
 
     boolean configureLbAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException;
 
