@@ -358,9 +358,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             List<LoadBalancerTO.ConditionTO> conditionTOs = new ArrayList<LoadBalancerTO.ConditionTO>(lbConditions.size());
             for (LbCondition lbCondition : lbConditions) {
                 Counter counter = lbCondition.getCounter();
-                LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getName(), counter.getSource().toString(), "" + counter.getValue());
+                LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getId(), counter.getName(), counter.getSource().toString(), "" + counter.getValue(), counter.getProvider());
                 Condition condition = lbCondition.getCondition();
-                LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
+                LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getId(), condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
                 conditionTOs.add(conditionTO);
             }
             AutoScalePolicy autoScalePolicy = lbAutoScalePolicy.getPolicy();
@@ -378,8 +378,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
         return
-                new LoadBalancerTO.AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
-                        autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
+                new LoadBalancerTO.AutoScaleVmGroupTO(autoScaleVmGroup.getId(), autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
+                        autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState(), autoScaleVmGroup.getLoadBalancerId());
     }
 
     @Override

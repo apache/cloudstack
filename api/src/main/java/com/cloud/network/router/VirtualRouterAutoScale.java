@@ -56,12 +56,14 @@ public interface VirtualRouterAutoScale {
 
     public class AutoScaleMetrics {
         VirtualRouterAutoScaleCounter counter;
+        Long policyId;
         Long conditionId;
         Long counterId;
         Integer duration;
 
-        public AutoScaleMetrics(VirtualRouterAutoScaleCounter counter, Long conditionId, Long counterId, Integer duration) {
+        public AutoScaleMetrics(VirtualRouterAutoScaleCounter counter, Long policyId, Long conditionId, Long counterId, Integer duration) {
             this.counter = counter;
+            this.policyId = policyId;
             this.conditionId = conditionId;
             this.counterId = counterId;
             this.duration = duration;
@@ -69,6 +71,10 @@ public interface VirtualRouterAutoScale {
 
         public VirtualRouterAutoScaleCounter getCounter() {
             return counter;
+        }
+
+        public Long getPolicyId() {
+            return policyId;
         }
 
         public Long getConditionId() {

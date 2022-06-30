@@ -360,14 +360,22 @@ public class LoadBalancerTO {
 
     public static class CounterTO implements Serializable {
         private static final long serialVersionUID = 2L;
+        private final Long id;
         private final String name;
         private final String source;
         private final String value;
+        private final String provider;
 
-        public CounterTO(String name, String source, String value) {
+        public CounterTO(Long id, String name, String source, String value, String provider) {
+            this.id = id;
             this.name = name;
             this.source = source;
             this.value = value;
+            this.provider = provider;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public String getName() {
@@ -381,18 +389,28 @@ public class LoadBalancerTO {
         public String getValue() {
             return value;
         }
+
+        public String getProvider() {
+            return provider;
+        }
     }
 
     public static class ConditionTO implements Serializable {
         private static final long serialVersionUID = 2L;
+        private final Long id;
         private final long threshold;
         private final String relationalOperator;
         private final CounterTO counter;
 
-        public ConditionTO(long threshold, String relationalOperator, CounterTO counter) {
+        public ConditionTO(Long id, long threshold, String relationalOperator, CounterTO counter) {
+            this.id = id;
             this.threshold = threshold;
             this.relationalOperator = relationalOperator;
             this.counter = counter;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public long getThreshold() {
@@ -534,6 +552,8 @@ public class LoadBalancerTO {
 
     public static class AutoScaleVmGroupTO implements Serializable {
         private static final long serialVersionUID = 2L;
+
+        private final Long id;
         private final String uuid;
         private final int minMembers;
         private final int maxMembers;
@@ -543,9 +563,11 @@ public class LoadBalancerTO {
         private final AutoScaleVmProfileTO profile;
         private final AutoScaleVmGroup.State state;
         private final AutoScaleVmGroup.State currentState;
+        private final Long loadBalancerId;
 
-        public AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
-                           AutoScaleVmGroup.State state, AutoScaleVmGroup.State currentState) {
+        public AutoScaleVmGroupTO(Long id, String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile,
+                           AutoScaleVmGroup.State state, AutoScaleVmGroup.State currentState, Long loadBalancerId) {
+            this.id = id;
             this.uuid = uuid;
             this.minMembers = minMembers;
             this.maxMembers = maxMembers;
@@ -555,6 +577,11 @@ public class LoadBalancerTO {
             this.profile = profile;
             this.state = state;
             this.currentState = currentState;
+            this.loadBalancerId = loadBalancerId;
+        }
+
+        public Long getId() {
+            return id;
         }
 
         public String getUuid() {
@@ -591,6 +618,10 @@ public class LoadBalancerTO {
 
         public AutoScaleVmGroup.State getCurrentState() {
             return currentState;
+        }
+
+        public Long getLoadBalancerId() {
+            return loadBalancerId;
         }
     }
 
