@@ -2773,7 +2773,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType())).thenReturn(kvmStoragePool);
+                .getUserInfo(), command.getPool().getType(), command.getDetails())).thenReturn(kvmStoragePool);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2784,7 +2784,7 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType());
+                .getUserInfo(), command.getPool().getType(), command.getDetails());
     }
 
     @Test
@@ -2796,7 +2796,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType())).thenReturn(null);
+                .getUserInfo(), command.getPool().getType(), command.getDetails())).thenReturn(null);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2807,7 +2807,7 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResourceMock, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType());
+                .getUserInfo(), command.getPool().getType(), command.getDetails());
     }
 
     @Test
