@@ -360,11 +360,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 Counter counter = lbCondition.getCounter();
                 LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getId(), counter.getName(), counter.getSource().toString(), "" + counter.getValue(), counter.getProvider());
                 Condition condition = lbCondition.getCondition();
-                LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getId(), condition.getThreshold(), condition.getRelationalOperator().toString(), counterTO);
+                LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getId(), condition.getThreshold(), condition.getRelationalOperator(), counterTO);
                 conditionTOs.add(conditionTO);
             }
             AutoScalePolicy autoScalePolicy = lbAutoScalePolicy.getPolicy();
-            autoScalePolicyTOs.add(new LoadBalancerTO.AutoScalePolicyTO(autoScalePolicy.getId(), autoScalePolicy.getDuration(), autoScalePolicy.getQuietTime(),
+            autoScalePolicyTOs.add(new LoadBalancerTO.AutoScalePolicyTO(autoScalePolicy.getId(), autoScalePolicy.getDuration(), autoScalePolicy.getQuietTime(), autoScalePolicy.getLastQuietTime(),
                     autoScalePolicy.getAction(), conditionTOs, lbAutoScalePolicy.isRevoked()));
         }
         LbAutoScaleVmProfile lbAutoScaleVmProfile = lbAutoScaleVmGroup.getProfile();

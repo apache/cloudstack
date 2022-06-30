@@ -1732,7 +1732,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                         AutoScalePolicyVO vo = _autoScalePolicyDao
                             .findById(GroupPolicyVO.getPolicyId());
                         if (vo.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
-                            vo.setLastQuiteTime(new Date());
+                            vo.setLastQuietTime(new Date());
                             _autoScalePolicyDao.persist(vo);
                             break;
                         }
@@ -1779,7 +1779,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             for (AutoScaleVmGroupPolicyMapVO GroupPolicyVO : GroupPolicyVOs) {
                 AutoScalePolicyVO vo = _autoScalePolicyDao.findById(GroupPolicyVO.getPolicyId());
                 if (vo.getAction().equals(AutoScalePolicy.Action.ScaleUp)) {
-                    vo.setLastQuiteTime(new Date());
+                    vo.setLastQuietTime(new Date());
                     _autoScalePolicyDao.persist(vo);
                     break;
                 }
@@ -1870,7 +1870,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public void checkAutoScaleVmGroup(AutoScaleVmGroupVO asGroup) {
         // check group state
         if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
-            Network.Provider provider = getLoadBalancerServiceProvider(asGroup);
+            Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
             if (Network.Provider.Netscaler.equals(provider)) {
                 checkNetScalerAsGroup(asGroup);
             } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
@@ -1882,7 +1882,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private void monitorAutoScaleVmGroup(AutoScaleVmGroupVO asGroup) {
         // check group state
         if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
-            Network.Provider provider = getLoadBalancerServiceProvider(asGroup);
+            Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
             if (Network.Provider.Netscaler.equals(provider)) {
                 s_logger.debug("Skipping the monitoring on AutoScale VmGroup with Netscaler provider: " + asGroup);
             } else if (Network.Provider.VirtualRouter.equals(provider) || Network.Provider.VPCVirtualRouter.equals(provider)) {
@@ -1929,157 +1929,79 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return counterTOs;
     }
 
-    private AutoScalePolicy.Action getAutoscaleAction(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroup asGroup, Map<String, String> params) {
-        s_logger.debug("[AutoScale] Getting autoscale action for group : " + asGroup.getId());
+    private AutoScalePolicy.Action getAutoscaleAction(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO) {
+        s_logger.debug("[AutoScale] Getting autoscale action for group : " + groupTO.getId());
 
-        Network.Provider provider = getLoadBalancerServiceProvider(asGroup);
+        Network.Provider provider = getLoadBalancerServiceProvider(groupTO.getLoadBalancerId());
 
-        List<AutoScaleVmGroupPolicyMapVO> listMap = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(asGroup.getId());
-        if ((listMap == null) || (listMap.size() == 0))
-            return null;
-        for (AutoScaleVmGroupPolicyMapVO asVmgPmap : listMap) {
-            AutoScalePolicyVO policyVO = _autoScalePolicyDao.findById(asVmgPmap.getPolicyId());
-            if (policyVO != null) {
-                int quitetime = policyVO.getQuietTime();
-                Date quitetimeDate = policyVO.getLastQuiteTime();
-                long last_quitetime = 0L;
-                if (quitetimeDate != null) {
-                    last_quitetime = policyVO.getLastQuiteTime().getTime();
-                }
-                long current_time = (new Date()).getTime();
+        for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
+            int quitetime = policyTO.getQuietTime();
+            Date quitetimeDate = policyTO.getLastQuietTime();
+            long last_quitetime = 0L;
+            if (quitetimeDate != null) {
+                last_quitetime = policyTO.getLastQuietTime().getTime();
+            }
+            long current_time = (new Date()).getTime();
 
-                // check quite time for this policy
-                if ((current_time - last_quitetime) >= (long)quitetime) {
+            // check quite time for this policy
+            if ((current_time - last_quitetime) >= (long)quitetime) {
+                // check whole conditions of this policy
+                boolean bValid = true;
+                for (ConditionTO conditionTO : policyTO.getConditions()) {
+                    CounterTO counter = conditionTO.getCounter();
+                    long thresholdValue = conditionTO.getThreshold();
+                    Double thresholdPercent = (double)thresholdValue;
 
-                    // list all condition of this policy
-                    boolean bValid = true;
-                    List<ConditionVO> lstConditions = getConditionsbyPolicyId(policyVO.getId());
-                    if ((lstConditions != null) && (lstConditions.size() > 0)) {
-                        // check whole conditions of this policy
-                        for (ConditionVO conditionVO : lstConditions) {
-                            long thresholdValue = conditionVO.getThreshold();
-                            Double thresholdPercent = (double)thresholdValue;
-                            CounterVO counterVO = _counterDao.findById(conditionVO.getCounterId());
-                            Counter.Source counter_source = counterVO.getSource();
-                            String counter_value = counterVO.getValue();
-                            long counter_count = 1;
-                            do {
-                                String counter_param = params.get("counter" + String.valueOf(counter_count));
-                                String counter_param_value = params.get("value" + String.valueOf(counter_count));
-                                if (counter_param.equals(counter_source.toString()) &&
-                                        (counter_param_value == null || counter_param_value.equals(counter_value))) {
-                                    break;
-                                }
-                                counter_count++;
-                            } while (true);
-
-                            String key = generateKeyFromPolicyAndConditionAndCounter(policyVO.getId(), conditionVO.getId(), counterVO.getId());
-                            if (Network.Provider.Netscaler.equals(provider)) {
-                                key = generateKeyFromPolicyAndConditionAndCounter(0L, conditionVO.getId(), counterVO.getId());
-                            }
-                            Double sum = countersMap.get(key);
-                            Integer number = countersNumberMap.get(key);
-                            s_logger.debug(String.format("policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyVO.getId(), conditionVO.getId(), counterVO.getSource(), sum, number));
-                            if (number == null || number == 0) {
-                                bValid = false;
-                                break;
-                            }
-                            Double avg = sum / number;
-                            Condition.Operator op = conditionVO.getRelationalOperator();
-                            boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent.equals(avg)))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg.doubleValue() >= thresholdPercent.doubleValue()))
-                                    || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg.doubleValue() > thresholdPercent.doubleValue()))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg.doubleValue() <= thresholdPercent.doubleValue()))
-                                    || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg.doubleValue() < thresholdPercent.doubleValue()));
-
-                            if (!bConditionCheck) {
-                                bValid = false;
-                                break;
-                            }
-                        }
-                        if (bValid) {
-                            return policyVO.getAction();
-                        }
+                    String key = generateKeyFromPolicyAndConditionAndCounter(policyTO.getId(), conditionTO.getId(), counter.getId());
+                    if (Network.Provider.Netscaler.equals(provider)) {
+                        key = generateKeyFromPolicyAndConditionAndCounter(0L, conditionTO.getId(), counter.getId());
                     }
+                    Double sum = countersMap.get(key);
+                    Integer number = countersNumberMap.get(key);
+                    s_logger.debug(String.format("policyId = %d, conditionId = %d, counter = %s, sum = %f, number = %s", policyTO.getId(), conditionTO.getId(), counter.getSource(), sum, number));
+                    if (number == null || number == 0) {
+                        bValid = false;
+                        break;
+                    }
+                    Double avg = sum / number;
+                    Condition.Operator op = conditionTO.getRelationalOperator();
+                    boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent.equals(avg)))
+                            || ((op == com.cloud.network.as.Condition.Operator.GE) && (avg.doubleValue() >= thresholdPercent.doubleValue()))
+                            || ((op == com.cloud.network.as.Condition.Operator.GT) && (avg.doubleValue() > thresholdPercent.doubleValue()))
+                            || ((op == com.cloud.network.as.Condition.Operator.LE) && (avg.doubleValue() <= thresholdPercent.doubleValue()))
+                            || ((op == com.cloud.network.as.Condition.Operator.LT) && (avg.doubleValue() < thresholdPercent.doubleValue()));
+
+                    if (!bConditionCheck) {
+                        bValid = false;
+                        break;
+                    }
+                }
+                if (bValid) {
+                    return policyTO.getAction();
                 }
             }
         }
         return null;
     }
 
-    private List<ConditionVO> getConditionsbyPolicyId(long policyId) {
-        List<AutoScalePolicyConditionMapVO> conditionMap = _autoScalePolicyConditionMapDao.findByPolicyId(policyId);
-        if ((conditionMap == null) || (conditionMap.size() == 0))
-            return null;
-
-        List<ConditionVO> lstResult = new ArrayList<ConditionVO>();
-        for (AutoScalePolicyConditionMapVO asPCmap : conditionMap) {
-            lstResult.add(_conditionDao.findById(asPCmap.getConditionId()));
-        }
-
-        return lstResult;
-    }
-
-    public List<Pair<String, Integer>> getPairofCounternameAndDuration(long groupId) {
-        AutoScaleVmGroupVO groupVo = _autoScaleVmGroupDao.findById(groupId);
-        if (groupVo == null)
-            return null;
+    public List<Pair<String, Integer>> getPairofCounternameAndDuration(AutoScaleVmGroupTO groupTO) {
         List<Pair<String, Integer>> result = new ArrayList<Pair<String, Integer>>();
-        //list policy map
-        List<AutoScaleVmGroupPolicyMapVO> groupPolicymap = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(groupVo.getId());
-        if (groupPolicymap == null)
-            return null;
-        for (AutoScaleVmGroupPolicyMapVO gpMap : groupPolicymap) {
-            //get duration
-            AutoScalePolicyVO policyVo = _autoScalePolicyDao.findById(gpMap.getPolicyId());
-            Integer duration = policyVo.getDuration();
-            //get collection of counter name
 
-            List<AutoScalePolicyConditionMapVO> lstPCmap = _autoScalePolicyConditionMapDao.findByPolicyId(policyVo.getId());
-            for (AutoScalePolicyConditionMapVO pcMap : lstPCmap) {
+        for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
+            //get duration
+            Integer duration = policyTO.getDuration();
+            for (ConditionTO conditionTO : policyTO.getConditions()) {
+                CounterTO counter = conditionTO.getCounter();
                 StringBuffer buff = new StringBuffer();
-                String counterName = getCounternamebyCondition(pcMap.getConditionId());
-                buff.append(counterName);
+                buff.append(counter.getName());
                 buff.append(",");
-                buff.append(pcMap.getConditionId());
-                String counterValue = getCountervaluebyCondition(pcMap.getConditionId());
-                buff.append(",");
-                buff.append(counterValue);
+                buff.append(conditionTO.getId());
                 // add to result
                 Pair<String, Integer> pair = new Pair<String, Integer>(buff.toString(), duration);
                 result.add(pair);
             }
         }
-
         return result;
-    }
-
-    public String getCounternamebyCondition(long conditionId) {
-
-        ConditionVO condition = _conditionDao.findById(conditionId);
-        if (condition == null)
-            return "";
-
-        long counterId = condition.getCounterId();
-        CounterVO counter = _counterDao.findById(counterId);
-        if (counter == null)
-            return "";
-
-        return counter.getSource().toString();
-    }
-
-    public String getCountervaluebyCondition(long conditionId) {
-
-        ConditionVO condition = _conditionDao.findById(conditionId);
-        if (condition == null)
-            return "";
-
-        long counterId = condition.getCounterId();
-        CounterVO counter = _counterDao.findById(counterId);
-        if (counter == null)
-            return "";
-
-        return counter.getValue();
     }
 
     private Network getNetwork(Long loadBalancerId) {
@@ -2106,8 +2028,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return new Pair<>(ipAddress.getAddress().addr(), loadBalancer.getSourcePortStart());
     }
 
-    private Network.Provider getLoadBalancerServiceProvider(AutoScaleVmGroup asGroup) {
-        Network network = getNetwork(asGroup.getLoadBalancerId());
+    private Network.Provider getLoadBalancerServiceProvider(Long loadBalancerId) {
+        Network network = getNetwork(loadBalancerId);
         List<Network.Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Network.Service.Lb);
         if (providers == null || providers.size() == 0) {
             throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: % ", network.getId()));
@@ -2157,7 +2079,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         VMInstanceVO vmVO = _vmInstanceDao.findById(vmId);
         Long receiveHost = vmVO.getHostId();
 
-        setPerformanceMonitorCommandParams(asGroup, params);
+        setPerformanceMonitorCommandParams(groupTO, params);
 
         PerformanceMonitorCommand perfMon = new PerformanceMonitorCommand(params, 20);
 
@@ -2182,7 +2104,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             Long counterId = Long.parseLong(counter_vm[1]);
                             Long conditionId = Long.parseLong(params.get("con" + counter_vm[1]));
                             Integer duration = Integer.parseInt(params.get("duration" + counter_vm[1]));
-                            Long policyId = 0L;
+                            Long policyId = 0L; // For NetScaler, the policyId is not returned in PerformanceMonitorAnswer
 
                             Double coVal = Double.parseDouble(counterVals[1]);
 
@@ -2193,7 +2115,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                         }
                     }
 
-                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, asGroup, params);
+                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
                     if (scaleAction != null) {
                         s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
                         if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
@@ -2210,10 +2132,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
     }
 
-    private void setPerformanceMonitorCommandParams(AutoScaleVmGroupVO asGroup, Map<String, String> params) {
+    private void setPerformanceMonitorCommandParams(AutoScaleVmGroupTO groupTO, Map<String, String> params) {
         // setup parameters phase: duration and counter
         // list pair [counter, duration]
-        List<Pair<String, Integer>> lstPair = getPairofCounternameAndDuration(asGroup.getId());
+        List<Pair<String, Integer>> lstPair = getPairofCounternameAndDuration(groupTO);
         int total_counter = 0;
         String[] lstCounter = new String[lstPair.size()];
         for (int i = 0; i < lstPair.size(); i++) {
@@ -2226,9 +2148,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             params.put("duration" + String.valueOf(total_counter), duration.toString());
             params.put("counter" + String.valueOf(total_counter), lstCounter[i]);
             params.put("con" + String.valueOf(total_counter), strCounterNames.split(",")[1]);
-            if (strCounterNames.split(",").length >= 3) {
-                params.put("value" + String.valueOf(total_counter), strCounterNames.split(",")[2]);
-            }
         }
         params.put("total_counter", String.valueOf(total_counter));
     }
@@ -2324,10 +2243,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         updateCountersMap(groupTO, countersMap, countersNumberMap);
 
         // get scale action
-        Map<String, String> params = new HashMap<String, String>();
-        setPerformanceMonitorCommandParams(asGroup, params);
-
-        AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, asGroup, params);
+        AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
         if (scaleAction != null) {
             s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
             if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {

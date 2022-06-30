@@ -18,10 +18,12 @@ package com.cloud.agent.api.to;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.Condition;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -399,10 +401,10 @@ public class LoadBalancerTO {
         private static final long serialVersionUID = 2L;
         private final Long id;
         private final long threshold;
-        private final String relationalOperator;
+        private final Condition.Operator relationalOperator;
         private final CounterTO counter;
 
-        public ConditionTO(Long id, long threshold, String relationalOperator, CounterTO counter) {
+        public ConditionTO(Long id, long threshold, Condition.Operator relationalOperator, CounterTO counter) {
             this.id = id;
             this.threshold = threshold;
             this.relationalOperator = relationalOperator;
@@ -417,7 +419,7 @@ public class LoadBalancerTO {
             return threshold;
         }
 
-        public String getRelationalOperator() {
+        public Condition.Operator getRelationalOperator() {
             return relationalOperator;
         }
 
@@ -431,14 +433,16 @@ public class LoadBalancerTO {
         private final long id;
         private final int duration;
         private final int quietTime;
+        private final Date lastQuietTime;
         private AutoScalePolicy.Action action;
         boolean revoked;
         private final List<ConditionTO> conditions;
 
-        public AutoScalePolicyTO(long id, int duration, int quietTime, AutoScalePolicy.Action action, List<ConditionTO> conditions, boolean revoked) {
+        public AutoScalePolicyTO(long id, int duration, int quietTime, Date lastQuietTime, AutoScalePolicy.Action action, List<ConditionTO> conditions, boolean revoked) {
             this.id = id;
             this.duration = duration;
             this.quietTime = quietTime;
+            this.lastQuietTime = lastQuietTime;
             this.conditions = conditions;
             this.action = action;
             this.revoked = revoked;
@@ -454,6 +458,10 @@ public class LoadBalancerTO {
 
         public int getQuietTime() {
             return quietTime;
+        }
+
+        public Date getLastQuietTime() {
+            return lastQuietTime;
         }
 
         public AutoScalePolicy.Action getAction() {
