@@ -158,6 +158,7 @@ public class KubernetesSupportedVersionVO implements KubernetesSupportedVersion 
         this.minimumRamSize = minimumRamSize;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
