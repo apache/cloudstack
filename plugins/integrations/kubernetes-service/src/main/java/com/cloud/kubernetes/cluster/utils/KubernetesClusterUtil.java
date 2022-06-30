@@ -336,7 +336,7 @@ public class KubernetesClusterUtil {
             result = SshHelper.sshExecute(
                     ipAddress, port,
                     user, sshKeyFile, null,
-                    "sudo /opt/bin/kubectl version --short",
+                    CLUSTER_NODE_VERSION_COMMAND,
                     10000, 10000, 20000);
         } catch (Exception e) {
             if (LOGGER.isDebugEnabled()) {
