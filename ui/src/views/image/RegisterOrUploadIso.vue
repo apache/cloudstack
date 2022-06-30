@@ -232,7 +232,9 @@ export default {
       }
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
         this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
