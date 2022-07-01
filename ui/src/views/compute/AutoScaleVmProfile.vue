@@ -45,7 +45,7 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
-          <a-input v-model:value="destroyvmgraceperiod"></a-input>
+          <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
         </div>
       </div>
       <div class="form">
@@ -113,7 +113,7 @@
         </div>
         <div class="form__item" ref="newParamValue">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.param.value') }}</div>
-          <a-input v-model:value="newParam.value"></a-input>
+          <a-input v-model:value="newParam.value" type="number"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item">

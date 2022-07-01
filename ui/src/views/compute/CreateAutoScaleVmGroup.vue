@@ -436,10 +436,10 @@
                 <template #description>
                   <div class="form">
                     <a-form-item :label="$t('label.duration')" name="scaleupduration" ref="scaleupduration">
-                      <a-input v-model:value="form.scaleupduration"></a-input>
+                      <a-input v-model:value="form.scaleupduration" type="number"></a-input>
                     </a-form-item>
                     <a-form-item :label="$t('label.quiettime')" name="scaleupquiettime" ref="scaleupquiettime">
-                      <a-input v-model:value="form.scaleupquiettime"></a-input>
+                      <a-input v-model:value="form.scaleupquiettime" type="number"></a-input>
                     </a-form-item>
                   </div>
                   <a-divider/>
@@ -480,7 +480,7 @@
                     </div>
                     <div class="form__item" ref="newScaleUpConditionThreshold">
                       <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
-                      <a-input v-model:value="newScaleUpCondition.threshold"></a-input>
+                      <a-input v-model:value="newScaleUpCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
                     <div class="form__item">
@@ -526,10 +526,10 @@
                 <template #description>
                   <div class="form">
                     <a-form-item :label="$t('label.duration')" name="scaledownduration" ref="scaledownduration">
-                      <a-input v-model:value="form.scaledownduration"></a-input>
+                      <a-input v-model:value="form.scaledownduration" type="number"></a-input>
                     </a-form-item>
                     <a-form-item :label="$t('label.quiettime')" name="scaledownquiettime" ref="scaledownquiettime">
-                      <a-input v-model:value="form.scaledownquiettime"></a-input>
+                      <a-input v-model:value="form.scaledownquiettime" type="number"></a-input>
                     </a-form-item>
                   </div>
                   <a-divider/>
@@ -570,7 +570,7 @@
                     </div>
                     <div class="form__item" ref="newScaleDownConditionThreshold">
                       <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
-                      <a-input v-model:value="newScaleDownCondition.threshold"></a-input>
+                      <a-input v-model:value="newScaleDownCondition.threshold" type="number"></a-input>
                       <span class="error-text">{{ $t('label.invalid.number') }}</span>
                     </div>
                     <div class="form__item">
@@ -631,16 +631,16 @@
                       </a-select>
                     </a-form-item>
                     <a-form-item :label="$t('label.destroyvmgraceperiod')" name="destroyvmgraceperiod" ref="destroyvmgraceperiod">
-                      <a-input v-model:value="form.destroyvmgraceperiod"></a-input>
+                      <a-input v-model:value="form.destroyvmgraceperiod" type="number"></a-input>
                     </a-form-item>
                     <a-form-item :label="$t('label.maxmembers')" name="maxmembers" ref="maxmembers">
-                      <a-input v-model:value="form.maxmembers"></a-input>
+                      <a-input v-model:value="form.maxmembers" type="number"></a-input>
                     </a-form-item>
                     <a-form-item :label="$t('label.minmembers')" name="minmembers" ref="minmembers">
-                      <a-input v-model:value="form.minmembers"></a-input>
+                      <a-input v-model:value="form.minmembers" type="number"></a-input>
                     </a-form-item>
                     <a-form-item :label="$t('label.interval')" name="interval" ref="interval">
-                      <a-input v-model:value="form.interval"></a-input>
+                      <a-input v-model:value="form.interval" type="number"></a-input>
                     </a-form-item>
                   </div>
                 </template>

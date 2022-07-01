@@ -29,11 +29,11 @@
       <div class="form" v-ctrl-enter="updateAutoScalePolicy">
         <div class="form__item">
           <div class="form__label">{{ $t('label.duration') }}</div>
-          <a-input v-model:value="duration"></a-input>
+          <a-input v-model:value="duration" type="number"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.quiettime') }}</div>
-          <a-input v-model:value="quiettime"></a-input>
+          <a-input v-model:value="quiettime" type="number"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
@@ -82,7 +82,7 @@
         </div>
         <div class="form__item" ref="newConditionThreshold">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
-          <a-input v-model:value="newCondition.threshold"></a-input>
+          <a-input v-model:value="newCondition.threshold" type="number"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item">
