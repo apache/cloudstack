@@ -688,7 +688,7 @@
       </a-col>
       <a-col :md="24" :lg="7" v-if="!isMobile()">
         <a-affix :offsetTop="75" class="vm-info-card">
-          <info-card :resource="vm" :title="$t('label.yourinstance')" @change-resource="(data) => resource = data" />
+          <info-card :resource="vm" :title="$t('label.your.autoscale.vmgroup')" @change-resource="(data) => resource = data" />
         </a-affix>
       </a-col>
     </a-row>
@@ -1758,7 +1758,7 @@ export default {
           return
         }
 
-        if (values.maxmembers < values.minmembers) {
+        if (parseInt(values.maxmembers) < parseInt(values.minmembers)) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.max.members.less.than.min.members')
@@ -1766,7 +1766,7 @@ export default {
           return
         }
 
-        if (values.scaleupduration < values.interval || values.scaledownduration < values.interval) {
+        if (parseInt(values.scaleupduration) < parseInt(values.interval) || parseInt(values.scaledownduration) < parseInt(values.interval)) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.duration.less.than.interval')
