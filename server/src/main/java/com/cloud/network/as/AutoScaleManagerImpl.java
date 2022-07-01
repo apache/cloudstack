@@ -152,7 +152,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentContext;
@@ -265,7 +264,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Inject
     private DiskOfferingDao _diskOfferingDao;
 
-    private long autoScaleStatsInterval = -1L;
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
 
     ExecutorService _groupExecutor;
@@ -276,8 +274,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     @Override
     public boolean start() {
-        autoScaleStatsInterval = NumbersUtil.parseLong(_configDao.getValue("autoscale.stats.interval"), ONE_MINUTE_IN_MILLISCONDS);
-
         // create thread pool and blocking queue
         final int workersCount = AutoScaleStatsWorker.value();
         _groupExecutor = Executors.newFixedThreadPool(workersCount);
@@ -319,7 +315,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterException("AutoScale is not supported in the network");
         }
         for (Counter counter : counters) {
-            String counterName = counter.getSource().name().toString();
+            String counterName = counter.getSource().name();
             boolean isCounterSupported = false;
             for (AutoScaleCounter autoScaleCounter : supportedCounters) {
                 if (autoScaleCounter.getName().equals(counterName)) {

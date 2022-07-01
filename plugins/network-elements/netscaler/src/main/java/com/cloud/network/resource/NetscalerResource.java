@@ -117,6 +117,8 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.resource.ServerResource;
@@ -3126,13 +3128,13 @@ public class NetscalerResource implements ServerResource {
                 for (final ConditionTO conditionTO : conditions) {
                     final CounterTO counterTO = conditionTO.getCounter();
                     String counterName = counterTO.getName();
-                    final String operator = conditionTO.getRelationalOperator();
+                    final Condition.Operator operator = conditionTO.getRelationalOperator();
                     final long threshold = conditionTO.getThreshold();
 
                     final StringBuilder conditionExpression = new StringBuilder();
                     try(Formatter formatter = new Formatter(conditionExpression, Locale.US);) {
 
-                        if (counterTO.getSource().equals("snmp")) {
+                        if (counterTO.getSource().equals(Counter.Source.snmp)) {
                             counterName = generateSnmpMetricName(counterName);
                             if (snmpMetrics.size() == 0) {
                                 // Create Metric Table
@@ -3232,7 +3234,7 @@ public class NetscalerResource implements ServerResource {
                             final int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name
                             // will be added as a param to SNMP_TABLE.
                             formatter.format("SYS.VSERVER(\"%s\").SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)", nsVirtualServerName, counterIndex, operator, threshold);
-                        } else if (counterTO.getSource().equals("netscaler")) {
+                        } else if (counterTO.getSource().equals(Counter.Source.netscaler)) {
                             //SYS.VSERVER("abcd").RESPTIME.GT(10)
                             formatter.format("SYS.VSERVER(\"%s\").%s.%s(%d)", nsVirtualServerName, counterTO.getValue(), operator, threshold);
                         }
@@ -3309,7 +3311,7 @@ public class NetscalerResource implements ServerResource {
                 final List<ConditionTO> conditions = autoScalePolicyTO.getConditions();
                 for (final ConditionTO conditionTO : conditions) {
                     final CounterTO counterTO = conditionTO.getCounter();
-                    if (counterTO.getSource().equals("snmp")) {
+                    if (counterTO.getSource().equals(Counter.Source.snmp)) {
                         isSnmp = true;
                         break;
                     }

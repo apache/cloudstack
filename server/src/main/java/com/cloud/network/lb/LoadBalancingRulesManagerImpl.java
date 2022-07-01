@@ -358,7 +358,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             List<LoadBalancerTO.ConditionTO> conditionTOs = new ArrayList<LoadBalancerTO.ConditionTO>(lbConditions.size());
             for (LbCondition lbCondition : lbConditions) {
                 Counter counter = lbCondition.getCounter();
-                LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getId(), counter.getName(), counter.getSource().toString(), "" + counter.getValue(), counter.getProvider());
+                LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getId(), counter.getName(), counter.getSource(), "" + counter.getValue(), counter.getProvider());
                 Condition condition = lbCondition.getCondition();
                 LoadBalancerTO.ConditionTO conditionTO = new LoadBalancerTO.ConditionTO(condition.getId(), condition.getThreshold(), condition.getRelationalOperator(), counterTO);
                 conditionTOs.add(conditionTO);

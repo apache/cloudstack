@@ -24,6 +24,7 @@ import java.util.List;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -364,11 +365,11 @@ public class LoadBalancerTO {
         private static final long serialVersionUID = 2L;
         private final Long id;
         private final String name;
-        private final String source;
+        private final Counter.Source source;
         private final String value;
         private final String provider;
 
-        public CounterTO(Long id, String name, String source, String value, String provider) {
+        public CounterTO(Long id, String name, Counter.Source source, String value, String provider) {
             this.id = id;
             this.name = name;
             this.source = source;
@@ -384,7 +385,7 @@ public class LoadBalancerTO {
             return name;
         }
 
-        public String getSource() {
+        public Counter.Source getSource() {
             return source;
         }
 
