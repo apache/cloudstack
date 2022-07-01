@@ -1933,16 +1933,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Network.Provider provider = getLoadBalancerServiceProvider(groupTO.getLoadBalancerId());
 
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
-            int quitetime = policyTO.getQuietTime();
-            Date quitetimeDate = policyTO.getLastQuietTime();
-            long last_quitetime = 0L;
-            if (quitetimeDate != null) {
-                last_quitetime = policyTO.getLastQuietTime().getTime();
+            int quiettime = policyTO.getQuietTime();
+            Date quiettimeDate = policyTO.getLastQuietTime();
+            long last_quiettime = 0L;
+            if (quiettimeDate != null) {
+                last_quiettime = policyTO.getLastQuietTime().getTime();
             }
             long current_time = (new Date()).getTime();
 
-            // check quite time for this policy
-            if ((current_time - last_quitetime) >= (long)quitetime) {
+            // check quiet time for this policy
+            if ((current_time - last_quiettime) >= (long)quiettime) {
                 // check whole conditions of this policy
                 boolean bValid = true;
                 for (ConditionTO conditionTO : policyTO.getConditions()) {
@@ -2440,7 +2440,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void cleanupAsVmGroupStatistics(AutoScaleVmGroupTO groupTO) {
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
-            Date beforeDate = new Date(System.currentTimeMillis() - ((long)AutoScaleStatsCleanupDelay.value() << 10));
+            Integer cleanupDelay = AutoScaleStatsCleanupDelay.value();
+            Integer duration = policyTO.getDuration();
+            Integer delaySecs = cleanupDelay >= duration ?  cleanupDelay : duration;
+            Date beforeDate = new Date(System.currentTimeMillis() - ((long)delaySecs * 1000));
             s_logger.debug(String.format("Removing stats for policy %d in as group %d, before %s", policyTO.getId(), groupTO.getId(), beforeDate));
             _asGroupStatisticsDao.removeByGroupAndPolicy(groupTO.getId(), policyTO.getId(), beforeDate);
         }
