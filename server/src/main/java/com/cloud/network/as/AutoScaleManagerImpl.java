@@ -931,7 +931,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
         s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
 
-        scheduleMonitorTask(vmGroupVO);
+        scheduleMonitorTask(vmGroupVO.getId());
 
         return vmGroupVO;
     }
@@ -1201,7 +1201,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Disabled);
-            scheduleMonitorTask(vmGroup);
+            scheduleMonitorTask(vmGroup.getId());
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             _autoScaleVmGroupDao.persist(vmGroup);
@@ -1230,7 +1230,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
             _asGroupStatisticsDao.removeByGroupId(id);
-            cancelCheckTask(vmGroup);
+            cancelCheckTask(vmGroup.getId());
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             _autoScaleVmGroupDao.persist(vmGroup);
@@ -1875,7 +1875,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
     }
 
-    private void monitorAutoScaleVmGroup(AutoScaleVmGroupVO asGroup) {
+    private void monitorAutoScaleVmGroup(Long groupId) {
+        AutoScaleVmGroupVO asGroup = _autoScaleVmGroupDao.findById(groupId);
+        s_logger.debug("Start monitoring on AutoScale VmGroup " + asGroup);
         // check group state
         if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
             Network.Provider provider = getLoadBalancerServiceProvider(asGroup.getLoadBalancerId());
@@ -2253,7 +2255,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void getVmStatsFromHosts(AutoScaleVmGroupTO groupTO) {
         // group vms by host id
-        Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<Long, List<Long>>();
+        Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<>();
 
         List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(groupTO.getId());
         for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
@@ -2262,7 +2264,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             if (vm.getHostId() != null) {
                 List<Long> vmIds = hostAndVmIdsMap.get(vm.getHostId());
                 if (vmIds == null) {
-                    vmIds = new ArrayList<Long>();
+                    vmIds = new ArrayList<>();
                 }
                 vmIds.add(vmId);
                 hostAndVmIdsMap.put(vm.getHostId(), vmIds);
@@ -2449,40 +2451,43 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listAll();
         for (AutoScaleVmGroupVO vmGroup : vmGroups) {
             if (vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
-                scheduleMonitorTask(vmGroup);
+                scheduleMonitorTask(vmGroup.getId());
             }
         }
     }
 
-    private void scheduleMonitorTask(AutoScaleVmGroupVO vmGroup) {
-        ScheduledExecutorService executor = vmGroupMonitorMaps.get(vmGroup.getId());
+    private void scheduleMonitorTask(Long groupId) {
+        ScheduledExecutorService executor = vmGroupMonitorMaps.get(groupId);
         if (executor == null) {
-            executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + vmGroup.getId()));
-            executor.scheduleAtFixedRate(new MonitorTask(vmGroup), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
-            vmGroupMonitorMaps.put(vmGroup.getId(), executor);
+            AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.findById(groupId);
+            s_logger.debug("Scheduling monitor task for autoscale vm group " + vmGroup);
+            executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VmGroup-Monitor-" + groupId));
+            executor.scheduleAtFixedRate(new MonitorTask(groupId), vmGroup.getInterval(), vmGroup.getInterval(), TimeUnit.SECONDS);
+            vmGroupMonitorMaps.put(groupId, executor);
         }
     }
 
-    private void cancelCheckTask(AutoScaleVmGroupVO vmGroup) {
-        ScheduledExecutorService executor = vmGroupMonitorMaps.get(vmGroup.getId());
+    private void cancelCheckTask(Long groupId) {
+        ScheduledExecutorService executor = vmGroupMonitorMaps.get(groupId);
         if (executor != null) {
+            s_logger.debug("Cancelling monitor task for autoscale vm group " + groupId);
             executor.shutdown();
-            vmGroupMonitorMaps.remove(vmGroup.getId());
+            vmGroupMonitorMaps.remove(groupId);
         }
     }
 
     protected class MonitorTask extends ManagedContextRunnable {
 
-        AutoScaleVmGroupVO group;
+        Long groupId;
 
-        public MonitorTask(AutoScaleVmGroupVO group) {
-            this.group = group;
+        public MonitorTask(Long groupId) {
+            this.groupId = groupId;
         }
 
         @Override
         protected synchronized void runInContext() {
             try {
-                monitorAutoScaleVmGroup(group);
+                monitorAutoScaleVmGroup(groupId);
             } catch (final Exception e) {
                 s_logger.warn("Caught the following exception on monitoring AutoScale Vm Group", e);
             }
