@@ -285,6 +285,33 @@ export default {
           }
         },
         {
+          title: 'label.authentication.method',
+          key: 'authmethod',
+          placeHolder: 'message.error.authmethod',
+          required: false,
+          radioGroup: true,
+          defaultValue: 'password',
+          radioOption: [{
+            label: 'label.password',
+            value: 'password'
+          }, {
+            label: 'label.authentication.sshkey',
+            value: 'sshkey',
+            condition: {
+              hypervisor: ['KVM']
+            }
+          }],
+          display: {
+            hypervisor: ['BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+          },
+          alert: {
+            message: 'message.add.host.sshkey',
+            display: {
+              authmethod: 'sshkey'
+            }
+          }
+        },
+        {
           title: 'label.password',
           key: 'hostPassword',
           placeHolder: 'message.error.host.password',

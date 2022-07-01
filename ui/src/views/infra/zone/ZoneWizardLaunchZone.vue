@@ -1211,6 +1211,7 @@ export default {
       this.addStep('message.adding.host', 'hostResource')
 
       const hostData = {}
+      const hostPassword = this.prefillContent?.authmethod !== 'password' ? '' : (this.prefillContent?.hostPassword || null)
       hostData.zoneid = this.stepData.zoneReturned.id
       hostData.podid = this.stepData.podReturned.id
       hostData.clusterid = this.stepData.clusterReturned.id
@@ -1218,7 +1219,7 @@ export default {
       hostData.clustertype = this.stepData.clusterReturned.clustertype
       hostData.hosttags = this.prefillContent?.hostTags || null
       hostData.username = this.prefillContent?.hostUserName || null
-      hostData.password = this.prefillContent?.hostPassword || null
+      hostData.password = hostPassword
       const hostname = this.prefillContent?.hostName || null
       let url = null
       if (hostname.indexOf('http://') === -1) {
