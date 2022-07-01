@@ -1914,19 +1914,17 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return false;
     }
 
-    private List<CounterTO> getCounters(AutoScaleVmGroupTO groupTO) {
-        List<Long> counterIds = new ArrayList<>();
-        List<CounterTO> counterTOs = new ArrayList<>();
+    private Map<Long, List<CounterTO>> getCounters(AutoScaleVmGroupTO groupTO) {
+        Map<Long, List<CounterTO>> counters = new HashMap<>();
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
+            List<CounterTO> counterTOs = new ArrayList<>();
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 CounterTO counterTO = conditionTO.getCounter();
-                if (!counterIds.contains(counterTO.getId())) {
-                    counterIds.add(counterTO.getId());
-                    counterTOs.add(counterTO);
-                }
+                counterTOs.add(counterTO);
             }
+            counters.put(policyTO.getId(), counterTOs);
         }
-        return counterTOs;
+        return counters;
     }
 
     private AutoScalePolicy.Action getAutoscaleAction(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO) {
@@ -2275,7 +2273,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
 
-        List<CounterTO> counters = getCounters(groupTO);
+        Map<Long, List<CounterTO>> countersMap = getCounters(groupTO);
 
         // get vm stats from each host and update database
         for (Long hostId : hostAndVmIdsMap.keySet()) {
@@ -2286,19 +2284,24 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             try {
                 Map<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
 
-                if (vmStatsById != null) {
-                    Set<Long> vmIdSet = vmStatsById.keySet();
+                if (vmStatsById == null) {
+                    s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
+                    continue;
+                }
+                Set<Long> vmIdSet = vmStatsById.keySet();
 
-                    for (Long vmId : vmIdSet) {
-                        VmStatsEntry vmStats = vmStatsById.get(vmId);
+                for (Long vmId : vmIdSet) {
+                    VmStatsEntry vmStats = vmStatsById.get(vmId);
+                    for (Long policyId : countersMap.keySet()) {
+                        List<CounterTO> counters = countersMap.get(policyId);
                         for (CounterTO counter : counters) {
                             if (Counter.Source.cpu.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getCPUUtilization() / 100;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
                                         counterValue, AutoScaleValueType.INSTANT, timestamp));
                             } else if (Counter.Source.memory.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getMemoryKBs() / 1024;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
                                         counterValue, AutoScaleValueType.INSTANT, timestamp));
                             }
                         }
@@ -2358,8 +2361,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Date timestamp = new Date();
         for (AutoScaleMetricsValue value : values) {
             AutoScaleMetrics metrics = value.getMetrics();
-            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), metrics.getCounterId(), routerId, ResourceTag.ResourceObjectType.DomainRouter,
-                    value.getValue(), value.getType(), timestamp));
+            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), metrics.getPolicyId(), metrics.getCounterId(), routerId,
+                    ResourceTag.ResourceObjectType.DomainRouter, value.getValue(), value.getType(), timestamp));
         }
     }
 
@@ -2373,7 +2376,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
                 s_logger.debug(String.format("Updating countersMap for condition %d in policy %d in as group %d: ", conditionId, policyTO.getId(), groupTO.getId()));
                 s_logger.debug(String.format("Updating countersMap with stats in %d seconds : between %s and %s", policyTO.getDuration(), afterDate, new Date()));
-                List<AutoScaleVmGroupStatisticsVO> stats = _asGroupStatisticsDao.listByVmGroupIdAndCounterId(groupTO.getId(), counter.getId(), afterDate);
+                List<AutoScaleVmGroupStatisticsVO> stats = _asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(groupTO.getId(), policyTO.getId(), counter.getId(), afterDate);
                 if (CollectionUtils.isEmpty(stats)) {
                     continue;
                 }
@@ -2439,10 +2442,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             Date beforeDate = new Date(System.currentTimeMillis() - ((long)AutoScaleStatsCleanupDelay.value() << 10));
             s_logger.debug(String.format("Removing stats for policy %d in as group %d, before %s", policyTO.getId(), groupTO.getId(), beforeDate));
-            for (ConditionTO conditionTO : policyTO.getConditions()) {
-                CounterTO counter = conditionTO.getCounter();
-                _asGroupStatisticsDao.removeByGroupAndCounter(groupTO.getId(), counter.getId(), beforeDate);
-            }
+            _asGroupStatisticsDao.removeByGroupAndPolicy(groupTO.getId(), policyTO.getId(), beforeDate);
         }
     }
 

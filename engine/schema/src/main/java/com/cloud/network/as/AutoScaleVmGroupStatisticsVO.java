@@ -44,6 +44,9 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     @Column(name = "vmgroup_id")
     private long vmGroupId;
 
+    @Column(name = "policy_id")
+    private long policyId;
+
     @Column(name = "counter_id")
     private long counterId;
 
@@ -68,9 +71,10 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     public AutoScaleVmGroupStatisticsVO() {
     }
 
-    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long counterId, long resourceId, ResourceTag.ResourceObjectType resourceType,
+    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long policyId, long counterId, long resourceId, ResourceTag.ResourceObjectType resourceType,
                                         Double rawValue, VirtualRouterAutoScale.AutoScaleValueType valueType, Date created) {
         this.vmGroupId = vmGroupId;
+        this.policyId = policyId;
         this.counterId = counterId;
         this.resourceId = resourceId;
         this.resourceType = resourceType;
@@ -86,6 +90,10 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
     public long getVmGroupId() {
         return vmGroupId;
+    }
+
+    public long getPolicyId() {
+        return policyId;
     }
 
     public long getCounterId() {

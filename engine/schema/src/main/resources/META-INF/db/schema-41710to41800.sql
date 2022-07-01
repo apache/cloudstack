@@ -58,6 +58,7 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
 CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
+  `policy_id` bigint unsigned NOT NULL,
   `counter_id` bigint unsigned NOT NULL,
   `resource_id` bigint unsigned NOT NULL,
   `resource_type` varchar(255) NOT NULL,
@@ -66,6 +67,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
   `created` datetime NOT NULL COMMENT 'Date this data is created',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_vmgroup_statistics__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_statistics__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroup_statistics__counter_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__counter_id` (`counter_id`) REFERENCES `counter` (`id`),
   INDEX `i_autoscale_vmgroup_statistics__vmgroup_id`(`vmgroup_id`),
   INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)

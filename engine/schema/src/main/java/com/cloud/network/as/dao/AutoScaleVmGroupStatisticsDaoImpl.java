@@ -39,6 +39,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     protected void init() {
         groupAndCounterSearch = createSearchBuilder();
         groupAndCounterSearch.and("vmGroupId", groupAndCounterSearch.entity().getVmGroupId(), Op.EQ);
+        groupAndCounterSearch.and("policyId", groupAndCounterSearch.entity().getPolicyId(), Op.EQ);
         groupAndCounterSearch.and("counterId", groupAndCounterSearch.entity().getCounterId(), Op.EQ);
         groupAndCounterSearch.and("createdLT", groupAndCounterSearch.entity().getCreated(), Op.LT);
         groupAndCounterSearch.and("createdGT", groupAndCounterSearch.entity().getCreated(), Op.GT);
@@ -54,19 +55,13 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     }
 
     @Override
-    public boolean removeByGroupAndCounter(long vmGroupId, long counterId) {
+    public boolean removeByGroupAndPolicy(long vmGroupId, long policyId, Date beforeDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);
-        sc.setParameters("counterId", counterId);
-        return expunge(sc) > 0;
-    }
-
-    @Override
-    public boolean removeByGroupAndCounter(long vmGroupId, long counterId, Date beforeDate) {
-        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
-        sc.setParameters("vmGroupId", vmGroupId);
-        sc.setParameters("counterId", counterId);
-        sc.setParameters("createdLT", beforeDate);
+        sc.setParameters("policyId", policyId);
+        if (beforeDate != null) {
+            sc.setParameters("createdLT", beforeDate);
+        }
         return expunge(sc) > 0;
     }
 
@@ -78,11 +73,14 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     }
 
     @Override
-    public List<AutoScaleVmGroupStatisticsVO> listByVmGroupIdAndCounterId(long vmGroupId, long counterId, Date afterDate) {
+    public List<AutoScaleVmGroupStatisticsVO> listByVmGroupAndPolicyAndCounter(long vmGroupId, long policyId, long counterId, Date afterDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);
+        sc.setParameters("policyId", policyId);
         sc.setParameters("counterId", counterId);
-        sc.setParameters("createdGT", afterDate);
+        if (afterDate != null) {
+            sc.setParameters("createdGT", afterDate);
+        }
         return listBy(sc);
     }
 }
