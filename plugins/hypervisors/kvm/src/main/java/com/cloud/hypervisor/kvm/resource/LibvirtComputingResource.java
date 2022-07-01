@@ -325,7 +325,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public final static String CONFIG_DIR = "config";
     private boolean enableIoUring;
-    private final static String ENABLE_IO_URING_PROPERTY = "enable.io.uring";
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
@@ -982,11 +981,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _videoRam = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_VIDEO_RAM);
 
         // Reserve 1GB unless admin overrides
-        _dom0MinMem = ByteScaleUtils.mibToBytes((long) AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
+        _dom0MinMem = ByteScaleUtils.mibToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_RESERVED_MEM_MB));
 
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
         // compressing technologies
-        _dom0OvercommitMem = ByteScaleUtils.mibToBytes((long) AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB));
+        _dom0OvercommitMem = ByteScaleUtils.mibToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB));
 
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVMCLOCK_DISABLE)) {
             _noKvmClock = true;
@@ -1055,7 +1054,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         // Enable/disable IO driver for Qemu (in case it is not set CloudStack can also detect if its supported by qemu)
-        boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
+        Boolean enableIoUringConfig = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ENABLE_IO_URING);
         enableIoUring = isIoUringEnabled(enableIoUringConfig);
         s_logger.info("IO uring driver for Qemu: " + (enableIoUring ? "enabled" : "disabled"));
 
@@ -1146,7 +1145,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         _migrateWait = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_WAIT);
 
-        configureAgentHooks(params);
+        configureAgentHooks();
 
         _migrateSpeed = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_SPEED);
         if (_migrateSpeed == -1) {
@@ -1174,7 +1173,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         getVifDriver(TrafficType.Control).createControlNetwork(_linkLocalBridgeName);
 
-        configureDiskActivityChecks(params);
+        configureDiskActivityChecks();
 
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
@@ -1272,10 +1271,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
-    private void configureAgentHooks(final Map<String, Object> params) {
+    private void configureAgentHooks() {
         _agentHooksBasedir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_BASEDIR);
         s_logger.debug("agent.hooks.basedir is " + _agentHooksBasedir);
-
 
         _agentHooksLibvirtXmlScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT);
         s_logger.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + _agentHooksLibvirtXmlScript);
@@ -1325,7 +1323,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    protected void configureDiskActivityChecks(final Map<String, Object> params) {
+    protected void configureDiskActivityChecks() {
         _diskActivityCheckEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_DISKACTIVITY_CHECKENABLED);
         if (_diskActivityCheckEnabled) {
             final int timeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_DISKACTIVITY_CHECKTIMEOUT_S);

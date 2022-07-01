@@ -24,6 +24,7 @@ package com.cloud.agent.properties;
  * @param <T> type of the default value.
  */
 public class AgentProperties{
+    private static final String DEFAULT = "default";
 
     /**
      * MANDATORY: The GUID to identify the agent with.<br>
@@ -31,28 +32,28 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> GUID = new Property<String>("guid", null, String.class);
+    public static final Property<String> GUID = new Property<>("guid", null, String.class);
 
     /**
      * The java class which the agent loads to execute.<br>
      * Data type: String.<br>
      * Default value: <code>com.cloud.hypervisor.kvm.resource.LibvirtComputingResource</code>
      */
-    public static final Property<String> RESOURCE = new Property<String>("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource");
+    public static final Property<String> RESOURCE = new Property<>("resource", "com.cloud.hypervisor.kvm.resource.LibvirtComputingResource");
 
     /**
      * The number of threads running in the agent.<br>
      * Data type: Integer.<br>
      * Default value: <code>5</code>
      */
-    public static final Property<Integer> WORKERS = new Property<Integer>("workers", 5);
+    public static final Property<Integer> WORKERS = new Property<>("workers", 5);
 
     /**
      * The IP address of the management server.<br>
      * Data type: String.<br>
      * Default value: <code>localhost</code>
      */
-    public static final Property<String> HOST = new Property<String>("host", "localhost");
+    public static final Property<String> HOST = new Property<>("host", "localhost");
 
     /**
      * The time interval (in seconds) after which the agent will check if the connected host is the preferred host.<br>
@@ -61,56 +62,56 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Integer> HOST_LB_CHECK_INTERVAL = new Property<Integer>("host.lb.check.interval", null, Integer.class);
+    public static final Property<Integer> HOST_LB_CHECK_INTERVAL = new Property<>("host.lb.check.interval", null, Integer.class);
 
     /**
      * The port that the management server is listening on.<br>
      * Data type: Integer.<br>
      * Default value: <code>8250</code>
      */
-    public static final Property<Integer> PORT = new Property<Integer>("port", 8250);
+    public static final Property<Integer> PORT = new Property<>("port", 8250);
 
     /**
      * The cluster which the agent belongs to.<br>
      * Data type: String.<br>
      * Default value: <code>default</code>
      */
-    public static final Property<String> CLUSTER = new Property<String>("cluster", "default");
+    public static final Property<String> CLUSTER = new Property<>("cluster", DEFAULT);
 
     /**
      * The pod which the agent belongs to.<br>
      * Data type: String.<br>
      * Default value: <code>default</code>
      */
-    public static final Property<String> POD = new Property<String>("pod", "default");
+    public static final Property<String> POD = new Property<>("pod", DEFAULT);
 
     /**
      * The zone which the agent belongs to.<br>
      * Data type: String.<br>
      * Default value: <code>default</code>
      */
-    public static final Property<String> ZONE = new Property<String>("zone", "default");
+    public static final Property<String> ZONE = new Property<>("zone", DEFAULT);
 
     /**
      * Public NIC device. If this property is commented, it will be autodetected on service startup.<br>
      * Data type: String.<br>
      * Default value: <code>cloudbr0</code>
      */
-    public static final Property<String> PUBLIC_NETWORK_DEVICE = new Property<String>("public.network.device", "cloudbr0");
+    public static final Property<String> PUBLIC_NETWORK_DEVICE = new Property<>("public.network.device", "cloudbr0");
 
     /**
      * Private NIC device. If this property is commented, it will be autodetected on service startup.<br>
      * Data type: String.<br>
      * Default value: <code>cloudbr1</code>
      */
-    public static final Property<String> PRIVATE_NETWORK_DEVICE = new Property<String>("private.network.device", "cloudbr1");
+    public static final Property<String> PRIVATE_NETWORK_DEVICE = new Property<>("private.network.device", "cloudbr1");
 
     /**
      * Guest NIC device. If this property is commented, the value of the private NIC device will be used.<br>
      * Data type: String.<br>
      * Default value: the private NIC device value.
      */
-    public static final Property<String> GUEST_NETWORK_DEVICE = new Property<String>("guest.network.device", null, String.class);
+    public static final Property<String> GUEST_NETWORK_DEVICE = new Property<>("guest.network.device", null, String.class);
 
     /**
      * Local storage path.<br>
@@ -118,7 +119,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images/</code>
      */
-    public static final Property<String> LOCAL_STORAGE_PATH = new Property<String>("local.storage.path", "/var/lib/libvirt/images/");
+    public static final Property<String> LOCAL_STORAGE_PATH = new Property<>("local.storage.path", "/var/lib/libvirt/images/");
 
     /**
      * Directory where Qemu sockets are placed.<br>
@@ -127,7 +128,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/qemu</code>
      */
-    public static final Property<String> QEMU_SOCKETS_PATH = new Property<String>("qemu.sockets.path", "/var/lib/libvirt/qemu");
+    public static final Property<String> QEMU_SOCKETS_PATH = new Property<>("qemu.sockets.path", "/var/lib/libvirt/qemu");
 
     /**
      * MANDATORY: The UUID for the local storage pool.<br>
@@ -135,7 +136,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> LOCAL_STORAGE_UUID = new Property<String>("local.storage.uuid", null, String.class);
+    public static final Property<String> LOCAL_STORAGE_UUID = new Property<>("local.storage.uuid", null, String.class);
 
     /**
      * Location for KVM virtual router scripts.<br>
@@ -143,14 +144,14 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>scripts/network/domr</code>
      */
-    public static final Property<String> DOMR_SCRIPTS_DIR = new Property<String>("domr.scripts.dir", "scripts/network/domr");
+    public static final Property<String> DOMR_SCRIPTS_DIR = new Property<>("domr.scripts.dir", "scripts/network/domr");
 
     /**
      * The timeout (in ms) for time-consuming operations, such as create/copy a snapshot.<br>
      * Data type: Integer.<br>
      * Default value: <code>7200</code>
      */
-    public static final Property<Integer> CMDS_TIMEOUT = new Property<Integer>("cmds.timeout", 7200);
+    public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
      * This parameter sets the VM migration speed (in mbps). The default value is -1,<br>
@@ -159,7 +160,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>-1</code>
      */
-    public static final Property<Integer> VM_MIGRATE_SPEED = new Property<Integer>("vm.migrate.speed", -1);
+    public static final Property<Integer> VM_MIGRATE_SPEED = new Property<>("vm.migrate.speed", -1);
 
     /**
      * Sets target downtime (in ms) at end of livemigration, the 'hiccup' for final copy.<br>
@@ -168,7 +169,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>-1</code>
      */
-    public static final Property<Integer> VM_MIGRATE_DOWNTIME = new Property<Integer>("vm.migrate.downtime", -1);
+    public static final Property<Integer> VM_MIGRATE_DOWNTIME = new Property<>("vm.migrate.downtime", -1);
 
     /**
      * Busy VMs may never finish migrating, depending on the environment. <br>
@@ -177,7 +178,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>-1</code>
      */
-    public static final Property<Integer> VM_MIGRATE_PAUSEAFTER = new Property<Integer>("vm.migrate.pauseafter", -1);
+    public static final Property<Integer> VM_MIGRATE_PAUSEAFTER = new Property<>("vm.migrate.pauseafter", -1);
 
     /**
      * Time (in seconds) to wait for VM migration to finish. Less than 1 means disabled.<br>
@@ -185,7 +186,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>-1</code>
      */
-    public static final Property<Integer> VM_MIGRATE_WAIT = new Property<Integer>("vm.migrate.wait", -1);
+    public static final Property<Integer> VM_MIGRATE_WAIT = new Property<>("vm.migrate.wait", -1);
 
     /**
      * Agent Hooks is the way to override default agent behavior to extend the functionality without excessive coding for a custom deployment.<br>
@@ -197,7 +198,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>/etc/cloudstack/agent/hooks</code>
      */
-    public static final Property<String> AGENT_HOOKS_BASEDIR = new Property<String>("agent.hooks.basedir", "/etc/cloudstack/agent/hooks");
+    public static final Property<String> AGENT_HOOKS_BASEDIR = new Property<>("agent.hooks.basedir", "/etc/cloudstack/agent/hooks");
 
     /**
      * This property is used with the agent.hooks.basedir property to define the Libvirt VM XML transformer script.<br>
@@ -208,7 +209,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>libvirt-vm-xml-transformer.groovy</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT = new Property<String>("agent.hooks.libvirt_vm_xml_transformer.script", "libvirt-vm-xml-transformer.groovy");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT = new Property<>("agent.hooks.libvirt_vm_xml_transformer.script", "libvirt-vm-xml-transformer.groovy");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_xml_transformer.script properties to define the Libvirt VM XML transformer method.<br>
@@ -218,7 +219,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>transform</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_METHOD = new Property<String>("agent.hooks.libvirt_vm_xml_transformer.method", "transform");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_METHOD = new Property<>("agent.hooks.libvirt_vm_xml_transformer.method", "transform");
 
     /**
      * This property is used with the agent.hooks.basedir property to define the Libvirt VM on start script.<br>
@@ -228,7 +229,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>libvirt-vm-state-change.groovy</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT = new Property<String>("agent.hooks.libvirt_vm_on_start.script", "libvirt-vm-state-change.groovy");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_start.script", "libvirt-vm-state-change.groovy");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_start.script properties to define the Libvirt VM on start method.<br>
@@ -237,7 +238,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>onStart</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_METHOD = new Property<String>("agent.hooks.libvirt_vm_on_start.method", "onStart");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_START_METHOD = new Property<>("agent.hooks.libvirt_vm_on_start.method", "onStart");
 
     /**
      * This property is used with the agent.hooks.basedir property to define the Libvirt VM on stop script.<br>
@@ -247,7 +248,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>libvirt-vm-state-change.groovy</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT = new Property<String>("agent.hooks.libvirt_vm_on_stop.script", "libvirt-vm-state-change.groovy");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT = new Property<>("agent.hooks.libvirt_vm_on_stop.script", "libvirt-vm-state-change.groovy");
 
     /**
      * This property is used with the agent.hooks.basedir and agent.hooks.libvirt_vm_on_stop.script properties to define the Libvirt VM on stop method.<br>
@@ -256,7 +257,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>onStop</code>
      */
-    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_METHOD = new Property<String>("agent.hooks.libvirt_vm_on_stop.method", "onStop");
+    public static final Property<String> AGENT_HOOKS_LIBVIRT_VM_ON_STOP_METHOD = new Property<>("agent.hooks.libvirt_vm_on_stop.method", "onStop");
 
     /**
      * Sets the type of bridge used on the hypervisor. This defines what commands the resource will use to setup networking.<br>
@@ -264,21 +265,21 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>native</code>
      */
-    public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<String>("network.bridge.type", "native");
+    public static final Property<String> NETWORK_BRIDGE_TYPE = new Property<>("network.bridge.type", "native");
 
     /**
      * Sets DPDK Support on OpenVSwitch.<br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> OPENVSWITCH_DPDK_ENABLED = new Property<Boolean>("openvswitch.dpdk.enabled", false);
+    public static final Property<Boolean> OPENVSWITCH_DPDK_ENABLED = new Property<>("openvswitch.dpdk.enabled", false);
 
     /**
      * Sets DPDK Support on OpenVSwitch (path).<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> OPENVSWITCH_DPDK_OVS_PATH = new Property<String>("openvswitch.dpdk.ovs.path", null, String.class);
+    public static final Property<String> OPENVSWITCH_DPDK_OVS_PATH = new Property<>("openvswitch.dpdk.ovs.path", null, String.class);
 
     /**
      * Sets the hypervisor type.<br>
@@ -286,14 +287,14 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>kvm</code>
      */
-    public static final Property<String> HYPERVISOR_TYPE = new Property<String>("hypervisor.type", "kvm");
+    public static final Property<String> HYPERVISOR_TYPE = new Property<>("hypervisor.type", "kvm");
 
     /**
      * Specifies a directory on the host local storage for temporary storing direct download templates.<br>
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images</code>
      */
-    public static final Property<String> DIRECT_DOWNLOAD_TEMPORARY_DOWNLOAD_LOCATION = new Property<String>("direct.download.temporary.download.location",
+    public static final Property<String> DIRECT_DOWNLOAD_TEMPORARY_DOWNLOAD_LOCATION = new Property<>("direct.download.temporary.download.location",
             "/var/lib/libvirt/images");
 
     /**
@@ -301,21 +302,21 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>/var/cache/cloud</code>
      */
-    public static final Property<String> HOST_CACHE_LOCATION = new Property<String>("host.cache.location", "/var/cache/cloud");
+    public static final Property<String> HOST_CACHE_LOCATION = new Property<>("host.cache.location", "/var/cache/cloud");
 
     /**
      * Sets the rolling maintenance hook scripts directory.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> ROLLING_MAINTENANCE_HOOKS_DIR = new Property<String>("rolling.maintenance.hooks.dir", null, String.class);
+    public static final Property<String> ROLLING_MAINTENANCE_HOOKS_DIR = new Property<>("rolling.maintenance.hooks.dir", null, String.class);
 
     /**
      * Disables the rolling maintenance service execution.<br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED = new Property<Boolean>("rolling.maintenance.service.executor.disabled", false);
+    public static final Property<Boolean> ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED = new Property<>("rolling.maintenance.service.executor.disabled", false);
 
     /**
      * Sets the hypervisor URI.<br>
@@ -324,7 +325,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> HYPERVISOR_URI = new Property<String>("hypervisor.uri", null, String.class);
+    public static final Property<String> HYPERVISOR_URI = new Property<>("hypervisor.uri", null, String.class);
 
     /**
      * Sets the driver used to plug and unplug NICs from the bridges.<br>
@@ -336,7 +337,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> LIBVIRT_VIF_DRIVER = new Property<String>("libvirt.vif.driver", null, String.class);
+    public static final Property<String> LIBVIRT_VIF_DRIVER = new Property<>("libvirt.vif.driver", null, String.class);
 
     /**
      * Setting to enable direct networking in libvirt.<br>
@@ -346,7 +347,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> NETWORK_DIRECT_SOURCE_MODE = new Property<String>("network.direct.source.mode", null, String.class);
+    public static final Property<String> NETWORK_DIRECT_SOURCE_MODE = new Property<>("network.direct.source.mode", null, String.class);
 
     /**
      * Setting to enable direct networking in libvirt.<br>
@@ -355,7 +356,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> NETWORK_DIRECT_DEVICE = new Property<String>("network.direct.device", null, String.class);
+    public static final Property<String> NETWORK_DIRECT_DEVICE = new Property<>("network.direct.device", null, String.class);
 
     /**
      * Setting to enable the CPU model to KVM guest globally.<br>
@@ -364,7 +365,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> GUEST_CPU_MODE = new Property<String>("guest.cpu.mode", null, String.class);
+    public static final Property<String> GUEST_CPU_MODE = new Property<>("guest.cpu.mode", null, String.class);
 
     /**
      * Custom CPU model. This param is only valid if property guest.cpu.mode=custom.<br>
@@ -372,7 +373,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> GUEST_CPU_MODEL = new Property<String>("guest.cpu.model", null, String.class);
+    public static final Property<String> GUEST_CPU_MODEL = new Property<>("guest.cpu.model", null, String.class);
 
     /**
      * This param will set the CPU architecture for the domain to override what the management server would send.<br>
@@ -381,7 +382,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code> (will set as the default of the host's OS).
      */
-    public static final Property<String> GUEST_CPU_ARCH = new Property<String>("guest.cpu.arch", null, String.class);
+    public static final Property<String> GUEST_CPU_ARCH = new Property<>("guest.cpu.arch", null, String.class);
 
     /**
      * This param will require CPU features on the CPU section.<br>
@@ -390,7 +391,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> GUEST_CPU_FEATURES = new Property<String>("guest.cpu.features", null, String.class);
+    public static final Property<String> GUEST_CPU_FEATURES = new Property<>("guest.cpu.features", null, String.class);
 
     /**
      * Disables memory ballooning on VM guests for overcommit.<br>
@@ -398,7 +399,7 @@ public class AgentProperties{
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> VM_MEMBALLOON_DISABLE = new Property<Boolean>("vm.memballoon.disable", false);
+    public static final Property<Boolean> VM_MEMBALLOON_DISABLE = new Property<>("vm.memballoon.disable", false);
 
     /**
      * Set to true to check disk activity on VM's disks before starting a VM.<br>
@@ -407,7 +408,7 @@ public class AgentProperties{
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> VM_DISKACTIVITY_CHECKENABLED = new Property<Boolean>("vm.diskactivity.checkenabled", false);
+    public static final Property<Boolean> VM_DISKACTIVITY_CHECKENABLED = new Property<>("vm.diskactivity.checkenabled", false);
 
     /**
      * Timeout (in seconds) for giving up on waiting for VM's disk files to become inactive.<br>
@@ -416,7 +417,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>120</code>
      */
-    public static final Property<Integer> VM_DISKACTIVITY_CHECKTIMEOUT_S = new Property<Integer>("vm.diskactivity.checktimeout_s", 120);
+    public static final Property<Integer> VM_DISKACTIVITY_CHECKTIMEOUT_S = new Property<>("vm.diskactivity.checktimeout_s", 120);
 
     /**
      * The length of time (in ms) that the disk needs to be inactive in order to pass the check.<br>
@@ -426,7 +427,7 @@ public class AgentProperties{
      * Data type: Long.<br>
      * Default value: <code>30000L</code>
      */
-    public static final Property<Long> VM_DISKACTIVITY_INACTIVETIME_MS = new Property<Long>("vm.diskactivity.inactivetime_ms", 30000L);
+    public static final Property<Long> VM_DISKACTIVITY_INACTIVETIME_MS = new Property<>("vm.diskactivity.inactivetime_ms", 30000L);
 
     /**
      * Some newer linux kernels are incapable of reliably migrating VMs with KVMclock.<br>
@@ -434,14 +435,14 @@ public class AgentProperties{
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> KVMCLOCK_DISABLE = new Property<Boolean>("kvmclock.disable", false);
+    public static final Property<Boolean> KVMCLOCK_DISABLE = new Property<>("kvmclock.disable", false);
 
     /**
      * This enables the VirtIO Random Number Generator device for guests. <br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> VM_RNG_ENABLE = new Property<Boolean>("vm.rng.enable", false);
+    public static final Property<Boolean> VM_RNG_ENABLE = new Property<>("vm.rng.enable", false);
 
     /**
      * The model of VirtIO Random Number Generator (RNG) to present to the Guest.<br>
@@ -449,7 +450,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>random</code>
      */
-    public static final Property<String> VM_RNG_MODEL = new Property<String>("vm.rng.model", "random");
+    public static final Property<String> VM_RNG_MODEL = new Property<>("vm.rng.model", "random");
 
     /**
      * Local Random Number Device Generator to use for VirtIO RNG for Guests.<br>
@@ -457,28 +458,28 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>/dev/random</code>
      */
-    public static final Property<String> VM_RNG_PATH = new Property<String>("vm.rng.path", "/dev/random");
+    public static final Property<String> VM_RNG_PATH = new Property<>("vm.rng.path", "/dev/random");
 
     /**
      * The amount of bytes the Guest may request/obtain from the RNG in the period specified in the property vm.rng.rate.period.<br>
      * Data type: Integer.<br>
      * Default value: <code>2048</code>
      */
-    public static final Property<Integer> VM_RNG_RATE_BYTES = new Property<Integer>("vm.rng.rate.bytes", 2048);
+    public static final Property<Integer> VM_RNG_RATE_BYTES = new Property<>("vm.rng.rate.bytes", 2048);
 
     /**
      * The number of milliseconds in which the guest is allowed to obtain the bytes specified in vm.rng.rate.bytes.<br>
      * Data type: Integer.<br>
      * Default value: <code>1000</code>
      */
-    public static final Property<Integer> VM_RNG_RATE_PERIOD = new Property<Integer>("vm.rng.rate.period", 1000);
+    public static final Property<Integer> VM_RNG_RATE_PERIOD = new Property<>("vm.rng.rate.period", 1000);
 
     /**
      * Timeout value for aggregation commands to be sent to the virtual router (in seconds).<br>
      * Data type: Long.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Long> ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT = new Property<Long>("router.aggregation.command.each.timeout", null, Long.class);
+    public static final Property<Long> ROUTER_AGGREGATION_COMMAND_EACH_TIMEOUT = new Property<>("router.aggregation.command.each.timeout", null, Long.class);
 
     /**
      * Allows to virtually increase the amount of RAM (in MB) available on the host.<br>
@@ -487,7 +488,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>0</code>
      */
-    public static final Property<Integer> HOST_OVERCOMMIT_MEM_MB = new Property<Integer>("host.overcommit.mem.mb", 0);
+    public static final Property<Integer> HOST_OVERCOMMIT_MEM_MB = new Property<>("host.overcommit.mem.mb", 0);
 
     /**
      * How much host memory (in MB) to reserve for non-allocation.<br>
@@ -496,7 +497,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>1024</code>
      */
-    public static final Property<Integer> HOST_RESERVED_MEM_MB = new Property<Integer>("host.reserved.mem.mb", 1024);
+    public static final Property<Integer> HOST_RESERVED_MEM_MB = new Property<>("host.reserved.mem.mb", 1024);
 
     /**
      * The model of Watchdog timer to present to the Guest.<br>
@@ -504,7 +505,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>i6300esb</code>
      */
-    public static final Property<String> VM_WATCHDOG_MODEL = new Property<String>("vm.watchdog.model", "i6300esb");
+    public static final Property<String> VM_WATCHDOG_MODEL = new Property<>("vm.watchdog.model", "i6300esb");
 
     /**
      * Action to take when the Guest/Instance is no longer notifiying the Watchdog timer.<br>
@@ -512,7 +513,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>none</code>
      */
-    public static final Property<String> VM_WATCHDOG_ACTION = new Property<String>("vm.watchdog.action", "none");
+    public static final Property<String> VM_WATCHDOG_ACTION = new Property<>("vm.watchdog.action", "none");
 
     /**
      * Automatically clean up iSCSI sessions not attached to any VM.<br>
@@ -521,7 +522,7 @@ public class AgentProperties{
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> ISCSI_SESSION_CLEANUP_ENABLED = new Property<Boolean>("iscsi.session.cleanup.enabled", false);
+    public static final Property<Boolean> ISCSI_SESSION_CLEANUP_ENABLED = new Property<>("iscsi.session.cleanup.enabled", false);
 
     /**
      * Heartbeat update timeout (in ms).<br>
@@ -529,14 +530,14 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>60000</code>
      */
-    public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<Integer>("heartbeat.update.timeout", 60000);
+    public static final Property<Integer> HEARTBEAT_UPDATE_TIMEOUT = new Property<>("heartbeat.update.timeout", 60000);
 
     /**
      * The timeout (in seconds) to retrieve the target's domain ID when migrating a VM with KVM. <br>
      * Data type: Integer. <br>
      * Default value: <code>10</code>
      */
-    public static final Property<Integer> VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT = new Property<Integer>("vm.migrate.domain.retrieve.timeout", 10);
+    public static final Property<Integer> VM_MIGRATE_DOMAIN_RETRIEVE_TIMEOUT = new Property<>("vm.migrate.domain.retrieve.timeout", 10);
 
     /**
      * This parameter specifies if the host must be rebooted when something goes wrong with the heartbeat.<br>
@@ -544,28 +545,28 @@ public class AgentProperties{
      * Default value: <code>true</code>
      */
     public static final Property<Boolean> REBOOT_HOST_AND_ALERT_MANAGEMENT_ON_HEARTBEAT_TIMEOUT
-        = new Property<Boolean>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
+        = new Property<>("reboot.host.and.alert.management.on.heartbeat.timeout", true);
 
     /**
      * Enables manually setting CPU's topology on KVM's VM. <br>
      * Data type: Boolean.<br>
      * Default value: <code>true</code>
      */
-    public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<Boolean>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
+    public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
 
     /**
      * Manually sets the host CPU speed (in MHz), in cases where CPU scaling support detects the value is wrong. <br>
      * Data type: Integer.<br>
      * Default value: <code>0</code>
      */
-    public static final Property<Integer> HOST_CPU_MANUAL_SPEED_MHZ = new Property<Integer>("host.cpu.manual.speed.mhz", 0);
+    public static final Property<Integer> HOST_CPU_MANUAL_SPEED_MHZ = new Property<>("host.cpu.manual.speed.mhz", 0);
 
     /**
      * Enable manually IO driver on KVM's VM. <br>
      * Data type: Boolean.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", null, Boolean.class);
+    public static final Property<Boolean> ENABLE_IO_URING = new Property<>("enable.io.uring", null, Boolean.class);
 
     /**
      * Defines the location for Hypervisor scripts.<br>
@@ -577,7 +578,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>scripts/vm/hypervisor</code>
      */
-    public static final Property<String> HYPERVISOR_SCRIPTS_DIR = new Property<String>("hypervisor.scripts.dir", "scripts/vm/hypervisor");
+    public static final Property<String> HYPERVISOR_SCRIPTS_DIR = new Property<>("hypervisor.scripts.dir", "scripts/vm/hypervisor");
 
     /**
      * Defines the location for KVM scripts.<br>
@@ -589,35 +590,35 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>scripts/vm/hypervisor/kvm</code>
      */
-    public static final Property<String> KVM_SCRIPTS_DIR = new Property<String>("kvm.scripts.dir", "scripts/vm/hypervisor/kvm");
+    public static final Property<String> KVM_SCRIPTS_DIR = new Property<>("kvm.scripts.dir", "scripts/vm/hypervisor/kvm");
 
     /**
      * Specifies start MAC address for private IP range.<br>
      * Data type: String.<br>
      * Default value: <code>00:16:3e:77:e2:a0</code>
      */
-    public static final Property<String> PRIVATE_MACADDR_START = new Property<String>("private.macaddr.start", "00:16:3e:77:e2:a0");
+    public static final Property<String> PRIVATE_MACADDR_START = new Property<>("private.macaddr.start", "00:16:3e:77:e2:a0");
 
     /**
      * Specifies start IP for private IP range. <br>
      * Data type: String.<br>
      * Default value: <code>192.168.166.128</code>
      */
-    public static final Property<String> PRIVATE_IPADDR_START = new Property<String>("private.ipaddr.start", "192.168.166.128");
+    public static final Property<String> PRIVATE_IPADDR_START = new Property<>("private.ipaddr.start", "192.168.166.128");
 
     /**
      * Defines Local Bridge Name.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> PRIVATE_BRIDGE_NAME = new Property<String>("private.bridge.name", null, String.class);
+    public static final Property<String> PRIVATE_BRIDGE_NAME = new Property<>("private.bridge.name", null, String.class);
 
     /**
      * Defines private network name.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> PRIVATE_NETWORK_NAME = new Property<String>("private.network.name", null, String.class);
+    public static final Property<String> PRIVATE_NETWORK_NAME = new Property<>("private.network.name", null, String.class);
 
     /**
      * Defines the location for network scripts.<br>
@@ -629,7 +630,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>scripts/vm/network/vnet</code>
      */
-    public static final Property<String> NETWORK_SCRIPTS_DIR = new Property<String>("network.scripts.dir", "scripts/vm/network/vnet");
+    public static final Property<String> NETWORK_SCRIPTS_DIR = new Property<>("network.scripts.dir", "scripts/vm/network/vnet");
 
     /**
      * Defines the location for storage scripts.<br>
@@ -641,7 +642,7 @@ public class AgentProperties{
      * Data type: String.<br>
      * Default value: <code>scripts/storage/qcow2</code>
      */
-    public static final Property<String> STORAGE_SCRIPTS_DIR = new Property<String>("storage.scripts.dir", "scripts/storage/qcow2");
+    public static final Property<String> STORAGE_SCRIPTS_DIR = new Property<>("storage.scripts.dir", "scripts/storage/qcow2");
 
     /**
      * Time (in seconds) to wait for the VM to shutdown gracefully.<br>
@@ -649,49 +650,49 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>120</code>
      */
-    public static final Property<Integer> STOP_SCRIPT_TIMEOUT = new Property<Integer>("stop.script.timeout", 120);
+    public static final Property<Integer> STOP_SCRIPT_TIMEOUT = new Property<>("stop.script.timeout", 120);
 
     /**
      * Definition of VMs video model type.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> VM_VIDEO_HARDWARE = new Property<String>("vm.video.hardware", null, String.class);
+    public static final Property<String> VM_VIDEO_HARDWARE = new Property<>("vm.video.hardware", null, String.class);
 
     /**
      * Definition of VMs video, specifies the amount of RAM in kibibytes (blocks of 1024 bytes).<br>
      * Data type: Integer.<br>
      * Default value: <code>0</code>
      */
-    public static final Property<Integer> VM_VIDEO_RAM = new Property<Integer>("vm.video.ram", 0);
+    public static final Property<Integer> VM_VIDEO_RAM = new Property<>("vm.video.ram", 0);
 
     /**
      * System VM ISO path.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> SYSTEMVM_ISO_PATH = new Property<String>("systemvm.iso.path", null, String.class);
+    public static final Property<String> SYSTEMVM_ISO_PATH = new Property<>("systemvm.iso.path", null, String.class);
 
     /**
      * If set to "true", allows override of the properties: private.macaddr.start, private.ipaddr.start, private.ipaddr.end.<br>
      * Data type: Boolean.<br>
      * Default value: <code>false</code>
      */
-    public static final Property<Boolean> DEVELOPER = new Property<Boolean>("developer", false);
+    public static final Property<Boolean> DEVELOPER = new Property<>("developer", false);
 
     /**
      * Can only be used if developer = true. This property is used to define the local bridge name and private network name.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<String> INSTANCE = new Property<String>("instance", null, String.class);
+    public static final Property<String> INSTANCE = new Property<>("instance", null, String.class);
 
     /**
      * Shows the path to the base directory in which NFS servers are going to be mounted.<br>
      * Data type: String.<br>
      * Default value: <code>/mnt</code>
      */
-    public static final Property<String> MOUNT_PATH = new Property<String>("mount.path", "/mnt");
+    public static final Property<String> MOUNT_PATH = new Property<>("mount.path", "/mnt");
 
     public static class Property <T>{
         private String name;
