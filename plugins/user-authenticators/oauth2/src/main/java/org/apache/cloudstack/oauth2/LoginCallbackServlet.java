@@ -39,7 +39,7 @@ public class LoginCallbackServlet extends AbstractAuthorizationCodeCallbackServl
 
     @Override
     protected void onError(HttpServletRequest request, HttpServletResponse httpServletResponse,
-                           AuthorizationCodeResponseUrl errorResponse)
+                           AuthorizationCodseResponseUrl errorResponse)
             throws IOException {
         httpServletResponse.getWriter().print("Error in authorization");
     }
