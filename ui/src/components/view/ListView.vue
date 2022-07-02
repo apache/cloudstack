@@ -70,11 +70,6 @@
     </div>
     -->
 
-    <template #id="{ text, record }" href="javascript:;">
-      <router-link v-if="['/autoscalevmgroup'].includes($route.path)" :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      <span v-else>{{ text }}</span>
-    </template>
-
     <template #name="{text, record}">
       <span v-if="['vm'].includes($route.path.split('/')[1])" style="margin-right: 5px">
         <span v-if="record.icon && record.icon.base64image">

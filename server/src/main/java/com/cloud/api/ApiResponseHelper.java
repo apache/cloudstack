@@ -3378,6 +3378,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup) {
         AutoScaleVmGroupResponse response = new AutoScaleVmGroupResponse();
         response.setId(vmGroup.getUuid());
+        response.setName(vmGroup.getName());
         response.setMinMembers(vmGroup.getMinMembers());
         response.setMaxMembers(vmGroup.getMaxMembers());
         response.setState(vmGroup.getState().toString());

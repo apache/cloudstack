@@ -26,6 +26,12 @@ WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm'
 
 -- VM autoscaling
 
+-- Add column 'name' to 'autoscale_vmgroups' table
+
+ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the autoscale vm group' AFTER `load_balancer_id`;
+
+UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
+
 -- Add column 'provider' and update values
 
 ALTER TABLE `cloud`.`counter` ADD COLUMN `provider` varchar(255) NOT NULL COMMENT 'Network provider name' AFTER `uuid`;

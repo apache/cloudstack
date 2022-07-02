@@ -60,6 +60,8 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
 
     long getProfileId();
 
+    String getName();
+
     int getMinMembers();
 
     int getMaxMembers();

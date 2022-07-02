@@ -899,6 +899,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_CREATE, eventDescription = "creating autoscale vm group", create = true)
     public AutoScaleVmGroup createAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) {
+        String name = cmd.getName();
         int minMembers = cmd.getMinMembers();
         int maxMembers = cmd.getMaxMembers();
         Integer interval = cmd.getInterval();
@@ -921,7 +922,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 "there are Vms already bound to the specified LoadBalancing Rule. User bound Vms and AutoScaled Vm Group cannot co-exist on a Load Balancing Rule");
         }
 
-        AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
+        AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), name, minMembers, maxMembers,
             loadBalancer.getDefaultPortStart(), interval, null, cmd.getProfileId(), AutoScaleVmGroup.State.New);
 
         if (forDisplay != null) {
@@ -1143,6 +1144,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_UPDATE, eventDescription = "updating autoscale vm group", async = true)
     public AutoScaleVmGroup updateAutoScaleVmGroup(UpdateAutoScaleVmGroupCmd cmd) {
         Long vmGroupId = cmd.getId();
+        String name = cmd.getName();
         Integer minMembers = cmd.getMinMembers();
         Integer maxMembers = cmd.getMaxMembers();
         Integer interval = cmd.getInterval();
@@ -1157,6 +1159,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
+        }
+
+        if (StringUtils.isNotBlank(name)) {
+            vmGroupVO.setName(name);
         }
 
         if (minMembers != null) {

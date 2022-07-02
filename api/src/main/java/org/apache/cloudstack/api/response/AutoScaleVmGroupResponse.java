@@ -35,6 +35,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Param(description = "the autoscale vm group ID")
     private String id;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the autoscale vm group ")
+    private String name;
+
     @SerializedName(ApiConstants.LBID)
     @Param(description = "the load balancer rule ID")
     private String loadBalancerId;
@@ -134,6 +138,10 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setLoadBalancerId(String loadBalancerId) {

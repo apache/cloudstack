@@ -50,6 +50,11 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale vmgroup")
+    private String name;
+
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
                description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
@@ -111,6 +116,10 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCustomIdCmd {
 
     public Long getId() {
         return id;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Integer getMinMembers() {

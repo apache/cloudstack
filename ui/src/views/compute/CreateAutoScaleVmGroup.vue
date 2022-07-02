@@ -615,6 +615,9 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
                   <div style="margin-top: 15px">
+                    <a-form-item :label="$t('label.name')" name="name" ref="name">
+                      <a-input v-model:value="form.name"></a-input>
+                    </a-form-item>
                     <a-form-item :label="$t('label.user')" name="autoscaleuserid" ref="autoscaleuserid">
                       <a-select
                         style="width: 100%"
@@ -1158,6 +1161,9 @@ export default {
         scaledownquiettime: [
           { required: true, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
+        ],
+        name: [
+          { required: true, message: this.$t('message.error.required.input') }
         ],
         autoscaleuserid: [
           { required: true, message: `${this.$t('message.error.select')}` }
@@ -1906,6 +1912,7 @@ export default {
           scaleuppolicyids: scaleUpPolicy.id,
           scaledownpolicyids: scaleDownPolicy.id,
           lbruleid: values.loadbalancerid,
+          name: values.name,
           maxmembers: values.maxmembers,
           minmembers: values.minmembers,
           interval: values.interval
@@ -1920,7 +1927,7 @@ export default {
                 const vmgroup = result.jobresult.autoscalevmgroup
                 this.$notification.success({
                   message: this.$t('label.new.autoscale.vmgroup'),
-                  description: vmgroup.id,
+                  description: vmgroup.name,
                   duration: 0
                 })
                 eventBus.emit('vm-refresh-data')

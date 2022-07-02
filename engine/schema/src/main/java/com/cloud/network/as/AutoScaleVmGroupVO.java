@@ -32,6 +32,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -59,6 +60,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
 
     @Column(name = "load_balancer_id")
     private Long loadBalancerId;
+
+    @Column(name = "name")
+    String name;
 
     @Column(name = "min_members", updatable = true)
     private int minMembers;
@@ -95,11 +99,16 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     }
 
     public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId,
-            long accountId, int minMembers, int maxMembers, int memberPort,
+            long accountId, String name, int minMembers, int maxMembers, int memberPort,
             int interval, Date lastInterval, long profileId, State state) {
 
         uuid = UUID.randomUUID().toString();
         loadBalancerId = lbRuleId;
+        if (StringUtils.isBlank(name)) {
+            this.name = uuid;
+        } else {
+            this.name = name;
+        }
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -115,6 +124,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     @Override
     public String toString() {
         return new StringBuilder("AutoScaleVmGroupVO[").append("id=").append(id)
+                .append("|name=").append(name)
                 .append("|loadBalancerId=").append(loadBalancerId)
                 .append("|profileId=").append(profileId)
                 .append("]").toString();
@@ -142,6 +152,11 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     @Override
     public Long getLoadBalancerId() {
         return loadBalancerId;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -192,6 +207,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
         this.state = state;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setMinMembers(int minMembers) {
         this.minMembers = minMembers;
     }
@@ -233,10 +252,5 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
     @Override
     public Class<?> getEntityType() {
         return AutoScaleVmGroup.class;
-    }
-
-    @Override
-    public String getName() {
-        return null;
     }
 }

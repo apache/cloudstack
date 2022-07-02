@@ -60,6 +60,11 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
                description = "the ID of the load balancer rule")
     private long lbRuleId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the autoscale vmgroup")
+    private String name;
+
     @Parameter(name = ApiConstants.MIN_MEMBERS,
                type = CommandType.INTEGER,
                required = true,
@@ -104,6 +109,11 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
+
+
+    public String getName() {
+        return name;
+    }
 
     public int getMinMembers() {
         return minMembers;
