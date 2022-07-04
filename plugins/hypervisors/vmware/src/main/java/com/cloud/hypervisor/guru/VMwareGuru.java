@@ -1080,7 +1080,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private String getHostGuidForLocalStorage(StoragePool pool) {
         List<StoragePoolHostVO> storagePoolHostVOs = storagePoolHostDao.listByPoolId(pool.getId());
         StoragePoolHostVO storagePoolHostVO = storagePoolHostVOs.get(0);
-        HostVO hostVO = _hostDao.findById(storagePoolHostVO.getHostId());
+        HostVO hostVO = hostDao.findById(storagePoolHostVO.getHostId());
         return hostVO.getGuid();
     }
 
