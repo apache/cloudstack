@@ -206,7 +206,7 @@ export default {
     },
     getPrefilled (field) {
       if (field.key === 'authmethod' && this.hypervisor !== 'KVM') {
-        return field.defaultValue || null
+        return field.value || field.defaultValue || 'password'
       }
       return this.prefillContent?.[field.key] || field.value || field.defaultValue || null
     },
