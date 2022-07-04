@@ -187,7 +187,7 @@
               </a-form-item>
               <a-form-item :label="$t('label.associatednetwork')" ref="associatednetworkid" name="associatednetworkid">
                 <a-select
-                  v-model:value="form.associatednetwork"
+                  v-model:value="form.associatednetworkid"
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
@@ -738,8 +738,8 @@ export default {
         if (data.vlan && String(data.vlan).length > 0) {
           params.vlan = data.vlan
         }
-        if (data.associatednetwork) {
-          params.associatednetworkid = data.associatednetwork
+        if (data.associatednetworkid) {
+          params.associatednetworkid = data.associatednetworkid
         }
 
         api('createPrivateGateway', params).then(response => {
@@ -822,7 +822,6 @@ export default {
     handleNetworkAclFormSubmit () {
       if (this.fetchLoading) return
       this.fetchLoading = true
-      this.modals.networkAcl = false
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -852,6 +851,7 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
+          this.modals.networkAcl = false
           this.fetchLoading = false
           this.fetchAclList()
         })

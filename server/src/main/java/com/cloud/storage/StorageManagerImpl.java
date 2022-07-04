@@ -1100,14 +1100,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
+    public boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
         StoragePool pool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         assert (pool.isShared()) : "Now, did you actually read the name of this method?";
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
-        listener.hostConnect(hostId, pool.getId());
+        return listener.hostConnect(hostId, pool.getId());
     }
 
     @Override
