@@ -77,11 +77,11 @@
               :key="idx">
               <a-radio-button
                 :value="radioItem.value"
-                v-if="isDisplaySubItem(radioItem.condition)">
+                v-if="isDisplayItem(radioItem.condition)">
                 {{ $t(radioItem.label) }}
               </a-radio-button>
             </span>
-            <a-alert style="margin-top: 5px" type="warning" v-if="field.alert && isDisplaySubItem(field.alert.display)">
+            <a-alert style="margin-top: 5px" type="warning" v-if="field.alert && isDisplayItem(field.alert.display)">
               <template #message>
                 <span v-html="$t(field.alert.message)" />
               </template>
@@ -257,7 +257,7 @@ export default {
       }
       return true
     },
-    isDisplaySubItem (conditions) {
+    isDisplayItem (conditions) {
       if (!conditions || Object.keys(conditions).length === 0) {
         return true
       }

@@ -318,7 +318,8 @@ export default {
           required: true,
           password: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator'],
+            authmethod: 'password'
           }
         },
         {
