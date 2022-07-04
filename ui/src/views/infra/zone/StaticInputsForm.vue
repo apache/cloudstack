@@ -138,6 +138,11 @@ export default {
   created () {
     this.initForm()
   },
+  computed: {
+    hypervisor () {
+      return this.prefillContent?.hypervisor || null
+    }
+  },
   mounted () {
     this.fillValue()
   },
@@ -200,6 +205,9 @@ export default {
       }
     },
     getPrefilled (field) {
+      if (field.key === 'authmethod' && this.hypervisor !== 'KVM') {
+        return field.defaultValue || null
+      }
       return this.prefillContent?.[field.key] || field.value || field.defaultValue || null
     },
     handleSubmit () {
