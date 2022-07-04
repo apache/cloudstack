@@ -180,7 +180,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         _id = value != null ? Long.parseLong(value) : null;
         s_logger.info("id is " + (_id != null ? _id : ""));
 
-        final Map<String, Object> params = new HashMap<String,Object>();
+        final Map<String, Object> params = new HashMap<>();
 
         // merge with properties from command line to let resource access command line parameters
         for (final Map.Entry<String, Object> cmdLineProp : _shell.getCmdLineProperties().entrySet()) {
