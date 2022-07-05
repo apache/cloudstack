@@ -192,8 +192,10 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                     snapshotOnSecondaryStorage, snapshotOnSecondaryStorage.getVolume()));
         }
 
-        s_logger.trace(String.format("Snapshot does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].",
-                kvmStoragePoolPrimary, snapshotOnSecondaryStorage, kvmStoragePoolSecondary));
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Snapshot does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].",
+                    kvmStoragePoolPrimary, snapshotOnSecondaryStorage, kvmStoragePoolSecondary));
+        }
 
         String snapshotPathOnSecondaryStorage = snapshotOnSecondaryStorage.getPath();
 
