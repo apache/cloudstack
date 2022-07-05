@@ -34,5 +34,5 @@ jobs:
       - name: SuperLinter
         uses: github/super-linter@v4
         env:
-          VALIDATE_PYTHON_FLAKE8: true
+          VALIDATE_PYTHON_FLAKE8: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
