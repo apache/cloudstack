@@ -203,6 +203,7 @@
             </template>
             <a-input-number
               style="width: 100%;"
+              :max=privateMtuMax
               v-model:value="form.privatemtu"
               :placeholder="$t('label.privatemtu')"/>
           </a-form-item>
@@ -372,6 +373,7 @@ export default {
       staticNats: {},
       vms: {},
       selectedNetworkOffering: {},
+      privateMtuMax: 1500,
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -500,6 +502,15 @@ export default {
         this.fetchVMs(network.id)
       }
       this.publicLBNetworkExists()
+      this.fetchPrivateMtuForZone()
+    },
+    fetchPrivateMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.private.interface.mtu',
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     fetchNetworkAclList () {
       this.fetchLoading = true

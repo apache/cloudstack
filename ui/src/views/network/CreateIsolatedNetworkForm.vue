@@ -113,6 +113,7 @@
                   <tooltip-label :title="$t('label.publicmtu')" :tooltip="apiParams.publicmtu.description"/>
                 </template>
                 <a-input-number
+                :max=publicMtuMax
                 style="width: 100%;"
                 v-model:value="form.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
@@ -126,6 +127,7 @@
                   <tooltip-label :title="$t('label.privatemtu')" :tooltip="apiParams.privatemtu.description"/>
                 </template>
                 <a-input-number
+                :max=privateMtuMax
                 style="width: 100%;"
                 v-model:value="form.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
@@ -298,7 +300,9 @@ export default {
       vpcs: [],
       vpcLoading: false,
       selectedVpc: {},
-      accountVisible: isAdminOrDomainAdmin()
+      accountVisible: isAdminOrDomainAdmin(),
+      privateMtuMax: 1500,
+      publicMtuMax: 1500
     }
   },
   watch: {
@@ -334,9 +338,27 @@ export default {
         vpcid: [{ required: true, message: this.$t('message.error.select') }]
       })
     },
-    fetchData () {
+    async fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
+      await this.fetchPrivateMtuForZone()
+      await this.fetchPublicMtuForZone()
+    },
+    fetchPrivateMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.private.interface.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
+    },
+    fetchPublicMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.public.interface.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
@@ -373,9 +395,11 @@ export default {
         }
       })
     },
-    handleZoneChange (zone) {
+    async handleZoneChange (zone) {
       this.selectedZone = zone
       this.updateVPCCheckAndFetchNetworkOfferingData()
+      await this.fetchPrivateMtuForZone()
+      await this.fetchPublicMtuForZone()
     },
     fetchDomainData () {
       const params = {}

@@ -505,6 +505,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     public List<IPAddressVO> listByNetworkId(long networkId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
+        sc.setParameters("state", State.Allocated);
         return listBy(sc);
     }
 }

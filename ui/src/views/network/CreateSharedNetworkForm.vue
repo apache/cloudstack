@@ -253,6 +253,7 @@
                 </template>
                 <a-input-number
                 style="width: 100%;"
+                :max=publicMtuMax
                 v-model:value="form.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
               </a-form-item>
@@ -266,6 +267,7 @@
                 </template>
                 <a-input-number
                 style="width: 100%;"
+                :max=privateMtuMax
                 v-model:value="form.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>
@@ -464,7 +466,9 @@ export default {
       projectLoading: false,
       selectedProject: {},
       isVirtualRouterForAtLeastOneService: false,
-      selectedServiceProviderMap: {}
+      selectedServiceProviderMap: {},
+      privateMtuMax: 1500,
+      publicMtuMax: 1500
     }
   },
   watch: {
@@ -507,7 +511,7 @@ export default {
         projectid: [{ type: 'number', required: true, message: this.$t('message.error.select') }]
       })
     },
-    fetchData () {
+    async fetchData () {
       if (this.isObjectEmpty(this.zone)) {
         this.fetchZoneData()
       } else {
@@ -516,6 +520,8 @@ export default {
       if (this.scopeType !== 'all') {
         this.handleScopeTypeChange(this.scopeType)
       }
+      await this.fetchPrivateMtuForZone()
+      await this.fetchPublicMtuForZone()
     },
     isAdmin () {
       return isAdmin()
@@ -537,6 +543,22 @@ export default {
     },
     isValidTextValueForKey (obj, key) {
       return this.isValidValueForKey(obj, key) && String(obj[key]).length > 0
+    },
+    fetchPrivateMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.private.interface.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
+    },
+    fetchPublicMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.public.interface.mtu',
+        zoneid: this.selectedZone.id
+      }).then(json => {
+        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     fetchZoneData () {
       this.zones = []
@@ -570,13 +592,15 @@ export default {
         })
       }
     },
-    handleZoneChange (zone) {
+    async handleZoneChange (zone) {
       this.selectedZone = zone
       if (isAdmin()) {
         this.fetchPhysicalNetworkData()
       } else {
         this.fetchNetworkOfferingData()
       }
+      await this.fetchPrivateMtuForZone()
+      await this.fetchPublicMtuForZone()
     },
     fetchPhysicalNetworkData () {
       this.formSelectedPhysicalNetwork = {}

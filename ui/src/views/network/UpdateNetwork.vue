@@ -54,6 +54,7 @@
                 <a-input-number
                   v-model:value="form.privatemtu"
                   style="width: 100%;"
+                  :max=privateMtuMax
                   :defaultValue="resource.privatemtu"
                   :placeholder="apiParams.privatemtu.description"/>
               </a-form-item>
@@ -68,6 +69,7 @@
                 </template>
                 <a-input-number
                   style="width: 100%;"
+                  :max=publicMtuMax
                   v-model:value="form.publicmtu"
                   :defaultValue="resource.publicmtu"
                   :placeholder="apiParams.publicmtu.description"/>
@@ -180,7 +182,9 @@ export default {
       networkOfferingLoading: false,
       networkOffering: {},
       cidrChanged: false,
-      loading: false
+      loading: false,
+      privateMtuMax: 1500,
+      publicMtuMax: 1500
     }
   },
   beforeCreate () {
@@ -213,21 +217,41 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        displaynetwork: this.resource.displaynetwork
+        displaynetwork: this.resource.displaynetwork,
+        privatemtu: this.resource.privatemtu,
+        publicmtu: this.resource.publicmtu
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         displaytext: [{ required: true, message: this.$t('message.error.required.input') }]
       })
     },
-    fetchData () {
+    async fetchData () {
       this.fetchNetworkOfferingData()
+      await this.fetchPrivateMtuForZone()
+      await this.fetchPublicMtuForZone()
     },
     isAdmin () {
       return isAdmin()
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
+    },
+    fetchPrivateMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.private.interface.mtu',
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        this.privateMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
+    },
+    fetchPublicMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.public.interface.mtu',
+        zoneid: this.resource.zoneid
+      }).then(json => {
+        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     fetchNetworkOfferingData () {
       this.networkOfferings = []

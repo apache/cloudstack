@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -1341,7 +1342,7 @@ public class CommandSetupHelper {
         return details;
     }
 
-    public void setupUpdateNetworkCommands(final VirtualRouter router, final List<IpAddressTO> ips, Commands cmds) {
+    public void setupUpdateNetworkCommands(final VirtualRouter router, final Set<IpAddressTO> ips, Commands cmds) {
         IpAddressTO[] ipsToSend = ips.toArray(new IpAddressTO[0]);
         if (!ips.isEmpty()) {
             UpdateNetworkCommand cmd = new UpdateNetworkCommand(ipsToSend);

@@ -1266,7 +1266,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected void updateMtuOfVpcNetwork(VpcVO vpcToUpdate, VpcVO vpc, Integer mtu) {
         List<IPAddressVO> ipAddresses = _ipAddressDao.listByAssociatedVpc(vpcToUpdate.getId(), null);
         long vpcId = vpcToUpdate.getId();
-        List<IpAddressTO> ips = new ArrayList<>(ipAddresses.size());
+        Set<IpAddressTO> ips = new HashSet<>(ipAddresses.size());
         for (IPAddressVO ip : ipAddresses) {
             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
             String vlanNetmask = vlan.getVlanNetmask();
@@ -1291,7 +1291,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    private void updateVpcMtu(List<IpAddressTO> ips, Integer publicMtu) {
+    private void updateVpcMtu(Set<IpAddressTO> ips, Integer publicMtu) {
         for (IpAddressTO ipAddress : ips) {
             NicVO nicVO = nicDao.findByIpAddressAndVmType(ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
             if (nicVO != null) {
@@ -1301,7 +1301,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
-    protected boolean updateMtuOnVpcVr(Long vpcId, List<IpAddressTO> ips) {
+    protected boolean updateMtuOnVpcVr(Long vpcId, Set<IpAddressTO> ips) {
         boolean success = false;
         List<DomainRouterVO> routers = routerDao.listByVpcId(vpcId);
         for (DomainRouterVO router : routers) {

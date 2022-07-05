@@ -103,6 +103,7 @@
           </template>
           <a-input-number
             style="width: 100%;"
+            :max=publicMtuMax
             v-model:value="form.publicmtu"
             :placeholder="apiParams.publicmtu.description"/>
         </a-form-item>
@@ -138,7 +139,8 @@ export default {
       loadingZone: false,
       loadingOffering: false,
       zones: [],
-      vpcOfferings: []
+      vpcOfferings: [],
+      publicMtuMax: 1500
     }
   },
   beforeCreate () {
@@ -162,8 +164,17 @@ export default {
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
-    fetchData () {
+    async fetchData () {
       this.fetchZones()
+      await this.fetchPublicMtuForZone()
+    },
+    fetchPublicMtuForZone () {
+      api('listConfigurations', {
+        name: 'vr.public.interface.mtu',
+        zoneid: this.form.zoneid
+      }).then(json => {
+        this.publicMtuMax = json?.listconfigurationsresponse?.configuration[0]?.value || 1500
+      })
     },
     fetchZones () {
       this.loadingZone = true
@@ -186,6 +197,7 @@ export default {
         return
       }
       this.fetchOfferings()
+      this.fetchPublicMtuForZone()
     },
     fetchOfferings () {
       this.loadingOffering = true

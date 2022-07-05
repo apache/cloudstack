@@ -2907,9 +2907,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         List<DomainRouterVO> routers = routerDao.findByNetwork(networkId);
 
         // Create Map to store the IPAddress List for each routers
-        Map<Long, List<IpAddressTO>> routersToIpList = new HashMap<>();
+        Map<Long, Set<IpAddressTO>> routersToIpList = new HashMap<>();
         for (DomainRouterVO routerVO : routers) {
-            List<IpAddressTO> ips = new ArrayList<>();
+            Set<IpAddressTO> ips = new HashSet<>();
             List<DomainRouterJoinVO> routerJoinVOS = routerJoinDao.getRouterByIdAndTrafficType(routerVO.getId(), TrafficType.Guest, TrafficType.Public);
             for (DomainRouterJoinVO router : routerJoinVOS) {
                 IpAddressTO ip = null;
@@ -2922,6 +2922,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
                 if (ip != null) {
                     ips.add(ip);
+                }
+            }
+            if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && publicMtu != null) {
+                List<IPAddressVO> addrs = _ipAddressDao.listByNetworkId(networkId);
+                for(IPAddressVO addr : addrs) {
+                    VlanVO vlan = _vlanDao.findById(addr.getVlanId());
+                    IpAddressTO to = new IpAddressTO(addr.getAddress().addr(), publicMtu, vlan.getVlanNetmask());
+                    ips.add(to);
                 }
             }
             if (!ips.isEmpty()) {
@@ -3135,8 +3143,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return new Pair<>(publicMtu, privateMtu);
     }
 
-    private void updateNetworkDetails(Map<Long, List<IpAddressTO>> routerToIpList, NetworkVO network, Integer publicMtu, Integer privateMtu) {
-        for (Map.Entry<Long, List<IpAddressTO>> routerEntrySet : routerToIpList.entrySet()) {
+    private void updateNetworkDetails(Map<Long, Set<IpAddressTO>> routerToIpList, NetworkVO network, Integer publicMtu, Integer privateMtu) {
+        for (Map.Entry<Long, Set<IpAddressTO>> routerEntrySet : routerToIpList.entrySet()) {
             for (IpAddressTO ipAddress : routerEntrySet.getValue()) {
                 NicVO nicVO = _nicDao.findByInstanceIdAndIpAddressAndVmtype(routerEntrySet.getKey(), ipAddress.getPublicIp(), VirtualMachine.Type.DomainRouter);
                 if (nicVO != null) {
@@ -3159,9 +3167,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         _networksDao.update(network.getId(), network);
     }
 
-    protected boolean updateMtuOnVr(Map<Long, List<IpAddressTO>> routersToIpList) {
+    protected boolean updateMtuOnVr(Map<Long, Set<IpAddressTO>> routersToIpList) {
         boolean success = false;
-        for (Map.Entry<Long, List<IpAddressTO>> routerEntrySet : routersToIpList.entrySet()) {
+        for (Map.Entry<Long, Set<IpAddressTO>> routerEntrySet : routersToIpList.entrySet()) {
             Long routerId = routerEntrySet.getKey();
             DomainRouterVO router = routerDao.findById(routerId);
             if (router == null) {
@@ -3170,7 +3178,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             Commands cmds = new Commands(Command.OnError.Stop);
             Map<String, String> state = new HashMap<>();
-            List<IpAddressTO> ips = routerEntrySet.getValue();
+            Set<IpAddressTO> ips = routerEntrySet.getValue();
             state.put(ApiConstants.REDUNDANT_STATE, router.getRedundantState() != null ? router.getRedundantState().name() : VirtualRouter.RedundantState.UNKNOWN.name());
             ips.forEach(ip -> ip.setDetails(state));
             commandSetupHelper.setupUpdateNetworkCommands(router, ips, cmds);
