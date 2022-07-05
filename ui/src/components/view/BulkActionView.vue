@@ -55,7 +55,7 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => $route.path.includes('/iso/') ? record.zoneid : record.id"
+          :rowKey="record => $route.path.includes('/iso/') ? record.zoneid : record.id"
           :pagination="true"
           style="overflow-y: auto">
           <template #bodyCell="{ column, text, record }">

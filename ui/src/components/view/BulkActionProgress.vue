@@ -52,7 +52,7 @@
         size="middle"
         :columns="selectedColumns"
         :dataSource="tableChanged ? filteredItems : selectedItems"
-        :rowKey="(record, idx) => ($route.path.includes('/template') || $route.path.includes('/iso')) ? record.zoneid: record.id"
+        :rowKey="record => ($route.path.includes('/template') || $route.path.includes('/iso')) ? record.zoneid: record.id"
         :pagination="true"
         @change="handleTableChange"
         style="overflow-y: auto">

@@ -173,7 +173,7 @@
           size="middle"
           :columns="selectedColumns"
           :dataSource="selectedItems"
-          :rowKey="(record, idx) => record.zoneid || record.name"
+          :rowKey="record => record.zoneid || record.name"
           :pagination="true"
           style="overflow-y: auto">
         </a-table>
