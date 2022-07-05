@@ -87,11 +87,9 @@ public class SAMLUtilsTest extends TestCase {
         idpMetadata.setEntityId(idpId);
 
         URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
-        assertThat(redirectUrl).hasScheme(urlScheme);
+        assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("SAMLRequest");
         assertEquals(urlScheme, redirectUrl.getScheme());
-        assertThat(redirectUrl).hasHost(idpDomain);
         assertEquals(idpDomain, redirectUrl.getHost());
-        assertThat(redirectUrl).hasParameter("SAMLRequest");
     }
 
     @Test
@@ -118,12 +116,9 @@ public class SAMLUtilsTest extends TestCase {
         idpMetadata.setEntityId(idpId);
 
         URI redirectUrl = new URI(SAMLUtils.buildAuthnRequestUrl(authnId, spMetadata, idpMetadata, SAML2AuthManager.SAMLSignatureAlgorithm.value()));
-        assertThat(redirectUrl).hasScheme(urlScheme);
+        assertThat(redirectUrl).hasScheme(urlScheme).hasHost(idpDomain).hasParameter("idpid").hasParameter("SAMLRequest");
         assertEquals(urlScheme, redirectUrl.getScheme());
-        assertThat(redirectUrl).hasHost(idpDomain);
         assertEquals(idpDomain, redirectUrl.getHost());
-        assertThat(redirectUrl).hasParameter("idpid");
-        assertThat(redirectUrl).hasParameter("SAMLRequest");
     }
 
     @Test
