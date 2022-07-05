@@ -728,7 +728,7 @@ public class LibvirtVMDef {
         private boolean qemuDriver = true;
         private DiscardType _discard = DiscardType.IGNORE;
         private IoDriver ioDriver;
-        private LibvirtDiskEncryptDetails _encryptDetails;
+        private LibvirtDiskEncryptDetails encryptDetails;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -1041,9 +1041,9 @@ public class LibvirtVMDef {
             this._serial = serial;
         }
 
-        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this._encryptDetails = details; }
+        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
 
-        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this._encryptDetails; }
+        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
 
         @Override
         public String toString() {
@@ -1115,9 +1115,9 @@ public class LibvirtVMDef {
                 diskBuilder.append("<serial>" + _serial + "</serial>\n");
             }
 
-            if (_encryptDetails != null) {
-                diskBuilder.append("<encryption format='" + _encryptDetails.encryptFormat + "'>\n");
-                diskBuilder.append("<secret type='passphrase' uuid='" + _encryptDetails.passphraseUuid + "' />\n");
+            if (encryptDetails != null) {
+                diskBuilder.append("<encryption format='" + encryptDetails.encryptFormat + "'>\n");
+                diskBuilder.append("<secret type='passphrase' uuid='" + encryptDetails.passphraseUuid + "' />\n");
                 diskBuilder.append("</encryption>\n");
             }
 

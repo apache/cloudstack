@@ -79,7 +79,6 @@ import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
-import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -315,8 +314,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private ManagementService managementService;
     @Inject
     protected SnapshotHelper snapshotHelper;
-    @Inject
-    private PassphraseDao _passphraseDao;
 
     protected Gson _gson;
 
@@ -3893,10 +3890,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (host != null) {
             _hostDao.loadDetails(host);
             boolean hostSupportsEncryption = Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION));
-            if (volumeToAttach.getPassphraseId() != null) {
-                if (!hostSupportsEncryption) {
-                    throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
-                }
+            if (volumeToAttach.getPassphraseId() != null && !hostSupportsEncryption) {
+                throw new CloudRuntimeException(errorMsg + " because target host " + host + " doesn't support volume encryption");
             }
         }
 

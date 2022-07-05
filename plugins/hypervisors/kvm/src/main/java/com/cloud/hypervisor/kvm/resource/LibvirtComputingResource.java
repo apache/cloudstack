@@ -2969,7 +2969,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
 
-                if (volumeObjectTO.getPassphrase() != null && volumeObjectTO.getPassphrase().length > 0) {
+                if (volumeObjectTO.requiresEncryption()) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
                     DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
@@ -4727,9 +4727,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean hostSupportsVolumeEncryption() {
         // test qemu-img
         Path testFile = Paths.get(javaTempDir, UUID.randomUUID().toString()).normalize().toAbsolutePath();
-        String objectName = "sec0";
-
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
         List<QemuObject> passphraseObjects = new ArrayList<>();
         QemuImgFile file = new QemuImgFile(testFile.toString(), 64<<20, PhysicalDiskFormat.QCOW2);
 

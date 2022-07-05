@@ -380,4 +380,8 @@ public class VolumeObjectTO implements DataTO {
             Arrays.fill(this.passphrase, (byte) 0);
         }
     }
+
+    public boolean requiresEncryption() {
+        return passphrase != null && passphrase.length > 0;
+    }
 }

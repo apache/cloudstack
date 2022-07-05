@@ -899,7 +899,7 @@ public class VolumeObject implements VolumeInfo {
         if (passphrase != null) {
             return passphrase.getPassphrase();
         }
-        return null;
+        return new byte[0];
     }
 
     @Override

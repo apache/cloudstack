@@ -49,13 +49,10 @@ public class QemuImageOptions {
     public QemuImageOptions(QemuImg.PhysicalDiskFormat format, String filePath, String secretName) {
         params.put(FILENAME_PARAM_KEY, filePath);
         if (secretName != null && !secretName.isBlank()) {
-            switch (format) {
-                case QCOW2:
-                    params.put(QCOW2_KEY_SECRET_PARAM_KEY, secretName);
-                    break;
-                case LUKS:
-                    params.put(LUKS_KEY_SECRET_PARAM_KEY, secretName);
-                    break;
+            if (format.equals(QemuImg.PhysicalDiskFormat.QCOW2)) {
+                params.put(QCOW2_KEY_SECRET_PARAM_KEY, secretName);
+            } else if (format.equals(QemuImg.PhysicalDiskFormat.LUKS)) {
+                params.put(LUKS_KEY_SECRET_PARAM_KEY, secretName);
             }
         }
         if (format != null) {

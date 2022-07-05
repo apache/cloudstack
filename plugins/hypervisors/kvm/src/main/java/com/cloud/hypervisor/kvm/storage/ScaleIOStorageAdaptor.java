@@ -313,7 +313,15 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to find the disk: " + name + " of the storage pool: " + destPool.getUuid());
         }
 
-        destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+        // golden copies of templates should be kept as qcow2 in the PowerFlex storage pool
+        if (disk.useAsTemplate()) {
+            LOGGER.debug("This is a template copy, storing in powerflex as QCOW2");
+            destDisk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+        } else {
+            LOGGER.debug("This is not a template copy, storing in powerflex as RAW");
+            destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+        }
+
         destDisk.setVirtualSize(disk.getVirtualSize());
         destDisk.setSize(disk.getSize());
 
@@ -323,7 +331,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         String srcKeyName = "sec0";
         String destKeyName = "sec1";
         List<QemuObject> qemuObjects = new ArrayList<>();
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
         CryptSetup cryptSetup = null;
 
         try (KeyFile srcKey = new KeyFile(srcPassphrase); KeyFile dstKey = new KeyFile(dstPassphrase)){
@@ -343,7 +351,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                     // format and open luks device rather than letting qemu do a slow copy of full image
                     cryptSetup = new CryptSetup();
                     cryptSetup.luksFormat(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath());
-                    cryptSetup.open(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath(),  name);
+                    cryptSetup.open(dstPassphrase, destDisk.getPath(),  name);
                     destPath = String.format("/dev/mapper/%s", name);
                 } else {
                     qemuObjects.add(QemuObject.prepareSecretForQemuImg(destDisk.getFormat(), null, dstKey.toString(), destKeyName, options));
@@ -358,6 +366,11 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             boolean forceSourceFormat = srcFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
             LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcFile.getFileName(), srcFile.getFormat(), destFile.getFileName(), destFile.getFormat(), forceSourceFormat));
+            if (destFile.getFormat() == QemuImg.PhysicalDiskFormat.QCOW2) {
+                destFile.setSize(disk.getVirtualSize());
+                LOGGER.debug(String.format("Pre-formatting qcow2 block device %s to size %s", destFile.getFileName(), destFile.getSize()));
+                qemu.create(destFile);
+            }
             qemu.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
             LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException | IOException | CryptSetupException e) {

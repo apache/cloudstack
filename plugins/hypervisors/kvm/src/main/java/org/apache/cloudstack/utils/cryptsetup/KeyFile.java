@@ -59,7 +59,7 @@ public class KeyFile implements Closeable {
         if (filePath != null) {
             return filePath.toAbsolutePath().toString();
         }
-        return null;
+        return "";
     }
 
     /**

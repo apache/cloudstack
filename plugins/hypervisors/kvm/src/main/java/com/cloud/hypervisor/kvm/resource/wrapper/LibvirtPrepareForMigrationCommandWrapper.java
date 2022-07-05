@@ -102,7 +102,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
                 if (data instanceof VolumeObjectTO) {
                     final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
 
-                    if (volumeObjectTO.getPassphrase() != null && volumeObjectTO.getPassphrase().length > 0) {
+                    if (volumeObjectTO.requiresEncryption()) {
                         String secretConsumer = volumeObjectTO.getPath();
                         if (volume.getDetails() != null && volume.getDetails().containsKey(DiskTO.SECRET_CONSUMER_DETAIL)) {
                             secretConsumer = volume.getDetails().get(DiskTO.SECRET_CONSUMER_DETAIL);

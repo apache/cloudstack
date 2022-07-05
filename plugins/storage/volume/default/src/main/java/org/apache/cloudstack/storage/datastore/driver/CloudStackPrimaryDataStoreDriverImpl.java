@@ -95,6 +95,8 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     }
 
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreDriverImpl.class);
+    private static final String NO_REMOTE_ENDPOINT_WITH_ENCRYPTION = "No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s";
+
     @Inject
     DiskOfferingDao diskOfferingDao;
     @Inject
@@ -142,7 +144,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         EndPoint ep = epSelector.select(volume, encryptionRequired);
         Answer answer = null;
         if (ep == null) {
-            String errMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
+            String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
             s_logger.error(errMsg);
             answer = new Answer(cmd, false, errMsg);
         } else {
@@ -283,7 +285,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 EndPoint ep = epSelector.select(srcData, destData, encryptionRequired);
                 Answer answer = null;
                 if (ep == null) {
-                    String errMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new Answer(cmd, false, errMsg);
                 } else {
@@ -298,7 +300,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 EndPoint ep = epSelector.select(srcdata, destData, encryptionRequired);
                 CopyCmdAnswer answer = null;
                 if (ep == null) {
-                    String errMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
+                    String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                     s_logger.error(errMsg);
                     answer = new CopyCmdAnswer(errMsg);
                 } else {
@@ -528,6 +530,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
      */
     private boolean anyVolumeRequiresEncryption(DataObject ... objects) {
         for (DataObject o : objects) {
+            // this fails code smell for returning true twice, but it is more readable than combining all tests into one statement
             if (o instanceof VolumeInfo && ((VolumeInfo) o).getPassphraseId() != null) {
                 return true;
             } else if (o instanceof SnapshotInfo && ((SnapshotInfo) o).getBaseVolume().getPassphraseId() != null) {

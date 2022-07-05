@@ -25,7 +25,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -69,8 +68,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected GenericSearchBuilder<VolumeVO, SumCount> secondaryStorageSearch;
     @Inject
     ResourceTagDao _tagsDao;
-    @Inject
-    PassphraseDao _passphraseDao;
 
     protected static final String SELECT_VM_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ? and v.mirror_state = ?";
     // need to account for zone-wide primary storage where storage_pool has

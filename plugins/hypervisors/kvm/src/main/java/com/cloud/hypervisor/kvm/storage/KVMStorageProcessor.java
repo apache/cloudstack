@@ -29,7 +29,6 @@ import java.net.URISyntaxException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -65,8 +64,6 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.cryptsetup.KeyFile;
-import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -152,7 +149,6 @@ public class KVMStorageProcessor implements StorageProcessor {
     private int _cmdsTimeout;
 
     private static final String MANAGE_SNAPSTHOT_CREATE_OPTION = "-c";
-    private static final String MANAGE_SNAPSTHOT_DESTROY_OPTION = "-d";
     private static final String NAME_OPTION = "-n";
     private static final String CEPH_MON_HOST = "mon_host";
     private static final String CEPH_AUTH_KEY = "key";
@@ -254,6 +250,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             /* Copy volume to primary storage */
+            tmplVol.setUseAsTemplate();
             s_logger.debug("Copying template to primary storage, template format is " + tmplVol.getFormat() );
             final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
 
@@ -1071,40 +1068,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    private boolean qemuVolumeHasEncryption(VolumeObjectTO volume) {
-        return volume.getEncryptFormat() != null && QemuObject.EncryptFormat.enumValue(volume.getEncryptFormat()) == QemuObject.EncryptFormat.LUKS && volume.getPassphrase() != null;
-    }
-
-    private void deleteSnapshotViaQemuImg(final VolumeObjectTO volume, final String path, final String snapshotName, final int timeout) {
-        List<QemuObject> passphraseObjects = new ArrayList<>();
-        try (KeyFile keyFile = new KeyFile(volume.getPassphrase())) {
-            passphraseObjects.add(
-                    QemuObject.prepareSecretForQemuImg(PhysicalDiskFormat.QCOW2, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", null)
-            );
-            QemuImg q = new QemuImg(timeout);
-            QemuImageOptions imgOptions = new QemuImageOptions(PhysicalDiskFormat.QCOW2, path,"sec0");
-            q.deleteSnapshot(imgOptions, snapshotName, passphraseObjects);
-        } catch (QemuImgException ex) {
-            throw new CloudRuntimeException("Failed to run qemu-img for deleting snapshot", ex);
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Failed to create keyfile for deleting encrypted snapshot", ex);
-        } catch (LibvirtException ex) {
-            throw new CloudRuntimeException("Failed to call Libvirt during deleting snapshot", ex);
-        } finally {
-            volume.clearPassphrase();
-        }
-    }
-
-    private void deleteSnapshotViaManageSnapshotScript(final String snapshotName, KVMPhysicalDisk snapshotDisk) {
-        final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-        command.add(MANAGE_SNAPSTHOT_DESTROY_OPTION, snapshotDisk.getPath());
-        command.add(NAME_OPTION, snapshotName);
-        final String result = command.execute();
-        if (result != null) {
-            s_logger.debug("Failed to delete snapshot on primary: " + result);
-        }
-    }
-
     protected synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, Map<String, String> params) throws LibvirtException, URISyntaxException,
     InternalErrorException {
         String isoXml = null;
@@ -1389,7 +1352,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
             DiskDef.LibvirtDiskEncryptDetails encryptDetails = null;
-            if (vol.getPassphrase() != null && vol.getPassphrase().length > 0) {
+            if (vol.requiresEncryption()) {
                 String secretUuid = resource.createLibvirtVolumeSecret(conn, vol.getPath(), vol.getPassphrase());
                 encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(vol.getEncryptFormat()));
                 vol.clearPassphrase();
@@ -1611,7 +1574,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && qemuVolumeHasEncryption(volume)) {
+            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && volume.requiresEncryption()) {
                 throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
             }
 

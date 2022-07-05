@@ -59,7 +59,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.ResignatureAnswer;
@@ -161,8 +160,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private ClusterDao clusterDao;
     @Inject
     private HostDao _hostDao;
-    @Inject
-    private PassphraseDao _passphraseDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -2227,7 +2224,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (vmTO.getDisks() != null) {
             LOGGER.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
             Arrays.stream(vmTO.getDisks()).filter(diskTO -> diskTO.getData().getId() == srcVolume.getId()).forEach( diskTO -> {
-                Map<String, String> details = diskTO.getDetails();
                 if (diskTO.getDetails() == null) {
                     diskTO.setDetails(new HashMap<>());
                 }

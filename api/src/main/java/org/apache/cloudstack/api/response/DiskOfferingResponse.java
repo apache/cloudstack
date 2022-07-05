@@ -162,7 +162,7 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean diskSizeStrictness;
 
     @SerializedName(ApiConstants.ENCRYPT)
-    @Param(description = "Whether disks using this offering will be encrypted on primary storage")
+    @Param(description = "Whether disks using this offering will be encrypted on primary storage", since = "4.18")
     private Boolean encrypt;
 
     @SerializedName(ApiConstants.DETAILS)

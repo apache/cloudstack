@@ -75,9 +75,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
     @Inject
     private DedicatedResourceDao dedicatedResourceDao;
 
-    private static final String volEncryptColumnName = "volume_encryption_support";
+    private static final String VOL_ENCRYPT_COLUMN_NAME = "volume_encryption_support";
     private final String findOneHostOnPrimaryStorage = "select t.id from "
-                            + "(select h.id, cd.value, hd.value as " + volEncryptColumnName + " "
+                            + "(select h.id, cd.value, hd.value as " + VOL_ENCRYPT_COLUMN_NAME + " "
                             + "from host h join storage_pool_host_ref s on h.id = s.host_id  "
                             + "join cluster c on c.id=h.cluster_id "
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
@@ -154,7 +154,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
 
         if (volumeEncryptionSupportRequired) {
-            sbuilder.append(String.format(" and t.%s='true'", volEncryptColumnName));
+            sbuilder.append(String.format(" and t.%s='true'", VOL_ENCRYPT_COLUMN_NAME));
         }
 
         // TODO: order by rand() is slow if there are lot of hosts

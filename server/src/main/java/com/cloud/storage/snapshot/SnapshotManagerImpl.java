@@ -174,7 +174,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Inject
     DomainDao _domainDao;
     @Inject
-    DiskOfferingDao _diskOfferingDao;
+    DiskOfferingDao diskOfferingDao;
     @Inject
     StorageManager _storageMgr;
     @Inject
@@ -851,7 +851,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         }
 
         // For now, volumes with encryption don't support snapshot schedules, because they will fail when VM is running
-        DiskOfferingVO diskOffering = _diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
+        DiskOfferingVO diskOffering = diskOfferingDao.findByIdIncludingRemoved(volume.getDiskOfferingId());
         if (diskOffering == null) {
             throw new InvalidParameterValueException(String.format("Failed to find disk offering for the volume [%s]", volume.getUuid()));
         } else if(diskOffering.getEncrypt()) {

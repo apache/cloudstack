@@ -36,16 +36,16 @@ import org.apache.log4j.Logger;
 public class QemuImg {
     private Logger logger = Logger.getLogger(this.getClass());
 
-    public final static String BACKING_FILE = "backing_file";
-    public final static String BACKING_FILE_FORMAT = "backing_file_format";
-    public final static String CLUSTER_SIZE = "cluster_size";
-    public final static String FILE_FORMAT = "file_format";
-    public final static String IMAGE = "image";
-    public final static String VIRTUAL_SIZE = "virtual_size";
-    public final static String ENCRYPT_FORMAT = "encrypt.format";
-    public final static String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
-    public final static String TARGET_ZERO_FLAG = "--target-is-zero";
-    public final static long QEMU_2_10 = 2010000;
+    public static final String BACKING_FILE = "backing_file";
+    public static final String BACKING_FILE_FORMAT = "backing_file_format";
+    public static final String CLUSTER_SIZE = "cluster_size";
+    public static final String FILE_FORMAT = "file_format";
+    public static final String IMAGE = "image";
+    public static final String VIRTUAL_SIZE = "virtual_size";
+    public static final String ENCRYPT_FORMAT = "encrypt.format";
+    public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
+    public static final String TARGET_ZERO_FLAG = "--target-is-zero";
+    public static final long QEMU_2_10 = 2010000;
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";

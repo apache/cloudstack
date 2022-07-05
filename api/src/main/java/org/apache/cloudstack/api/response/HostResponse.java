@@ -271,7 +271,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private Boolean uefiCapabilty;
 
     @SerializedName(ApiConstants.ENCRYPTION_SUPPORTED)
-    @Param(description = "true if the host supports encryption")
+    @Param(description = "true if the host supports encryption", since = "4.18")
     private Boolean encryptionSupported;
 
     @Override

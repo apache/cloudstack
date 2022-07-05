@@ -227,7 +227,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private String diskOfferingDisplayText;
 
     @SerializedName(ApiConstants.ENCRYPT_ROOT)
-    @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.16")
+    @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.18")
     private Boolean encryptRoot;
 
     public ServiceOfferingResponse() {

@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -60,10 +60,6 @@ public class QemuObject {
 
         EncryptFormat(String format) { this.format = format; }
 
-        EncryptFormat(QemuImg.PhysicalDiskFormat format) {
-            this.format = format.toString();
-        }
-
         @Override
         public String toString() { return format;}
 
@@ -78,15 +74,15 @@ public class QemuObject {
     public enum ObjectType {
         SECRET("secret");
 
-        private final String objectType;
+        private final String objectTypeValue;
 
-        ObjectType(String objectType) {
-            this.objectType = objectType;
+        ObjectType(String objectTypeValue) {
+            this.objectTypeValue = objectTypeValue;
         }
 
         @Override
         public String toString() {
-            return objectType;
+            return objectTypeValue;
         }
     }
 
@@ -115,9 +111,9 @@ public class QemuObject {
      * @return the QemuObject containing encryption parameters
      */
     public static QemuObject prepareSecretForQemuImg(QemuImg.PhysicalDiskFormat format, EncryptFormat encryptFormat, String keyFilePath, String secretName, Map<String, String> options) {
-        Map<QemuObject.ObjectParameter, String> params = new HashMap<>();
-        params.put(QemuObject.ObjectParameter.ID, secretName);
-        params.put(QemuObject.ObjectParameter.FILE, keyFilePath);
+        EnumMap<ObjectParameter, String> params = new EnumMap<>(ObjectParameter.class);
+        params.put(ObjectParameter.ID, secretName);
+        params.put(ObjectParameter.FILE, keyFilePath);
 
         if (options != null) {
             if (format == QemuImg.PhysicalDiskFormat.QCOW2) {
@@ -127,6 +123,6 @@ public class QemuObject {
                 options.put("key-secret", secretName);
             }
         }
-        return new QemuObject(QemuObject.ObjectType.SECRET, params);
+        return new QemuObject(ObjectType.SECRET, params);
     }
 }

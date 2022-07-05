@@ -21,7 +21,7 @@ import com.cloud.utils.script.Script;
 import java.io.IOException;
 
 public class CryptSetup {
-    protected String _commandPath = "cryptsetup";
+    protected String commandPath = "cryptsetup";
 
     /**
      * LuksType represents the possible types that can be passed to cryptsetup.
@@ -32,25 +32,25 @@ public class CryptSetup {
     public enum LuksType {
         LUKS("luks1"), LUKS2("luks2"), PLAIN("plain"), TCRYPT("tcrypt"), BITLK("bitlk");
 
-        String luksType;
+        final String luksTypeValue;
 
-        LuksType(String type) { this.luksType = type; }
+        LuksType(String type) { this.luksTypeValue = type; }
 
         @Override
         public String toString() {
-            return luksType;
+            return luksTypeValue;
         }
     }
 
     public CryptSetup(final String commandPath) {
-        _commandPath = commandPath;
+        this.commandPath = commandPath;
     }
 
     public CryptSetup() {}
 
-    public void open(byte[] passphrase, LuksType luksType, String diskPath, String diskName) throws CryptSetupException {
+    public void open(byte[] passphrase, String diskPath, String diskName) throws CryptSetupException {
         try(KeyFile key = new KeyFile(passphrase)) {
-            final Script script = new Script(_commandPath);
+            final Script script = new Script(commandPath);
             script.add("open");
             script.add("--key-file");
             script.add(key.toString());
@@ -68,7 +68,7 @@ public class CryptSetup {
     }
 
     public void close(String diskName) throws CryptSetupException {
-        final Script script = new Script(_commandPath);
+        final Script script = new Script(commandPath);
         script.add("close");
         script.add(diskName);
 
@@ -87,7 +87,7 @@ public class CryptSetup {
      */
     public void luksFormat(byte[] passphrase, LuksType luksType, String diskPath) throws CryptSetupException {
         try(KeyFile key = new KeyFile(passphrase)) {
-            final Script script = new Script(_commandPath);
+            final Script script = new Script(commandPath);
             script.add("luksFormat");
             script.add("-q");
             script.add("--force-password");
@@ -107,14 +107,14 @@ public class CryptSetup {
     }
 
     public boolean isSupported() {
-        final Script script = new Script(_commandPath);
+        final Script script = new Script(commandPath);
         script.add("--usage");
         final String result = script.execute();
         return result == null;
     }
 
     public boolean isLuks(String filePath) {
-        final Script script = new Script(_commandPath);
+        final Script script = new Script(commandPath);
         script.add("isLuks");
         script.add(filePath);
 

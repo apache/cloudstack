@@ -141,7 +141,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String destPoolLocalPath = destPool.getLocalPath();
         String destPath = String.format("%s%s%s", destPoolLocalPath, destPoolLocalPath.endsWith("/") ? "" : "/", name);
 
-        Map<String, String> options = new HashMap<String, String>();
+        Map<String, String> options = new HashMap<>();
         List<QemuObject> passphraseObjects = new ArrayList<>();
         try (KeyFile keyFile = new KeyFile(passphrase)) {
             QemuImgFile destFile = new QemuImgFile(destPath, format);
@@ -155,7 +155,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             QemuImg qemu = new QemuImg(timeout);
             qemu.create(destFile, backingFile, options, passphraseObjects);
-            Map<String, String> info = qemu.info(destFile);
         } catch (QemuImgException | LibvirtException | IOException e) {
             // why don't we throw an exception here? I guess we fail to find the volume later and that results in a failure returned?
             s_logger.error(String.format("Failed to create %s in [%s] due to [%s].", volumeDesc, destPath, e.getMessage()), e);
@@ -1085,7 +1084,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     qemu.convert(sourceFile, destFile, options, passphraseObjects, null, false);
                 }
             } catch (QemuImgException | LibvirtException | IOException e) {
-                throw new CloudRuntimeException(String.format("Failed to create %s due to a failed execution of qemu-img", disk.getPath()), e);
+                throw new CloudRuntimeException(String.format("Failed to create %s due to a failed execution of qemu-img", name), e);
             }
         }
 

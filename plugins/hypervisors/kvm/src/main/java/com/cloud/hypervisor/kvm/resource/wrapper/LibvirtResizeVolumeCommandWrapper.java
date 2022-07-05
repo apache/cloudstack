@@ -23,6 +23,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
@@ -119,15 +120,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
                 }
             }
 
-            boolean vmIsRunning = false;
-            try {
-                final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
-                Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(command.getInstanceName());
-                Domain dom = conn.domainLookupByName(command.getInstanceName());
-                vmIsRunning = (dom != null && dom.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING);
-            } catch (LibvirtException ex) {
-                s_logger.info(String.format("Did not find a running VM '%s'",command.getInstanceName()));
-            }
+            boolean vmIsRunning = isVmRunning(vmInstanceName, libvirtComputingResource);
 
             /* when VM is offline, we use qemu-img directly to resize encrypted volumes.
                If VM is online, the existing resize script will call virsh blockresize which works
@@ -135,22 +128,8 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
              */
             if (!vmIsRunning && command.getPassphrase() != null && command.getPassphrase().length > 0 ) {
                 s_logger.debug("Invoking qemu-img to resize an offline, encrypted volume");
-                List<QemuObject> passphraseObjects = new ArrayList<>();
-                try (KeyFile keyFile = new KeyFile(command.getPassphrase())) {
-                    QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
-                    passphraseObjects.add(
-                            QemuObject.prepareSecretForQemuImg(vol.getFormat(), encryptFormat, keyFile.toString(), "sec0", null)
-                    );
-                    QemuImg q = new QemuImg(libvirtComputingResource.getCmdsTimeout());
-                    QemuImageOptions imgOptions = new QemuImageOptions(vol.getFormat(), path,"sec0");
-                    q.resize(imgOptions, passphraseObjects, newSize);
-                } catch (QemuImgException | LibvirtException ex) {
-                    throw new CloudRuntimeException("Failed to run qemu-img for resize", ex);
-                } catch (IOException ex) {
-                    throw new CloudRuntimeException("Failed to create keyfile for encrypted resize", ex);
-                } finally {
-                    command.clearPassphrase();
-                }
+                QemuObject.EncryptFormat encryptFormat = QemuObject.EncryptFormat.enumValue(command.getEncryptFormat());
+                resizeEncryptedQcowFile(vol, encryptFormat,newSize, command.getPassphrase(), libvirtComputingResource);
             } else {
                 s_logger.debug("Invoking resize script to handle type " + type);
                 final Script resizecmd = new Script(libvirtComputingResource.getResizeVolumePath(), libvirtComputingResource.getCmdsTimeout(), s_logger);
@@ -181,6 +160,39 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             final String error = "Failed to resize volume: " + e.getMessage();
             s_logger.debug(error);
             return new ResizeVolumeAnswer(command, false, error);
+        } finally {
+            command.clearPassphrase();
+        }
+    }
+
+    private boolean isVmRunning(final String vmName, final LibvirtComputingResource libvirtComputingResource) {
+        try {
+            final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
+            Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
+            Domain dom = conn.domainLookupByName(vmName);
+            return (dom != null && dom.getInfo().state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING);
+        } catch (LibvirtException ex) {
+            s_logger.info(String.format("Did not find a running VM '%s'", vmName));
+        }
+        return false;
+    }
+
+    private void resizeEncryptedQcowFile(final KVMPhysicalDisk vol, final QemuObject.EncryptFormat encryptFormat, long newSize,
+                                         byte[] passphrase, final LibvirtComputingResource libvirtComputingResource) throws CloudRuntimeException {
+        List<QemuObject> passphraseObjects = new ArrayList<>();
+        try (KeyFile keyFile = new KeyFile(passphrase)) {
+            passphraseObjects.add(
+                    QemuObject.prepareSecretForQemuImg(vol.getFormat(), encryptFormat, keyFile.toString(), "sec0", null)
+            );
+            QemuImg q = new QemuImg(libvirtComputingResource.getCmdsTimeout());
+            QemuImageOptions imgOptions = new QemuImageOptions(vol.getFormat(), vol.getPath(),"sec0");
+            q.resize(imgOptions, passphraseObjects, newSize);
+        } catch (QemuImgException | LibvirtException ex) {
+            throw new CloudRuntimeException("Failed to run qemu-img for resize", ex);
+        } catch (IOException ex) {
+            throw new CloudRuntimeException("Failed to create keyfile for encrypted resize", ex);
+        } finally {
+            Arrays.fill(passphrase, (byte) 0);
         }
     }
 }

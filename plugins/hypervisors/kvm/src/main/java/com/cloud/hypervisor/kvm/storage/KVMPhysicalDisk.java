@@ -23,6 +23,7 @@ public class KVMPhysicalDisk {
     private String path;
     private String name;
     private KVMStoragePool pool;
+    private boolean useAsTemplate;
 
     public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
         String rbdOpts;
@@ -111,4 +112,7 @@ public class KVMPhysicalDisk {
         this.qemuEncryptFormat = format;
     }
 
+    public void setUseAsTemplate() { this.useAsTemplate = true; }
+
+    public boolean useAsTemplate() { return this.useAsTemplate; }
 }
