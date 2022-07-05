@@ -1681,7 +1681,7 @@ class TestDeployOnSpecificHost(cloudstackTestCase):
         self.assertEqual(
             isinstance(hosts, list),
             True,
-            "CS should have atleast one host Up and Running"
+            "CS should have at least one host Up and Running"
         )
 
         host = hosts[0]

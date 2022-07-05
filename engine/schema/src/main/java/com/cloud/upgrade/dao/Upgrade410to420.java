@@ -719,7 +719,7 @@ public class Upgrade410to420 implements DbUpgrade {
                         dcList = new ArrayList<String>();
                         count = 0L;
                         // Legacy zone term is meant only for VMware
-                        // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                        // Legacy zone is a zone with at least 2 clusters & with multiple DCs or VCs
                         clusters = clustersQuery.executeQuery();
                         if (!clusters.next()) {
                             continue; // Ignore the zone without any clusters
