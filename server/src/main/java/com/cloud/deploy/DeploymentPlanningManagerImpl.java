@@ -42,7 +42,6 @@ import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -301,8 +300,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
             if (host != null && StringUtils.isNotBlank(uefiFlag) && "yes".equalsIgnoreCase(uefiFlag)) {
-                _hostDao.loadDetails(host);
-                if (MapUtils.isNotEmpty(host.getDetails()) && host.getDetails().containsKey(Host.HOST_UEFI_ENABLE) && "false".equalsIgnoreCase(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                DetailVO uefiHostDetail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_UEFI_ENABLE);
+                if (uefiHostDetail == null || "false".equalsIgnoreCase(uefiHostDetail.getValue())) {
                     s_logger.debug("Cannot deploy to specified host as host does n't support uefi vm deployment, returning.");
                     return null;
 
@@ -1564,7 +1563,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 
-        // There should be atleast the ROOT volume of the VM in usable state
+        // There should be at least the ROOT volume of the VM in usable state
         if (volumesTobeCreated.isEmpty()) {
             // OfflineVmwareMigration: find out what is wrong with the id of the vm we try to start
             throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM: " + vmProfile.getId());

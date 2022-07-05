@@ -265,7 +265,7 @@ public enum Config {
     NetworkRouterRpFilter(
             "Network",
             ManagementServer.class,
-            Integer.class,
+            Boolean.class,
             "network.disable.rpfilter",
             "true",
             "disable rp_filter on Domain Router VM public interfaces.",
@@ -446,7 +446,7 @@ public enum Config {
     ConsoleProxyDisableRpFilter(
             "Console Proxy",
             AgentManager.class,
-            Integer.class,
+            Boolean.class,
             "consoleproxy.disable.rpfilter",
             "true",
             "disable rp_filter on console proxy VM public interface",
@@ -1361,14 +1361,6 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
-    DefaultMaxAccountSecondaryStorage(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.secondary.storage",
-            "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an account",
-            null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1496,14 +1488,6 @@ public enum Config {
             "max.project.primary.storage",
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an project",
-            null),
-    DefaultMaxProjectSecondaryStorage(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.secondary.storage",
-            "400",
-            "The default maximum secondary storage space (in GiB) that can be used for an project",
             null),
 
     ProjectInviteRequired(

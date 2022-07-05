@@ -346,8 +346,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
 
     @Override
     // an exception thrown by createNetwork() will be caught by the dispatcher.
-        public
-        void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(getResponseView(), result);

@@ -47,6 +47,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -2105,6 +2106,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String lbProtocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2131,6 +2133,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (forDisplay != null) {
             lb.setDisplay(forDisplay);
+        }
+
+        if (StringUtils.isNotBlank(lbProtocol)) {
+            lb.setLbProtocol(lbProtocol);
         }
 
         // Validate rule in LB provider

@@ -19,8 +19,14 @@ name: Lint Code Base
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      statuses: write  # for github/super-linter to mark status of each linter run
     name: SuperLinter Check
     runs-on: ubuntu-latest
     steps:

@@ -126,7 +126,7 @@ public class AddUserToProjectCmd extends BaseAsyncCmd {
 
     private void validateInput() {
         if (email == null && username == null) {
-            throw new InvalidParameterValueException("Must specify atleast username");
+            throw new InvalidParameterValueException("Must specify at least username");
         }
         if (email != null && username == null) {
             throw new InvalidParameterValueException("Must specify username for given email ID");
