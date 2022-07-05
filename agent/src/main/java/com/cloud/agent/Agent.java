@@ -457,7 +457,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send reques: " + request.toString());
+                s_logger.warn("Unable to send request: " + request.toString());
             }
         }
     }
@@ -467,7 +467,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         try {
             addr = InetAddress.getLocalHost();
         } catch (final UnknownHostException e) {
-            s_logger.warn("unknow host? ", e);
+            s_logger.warn("unknown host? ", e);
             throw new CloudRuntimeException("Cannot get local IP address");
         }
 
@@ -954,7 +954,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to post agent control reques: " + request.toString());
+                s_logger.warn("Unable to post agent control request: " + request.toString());
                 throw new AgentControlChannelException("Unable to post agent control request due to " + e.getMessage());
             }
         } else {
