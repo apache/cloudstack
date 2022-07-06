@@ -950,8 +950,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         configureLocalStorage();
 
         /* Directory to use for Qemu sockets like for the Qemu Guest Agent */
-        String _qemuSocketsPathVar = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.QEMU_SOCKETS_PATH);
-        _qemuSocketsPath = new File(_qemuSocketsPathVar);
+        String qemuSocketsPathVar = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.QEMU_SOCKETS_PATH);
+        _qemuSocketsPath = new File(qemuSocketsPathVar);
 
         // This value is never set. Default value is always used.
         String value = (String)params.get("scripts.timeout");
@@ -1166,9 +1166,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
 
-        Boolean _iscsiCleanUpEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ISCSI_SESSION_CLEANUP_ENABLED);
+        Boolean iscsiCleanUpEnabled = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ISCSI_SESSION_CLEANUP_ENABLED);
 
-        if (BooleanUtils.isTrue(_iscsiCleanUpEnabled)) {
+        if (BooleanUtils.isTrue(iscsiCleanUpEnabled)) {
             IscsiStorageCleanupMonitor isciCleanupMonitor = new IscsiStorageCleanupMonitor();
             final Thread cleanupMonitor = new Thread(isciCleanupMonitor);
             cleanupMonitor.start();
