@@ -203,9 +203,10 @@
             </template>
             <a-input-number
               style="width: 100%;"
-              :max=privateMtuMax
               v-model:value="form.privatemtu"
-              :placeholder="$t('label.privatemtu')"/>
+              :placeholder="$t('label.privatemtu')"
+              @change="updateMtu()"/>
+              <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
           </a-form-item>
           <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
@@ -374,6 +375,7 @@ export default {
       vms: {},
       selectedNetworkOffering: {},
       privateMtuMax: 1500,
+      errorPrivateMtu: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -491,6 +493,14 @@ export default {
     },
     showIlb (network) {
       return network.service.filter(s => (s.name === 'Lb') && (s.capability.filter(c => c.name === 'LbSchemes' && c.value === 'Internal').length > 0)).length > 0 || false
+    },
+    updateMtu () {
+      if (this.form.privatemtu > this.privateMtuMax) {
+        this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed')}`
+        this.form.privatemtu = this.privateMtuMax
+      } else {
+        this.errorPrivateMtu = ''
+      }
     },
     fetchData () {
       this.networks = this.resource.network

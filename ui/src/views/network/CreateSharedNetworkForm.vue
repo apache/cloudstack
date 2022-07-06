@@ -253,9 +253,10 @@
                 </template>
                 <a-input-number
                 style="width: 100%;"
-                :max=publicMtuMax
                 v-model:value="form.publicmtu"
-                  :placeholder="apiParams.publicmtu.description"/>
+                  :placeholder="apiParams.publicmtu.description"
+                  @change="updateMtu(true)"/>
+                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu.replace('%x', publicMtuMax)"></div>
               </a-form-item>
             </a-col>
             <a-col :md="12" :lg="12">
@@ -267,9 +268,10 @@
                 </template>
                 <a-input-number
                 style="width: 100%;"
-                :max=privateMtuMax
                 v-model:value="form.privatemtu"
-                  :placeholder="apiParams.privatemtu.description"/>
+                  :placeholder="apiParams.privatemtu.description"
+                  @change="updateMtu(false)"/>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
               </a-form-item>
             </a-col>
           </a-row>
@@ -468,7 +470,9 @@ export default {
       isVirtualRouterForAtLeastOneService: false,
       selectedServiceProviderMap: {},
       privateMtuMax: 1500,
-      publicMtuMax: 1500
+      publicMtuMax: 1500,
+      errorPublicMtu: '',
+      errorPrivateMtu: ''
     }
   },
   watch: {
@@ -1058,6 +1062,23 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    updateMtu (isPublic) {
+      if (isPublic) {
+        if (this.form.publicmtu > this.publicMtuMax) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed')}`
+          this.form.publicmtu = this.publicMtuMax
+        } else {
+          this.errorPublicMtu = ''
+        }
+      } else {
+        if (this.form.privatemtu > this.privateMtuMax) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed')}`
+          this.form.privatemtu = this.privateMtuMax
+        } else {
+          this.errorPrivateMtu = ''
+        }
+      }
     }
   }
 }

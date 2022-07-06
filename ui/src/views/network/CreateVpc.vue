@@ -103,9 +103,10 @@
           </template>
           <a-input-number
             style="width: 100%;"
-            :max=publicMtuMax
             v-model:value="form.publicmtu"
-            :placeholder="apiParams.publicmtu.description"/>
+            :placeholder="apiParams.publicmtu.description"
+            @change="updateMtu()"/>
+            <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu.replace('%x', publicMtuMax)"></div>
         </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
@@ -140,7 +141,8 @@ export default {
       loadingOffering: false,
       zones: [],
       vpcOfferings: [],
-      publicMtuMax: 1500
+      publicMtuMax: 1500,
+      errorPublicMtu: ''
     }
   },
   beforeCreate () {
@@ -210,6 +212,14 @@ export default {
     },
     closeAction () {
       this.$emit('close-action')
+    },
+    updateMtu () {
+      if (this.form.publicmtu > this.publicMtuMax) {
+        this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed')}`
+        this.form.publicmtu = this.publicMtuMax
+      } else {
+        this.errorPublicMtu = ''
+      }
     },
     handleSubmit (e) {
       e.preventDefault()

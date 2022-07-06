@@ -2216,6 +2216,8 @@
 "message.error.loading.setting": "There was an error loading these settings.",
 "message.error.lun": "Please enter LUN #.",
 "message.error.macaddress": "Please enter a valid MAC Address.",
+"message.error.mtu.public.max.exceed": "MTU exceeds configured maximum in the zone-level setting: vr.public.interface.mtu (%x).This value will be reset to the maximum value configured for the zone",
+"message.error.mtu.private.max.exceed": "MTU exceeds configured maximum in the zone-level setting: vr.private.interface.mtu (%x). This value will be reset to the maximum value configured for the zone",
 "message.error.name": "Please enter name.",
 "message.error.netmask": "Please enter Netmask.",
 "message.error.network.offering": "Please select network offering.",
