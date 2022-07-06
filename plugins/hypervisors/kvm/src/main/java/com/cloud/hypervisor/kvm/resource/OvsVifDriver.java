@@ -55,8 +55,6 @@ public class OvsVifDriver extends VifDriverBase {
 
         getPifs();
 
-        String networkScriptsDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_SCRIPTS_DIR);
-
         if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED)) {
             dpdkDriver = new DpdkDriverImpl();
         }

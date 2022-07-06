@@ -925,10 +925,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _networkDirectSourceMode = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_SOURCE_MODE);
         _networkDirectDevice = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.NETWORK_DIRECT_DEVICE);
 
-        String startMac = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_MACADDR_START);
-
-        String startIp = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PRIVATE_IPADDR_START);
-
         _pingTestPath = Script.findScript(kvmScriptsDir, "pingtest.sh");
         if (_pingTestPath == null) {
             throw new ConfigurationException("Unable to find the pingtest.sh");

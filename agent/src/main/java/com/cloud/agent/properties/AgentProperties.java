@@ -14,6 +14,8 @@
  */
 package com.cloud.agent.properties;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+
 /**
  * Class of constant agent's properties available to configure on
  * "agent.properties".
@@ -717,7 +719,7 @@ public class AgentProperties{
             }
 
             if (this.typeClass == null) {
-                throw new RuntimeException("Could not \"discover\" the type class. If you are using \"Null\" as the default value, you must enter the Type class.");
+                throw new CloudRuntimeException("Could not \"discover\" the type class. If you are using \"Null\" as the default value, you must enter the Type class.");
             }
 
         }
