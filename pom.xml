@@ -118,6 +118,7 @@
         <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.27.2</cs.wiremock.version>
         <cs.xercesImpl.version>2.12.2</cs.xercesImpl.version>
+        <cs.assertj.version>3.23.1</cs.assertj.version>
 
         <!-- Dependencies versions -->
         <cs.amqp-client.version>5.10.0</cs.amqp-client.version>
