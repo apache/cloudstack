@@ -28,6 +28,7 @@ import com.cloud.hypervisor.kvm.dpdk.DpdkDriver;
 import com.cloud.hypervisor.kvm.dpdk.DpdkDriverImpl;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
@@ -55,7 +56,7 @@ public class OvsVifDriver extends VifDriverBase {
 
         getPifs();
 
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED)) {
+        if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED))) {
             dpdkDriver = new DpdkDriverImpl();
         }
 

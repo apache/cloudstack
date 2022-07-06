@@ -300,9 +300,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
     private String _ovsTunnelPath;
-    private String _host;
     private String _dcId;
-    private String _pod;
     private String _clusterId;
     private final Properties _uefiProperties = new Properties();
 
@@ -328,7 +326,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String BASH_SCRIPT_PATH = "/bin/bash";
 
-    private String _mountPoint = "/mnt";
     private StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
 
@@ -795,7 +792,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
 
         Boolean dpdk = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_ENABLED);
-        if (_bridgeType == BridgeType.OPENVSWITCH && dpdk) {
+        if (_bridgeType == BridgeType.OPENVSWITCH && BooleanUtils.isTrue(dpdk)) {
             dpdkSupport = true;
             dpdkOvsPath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.OPENVSWITCH_DPDK_OVS_PATH);
             if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
@@ -816,11 +813,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
 
-        _host = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST);
-
         _dcId = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ZONE);
-
-        _pod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.POD);
 
         _clusterId = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CLUSTER);
 
@@ -914,7 +907,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         _hypervisorType = HypervisorType.getType(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_TYPE));
 
         String hooksDir = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_HOOKS_DIR);
-        rollingMaintenanceExecutor = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED) ? new RollingMaintenanceAgentExecutor(hooksDir) :
+        rollingMaintenanceExecutor = BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.ROLLING_MAINTENANCE_SERVICE_EXECUTOR_DISABLED)) ? new RollingMaintenanceAgentExecutor(hooksDir) :
                 new RollingMaintenanceServiceExecutor(hooksDir);
 
         _hypervisorURI = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HYPERVISOR_URI);
@@ -983,11 +976,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // compressing technologies
         _dom0OvercommitMem = ByteScaleUtils.mibToBytes(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_OVERCOMMIT_MEM_MB));
 
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVMCLOCK_DISABLE)) {
+        if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.KVMCLOCK_DISABLE))) {
             _noKvmClock = true;
         }
 
-        if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_ENABLE)) {
+        if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_ENABLE))) {
             _rngEnable = true;
 
             _rngBackendModel = RngBackendModel.valueOf(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_RNG_MODEL).toUpperCase());
@@ -1132,8 +1125,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (_localGateway == null) {
             s_logger.warn("No default IPv4 gateway found");
         }
-
-        _mountPoint = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.MOUNT_PATH);
 
         _migrateDowntime = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.VM_MIGRATE_DOWNTIME);
 
