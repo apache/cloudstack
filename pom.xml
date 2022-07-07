@@ -150,7 +150,7 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
+        <cs.jetty.version>10.0.10</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.9</cs.joda-time.version>
