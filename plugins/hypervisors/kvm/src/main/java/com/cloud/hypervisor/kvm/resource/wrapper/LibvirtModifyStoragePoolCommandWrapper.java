@@ -40,13 +40,13 @@ public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
         final KVMStoragePool storagepool =
                 storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                        .getUserInfo(), command.getPool().getType());
+                        .getUserInfo(), command.getPool().getType(), command.getDetails());
         if (storagepool == null) {
             return new Answer(command, false, " Failed to create storage pool");
         }
 
         final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
-        final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo);
+        final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, storagepool.getDetails());
 
         return answer;
     }

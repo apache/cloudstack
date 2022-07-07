@@ -6535,8 +6535,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         }
                     }
 
-                    final VmStatsEntry vmStats = new VmStatsEntry(0, NumberUtils.toDouble(memkb) * 1024, NumberUtils.toDouble(guestMemusage) * 1024, NumberUtils.toDouble(memlimit) * 1024,
-                            maxCpuUsage, networkReadKBs, networkWriteKBs, NumberUtils.toInt(numberCPUs), diskReadKbs, diskWriteKbs, diskReadIops, diskWriteIops, "vm");
+                    double doubleMemKb = NumberUtils.toDouble(memkb);
+                    double guestFreeMem =  doubleMemKb - NumberUtils.toDouble(guestMemusage);
+
+                    final VmStatsEntry vmStats = new VmStatsEntry(0, doubleMemKb * 1024, guestFreeMem * 1024, NumberUtils.toDouble(memlimit) * 1024, maxCpuUsage, networkReadKBs,
+                            networkWriteKBs, NumberUtils.toInt(numberCPUs), diskReadKbs, diskWriteKbs, diskReadIops, diskWriteIops, "vm");
                     vmResponseMap.put(name, vmStats);
 
                 }
