@@ -135,22 +135,22 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     protected VolumeDao volumeDao;
 
     protected String kubernetesClusterNodeNamePrefix;
-    protected static final String apiServerCertPlaceholder = "{{ k8s_control_node.apiserver.crt }}";
-    protected static final String apiServerKeyPlaceholder = "{{ k8s_control_node.apiserver.key }}";
-    protected static final String caCertPlaceholder = "{{ k8s_control_node.ca.crt }}";
-    protected static final String sshPubKeyPlaceholder = "{{ k8s.ssh.pub.key }}";
-    protected static final String clusterTokenPlaceholder = "{{ k8s_control_node.cluster.token }}";
-    protected static final String clusterInitArgsPlaceholder = "{{ k8s_control_node.cluster.initargs }}";
-    protected static final String ejectIsoPlaceholder = "{{ k8s.eject.iso }}";
-    protected static final String joinIpPlaceholder = "{{ k8s_control_node.join_ip }}";
-    protected static final String nodeTypePlaceholder = "{{ k8s.node.type }}";
-    protected static final String clusterHACertificateKeyPlaceholder = "{{ k8s_control_node.cluster.ha.certificate.key }}";
-    protected static final String registryUrlPlaceholder = "{{ k8s.registry.url }}";
-    protected static final String registryUrlEndpointPlaceholder = "{{ k8s.registry.url.endpoint }}";
-    protected static final String registryUsernamePlaceholder = "{{ k8s.registry.username }}";
-    protected static final String registryPasswordPlaceholder = "{{ k8s.registry.password }}";
-    protected static final String registryTokenPlaceholder = "{{ k8s.registry.token }}";
-    protected static final String cksUserdataFile = "/conf/k8s-node.yml";
+    protected static final String API_SERVER_CERT_PLACEHOLDER = "{{ k8s_control_node.apiserver.crt }}";
+    protected static final String API_SERVER_KEY_PLACEHOLDER = "{{ k8s_control_node.apiserver.key }}";
+    protected static final String CA_CERT_PLACEHOLDER = "{{ k8s_control_node.ca.crt }}";
+    protected static final String SSH_PUB_KEY_PLACEHOLDER = "{{ k8s.ssh.pub.key }}";
+    protected static final String CLUSTER_TOKEN_PLACEHOLDER = "{{ k8s_control_node.cluster.token }}";
+    protected static final String CLUSTER_INIT_ARGS_PLACEHOLDER = "{{ k8s_control_node.cluster.initargs }}";
+    protected static final String EJECT_ISO_PLACEHOLDER = "{{ k8s.eject.iso }}";
+    protected static final String JOIN_IP_PLACEHOLDER = "{{ k8s_control_node.join_ip }}";
+    protected static final String NODE_TYPE_PLACEHOLDER = "{{ k8s.node.type }}";
+    protected static final String CLUSTER_HA_CERTIFICATE_KEY_PLACEHOLDER = "{{ k8s_control_node.cluster.ha.certificate.key }}";
+    protected static final String REGISTRY_URL_PLACEHOLDER = "{{ k8s.registry.url }}";
+    protected static final String REGISTRY_URL_ENDPOINT_PLACEHOLDER = "{{ k8s.registry.url.endpoint }}";
+    protected static final String REGISTRY_USERNAME_PLACEHOLDER = "{{ k8s.registry.username }}";
+    protected static final String REGISTRY_PASSWORD_PLACEHOLDER = "{{ k8s.registry.password }}";
+    protected static final String REGISTRY_TOKEN_PLACEHOLDER = "{{ k8s.registry.token }}";
+    protected static final String CKS_USERDATA_FILE = "/conf/k8s-node.yml";
 
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
@@ -162,7 +162,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     private String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sNodeConfig = readResourceFile(cksUserdataFile);
+        String k8sNodeConfig = readResourceFile(CKS_USERDATA_FILE);
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -171,11 +171,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sNodeConfig = k8sNodeConfig.replace(nodeTypePlaceholder, "worker");
-        k8sNodeConfig = k8sNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
-        k8sNodeConfig = k8sNodeConfig.replace(joinIpPlaceholder, joinIp);
-        k8sNodeConfig = k8sNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sNodeConfig = k8sNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
+        k8sNodeConfig = k8sNodeConfig.replace(NODE_TYPE_PLACEHOLDER, "worker");
+        k8sNodeConfig = k8sNodeConfig.replace(SSH_PUB_KEY_PLACEHOLDER, pubKey);
+        k8sNodeConfig = k8sNodeConfig.replace(JOIN_IP_PLACEHOLDER, joinIp);
+        k8sNodeConfig = k8sNodeConfig.replace(CLUSTER_TOKEN_PLACEHOLDER, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sNodeConfig = k8sNodeConfig.replace(EJECT_ISO_PLACEHOLDER, String.valueOf(ejectIso));
 
         k8sNodeConfig = updateKubeConfigWithRegistryDetails(k8sNodeConfig);
 
@@ -211,11 +211,11 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
             final String usernamePasswordKey = registryUsername + ":" + registryPassword;
             String base64Auth = Base64.encodeBase64String(usernamePasswordKey.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
-            k8sConfig = k8sConfig.replace(registryUrlPlaceholder,   registryUrl);
-            k8sConfig = k8sConfig.replace(registryUrlEndpointPlaceholder, registryEndpoint);
-            k8sConfig = k8sConfig.replace(registryUsernamePlaceholder, registryUsername);
-            k8sConfig = k8sConfig.replace(registryPasswordPlaceholder, registryPassword);
-            k8sConfig = k8sConfig.replace(registryTokenPlaceholder, base64Auth);
+            k8sConfig = k8sConfig.replace(REGISTRY_URL_PLACEHOLDER,   registryUrl);
+            k8sConfig = k8sConfig.replace(REGISTRY_URL_ENDPOINT_PLACEHOLDER, registryEndpoint);
+            k8sConfig = k8sConfig.replace(REGISTRY_USERNAME_PLACEHOLDER, registryUsername);
+            k8sConfig = k8sConfig.replace(REGISTRY_PASSWORD_PLACEHOLDER, registryPassword);
+            k8sConfig = k8sConfig.replace(REGISTRY_TOKEN_PLACEHOLDER, base64Auth);
         }
         return k8sConfig;
     }

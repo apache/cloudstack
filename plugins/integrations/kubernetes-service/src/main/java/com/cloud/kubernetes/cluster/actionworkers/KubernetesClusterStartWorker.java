@@ -133,7 +133,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     private String getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
                                                   final String hostName, final boolean haSupported,
                                                   final boolean ejectIso) throws IOException {
-        String k8sControlNodeConfig = readResourceFile(cksUserdataFile);
+        String k8sControlNodeConfig = readResourceFile(CKS_USERDATA_FILE);
         final List<String> addresses = new ArrayList<>();
         addresses.add(controlNodeIp);
         if (!serverIp.equals(controlNodeIp)) {
@@ -145,9 +145,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
         final String tlsCaCert = CertUtils.x509CertificatesToPem(certificate.getCaCertificates());
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerCertPlaceholder, tlsClientCert.replace("\n", "\n      "));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(apiServerKeyPlaceholder, tlsPrivateKey.replace("\n", "\n      "));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(caCertPlaceholder, tlsCaCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(API_SERVER_CERT_PLACEHOLDER, tlsClientCert.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(API_SERVER_KEY_PLACEHOLDER, tlsPrivateKey.replace("\n", "\n      "));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(CA_CERT_PLACEHOLDER, tlsCaCert.replace("\n", "\n      "));
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -156,9 +156,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(nodeTypePlaceholder, "control-plane");
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(NODE_TYPE_PLACEHOLDER, "control-plane");
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(SSH_PUB_KEY_PLACEHOLDER, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(CLUSTER_TOKEN_PLACEHOLDER, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
         String initArgs = "";
         if (haSupported) {
             initArgs = String.format("--control-plane-endpoint %s:%d --upload-certs --certificate-key %s ",
@@ -168,8 +168,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         initArgs += String.format("--apiserver-cert-extra-sans=%s", serverIp);
         initArgs += String.format(" --kubernetes-version=%s", getKubernetesClusterVersion().getSemanticVersion());
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterInitArgsPlaceholder, initArgs);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(CLUSTER_INIT_ARGS_PLACEHOLDER, initArgs);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(EJECT_ISO_PLACEHOLDER, String.valueOf(ejectIso));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;
@@ -231,7 +231,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private String getKubernetesAdditionalControlNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sControlNodeConfig = readResourceFile(cksUserdataFile);
+        String k8sControlNodeConfig = readResourceFile(CKS_USERDATA_FILE);
         String pubKey = "- \"" + configurationDao.getValue("ssh.publickey") + "\"";
         String sshKeyPair = kubernetesCluster.getKeyPair();
         if (StringUtils.isNotEmpty(sshKeyPair)) {
@@ -240,12 +240,12 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 pubKey += "\n      - \"" + sshkp.getPublicKey() + "\"";
             }
         }
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(nodeTypePlaceholder, "control-plane-add");
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(sshPubKeyPlaceholder, pubKey);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(joinIpPlaceholder, joinIp);
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterTokenPlaceholder, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(clusterHACertificateKeyPlaceholder, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
-        k8sControlNodeConfig = k8sControlNodeConfig.replace(ejectIsoPlaceholder, String.valueOf(ejectIso));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(NODE_TYPE_PLACEHOLDER, "control-plane-add");
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(SSH_PUB_KEY_PLACEHOLDER, pubKey);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(JOIN_IP_PLACEHOLDER, joinIp);
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(CLUSTER_TOKEN_PLACEHOLDER, KubernetesClusterUtil.generateClusterToken(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(CLUSTER_HA_CERTIFICATE_KEY_PLACEHOLDER, KubernetesClusterUtil.generateClusterHACertificateKey(kubernetesCluster));
+        k8sControlNodeConfig = k8sControlNodeConfig.replace(EJECT_ISO_PLACEHOLDER, String.valueOf(ejectIso));
         k8sControlNodeConfig = updateKubeConfigWithRegistryDetails(k8sControlNodeConfig);
 
         return k8sControlNodeConfig;
