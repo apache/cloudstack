@@ -59,6 +59,7 @@
         <module>api/solidfire-intg-test</module>
 
         <module>backup/dummy</module>
+        <module>backup/networker</module>
 
         <module>ca/root-ca</module>
 
