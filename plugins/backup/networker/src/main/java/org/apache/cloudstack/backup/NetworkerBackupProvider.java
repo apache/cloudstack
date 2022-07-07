@@ -94,8 +94,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     private final ConfigKey<Boolean> NetworkerClientVerboseLogs = new ConfigKey<>("Advanced", Boolean.class,
             "backup.plugin.networker.client.verbosity", "false",
-            "Produce Verbose logs in Hypervisor", true, ConfigKey.Scope.Zone);
-
     @Inject
     private BackupDao backupDao;
 
@@ -124,7 +122,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (URI.MalformedURIException e) {
             throw new CloudRuntimeException("Failed to cast URI");
         }
-
         return uri.getHost();
     }
 
@@ -209,7 +206,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     protected Ternary<String, String, String> getKVMHyperisorCredentials(HostVO host) {
-
         String username = null;
         String password = null;
         String privateKey = null;
@@ -223,7 +219,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         if ((password == null && privateKey == null) || username == null) {
             throw new CloudRuntimeException("Cannot find login credentials for HYPERVISOR " + Objects.requireNonNull(host).getUuid());
         }
-
         return new Ternary<>(username, password, privateKey);
     }
 
@@ -232,8 +227,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         SSHCmdHelper.SSHCmdResult result;
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
         Pattern saveTimePattern = Pattern.compile(nstRegex);
-
-
 
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
                 host.getPrivateIpAddress(), 22, username, password, privateKey);
@@ -259,7 +252,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     private boolean executeRestoreCommand(HostVO host, String username, String password, String privateKey, String command) {
 
         SSHCmdHelper.SSHCmdResult result;
-
 
         final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(
                 host.getPrivateIpAddress(), 22, username, password, privateKey);
@@ -298,7 +290,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 policies.add(policy);
             }
         }
-
         return policies;
     }
 
@@ -468,7 +459,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         String networkerServer;
         String clusterName;
-
         try {
             networkerServer = getUrlDomain(NetworkerUrl.value());
         } catch (URISyntaxException e) {
@@ -488,7 +478,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             LOG.warn("There is no retention setting for Emc Networker Policy, setting default for 1 day");
             backupRentionPeriod = "1 Day";
         }
-
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);
 

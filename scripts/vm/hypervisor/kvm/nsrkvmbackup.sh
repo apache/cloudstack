@@ -40,7 +40,6 @@ log () {
     else
           builtin echo "$(date '+%Y-%m-%d %H-%M-%S>')" "$@" >> "$logFile"
     fi
-
 }
 
 vercomp(){
@@ -65,7 +64,6 @@ Options:
         -p Snapshot Prefix for backups
         -P mediaPool EMC Networker Media Pool
         -R retention_time Backup retention time
-
 Supplements Apache Cloudstack B&R Framework  EMC Networker plugin and performs the backup of the Virtual Machines
 "
 
@@ -114,9 +112,6 @@ sanity_checks() {
                 log -e "\n\tYour QEMU version $hvVersion is unsupported. Consider upgrading at least to latest QEMU at branch 2"
                 exit 4
         fi
-
-
-
         log "Environment Sanity Checks successfully passed"
 }
 

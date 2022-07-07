@@ -28,7 +28,6 @@
         <version>4.18.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -52,5 +51,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
