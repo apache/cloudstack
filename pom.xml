@@ -151,7 +151,7 @@
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
         <cs.jetty.version>9.4.48.v20220622</cs.jetty.version>
-        <cs.jetty-maven-plugin.version>9.4.48.v20220622</cs.jetty-maven-plugin.version>
+        <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
         <cs.joda-time.version>2.10.14</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
@@ -161,7 +161,7 @@
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
-        <cs.mysql.version>8.0.29</cs.mysql.version>
+        <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
