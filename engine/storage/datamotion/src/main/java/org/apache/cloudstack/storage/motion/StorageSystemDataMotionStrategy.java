@@ -19,15 +19,18 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -68,9 +71,11 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -133,10 +138,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
@@ -186,6 +187,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private EndPointSelector selector;
     @Inject
     VMTemplatePoolDao templatePoolDao;
+
+    private boolean isVMwareHostWithVersionOrHigher(Host host, String requiredVersion) {
+        if (!HypervisorType.VMware.equals(host.getHypervisorType()) || StringUtils.isBlank(requiredVersion)) {
+            return false;
+        }
+        ComparableVersion version = new ComparableVersion(host.getHypervisorVersion());
+        return version.compareTo(new ComparableVersion(requiredVersion)) >= 0;
+    }
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -1413,12 +1422,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 verifyCopyCmdAnswer(copyCmdAnswer, templateInfo);
 
-                // Seems like vmware 6.5 and above does not automatically remount the datastore after rescanning the storage.
-                // Not sure if this is needed.
                 // If using VMware, have the host rescan its software HBA if dynamic discovery is in use.
-                //if (HypervisorType.VMware.equals(templateInfo.getHypervisorType())) {
-                //    disconnectHostFromVolume(hostVO, volumeInfo.getPoolId(), volumeInfo.get_iScsiName());
-                //}
+                if (HypervisorType.VMware.equals(templateInfo.getHypervisorType())) {
+                    disconnectHostFromVolume(hostVO, volumeInfo.getPoolId(), volumeInfo.get_iScsiName());
+                }
             }
             else {
                 VolumeObjectTO newVolume = new VolumeObjectTO();
@@ -2135,6 +2142,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private void disconnectHostFromVolume(Host host, long storagePoolId, String iqn) {
+        if (isVMwareHostWithVersionOrHigher(host, "6.5")) {
+            return;
+        }
         ModifyTargetsCommand modifyTargetsCommand = getModifyTargetsCommand(storagePoolId, iqn, false);
 
         sendModifyTargetsCommand(modifyTargetsCommand, host.getId());

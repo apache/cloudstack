@@ -21,6 +21,8 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.CloudException;
@@ -315,7 +317,7 @@ public class DatastoreMO extends BaseMO {
         DatastoreFile file = new DatastoreFile(fileFullPath);
         DatastoreFile dirFile = new DatastoreFile(file.getDatastoreName(), file.getDir());
         Boolean folderExists = true;
-        if(file.getDir() != ""){
+        if(StringUtils.isNotBlank(file.getDir())){
             folderExists = folderExists(String.format("[%s]", file.getDatastoreName()), file.getDir());
         }
         if (folderExists){
@@ -323,8 +325,7 @@ public class DatastoreMO extends BaseMO {
             s_logger.info("Search file " + file.getFileName() + " on " + dirFile.getPath());
             HostDatastoreBrowserSearchResults results = browserMo.searchDatastore(dirFile.getPath(), file.getFileName(), true);
             if (results != null) {
-                List<FileInfo> info = results.getFile();
-                if (info != null && info.size() > 0) {
+                if (CollectionUtils.isNotEmpty(results.getFile())) {
                     s_logger.info("File " + fileFullPath + " exists on datastore");
                     return true;
                 }

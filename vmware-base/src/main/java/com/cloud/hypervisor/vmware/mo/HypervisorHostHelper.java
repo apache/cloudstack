@@ -2339,4 +2339,20 @@ public class HypervisorHostHelper {
         }
         return hardwareVersion;
     }
+
+    public static boolean isHostVersionEqualOrHigher(VmwareHypervisorHost host, String requiredVersion) {
+        if (StringUtils.isBlank(requiredVersion)) {
+            return false;
+        }
+        HostMO hostMo = new HostMO(host.getContext(), host.getMor());
+        String hostApiVersion = "";
+        try {
+            hostApiVersion = hostMo.getHostAboutInfo().getApiVersion();
+        } catch (Exception ignored) {}
+        if (StringUtils.isBlank(hostApiVersion)) {
+            return false;
+        }
+        ComparableVersion version = new ComparableVersion(hostApiVersion);
+        return version.compareTo(new ComparableVersion(requiredVersion)) >= 0;
+    }
 }

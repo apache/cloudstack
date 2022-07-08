@@ -283,8 +283,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 }
             }
 
-            //vmware 6.7 does not automatically mount datastores after rescanning once removed
-            //removeVmfsDatastore(cmd, hyperHost, datastoreName, storageHost, storagePortNumber, trimIqn(iScsiName), lstHosts);
+            removeVmfsDatastore(cmd, hyperHost, datastoreName, storageHost, storagePortNumber, trimIqn(iScsiName), lstHosts);
 
             if (!foundExtent) {
                 throw new CloudRuntimeException("Unable to locate the applicable extent");
@@ -3118,6 +3117,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private void removeVmfsDatastore(Command cmd, VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber,
                                      String iqn, List<Pair<ManagedObjectReference, String>> lstHosts) throws Exception {
+        if (HypervisorHostHelper.isHostVersionEqualOrHigher(hyperHost, "6.5")) {
+            return;
+        }
         VmwareContext context = hostService.getServiceContext(cmd);
 
         unmountVmfsDatastore(context, hyperHost, datastoreName, lstHosts);
