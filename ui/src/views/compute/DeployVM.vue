@@ -47,7 +47,7 @@
                                     <div>
                                       <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :image="zoneItem?.icon?.base64image"
+                                        :image="zoneItem.icon.base64image"
                                         size="36"
                                         style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
