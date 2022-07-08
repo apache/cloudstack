@@ -1047,7 +1047,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         if (publicMtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
+            String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
+                            "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", NetworkServiceImpl.VRPublicInterfaceMtu.key(),
+                    NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId));
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             publicMtu = NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId);
+        } else if (publicMtu < NetworkService.MINIMUM_MTU) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
+            String message = String.format("Configured MTU for network VR's public interfaces is lesser than the supported minim MTU of %s", NetworkService.MINIMUM_MTU);
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            publicMtu = NetworkService.MINIMUM_MTU;
         }
 
         final boolean useDistributedRouter = vpcOff.isSupportsDistributedRouter();
@@ -1255,6 +1267,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             s_logger.warn(message);
             alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             mtu = NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId);
+        } else if (mtu < NetworkService.MINIMUM_MTU) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
+            String message = String.format("Configured MTU for network VR's public interfaces is lesser than the minimum MTU of %s", NetworkService.MINIMUM_MTU );
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            mtu = NetworkService.MINIMUM_MTU;
         }
         if (Objects.equals(mtu, vpcToUpdate.getPublicMtu())) {
             s_logger.info(String.format("Desired MTU of %s already configured on the VPC public interfaces", mtu));

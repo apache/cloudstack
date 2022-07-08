@@ -106,7 +106,7 @@
             v-model:value="form.publicmtu"
             :placeholder="apiParams.publicmtu.description"
             @change="updateMtu()"/>
-            <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu.replace('%x', publicMtuMax)"></div>
+            <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
         </a-form-item>
         <a-form-item name="start" ref="start">
           <template #label>
@@ -142,6 +142,7 @@ export default {
       zones: [],
       vpcOfferings: [],
       publicMtuMax: 1500,
+      minMTU: 68,
       errorPublicMtu: ''
     }
   },
@@ -215,8 +216,11 @@ export default {
     },
     updateMtu () {
       if (this.form.publicmtu > this.publicMtuMax) {
-        this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed')}`
+        this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
         this.form.publicmtu = this.publicMtuMax
+      } else if (this.form.publicmtu < this.minMTU) {
+        this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+        this.form.publicmtu = this.minMTU
       } else {
         this.errorPublicMtu = ''
       }

@@ -256,7 +256,7 @@
                 v-model:value="form.publicmtu"
                   :placeholder="apiParams.publicmtu.description"
                   @change="updateMtu(true)"/>
-                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu.replace('%x', publicMtuMax)"></div>
+                <div style="color: red" v-if="errorPublicMtu" v-html="errorPublicMtu"></div>
               </a-form-item>
             </a-col>
             <a-col :md="12" :lg="12">
@@ -271,7 +271,7 @@
                 v-model:value="form.privatemtu"
                   :placeholder="apiParams.privatemtu.description"
                   @change="updateMtu(false)"/>
-                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
+                <div style="color: red" v-if="errorPrivateMtu"  v-html="errorPrivateMtu"></div>
               </a-form-item>
             </a-col>
           </a-row>
@@ -471,6 +471,7 @@ export default {
       selectedServiceProviderMap: {},
       privateMtuMax: 1500,
       publicMtuMax: 1500,
+      minMTU: 68,
       errorPublicMtu: '',
       errorPrivateMtu: ''
     }
@@ -1066,15 +1067,21 @@ export default {
     updateMtu (isPublic) {
       if (isPublic) {
         if (this.form.publicmtu > this.publicMtuMax) {
-          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed')}`
+          this.errorPublicMtu = `${this.$t('message.error.mtu.public.max.exceed').replace('%x', this.publicMtuMax)}`
           this.form.publicmtu = this.publicMtuMax
+        } else if (this.form.publicmtu < this.minMTU) {
+          this.errorPublicMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.publicmtu = this.minMTU
         } else {
           this.errorPublicMtu = ''
         }
       } else {
         if (this.form.privatemtu > this.privateMtuMax) {
-          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed')}`
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.private.max.exceed').replace('%x', this.privateMtuMax)}`
           this.form.privatemtu = this.privateMtuMax
+        } else if (this.form.privatemtu < this.minMTU) {
+          this.errorPrivateMtu = `${this.$t('message.error.mtu.below.min').replace('%x', this.minMTU)}`
+          this.form.privatemtu = this.minMTU
         } else {
           this.errorPrivateMtu = ''
         }

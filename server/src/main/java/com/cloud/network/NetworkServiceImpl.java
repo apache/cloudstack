@@ -1675,6 +1675,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             s_logger.warn(message);
             alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
             publicMtu = vrMaxMtuForPublicIfaces;
+        } else if (publicMtu < MINIMUM_MTU) {
+            String subject = "Incorrect MTU configured on network for public interfaces of the VR";
+            String message = String.format("Configured MTU for network VR's public interfaces is lesser than the supported minimum of %s.", MINIMUM_MTU);
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            publicMtu = MINIMUM_MTU;
         }
 
         if (privateMtu > vrMaxMtuForPrivateIfaces) {
@@ -1682,8 +1688,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
                     "enforced by zone level setting: %s. VR's public interfaces can be configured with a maximum MTU of %s", VRPublicInterfaceMtu.key(), VRPublicInterfaceMtu.valueIn(zoneId));
             s_logger.warn(message);
-            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PRIVATE_IFACE_MTU, zoneId, null, subject, message);
             privateMtu = vrMaxMtuForPrivateIfaces;
+        } else if (privateMtu < MINIMUM_MTU) {
+            String subject = "Incorrect MTU configured on network for private interfaces of the VR";
+            String message = String.format("Configured MTU for network VR's private interfaces is lesser than the supported minimum of %s.", MINIMUM_MTU);
+            s_logger.warn(message);
+            alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PRIVATE_IFACE_MTU, zoneId, null, subject, message);
+            privateMtu = MINIMUM_MTU;
         }
         return new Pair<>(publicMtu, privateMtu);
     }
@@ -3126,12 +3138,28 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
-        if (publicMtu != null && publicMtu > VRPublicInterfaceMtu.valueIn(zoneId)) {
-            publicMtu = VRPublicInterfaceMtu.valueIn(zoneId);
+        if (publicMtu != null) {
+            if (publicMtu > VRPublicInterfaceMtu.valueIn(zoneId)) {
+                publicMtu = VRPublicInterfaceMtu.valueIn(zoneId);
+            } else if (publicMtu < MINIMUM_MTU) {
+                String subject = "Incorrect MTU configured on network for public interfaces of the VR";
+                String message = String.format("Configured MTU for network VR's public interfaces is lesser than the supported minimum of %s.", MINIMUM_MTU);
+                s_logger.warn(message);
+                alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PUBLIC_IFACE_MTU, zoneId, null, subject, message);
+                publicMtu = MINIMUM_MTU;
+            }
         }
 
-        if (privateMtu != null && privateMtu > VRPrivateInterfaceMtu.valueIn(zoneId)) {
-            privateMtu = VRPrivateInterfaceMtu.valueIn(zoneId);
+        if (privateMtu != null) {
+            if (privateMtu > VRPrivateInterfaceMtu.valueIn(zoneId)) {
+                privateMtu = VRPrivateInterfaceMtu.valueIn(zoneId);
+            } else if (privateMtu < MINIMUM_MTU) {
+                String subject = "Incorrect MTU configured on network for private interfaces of the VR";
+                String message = String.format("Configured MTU for network VR's private interfaces is lesser than the supported minimum of %s.", MINIMUM_MTU);
+                s_logger.warn(message);
+                alertManager.sendAlert(AlertService.AlertType.ALERT_TYPE_VR_PRIVATE_IFACE_MTU, zoneId, null, subject, message);
+                privateMtu = MINIMUM_MTU;
+            }
         }
 
         if (publicMtu != null && network.getVpcId() != null) {

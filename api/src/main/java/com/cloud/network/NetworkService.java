@@ -60,6 +60,7 @@ import com.cloud.vm.NicSecondaryIp;
 public interface NetworkService {
 
     public static final Integer DEFAULT_MTU = 1500;
+    public static final Integer MINIMUM_MTU = 68;
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
