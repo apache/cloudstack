@@ -97,12 +97,13 @@ public class VpcOfferingVO implements VpcOffering {
 
     public VpcOfferingVO(final String name, final String displayText, final boolean isDefault, final Long serviceOfferingId,
                          final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                         final boolean redundantRouter) {
+                         final boolean redundantRouter, final boolean selectSnatIpAllowed) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
         this.supportsDistributedRouter = supportsDistributedRouter;
         this.offersRegionLevelVPC = offersRegionLevelVPC;
         this.redundantRouter = redundantRouter;
+        this.selectSnatIpAllowed = selectSnatIpAllowed;
     }
 
     public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId,

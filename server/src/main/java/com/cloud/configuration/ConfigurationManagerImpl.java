@@ -295,6 +295,8 @@ import com.googlecode.ipv6.IPv6Network;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
+    public static final String PERACCOUNT = "peraccount";
+    public static final String PERZONE = "perzone";
 
     @Inject
     EntityManager _entityMgr;
@@ -6208,33 +6210,34 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     void validateSourceNatServiceCapablities(final Map<Capability, String> sourceNatServiceCapabilityMap) {
         if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            if (sourceNatServiceCapabilityMap.keySet().size() > 2) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter
+            if (sourceNatServiceCapabilityMap.keySet().size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap)) {
+                throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
+                        + ", " + Capability.RedundantRouter
+                        + " and " + Capability.SelectSnatIpAllowed
                         + " capabilities can be sepcified for source nat service");
             }
+        }
+    }
 
-            for (final Map.Entry<Capability ,String> srcNatPair : sourceNatServiceCapabilityMap.entrySet()) {
-                final Capability capability = srcNatPair.getKey();
-                final String value = srcNatPair.getValue();
-                if (capability == Capability.SupportedSourceNatTypes) {
-                    final boolean perAccount = value.contains("peraccount");
-                    final boolean perZone = value.contains("perzone");
-                    if (perAccount && perZone || !perAccount && !perZone) {
-                        throw new InvalidParameterValueException("Either peraccount or perzone source NAT type can be specified for "
-                                + Capability.SupportedSourceNatTypes.getName());
-                    }
-                } else if (capability == Capability.RedundantRouter) {
-                    final boolean enabled = value.contains("true");
-                    final boolean disabled = value.contains("false");
-                    if (!enabled && !disabled) {
-                        throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
-                    }
-                } else {
-                    throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName() + " and " + Capability.RedundantRouter
-                            + " capabilities can be sepcified for source nat service");
+    private boolean sourceNatCapabilitiesContainValidValues(Map<Capability, String> sourceNatServiceCapabilityMap) {
+        for (final Entry<Capability ,String> srcNatPair : sourceNatServiceCapabilityMap.entrySet()) {
+            final Capability capability = srcNatPair.getKey();
+            final String value = srcNatPair.getValue();
+            if (capability == Capability.SupportedSourceNatTypes) {
+                List<String> snatTypes = Arrays.asList(PERACCOUNT, PERZONE);
+                if (! snatTypes.contains(value) || ( value.contains(PERACCOUNT) && value.contains(PERZONE))) {
+                    throw new InvalidParameterValueException("Either peraccount or perzone source NAT type can be specified for "
+                            + Capability.SupportedSourceNatTypes.getName());
                 }
+            } else if (Arrays.asList(Capability.RedundantRouter, Capability.SelectSnatIpAllowed).contains(capability)) {
+                if (! Arrays.asList("true", "false").contains(value)) {
+                    throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
+                }
+            } else {
+                return false;
             }
         }
+        return true;
     }
 
     void validateStaticNatServiceCapablities(final Map<Capability, String> staticNatServiceCapabilityMap) {
@@ -6353,6 +6356,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean elasticLb = false;
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
+        boolean selectSnatIpAllowed = false;
         boolean elasticIp = false;
         boolean associatePublicIp = false;
         boolean inline = false;
@@ -6411,16 +6415,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
             final Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
             if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-                final String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
-                if (sourceNatType != null) {
-                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, sourceNatType);
-                    sharedSourceNat = sourceNatType.contains("perzone");
+                String param = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
+                if (param != null) {
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, param);
+                    sharedSourceNat = param.contains(PERZONE);
                 }
 
-                final String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
+                param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
                 if (param != null) {
                     _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
                     redundantRouter = param.contains("true");
+                }
+
+                param = sourceNatServiceCapabilityMap.get(Capability.SelectSnatIpAllowed);
+                if (param != null) {
+                    _networkModel.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SelectSnatIpAllowed, param);
+                    selectSnatIpAllowed = param.contains("true");
                 }
             }
 
@@ -6461,7 +6471,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability,
                 tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb,
-                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess);
+                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess, selectSnatIpAllowed);
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);

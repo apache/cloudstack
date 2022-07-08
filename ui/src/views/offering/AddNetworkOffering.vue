@@ -268,6 +268,13 @@
           v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && !isVpcVirtualRouterForAtLeastOneService">
           <a-switch v-model:checked="form.redundantroutercapability" />
         </a-form-item>
+        <a-form-item
+          name=""
+          ref="selectsnatipallowed"
+          :label="$t('label.selectsnatipallowed')"
+          v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked && !isVpcVirtualRouterForAtLeastOneService">
+          <a-switch v-model:checked="form.selectsnatipallowed" />
+        </a-form-item>
         <a-form-item name="sourcenattype" ref="sourcenattype" :label="$t('label.sourcenattype')" v-if="(guestType === 'shared' || guestType === 'isolated') && sourceNatServiceChecked">
           <a-radio-group
             v-model:value="form.sourcenattype"
@@ -931,11 +938,19 @@ export default {
               params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
               serviceCapabilityIndex++
             }
+            if (values.selectsnatipallowed === true) {
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SelectSnatIpAllowed'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+              serviceCapabilityIndex++
+            }
+
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'SupportedSourceNatTypes'
             params['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = values.sourcenattype
             serviceCapabilityIndex++
             delete params.redundantroutercapability
+            delete params.selectsnatipallowed
             delete params.sourcenattype
           }
           if (supportedServices.includes('SourceNat')) {

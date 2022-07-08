@@ -148,7 +148,7 @@ public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     private String internetProtocol;
 
     @SerializedName(ApiConstants.IS_SELECTION_OF_STATIC_NAT_ALLOWED)
-    @Param(description = "Are users allowed to select a primarey SNAT public address")
+    @Param(description = "Are users allowed to select a primarey SNAT public address", since = "4.18")
     boolean selectSnatIpAllowed;
 
     public void setId(String id) {

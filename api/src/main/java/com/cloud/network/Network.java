@@ -256,7 +256,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     public static class Capability {
 
-        private static List<Capability> supportedCapabilities = new ArrayList<Capability>();
+        private static List<Capability> supportedCapabilities = new ArrayList<>();
 
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
         public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
@@ -270,6 +270,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
+        public static final Capability SelectSnatIpAllowed = new Capability("SelectSnatIpAllowed");
         public static final Capability ElasticIp = new Capability("ElasticIp");
         public static final Capability AssociatePublicIP = new Capability("AssociatePublicIP");
         public static final Capability ElasticLb = new Capability("ElasticLb");

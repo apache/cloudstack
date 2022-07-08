@@ -322,7 +322,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, false, false);
                 }
 
                 // configure default vpc offering with Netscaler as LB Provider
@@ -341,7 +341,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false);
+                    createVpcOffering(VpcOffering.defaultVPCNSOfferingName, VpcOffering.defaultVPCNSOfferingName, svcProviderMap, false, State.Enabled, null, false, false, false, false);
 
                 }
 
@@ -361,7 +361,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             svcProviderMap.put(svc, defaultProviders);
                         }
                     }
-                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, true);
+                    createVpcOffering(VpcOffering.redundantVPCOfferingName, VpcOffering.redundantVPCOfferingName, svcProviderMap, true, State.Enabled, null, false, false, true, false);
                 }
             }
         });
@@ -534,8 +534,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final boolean supportsDistributedRouter = isVpcOfferingSupportsDistributedRouter(serviceCapabilityList);
         final boolean offersRegionLevelVPC = isVpcOfferingForRegionLevelVpc(serviceCapabilityList);
         final boolean redundantRouter = isVpcOfferingRedundantRouter(serviceCapabilityList);
+        final boolean selectSnatIpAllowed = isVpcSelectSnatIpAllowed(serviceCapabilityList);
         final VpcOfferingVO offering = createVpcOffering(name, displayText, svcProviderMap, false, state, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC,
-                redundantRouter);
+                redundantRouter, selectSnatIpAllowed);
 
         if (offering != null) {
             List<VpcOfferingDetailsVO> detailsVO = new ArrayList<>();
@@ -563,13 +564,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @DB
     protected VpcOfferingVO createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap,
                                               final boolean isDefault, final State state, final Long serviceOfferingId, final boolean supportsDistributedRouter, final boolean offersRegionLevelVPC,
-                                              final boolean redundantRouter) {
+                                              final boolean redundantRouter, final boolean selectSnatIpAllowed) {
 
         return Transaction.execute(new TransactionCallback<VpcOfferingVO>() {
             @Override
             public VpcOfferingVO doInTransaction(final TransactionStatus status) {
                 // create vpc offering object
-                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter);
+                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, supportsDistributedRouter, offersRegionLevelVPC, redundantRouter, selectSnatIpAllowed);
 
                 if (state != null) {
                     offering.setState(state);
@@ -682,6 +683,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     private boolean isVpcOfferingRedundantRouter(final Map serviceCapabilitystList) {
         return findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter, Service.SourceNat);
+    }
+
+    private boolean isVpcSelectSnatIpAllowed(final Map serviceCapabilitystList) {
+        return findCapabilityForService(serviceCapabilitystList, Capability.SelectSnatIpAllowed, Service.SourceNat);
     }
 
     @Override

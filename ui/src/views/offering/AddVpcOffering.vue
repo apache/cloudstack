@@ -117,6 +117,9 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <a-form-item name="ipSelectionAllowed" ref="selectSnatIpAllowed" :label="$t('label.selectsnatipallowed')" v-if="sourceNatServiceChecked">
+          <a-switch v-model:checked="form.selectsnatipallowed" />
+        </a-form-item>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-if="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -483,6 +486,12 @@ export default {
           }
           if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
             params.serviceofferingid = values.serviceofferingid
+          }
+          if (supportedServices.includes('SourceNat') && values.selectsnatipallowed === true) {
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SelectSnatIpAllowed'
+            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+            serviceCapabilityIndex++
           }
         } else {
           params.supportedservices = ''

@@ -425,7 +425,6 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
         return supportsVmAutoScaling;
     }
 
-    @Override
     public void setSelectSnatIpAllowed(boolean selectSnatIpAllowed) {
         this.selectSnatIpAllowed = selectSnatIpAllowed;
     }
