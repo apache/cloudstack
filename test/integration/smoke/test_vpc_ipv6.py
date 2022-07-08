@@ -299,8 +299,8 @@ class TestIpv6Vpc(cloudstackTestCase):
             off_service,
             conservemode=False
         )
-        network_offering.update(self.apiclient, state='Enabled')
         self.cleanup.append(network_offering)
+        network_offering.update(self.apiclient, state='Enabled')
         return network_offering
 
     def createIpv4NetworkTierOffering(self):
