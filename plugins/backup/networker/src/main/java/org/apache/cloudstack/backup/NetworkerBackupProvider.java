@@ -222,7 +222,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return new Ternary<>(username, password, privateKey);
     }
 
-    private String executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
+    private boolean executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
 
         SSHCmdHelper.SSHCmdResult result;
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";
@@ -246,7 +246,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         } catch (final SshException e) {
             throw new CloudRuntimeException(String.format("Command execution on host %s took longer than expected: %s", host, e.getMessage()));
         }
-
         return null;
     }
     private boolean executeRestoreCommand(HostVO host, String username, String password, String privateKey, String command) {
@@ -473,7 +472,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupOfferingVO vmBackupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
         final String backupProviderPolicyId = vmBackupOffering.getExternalId();
         String backupRentionPeriod = getClient(vm.getDataCenterId()).getBackupPolicyRetentionInterval(backupProviderPolicyId);
-
         if ( backupRentionPeriod == null ) {
             LOG.warn("There is no retention setting for Emc Networker Policy, setting default for 1 day");
             backupRentionPeriod = "1 Day";

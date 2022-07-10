@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -65,7 +64,6 @@ import java.util.List;
 
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
 
-<<<<<<< HEAD
 public class NetworkerClient {
     private static final Logger LOG = Logger.getLogger(NetworkerClient.class);
     private final URI apiURI;
@@ -289,7 +287,6 @@ public class NetworkerClient {
         }
         return null;
     }
-
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
         SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 

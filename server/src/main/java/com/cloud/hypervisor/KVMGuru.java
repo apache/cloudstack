@@ -349,7 +349,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
-
         if (vm == null) {
             throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
         }

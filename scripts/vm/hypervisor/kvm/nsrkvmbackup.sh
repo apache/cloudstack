@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -166,7 +165,6 @@ backup_domain() {
                 log "Backup $disks for $name completed!!"
         fi
 
-
         #Merge changes and conclude
         SNAPSHOTS="$(virsh domblklist "$name" --details | grep file | grep -v 'cdrom' | grep -v 'floppy' | awk '{print $4}')"
         for target in "${!TRGSRC[@]}"; do
@@ -223,7 +221,6 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  shift $((OPTIND-1))
 
  [ "${1:-}" = "--" ] && shift
-
  if [[ -z "$networkerServer" || -z "$kvmDName" || -z "$clusterClient" || -z "$kvmDUuid" ]];  then
      usage
      exit 255
@@ -234,7 +231,6 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  fi
 
  logFile="$logDir/BACKUP-$kvmDName-$(date +'%Y_%m_%d_%I_%M_%p').log"
-
 
  # Perform Initial sanity checks
  sanity_checks
