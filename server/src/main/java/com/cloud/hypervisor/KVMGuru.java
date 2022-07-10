@@ -30,21 +30,30 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
@@ -59,6 +68,12 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     HostDao _hostDao;
     @Inject
     DpdkHelper dpdkHelper;
+
+     @Inject
+    VMInstanceDao _instanceDao;
+
+    @Inject
+    VolumeDao _volumeDao;
 
     @Inject
     ServiceOfferingDao serviceOfferingDao;
@@ -303,4 +318,50 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         return null;
     }
 
+
+    @Override
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+        s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
+
+        VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
+        if (vm.getRemoved() != null) {
+            vm.setState(VirtualMachine.State.Stopped);
+            vm.setPowerState(VirtualMachine.PowerState.PowerOff);
+            _instanceDao.update(vm.getId(), vm);
+            _instanceDao.unremove(vm.getId());
+        }
+        for (final VolumeVO volume : _volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), null)) {
+            volume.setState(Volume.State.Ready);
+            volume.setAttached(new Date());
+            _volumeDao.update(volume.getId(), volume);
+            _volumeDao.unremove(volume.getId());
+        }
+
+        return vm;
+    }
+
+
+
+    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
+            throws Exception {
+
+        VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
+        List<VolumeVO> devices = _volumeDao.findIncludingRemovedByInstanceAndType(targetVM.getId(), null);
+        VolumeVO restoredVolume = _volumeDao.findByUuid(location);
+        Integer deviceId = devices.size();
+
+
+        if (restoredVolume != null) {
+            restoredVolume.setState(Volume.State.Ready);
+            _volumeDao.update(restoredVolume.getId(), restoredVolume);
+            try {
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), deviceId);
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e);
+            }
+        }
+        return false;
+    }
 }

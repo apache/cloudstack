@@ -1,6 +1,5 @@
 package org.apache.cloudstack.backup.networker;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.vm.VirtualMachine;
@@ -253,6 +252,26 @@ public class NetworkerClient {
         return null;
     }
 
+
+    public Backup getNetworkerBackupInfo(String backupId) {
+        LOG.debug("Trying to get EMC Networker details for backup " + backupId);
+        try {
+            final HttpResponse response = get("/global/backups/?q=id:" + backupId);
+            checkResponseOK(response);
+            final ObjectMapper jsonMapper = new ObjectMapper();
+            jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            NetworkerBackups networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
+            Backup networkerBackup = networkerBackups.getBackups().get(0);
+            if (networkerBackup == null ) {
+                return null;
+            }
+            return networkerBackup;
+        } catch (final IOException e) {
+            LOG.error("Failed to list EMC Networker backups due to:", e);
+            checkResponseTimeOut(e);
+        }
+        return null;
+    }
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
         LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
 
@@ -304,19 +323,6 @@ public class NetworkerClient {
         }
         return new ArrayList<>();
     }
-
-    public boolean restoreFullVM(VirtualMachine vm, final String restorePointId) {
-
-
-        return false;
-    }
-
-    public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String volumeUuid, String hostIp, String dataStoreUuid) {
-
-
-        return null;
-    }
-
 }
 
 
