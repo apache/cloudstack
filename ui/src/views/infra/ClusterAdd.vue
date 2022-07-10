@@ -269,10 +269,12 @@ export default {
       this.addCluster()
     },
     addCluster () {
+      let clustername = this.clustername
+
       if (this.hypervisor === 'VMware') {
         const clusternameVal = this.clustername
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
-        this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
+        clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
       this.loading = true
       this.parentToggleLoading()
@@ -281,7 +283,7 @@ export default {
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
         podId: this.podId,
-        clustername: this.clustername,
+        clustername: clustername,
         url: this.url
       }
       if (this.ovm3pool) {

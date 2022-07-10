@@ -137,14 +137,14 @@ export default {
       return this.prefillContent?.hypervisor || null
     },
     localstorageenabled () {
-      return this.prefillContent?.localstorageenabled?.value || false
+      return this.prefillContent?.localstorageenabled || false
     },
     localstorageenabledforsystemvm () {
-      return this.prefillContent?.localstorageenabledforsystemvm?.value || false
+      return this.prefillContent?.localstorageenabledforsystemvm || false
     },
     steps () {
       const steps = []
-      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor.value : null
+      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
