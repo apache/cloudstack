@@ -335,18 +335,26 @@
                         :value="networkOfferingIds"
                         :loading="loading.networks"
                         :zoneId="zoneId"
-                        :autoscale="true"
                         :preFillContent="dataPreFill"
                         @select-network-item="($event) => updateNetworks($event)"
                         @handle-search-filter="($event) => handleSearchFilter('networks', $event)"
                       ></network-selection>
+                      <network-configuration
+                        v-if="networks.length > 0"
+                        :items="networks"
+                        :autoscale="true"
+                        :preFillContent="dataPreFill"
+                        @handler-error="($event) => hasError = $event"
+                        @select-default-network-item="($event) => updateDefaultNetworks($event)"
+                      ></network-configuration>
                     </div>
                   </div>
                 </template>
               </a-step>
               <a-step
                 :title="$t('label.loadbalancing')"
-                :status="networkSelected ? 'process' : 'wait'">
+                :status="zoneSelected ? 'process' : 'wait'"
+                v-if="networks.length > 0">
                 <template #description>
                   <load-balancer-selection
                     :items="options.loadbalancers"
@@ -805,8 +813,6 @@ export default {
       diskOffering: {},
       networks: [],
       networksAdd: [],
-      networkSelected: false,
-      selectedNetworkId: null,
       selectedLbId: null,
       countersList: [],
       scaleUpConditions: [],
@@ -867,6 +873,7 @@ export default {
         'sharedexecutable'
       ],
       initDataConfig: {},
+      defaultNetworkId: '',
       dataNetworkCreated: [],
       tabKey: 'templateid',
       dataPreFill: {},
@@ -954,7 +961,7 @@ export default {
           list: 'listLoadBalancerRules',
           options: {
             zoneid: _.get(this.zone, 'id'),
-            networkid: this.selectedNetworkId,
+            networkid: this.defaultNetworkId,
             id: this.lbRuleId,
             projectid: store.getters.project ? store.getters.project.id : null,
             domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
@@ -1386,7 +1393,7 @@ export default {
     fetchCountersList () {
       api('listNetworks', {
         listAll: true,
-        id: this.selectedNetworkId
+        id: this.defaultNetworkId
       }).then(response => {
         const services = response.listnetworksresponse?.network?.[0]?.service
         const index = services.map(svc => { return svc.name }).indexOf('Lb')
@@ -1425,7 +1432,6 @@ export default {
         disksize: null
       }
       this.zoneSelected = false
-      this.networkSelected = false
       this.formRef.value.resetFields()
       this.fetchData()
     },
@@ -1484,14 +1490,14 @@ export default {
       this.form.multidiskoffering = value
     },
     updateNetworks (ids) {
-      this.networkSelected = true
       if (typeof (ids) === 'string') {
-        this.selectedNetworkId = ids
         this.form.networkids = [ids]
       } else if (typeof (ids) === 'object') {
-        this.selectedNetworkId = ids[0]
         this.form.networkids = ids
       }
+    },
+    updateDefaultNetworks (id) {
+      this.defaultNetworkId = id
       this.fetchLoadBalancer()
       this.fetchCountersList()
     },
@@ -1740,7 +1746,7 @@ export default {
           return
         }
 
-        if (!this.selectedNetworkId) {
+        if (!this.defaultNetworkId) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.select.network')
