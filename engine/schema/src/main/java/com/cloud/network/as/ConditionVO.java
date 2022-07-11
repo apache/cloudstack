@@ -138,4 +138,11 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
         return null;
     }
 
+    public void setThreshold(long threshold) {
+        this.threshold = threshold;
+    }
+
+    public void setRelationalOperator(Operator relationalOperator) {
+        this.relationalOperator = relationalOperator;
+    }
 }

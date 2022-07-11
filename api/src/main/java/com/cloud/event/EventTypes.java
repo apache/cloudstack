@@ -554,6 +554,7 @@ public class EventTypes {
     public static final String EVENT_COUNTER_DELETE = "COUNTER.DELETE";
     public static final String EVENT_CONDITION_CREATE = "CONDITION.CREATE";
     public static final String EVENT_CONDITION_DELETE = "CONDITION.DELETE";
+    public static final String EVENT_CONDITION_UPDATE = "CONDITION.UPDATE";
     public static final String EVENT_AUTOSCALEPOLICY_CREATE = "AUTOSCALEPOLICY.CREATE";
     public static final String EVENT_AUTOSCALEPOLICY_UPDATE = "AUTOSCALEPOLICY.UPDATE";
     public static final String EVENT_AUTOSCALEPOLICY_DELETE = "AUTOSCALEPOLICY.DELETE";

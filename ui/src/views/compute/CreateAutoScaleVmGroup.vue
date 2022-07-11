@@ -478,11 +478,11 @@
                         :filterOption="(input, option) => {
                           return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
-                        <a-select-option value="gt">{{ getOperator('GT') }}</a-select-option>
-                        <a-select-option value="ge">{{ getOperator('GE') }}</a-select-option>
-                        <a-select-option value="lt">{{ getOperator('LT') }}</a-select-option>
-                        <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
-                        <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
+                        <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
+                        <a-select-option value="GE">{{ getOperator('GE') }}</a-select-option>
+                        <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+                        <a-select-option value="LE">{{ getOperator('LE') }}</a-select-option>
+                        <a-select-option value="EQ">{{ getOperator('EQ') }}</a-select-option>
                       </a-select>
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>
@@ -568,11 +568,11 @@
                         :filterOption="(input, option) => {
                           return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }" >
-                        <a-select-option value="gt">{{ getOperator('GT') }}</a-select-option>
-                        <a-select-option value="ge">{{ getOperator('GE') }}</a-select-option>
-                        <a-select-option value="lt">{{ getOperator('LT') }}</a-select-option>
-                        <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
-                        <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
+                        <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
+                        <a-select-option value="GE">{{ getOperator('GE') }}</a-select-option>
+                        <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+                        <a-select-option value="LE">{{ getOperator('LE') }}</a-select-option>
+                        <a-select-option value="EQ">{{ getOperator('EQ') }}</a-select-option>
                       </a-select>
                       <span class="error-text">{{ $t('label.required') }}</span>
                     </div>

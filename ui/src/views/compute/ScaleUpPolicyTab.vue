@@ -72,11 +72,11 @@
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="gt">{{ getOperator('GT') }}</a-select-option>
-            <a-select-option value="ge">{{ getOperator('GE') }}</a-select-option>
-            <a-select-option value="lt">{{ getOperator('LT') }}</a-select-option>
-            <a-select-option value="le">{{ getOperator('LE') }}</a-select-option>
-            <a-select-option value="eq">{{ getOperator('EQ') }}</a-select-option>
+            <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
+            <a-select-option value="GE">{{ getOperator('GE') }}</a-select-option>
+            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LE">{{ getOperator('LE') }}</a-select-option>
+            <a-select-option value="EQ">{{ getOperator('EQ') }}</a-select-option>
           </a-select>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
@@ -115,6 +115,11 @@
       </template>
       <template #actions="{ record }">
         <tooltip-button
+          :tooltip="$t('label.edit')"
+          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+          icon="edit-outlined"
+          @onClick="() => openUpdateConditionModal(record)" />
+        <tooltip-button
           :tooltip="$t('label.delete')"
           :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
           type="primary"
@@ -123,6 +128,50 @@
           @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
       </template>
     </a-table>
+
+    <a-modal
+      :title="$t('label.update.condition')"
+      :visible="updateConditionModalVisible"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="updateConditionModalVisible = false">
+      <span v-show="updateConditionModalLoading" class="modal-loading">
+        <loading-outlined />
+      </span>
+
+      <div class="update-condition" v-if="selectedCondition" v-ctrl-enter="handleSubmitUpdateConditionForm">
+        <div class="update-condition__item">
+          <p class="update-condition__label">{{ $t('label.counter') }}</p>
+          {{ updateConditionDetails.countername }}
+        </div>
+        <div class="update-condition__item">
+          <p class="update-condition__label">{{ $t('label.relationaloperator') }}</p>
+          <a-select
+            v-model:value="updateConditionDetails.relationaloperator"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
+            <a-select-option value="GE">{{ getOperator('GE') }}</a-select-option>
+            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LE">{{ getOperator('LE') }}</a-select-option>
+            <a-select-option value="EQ">{{ getOperator('EQ') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="update-condition__item">
+          <p class="update-condition__label">{{ $t('label.threshold') }}</p>
+          <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" />
+        </div>
+        <div :span="24" class="action-button">
+          <a-button @click="() => updateConditionModalVisible = false">{{ $t('label.cancel') }}</a-button>
+          <a-button type="primary" @click="handleSubmitUpdateConditionForm">{{ $t('label.ok') }}</a-button>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -155,6 +204,14 @@ export default {
         counterid: null,
         relationaloperator: null,
         threshold: null
+      },
+      selectedCondition: null,
+      updateConditionModalVisible: false,
+      updateConditionModalLoading: false,
+      updateConditionDetails: {
+        counter: '',
+        relationaloperator: '',
+        threshold: ''
       },
       countersList: [],
       columns: [
@@ -275,6 +332,40 @@ export default {
         this.loading = false
       })
     },
+    openUpdateConditionModal (condition) {
+      this.selectedCondition = condition
+      this.updateConditionModalVisible = true
+      this.updateConditionDetails.countername = this.selectedCondition.countername
+      this.updateConditionDetails.relationaloperator = this.selectedCondition.relationaloperator
+      this.updateConditionDetails.threshold = this.selectedCondition.threshold
+    },
+    handleSubmitUpdateConditionForm () {
+      if (this.updateConditionModalLoading) return
+      this.updateConditionModalLoading = true
+      api('updateCondition', {
+        id: this.selectedCondition.id,
+        relationaloperator: this.updateConditionDetails.relationaloperator,
+        threshold: this.updateConditionDetails.threshold
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.updateconditionresponse.jobid,
+          successMessage: this.$t('message.success.update.condition'),
+          successMethod: () => {
+            this.fetchData()
+            this.closeModal()
+          },
+          errorMessage: this.$t('message.update.condition.failed'),
+          errorMethod: () => {
+            this.fetchData()
+            this.closeModal()
+          },
+          loadingMessage: this.$t('message.update.condition.processing')
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.updateConditionModalLoading = false
+      })
+    },
     deleteConditionFromAutoScalePolicy (conditionId) {
       this.updateAutoScalePolicy(null, conditionId)
     },
@@ -358,7 +449,8 @@ export default {
       })
     },
     closeModal () {
-      this.showConfirmationAction = false
+      this.updateConditionModalVisible = false
+      this.updateConditionModalLoading = false
     },
     capitalise (val) {
       return val.toUpperCase()
@@ -413,6 +505,23 @@ export default {
 
     button {
       margin-right: 20px;
+    }
+
+  }
+
+  .update-condition {
+
+    .ant-select {
+      width: 100%;
+    }
+
+    &__item {
+      margin-bottom: 10px;
+    }
+
+    &__label {
+      margin-bottom: 5px;
+      font-weight: bold;
     }
 
   }

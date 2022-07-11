@@ -68,6 +68,7 @@ import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
 import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
@@ -161,6 +162,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -1394,7 +1396,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_CONDITION_DELETE, eventDescription = "condition")
+    @ActionEvent(eventType = EventTypes.EVENT_CONDITION_DELETE, eventDescription = "delete a condition")
     public boolean deleteCondition(long conditionId) throws ResourceInUseException {
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, _conditionDao);
@@ -1412,6 +1414,63 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             s_logger.info("Successfully deleted condition " + condition.getId());
         }
         return success;
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_CONDITION_UPDATE, eventDescription = "update a condition")
+    public Condition updateCondition(UpdateConditionCmd cmd) throws ResourceInUseException {
+        Long conditionId = cmd.getId();
+        /* Check if entity is in database */
+        ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, _conditionDao);
+        if (condition == null) {
+            throw new InvalidParameterValueException("Unable to find Condition");
+        }
+
+        String operator = cmd.getRelationalOperator();
+        Long threshold = cmd.getThreshold();
+
+        Condition.Operator op;
+        // Validate Relational Operator
+        try {
+            op = Condition.Operator.valueOf(operator);
+        } catch (IllegalArgumentException ex) {
+            throw new InvalidParameterValueException("The Operator " + operator + " does not exist; Unable to update Condition.");
+        }
+
+        // Verify if condition is used in any autoscale vmgroup
+        GenericSearchBuilder<AutoScalePolicyConditionMapVO, Long> conditionSearch = _autoScalePolicyConditionMapDao.createSearchBuilder(Long.class);
+        conditionSearch.selectFields(conditionSearch.entity().getPolicyId());
+        conditionSearch.and("conditionId", conditionSearch.entity().getConditionId(), Op.EQ);
+        SearchCriteria<Long> sc = conditionSearch.create();
+        sc.setParameters("conditionId", conditionId);
+        List<Long> policyIds = _autoScalePolicyConditionMapDao.customSearch(sc, null);
+
+        if (CollectionUtils.isNotEmpty(policyIds)) {
+            SearchBuilder<AutoScaleVmGroupPolicyMapVO> policySearch = _autoScaleVmGroupPolicyMapDao.createSearchBuilder();
+            policySearch.and("policyId", policySearch.entity().getPolicyId(), Op.IN);
+            SearchBuilder<AutoScaleVmGroupVO> vmGroupSearch = _autoScaleVmGroupDao.createSearchBuilder();
+            vmGroupSearch.and("stateNEQ", vmGroupSearch.entity().getState(), Op.NEQ);
+            vmGroupSearch.join("policySearch", policySearch, vmGroupSearch.entity().getId(), policySearch.entity().getVmGroupId(), JoinBuilder.JoinType.INNER);
+            vmGroupSearch.done();
+
+            SearchCriteria<AutoScaleVmGroupVO> sc2 = vmGroupSearch.create();
+            sc2.setParameters("stateNEQ", AutoScaleVmGroup.State.Disabled);
+            sc2.setJoinParameters("policySearch", "policyId", policyIds.toArray((new Object[policyIds.size()])));
+            List<AutoScaleVmGroupVO> groups = _autoScaleVmGroupDao.search(sc2, null);
+            if (CollectionUtils.isNotEmpty(groups)) {
+                String msg = String.format("Cannot update condition %d as it is being used in %d vm groups.", conditionId, groups.size());
+                s_logger.info(msg);
+                throw new ResourceInUseException(msg);
+            }
+        }
+
+        condition.setRelationalOperator(op);
+        condition.setThreshold(threshold);
+        boolean success = _conditionDao.update(conditionId, condition);
+        if (success) {
+            s_logger.info("Successfully updated condition " + condition.getId());
+        }
+        return condition;
     }
 
     @Override
