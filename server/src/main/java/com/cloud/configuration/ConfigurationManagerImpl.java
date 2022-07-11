@@ -6209,13 +6209,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     void validateSourceNatServiceCapablities(final Map<Capability, String> sourceNatServiceCapabilityMap) {
-        if (sourceNatServiceCapabilityMap != null && !sourceNatServiceCapabilityMap.isEmpty()) {
-            if (sourceNatServiceCapabilityMap.keySet().size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap)) {
-                throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
-                        + ", " + Capability.RedundantRouter
-                        + " and " + Capability.SelectSnatIpAllowed
-                        + " capabilities can be sepcified for source nat service");
-            }
+        if (MapUtils.isNotEmpty(sourceNatServiceCapabilityMap) && sourceNatServiceCapabilityMap.size() > 3 || ! sourceNatCapabilitiesContainValidValues(sourceNatServiceCapabilityMap)) {
+            throw new InvalidParameterValueException("Only " + Capability.SupportedSourceNatTypes.getName()
+                    + ", " + Capability.RedundantRouter
+                    + " and " + Capability.SelectSnatIpAllowed
+                    + " capabilities can be sepcified for source nat service");
         }
     }
 
@@ -6231,7 +6229,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             } else if (Arrays.asList(Capability.RedundantRouter, Capability.SelectSnatIpAllowed).contains(capability)) {
                 if (! Arrays.asList("true", "false").contains(value)) {
-                    throw new InvalidParameterValueException("Unknown specified value for " + Capability.RedundantRouter.getName());
+                    throw new InvalidParameterValueException("Unknown specified value for " + capability.getName());
                 }
             } else {
                 return false;

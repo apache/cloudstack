@@ -685,7 +685,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return findCapabilityForService(serviceCapabilitystList, Capability.RedundantRouter, Service.SourceNat);
     }
 
-    private boolean isVpcSelectSnatIpAllowed(final Map serviceCapabilitystList) {
+    private boolean isVpcSelectSnatIpAllowed(final Map<String, String> serviceCapabilitystList) {
         return findCapabilityForService(serviceCapabilitystList, Capability.SelectSnatIpAllowed, Service.SourceNat);
     }
 

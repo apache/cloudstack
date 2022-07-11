@@ -548,15 +548,67 @@ public class ConfigurationManagerTest {
     }
 
     @Test
+    public void validateEmptySourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+
+        configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+    }
+
+    @Test
+    public void validateInvalidSourceNatTypeForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SupportedSourceNatTypes, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Either peraccount or perzone source NAT type can be specified for SupportedSourceNatTypes"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidBooleanValueForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.SelectSnatIpAllowed, "maybe");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Unknown specified value for SelectSnatIpAllowed"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
+    public void validateInvalidCapabilityForSourceNatServiceCapablitiesTest() {
+        Map<Capability, String> sourceNatServiceCapabilityMap = new HashMap<>();
+        sourceNatServiceCapabilityMap.put(Capability.ElasticIp, "perDomain");
+
+        boolean caught = false;
+        try {
+            configurationMgr.validateSourceNatServiceCapablities(sourceNatServiceCapabilityMap);
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("Only SupportedSourceNatTypes, Network.Capability[name=RedundantRouter] and Network.Capability[name=SelectSnatIpAllowed] capabilities can be sepcified for source nat service"));
+            caught = true;
+        }
+        Assert.assertTrue("should not be accepted", caught);
+    }
+
+    @Test
     public void validateEmptyStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
 
         configurationMgr.validateStaticNatServiceCapablities(staticNatServiceCapabilityMap);
     }
 
     @Test
     public void validateInvalidStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "Frue and Talse");
 
         boolean caught = false;
@@ -571,7 +623,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateTTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -580,7 +632,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFTStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "True");
 
@@ -589,7 +641,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateTFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "true and Talse");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "false");
 
@@ -608,7 +660,7 @@ public class ConfigurationManagerTest {
 
     @Test
     public void validateFFStaticNatServiceCapablitiesTest() {
-        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<Capability, String>();
+        Map<Capability, String> staticNatServiceCapabilityMap = new HashMap<>();
         staticNatServiceCapabilityMap.put(Capability.AssociatePublicIP, "false");
         staticNatServiceCapabilityMap.put(Capability.ElasticIp, "False");
 
