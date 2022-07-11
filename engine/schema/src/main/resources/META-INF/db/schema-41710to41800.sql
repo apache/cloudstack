@@ -52,6 +52,9 @@ INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VAL
 INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes)', 'virtual.network.transmit', NOW());
 INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
 
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+
 -- Update autoscale_vmgroups to new state
 
 UPDATE `cloud`.`autoscale_vmgroups` SET state='New' WHERE state='new';

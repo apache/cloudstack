@@ -3398,13 +3398,19 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworkId(network.getUuid());
 
         String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
-        response.setLbProvider(provider);
+        if (provider != null) {
+            response.setLbProvider(provider);
+        } else {
+            response.setLbProvider(Network.Provider.None.toString());
+        }
 
         IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
-        response.setPublicIpId(publicIp.getUuid());
-        response.setPublicIp(publicIp.getAddress().addr());
-        response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
-        response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
+        if (publicIp != null) {
+            response.setPublicIpId(publicIp.getUuid());
+            response.setPublicIp(publicIp.getAddress().addr());
+            response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
+            response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
+        }
 
         List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
         List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
