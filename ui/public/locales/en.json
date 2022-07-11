@@ -1707,6 +1707,7 @@
 "label.see.more.info.network.usage": "See more info about network usage",
 "label.see.more.info.disk.usage": "See more info about disk usage",
 "label.see.more.info.shown.charts": "See more info about the shown charts",
+"label.selectsnatipallowed": "Is selection of the public IP allowed on source NAT interfaces",
 "label.select-view": "Select view",
 "label.select.a.zone": "Select a zone",
 "label.select.deployment.infrastructure": "Select deployment infrastructure",
