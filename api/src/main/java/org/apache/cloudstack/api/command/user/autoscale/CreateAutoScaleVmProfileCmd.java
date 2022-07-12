@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -37,7 +38,6 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.user.Account;
@@ -80,9 +80,11 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     private Long templateId;
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS,
-               type = CommandType.STRING,
-               description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine")
-    private String otherDeployParams;
+               type = CommandType.MAP,
+               description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. "
+                       + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 ."
+                    + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\".")
+    private Map otherDeployParams;
 
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,
                type = CommandType.INTEGER,
@@ -102,8 +104,6 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
-
-    private Map<String, String> otherDeployParamMap;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -148,7 +148,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return counterParamList;
     }
 
-    public String getOtherDeployParams() {
+    public Map getOtherDeployParams() {
         return otherDeployParams;
     }
 
@@ -180,27 +180,8 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return accountId;
     }
 
-    private void createOtherDeployParamMap() {
-        if (otherDeployParamMap == null) {
-            otherDeployParamMap = new HashMap<String, String>();
-        }
-        if (otherDeployParams == null)
-            return;
-        String[] keyValues = otherDeployParams.split("&"); // hostid=123, hypervisor=xenserver
-        for (String keyValue : keyValues) { // keyValue == "hostid=123"
-            String[] keyAndValue = keyValue.split("="); // keyValue = hostid, 123
-            if (keyAndValue.length != 2) {
-                throw new InvalidParameterValueException("Invalid parameter in otherDeployParam : " + keyValue);
-            }
-            String paramName = keyAndValue[0]; // hostid
-            String paramValue = keyAndValue[1]; // 123
-            otherDeployParamMap.put(paramName, paramValue);
-        }
-    }
-
     public HashMap<String, String> getDeployParamMap() {
-        createOtherDeployParamMap();
-        HashMap<String, String> deployParams = new HashMap<String, String>(otherDeployParamMap);
+        HashMap<String, String> deployParams = new HashMap<String, String>(getOtherDeployParamsMap());
         deployParams.put("command", "deployVirtualMachine");
         deployParams.put("zoneId", zoneId.toString());
         deployParams.put("serviceOfferingId", serviceOfferingId.toString());
@@ -208,12 +189,17 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return deployParams;
     }
 
-    public String getOtherDeployParam(String param) {
-        if (param == null) {
-            return null;
+    private Map<String, String> getOtherDeployParamsMap() {
+        Map<String, String> otherDeployParamsMap = new HashMap<>();
+        if (MapUtils.isNotEmpty(otherDeployParams)) {
+            for (Object object : otherDeployParams.values()) {
+                HashMap<String, String> paramKVpair = (HashMap<String, String>)object;
+                String paramName = paramKVpair.get("name");
+                String paramValue = paramKVpair.get("value");
+                otherDeployParamsMap.put(paramName,paramValue);
+            }
         }
-        createOtherDeployParamMap();
-        return otherDeployParamMap.get(param);
+        return otherDeployParamsMap;
     }
 
     // ///////////////////////////////////////////////////

@@ -2967,7 +2967,6 @@ public class NetscalerResource implements ServerResource {
         final AutoScaleVmProfileTO profileTO = vmGroupTO.getProfile();
         final List<AutoScalePolicyTO> policies = vmGroupTO.getPolicies();
         final int interval = vmGroupTO.getInterval();
-        profileTO.getCounterParamList();
         String snmpCommunity = null;
         int snmpPort = DEFAULT_SNMP_PORT;
         long cur_prirotiy = 1;

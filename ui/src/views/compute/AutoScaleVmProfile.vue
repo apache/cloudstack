@@ -71,7 +71,6 @@
             style="width: 100%"
             showSearch
             optionFilterProp="label"
-            :disabled='true'
             :filterOption="(input, option) => {
               return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
@@ -93,6 +92,9 @@
       </div>
 
       <a-divider/>
+      <div class="title">
+        {{ $t('label.params') }}
+      </div>
       <div class="form" v-ctrl-enter="addParam">
         <div class="form__item" ref="newParamName">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.param.name') }}</div>
@@ -105,7 +107,7 @@
             }"
             v-focus="true"
             v-model:value="newParam.name">
-            <a-select-option v-for="(param, index) in counterParams" :value="param" :key="index">
+            <a-select-option v-for="(param, index) in paramNameList" :value="param" :key="index">
               {{ param }}
             </a-select-option>
           </a-select>
@@ -113,7 +115,7 @@
         </div>
         <div class="form__item" ref="newParamValue">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.param.value') }}</div>
-          <a-input v-model:value="newParam.value" type="number"></a-input>
+          <a-input v-model:value="newParam.value"></a-input>
           <span class="error-text">{{ $t('label.required') }}</span>
         </div>
         <div class="form__item">
@@ -224,8 +226,8 @@ export default {
   methods: {
     fetchInitData () {
       this.counterParams = ['snmpcommunity', 'snmpport']
-      this.deployParams = ['diskofferingid', 'securitygroupids']
-      this.paramNameList = ['snmpcommunity', 'snmpport', 'diskofferingid', 'securitygroupids']
+      this.deployParams = ['securitygroupids', 'rootdisksize', 'diskofferingid', 'size']
+      this.paramNameList = this.counterParams.concat(this.deployParams)
       this.fetchUserData()
       this.fetchTemplateData()
       this.fetchServiceOfferingData()
@@ -293,6 +295,12 @@ export default {
       if (otherdeployparams.securitygroupids) {
         this.allParams.push({ name: 'securitygroupids', value: otherdeployparams.securitygroupids })
       }
+      if (otherdeployparams.rootdisksize) {
+        this.allParams.push({ name: 'rootdisksize', value: otherdeployparams.rootdisksize })
+      }
+      if (otherdeployparams.size) {
+        this.allParams.push({ name: 'size', value: otherdeployparams.size })
+      }
     },
     deleteParam (paramName) {
       this.updateAutoScaleVmProfileWithParam(null, null, paramName)
@@ -322,17 +330,28 @@ export default {
         id: this.profileid
       }
       var i = 0
+      var j = 0
       for (var index = 0; index < this.allParams.length; index++) {
         var param = { ...this.allParams[index] }
-        if (param.name !== paramNameToAdd && param.name !== paramNameToRemove) {
+        if (this.counterParams.includes(param.name) && param.name !== paramNameToAdd && param.name !== paramNameToRemove) {
           params['counterparam[' + i + '].name'] = param.name
           params['counterparam[' + i + '].value'] = param.value
+          i++
         }
-        i++
+        if (this.deployParams.includes(param.name) && param.name !== paramNameToAdd && param.name !== paramNameToRemove) {
+          params['otherdeployparams[' + j + '].name'] = param.name
+          params['otherdeployparams[' + j + '].value'] = param.value
+          j++
+        }
       }
       if (paramNameToAdd && this.counterParams.includes(paramNameToAdd) && paramValueToAdd) {
         params['counterparam[' + i + '].name'] = paramNameToAdd
         params['counterparam[' + i + '].value'] = paramValueToAdd
+      }
+
+      if (paramNameToAdd && this.deployParams.includes(paramNameToAdd) && paramValueToAdd) {
+        params['otherdeployparams[' + j + '].name'] = paramNameToAdd
+        params['otherdeployparams[' + j + '].value'] = paramValueToAdd
       }
 
       api('updateAutoScaleVmProfile', params).then(response => {
@@ -400,6 +419,11 @@ export default {
       font-weight: bold;
     }
 
+  }
+
+  .title {
+    margin-bottom: 5px;
+    font-weight: bold;
   }
 
   .add-btn {

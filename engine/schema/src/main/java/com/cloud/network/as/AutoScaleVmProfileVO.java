@@ -35,6 +35,8 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
@@ -92,7 +94,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, Map otherDeployParamsMap, Map counterParamList,
             Integer destroyVmGraceperiod, long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
@@ -100,12 +102,12 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         this.accountId = accountId;
         this.serviceOfferingId = serviceOfferingId;
         this.templateId = templateId;
-        this.otherDeployParams = otherDeployParams;
         this.autoscaleUserId = autoscaleUserId;
         if (destroyVmGraceperiod != null) {
             this.destroyVmGraceperiod = destroyVmGraceperiod;
         }
         setCounterParamsForUpdate(counterParamList);
+        setOtherDeployParamsForUpdate(otherDeployParamsMap);
     }
 
     @Override
@@ -136,8 +138,33 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return otherDeployParams;
     }
 
+    @Override
+    public List<Pair<String, String>> getOtherDeployParamsList() {
+        List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
+        if (otherDeployParams != null) {
+            String[] params = otherDeployParams.split("[=&]");
+            for (int i = 0; i < (params.length - 1); i = i + 2) {
+                paramsList.add(new Pair<String, String>(params[i], params[i + 1]));
+            }
+        }
+        return paramsList;
+    }
+
     public void setOtherDeployParams(String otherDeployParams) {
         this.otherDeployParams = otherDeployParams;
+    }
+
+    public void setOtherDeployParamsForUpdate(Map otherDeployParamsMap) {
+        if (MapUtils.isNotEmpty(otherDeployParamsMap)) {
+            List<String> params = new ArrayList<>();
+            for (Object object : otherDeployParamsMap.values()) {
+                HashMap<String, String> paramKVpair = (HashMap<String, String>)object;
+                String paramName = paramKVpair.get("name");
+                String paramValue = paramKVpair.get("value");
+                params.add(paramName + "=" + paramValue);
+            }
+            setOtherDeployParams(StringUtils.join(params, "&"));
+        }
     }
 
     @Override

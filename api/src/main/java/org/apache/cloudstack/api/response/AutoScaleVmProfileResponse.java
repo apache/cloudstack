@@ -54,7 +54,7 @@ public class AutoScaleVmProfileResponse extends BaseResponseWithAnnotations impl
 
     @SerializedName(ApiConstants.OTHER_DEPLOY_PARAMS)
     @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
-    private String otherDeployParams;
+    private Map<String, String> otherDeployParams;
 
     /* Parameters related to destroying a virtual machine */
     @SerializedName(ApiConstants.AUTOSCALE_VM_DESTROY_TIME)
@@ -126,8 +126,13 @@ public class AutoScaleVmProfileResponse extends BaseResponseWithAnnotations impl
         this.templateId = templateId;
     }
 
-    public void setOtherDeployParams(String otherDeployParams) {
-        this.otherDeployParams = otherDeployParams;
+    public void setOtherDeployParams(List<Pair<String, String>> otherDeployParams) {
+        this.otherDeployParams = new HashMap<String, String>();
+        for (Pair<String, String> paramKV : otherDeployParams) {
+            String key = paramKV.first();
+            String value = paramKV.second();
+            this.otherDeployParams.put(key, value);
+        }
     }
 
     public void setCounterParams(List<Pair<String, String>> counterParams) {

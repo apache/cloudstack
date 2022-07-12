@@ -268,6 +268,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
 
+    private static final List<String> supportedDeployParams = Arrays.asList("rootdisksize", "diskofferingid", "size", "securitygroupids");
+
     ExecutorService _groupExecutor;
 
     CompletionService<Pair<Long, Boolean>> _completionService;
@@ -415,6 +417,17 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
 
+        Long serviceOfferingId = vmProfile.getServiceOfferingId();
+        if (serviceOfferingId != null) {
+            ServiceOffering serviceOffering = _entityMgr.findByIdIncludingRemoved(ServiceOffering.class, serviceOfferingId);
+            if (serviceOffering == null) {
+                throw new InvalidParameterValueException("Unable to find service offering by id");
+            }
+            if (serviceOffering.isDynamic()) {
+                throw new InvalidParameterValueException("Unable to use dynamic service offering in AutoScale vm profile");
+            }
+        }
+
         VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
@@ -451,6 +464,15 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException(String.format("Global setting %s has to be set to larger than 0", AutoScaleStatsInterval.key()));
         }
 
+        List<Pair<String, String>> otherDeployParams = vmProfile.getOtherDeployParamsList();
+        if (CollectionUtils.isNotEmpty(otherDeployParams)) {
+            for (Pair<String, String> kvPair : otherDeployParams) {
+                String key = kvPair.first();
+                if (!supportedDeployParams.contains(key)) {
+                    throw new InvalidParameterValueException(String.format("Unsupported otherdeployparams key: %s. Supported values are %s", key, supportedDeployParams));
+                }
+            }
+        }
         vmProfile = _autoScaleVmProfileDao.persist(vmProfile);
 
         return vmProfile;
@@ -513,19 +535,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Long templateId = cmd.getTemplateId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
+        Map otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
 
         Integer destroyVmGraceperiod = cmd.getDestroyVmGraceperiod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
-        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || destroyVmGraceperiod != null);
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null && destroyVmGraceperiod != null);
 
         if (serviceOfferingId != null) {
-            ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
-            if (serviceOffering == null) {
-                throw new InvalidParameterValueException("Unable to find service offering by id");
-            }
             vmProfile.setServiceOfferingId(serviceOfferingId);
         }
 
@@ -535,6 +554,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (autoscaleUserId != null) {
             vmProfile.setAutoscaleUserId(autoscaleUserId);
+        }
+
+        if (otherDeployParams != null) {
+            vmProfile.setOtherDeployParamsForUpdate(otherDeployParams);
         }
 
         if (counterParamList != null) {
@@ -1630,12 +1653,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
             Long dataDiskSize = null;       // DATA disk size
-            if (deployParams.get("datadisksize") != null) {
-                String dataDiskSizeInParam = deployParams.get("datadisksize");
+            if (deployParams.get("size") != null) {
+                String dataDiskSizeInParam = deployParams.get("size");
                 try {
                     dataDiskSize = Long.parseLong(dataDiskSizeInParam);
                 } catch (NumberFormatException ex) {
-                    s_logger.warn("Cannot parse datadisksize from otherdeployparams in AutoScale Vm profile");
+                    s_logger.warn("Cannot parse size from otherdeployparams in AutoScale Vm profile");
                 }
             }
 

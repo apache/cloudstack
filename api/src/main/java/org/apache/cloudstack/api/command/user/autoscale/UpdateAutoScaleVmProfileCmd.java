@@ -72,6 +72,13 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
                description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
+    @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS,
+            type = CommandType.MAP,
+            description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. "
+                    + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 ."
+                    + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\".")
+    private Map otherDeployParams;
+
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,
                type = CommandType.INTEGER,
                description = "the time allowed for existing connections to get closed before a vm is destroyed")
@@ -122,6 +129,10 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public Map getOtherDeployParams() {
+        return otherDeployParams;
     }
 
     public Map getCounterParamList() {

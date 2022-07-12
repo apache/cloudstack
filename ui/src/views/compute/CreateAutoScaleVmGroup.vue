@@ -1639,24 +1639,31 @@ export default {
           params['counterparam[' + i + '].value'] = createVmGroupData.snmpport
           i++
         }
-        const otherdeployparams = []
+        var j = 0
         if (createVmGroupData.rootdisksize) {
-          otherdeployparams.push('rootdisksize=' + createVmGroupData.rootdisksize)
+          params['otherdeployparams[' + j + '].name'] = 'rootdisksize'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.rootdisksize
+          j++
         }
         if (createVmGroupData.overridediskofferingid) {
-          otherdeployparams.push('overridediskofferingid=' + createVmGroupData.overridediskofferingid)
+          params['otherdeployparams[' + j + '].name'] = 'overridediskofferingid'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.overridediskofferingid
+          j++
         }
         if (createVmGroupData.diskofferingid) {
-          otherdeployparams.push('diskofferingid=' + createVmGroupData.diskofferingid)
+          params['otherdeployparams[' + j + '].name'] = 'diskofferingid'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.diskofferingid
+          j++
         }
         if (createVmGroupData.size) {
-          otherdeployparams.push('datadisksize=' + createVmGroupData.size)
+          params['otherdeployparams[' + j + '].name'] = 'size'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.size
+          j++
         }
         if (createVmGroupData.securitygroupids) {
-          otherdeployparams.push('securitygroupids=' + createVmGroupData.securitygroupids)
-        }
-        if (otherdeployparams.length > 0) {
-          params.otherdeployparams = otherdeployparams.join('&')
+          params['otherdeployparams[' + j + '].name'] = 'securitygroupids'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.securitygroupids
+          j++
         }
         api('createAutoScaleVmProfile', params).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
