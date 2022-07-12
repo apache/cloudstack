@@ -34,6 +34,7 @@ apiVersion=""
 kvmDName=""
 kvmDUuid=""
 logFile=""
+mediaPool=""
 
 
 log () {
@@ -55,7 +56,7 @@ vercomp(){
 usage() {
         echo "
 
-Usage:[-v] [-h] [-l log_dir] [-dr] [-s networker_server] [-c networker_cluster_client] [-t target_vm] [-u target_uuid] [-p snapprefix]
+Usage:[-v] [-h] [-l log_dir] [-dr] [-s networker_server] [-c networker_cluster_client] [-t target_vm] [-u target_uuid] [-p snapprefix] [-P media_pool ]
 
 Options:
         -h Help and usage
@@ -66,6 +67,7 @@ Options:
         -t target_vm KVM domain to backup
         -u target_uuid KVM domain to backup
         -p Snapshot Prefix for backups
+        -P mediaPool EMC Networker Media Pool
 
 Supplements Apache Cloudstack B&R Framework  EMC Networker plugin and performs the backup of the Virtual Machines
 "
@@ -162,7 +164,7 @@ backup_domain() {
                 fi
                 log "Created snapshot(s) for $name"
         fi
-        cmd="$(save -LL -q -s "$networkerServer" -c "$clusterClient" -N "$name" $disks)"
+        cmd="$(save -LL -q -s "$networkerServer" -c "$clusterClient" -N "$name" -b "$mediaPool" $disks)"
         retVal=$?
         log "$cmd"
         echo "$cmd" | grep -oE 'savetime=[0-9]{10}'
@@ -199,7 +201,7 @@ backup_domain() {
          done
 }
 
-while getopts "h?vs:l:c:t:u:p:" opt; do
+while getopts "h?vs:l:c:t:u:p:P:" opt; do
   case "$opt" in
     h|\?)
       usage
@@ -217,6 +219,8 @@ while getopts "h?vs:l:c:t:u:p:" opt; do
       ;;
      p) snapPrefix=$OPTARG
       ;;
+     P) mediaPool=$OPTARG
+          ;;
      v)  verb=1
        ;;
    esac

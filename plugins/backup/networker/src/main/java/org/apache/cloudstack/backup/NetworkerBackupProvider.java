@@ -73,13 +73,20 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             "backup.plugin.networker.password", "password",
             "The EMC Networker API password.", true, ConfigKey.Scope.Zone);
 
-    private final ConfigKey<Boolean> NetworkerValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.networker.validate.ssl", "false",
+    private final ConfigKey<String> NetworkerMediaPool = new ConfigKey<>("Advanced", String.class,
+            "backup.plugin.networker.pool", "Default",
+            "The EMC Networker Media Pool", true, ConfigKey.Scope.Zone);
+
+    private final ConfigKey<Boolean> NetworkerValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class,
+            "backup.plugin.networker.validate.ssl", "false",
             "Validate the SSL certificate when connecting to EMC Networker API service.", true, ConfigKey.Scope.Zone);
 
-    private final ConfigKey<Integer> NetworkerApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.networker.request.timeout", "300",
+    private final ConfigKey<Integer> NetworkerApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "backup.plugin.networker.request.timeout", "300",
             "The EMC Networker API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
-    private final ConfigKey<Boolean> NetworkerClientVerboseLogs = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.networker.client.verbosity", "false",
+    private final ConfigKey<Boolean> NetworkerClientVerboseLogs = new ConfigKey<>("Advanced", Boolean.class,
+            "backup.plugin.networker.client.verbosity", "false",
             "Produce Verbose logs in Hypervisor", true, ConfigKey.Scope.Zone);
 
     @Inject
@@ -119,6 +126,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 NetworkerPassword,
                 NetworkerValidateSSLSecurity,
                 NetworkerApiRequestTimeout,
+                NetworkerMediaPool,
                 NetworkerClientVerboseLogs
         };
     }
@@ -300,9 +308,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
-        return true;
-    }
+    public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) { return true; }
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
@@ -479,6 +485,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh" +
                 " -s " + networkerServer +
+                " -P " + NetworkerMediaPool.valueIn(vm.getDataCenterId()) +
                 " -c " + clusterName +
                 " -u " + vm.getUuid() +
                 " -t " + vm.getName();
