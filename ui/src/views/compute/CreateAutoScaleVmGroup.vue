@@ -164,6 +164,7 @@
                       :selected-template="template ? template : {}"
                       :row-count="rowCount.serviceOfferings"
                       :zoneId="zoneId"
+                      :autoscale="true"
                       :value="serviceOffering ? serviceOffering.id : ''"
                       :loading="loading.serviceOfferings"
                       :preFillContent="dataPreFill"
