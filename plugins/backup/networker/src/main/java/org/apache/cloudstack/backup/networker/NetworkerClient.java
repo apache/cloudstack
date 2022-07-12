@@ -1,3 +1,21 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+
 package org.apache.cloudstack.backup.networker;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -42,6 +60,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -123,7 +142,7 @@ public class NetworkerClient {
         if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
                 response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
                 response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            LOG.debug(String.format("HTTP request failed, status code is [%s], response is: [%s].", response.getStatusLine().getStatusCode(), response.toString()));
+            LOG.debug(String.format("HTTP request failed, status code is [%s], response is: [%s].", response.getStatusLine().getStatusCode(), response));
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Got invalid API status code returned by the EMC Networker server");
         }
     }
@@ -197,7 +216,7 @@ public class NetworkerClient {
     }
 
 
-    public BackupVO registerBackupForVm(VirtualMachine vm, Date backupJobStart) {
+    public BackupVO registerBackupForVm(VirtualMachine vm, Date backupJobStart, String saveTime) {
         LOG.debug("Querying EMC Networker about latest backup");
 
         NetworkerBackups networkerBackups;
@@ -205,6 +224,7 @@ public class NetworkerClient {
 
         SimpleDateFormat formatterDate = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat formatterTime = new SimpleDateFormat("HH:mm:ss");
+        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 
         String startDate = formatterDate.format(backupJobStart);
         String startTime = formatterTime.format(backupJobStart);
@@ -212,9 +232,18 @@ public class NetworkerClient {
         String endTime = formatterTime.format(new Date());
 
         final String searchRange = "['" + startDate + "T" + startTime + "'+TO+'" + endDate + "T" + endTime + "']";
+        String backupJobCriteria;
 
         try {
-            final HttpResponse response = get("/global/backups/?q=name:" + vm.getName() + "+and+saveTime:" + searchRange);
+            if ( saveTime != null ) {
+                Instant instant = Instant.ofEpochSecond(Long.parseLong(saveTime));
+                String completionTime = formatterDateTime.format(Date.from(instant));
+                backupJobCriteria = "+and+saveTime:" + "'" + completionTime + "'";
+            }
+            else {
+                backupJobCriteria = "+and+saveTime:" + searchRange;
+            }
+            final HttpResponse response = get("/global/backups/?q=name:" + vm.getName() + backupJobCriteria);
             checkResponseOK(response);
             final ObjectMapper jsonMapper = new ObjectMapper();
             jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -262,7 +291,7 @@ public class NetworkerClient {
             jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             NetworkerBackups networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
             Backup networkerBackup = networkerBackups.getBackups().get(0);
-            if (networkerBackup == null ) {
+            if ( networkerBackup.getShortId() == null ) {
                 return null;
             }
             return networkerBackup;
