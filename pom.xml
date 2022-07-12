@@ -80,7 +80,7 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.reload4j.version>1.2.20</cs.reload4j.version>
+        <cs.reload4j.version>1.2.21</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
@@ -97,8 +97,8 @@
         <cs.commons-net.version>3.7.2</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
-        <cs.daemon.version>1.2.3</cs.daemon.version>
-        <cs.dbcp.version>2.8.0</cs.dbcp.version>
+        <cs.daemon.version>1.3.1</cs.daemon.version>
+        <cs.dbcp.version>2.9.0</cs.dbcp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.9.0</cs.pool.version>
@@ -124,7 +124,7 @@
         <cs.amqp-client.version>5.10.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
         <cs.aspectjrt.version>1.9.6</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.11.940</cs.aws.sdk.version>
+        <cs.aws.sdk.version>1.12.255</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
         <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
@@ -134,14 +134,14 @@
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
-        <cs.google-http-client>1.38.1</cs.google-http-client>
+        <cs.google-http-client>1.42.1</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
-        <cs.guava.version>30.1-jre</cs.guava.version>
+        <cs.guava.version>31.1-jre</cs.guava.version>
         <cs.httpclient.version>4.5.13</cs.httpclient.version>
-        <cs.httpcore.version>4.4.14</cs.httpcore.version>
-        <cs.influxdb-java.version>2.21</cs.influxdb-java.version>
-        <cs.jackson.version>2.12.1</cs.jackson.version>
+        <cs.httpcore.version>4.4.15</cs.httpcore.version>
+        <cs.influxdb-java.version>2.22</cs.influxdb-java.version>
+        <cs.jackson.version>2.13.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.27.0-GA</cs.javassist.version>
@@ -150,10 +150,10 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
+        <cs.jetty.version>9.4.48.v20220622</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
-        <cs.joda-time.version>2.10.9</cs.joda-time.version>
+        <cs.joda-time.version>2.10.14</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
         <cs.json.version>20090211</cs.json.version>
@@ -164,20 +164,20 @@
         <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
-        <cs.opensaml.version>2.6.4</cs.opensaml.version>
+        <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
         <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
-        <cs.tomcat-embed-core.version>10.0.2</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>10.0.22</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.19</cs.xstream.version>
-        <org.springframework.version>5.3.18</org.springframework.version>
+        <org.springframework.version>5.3.21</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
