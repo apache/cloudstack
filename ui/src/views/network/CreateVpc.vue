@@ -163,7 +163,7 @@
             v-model:value="form.routerip"
             :placeholder="apiParams.routerip.description"/>
         </a-form-item>
-        <a-form-item v-if="selectedVpcOffering && selectedVpcOffering.selectsnatipallowed" name="routeripv6" ref="routeripv6">
+        <a-form-item v-if="form.selectedVpcOffering && form.selectedVpcOffering.selectsnatipallowed" name="routeripv6" ref="routeripv6">
           <template #label>
             <tooltip-label :title="$t('label.routeripv6')" :tooltip="apiParams.routeripv6.description"/>
           </template>
@@ -290,9 +290,9 @@ export default {
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
         this.loadingOffering = false
-        if (this.arrayHasItems(this.vpcOfferings)) {
-          this.form.networkofferingid = 0
-          this.handleVpcOfferingChange(this.networkOfferings[0])
+        if (this.vpcOfferings.length > 0) {
+          this.form.vpcofferingid = 0
+          this.handleVpcOfferingChange(this.vpcOfferings[0].id)
         }
       })
     },
