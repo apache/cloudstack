@@ -128,10 +128,7 @@ backup_domain() {
         name=$1
         snapName=$2
         log  "Preparing snapshots and gathering information for backing up domain $name under snapshot name $snapName"
-<<<<<<< HEAD
         log  "Retention time is $retentionTime"
-=======
->>>>>>> a0fd0e8907 (More checks and enhancements for the backup scripts.)
 
         declare -A TRGSRC
         while IFS=',' read -r TARGET SOURCE

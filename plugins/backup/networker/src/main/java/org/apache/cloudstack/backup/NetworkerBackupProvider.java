@@ -94,6 +94,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     private final ConfigKey<Boolean> NetworkerClientVerboseLogs = new ConfigKey<>("Advanced", Boolean.class,
             "backup.plugin.networker.client.verbosity", "false",
+
     @Inject
     private BackupDao backupDao;
 
