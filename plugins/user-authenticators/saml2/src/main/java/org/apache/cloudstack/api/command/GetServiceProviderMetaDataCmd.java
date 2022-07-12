@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.SAMLMetaDataResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.log4j.Logger;
 import org.opensaml.Configuration;
 import org.opensaml.DefaultBootstrap;
@@ -239,7 +240,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
 
         StringWriter stringWriter = new StringWriter();
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.newDocument();
             Marshaller out = Configuration.getMarshallerFactory().getMarshaller(spEntityDescriptor);
