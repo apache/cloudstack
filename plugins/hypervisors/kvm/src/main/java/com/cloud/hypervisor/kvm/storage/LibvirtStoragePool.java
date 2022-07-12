@@ -283,6 +283,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
     }
 
     @Override
+    public Map<String, String> getDetails() {
+        return null;
+    }
+
+    @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.JSON_STYLE).append("uuid", getUuid()).append("path", getLocalPath()).toString();
     }

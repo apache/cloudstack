@@ -4588,12 +4588,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_logger.debug("Cleaning the metadata of vm snapshots of vm " + dm.getName());
         List<Ternary<String, Boolean, String>> vmsnapshots = new ArrayList<Ternary<String, Boolean, String>>();
         if (dm.snapshotNum() == 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("VM [%s] does not have any snapshots. Skipping cleanup of snapshots for this VM.", dm.getName()));
+            }
             return vmsnapshots;
         }
         String currentSnapshotName = null;
         try {
             DomainSnapshot snapshotCurrent = dm.snapshotCurrent();
             String snapshotXML = snapshotCurrent.getXMLDesc();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Current snapshot of VM [%s] has the following XML: [%s].", dm.getName(), snapshotXML));
+            }
+
             snapshotCurrent.free();
             DocumentBuilder builder;
             try {
@@ -4605,25 +4612,25 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 Element rootElement = doc.getDocumentElement();
 
                 currentSnapshotName = getTagValue("name", rootElement);
-            } catch (ParserConfigurationException e) {
-                s_logger.debug(e.toString());
-            } catch (SAXException e) {
-                s_logger.debug(e.toString());
-            } catch (IOException e) {
-                s_logger.debug(e.toString());
+            } catch (ParserConfigurationException | SAXException | IOException e) {
+                s_logger.error(String.format("Failed to parse snapshot configuration [%s] of VM [%s] due to: [%s].", snapshotXML, dm.getName(), e.getMessage()), e);
             }
         } catch (LibvirtException e) {
-            s_logger.debug("Fail to get the current vm snapshot for vm: " + dm.getName() + ", continue");
+            s_logger.error(String.format("Failed to get the current snapshot of VM [%s] due to: [%s]. Continuing the migration process.", dm.getName(), e.getMessage()), e);
         }
         int flags = 2; // VIR_DOMAIN_SNAPSHOT_DELETE_METADATA_ONLY = 2
         String[] snapshotNames = dm.snapshotListNames();
         Arrays.sort(snapshotNames);
+        s_logger.debug(String.format("Found [%s] snapshots in VM [%s] to clean.", snapshotNames.length, dm.getName()));
         for (String snapshotName: snapshotNames) {
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             Boolean isCurrent = (currentSnapshotName != null && currentSnapshotName.equals(snapshotName)) ? true: false;
             vmsnapshots.add(new Ternary<String, Boolean, String>(snapshotName, isCurrent, snapshot.getXMLDesc()));
         }
         for (String snapshotName: snapshotNames) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Cleaning snapshot [%s] of VM [%s] metadata.", snapshotNames, dm.getName()));
+            }
             DomainSnapshot snapshot = dm.snapshotLookupByName(snapshotName);
             snapshot.delete(flags); // clean metadata of vm snapshot
         }

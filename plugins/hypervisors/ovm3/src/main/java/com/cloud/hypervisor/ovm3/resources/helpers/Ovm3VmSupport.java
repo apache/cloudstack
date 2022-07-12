@@ -223,7 +223,7 @@ public class Ovm3VmSupport {
                 xen.migrateVm(ovmObject.deDash(vm.getVmRootDiskPoolId()),
                         vm.getVmUuid(), destIp);
                 state = State.Stopping;
-                msg = "Migration of " + vmName + " successfull";
+                msg = "Migration of " + vmName + " successful";
                 return new MigrateAnswer(cmd, true, msg, null);
             } catch (Ovm3ResourceException e) {
                 msg = "Pooled VM Migrate" + ": Migration of " + vmName + " to "

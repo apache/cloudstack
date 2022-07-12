@@ -19,14 +19,26 @@ name: Lint Code Base
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   build:
+    permissions:
+      contents: read  # for actions/checkout to fetch code
+      statuses: write  # for github/super-linter to mark status of each linter run
     name: SuperLinter Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          # Full git history is needed to get a proper list of changed files within `super-linter`
+          fetch-depth: 0
       - name: SuperLinter
         uses: github/super-linter@v4
         env:
-          VALIDATE_PYTHON_FLAKE8: true
+          DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_PYTHON_FLAKE8: true
