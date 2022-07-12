@@ -535,11 +535,11 @@ export default {
         },
         {
           name: 'scaleup.policy',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleUpPolicyTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleUpPolicyTab.vue')))
         },
         {
           name: 'scaledown.policy',
-          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/ScaleDownPolicyTab.vue')))
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/AutoScaleDownPolicyTab.vue')))
         },
         {
           name: 'events',
