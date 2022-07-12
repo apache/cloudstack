@@ -222,7 +222,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return new Ternary<>(username, password, privateKey);
     }
 
-    private boolean executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
+    private String executeBackupCommand(HostVO host, String username, String password, String privateKey, String command) {
+
+        SSHCmdHelper.SSHCmdResult result;
+        String nstRegex = "\\bcompleted savetime=([0-9]{10})";
+        Pattern saveTimePattern = Pattern.compile(nstRegex);
 
         SSHCmdHelper.SSHCmdResult result;
         String nstRegex = "\\bcompleted savetime=([0-9]{10})";

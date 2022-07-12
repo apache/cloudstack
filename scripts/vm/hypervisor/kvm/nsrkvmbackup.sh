@@ -1,4 +1,5 @@
 #!/bin/bash
+
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -46,6 +47,7 @@ vercomp(){
    printf -v a %08d $1; printf -v b %08d $3
    test $a "$2" $b
 }
+
 
 usage() {
         echo "
@@ -126,7 +128,10 @@ backup_domain() {
         name=$1
         snapName=$2
         log  "Preparing snapshots and gathering information for backing up domain $name under snapshot name $snapName"
+<<<<<<< HEAD
         log  "Retention time is $retentionTime"
+=======
+>>>>>>> a0fd0e8907 (More checks and enhancements for the backup scripts.)
 
         declare -A TRGSRC
         while IFS=',' read -r TARGET SOURCE
@@ -248,4 +253,5 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  fi
 
  backup_domain "$kvmDName" "$snapPrefix$kvmDName"
+
  exit 0

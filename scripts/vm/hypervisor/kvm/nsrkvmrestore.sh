@@ -1,4 +1,5 @@
 #!/bin/bash
+
 ## Licensed to the Apache Software Foundation (ASF) under one
 ## or more contributor license agreements.  See the NOTICE file
 ## distributed with this work for additional information
@@ -17,14 +18,8 @@
 ## under the License.
 version=0.9.1
 OPTIND=1
-=======
-version=0.7.4
-
-
 OPTIND=1
-
 dryRun=0
->>>>>>> abcc93e255 (Implementation of Restore Functionality)
 verb=0
 logDir="/nsr/logs/cloudstack/"
 clusterClient=""
@@ -61,11 +56,7 @@ Usage:[-v] [-h] [-l log_dir] [-s networker_server] [-c networker_cluster_client]
 
 Options:
         -h Help and usage
-<<<<<<< HEAD
         -v Enable log mode
-=======
-        -v Enable verbose mode
->>>>>>> abcc93e255 (Implementation of Restore Functionality)
         -l log_dir. Specify log directory. Default is /nsr/logs/cloudstack
         -s networker_server  Specify the EMC Networker server we are going to use
         -c networker_cluster_client  Specify the EMC Networker client CLUSTER to use
@@ -215,6 +206,7 @@ elif [[ -n "$ssid" && -n "$volumeUuid" ]]; then
       exit 250
 else
   exit 255
+<<<<<<< HEAD
 fi
 
 if [ ! -d "$logDir" ]; then
