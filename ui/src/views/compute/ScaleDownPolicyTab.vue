@@ -43,7 +43,46 @@
           </a-button>
         </div>
       </div>
+    </div>
 
+    <a-divider/>
+    <div class="title">
+      {{ $t('label.conditions') }}
+    </div>
+    <a-table
+      size="small"
+      style="overflow-y: auto"
+      :loading="loading"
+      :columns="columns"
+      :dataSource="conditions"
+      :pagination="false"
+      :rowKey="record => record.id">
+      <template #name="{ record }">
+        {{ record.name }}
+      </template>
+      <template #relationaloperator="{ record }">
+        {{ getOperator(record.relationaloperator) }}
+      </template>
+      <template #threshold="{ record }">
+        {{ record.threshold }}
+      </template>
+      <template #actions="{ record }">
+        <tooltip-button
+          :tooltip="$t('label.edit')"
+          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+          icon="edit-outlined"
+          @onClick="() => openUpdateConditionModal(record)" />
+        <tooltip-button
+          :tooltip="$t('label.delete')"
+          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+          type="primary"
+          :danger="true"
+          icon="delete-outlined"
+          @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
+      </template>
+    </a-table>
+
+    <div>
       <a-divider/>
       <div class="form" v-ctrl-enter="addCondition">
         <div class="form__item" ref="newConditionCounterId">
@@ -89,45 +128,11 @@
           <div class="form__label">{{ $t('label.action') }}</div>
           <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addCondition">
             <template #icon><plus-outlined /></template>
-            {{ $t('label.add') }}
+            {{ $t('label.add.condition') }}
           </a-button>
         </div>
       </div>
     </div>
-
-    <a-divider/>
-    <a-table
-      size="small"
-      style="overflow-y: auto"
-      :loading="loading"
-      :columns="columns"
-      :dataSource="conditions"
-      :pagination="false"
-      :rowKey="record => record.id">
-      <template #name="{ record }">
-        {{ record.name }}
-      </template>
-      <template #relationaloperator="{ record }">
-        {{ getOperator(record.relationaloperator) }}
-      </template>
-      <template #threshold="{ record }">
-        {{ record.threshold }}
-      </template>
-      <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.edit')"
-          :disabled="!('updateCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
-          icon="edit-outlined"
-          @onClick="() => openUpdateConditionModal(record)" />
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteConditionFromAutoScalePolicy(record.id)" />
-      </template>
-    </a-table>
 
     <a-modal
       :title="$t('label.update.condition')"
@@ -484,6 +489,11 @@ export default {
       font-weight: bold;
     }
 
+  }
+
+  .title {
+    margin-bottom: 5px;
+    font-weight: bold;
   }
 
   .add-btn {

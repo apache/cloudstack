@@ -411,6 +411,7 @@
 "label.complete": "Complete",
 "label.compute": "Compute",
 "label.compute.offerings": "Compute offerings",
+"label.conditions": "Conditions",
 "label.configuration": "Configuration",
 "label.configure": "Configure",
 "label.configure.ldap": "Configure LDAP",
