@@ -62,6 +62,13 @@ public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGrou
     public boolean removeByVm(long vmId) {
         SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
         sc.addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
-        return remove(sc) > 0;
+        return remove(sc) >= 0;
+    }
+
+    @Override
+    public boolean removeByGroup(long vmGroupId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
+        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        return remove(sc) >= 0;
     }
 }

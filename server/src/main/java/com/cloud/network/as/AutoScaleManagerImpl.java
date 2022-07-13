@@ -1050,6 +1050,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     return false;
                 }
 
+                success = _autoScaleVmGroupVmMapDao.removeByGroup(id);
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Group VM mappings");
+                    return false;
+                }
+
                 s_logger.info("Successfully deleted autoscale vm group id : " + id);
                 return success; // Successfull
             }

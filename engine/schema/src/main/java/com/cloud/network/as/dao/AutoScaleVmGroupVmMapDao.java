@@ -31,4 +31,6 @@ public interface AutoScaleVmGroupVmMapDao extends GenericDao<AutoScaleVmGroupVmM
     public int remove(long vmGroupId, long vmId);
 
     public boolean removeByVm(long vmId);
+
+    public boolean removeByGroup(long vmGroupId);
 }
