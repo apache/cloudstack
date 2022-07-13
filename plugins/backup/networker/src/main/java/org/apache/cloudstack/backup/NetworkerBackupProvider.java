@@ -284,7 +284,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         List<BackupOffering> policies = new ArrayList<>();
         for (final BackupOffering policy : getClient(zoneId).listPolicies()) {
-            System.out.println(policy.getName());
             if (!policy.getName().contains(BACKUP_IDENTIFIER)) {
                 policies.add(policy);
             }
