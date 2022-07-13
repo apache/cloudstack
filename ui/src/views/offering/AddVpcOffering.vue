@@ -478,20 +478,22 @@ export default {
               serviceCapabilityIndex++
             }
           }
-          if (supportedServices.includes('SourceNat') && values.redundantrouter === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
-          }
           if (values.serviceofferingid && this.isVpcVirtualRouterForAtLeastOneService) {
             params.serviceofferingid = values.serviceofferingid
           }
-          if (supportedServices.includes('SourceNat') && values.selectsnatipallowed === true) {
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SelectSnatIpAllowed'
-            params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
-            serviceCapabilityIndex++
+          if (supportedServices.includes('SourceNat')) {
+            if (values.redundantrouter === true) {
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'RedundantRouter'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+              serviceCapabilityIndex++
+            }
+            if (values.selectsnatipallowed === true) {
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].service'] = 'SourceNat'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilitytype'] = 'SelectSnatIpAllowed'
+              params['serviceCapabilityList[' + serviceCapabilityIndex + '].capabilityvalue'] = true
+              serviceCapabilityIndex++
+            }
           }
         } else {
           params.supportedservices = ''
