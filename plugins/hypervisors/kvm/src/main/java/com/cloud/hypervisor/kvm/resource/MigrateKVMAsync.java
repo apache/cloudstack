@@ -37,7 +37,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private String dxml = "";
     private String vmName = "";
     private String destIp = "";
-    private String rootDiskDiskDeviceLabel = null;
+    private String rootDiskDiskDevicesLabels = null;
     private boolean migrateStorage;
     private boolean migrateNonSharedInc;
     private boolean autoConvergence;
@@ -94,7 +94,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
 
     public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
             final boolean migrateStorage, final boolean migrateNonSharedInc, final boolean autoConvergence, final String vmName, final String destIp,
-            final String rootDiskDiskDeviceLabel) {
+            final String rootDiskDiskDevicesLabels) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
@@ -105,7 +105,7 @@ public class MigrateKVMAsync implements Callable<Domain> {
         this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
-        this.rootDiskDiskDeviceLabel = rootDiskDiskDeviceLabel;
+        this.rootDiskDiskDevicesLabels = rootDiskDiskDevicesLabels;
     }
 
     @Override
@@ -130,8 +130,8 @@ public class MigrateKVMAsync implements Callable<Domain> {
             flags |= VIR_MIGRATE_AUTO_CONVERGE;
         }
 
-        if (StringUtils.isNotBlank(rootDiskDiskDeviceLabel) && migrateStorage && !migrateNonSharedInc) {
-            return migrateRootDisk(flags, rootDiskDiskDeviceLabel, destUri);
+        if (StringUtils.isNotBlank(rootDiskDiskDevicesLabels) && migrateStorage && !migrateNonSharedInc) {
+            return migrateRootDisk(flags, rootDiskDiskDevicesLabels, destUri);
         }
         return dm.migrate(dconn, flags, dxml, vmName, destUri, libvirtComputingResource.getMigrateSpeed());
     }
@@ -141,14 +141,14 @@ public class MigrateKVMAsync implements Callable<Domain> {
      * VIR_MIGRATE_NON_SHARED_DISK is analagous to "--copy-all" in "virsh".
      * Binding into: "virsh migrate i-2-13456-VM qemu://<DestHostAddr>/system --live --compressed --copy-storage-all --migrate-disks vda --xml i-2-13456-VM.xml"
      */
-    private Domain migrateRootDisk(long flags, String diskDeviceName, String uri) throws LibvirtException {
+    private Domain migrateRootDisk(long flags, String diskDevicesName, String uri) throws LibvirtException {
         int nParams = 5;
         TypedParameter[] params = new TypedParameter[nParams];
         params[0] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_XML, dxml);
         params[1] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_DEST_NAME, vmName);
         params[2] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_URI, uri);
         params[3] = new TypedUlongParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_BANDWIDTH, (long)libvirtComputingResource.getMigrateSpeed());
-        params[4] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_MIGRATE_DISKS, diskDeviceName);
+        params[4] = new TypedStringParameter(Domain.DomainMigrateParameters.VIR_MIGRATE_PARAM_MIGRATE_DISKS, diskDevicesName);
         return dm.migrate(dconn, params, flags);
     }
 }

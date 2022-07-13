@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,6 +46,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.DpdkTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -188,7 +190,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
             final boolean migrateStorageManaged = command.isMigrateStorageManaged();
 
-            String rootDiskDiskDeviceLabel = null;
+            String rootDiskDiskDevicesLabels = null;
             if (migrateStorage) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Changing VM [%s] volumes during migration to host: [%s].", vmName, target));
@@ -197,7 +199,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(String.format("Changed VM [%s] XML configuration of used storage. New XML configuration is [%s].", vmName, xmlDesc));
                 }
-                rootDiskDiskDeviceLabel = retrieveLocalRootDiskDeviceLabel(disks);
+                rootDiskDiskDevicesLabels = retrieveLocalDiskDevicesLabels(disks);
             }
 
             Map<String, DpdkTO> dpdkPortsMapping = command.getDpdkInterfaceMapping();
@@ -224,7 +226,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
-                    command.isAutoConvergence(), vmName, command.getDestinationIp(), rootDiskDiskDeviceLabel);
+                    command.isAutoConvergence(), vmName, command.getDestinationIp(), rootDiskDiskDevicesLabels);
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -365,18 +367,22 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      * It returns the label of the Root disk in case it is placed in a local storage.
      * In such cases, the disk device is of type "File".
      * If the Root volume is not in local storage then it returns null.
-     * Example of output: "sda".
-     *
-     * @Note: At the moment of this implementation, CloudStack supports only Root volumes to be placed in Local storage.
-     *        It is not possible to have local data-disk, therefore, only one device of type "Disk" can be a "File".
-     *        Domain's XML contain also "DeviceType.CDROM" of type "DiskDef.DiskType.FILE", which is filtered in this method.
+     * Example of output: "sda" for one Root local.
+     * In case of multiple devices, then comma separated; example: "sda,sdb".
      */
-    protected String retrieveLocalRootDiskDeviceLabel(List<DiskDef> disks) {
-        DiskDef diskDef = disks.get(0);
-        if (DiskDef.DiskType.FILE == diskDef.getDiskType() && DiskDef.DeviceType.DISK == diskDef.getDeviceType()) {
-            return diskDef.getDiskLabel();
+    protected String retrieveLocalDiskDevicesLabels(List<DiskDef> disks) {
+        List<String> labels = new ArrayList<>();
+        for (DiskDef diskDef : disks) {
+            if (DiskDef.DiskType.FILE == diskDef.getDiskType() && DiskDef.DeviceType.DISK == diskDef.getDeviceType()) {
+                labels.add(diskDef.getDiskLabel());
+            }
         }
-        return null;
+
+        String localDiskDevicesLabels = null;
+        if (CollectionUtils.isNotEmpty(labels))
+            localDiskDevicesLabels = String.join(",", labels);
+
+        return localDiskDevicesLabels;
     }
 
     /**

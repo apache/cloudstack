@@ -794,40 +794,54 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void discoverLocalRootDiskDeviceLabelTestRootDiskFile() {
-        String rootLabel = "vda";
-        DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, DiskDef.DeviceType.DISK);
+        String rootLabel = "rootLabel";
+        DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, DiskDef.DeviceType.DISK, rootLabel);
         Mockito.when(rootDisk.getDiskLabel()).thenReturn(rootLabel);
-        prepareAndTestDiscoverLocalRootDiskDeviceLabel(rootDisk, rootLabel);
+        List<DiskDef> disks = new ArrayList<>();
+        disks.add(rootDisk);
+        prepareAndTestDiscoverLocalRootDiskDeviceLabel(disks, rootLabel);
     }
 
     @Test
     public void discoverLocalRootDiskDeviceLabelTestRootDiskFileNotDisk() {
-        String rootLabel = "vda";
+        String rootLabel = "rootLabel";
         String expectedLabel = null;
         for (DiskDef.DeviceType deviceType : DiskDef.DeviceType.values()) {
             if (DiskDef.DeviceType.DISK != deviceType) {
                 List<DiskDef> disks = new ArrayList<>();
-                DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, deviceType);
+                DiskDef rootDisk = mockDisk(DiskDef.DiskType.FILE, deviceType, rootLabel);
                 Mockito.when(rootDisk.getDiskLabel()).thenReturn(rootLabel);
-                prepareAndTestDiscoverLocalRootDiskDeviceLabel(rootDisk, expectedLabel);
+                disks.add(rootDisk);
+                prepareAndTestDiscoverLocalRootDiskDeviceLabel(disks, expectedLabel);
             }
         }
     }
 
-    private void prepareAndTestDiscoverLocalRootDiskDeviceLabel(DiskDef rootDisk, String expected) {
+    @Test
+    public void TestMultipleDeviceLabel() {
         List<DiskDef> disks = new ArrayList<>();
-        disks.add(rootDisk);
-        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK));
-        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK));
-        disks.add(mockDisk(DiskDef.DiskType.BLOCK, DiskDef.DeviceType.DISK));
-        String diskLabel = libvirtMigrateCmdWrapper.retrieveLocalRootDiskDeviceLabel(disks);
+        disks.add(mockDisk(DiskDef.DiskType.FILE, DiskDef.DeviceType.DISK, "label1"));
+        disks.add(mockDisk(DiskDef.DiskType.FILE, DiskDef.DeviceType.DISK, "label2"));
+        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK, "label3"));
+        disks.add(mockDisk(DiskDef.DiskType.BLOCK, DiskDef.DeviceType.DISK, "label4"));
+        String diskLabel = libvirtMigrateCmdWrapper.retrieveLocalDiskDevicesLabels(disks);
+        String expected = "label1,label2";
         Assert.assertEquals(expected, diskLabel);
     }
 
-    private DiskDef mockDisk(DiskDef.DiskType file, DiskDef.DeviceType diskType) {
+    private void prepareAndTestDiscoverLocalRootDiskDeviceLabel(List<DiskDef> disks, String expected) {
+        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK, "label1"));
+        disks.add(mockDisk(DiskDef.DiskType.NETWORK, DiskDef.DeviceType.DISK, "label2"));
+        disks.add(mockDisk(DiskDef.DiskType.BLOCK, DiskDef.DeviceType.DISK,"label3"));
+        String diskLabel = libvirtMigrateCmdWrapper.retrieveLocalDiskDevicesLabels(disks);
+        Assert.assertEquals(expected, diskLabel);
+    }
+
+    private DiskDef mockDisk(DiskDef.DiskType file, DiskDef.DeviceType diskType, String label) {
         DiskDef mockedDisk = Mockito.mock(DiskDef.class);
         Mockito.when(mockedDisk.getDiskType()).thenReturn(file);
         Mockito.when(mockedDisk.getDeviceType()).thenReturn(diskType);
+        Mockito.when(mockedDisk.getDiskLabel()).thenReturn(label);
         return mockedDisk;
     }
 }
