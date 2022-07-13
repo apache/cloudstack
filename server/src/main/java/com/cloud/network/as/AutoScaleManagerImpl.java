@@ -268,7 +268,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
 
-    private static final List<String> supportedDeployParams = Arrays.asList("rootdisksize", "diskofferingid", "size", "securitygroupids");
+    private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
+    private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
+    private static final String PARAM_DATA_DISK_SIZE = "size";
+    private static final String PARAM_SECURITY_GROUP_IDS = "securitygroupids";
+    private static final String PARAM_OVERRIDE_DISK_OFFERING_ID = "overridediskofferingid";
+    private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DATA_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
+            PARAM_OVERRIDE_DISK_OFFERING_ID);
 
     ExecutorService _groupExecutor;
 
@@ -1596,35 +1602,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<String> sshKeyPairs = new ArrayList<>();
 
             Map<String, String> deployParams = getDeployParams(profileVo.getOtherDeployParams());
-            if (deployParams.get("cpunumber") != null) {    // CPU number
-                String value = deployParams.get("cpunumber");
-                try {
-                    Long cpuNumber = Long.parseLong(value);
-                    customParameters.put(VmDetailConstants.CPU_NUMBER, String.valueOf(cpuNumber));
-                } catch (NumberFormatException ex) {
-                    s_logger.warn("Cannot parse cpunumber from otherdeployparams in AutoScale Vm profile");
-                }
-            }
-            if (deployParams.get("cpuspeed") != null) {     // CPU speed
-                String value = deployParams.get("cpuspeed");
-                try {
-                    Long cpuSpeed = Long.parseLong(value);
-                    customParameters.put(VmDetailConstants.CPU_SPEED, String.valueOf(cpuSpeed));
-                } catch (NumberFormatException ex) {
-                    s_logger.warn("Cannot parse cpuspeed from otherdeployparams in AutoScale Vm profile");
-                }
-            }
-            if (deployParams.get("memory") != null) {       // memory
-                String value = deployParams.get("memory");
-                try {
-                    Long memory = Long.parseLong(value);
-                    customParameters.put(VmDetailConstants.MEMORY, String.valueOf(memory));
-                } catch (NumberFormatException ex) {
-                    s_logger.warn("Cannot parse memory from otherdeployparams in AutoScale Vm profile");
-                }
-            }
-            if (deployParams.get("rootdisksize") != null) {     // ROOT disk size
-                String value = deployParams.get("rootdisksize");
+            if (deployParams.get(PARAM_ROOT_DISK_SIZE) != null) {     // ROOT disk size
+                String value = deployParams.get(PARAM_ROOT_DISK_SIZE);
                 try {
                     Long rootDiskSize = Long.parseLong(value);
                     customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(rootDiskSize));
@@ -1633,8 +1612,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
             Long overrideDiskOfferingId = null;     // override ROOT disk offering
-            if (deployParams.get("overridediskofferingid") != null) {
-                String overrideDiskOfferingUuid = deployParams.get("overridediskofferingid");
+            if (deployParams.get(PARAM_OVERRIDE_DISK_OFFERING_ID) != null) {
+                String overrideDiskOfferingUuid = deployParams.get(PARAM_OVERRIDE_DISK_OFFERING_ID);
                 DiskOffering overrideDiskOfferingInParam = _diskOfferingDao.findByUuid(overrideDiskOfferingUuid);
                 if (overrideDiskOfferingInParam != null) {
                     overrideDiskOfferingId = overrideDiskOfferingInParam.getId();
@@ -1643,8 +1622,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
             Long diskOfferingId = null;     // DATA disk offering ID
-            if (deployParams.get("diskofferingid") != null) {
-                String diskOfferingUuid = deployParams.get("diskofferingid");
+            if (deployParams.get(PARAM_DISK_OFFERING_ID) != null) {
+                String diskOfferingUuid = deployParams.get(PARAM_DISK_OFFERING_ID);
                 DiskOffering diskOfferingInParam = _diskOfferingDao.findByUuid(diskOfferingUuid);
                 if (diskOfferingInParam != null) {
                     diskOfferingId = diskOfferingInParam.getId();
@@ -1653,8 +1632,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
             Long dataDiskSize = null;       // DATA disk size
-            if (deployParams.get("size") != null) {
-                String dataDiskSizeInParam = deployParams.get("size");
+            if (deployParams.get(PARAM_DATA_DISK_SIZE) != null) {
+                String dataDiskSizeInParam = deployParams.get(PARAM_DATA_DISK_SIZE);
                 try {
                     dataDiskSize = Long.parseLong(dataDiskSizeInParam);
                 } catch (NumberFormatException ex) {
