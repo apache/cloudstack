@@ -155,12 +155,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="domain in domains"
               :key="domain.id"
-              :value="domain.id">{{ domain.path || domain.name || domain.description }}
+              :value="domain.id"
+              :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
             </a-select-option>
           </a-select>
         </div>
@@ -208,10 +209,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             v-focus="true">
-            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id">{{ pod.name }}</a-select-option>
+            <a-select-option v-for="pod in pods" :key="pod.id" :value="pod.id" :label="pod.name">{{ pod.name }}</a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item name="vlan" ref="vlan" :label="$t('label.vlan')" class="form__item" v-if="!basicGuestNetwork">
@@ -258,12 +259,13 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="domain in domains"
                   :key="domain.id"
-                  :value="domain.id">{{ domain.path || domain.name || domain.description }}
+                  :value="domain.id"
+                  :label="domain.path || domain.name || domain.description">{{ domain.path || domain.name || domain.description }}
                 </a-select-option>
               </a-select>
             </a-form-item>

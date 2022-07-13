@@ -44,9 +44,13 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(nic, nicIndex) in nics[index]" :key="nic" :value="nic">
+              <a-select-option
+                v-for="(nic, nicIndex) in nics[index]"
+                :key="nic"
+                :value="nic"
+                :label="nic + nicIndex === 0 ? ` (${this.$t('label.primary')})` : null">
                 {{ nic }}{{ nicIndex === 0 ? ` (${this.$t('label.primary')})` : null }}
               </a-select-option>
             </a-select>

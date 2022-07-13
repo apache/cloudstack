@@ -41,13 +41,13 @@
           <a-select
             v-model:value="newRule.traffictype"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             @change="val => { handleTrafficTypeChange(val) }" >
-            <a-select-option value="ingress">{{ $t('label.ingress') }}</a-select-option>
-            <a-select-option value="egress">{{ $t('label.egress') }}</a-select-option>
+            <a-select-option value="ingress" :label="$t('label.ingress')">{{ $t('label.ingress') }}</a-select-option>
+            <a-select-option value="egress" :label="$t('label.egress')">{{ $t('label.egress') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item">
@@ -57,11 +57,11 @@
             style="width: 100%;"
             @change="resetRulePorts"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="opt in protocols" :key="opt">
+            <a-select-option v-for="opt in protocols" :key="opt" :label="$t('label.' + opt)">
               {{ $t('label.' + opt) }}
             </a-select-option>
           </a-select>

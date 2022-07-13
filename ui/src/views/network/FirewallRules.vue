@@ -32,11 +32,11 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
-            <a-select-option value="icmp">{{ $t('label.icmp') }}</a-select-option>
+            <a-select-option value="tcp" :label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="icmp" :label="$t('label.icmp')">{{ $t('label.icmp') }}</a-select-option>
           </a-select>
         </div>
         <div v-show="newRule.protocol === 'tcp' || newRule.protocol === 'udp'" class="form__item">

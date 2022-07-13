@@ -509,7 +509,7 @@ export default {
     },
     filterOption (input, option) {
       return (
-        option.children[0].children.toUpperCase().indexOf(input.toUpperCase()) >= 0
+        option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
       )
     },
     fetchOptions (param, name, exclude) {

@@ -120,7 +120,7 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option v-for="hypervisor in hypervisors" :key="hypervisor.name">
             {{ hypervisor.name }}
@@ -141,11 +141,12 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
           <a-select-option
             v-for="networkOffering in availableNetworkOfferings"
-            :key="networkOffering.id">
+            :key="networkOffering.id"
+            :label="networkOffering.displaytext || networkOffering.name || networkOffering.description">
             {{ networkOffering.displaytext || networkOffering.name || networkOffering.description }}
           </a-select-option>
         </a-select>
@@ -188,9 +189,9 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="dom in domains" :key="dom.id">
+          <a-select-option v-for="dom in domains" :key="dom.id" :label="dom.path">
             {{ dom.path }}
           </a-select-option>
         </a-select>

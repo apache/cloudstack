@@ -41,7 +41,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option value="VLAN"> VLAN </a-select-option>
             <a-select-option value="VXLAN"> VXLAN </a-select-option>
@@ -74,7 +74,7 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="(traffic, index) in availableTrafficToAdd"
@@ -198,11 +198,17 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option value="nexusdvs">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
-              <a-select-option value="vmwaresvs">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
-              <a-select-option value="vmwaredvs">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
+              <a-select-option
+                value="nexusdvs"
+                :label="$t('label.vswitch.type.nexusdvs')">{{ $t('label.vswitch.type.nexusdvs') }}</a-select-option>
+              <a-select-option
+                value="vmwaresvs"
+                :label="$t('label.vswitch.type.vmwaresvs')">{{ $t('label.vswitch.type.vmwaresvs') }}</a-select-option>
+              <a-select-option
+                value="vmwaredvs"
+                :label="$t('label.vswitch.type.vmwaredvs')">{{ $t('label.vswitch.type.vmwaredvs') }}</a-select-option>
             </a-select>
           </a-form-item>
         </span>

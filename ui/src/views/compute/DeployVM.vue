@@ -221,7 +221,7 @@
                         }"
                         @change="onSelectTemplateConfigurationId"
                       >
-                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id">
+                        <a-select-option v-for="opt in templateConfigurations" :key="opt.id" :label="opt.name || opt.description">
                           {{ opt.name || opt.description }}
                         </a-select-option>
                       </a-select>
@@ -487,7 +487,7 @@
                             v-model:value="form['properties.' + escapePropertyKey(property.key)]"
                             :placeholder="property.description"
                             :filterOption="(input, option) => {
-                              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                             }"
                           >
                             <a-select-option v-for="opt in getPropertyQualifiers(property.qualifiers, 'select')" :key="opt">
@@ -528,7 +528,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id">
+                          <a-select-option v-for="bootType in options.bootTypes" :key="bootType.id" :label="bootType.description">
                             {{ bootType.description }}
                           </a-select-option>
                         </a-select>
@@ -539,7 +539,7 @@
                           showSearch
                           optionFilterProp="label"
                           :filterOption="filterOption">
-                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id">
+                          <a-select-option v-for="bootMode in options.bootModes" :key="bootMode.id" :label="bootMode.description">
                             {{ bootMode.description }}
                           </a-select-option>
                         </a-select>

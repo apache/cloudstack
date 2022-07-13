@@ -27,9 +27,9 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id">
+          <a-select-option v-for="network in networksList" :key="network.id" :value="network.id" :label="network.name">
             {{ network.name }}
           </a-select-option>
         </a-select>
@@ -64,12 +64,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }">
             <a-select-option
               @click="selectedNic = item"
               v-for="item in nicsList"
-              :key="item.id">
+              :key="item.id"
+              :label="item.ipaddress">
               {{ item.ipaddress }}
             </a-select-option>
           </a-select>

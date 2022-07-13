@@ -204,12 +204,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
             v-if="isAdmin()">
-            <a-select-option v-for="(opt) in storageTags" :key="opt">
+            <a-select-option v-for="(opt) in storageTags" :key="opt" :label="opt">
               {{ opt }}
             </a-select-option>
           </a-select>
@@ -275,9 +275,9 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option v-for="policy in storagePolicies" :key="policy.id">
+            <a-select-option v-for="policy in storagePolicies" :key="policy.id" :label="policy.name || policy.id">
               {{ policy.name || policy.id }}
             </a-select-option>
           </a-select>

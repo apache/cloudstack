@@ -93,10 +93,10 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option value="account">{{ $t('label.account') }}</a-select-option>
-              <a-select-option value="project">{{ $t('label.project') }}</a-select-option>
+              <a-select-option value="account" :label="$t('label.account')">{{ $t('label.account') }}</a-select-option>
+              <a-select-option value="project" :label="$t('label.project')">{{ $t('label.project') }}</a-select-option>
             </a-select>
           </a-form-item>
 

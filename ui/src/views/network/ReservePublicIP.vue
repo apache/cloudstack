@@ -37,7 +37,7 @@
           showSearch
           optionFilterProp="label"
           :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }">
           <a-select-option :value="$t('label.account')">{{ $t('label.account') }}</a-select-option>
           <a-select-option :value="$t('label.project')">{{ $t('label.project') }}</a-select-option>

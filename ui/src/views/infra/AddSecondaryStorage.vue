@@ -35,7 +35,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               :value="prov"

@@ -167,9 +167,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in physicalnetworks" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>
@@ -338,9 +338,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id">
+                  <a-select-option v-for="item in vpncustomergateways" :key="item.id" :value="item.id" :label="item.name">
                     {{ item.name }}
                   </a-select-option>
                 </a-select>

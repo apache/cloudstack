@@ -69,7 +69,7 @@
                       v-for="(opt, idx) in field.opts"
                       :key="idx"
                       :value="opt.id"
-                      :label="$t(opt.name)">
+                      :label="$t(opt.path || opt.name)">
                       <div>
                         <span v-if="(field.name.startsWith('zone'))">
                           <span v-if="opt.icon">

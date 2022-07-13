@@ -109,11 +109,12 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option
                   v-for="(opt, idx) in field.opts"
-                  :key="idx">{{ opt.name || opt.description }}</a-select-option>
+                  :key="idx"
+                  :label="opt.name || opt.description">{{ opt.name || opt.description }}</a-select-option>
               </a-select>
             </span>
             <span v-else>

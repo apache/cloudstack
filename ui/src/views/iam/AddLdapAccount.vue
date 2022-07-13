@@ -59,9 +59,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
-                <a-select-option v-for="opt in filters" :key="opt.id" >
+                <a-select-option v-for="opt in filters" :key="opt.id" :label="opt.name">
                   {{ opt.name }}
                 </a-select-option>
               </a-select>
@@ -73,9 +73,9 @@
                 :loading="domainLoading"
                 @change="fetchListLdapUsers($event)"
                 showSearch
-                optionFilterProp="label"
+                optionFilterProp="value"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="opt in listDomains" :key="opt.name">
                   {{ opt.name }}
@@ -94,9 +94,9 @@
                 :placeholder="apiParams.roleid.description"
                 :loading="roleLoading"
                 showSearch
-                optionFilterProp="label"
+                optionFilterProp="value"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
                 <a-select-option v-for="opt in listRoles" :key="opt.name">
                   {{ opt.name }}
@@ -111,9 +111,9 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }">
-                <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                   {{ opt.name || opt.description }}
                 </a-select-option>
               </a-select>
@@ -142,9 +142,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }">
-                  <a-select-option v-for="(idp, idx) in listIdps" :key="idx">
+                  <a-select-option v-for="(idp, idx) in listIdps" :key="idx" :label="idp.orgName">
                     {{ idp.orgName }}
                   </a-select-option>
                 </a-select>

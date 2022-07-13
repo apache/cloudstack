@@ -72,7 +72,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="format in formats" :key="format">
               {{ format }}
@@ -90,12 +90,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="(offering, index) in offerings"
               :value="offering.id"
-              :key="index">
+              :key="index"
+              :label="offering.displaytext || offering.name">
               {{ offering.displaytext || offering.name }}
             </a-select-option>
           </a-select>
@@ -118,12 +119,12 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="domainLoading"
             :placeholder="$t('label.domainid')"
             @change="val => { handleDomainChange(domainList[val].id) }">
-            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex">
+            <a-select-option v-for="(opt, optIndex) in domainList" :key="optIndex" :label="opt.path || opt.name || opt.description">
               {{ opt.path || opt.name || opt.description }}
             </a-select-option>
           </a-select>
@@ -137,7 +138,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :placeholder="$t('label.account')"
             @change="val => { handleAccountChange(val) }">

@@ -66,10 +66,10 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
-            <a-select-option value="tcp">{{ $t('label.tcp') }}</a-select-option>
-            <a-select-option value="udp">{{ $t('label.udp') }}</a-select-option>
+            <a-select-option value="tcp" label="$t('label.tcp')">{{ $t('label.tcp') }}</a-select-option>
+            <a-select-option value="udp" :label="$t('label.udp')">{{ $t('label.udp') }}</a-select-option>
           </a-select>
         </div>
         <div class="form__item" style="margin-left: auto;">
@@ -217,12 +217,13 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option
               v-for="tier in tiers.data"
               :loading="tiers.loading"
-              :key="tier.id">
+              :key="tier.id"
+              :label="tier.displaytext">
               {{ tier.displaytext }}
             </a-select-option>
           </a-select>
@@ -256,9 +257,13 @@
                 showSearch
                 optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
-                <a-select-option v-for="(nic, nicIndex) in nics" :key="nic" :value="nic">
+                <a-select-option
+                  v-for="(nic, nicIndex) in nics"
+                  :key="nic"
+                  :value="nic"
+                  :label="nic + nicIndex === 0 ? ` (${$t('label.primary')})` : null">
                   {{ nic }}{{ nicIndex === 0 ? ` (${$t('label.primary')})` : null }}
                 </a-select-option>
               </a-select>

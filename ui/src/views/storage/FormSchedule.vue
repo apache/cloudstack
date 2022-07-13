@@ -86,9 +86,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex">
+                  <a-select-option v-for="(opt, optIndex) in dayOfWeek" :key="optIndex" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>
@@ -101,7 +101,7 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
                   <a-select-option v-for="opt in dayOfMonth" :key="opt.name">
                     {{ opt.name }}
@@ -130,9 +130,9 @@
                   showSearch
                   optionFilterProp="label"
                   :filterOption="(input, option) => {
-                    return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }" >
-                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id">
+                  <a-select-option v-for="opt in timeZoneMap" :key="opt.id" :label="opt.name || opt.description">
                     {{ opt.name || opt.description }}
                   </a-select-option>
                 </a-select>

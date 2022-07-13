@@ -192,9 +192,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkOfferings" :key="item.id" :value="item.id" :label="item.displaytext || item.name || item.description">
                 {{ item.displaytext || item.name || item.description }}
               </a-select-option>
             </a-select>
@@ -242,9 +242,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id">
+              <a-select-option v-for="item in networkAclList" :key="item.id" :value="item.id" :label="`${item.name}(${item.description})`">
                 <strong>{{ item.name }}</strong> ({{ item.description }})
               </a-select-option>
             </a-select>
@@ -306,9 +306,9 @@
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]">
+              <a-select-option v-for="(key, idx) in Object.keys(algorithms)" :key="idx" :value="algorithms[key]" :label="key">
                 {{ key }}
               </a-select-option>
             </a-select>
