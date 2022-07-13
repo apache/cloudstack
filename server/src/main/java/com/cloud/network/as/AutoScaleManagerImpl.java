@@ -1843,6 +1843,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             } else {
                 s_logger.error("Can not deploy new VM for scaling up in the group "
                     + asGroup.getId() + ". Waiting for next round");
+                try {
+                    removeVmFromVmGroup(vmId);
+                    _userVmManager.destroyVm(vmId, false);
+                } catch (ResourceUnavailableException ex) {
+                    s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
+                } catch (ConcurrentOperationException ex) {
+                    s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
+                }
                 break;
             }
         }
