@@ -48,6 +48,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
@@ -149,8 +151,10 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -265,16 +269,23 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     protected RouterControlHelper _routerControlHelper;
     @Inject
     private DiskOfferingDao _diskOfferingDao;
+    @Inject
+    private SSHKeyPairDao _sshKeyPairDao;
+    @Inject
+    private AffinityGroupDao _affinityGroupDao;
 
     private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
     private static final String PARAM_DATA_DISK_SIZE = "size";
-    private static final String PARAM_SECURITY_GROUP_IDS = "securitygroupids";
     private static final String PARAM_OVERRIDE_DISK_OFFERING_ID = "overridediskofferingid";
+    private static final String PARAM_SECURITY_GROUP_IDS = "securitygroupids";
+    private static final String PARAM_SSH_KEYPAIRS = "keypairs";
+    private static final String PARAM_AFFINITY_GROUP_IDS = "affinitygroupids";
+
     private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DATA_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
-            PARAM_OVERRIDE_DISK_OFFERING_ID);
+            PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS);
 
     ExecutorService _groupExecutor;
 
@@ -509,6 +520,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
+        s_logger.debug("deployParams=" + deployParams);
         if (deployParams.containsKey("networks") && deployParams.get("networks").length() > 0) {
             throw new InvalidParameterValueException(
                 "'networks' is not a valid parameter, network for an AutoScaled VM is chosen automatically. An autoscaled VM is deployed in the loadbalancer's network");
@@ -1641,12 +1653,37 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
 
+            if (deployParams.get(PARAM_SSH_KEYPAIRS) != null) {   // SSH keypairs
+                String[] keypairs = deployParams.get(PARAM_SSH_KEYPAIRS).split(",");
+                for (String keypair : keypairs) {
+                    SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), keypair);
+                    if (s != null) {
+                        sshKeyPairs.add(s.getName());
+                    } else {
+                        s_logger.warn("Cannot find ssh keypair by name in sshkeypairs from otherdeployparams in AutoScale Vm profile");
+                    }
+                }
+            }
+
+            List<Long> affinityGroupIdList = new ArrayList<>();
+            if (deployParams.get(PARAM_AFFINITY_GROUP_IDS) != null) {   // Affinity groups
+                String[] affinityGroupIds = deployParams.get(PARAM_AFFINITY_GROUP_IDS).split(",");
+                for (String affinityGroupId : affinityGroupIds) {
+                    AffinityGroupVO affintyGroup = _affinityGroupDao.findByUuid(affinityGroupId);
+                    if (affintyGroup != null) {
+                        affinityGroupIdList.add(affintyGroup.getId());
+                    } else {
+                        s_logger.warn("Cannot find affinity group by affinitygroupids from otherdeployparams in AutoScale Vm profile");
+                    }
+                }
+            }
+
             if (zone.getNetworkType() == NetworkType.Basic) {
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
                     "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                     hypervisorType, HTTPMethod.GET, null, sshKeyPairs, null,
-                    null, true, null, null, customParameters, null, null, null,
+                    null, true, null, affinityGroupIdList, customParameters, null, null, null,
                     null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
@@ -1654,14 +1691,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
                         "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
-                        null, true, null, null, customParameters, null, null, null,
+                        null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
                             diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
-                        addrs, true, null, null, customParameters, null, null, null,
+                        addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, null, overrideDiskOfferingId);
                 }
             }

@@ -620,6 +620,41 @@
                 </template>
               </a-step>
               <a-step
+                :title="$t('label.advanced.mode')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description v-if="zoneSelected">
+                  <span>
+                    {{ $t('label.isadvanced') }}
+                    <a-switch v-model:checked="showDetails" style="margin-left: 10px"/>
+                  </span>
+                  <div style="margin-top: 15px" v-show="showDetails">
+                    <a-form-item :label="$t('label.sshkeypairs')">
+                      <ssh-key-pair-selection
+                        :items="options.sshKeyPairs"
+                        :row-count="rowCount.sshKeyPairs"
+                        :zoneId="zoneId"
+                        :value="sshKeyPairs"
+                        :loading="loading.sshKeyPairs"
+                        :preFillContent="dataPreFill"
+                        @select-ssh-key-pair-item="($event) => updateSshKeyPairs($event)"
+                        @handle-search-filter="($event) => handleSearchFilter('sshKeyPairs', $event)"
+                      />
+                    </a-form-item>
+                    <a-form-item :label="$t('label.affinity.groups')">
+                      <affinity-group-selection
+                        :items="options.affinityGroups"
+                        :row-count="rowCount.affinityGroups"
+                        :zoneId="zoneId"
+                        :value="affinityGroupIds"
+                        :loading="loading.affinityGroups"
+                        :preFillContent="dataPreFill"
+                        @select-affinity-group-item="($event) => updateAffinityGroups($event)"
+                        @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.details')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description v-if="zoneSelected">
@@ -782,6 +817,9 @@ export default {
         serviceofferingname: null,
         ostypeid: null,
         ostypename: null,
+        keypairs: [],
+        affinitygroupids: [],
+        affinitygroup: [],
         rootdisksize: null,
         disksize: null
       },
@@ -790,7 +828,9 @@ export default {
         serviceOfferings: [],
         diskOfferings: [],
         zones: [],
+        affinityGroups: [],
         networks: [],
+        sshKeyPairs: [],
         loadbalancers: []
       },
       rowCount: {},
@@ -799,7 +839,9 @@ export default {
         templates: false,
         serviceOfferings: false,
         diskOfferings: false,
+        affinityGroups: false,
         networks: false,
+        sshKeyPairs: false,
         loadbalancers: false,
         zones: false
       },
@@ -812,6 +854,7 @@ export default {
       selectedTemplateConfiguration: {},
       serviceOffering: {},
       diskOffering: {},
+      affinityGroups: [],
       networks: [],
       networksAdd: [],
       selectedLbId: null,
@@ -866,6 +909,8 @@ export default {
       ],
       usersList: [],
       zone: {},
+      sshKeyPairs: [],
+      sshKeyPair: {},
       overrideDiskOffering: {},
       templateFilter: [
         'featured',
@@ -918,6 +963,9 @@ export default {
       }
       return size.join(' | ')
     },
+    affinityGroupIds () {
+      return _.map(this.affinityGroups, 'id')
+    },
     params () {
       return {
         serviceOfferings: {
@@ -943,6 +991,24 @@ export default {
           list: 'listZones',
           isLoad: true,
           field: 'zoneid'
+        },
+        affinityGroups: {
+          list: 'listAffinityGroups',
+          options: {
+            page: 1,
+            pageSize: 10,
+            keyword: undefined,
+            listall: false
+          }
+        },
+        sshKeyPairs: {
+          list: 'listSSHKeyPairs',
+          options: {
+            page: 1,
+            pageSize: 10,
+            keyword: undefined,
+            listall: false
+          }
         },
         networks: {
           list: 'listNetworks',
@@ -1061,6 +1127,8 @@ export default {
 
         this.zone = _.find(this.options.zones, (option) => option.id === vmgroupConfig.zoneid)
         this.networks = _.filter(this.options.networks, (option) => _.includes(vmgroupConfig.networkids, option.id))
+        this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(vmgroupConfig.affinitygroupids, option.id))
+        this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === vmgroupConfig.keypair)
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
@@ -1117,6 +1185,14 @@ export default {
           this.vm.diskofferingid = this.diskOffering.id
           this.vm.diskofferingname = this.diskOffering.displaytext
           this.vm.diskofferingsize = this.diskOffering.disksize
+        }
+
+        if (this.affinityGroups) {
+          this.vm.affinitygroup = this.affinityGroups
+        }
+
+        if (this.sshKeyPairs && this.sshKeyPairs.length > 0) {
+          this.vm.keypairs = this.sshKeyPairs
         }
       }
     }
@@ -1425,6 +1501,9 @@ export default {
         zonename: null,
         templateid: null,
         templatename: null,
+        keypair: null,
+        affinitygroupids: [],
+        affinitygroup: [],
         serviceofferingid: null,
         serviceofferingname: null,
         ostypeid: null,
@@ -1605,6 +1684,13 @@ export default {
     deleteScaleDownCondition (counterId) {
       this.scaleDownConditions = this.scaleDownConditions.filter(condition => condition.counterid !== counterId)
     },
+    updateSshKeyPairs (names) {
+      this.form.keypairs = names
+      this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
+    },
+    updateAffinityGroups (ids) {
+      this.form.affinitygroupids = ids
+    },
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
@@ -1664,6 +1750,16 @@ export default {
         if (createVmGroupData.securitygroupids) {
           params['otherdeployparams[' + j + '].name'] = 'securitygroupids'
           params['otherdeployparams[' + j + '].value'] = createVmGroupData.securitygroupids
+          j++
+        }
+        if (createVmGroupData.keypairs) {
+          params['otherdeployparams[' + j + '].name'] = 'keypairs'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.keypairs
+          j++
+        }
+        if (createVmGroupData.affinitygroupids) {
+          params['otherdeployparams[' + j + '].name'] = 'affinitygroupids'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.affinitygroupids
           j++
         }
         api('createAutoScaleVmProfile', params).then(async json => {
@@ -1891,6 +1987,10 @@ export default {
         if (this.securitygroupids.length > 0) {
           createVmGroupData.securitygroupids = this.securitygroupids.join(',')
         }
+
+        // advanced settings
+        createVmGroupData.keypairs = this.sshKeyPairs.join(',')
+        createVmGroupData.affinitygroupids = (values.affinitygroupids || []).join(',')
 
         // vm profile details
         createVmGroupData.autoscaleuserid = values.autoscaleuserid
