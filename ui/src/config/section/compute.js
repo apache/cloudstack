@@ -574,7 +574,7 @@ export default {
           label: 'label.disable.autoscale.vmgroup',
           message: 'message.confirm.disable.autoscale.vmgroup',
           dataView: true,
-          show: (record) => { return record.state === 'Enabled' }
+          show: (record) => { return ['Enabled', 'Scaling'].includes(record.state) }
         },
         {
           api: 'updateAutoScaleVmGroup',

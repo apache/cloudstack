@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.as;
 
-import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -333,7 +332,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public void validateAutoScaleCounters(long networkid, List<Counter> counters, List<Pair<String, String>> counterParamPassed) {
         List<AutoScaleCounter> supportedCounters = getSupportedAutoScaleCounters(networkid);
         if (supportedCounters == null) {
-            throw new InvalidParameterException("AutoScale is not supported in the network");
+            throw new InvalidParameterValueException("AutoScale is not supported in the network");
         }
         for (Counter counter : counters) {
             String counterName = counter.getSource().name();
@@ -352,7 +351,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                             }
                             if (!isRequiredParamPresent) {
-                                throw new InvalidParameterException("Parameter " + autoScaleCounterParam.getParamName() + " has to be set in AutoScaleVmProfile's " +
+                                throw new InvalidParameterValueException("Parameter " + autoScaleCounterParam.getParamName() + " has to be set in AutoScaleVmProfile's " +
                                     ApiConstants.COUNTERPARAM_LIST);
                             }
                         }
@@ -361,7 +360,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
             if (!isCounterSupported) {
-                throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource().name() + "' is not supported " + "in the network");
+                throw new InvalidParameterValueException("AutoScale counter with source='" + counter.getSource().name() + "' is not supported " + "in the network");
             }
         }
     }
@@ -1270,8 +1269,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public AutoScaleVmGroup disableAutoScaleVmGroup(Long id) {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
-        if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled state can be disabled.");
+        if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled) && !vmGroup.getState().equals(AutoScaleVmGroup.State.Scaling)) {
+            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled or Scaling state can be disabled.");
         }
 
         try {
@@ -2596,5 +2595,23 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 s_logger.warn("Caught the following exception on monitoring AutoScale Vm Group", e);
             }
         }
+    }
+
+    @Override
+    public void checkIfVmActionAllowed(Long vmId) {
+        List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByVm(vmId);
+        if (CollectionUtils.isNotEmpty(asGroupVmVOs)) {
+            for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
+                AutoScaleVmGroupVO group = _autoScaleVmGroupDao.findById(asGroupVmVO.getVmGroupId());
+                if (group != null && !AutoScaleVmGroup.State.Disabled.equals(group.getState())) {
+                    throw new InvalidParameterValueException("Cannot perform actions on VM in an AutoScale VM group, Please disable the VM group and retry.");
+                }
+            }
+        }
+    }
+
+    @Override
+    public void removeVmFromVmGroup(Long vmId) {
+        _autoScaleVmGroupVmMapDao.removeByVm(vmId);
     }
 }

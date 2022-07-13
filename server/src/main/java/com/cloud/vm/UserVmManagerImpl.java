@@ -241,6 +241,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -565,6 +566,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+
+    @Inject
+    private AutoScaleManager _asManager;
 
     private ScheduledExecutorService _executor = null;
     private ScheduledExecutorService _vmIpFetchExecutor = null;
@@ -2390,6 +2394,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
 
+            _asManager.removeVmFromVmGroup(vm.getId());
+
             releaseNetworkResourcesOnExpunge(vm.getId());
 
             List<VolumeVO> rootVol = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
@@ -3192,6 +3198,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return vm;
         }
 
+        // check if vm belongs to AutoScale vm group in Disabled state
+        _asManager.checkIfVmActionAllowed(vmId);
+
         // check if there are active volume snapshots tasks
         s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
         if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
@@ -3219,6 +3228,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
             }
         }
+
+        _asManager.removeVmFromVmGroup(vmId);
 
         deleteVolumesFromVm(volumesToBeDeleted, expunge);
 
@@ -5578,6 +5589,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!_accountMgr.isAdmin(userId) && !AllowUserExpungeRecoverVm.valueIn(userId)) {
             throw new PermissionDeniedException("Expunging a vm can only be done by an Admin. Or when the allow.user.expunge.recover.vm key is set.");
         }
+
+        // check if vm belongs to AutoScale vm group in Disabled state
+        _asManager.checkIfVmActionAllowed(vmId);
 
         _vmSnapshotMgr.deleteVMSnapshotsFromDB(vmId, false);
 

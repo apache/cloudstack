@@ -48,4 +48,8 @@ public interface AutoScaleManager extends AutoScaleService {
     void checkAllAutoScaleVmGroups();
 
     void checkAutoScaleVmGroup(AutoScaleVmGroupVO asGroup);
+
+    void checkIfVmActionAllowed(Long vmId);
+
+    void removeVmFromVmGroup(Long vmId);
 }
