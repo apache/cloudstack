@@ -258,6 +258,7 @@ export default {
         issystem: 'false'
       }).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
+        this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
     },
     fetchData () {
