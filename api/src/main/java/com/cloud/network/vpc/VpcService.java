@@ -57,6 +57,16 @@ public interface VpcService {
             throws ResourceAllocationException;
 
     /**
+     * Persists VPC record in the database
+     *
+     * @param cmd the command with specification data for the new vpc
+     * @return a data object describing the new vpc
+     * @throws ResourceAllocationException TODO
+     */
+    public Vpc createVpc(CreateVPCCmd cmd)
+            throws ResourceAllocationException;
+
+    /**
      * Deletes a VPC
      *
      * @param vpcId
@@ -154,18 +164,7 @@ public interface VpcService {
     /**
      * Persists VPC private gateway in the Database.
      *
-     *
-     * @param vpcId TODO
-     * @param physicalNetworkId
-     * @param vlan
-     * @param ipAddress
-     * @param gateway
-     * @param netmask
-     * @param gatewayOwnerId
-     * @param networkOfferingId
-     * @param isSourceNat
-     * @param aclId
-     * @return
+     * @return data object describing the private gateway
      * @throws InsufficientCapacityException
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException

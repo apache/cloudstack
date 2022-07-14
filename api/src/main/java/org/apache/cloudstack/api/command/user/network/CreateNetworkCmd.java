@@ -164,13 +164,13 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
             description = "The network this network is associated to. only available if create a Shared network")
     private Long associatedNetworkId;
 
-    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the router of the network", since = "4.16",
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the public interface of the router", since = "4.18",
             validations = {ApiArgValidator.NotNullOrEmpty})
-    private String routerIp;
+    private String routerIPv4;
 
-    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to the router of the network", since = "4.16",
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to the public interface of the router", since = "4.18",
             validations = {ApiArgValidator.NotNullOrEmpty})
-    private String routerIpv6;
+    private String routerIPv6;
 
     @Parameter(name = ApiConstants.PUBLIC_MTU, type = CommandType.INTEGER,
             description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
@@ -388,12 +388,12 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
         return ip6Dns2;
     }
 
-    public String getRouterIp() {
-        return routerIp;
+    public String getRouterIPv4() {
+        return routerIPv4;
     }
 
-    public String getRouterIpv6() {
-        return routerIpv6;
+    public String getRouterIPv6() {
+        return routerIPv6;
     }
 
     /////////////////////////////////////////////////////

@@ -20,6 +20,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -103,6 +104,14 @@ public class UpdateNetworkCmd extends BaseAsyncCustomIdCmd implements UserCmd {
 
     @Parameter(name = ApiConstants.IP6_DNS2, type = CommandType.STRING, description = "the second IPv6 DNS for the network. Empty string will update the second IPv6 DNS with the value from the zone", since = "4.18.0")
     private String ip6Dns2;
+
+    @Parameter(name = ApiConstants.ROUTER_IP, type = CommandType.STRING, description = "IPV4 address to be assigned to the router of the network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIPv4;
+
+    @Parameter(name = ApiConstants.ROUTER_IPV6, type = CommandType.STRING, description = "IPV6 address to be assigned to the router of the network", since = "4.16",
+            validations = {ApiArgValidator.NotNullOrEmpty})
+    private String routerIPv6;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////

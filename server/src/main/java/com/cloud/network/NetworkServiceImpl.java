@@ -1298,8 +1298,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateRouterIps(String routerIp, String routerIpv6, String startIp, String endIp, String gateway,
-                                   String netmask, String startIpv6, String endIpv6, String ip6Cidr) {
+    private void validateSharedRouterIPv4(String routerIp, String startIp, String endIp, String gateway, String netmask) {
         if (StringUtils.isNotBlank(routerIp)) {
             if (startIp != null && endIp == null) {
                 endIp = startIp;
@@ -1318,24 +1317,33 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 }
             }
         }
-        if (StringUtils.isNotBlank(routerIpv6)) {
-            if (startIpv6 != null && endIpv6 == null) {
-                endIpv6 = startIpv6;
+    }
+
+    private void validateSheredRouterIPv6(String routerIPv6, String startIPv6, String endIPv6, String cidrIPv6) {
+        if (StringUtils.isNotBlank(routerIPv6)) {
+            if (startIPv6 != null && endIPv6 == null) {
+                endIPv6 = startIPv6;
             }
-            if (!NetUtils.isValidIp6(routerIpv6)) {
+            if (!NetUtils.isValidIp6(routerIPv6)) {
                 throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
             }
-            if (StringUtils.isNoneBlank(startIpv6, endIpv6)) {
-                String ipv6Range = startIpv6 + "-" + endIpv6;
-                if (!NetUtils.isIp6InRange(routerIpv6, ipv6Range)) {
-                    throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIpv6 + " - " + endIpv6);
+            if (StringUtils.isNoneBlank(startIPv6, endIPv6)) {
+                String ipv6Range = startIPv6 + "-" + endIPv6;
+                if (!NetUtils.isIp6InRange(routerIPv6, ipv6Range)) {
+                    throw new CloudRuntimeException("Router IPv6 address provided is not within the specified range: " + startIPv6 + " - " + endIPv6);
                 }
             } else {
-                if (!NetUtils.isIp6InNetwork(routerIpv6, ip6Cidr)) {
+                if (!NetUtils.isIp6InNetwork(routerIPv6, cidrIPv6)) {
                     throw new CloudRuntimeException("Router IPv6 address provided is not with the network range");
                 }
             }
         }
+    }
+
+    private void validateIsolatedRouterIPv4(String routerIPv4) {
+    }
+
+    private void validateIsolatedRouterIPv6(String routerIPv6) {
     }
 
     @Override
@@ -1351,14 +1359,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String vlanId = null;
         boolean bypassVlanOverlapCheck = false;
         boolean hideIpAddressUsage = false;
-        String routerIp = null;
-        String routerIpv6 = null;
+        String routerIp = cmd.getRouterIPv4();
+        String routerIpv6 = cmd.getRouterIPv6();
         if (cmd instanceof CreateNetworkCmdByAdmin) {
             vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
             bypassVlanOverlapCheck = ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
             hideIpAddressUsage = ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
-            routerIp = ((CreateNetworkCmdByAdmin)cmd).getRouterIp();
-            routerIpv6 = ((CreateNetworkCmdByAdmin)cmd).getRouterIpv6();
         }
 
         String name = cmd.getNetworkName();
@@ -1472,8 +1478,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        if (ntwkOff.getGuestType() != GuestType.Shared && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
-            throw new InvalidParameterValueException("Router IP can be specified only for Shared networks");
+        if (ntwkOff.getGuestType() == GuestType.L2 && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
+            throw new InvalidParameterValueException("Router IP cannot be specified for level 2 networks");
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
@@ -1610,7 +1616,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        validateRouterIps(routerIp, routerIpv6, startIP, endIP, gateway, netmask, startIPv6, endIPv6, ip6Cidr);
+        if (ntwkOff.getGuestType() == GuestType.Shared) {
+            validateSharedRouterIPv4(routerIp, startIP, endIP, gateway, netmask);
+            validateSheredRouterIPv6(routerIpv6, startIPv6, endIPv6, ip6Cidr);
+
+        } else if (ntwkOff.getGuestType() == GuestType.Isolated) {
+            validateIsolatedRouterIPv4(routerIp);
+        }
         Pair<String, String> ip6GatewayCidr = null;
         if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
             ipv6 = _networkOfferingDao.isIpv6Supported(ntwkOff.getId());
