@@ -253,4 +253,8 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
         this.ipv6Routes = ipv6Routes;
     }
+
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
+    }
 }

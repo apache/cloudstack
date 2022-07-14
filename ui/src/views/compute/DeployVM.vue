@@ -45,12 +45,11 @@
                                 <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
-                                      <img
+                                      <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :src="getImg(zoneItem.icon.base64image)"
-                                        style="marginTop: -30px; marginLeft: 60px"
-                                        width="36px"
-                                        height="36px" />
+                                        :image="zoneItem.icon.base64image"
+                                        size="36"
+                                        style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
                                   </a-radio>
@@ -180,6 +179,7 @@
                         <a-form-item :label="$t('label.hypervisor')">
                           <a-select
                             v-model:value="form.hypervisor"
+                            :preFillContent="dataPreFill"
                             :options="hypervisorSelectOptions"
                             @change="value => hypervisor = value"
                             showSearch
@@ -1486,9 +1486,6 @@ export default {
         'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
         'minmemory' in serviceOffering.serviceofferingdetails
     },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
-    },
     updateOverrideRootDiskShowParam (val) {
       if (val) {
         this.showRootDiskSizeChanger = false
@@ -1974,7 +1971,9 @@ export default {
             this.options[name] = response
 
             if (name === 'hypervisors') {
-              this.hypervisor = response[0] && response[0].name ? response[0].name : null
+              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+              this.dataPreFill.hypervisor = hypervisorFromResponse
+              this.form.hypervisor = hypervisorFromResponse
             }
 
             if (param.field) {

@@ -30,7 +30,7 @@ import java.util.UUID;
 
 public class Upgrade41610to41700 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
-    final static Logger LOG = Logger.getLogger(Upgrade41610to41700.class);
+    final static Logger LOG = Logger.getLogger(Upgrade41700to41710.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
