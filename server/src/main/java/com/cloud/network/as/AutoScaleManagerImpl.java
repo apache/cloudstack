@@ -1013,6 +1013,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             /* This condition is for handling failures during creation command */
             return _autoScaleVmGroupDao.remove(id);
         }
+
+        Integer currentVM = _autoScaleVmGroupVmMapDao.countByGroup(id);
+        if (currentVM > 0) {
+            throw new InvalidParameterValueException(String.format("Cannot delete autoscale vm group id : %d because there are %d VMs. Please remove the VMs or pass forced=true flag which will destroy all VMs.", id, currentVM));
+        }
+
         AutoScaleVmGroup.State bakupState = autoScaleVmGroupVO.getState();
         autoScaleVmGroupVO.setState(AutoScaleVmGroup.State.Revoke);
         _autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
