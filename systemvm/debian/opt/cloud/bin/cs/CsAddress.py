@@ -430,6 +430,12 @@ class CsIP:
                             "-I VPN_%s -m state --state RELATED,ESTABLISHED -j ACCEPT" % self.address['public_ip']])
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
+            self.fw.append(
+                ["", "front", "-A FORWARD -j NETWORK_STATS_%s" % self.dev])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i eth0 -o %s" % (self.dev, self.dev)])
+            self.fw.append(
+                ["", "", "-A NETWORK_STATS_%s -i %s -o eth0" % (self.dev, self.dev)])
             self.fw.append(["nat", "",
                             "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",

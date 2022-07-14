@@ -2251,11 +2251,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String networkUsage(final String privateIpAddress, final String option, final String vif) {
+        return networkUsage(privateIpAddress, option, vif, null);
+    }
+
+    public String networkUsage(final String privateIpAddress, final String option, final String vif, String publicIp) {
         final Script getUsage = new Script(_routerProxyPath, s_logger);
         getUsage.add("netusage.sh");
         getUsage.add(privateIpAddress);
         if (option.equals("get")) {
             getUsage.add("-g");
+            if (StringUtils.isNotEmpty(publicIp)) {
+                getUsage.add("-l", publicIp);
+            }
         } else if (option.equals("create")) {
             getUsage.add("-c");
         } else if (option.equals("reset")) {
@@ -2276,7 +2283,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public long[] getNetworkStats(final String privateIP) {
-        final String result = networkUsage(privateIP, "get", null);
+        return getNetworkStats(privateIP, null);
+    }
+
+    public long[] getNetworkStats(final String privateIP, String publicIp) {
+        final String result = networkUsage(privateIP, "get", null, publicIp);
         final long[] stats = new long[2];
         if (result != null) {
             final String[] splitResult = result.split(":");

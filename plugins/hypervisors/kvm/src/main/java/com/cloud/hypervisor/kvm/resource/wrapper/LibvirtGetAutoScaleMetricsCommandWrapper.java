@@ -47,7 +47,7 @@ public final class LibvirtGetAutoScaleMetricsCommandWrapper extends CommandWrapp
             bytesSent = stats[0];
             bytesReceived = stats[1];
         } else {
-            final long [] stats = libvirtComputingResource.getNetworkStats(command.getPrivateIP());
+            final long [] stats = libvirtComputingResource.getNetworkStats(command.getPrivateIP(), command.getPublicIP());
             bytesSent = stats[0];
             bytesReceived = stats[1];
         }
