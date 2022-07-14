@@ -1830,7 +1830,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     + asGroup.getId() + ". Waiting for next round");
                 break;
             }
-            if (startNewVM(vmId)) {
+            try {
+                startNewVM(vmId);
                 if (assignLBruleToNewVm(vmId, asGroup)) {
                     // persist to DB
                     AutoScaleVmGroupVmMapVO GroupVmVO = new AutoScaleVmGroupVmMapVO(
@@ -1852,7 +1853,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     s_logger.error("Can not assign LB rule for this new VM");
                     break;
                 }
-            } else {
+            } catch (ServerApiException e) {
                 s_logger.error("Can not deploy new VM for scaling up in the group "
                     + asGroup.getId() + ". Waiting for next round");
                 try {
