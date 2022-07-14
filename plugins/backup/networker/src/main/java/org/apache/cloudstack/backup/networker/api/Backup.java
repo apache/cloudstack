@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import javax.annotation.Generated;
 import java.io.Serializable;
 import java.util.List;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
@@ -302,81 +303,10 @@ public class Backup implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Backup.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("attributes");
-        sb.append('=');
-        sb.append(((this.attributes == null) ? "<null>" : this.attributes));
-        sb.append(',');
-        sb.append("browseTime");
-        sb.append('=');
-        sb.append(((this.browseTime == null) ? "<null>" : this.browseTime));
-        sb.append(',');
-        sb.append("clientHostname");
-        sb.append('=');
-        sb.append(((this.clientHostname == null) ? "<null>" : this.clientHostname));
-        sb.append(',');
-        sb.append("clientId");
-        sb.append('=');
-        sb.append(((this.clientId == null) ? "<null>" : this.clientId));
-        sb.append(',');
-        sb.append("completionTime");
-        sb.append('=');
-        sb.append(((this.completionTime == null) ? "<null>" : this.completionTime));
-        sb.append(',');
-        sb.append("creationTime");
-        sb.append('=');
-        sb.append(((this.creationTime == null) ? "<null>" : this.creationTime));
-        sb.append(',');
-        sb.append("fileCount");
-        sb.append('=');
-        sb.append(((this.fileCount == null) ? "<null>" : this.fileCount));
-        sb.append(',');
-        sb.append("id");
-        sb.append('=');
-        sb.append(((this.id == null) ? "<null>" : this.id));
-        sb.append(',');
-        sb.append("instances");
-        sb.append('=');
-        sb.append(((this.instances == null) ? "<null>" : this.instances));
-        sb.append(',');
-        sb.append("level");
-        sb.append('=');
-        sb.append(((this.level == null) ? "<null>" : this.level));
-        sb.append(',');
-        sb.append("links");
-        sb.append('=');
-        sb.append(((this.links == null) ? "<null>" : this.links));
-        sb.append(',');
-        sb.append("name");
-        sb.append('=');
-        sb.append(((this.name == null) ? "<null>" : this.name));
-        sb.append(',');
-        sb.append("retentionTime");
-        sb.append('=');
-        sb.append(((this.retentionTime == null) ? "<null>" : this.retentionTime));
-        sb.append(',');
-        sb.append("saveTime");
-        sb.append('=');
-        sb.append(((this.saveTime == null) ? "<null>" : this.saveTime));
-        sb.append(',');
-        sb.append("shortId");
-        sb.append('=');
-        sb.append(((this.shortId == null) ? "<null>" : this.shortId));
-        sb.append(',');
-        sb.append("size");
-        sb.append('=');
-        sb.append(((this.size == null) ? "<null>" : this.size));
-        sb.append(',');
-        sb.append("type");
-        sb.append('=');
-        sb.append(((this.type == null) ? "<null>" : this.type));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"attributes","browseTime","clientHostname","clientId",
+                "completionTime","creationTime","fileCount","id","instances","level","links","name","retentionTime",
+                "saveTime","shortId","size","type");
         return sb.toString();
     }
 
@@ -402,22 +332,4 @@ public class Backup implements Serializable {
         result = ((result * 31) + ((this.saveTime == null) ? 0 : this.saveTime.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Backup) == false) {
-            return false;
-        }
-        Backup rhs = ((Backup) other);
-        return ((((((((((((((((((this.shortId == rhs.shortId) || ((this.shortId != null) && this.shortId.equals(rhs.shortId))) && ((this.clientId == rhs.clientId) || ((this.clientId != null) && this.clientId.equals(rhs.clientId)))) && ((this.browseTime == rhs.browseTime) || ((this.browseTime != null) &&
-                this.browseTime.equals(rhs.browseTime)))) && ((this.creationTime == rhs.creationTime) || ((this.creationTime != null) && this.creationTime.equals(rhs.creationTime)))) && ((this.instances == rhs.instances) || ((this.instances != null) && this.instances.equals(rhs.instances)))) && ((this.level == rhs.level) || ((this.level != null) &&
-                this.level.equals(rhs.level)))) && ((this.retentionTime == rhs.retentionTime) || ((this.retentionTime != null) && this.retentionTime.equals(rhs.retentionTime)))) && ((this.type == rhs.type) || ((this.type != null) && this.type.equals(rhs.type)))) && ((this.fileCount == rhs.fileCount) || ((this.fileCount != null) && this.fileCount.equals(rhs.fileCount)))) &&
-                ((this.clientHostname == rhs.clientHostname) || ((this.clientHostname != null) && this.clientHostname.equals(rhs.clientHostname)))) && ((this.completionTime == rhs.completionTime) || ((this.completionTime != null) && this.completionTime.equals(rhs.completionTime)))) && ((this.size == rhs.size) || ((this.size != null) && this.size.equals(rhs.size)))) &&
-                ((this.name == rhs.name) || ((this.name != null) && this.name.equals(rhs.name)))) && ((this.attributes == rhs.attributes) || ((this.attributes != null) && this.attributes.equals(rhs.attributes)))) && ((this.links == rhs.links) || ((this.links != null) && this.links.equals(rhs.links)))) && ((this.id == rhs.id) || ((this.id != null) && this.id.equals(rhs.id)))) &&
-                ((this.saveTime == rhs.saveTime) || ((this.saveTime != null) && this.saveTime.equals(rhs.saveTime))));
-    }
-
 }

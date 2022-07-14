@@ -37,6 +37,10 @@ public class Size implements Serializable {
     private String unit;
     @JsonProperty("value")
     private Long value;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 056e8a9211 (Switch to ReflectionToStringBuilderUtils in all API classes.)
     /**
      * No args constructor for use in serialization
      */
