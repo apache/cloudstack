@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -77,21 +78,8 @@ public class NetworkerBackups implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(NetworkerBackups.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("backups");
-        sb.append('=');
-        sb.append(((this.backups == null) ? "<null>" : this.backups));
-        sb.append(',');
-        sb.append("count");
-        sb.append('=');
-        sb.append(((this.count == null) ? "<null>" : this.count));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"backups","count");
         return sb.toString();
     }
 
@@ -102,17 +90,4 @@ public class NetworkerBackups implements Serializable {
         result = ((result * 31) + ((this.backups == null) ? 0 : this.backups.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof NetworkerBackups) == false) {
-            return false;
-        }
-        NetworkerBackups rhs = ((NetworkerBackups) other);
-        return (((this.count == rhs.count) || ((this.count != null) && this.count.equals(rhs.count))) && ((this.backups == rhs.backups) || ((this.backups != null) && this.backups.equals(rhs.backups))));
-    }
-
 }

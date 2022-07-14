@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -77,21 +78,8 @@ public class ProtectionPolicies implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ProtectionPolicies.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("count");
-        sb.append('=');
-        sb.append(((this.count == null) ? "<null>" : this.count));
-        sb.append(',');
-        sb.append("protectionPolicies");
-        sb.append('=');
-        sb.append(((this.protectionPolicies == null) ? "<null>" : this.protectionPolicies));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"count","protectionPolicies");
         return sb.toString();
     }
 
@@ -102,17 +90,4 @@ public class ProtectionPolicies implements Serializable {
         result = ((result * 31) + ((this.protectionPolicies == null) ? 0 : this.protectionPolicies.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof ProtectionPolicies) == false) {
-            return false;
-        }
-        ProtectionPolicies rhs = ((ProtectionPolicies) other);
-        return (((this.count == rhs.count) || ((this.count != null) && this.count.equals(rhs.count))) && ((this.protectionPolicies == rhs.protectionPolicies) || ((this.protectionPolicies != null) && this.protectionPolicies.equals(rhs.protectionPolicies))));
-    }
-
 }

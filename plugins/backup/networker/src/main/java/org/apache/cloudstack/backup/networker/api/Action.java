@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -318,85 +319,11 @@ public class Action implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Action.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("actionReferSchedule");
-        sb.append('=');
-        sb.append(((this.actionReferSchedule == null) ? "<null>" : this.actionReferSchedule));
-        sb.append(',');
-        sb.append("actionSpecificData");
-        sb.append('=');
-        sb.append(((this.actionSpecificData == null) ? "<null>" : this.actionSpecificData));
-        sb.append(',');
-        sb.append("comment");
-        sb.append('=');
-        sb.append(((this.comment == null) ? "<null>" : this.comment));
-        sb.append(',');
-        sb.append("completionNotification");
-        sb.append('=');
-        sb.append(((this.completionNotification == null) ? "<null>" : this.completionNotification));
-        sb.append(',');
-        sb.append("concurrent");
-        sb.append('=');
-        sb.append(((this.concurrent == null) ? "<null>" : this.concurrent));
-        sb.append(',');
-        sb.append("drivenBy");
-        sb.append('=');
-        sb.append(((this.drivenBy == null) ? "<null>" : this.drivenBy));
-        sb.append(',');
-        sb.append("enabled");
-        sb.append('=');
-        sb.append(((this.enabled == null) ? "<null>" : this.enabled));
-        sb.append(',');
-        sb.append("failureImpact");
-        sb.append('=');
-        sb.append(((this.failureImpact == null) ? "<null>" : this.failureImpact));
-        sb.append(',');
-        sb.append("hardLimit");
-        sb.append('=');
-        sb.append(((this.hardLimit == null) ? "<null>" : this.hardLimit));
-        sb.append(',');
-        sb.append("inactivityTimeoutInMin");
-        sb.append('=');
-        sb.append(((this.inactivityTimeoutInMin == null) ? "<null>" : this.inactivityTimeoutInMin));
-        sb.append(',');
-        sb.append("name");
-        sb.append('=');
-        sb.append(((this.name == null) ? "<null>" : this.name));
-        sb.append(',');
-        sb.append("parallelism");
-        sb.append('=');
-        sb.append(((this.parallelism == null) ? "<null>" : this.parallelism));
-        sb.append(',');
-        sb.append("retries");
-        sb.append('=');
-        sb.append(((this.retries == null) ? "<null>" : this.retries));
-        sb.append(',');
-        sb.append("retryDelayInSec");
-        sb.append('=');
-        sb.append(((this.retryDelayInSec == null) ? "<null>" : this.retryDelayInSec));
-        sb.append(',');
-        sb.append("softLimit");
-        sb.append('=');
-        sb.append(((this.softLimit == null) ? "<null>" : this.softLimit));
-        sb.append(',');
-        sb.append("scheduleActivities");
-        sb.append('=');
-        sb.append(((this.scheduleActivities == null) ? "<null>" : this.scheduleActivities));
-        sb.append(',');
-        sb.append("scheduleOverrides");
-        sb.append('=');
-        sb.append(((this.scheduleOverrides == null) ? "<null>" : this.scheduleOverrides));
-        sb.append(',');
-        sb.append("schedulePeriod");
-        sb.append('=');
-        sb.append(((this.schedulePeriod == null) ? "<null>" : this.schedulePeriod));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"actionReferSchedule","actionReferSchedule","comment","completionNotification",
+                "concurrent","drivenBy","enabled","failureImpact","hardLimit","inactivityTimeoutInMin","name",
+                "parallelism","retries","retryDelayInSec","softLimit","scheduleActivities","scheduleOverrides",
+                "schedulePeriod");
         return sb.toString();
     }
 
@@ -423,22 +350,4 @@ public class Action implements Serializable {
         result = ((result * 31) + ((this.softLimit == null) ? 0 : this.softLimit.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Action) == false) {
-            return false;
-        }
-        Action rhs = ((Action) other);
-        return (((((((((((((((((((this.failureImpact == rhs.failureImpact) || ((this.failureImpact != null) && this.failureImpact.equals(rhs.failureImpact))) && ((this.actionSpecificData == rhs.actionSpecificData) || ((this.actionSpecificData != null) && this.actionSpecificData.equals(rhs.actionSpecificData)))) && ((this.completionNotification == rhs.completionNotification) || ((this.completionNotification != null) &&
-                this.completionNotification.equals(rhs.completionNotification)))) && ((this.parallelism == rhs.parallelism) || ((this.parallelism != null) && this.parallelism.equals(rhs.parallelism)))) && ((this.concurrent == rhs.concurrent) || ((this.concurrent != null) && this.concurrent.equals(rhs.concurrent)))) && ((this.retryDelayInSec == rhs.retryDelayInSec) || ((this.retryDelayInSec != null) && this.retryDelayInSec.equals(rhs.retryDelayInSec)))) && ((this.drivenBy == rhs.drivenBy) || ((this.drivenBy != null) &&
-                this.drivenBy.equals(rhs.drivenBy)))) && ((this.enabled == rhs.enabled) || ((this.enabled != null) && this.enabled.equals(rhs.enabled)))) && ((this.scheduleActivities == rhs.scheduleActivities) || ((this.scheduleActivities != null) && this.scheduleActivities.equals(rhs.scheduleActivities)))) && ((this.retries == rhs.retries) || ((this.retries != null) && this.retries.equals(rhs.retries)))) &&
-                ((this.actionReferSchedule == rhs.actionReferSchedule) || ((this.actionReferSchedule != null) && this.actionReferSchedule.equals(rhs.actionReferSchedule)))) && ((this.name == rhs.name) || ((this.name != null) && this.name.equals(rhs.name)))) && ((this.inactivityTimeoutInMin == rhs.inactivityTimeoutInMin) || ((this.inactivityTimeoutInMin != null) && this.inactivityTimeoutInMin.equals(rhs.inactivityTimeoutInMin)))) && ((this.comment == rhs.comment) || ((this.comment != null) &&
-                this.comment.equals(rhs.comment)))) && ((this.hardLimit == rhs.hardLimit) || ((this.hardLimit != null) && this.hardLimit.equals(rhs.hardLimit)))) && ((this.scheduleOverrides == rhs.scheduleOverrides) || ((this.scheduleOverrides != null) && this.scheduleOverrides.equals(rhs.scheduleOverrides)))) && ((this.schedulePeriod == rhs.schedulePeriod) || ((this.schedulePeriod != null) && this.schedulePeriod.equals(rhs.schedulePeriod)))) &&
-                ((this.softLimit == rhs.softLimit) || ((this.softLimit != null) && this.softLimit.equals(rhs.softLimit))));
-    }
-
 }

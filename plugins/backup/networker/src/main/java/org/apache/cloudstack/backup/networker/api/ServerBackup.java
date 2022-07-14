@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -122,33 +123,9 @@ public class ServerBackup implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ServerBackup.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("performBootstrap");
-        sb.append('=');
-        sb.append(((this.performBootstrap == null) ? "<null>" : this.performBootstrap));
-        sb.append(',');
-        sb.append("performClientFileIndexing");
-        sb.append('=');
-        sb.append(((this.performClientFileIndexing == null) ? "<null>" : this.performClientFileIndexing));
-        sb.append(',');
-        sb.append("destinationStorageNode");
-        sb.append('=');
-        sb.append(((this.destinationStorageNode == null) ? "<null>" : this.destinationStorageNode));
-        sb.append(',');
-        sb.append("retentionPeriod");
-        sb.append('=');
-        sb.append(((this.retentionPeriod == null) ? "<null>" : this.retentionPeriod));
-        sb.append(',');
-        sb.append("destinationPool");
-        sb.append('=');
-        sb.append(((this.destinationPool == null) ? "<null>" : this.destinationPool));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"performBootstrap","performClientFileIndexing","destinationStorageNode",
+                "retentionPeriod","destinationPool");
         return sb.toString();
     }
 
@@ -162,17 +139,4 @@ public class ServerBackup implements Serializable {
         result = ((result * 31) + ((this.retentionPeriod == null) ? 0 : this.retentionPeriod.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof ServerBackup) == false) {
-            return false;
-        }
-        ServerBackup rhs = ((ServerBackup) other);
-        return ((((((this.performBootstrap == rhs.performBootstrap) || ((this.performBootstrap != null) && this.performBootstrap.equals(rhs.performBootstrap))) && ((this.performClientFileIndexing == rhs.performClientFileIndexing) || ((this.performClientFileIndexing != null) && this.performClientFileIndexing.equals(rhs.performClientFileIndexing)))) && ((this.destinationPool == rhs.destinationPool) || ((this.destinationPool != null) && this.destinationPool.equals(rhs.destinationPool)))) && ((this.destinationStorageNode == rhs.destinationStorageNode) || ((this.destinationStorageNode != null) && this.destinationStorageNode.equals(rhs.destinationStorageNode)))) && ((this.retentionPeriod == rhs.retentionPeriod) || ((this.retentionPeriod != null) && this.retentionPeriod.equals(rhs.retentionPeriod))));
-    }
-
 }

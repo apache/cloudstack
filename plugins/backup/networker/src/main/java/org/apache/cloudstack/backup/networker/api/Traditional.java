@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -212,57 +213,11 @@ public class Traditional implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Traditional.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("forceBackupLevel");
-        sb.append('=');
-        sb.append(((this.forceBackupLevel == null) ? "<null>" : this.forceBackupLevel));
-        sb.append(',');
-        sb.append("browsePeriod");
-        sb.append('=');
-        sb.append(((this.browsePeriod == null) ? "<null>" : this.browsePeriod));
-        sb.append(',');
-        sb.append("estimate");
-        sb.append('=');
-        sb.append(((this.estimate == null) ? "<null>" : this.estimate));
-        sb.append(',');
-        sb.append("enableDDRetentionLock");
-        sb.append('=');
-        sb.append(((this.enableDDRetentionLock == null) ? "<null>" : this.enableDDRetentionLock));
-        sb.append(',');
-        sb.append("ddRetentionLockTime");
-        sb.append('=');
-        sb.append(((this.ddRetentionLockTime == null) ? "<null>" : this.ddRetentionLockTime));
-        sb.append(',');
-        sb.append("destinationPool");
-        sb.append('=');
-        sb.append(((this.destinationPool == null) ? "<null>" : this.destinationPool));
-        sb.append(',');
-        sb.append("timestampFormat");
-        sb.append('=');
-        sb.append(((this.timestampFormat == null) ? "<null>" : this.timestampFormat));
-        sb.append(',');
-        sb.append("verifySyntheticFull");
-        sb.append('=');
-        sb.append(((this.verifySyntheticFull == null) ? "<null>" : this.verifySyntheticFull));
-        sb.append(',');
-        sb.append("revertToFullWhenSyntheticFullFails");
-        sb.append('=');
-        sb.append(((this.revertToFullWhenSyntheticFullFails == null) ? "<null>" : this.revertToFullWhenSyntheticFullFails));
-        sb.append(',');
-        sb.append("fileInactivityThresholdInDays");
-        sb.append('=');
-        sb.append(((this.fileInactivityThresholdInDays == null) ? "<null>" : this.fileInactivityThresholdInDays));
-        sb.append(',');
-        sb.append("fileInactivityAlertThresholdPercentage");
-        sb.append('=');
-        sb.append(((this.fileInactivityAlertThresholdPercentage == null) ? "<null>" : this.fileInactivityAlertThresholdPercentage));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"forceBackupLevel","browsePeriod","estimate","enableDDRetentionLock",
+                "enableDDRetentionLock","ddRetentionLockTime","ddRetentionLockTime","destinationPool","timestampFormat",
+                "verifySyntheticFull","revertToFullWhenSyntheticFullFails","fileInactivityThresholdInDays",
+                "fileInactivityAlertThresholdPercentage");
         return sb.toString();
     }
 
@@ -282,18 +237,4 @@ public class Traditional implements Serializable {
         result = ((result * 31) + ((this.browsePeriod == null) ? 0 : this.browsePeriod.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Traditional) == false) {
-            return false;
-        }
-        Traditional rhs = ((Traditional) other);
-        return ((((((((((((this.enableDDRetentionLock == rhs.enableDDRetentionLock) || ((this.enableDDRetentionLock != null) && this.enableDDRetentionLock.equals(rhs.enableDDRetentionLock))) && ((this.revertToFullWhenSyntheticFullFails == rhs.revertToFullWhenSyntheticFullFails) || ((this.revertToFullWhenSyntheticFullFails != null) && this.revertToFullWhenSyntheticFullFails.equals(rhs.revertToFullWhenSyntheticFullFails)))) && ((this.fileInactivityThresholdInDays == rhs.fileInactivityThresholdInDays) || ((this.fileInactivityThresholdInDays != null) && this.fileInactivityThresholdInDays.equals(rhs.fileInactivityThresholdInDays)))) && ((this.destinationPool == rhs.destinationPool) || ((this.destinationPool != null) && this.destinationPool.equals(rhs.destinationPool)))) && ((this.fileInactivityAlertThresholdPercentage == rhs.fileInactivityAlertThresholdPercentage) || ((this.fileInactivityAlertThresholdPercentage != null) &&
-                this.fileInactivityAlertThresholdPercentage.equals(rhs.fileInactivityAlertThresholdPercentage)))) && ((this.estimate == rhs.estimate) || ((this.estimate != null) && this.estimate.equals(rhs.estimate)))) && ((this.ddRetentionLockTime == rhs.ddRetentionLockTime) || ((this.ddRetentionLockTime != null) && this.ddRetentionLockTime.equals(rhs.ddRetentionLockTime)))) && ((this.timestampFormat == rhs.timestampFormat) || ((this.timestampFormat != null) && this.timestampFormat.equals(rhs.timestampFormat)))) && ((this.forceBackupLevel == rhs.forceBackupLevel) || ((this.forceBackupLevel != null) && this.forceBackupLevel.equals(rhs.forceBackupLevel)))) && ((this.verifySyntheticFull == rhs.verifySyntheticFull) || ((this.verifySyntheticFull != null) && this.verifySyntheticFull.equals(rhs.verifySyntheticFull)))) && ((this.browsePeriod == rhs.browsePeriod) || ((this.browsePeriod != null) && this.browsePeriod.equals(rhs.browsePeriod))));
-    }
-
 }

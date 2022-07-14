@@ -241,7 +241,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 return saveTimeMatcher.group(1);
             }
         } catch (final SshException e) {
-            throw new CloudRuntimeException("BACKUP SCRIPT FAILED", e);
+            throw new CloudRuntimeException(String.format("Command execution on host %s took longer than expected: %s", host, e.getMessage()));
         }
 
         return null;

@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -91,25 +92,8 @@ public class ActionSpecificData implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ActionSpecificData.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("backup");
-        sb.append('=');
-        sb.append(((this.backup == null) ? "<null>" : this.backup));
-        sb.append(',');
-        sb.append("serverBackup");
-        sb.append('=');
-        sb.append(((this.serverBackup == null) ? "<null>" : this.serverBackup));
-        sb.append(',');
-        sb.append("expire");
-        sb.append('=');
-        sb.append(((this.expire == null) ? "<null>" : this.expire));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"backup","serverBackup","expire");
         return sb.toString();
     }
 
@@ -121,17 +105,4 @@ public class ActionSpecificData implements Serializable {
         result = ((result * 31) + ((this.expire == null) ? 0 : this.expire.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof ActionSpecificData) == false) {
-            return false;
-        }
-        ActionSpecificData rhs = ((ActionSpecificData) other);
-        return ((((this.backup == rhs.backup) || ((this.backup != null) && this.backup.equals(rhs.backup))) && ((this.serverBackup == rhs.serverBackup) || ((this.serverBackup != null) && this.serverBackup.equals(rhs.serverBackup)))) && ((this.expire == rhs.expire) || ((this.expire != null) && this.expire.equals(rhs.expire))));
-    }
-
 }

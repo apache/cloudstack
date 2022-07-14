@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -107,29 +108,8 @@ public class Instance implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Instance.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("clone");
-        sb.append('=');
-        sb.append(((this.clone == null) ? "<null>" : this.clone));
-        sb.append(',');
-        sb.append("id");
-        sb.append('=');
-        sb.append(((this.id == null) ? "<null>" : this.id));
-        sb.append(',');
-        sb.append("status");
-        sb.append('=');
-        sb.append(((this.status == null) ? "<null>" : this.status));
-        sb.append(',');
-        sb.append("volumeIds");
-        sb.append('=');
-        sb.append(((this.volumeIds == null) ? "<null>" : this.volumeIds));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"clone","id","status","volumeIds");
         return sb.toString();
     }
 
@@ -142,17 +122,4 @@ public class Instance implements Serializable {
         result = ((result * 31) + ((this.status == null) ? 0 : this.status.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Instance) == false) {
-            return false;
-        }
-        Instance rhs = ((Instance) other);
-        return (((((this.clone == rhs.clone) || ((this.clone != null) && this.clone.equals(rhs.clone))) && ((this.volumeIds == rhs.volumeIds) || ((this.volumeIds != null) && this.volumeIds.equals(rhs.volumeIds)))) && ((this.id == rhs.id) || ((this.id != null) && this.id.equals(rhs.id)))) && ((this.status == rhs.status) || ((this.status != null) && this.status.equals(rhs.status))));
-    }
-
 }
