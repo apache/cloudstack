@@ -1303,9 +1303,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (startIp != null && endIp == null) {
                 endIp = startIp;
             }
-            if (!NetUtils.isValidIp4(routerIp)) {
-                throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
-            }
+            isIPv4AddressValid(routerIp);
             if (StringUtils.isNoneBlank(startIp, endIp)) {
                 if (!NetUtils.isIpInRange(routerIp, startIp, endIp)) {
                     throw new CloudRuntimeException("Router IPv4 IP provided is not within the specified range: " + startIp + " - " + endIp);
@@ -1319,14 +1317,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    private void validateSheredRouterIPv6(String routerIPv6, String startIPv6, String endIPv6, String cidrIPv6) {
+    private void validateSharedRouterIPv6(String routerIPv6, String startIPv6, String endIPv6, String cidrIPv6) {
         if (StringUtils.isNotBlank(routerIPv6)) {
             if (startIPv6 != null && endIPv6 == null) {
                 endIPv6 = startIPv6;
             }
-            if (!NetUtils.isValidIp6(routerIPv6)) {
-                throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
-            }
+            isIPv6AddressValid(routerIPv6);
             if (StringUtils.isNoneBlank(startIPv6, endIPv6)) {
                 String ipv6Range = startIPv6 + "-" + endIPv6;
                 if (!NetUtils.isIp6InRange(routerIPv6, ipv6Range)) {
@@ -1341,9 +1337,27 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private void validateIsolatedRouterIPv4(String routerIPv4) {
+        if (StringUtils.isNotBlank(routerIPv4)) {
+            isIPv4AddressValid(routerIPv4);
+        }
     }
 
     private void validateIsolatedRouterIPv6(String routerIPv6) {
+        if (StringUtils.isNotBlank(routerIPv6)) {
+            isIPv6AddressValid(routerIPv6);
+        }
+    }
+
+    private void isIPv4AddressValid(String routerIp) {
+        if (!NetUtils.isValidIp4(routerIp)) {
+            throw new CloudRuntimeException("Router IPv4 IP provided is of incorrect format");
+        }
+    }
+
+    private void isIPv6AddressValid(String routerIPv6) {
+        if (!NetUtils.isValidIp6(routerIPv6)) {
+            throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
+        }
     }
 
     @Override
@@ -1359,8 +1373,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String vlanId = null;
         boolean bypassVlanOverlapCheck = false;
         boolean hideIpAddressUsage = false;
-        String routerIp = cmd.getRouterIPv4();
-        String routerIpv6 = cmd.getRouterIPv6();
         if (cmd instanceof CreateNetworkCmdByAdmin) {
             vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
             bypassVlanOverlapCheck = ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
@@ -1478,12 +1490,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        if (ntwkOff.getGuestType() == GuestType.L2 && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
+        if (ntwkOff.getGuestType() == GuestType.L2 && (!StringUtils.isAllBlank(cmd.getRouterIPv4(), cmd.getRouterIPv6()))) {
             throw new InvalidParameterValueException("Router IP cannot be specified for level 2 networks");
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared && !_networkModel.isProviderForNetworkOffering(Provider.VirtualRouter, networkOfferingId)
-                && (!StringUtils.isAllBlank(routerIp, routerIpv6))) {
+                && (!StringUtils.isAllBlank(cmd.getRouterIPv4(), cmd.getRouterIPv6()))) {
             throw new InvalidParameterValueException("Virtual Router is not a supported provider for the Shared network, hence router ip should not be provided");
         }
 
@@ -1617,11 +1629,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         if (ntwkOff.getGuestType() == GuestType.Shared) {
-            validateSharedRouterIPv4(routerIp, startIP, endIP, gateway, netmask);
-            validateSheredRouterIPv6(routerIpv6, startIPv6, endIPv6, ip6Cidr);
+            validateSharedRouterIPv4(cmd.getRouterIPv4(), startIP, endIP, gateway, netmask);
+            validateSharedRouterIPv6(cmd.getRouterIPv6(), startIPv6, endIPv6, ip6Cidr);
 
         } else if (ntwkOff.getGuestType() == GuestType.Isolated) {
-            validateIsolatedRouterIPv4(routerIp);
+            validateIsolatedRouterIPv4(cmd.getRouterIPv4());
+            validateIsolatedRouterIPv6(cmd.getRouterIPv6());
         }
         Pair<String, String> ip6GatewayCidr = null;
         if (zone.getNetworkType() == NetworkType.Advanced && ntwkOff.getGuestType() == GuestType.Isolated) {
@@ -1743,7 +1756,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
-                externalId, routerIp, routerIpv6, associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
+                externalId, cmd.getRouterIPv4(), cmd.getRouterIPv6(), associatedNetwork, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2, interfaceMTUs);
 
         if (hideIpAddressUsage) {
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));

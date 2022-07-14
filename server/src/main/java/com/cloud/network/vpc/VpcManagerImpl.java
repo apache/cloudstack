@@ -1021,19 +1021,6 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
-    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException {
-        return createVpc(cmd.getZoneId(),
-                cmd.getVpcOffering(),
-                cmd.getEntityOwnerId(),
-                cmd.getVpcName(),
-                cmd.getDisplayText(),
-                cmd.getCidr(),
-                cmd.getNetworkDomain(),
-                cmd.getDisplayVpc());
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create = true)
     public Vpc createVpc(final long zoneId, final long vpcOffId, final long vpcOwnerId, final String vpcName, final String displayText, final String cidr, String networkDomain,
             final String ip4Dns1, final String ip4Dns2, final String ip6Dns1, final String ip6Dns2, final Boolean displayVpc, Integer publicMtu) throws ResourceAllocationException {
         final Account caller = CallContext.current().getCallingAccount();

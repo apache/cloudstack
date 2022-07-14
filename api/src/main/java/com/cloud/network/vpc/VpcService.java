@@ -37,7 +37,6 @@ import com.cloud.utils.Pair;
 
 public interface VpcService {
 
-    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException;
     /**
      * Persists VPC record in the database
      *
@@ -61,10 +60,9 @@ public interface VpcService {
      *
      * @param cmd the command with specification data for the new vpc
      * @return a data object describing the new vpc
-     * @throws ResourceAllocationException TODO
+     * @throws ResourceAllocationException the resources for this VPC cannot be allocated
      */
-    public Vpc createVpc(CreateVPCCmd cmd)
-            throws ResourceAllocationException;
+    public Vpc createVpc(CreateVPCCmd cmd) throws ResourceAllocationException;
 
     /**
      * Deletes a VPC
@@ -140,17 +138,17 @@ public interface VpcService {
      */
     boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
+    boolean restartVpc(RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
     /**
      * Restarts the VPC. VPC gets shutdown and started as a part of it
      *
      * @param id
      * @param cleanUp
      * @param makeredundant
-     * @return
-     * @throws InsufficientCapacityException
+     * @return success or not
+     * @throws InsufficientCapacityException when there is no suitable deployment plan possible
      */
-    boolean restartVpc(RestartVPCCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-
     boolean restartVpc(Long networkId, boolean cleanup, boolean makeRedundant, boolean livePatch, User user) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
@@ -262,5 +260,4 @@ public interface VpcService {
      * @return
      */
     public boolean applyStaticRoute(long routeId) throws ResourceUnavailableException;
-
 }

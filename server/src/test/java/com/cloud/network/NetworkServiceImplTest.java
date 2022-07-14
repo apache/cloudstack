@@ -562,7 +562,7 @@ public class NetworkServiceImplTest {
         }
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test(expected = CloudRuntimeException.class)
     public void testCreateNetworkDnsOfferingServiceFailure() {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
@@ -577,7 +577,7 @@ public class NetworkServiceImplTest {
         }
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test(expected = CloudRuntimeException.class)
     public void testCreateIp4NetworkIp6DnsFailure() {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
