@@ -38,7 +38,7 @@ import com.github.tomakehurst.wiremock.client.VerificationException;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
-import org.apache.cloudstack.backup.networker.api.Backup;
+import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -731,7 +731,7 @@ public class NetworkerClientTest {
 
 
         String backupId="d371d629-00000006-84ccd61b-62ccd61b-007d1500-5a80015d";
-        Backup backup = client.getNetworkerBackupInfo(backupId);
+        NetworkerBackup backup = client.getNetworkerBackupInfo(backupId);
         verify(getRequestedFor(urlEqualTo("/nwrestapi/v3/global/backups/?q=id:"+backupId)));
         Assert.assertEquals("658580844", backup.getSize().getValue().toString());
         Assert.assertEquals("cb2bf6eb-00000004-62c176f2-62c176f1-00021500-5a80015d", backup.getClientId());

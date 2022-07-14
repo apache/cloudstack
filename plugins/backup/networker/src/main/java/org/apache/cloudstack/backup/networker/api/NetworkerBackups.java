@@ -36,7 +36,7 @@ public class NetworkerBackups implements Serializable {
 
     private final static long serialVersionUID = -3805021350250865454L;
     @JsonProperty("backups")
-    private List<Backup> backups = null;
+    private List<NetworkerBackup> backups = null;
     @JsonProperty("count")
     private Integer count;
 
@@ -50,19 +50,19 @@ public class NetworkerBackups implements Serializable {
      * @param count
      * @param backups
      */
-    public NetworkerBackups(List<Backup> backups, Integer count) {
+    public NetworkerBackups(List<NetworkerBackup> backups, Integer count) {
         super();
         this.backups = backups;
         this.count = count;
     }
 
     @JsonProperty("backups")
-    public List<Backup> getBackups() {
+    public List<NetworkerBackup> getBackups() {
         return backups;
     }
 
     @JsonProperty("backups")
-    public void setBackups(List<Backup> backups) {
+    public void setBackups(List<NetworkerBackup> backups) {
         this.backups = backups;
     }
 
