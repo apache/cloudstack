@@ -29,10 +29,14 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -41,6 +45,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.xml.utils.URI;
+import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
+
 
 import javax.inject.Inject;
 import java.net.URISyntaxException;
@@ -55,6 +61,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 public class NetworkerBackupProvider extends AdapterBase implements BackupProvider, Configurable {
@@ -331,7 +338,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         final Long zoneId = backup.getZoneId();
         final String externalBackupId = backup.getExternalId();
-        final org.apache.cloudstack.backup.networker.api.Backup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
+        final NetworkerBackup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
         final String SSID = networkerBackup.getShortId();
 
         if ( SSID.isEmpty() ) {
@@ -382,7 +389,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         final Long zoneId = backup.getZoneId();
         final String externalBackupId = backup.getExternalId();
-        final org.apache.cloudstack.backup.networker.api.Backup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
+        final NetworkerBackup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
         final String SSID = networkerBackup.getShortId();
         final String clusterName = networkerBackup.getClientHostname();
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
@@ -495,7 +502,6 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         Date backupJobStart = new Date();
 
         String saveTime = executeBackupCommand(hostVO, credentials.first(), credentials.second(), credentials.third(), command);
-
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backupDao.persist(backup);
@@ -523,11 +529,77 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+
+        final Long zoneId = vm.getDataCenterId();
+        Transaction.execute(new TransactionCallbackNoReturn() {
+          @Override
+          public void doInTransactionWithoutResult(TransactionStatus status) {
+            final List<Backup> backupsInDb = backupDao.listByVmId(null, vm.getId());
+            final ArrayList<String> backupsInNetworker = getClient(zoneId).getBackupsForVm(vm);
+            final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
+            for (final String networkerBackupId : backupsInNetworker ) {
+                boolean backupExists = false;
+                for (final Backup backupInDb : backupsInDb) {
+                    LOG.debug("Checking if Backup with external ID " + backupInDb.getName() + " for VM " + backupInDb.getVmId() + "is valid");
+                    if ( networkerBackupId.equals(backupInDb.getExternalId()) ) {
+                        LOG.debug("Found Backup with id " + backupInDb.getId() + " in both Database and Networker");
+                        backupExists = true;
+                        removeList.remove(backupInDb.getId());
+                        if (metric != null) {
+                            LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                    backupInDb.getUuid(), backupInDb.getExternalId(), backupInDb.getSize(), backupInDb.getProtectedSize(),
+                                    metric.getBackupSize(), metric.getDataSize()));
+                            ((BackupVO) backupInDb).setSize(metric.getBackupSize());
+                            ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
+                            backupDao.update(backupInDb.getId(), ((BackupVO) backupInDb));
+                        }
+                        break;
+                    }
+                }
+                if (backupExists) {
+                    continue;
+                }
+                // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
+                // with the proper parameters. So we will register any backups taken on the Networker side from
+                // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will
+                // ensure that SLA like backups will be found and registered.
+                NetworkerBackup strayNetworkerBackup = getClient(vm.getDataCenterId()).getNetworkerBackupInfo(networkerBackupId);
+                // Since running backups are already present in Networker Server but not completed
+                // make sure the backup is not in progress at this time.
+                if ( strayNetworkerBackup.getCompletionTime() != null) {
+                    BackupVO strayBackup = new BackupVO();
+                    strayBackup.setVmId(vm.getId());
+                    strayBackup.setExternalId(strayNetworkerBackup.getId());
+                    strayBackup.setType(strayNetworkerBackup.getType());
+                    strayBackup.setDate(strayNetworkerBackup.getSaveTime());
+                    strayBackup.setStatus(Backup.Status.BackedUp);
+                    if (metric != null) {
+                        strayBackup.setSize(metric.getBackupSize());
+                        strayBackup.setProtectedSize(metric.getDataSize());
+                    }
+                    strayBackup.setBackupOfferingId(vm.getBackupOfferingId());
+                    strayBackup.setAccountId(vm.getAccountId());
+                    strayBackup.setDomainId(vm.getDomainId());
+                    strayBackup.setZoneId(vm.getDataCenterId());
+                    LOG.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                                    + "domain_id: %s, zone_id: %s].", strayBackup.getUuid(), strayBackup.getVmId(), strayBackup.getExternalId(),
+                            strayBackup.getType(), strayBackup.getDate(), strayBackup.getBackupOfferingId(), strayBackup.getAccountId(),
+                            strayBackup.getDomainId(), strayBackup.getZoneId()));
+                    backupDao.persist(strayBackup);
+                    LOG.warn("Added backup found in provider with ID: [" + strayBackup.getId() + "]");
+                } else {
+                    LOG.debug ("Backup is in progress, skipping addition for this run");
+                }
+            }
+            for (final Long backupIdToRemove : removeList) {
+              LOG.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+              backupDao.remove(backupIdToRemove);
+            }
+          }
+        });
     }
 
     @Override
-    public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
-    }
+    public boolean willDeleteBackupsOnOfferingRemoval() { return true; }
 }
 

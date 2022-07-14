@@ -36,7 +36,7 @@ public class ActionSpecificData implements Serializable {
 
     private final static long serialVersionUID = 2969226417055065194L;
     @JsonProperty("backup")
-    private Backup backup;
+    private NetworkerBackup backup;
     @JsonProperty("serverBackup")
     private ServerBackup serverBackup;
     @JsonProperty("expire")
@@ -53,7 +53,7 @@ public class ActionSpecificData implements Serializable {
      * @param expire
      * @param serverBackup
      */
-    public ActionSpecificData(Backup backup, ServerBackup serverBackup, Expire expire) {
+    public ActionSpecificData(NetworkerBackup backup, ServerBackup serverBackup, Expire expire) {
         super();
         this.backup = backup;
         this.serverBackup = serverBackup;
@@ -61,12 +61,12 @@ public class ActionSpecificData implements Serializable {
     }
 
     @JsonProperty("backup")
-    public Backup getBackup() {
+    public NetworkerBackup getBackup() {
         return backup;
     }
 
     @JsonProperty("backup")
-    public void setBackup(Backup backup) {
+    public void setBackup(NetworkerBackup backup) {
         this.backup = backup;
     }
 

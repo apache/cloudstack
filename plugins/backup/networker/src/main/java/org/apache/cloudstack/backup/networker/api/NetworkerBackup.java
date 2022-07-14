@@ -47,7 +47,7 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
         "type"
 })
 @Generated("jsonschema2pojo")
-public class Backup implements Serializable {
+public class NetworkerBackup implements Serializable {
 
     private final static long serialVersionUID = -4474500098917286405L;
     @JsonProperty("attributes")
@@ -88,7 +88,7 @@ public class Backup implements Serializable {
     /**
      * No args constructor for use in serialization
      */
-    public Backup() {
+    public NetworkerBackup() {
     }
 
     /**
@@ -110,7 +110,7 @@ public class Backup implements Serializable {
      * @param id
      * @param saveTime
      */
-    public Backup(List<Attribute> attributes, String browseTime, String clientHostname, String clientId, String completionTime, String creationTime, Integer fileCount, String id, List<Instance> instances, String level, List<Link> links, String name, String retentionTime, String saveTime, String shortId, Size size, String type) {
+    public NetworkerBackup(List<Attribute> attributes, String browseTime, String clientHostname, String clientId, String completionTime, String creationTime, Integer fileCount, String id, List<Instance> instances, String level, List<Link> links, String name, String retentionTime, String saveTime, String shortId, Size size, String type) {
         super();
         this.attributes = attributes;
         this.browseTime = browseTime;

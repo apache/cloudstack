@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.backup.networker.api.Backup;
+import org.apache.cloudstack.backup.networker.api.NetworkerBackup;
 import org.apache.cloudstack.backup.networker.api.NetworkerBackups;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicies;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicy;
@@ -249,7 +249,7 @@ public class NetworkerClient {
             jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
             networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
-            Backup networkerLatestBackup = new Backup();
+            NetworkerBackup networkerLatestBackup = new NetworkerBackup();
 
             if (networkerBackups == null || networkerBackups.getBackups() == null || networkerBackups.getCount() == 0) {
                 return null;
@@ -257,7 +257,7 @@ public class NetworkerClient {
             if (networkerBackups.getCount() == 1) {
                 networkerLatestBackup = networkerBackups.getBackups().get(0);
             } else {
-                for (final Backup networkerBackup : networkerBackups.getBackups()) {
+                for (final NetworkerBackup networkerBackup : networkerBackups.getBackups()) {
                     LOG.debug("Found Backup :" + networkerBackup.getName());
                 }
             }
@@ -282,7 +282,7 @@ public class NetworkerClient {
     }
 
 
-    public Backup getNetworkerBackupInfo(String backupId) {
+    public NetworkerBackup getNetworkerBackupInfo(String backupId) {
         LOG.debug("Trying to get EMC Networker details for backup " + backupId);
         try {
             final HttpResponse response = get("/global/backups/?q=id:" + backupId);
@@ -290,7 +290,7 @@ public class NetworkerClient {
             final ObjectMapper jsonMapper = new ObjectMapper();
             jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             NetworkerBackups networkerBackups = jsonMapper.readValue(response.getEntity().getContent(), NetworkerBackups.class);
-            Backup networkerBackup = networkerBackups.getBackups().get(0);
+            NetworkerBackup networkerBackup = networkerBackups.getBackups().get(0);
             if ( networkerBackup.getShortId() == null ) {
                 return null;
             }
@@ -314,7 +314,7 @@ public class NetworkerClient {
             if (networkerBackups == null || networkerBackups.getBackups() == null) {
                 return backupsTaken;
             }
-            for (final Backup backup : networkerBackups.getBackups()) {
+            for (final NetworkerBackup backup : networkerBackups.getBackups()) {
                 LOG.debug("Found Backup " + backup.getId());
                 backupsTaken.add(backup.getId());
             }
