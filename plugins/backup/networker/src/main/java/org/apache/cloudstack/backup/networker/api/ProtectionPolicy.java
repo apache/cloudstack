@@ -21,6 +21,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -155,41 +156,9 @@ public class ProtectionPolicy implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(ProtectionPolicy.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("comment");
-        sb.append('=');
-        sb.append(((this.comment == null) ? "<null>" : this.comment));
-        sb.append(',');
-        sb.append("links");
-        sb.append('=');
-        sb.append(((this.links == null) ? "<null>" : this.links));
-        sb.append(',');
-        sb.append("name");
-        sb.append('=');
-        sb.append(((this.name == null) ? "<null>" : this.name));
-        sb.append(',');
-        sb.append("policyProtectionEnable");
-        sb.append('=');
-        sb.append(((this.policyProtectionEnable == null) ? "<null>" : this.policyProtectionEnable));
-        sb.append(',');
-        sb.append("policyProtectionPeriod");
-        sb.append('=');
-        sb.append(((this.policyProtectionPeriod == null) ? "<null>" : this.policyProtectionPeriod));
-        sb.append(',');
-        sb.append("resourceId");
-        sb.append('=');
-        sb.append(((this.resourceId == null) ? "<null>" : this.resourceId));
-        sb.append(',');
-        sb.append("summaryNotification");
-        sb.append('=');
-        sb.append(((this.summaryNotification == null) ? "<null>" : this.summaryNotification));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"comment","links","name","policyProtectionEnable","resourceId",
+                "summaryNotification");
         return sb.toString();
     }
 
@@ -205,18 +174,4 @@ public class ProtectionPolicy implements Serializable {
         result = ((result * 31) + ((this.links == null) ? 0 : this.links.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof ProtectionPolicy) == false) {
-            return false;
-        }
-        ProtectionPolicy rhs = ((ProtectionPolicy) other);
-        return (((((((((this.policyProtectionEnable == rhs.policyProtectionEnable) || ((this.policyProtectionEnable != null) && this.policyProtectionEnable.equals(rhs.policyProtectionEnable))) && ((this.policyProtectionPeriod == rhs.policyProtectionPeriod) || ((this.policyProtectionPeriod != null) && this.policyProtectionPeriod.equals(rhs.policyProtectionPeriod)))) && ((this.summaryNotification == rhs.summaryNotification) || ((this.summaryNotification != null) && this.summaryNotification.equals(rhs.summaryNotification)))) &&
-                ((this.resourceId == rhs.resourceId) || ((this.resourceId != null) && this.resourceId.equals(rhs.resourceId)))) && ((this.name == rhs.name) || ((this.name != null) && this.name.equals(rhs.name)))) && ((this.comment == rhs.comment) || ((this.comment != null) && this.comment.equals(rhs.comment)))) && ((this.links == rhs.links) || ((this.links != null) && this.links.equals(rhs.links)))) );
-    }
-
 }

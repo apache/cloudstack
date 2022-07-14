@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -76,21 +77,8 @@ public class Link implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Link.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("href");
-        sb.append('=');
-        sb.append(((this.href == null) ? "<null>" : this.href));
-        sb.append(',');
-        sb.append("rel");
-        sb.append('=');
-        sb.append(((this.rel == null) ? "<null>" : this.rel));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"href","rel");
         return sb.toString();
     }
 
@@ -101,17 +89,4 @@ public class Link implements Serializable {
         result = ((result * 31) + ((this.href == null) ? 0 : this.href.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Link) == false) {
-            return false;
-        }
-        Link rhs = ((Link) other);
-        return (((this.rel == rhs.rel) || ((this.rel != null) && this.rel.equals(rhs.rel))) && ((this.href == rhs.href) || ((this.href != null) && this.href.equals(rhs.href))));
-    }
-
 }

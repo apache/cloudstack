@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -36,7 +37,7 @@ public class Size implements Serializable {
     @JsonProperty("unit")
     private String unit;
     @JsonProperty("value")
-    private Integer value;
+    private Long value;
 
     /**
      * No args constructor for use in serialization
@@ -48,7 +49,7 @@ public class Size implements Serializable {
      * @param unit
      * @param value
      */
-    public Size(String unit, Integer value) {
+    public Size(String unit, Long value) {
         super();
         this.unit = unit;
         this.value = value;
@@ -65,32 +66,19 @@ public class Size implements Serializable {
     }
 
     @JsonProperty("value")
-    public Integer getValue() {
+    public Long getValue() {
         return value;
     }
 
     @JsonProperty("value")
-    public void setValue(Integer value) {
+    public void setValue(Long value) {
         this.value = value;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Size.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("unit");
-        sb.append('=');
-        sb.append(((this.unit == null) ? "<null>" : this.unit));
-        sb.append(',');
-        sb.append("value");
-        sb.append('=');
-        sb.append(((this.value == null) ? "<null>" : this.value));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"unit","value");
         return sb.toString();
     }
 
@@ -101,17 +89,4 @@ public class Size implements Serializable {
         result = ((result * 31) + ((this.unit == null) ? 0 : this.unit.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Size) == false) {
-            return false;
-        }
-        Size rhs = ((Size) other);
-        return (((this.value == rhs.value) || ((this.value != null) && this.value.equals(rhs.value))) && ((this.unit == rhs.unit) || ((this.unit != null) && this.unit.equals(rhs.unit))));
-    }
-
 }

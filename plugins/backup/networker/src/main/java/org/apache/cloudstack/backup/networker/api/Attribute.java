@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup.networker.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
@@ -77,21 +78,8 @@ public class Attribute implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Attribute.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-        sb.append("key");
-        sb.append('=');
-        sb.append(((this.key == null) ? "<null>" : this.key));
-        sb.append(',');
-        sb.append("values");
-        sb.append('=');
-        sb.append(((this.values == null) ? "<null>" : this.values));
-        sb.append(',');
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        ReflectionToStringBuilderUtils sb = new ReflectionToStringBuilderUtils();
+        sb.reflectOnlySelectedFields(this,"key","values");
         return sb.toString();
     }
 
@@ -102,17 +90,4 @@ public class Attribute implements Serializable {
         result = ((result * 31) + ((this.values == null) ? 0 : this.values.hashCode()));
         return result;
     }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        }
-        if ((other instanceof Attribute) == false) {
-            return false;
-        }
-        Attribute rhs = ((Attribute) other);
-        return (((this.key == rhs.key) || ((this.key != null) && this.key.equals(rhs.key))) && ((this.values == rhs.values) || ((this.values != null) && this.values.equals(rhs.values))));
-    }
-
 }
