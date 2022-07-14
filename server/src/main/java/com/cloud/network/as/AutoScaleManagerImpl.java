@@ -282,9 +282,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private static final String PARAM_SECURITY_GROUP_IDS = "securitygroupids";
     private static final String PARAM_SSH_KEYPAIRS = "keypairs";
     private static final String PARAM_AFFINITY_GROUP_IDS = "affinitygroupids";
+    private static final String PARAM_NETWORK_IDS = "networkids";
 
     private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DATA_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
-            PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS);
+            PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS, PARAM_NETWORK_IDS);
 
     ExecutorService _groupExecutor;
 
@@ -519,11 +520,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
-        s_logger.debug("deployParams=" + deployParams);
-        if (deployParams.containsKey("networks") && deployParams.get("networks").length() > 0) {
-            throw new InvalidParameterValueException(
-                "'networks' is not a valid parameter, network for an AutoScaled VM is chosen automatically. An autoscaled VM is deployed in the loadbalancer's network");
-        }
         /*
          * Just for making sure the values are right in other deploy params.
          * For ex. if projectId is given as a string instead of an long value, this
@@ -1619,6 +1615,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             List<String> sshKeyPairs = new ArrayList<>();
 
             Map<String, String> deployParams = getDeployParams(profileVo.getOtherDeployParams());
+
+            if (deployParams.get(PARAM_NETWORK_IDS) != null) { // networkids, append to LB networkid
+                String[] networkids = deployParams.get(PARAM_NETWORK_IDS).split(",");
+                for (String networkid : networkids) {
+                    Network otherNetwork = _networkDao.findByUuid(networkid);
+                    if (otherNetwork != null && otherNetwork.getId() != network.getId()) {
+                        networkIds.add(otherNetwork.getId());
+                    }
+                }
+            }
             if (deployParams.get(PARAM_ROOT_DISK_SIZE) != null) {     // ROOT disk size
                 String value = deployParams.get(PARAM_ROOT_DISK_SIZE);
                 try {

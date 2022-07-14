@@ -1570,11 +1570,7 @@ export default {
       this.form.multidiskoffering = value
     },
     updateNetworks (ids) {
-      if (typeof (ids) === 'string') {
-        this.form.networkids = [ids]
-      } else if (typeof (ids) === 'object') {
-        this.form.networkids = ids
-      }
+      this.form.networkids = ids
     },
     updateDefaultNetworks (id) {
       this.defaultNetworkId = id
@@ -1762,6 +1758,12 @@ export default {
           params['otherdeployparams[' + j + '].value'] = createVmGroupData.affinitygroupids
           j++
         }
+        if (createVmGroupData.networkids) {
+          params['otherdeployparams[' + j + '].name'] = 'networkids'
+          params['otherdeployparams[' + j + '].value'] = createVmGroupData.networkids
+          j++
+        }
+
         api('createAutoScaleVmProfile', params).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
@@ -1977,15 +1979,9 @@ export default {
               createVmGroupData['nicnetworklist[' + j + '].network'] = nicNetwork.network
             }
           } else {
-            const arrNetwork = []
             networkIds = values.networkids
             if (networkIds.length > 0) {
-              for (let i = 0; i < networkIds.length; i++) {
-                const ipToNetwork = {
-                  networkid: networkIds[i]
-                }
-                arrNetwork.push(ipToNetwork)
-              }
+              createVmGroupData.networkids = values.networkids.join(',')
             } else {
               this.$notification.error({
                 message: this.$t('message.request.failed'),
@@ -1993,9 +1989,6 @@ export default {
               })
               this.loading.deploy = false
               return
-            }
-            for (let j = 0; j < arrNetwork.length; j++) {
-              createVmGroupData['iptonetworklist[' + j + '].networkid'] = arrNetwork[j].networkid
             }
           }
         }
