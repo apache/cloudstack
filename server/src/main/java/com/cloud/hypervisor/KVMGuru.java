@@ -64,12 +64,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     DpdkHelper dpdkHelper;
-    @Inject
-    VMInstanceDao _instanceDao;
-    @Inject
-    VolumeDao _volumeDao;
-
-
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 

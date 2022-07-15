@@ -1557,8 +1557,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             case LXC:
                 return false;
             case VMware:
-                final Boolean fullClone = HypervisorGuru.VmwareFullClone.value();
-                return fullClone;
+                return StorageManager.shouldExecuteInSequenceOnVmware();
             default:
                 return ExecuteInSequence.value();
         }
