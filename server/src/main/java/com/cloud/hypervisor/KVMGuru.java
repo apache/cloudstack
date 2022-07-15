@@ -22,11 +22,9 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -65,15 +63,13 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
-    HostDao _hostDao;
-    @Inject
     DpdkHelper dpdkHelper;
     @Inject
     VMInstanceDao _instanceDao;
     @Inject
     VolumeDao _volumeDao;
-    @Inject
-    ServiceOfferingDao serviceOfferingDao;
+
+
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -98,14 +94,14 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     /**
-    * Set VM CPU quota percentage with respect to host CPU on 'to' if CPU limit option is set
-    * @param to vm to
-    * @param vmProfile vm profile
-    */
+     * Set VM CPU quota percentage with respect to host CPU on 'to' if CPU limit option is set
+     * @param to vm to
+     * @param vmProfile vm profile
+     */
     protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
         if (to.getLimitCpuUse()) {
             VirtualMachine vm = vmProfile.getVirtualMachine();
-            HostVO host = _hostDao.findById(vm.getHostId());
+            HostVO host = hostDao.findById(vm.getHostId());
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
@@ -138,7 +134,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         VirtualMachine virtualMachine = vm.getVirtualMachine();
         Long hostId = virtualMachine.getHostId();
-        HostVO host = hostId == null ? null : _hostDao.findById(hostId);
+        HostVO host = hostId == null ? null : hostDao.findById(hostId);
 
         // Determine the VM's OS description
         configureVmOsDescription(virtualMachine, to, host);
@@ -170,7 +166,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         if (virtualMachineTo.getType() == VirtualMachine.Type.User && MapUtils.isNotEmpty(virtualMachineTo.getExtraConfig()) &&
-          virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
+                virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_NUMA) && virtualMachineTo.getExtraConfig().containsKey(DpdkHelper.DPDK_HUGE_PAGES)) {
             for (final NicTO nic : virtualMachineTo.getNics()) {
                 nic.setDpdkEnabled(true);
             }
@@ -218,7 +214,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Long lastHostId = virtualMachine.getLastHostId();
         s_logger.info(String.format("%s is not running; therefore, we use the last host [%s] that the VM was running on to derive the unconstrained service offering max CPU and memory.", vmDescription, lastHostId));
 
-        HostVO lastHost = lastHostId == null ? null : _hostDao.findById(lastHostId);
+        HostVO lastHost = lastHostId == null ? null : hostDao.findById(lastHostId);
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
@@ -243,7 +239,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             String maxMemoryConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_RAM_SIZE.key();
 
             s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s memory.",
-              serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
+                    serviceOfferingDescription, maxMemoryConfigKey, maxMemoryConfig, vmDescription));
 
             if (maxMemoryConfig > 0) {
                 maxMemory = ByteScaleUtils.mibToBytes(maxMemoryConfig);
@@ -269,7 +265,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             String maxCpuCoreConfigKey = ConfigurationManagerImpl.VM_SERVICE_OFFERING_MAX_CPU_CORES.key();
 
             s_logger.info(String.format("%s is a 'Custom unconstrained' service offering. Using config [%s] value [%s] as max %s cpu cores.",
-              serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
+                    serviceOfferingDescription, maxCpuCoreConfigKey, maxCpuCoresConfig, vmDescription));
 
             if (maxCpuCoresConfig > 0) {
                 maxCpuCores = maxCpuCoresConfig;
@@ -314,7 +310,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     public Map<String, String> getClusterSettings(long vmId) {
         return null;
     }
-
 
     @Override
     public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
