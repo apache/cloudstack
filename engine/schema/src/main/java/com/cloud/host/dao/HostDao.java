@@ -141,6 +141,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     HostVO findByName(String name);
 
+    HostVO findHostByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion);
+
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 
     /**

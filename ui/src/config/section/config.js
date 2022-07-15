@@ -82,6 +82,25 @@ export default {
           args: ['maxguestslimit']
         }
       ]
+    },
+    {
+      name: 'guestoshypervisormapping',
+      title: 'label.guest.os.mappings',
+      icon: 'database-outlined',
+      permission: ['listGuestOsMapping'],
+      columns: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor'],
+      details: ['hypervisor', 'hypervisorversion', 'osdisplayname', 'osnameforhypervisor', 'isuserdefined'],
+      filters: ['all', 'kvm', 'vmware', 'xenserver', 'lxc', 'ovm3'],
+      searchFilters: ['hypervisor', 'hypervisorversion'],
+      actions: [
+        {
+          api: 'updateGuestOsMapping',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          args: ['osnameforhypervisor']
+        }
+      ]
     }
   ]
 }

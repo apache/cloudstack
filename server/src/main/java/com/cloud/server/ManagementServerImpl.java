@@ -44,6 +44,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
@@ -2562,6 +2564,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     public Pair<List<? extends GuestOSHypervisor>, Integer> listGuestOSMappingByCriteria(final ListGuestOsMappingCmd cmd) {
         final Filter searchFilter = new Filter(GuestOSHypervisorVO.class, "hypervisorType", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "hypervisorVersion", false);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "guestOsId", true);
+        searchFilter.addOrderBy(GuestOSHypervisorVO.class, "created", false);
         final Long id = cmd.getId();
         final Long osTypeId = cmd.getOsTypeId();
         final String hypervisor = cmd.getHypervisor();
@@ -2634,9 +2639,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final GuestOSHypervisorVO duplicate = _guestOSHypervisorDao.findByOsIdAndHypervisorAndUserDefined(guestOs.getId(), hypervisorType.toString(), hypervisorVersion, true);
 
         if (duplicate != null) {
-            throw new InvalidParameterValueException(
-                    "Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : " + guestOs.getDisplayName() + " already exists!");
+            if (!cmd.isForced()) {
+                throw new InvalidParameterValueException(
+                        "Mapping from hypervisor : " + hypervisorType.toString() + ", version : " + hypervisorVersion + " and guest OS : " + guestOs.getDisplayName() + " already exists!");
+            }
+
+            if (cmd.getOsMappingCheckEnabled()) {
+                checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
+            }
+
+            final long guestOsId = duplicate.getId();
+            final GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(guestOsId);
+            guestOsHypervisor.setGuestOsName(osNameForHypervisor);
+            if (_guestOSHypervisorDao.update(guestOsId, guestOsHypervisor)) {
+                return _guestOSHypervisorDao.findById(guestOsId);
+            }
+            return null;
         }
+
+        if (cmd.getOsMappingCheckEnabled()) {
+            checkGuestOSHypervisorMapping(hypervisorType, hypervisorVersion, guestOs.getDisplayName(), osNameForHypervisor);
+        }
+
         final GuestOSHypervisorVO guestOsMapping = new GuestOSHypervisorVO();
         guestOsMapping.setGuestOsId(guestOs.getId());
         guestOsMapping.setGuestOsName(osNameForHypervisor);
@@ -2644,7 +2668,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         guestOsMapping.setHypervisorVersion(hypervisorVersion);
         guestOsMapping.setIsUserDefined(true);
         return _guestOSHypervisorDao.persist(guestOsMapping);
+    }
 
+    private void checkGuestOSHypervisorMapping(HypervisorType hypervisorType, String hypervisorVersion, String guestOsName, String guestOsNameForHypervisor) {
+        if (!isGuestOSMappingCheckSupported(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Guest OS mapping check is not supported for hypervisor: %s", hypervisorType.toString()));
+        }
+        final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("No host available with hypervisor: %s and version: %s, unable to check the guest os mapping", hypervisorType.toString(), hypervisorVersion));
+        }
+        CheckGuestOsMappingAnswer answer = (CheckGuestOsMappingAnswer) _agentMgr.easySend(host.getId(), new CheckGuestOsMappingCommand(guestOsName, guestOsNameForHypervisor, hypervisorVersion));
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Invalid hypervisor os mapping: %s for guest os: %s, hypervisor: %s and version: %s", guestOsNameForHypervisor, guestOsName, hypervisorType.toString(), hypervisorVersion));
+        }
+    }
+
+    private boolean isGuestOSMappingCheckSupported(HypervisorType hypervisorType) {
+        return (hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.XenServer);
     }
 
     @Override
@@ -2772,6 +2813,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (!guestOsHypervisorHandle.getIsUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined Guest OS mapping");
+        }
+
+        if (cmd.getOsMappingCheckEnabled()) {
+            GuestOS guestOs = ApiDBUtils.findGuestOSById(guestOsHypervisorHandle.getGuestOsId());
+            if (guestOs == null) {
+                throw new InvalidParameterValueException("Unable to find the guest OS for the mapping");
+            }
+            checkGuestOSHypervisorMapping(HypervisorType.getType(guestOsHypervisorHandle.getHypervisorType()), guestOsHypervisorHandle.getHypervisorVersion(), guestOs.getDisplayName(), osNameForHypervisor);
         }
 
         final GuestOSHypervisorVO guestOsHypervisor = _guestOSHypervisorDao.createForUpdate(id);
