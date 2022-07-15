@@ -68,13 +68,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     HostDao _hostDao;
     @Inject
     DpdkHelper dpdkHelper;
-
-     @Inject
+    @Inject
     VMInstanceDao _instanceDao;
-
     @Inject
     VolumeDao _volumeDao;
-
     @Inject
     ServiceOfferingDao serviceOfferingDao;
 
