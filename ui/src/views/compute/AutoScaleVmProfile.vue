@@ -226,7 +226,8 @@ export default {
   methods: {
     fetchInitData () {
       this.counterParams = ['snmpcommunity', 'snmpport']
-      this.deployParams = ['securitygroupids', 'rootdisksize', 'diskofferingid', 'size']
+      this.deployParams = ['securitygroupids', 'rootdisksize', 'diskofferingid', 'size',
+        'overridediskofferingid', 'keypairs', 'affinitygroupids', 'networkids']
       this.paramNameList = this.counterParams.concat(this.deployParams)
       this.fetchUserData()
       this.fetchTemplateData()
@@ -301,6 +302,18 @@ export default {
       }
       if (otherdeployparams.size) {
         this.allParams.push({ name: 'size', value: otherdeployparams.size })
+      }
+      if (otherdeployparams.overridediskofferingid) {
+        this.allParams.push({ name: 'overridediskofferingid', value: otherdeployparams.overridediskofferingid })
+      }
+      if (otherdeployparams.keypairs) {
+        this.allParams.push({ name: 'keypairs', value: otherdeployparams.keypairs })
+      }
+      if (otherdeployparams.affinitygroupids) {
+        this.allParams.push({ name: 'affinitygroupids', value: otherdeployparams.affinitygroupids })
+      }
+      if (otherdeployparams.networkids) {
+        this.allParams.push({ name: 'networkids', value: otherdeployparams.networkids })
       }
     },
     deleteParam (paramName) {
