@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.cloud.agent.api.CheckGuestOsMappingAnswer;
+import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.resource.ServerResourceBase;
@@ -307,6 +309,7 @@ import com.vmware.vim25.DistributedVirtualSwitchPortCriteria;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.GuestNicInfo;
+import com.vmware.vim25.GuestOsDescriptor;
 import com.vmware.vim25.HostCapability;
 import com.vmware.vim25.HostConfigInfo;
 import com.vmware.vim25.HostFileSystemMountInfo;
@@ -605,6 +608,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetVmVncTicketCommand) cmd);
             } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
+            } else if (clz == CheckGuestOsMappingCommand.class) {
+                answer = execute((CheckGuestOsMappingCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7720,6 +7725,29 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         } catch (Exception e) {
             s_logger.error("Error getting VNC ticket for VM " + vmInternalName, e);
             return new GetVmVncTicketAnswer(null, false, e.getLocalizedMessage());
+        }
+    }
+
+    private CheckGuestOsMappingAnswer execute(CheckGuestOsMappingCommand cmd) {
+        String guestOsName = cmd.getGuestOsName();
+        String guestOsMappingName = cmd.getGuestOsHypervisorMappingName();
+        s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            GuestOsDescriptor guestOsDescriptor = hyperHost.getGuestOsDescriptor(guestOsMappingName);
+            if (guestOsDescriptor == null) {
+                return new CheckGuestOsMappingAnswer(cmd, "Guest os mapping name not found in the hypervisor");
+            }
+            s_logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
+            if (guestOsDescriptor.getFullName().equalsIgnoreCase(guestOsName)) {
+                // Extact matching may fail, try with regex?
+                s_logger.debug("Hypervisor guest os name matches with os name: " + guestOsName + " from user");
+            }
+            return new CheckGuestOsMappingAnswer(cmd);
+        } catch (Exception e) {
+            s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
+            return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
         }
     }
 

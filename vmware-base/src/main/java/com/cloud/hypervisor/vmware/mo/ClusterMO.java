@@ -740,4 +740,16 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
             throw new CloudRuntimeException(msg);
         }
     }
+
+    @Override
+    public GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception {
+        VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
+        List<GuestOsDescriptor> guestDescriptors = vmConfigOption.getGuestOSDescriptor();
+        for (GuestOsDescriptor descriptor : guestDescriptors) {
+            if (guestOsId != null && guestOsId.equalsIgnoreCase(descriptor.getId())) {
+                return descriptor;
+            }
+        }
+        return null;
+    }
 }

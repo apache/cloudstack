@@ -53,8 +53,14 @@
                   <a-select
                     v-if="!dataView && filters && filters.length > 0"
                     :placeholder="$t('label.filterby')"
-                    :value="filterValue"
                     style="min-width: 120px; margin-left: 10px; margin-top: -4px"
+                    :value="$route.query.filter || (projectView && $route.name === 'vm' ||
+                      ['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)
+                        ? 'all' : ['publicip'].includes($route.name)
+                        ? 'allocated' : ['guestnetwork', 'guestvlans', 'guestoshypervisormapping'].includes($route.name)
+                        ? 'all' : ['volume'].includes($route.name)
+                        ? 'user' : 'self')"
+                    style="min-width: 120px; margin-left: 10px"
                     @change="changeFilter"
                     showSearch
                     optionFilterProp="label"
@@ -1643,6 +1649,12 @@ export default {
         } else {
           delete query.archived
         }
+      } else if (this.$route.name === 'guestoshypervisormapping') {
+        if (filter === 'all') {
+          delete query.hypervisor
+        } else {
+          query.hypervisor = filter
+        }
       }
       query.filter = filter
       query.page = '1'
@@ -1668,6 +1680,8 @@ export default {
               query.templatetype = value
             } else if (this.$route.name === 'globalsetting') {
               query.name = value
+            } else if (this.$route.name === 'guestoshypervisormapping') {
+              query.hypervisor = value
             } else {
               query.keyword = value
             }
