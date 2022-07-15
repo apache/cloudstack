@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-engine</artifactId>
-        <version>4.17.0.0</version>
+        <version>4.17.0.1</version>
     </parent>
     <artifactId>cloud-engine-service</artifactId>
     <packaging>war</packaging>

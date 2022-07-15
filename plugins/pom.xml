@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.17.0.0</version>
+        <version>4.17.0.1</version>
     </parent>
     <build>
         <plugins>
