@@ -155,7 +155,7 @@
               <div>{{ ip }}</div>
               <tooltip-button
                 :disabled='record.autoscalevmgroup'
-                :tooltip="$t('label.action.delete.load.balancer')"
+                :tooltip="$t('label.remove.vm.from.lb')"
                 type="primary"
                 :danger="true"
                 icon="delete-outlined"
