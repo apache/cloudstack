@@ -17,7 +17,15 @@
 
 <template>
   <div>
-   <a-table
+    <div>
+      <a-alert type="info" v-if="resource.state !== 'Disabled'">
+        <template #message>
+        <div
+          v-html="$t('message.autoscale.loadbalancer.update')" />
+        </template>
+      </a-alert>
+    </div>
+    <a-table
       size="small"
       class="list-view"
       :loading="loading"
@@ -49,8 +57,8 @@
               </div>
               <div>{{ ip }}</div>
               <tooltip-button
-                :disabled='record.autoscalevmgroup'
-                :tooltip="$t('label.action.delete.load.balancer')"
+                :disabled='record.autoscalevmgroup && record.autoscalevmgroup.state != "Disabled"'
+                :tooltip="$t('label.remove.vm.from.lb')"
                 type="primary"
                 :danger="true"
                 icon="delete-outlined"
@@ -775,6 +783,34 @@ export default {
     handleStickinessMethodSelectChange (e) {
       if (this.formRef.value) this.formRef.value.resetFields()
       this.stickinessPolicyMethod = e
+    },
+    handleDeleteInstanceFromRule (instance, rule, ip) {
+      this.loading = true
+      api('removeFromLoadBalancerRule', {
+        id: rule.id,
+        'vmidipmap[0].vmid': instance.loadbalancerruleinstance.id,
+        'vmidipmap[0].vmip': ip
+      }).then(response => {
+        this.$pollJob({
+          jobId: response.removefromloadbalancerruleresponse.jobid,
+          successMessage: this.$t('message.success.remove.instance.rule'),
+          successMethod: () => {
+            this.fetchData()
+          },
+          errorMessage: this.$t('message.remove.instance.failed'),
+          errorMethod: () => {
+            this.fetchData()
+          },
+          loadingMessage: this.$t('message.remove.instance.processing'),
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          catchMethod: () => {
+            this.fetchData()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.fetchData()
+      })
     },
     openEditRuleModal (rule) {
       this.selectedRule = rule

@@ -2052,6 +2052,7 @@
 "message.attach.volume.failed": "Failed to attach volume.",
 "message.attach.volume.progress": "Attaching volume",
 "message.authorization.failed": "Session expired, authorization verification failed.",
+"message.autoscale.loadbalancer.update": "The load balancer rule can be updated only when autoscale VM group is Disabled.",
 "message.autoscale.policies.update": "The scale up/down policies can be updated only when autoscale VM group is Disabled.",
 "message.autoscale.vmprofile.update": "The autoscale vm profile can be updated only when autoscale VM group is Disabled.",
 "message.backup.attach.restore": "Please confirm that you want to restore and attach the volume from the backup?",

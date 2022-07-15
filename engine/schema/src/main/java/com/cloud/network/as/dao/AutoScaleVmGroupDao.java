@@ -30,4 +30,6 @@ public interface AutoScaleVmGroupDao extends GenericDao<AutoScaleVmGroupVO, Long
     boolean isAutoScaleLoadBalancer(Long loadBalancerId);
 
     boolean updateState(long groupId, AutoScaleVmGroup.State oldState, AutoScaleVmGroup.State newState);
+
+    List<AutoScaleVmGroupVO> listByLoadBalancer(Long loadBalancerId);
 }

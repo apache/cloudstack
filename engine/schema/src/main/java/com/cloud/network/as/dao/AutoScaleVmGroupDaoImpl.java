@@ -74,4 +74,11 @@ public class AutoScaleVmGroupDaoImpl extends GenericDaoBase<AutoScaleVmGroupVO, 
         group.setState(newState);
         return update(groupId, group);
     }
+
+    @Override
+    public List<AutoScaleVmGroupVO> listByLoadBalancer(Long loadBalancerId) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        return listBy(sc);
+    }
 }

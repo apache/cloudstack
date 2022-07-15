@@ -29,6 +29,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -47,6 +48,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -79,6 +81,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.as.AutoScaleCounter;
 import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.AutoScalePolicyConditionMapVO;
 import com.cloud.network.as.AutoScaleVmGroup;
@@ -249,6 +252,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     AutoScaleVmGroupDao _autoScaleVmGroupDao;
     @Inject
     AutoScaleVmGroupPolicyMapDao _autoScaleVmGroupPolicyMapDao;
+    @Inject
+    AutoScaleVmGroupVmMapDao _autoScaleVmGroupVmMapDao;
+    @Inject
+    private AutoScaleManager _asManager;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -1015,6 +1022,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
 
+        if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
+            throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + " because it is being used by an Autoscale VM group.");
+        }
 
         if (instanceIds == null && vmIdIpMap.isEmpty()) {
             throw new InvalidParameterValueException("Both instanceids and vmidipmap  can't be null");
@@ -1397,6 +1407,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         boolean success = false;
         FirewallRule.State backupState = loadBalancer.getState();
         Set<Long> vmIds = vmIdIpMap.keySet();
+
+        for (long instanceId : vmIds) {
+            _asManager.checkIfVmActionAllowed(instanceId);
+        }
+
         try {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
@@ -1438,6 +1453,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 // We can consider the job done and only need to remove the
                 // rules in DB
                 _lb2VmMapDao.remove(loadBalancer.getId(), instanceIds, null);
+                for (Long instanceId: instanceIds){
+                    _autoScaleVmGroupVmMapDao.removeByVm(instanceId);
+                }
                 return true;
             }
 
@@ -1542,6 +1560,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @DB
     public boolean deleteLoadBalancerRule(final long loadBalancerId, boolean apply, Account caller, long callerUserId, boolean rollBack) {
+        List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listByLoadBalancer(loadBalancerId);
+        if (CollectionUtils.isNotEmpty(vmGroups)) {
+            for (AutoScaleVmGroupVO vmGroup : vmGroups) {
+                if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Disabled)) {
+                    throw new CloudRuntimeException(String.format("Cannot delete load balancer rule %d because it is being used by an Autoscale VM group: %s.", loadBalancerId, vmGroup.getName()));
+                }
+            }
+        }
+
         final LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
         FirewallRule.State backupState = lb.getState();
 
