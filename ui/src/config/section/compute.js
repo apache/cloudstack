@@ -590,7 +590,7 @@ export default {
           label: 'label.delete.autoscale.vmgroup',
           message: 'message.action.delete.autoscale.vmgroup',
           dataView: true,
-          show: (record) => { return record.state === 'Disabled' },
+          args: ['cleanup'],
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }

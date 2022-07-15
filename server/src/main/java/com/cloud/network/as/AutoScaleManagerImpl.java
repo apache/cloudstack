@@ -1006,7 +1006,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_DELETE, eventDescription = "deleting autoscale vm group", async = true)
-    public boolean deleteAutoScaleVmGroup(final long id) {
+    public boolean deleteAutoScaleVmGroup(final long id, final Boolean cleanup) {
         AutoScaleVmGroupVO autoScaleVmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
 
         if (autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.New)) {
@@ -1014,15 +1014,27 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             return _autoScaleVmGroupDao.remove(id);
         }
 
+        if (!autoScaleVmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled) && !Boolean.TRUE.equals(cleanup)) {
+            throw new InvalidParameterValueException(String.format("Cannot delete autoscale vm group id : %d because it is in %s state. Please disable it or pass cleanup=true flag which will destroy all VMs.", id, autoScaleVmGroupVO.getState()));
+        }
+
         Integer currentVM = _autoScaleVmGroupVmMapDao.countByGroup(id);
-        if (currentVM > 0) {
-            throw new InvalidParameterValueException(String.format("Cannot delete autoscale vm group id : %d because there are %d VMs. Please remove the VMs or pass forced=true flag which will destroy all VMs.", id, currentVM));
+        if (currentVM > 0 && !Boolean.TRUE.equals(cleanup)) {
+            throw new InvalidParameterValueException(String.format("Cannot delete autoscale vm group id : %d because there are %d VMs. Please remove the VMs or pass cleanup=true flag which will destroy all VMs.", id, currentVM));
         }
 
         AutoScaleVmGroup.State bakupState = autoScaleVmGroupVO.getState();
         autoScaleVmGroupVO.setState(AutoScaleVmGroup.State.Revoke);
         _autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
         boolean success = false;
+
+        if (cleanup) {
+            List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(id);
+            for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
+                Long vmId = asGroupVmVO.getInstanceId();
+                destroyVm(vmId);
+            }
+        }
 
         try {
             success = configureAutoScaleVmGroup(id, bakupState);
@@ -1862,14 +1874,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             } catch (ServerApiException e) {
                 s_logger.error("Can not deploy new VM for scaling up in the group "
                     + asGroup.getId() + ". Waiting for next round");
-                try {
-                    removeVmFromVmGroup(vmId);
-                    _userVmManager.destroyVm(vmId, false);
-                } catch (ResourceUnavailableException ex) {
-                    s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
-                } catch (ConcurrentOperationException ex) {
-                    s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
-                }
+                destroyVm(vmId);
                 break;
             }
         }
@@ -2640,5 +2645,16 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Override
     public void removeVmFromVmGroup(Long vmId) {
         _autoScaleVmGroupVmMapDao.removeByVm(vmId);
+    }
+
+    private void destroyVm(Long vmId) {
+        try {
+            removeVmFromVmGroup(vmId);
+            _userVmManager.destroyVm(vmId, false);
+        } catch (ResourceUnavailableException ex) {
+            s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
+        } catch (ConcurrentOperationException ex) {
+            s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
+        }
     }
 }

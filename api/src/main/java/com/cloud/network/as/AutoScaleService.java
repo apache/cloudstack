@@ -58,7 +58,7 @@ public interface AutoScaleService {
 
     boolean configureAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) throws ResourceUnavailableException;
 
-    boolean deleteAutoScaleVmGroup(long vmGroupId);
+    boolean deleteAutoScaleVmGroup(long vmGroupId, Boolean cleanup);
 
     AutoScaleVmGroup updateAutoScaleVmGroup(UpdateAutoScaleVmGroupCmd cmd);
 
