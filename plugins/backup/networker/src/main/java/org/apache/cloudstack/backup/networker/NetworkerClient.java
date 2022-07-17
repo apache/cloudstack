@@ -179,7 +179,6 @@ public class NetworkerClient {
         }
         return null;
     }
-
     private HttpResponse delete(final String path) throws IOException {
         String url = apiURI.toString() + path;
         final HttpDelete request = new HttpDelete(url);
@@ -321,7 +320,6 @@ public class NetworkerClient {
         }
         return new ArrayList<>();
     }
-
     public List<BackupOffering> listPolicies() {
         LOG.debug("Trying to list backup EMC Networker Policies we can use");
         try {

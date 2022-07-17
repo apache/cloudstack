@@ -252,3 +252,4 @@ while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
  backup_domain "$kvmDName" "$snapPrefix$kvmDName"
 
  exit 0
+
