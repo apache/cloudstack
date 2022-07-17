@@ -38,6 +38,7 @@ import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -218,7 +219,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             privateKey = configDao.getValue("ssh.privatekey");
         }
         if ((password == null && privateKey == null) || username == null) {
-            throw new CloudRuntimeException("Cannot find login credentials for HYPERVISOR " + host.getUuid());
+            throw new CloudRuntimeException("Cannot find login credentials for HYPERVISOR " + Objects.requireNonNull(host).getUuid());
         }
 
         return new Ternary<>(username, password, privateKey);
@@ -486,11 +487,23 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         // Get credentials for that host
         Ternary<String, String, String> credentials = getKVMHyperisorCredentials(hostVO);
 
+        // Get retention Period for our Backup
+        BackupOfferingVO vmBackupOffering = new BackupOfferingDaoImpl().findById(vm.getBackupOfferingId());
+        final String backupProviderPolicyId = vmBackupOffering.getExternalId();
+
+        String backupRentionPeriod = getClient(vm.getDataCenterId()).getBackupPolicyRetentionInterval(backupProviderPolicyId);
+
+        if ( backupRentionPeriod == null ) {
+            LOG.warn("There is no retention setting for Emc Networker Policy, setting default for 1 day");
+            backupRentionPeriod="1 Day";
+        }
+
         // Get Cluster
         clusterName = getVMHypervisorCluster(hostVO);
 
         String command = "sudo /usr/share/cloudstack-common/scripts/vm/hypervisor/kvm/nsrkvmbackup.sh" +
                 " -s " + networkerServer +
+                " -R '" + backupRentionPeriod + "'" +
                 " -P " + NetworkerMediaPool.valueIn(vm.getDataCenterId()) +
                 " -c " + clusterName +
                 " -u " + vm.getUuid() +

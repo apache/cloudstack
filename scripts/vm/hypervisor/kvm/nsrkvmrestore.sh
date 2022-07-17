@@ -172,21 +172,21 @@ while getopts "h?vs:l:c:d:a:S:n:p:" opt; do
       usage
       exit 254
       ;;
-    c) clusterClient=$OPTARG
+    c) clusterClient="$OPTARG"
      ;;
-    s) networkerServer=$OPTARG
+    s) networkerServer="$OPTARG"
      ;;
-    l) logDir=$OPTARG
+    l) logDir="$OPTARG"
      ;;
-    d) destination=$OPTARG
+    d) destination="$OPTARG"
      ;;
-    a) volume=$OPTARG
+    a) volume="$OPTARG"
      ;;
-    S) ssid=$OPTARG
+    S) ssid="$OPTARG"
      ;;
-    n) newvolumeUuid=$OPTARG
+    n) newvolumeUuid="$OPTARG"
      ;;
-    p) POOLPATH=$OPTARG
+    p) POOLPATH="$OPTARG"
      ;;
     v)  verb=1
       ;;

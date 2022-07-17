@@ -35,6 +35,7 @@ kvmDName=""
 kvmDUuid=""
 logFile=""
 mediaPool=""
+retentionTime=""
 
 
 log () {
@@ -56,7 +57,7 @@ vercomp(){
 usage() {
         echo "
 
-Usage:[-v] [-h] [-l log_dir] [-dr] [-s networker_server] [-c networker_cluster_client] [-t target_vm] [-u target_uuid] [-p snapprefix] [-P media_pool ]
+Usage:[-v] [-h] [-l log_dir] [-dr] [-s networker_server] [-c networker_cluster_client] [-t target_vm] [-u target_uuid] [-p snapprefix] [-P media_pool ] [-R retention_time ]
 
 Options:
         -h Help and usage
@@ -68,6 +69,7 @@ Options:
         -u target_uuid KVM domain to backup
         -p Snapshot Prefix for backups
         -P mediaPool EMC Networker Media Pool
+        -R retention_time Backup retention time
 
 Supplements Apache Cloudstack B&R Framework  EMC Networker plugin and performs the backup of the Virtual Machines
 "
@@ -136,6 +138,7 @@ backup_domain() {
         name=$1
         snapName=$2
         log  "Preparing snapshots and gathering information for backing up domain $name under snapshot name $snapName"
+        log  "Retention time is $retentionTime"
 
         declare -A TRGSRC
         while IFS=',' read -r TARGET SOURCE
@@ -164,7 +167,7 @@ backup_domain() {
                 fi
                 log "Created snapshot(s) for $name"
         fi
-        cmd="$(save -LL -q -s "$networkerServer" -c "$clusterClient" -N "$name" -b "$mediaPool" $disks)"
+        cmd="$(save -LL -q -e "${retentionTime}" -s "$networkerServer" -c "$clusterClient" -N "$name" -b "$mediaPool" $disks)"
         retVal=$?
         log "$cmd"
         echo "$cmd" | grep -oE 'savetime=[0-9]{10}'
@@ -201,26 +204,28 @@ backup_domain() {
          done
 }
 
-while getopts "h?vs:l:c:t:u:p:P:" opt; do
+while getopts "h?vs:l:c:t:u:p:P:R:" opt; do
   case "$opt" in
     h|\?)
       usage
       exit 254
       ;;
-     c) clusterClient=$OPTARG
+     c) clusterClient="$OPTARG"
       ;;
-     s) networkerServer=$OPTARG
+     s) networkerServer="$OPTARG"
       ;;
-     l) logDir=$OPTARG
+     l) logDir="$OPTARG"
       ;;
-     t) kvmDName=$OPTARG
+     t) kvmDName="$OPTARG"
       ;;
-     u) kvmDUuid=$OPTARG
+     u) kvmDUuid="$OPTARG"
       ;;
-     p) snapPrefix=$OPTARG
+     p) snapPrefix="$OPTARG"
       ;;
-     P) mediaPool=$OPTARG
+     P) mediaPool="$OPTARG"
           ;;
+     R) retentionTime="$OPTARG"
+       ;;
      v)  verb=1
        ;;
    esac
@@ -262,3 +267,4 @@ while getopts "h?vs:l:c:t:u:p:P:" opt; do
 
 
  exit 0
+
