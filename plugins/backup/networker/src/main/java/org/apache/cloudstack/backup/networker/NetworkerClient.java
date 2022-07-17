@@ -21,10 +21,8 @@ package org.apache.cloudstack.backup.networker;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.vm.VirtualMachine;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupOffering;
@@ -34,7 +32,6 @@ import org.apache.cloudstack.backup.networker.api.NetworkerBackups;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicies;
 import org.apache.cloudstack.backup.networker.api.ProtectionPolicy;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -42,11 +39,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
@@ -59,6 +54,7 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -166,31 +162,29 @@ public class NetworkerClient {
         return response;
     }
 
-    private HttpResponse post(final String path, final Object obj) throws IOException {
-        String json = null;
+    public  String getBackupPolicyRetentionInterval(String externalId) {
+        try {
+            final HttpResponse response = get("/global/protectionpolicies/?q=comment:" + BACKUP_IDENTIFIER);
+            checkResponseOK(response);
+            final ObjectMapper jsonMapper = new ObjectMapper();
+            jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-        if (obj != null) {
-            final JsonMapper jsonMapper = new JsonMapper();
-            json = jsonMapper.writer()
-                    .with(JsonGenerator.Feature.STRICT_DUPLICATE_DETECTION)
-                    .writeValueAsString(obj);
+            final ProtectionPolicies protectionPolicies = jsonMapper.readValue(response.getEntity().getContent(), ProtectionPolicies.class);
+
+             if (protectionPolicies == null || protectionPolicies.getProtectionPolicies() == null) {
+                return null;
+            }
+            for (final ProtectionPolicy protectionPolicy : protectionPolicies.getProtectionPolicies()) {
+                if ( protectionPolicy.getResourceId().getId().equals(externalId)) {
+                        return protectionPolicy.getPolicyProtectionPeriod();
+                }
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to get Protection Policy Period from EMC Networker due to:", e);
+            checkResponseTimeOut(e);
         }
-        String url = apiURI.toString() + path;
-        final HttpPost request = new HttpPost(url);
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Basic " + Base64.getEncoder().encodeToString((apiName + ":" + apiPassword).getBytes()));
-        request.setHeader(HttpHeaders.ACCEPT, "application/json");
-        request.setHeader(HttpHeaders.USER_AGENT, "CloudStack B&R");
-        if (StringUtils.isNotBlank(json)) {
-            request.setEntity(new StringEntity(json));
-        }
-
-        final HttpResponse response = httpClient.execute(request);
-        checkAuthFailure(response);
-
-        LOG.debug(String.format("Response received in POST request with body [%s] is: [%s] for URL [%s].", "hello", response.toString(), url));
-        return response;
+        return null;
     }
-
     private HttpResponse delete(final String path) throws IOException {
         String url = apiURI.toString() + path;
         final HttpDelete request = new HttpDelete(url);
@@ -302,8 +296,9 @@ public class NetworkerClient {
         return null;
     }
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
-        LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
+        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 
+        LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
         try {
             final HttpResponse response = get("/global/backups/?q=name:" + vm.getName());
             checkResponseOK(response);
@@ -316,7 +311,16 @@ public class NetworkerClient {
             }
             for (final NetworkerBackup backup : networkerBackups.getBackups()) {
                 LOG.debug("Found Backup " + backup.getId());
-                backupsTaken.add(backup.getId());
+                // Backups that have expired on the EMC Networker but not removed yet will not be added
+                try {
+                    Date backupRetentionTime = formatterDateTime.parse(backup.getRetentionTime());
+                    Date currentTime = new Date();
+                    if (currentTime.compareTo(backupRetentionTime) < 0) {
+                        backupsTaken.add(backup.getId());
+                    }
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
+                }
             }
             return backupsTaken;
         } catch (final IOException e) {
@@ -325,7 +329,6 @@ public class NetworkerClient {
         }
         return new ArrayList<>();
     }
-
     public List<BackupOffering> listPolicies() {
         LOG.debug("Trying to list backup EMC Networker Policies we can use");
         try {
