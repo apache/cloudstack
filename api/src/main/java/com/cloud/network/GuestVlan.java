@@ -16,17 +16,26 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface GuestVlan extends InternalIdentity, Identity {
+import java.util.Date;
+
+public interface GuestVlan extends InternalIdentity {
 
     @Override
     public long getId();
 
-    public long getAccountId();
+    Date getTakenAt();
 
-    public String getGuestVlanRange();
+    String getVnet();
 
-    public long getPhysicalNetworkId();
+    String getReservationId();
+
+    Long getAccountId();
+
+    long getDataCenterId();
+
+    long getPhysicalNetworkId();
+
+    Long getAccountGuestVlanMapId();
 }

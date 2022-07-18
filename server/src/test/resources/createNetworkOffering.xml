@@ -41,6 +41,13 @@
     <bean id="ConfigurationManager" class="com.cloud.configuration.ConfigurationManagerImpl">
         <property name="name" value="ConfigurationManager"/>
     </bean>
+    <bean id="dataCenterGuestIpv6PrefixDaoImpl" class="com.cloud.dc.dao.DataCenterGuestIpv6PrefixDaoImpl" />
+    <bean id="ipv6GuestPrefixSubnetNetworkMapDaoImpl" class="com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDaoImpl" />
+    <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
+    <bean id="domainRouterDaoImpl" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
+    <bean id="routerNetworkDaoImpl" class="com.cloud.network.dao.RouterNetworkDaoImpl" />
+    <bean id="userStatisticsDaoImpl" class="com.cloud.user.dao.UserStatisticsDaoImpl" />
+    <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
     <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />

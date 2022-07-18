@@ -45,12 +45,11 @@
                                 <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
-                                      <img
+                                      <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :src="getImg(zoneItem.icon.base64image)"
-                                        style="marginTop: -30px; marginLeft: 60px"
-                                        width="36px"
-                                        height="36px" />
+                                        :image="zoneItem.icon.base64image"
+                                        size="36"
+                                        style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
                                   </a-radio>
@@ -146,6 +145,7 @@
                           :selected="tabKey"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
+                          :key="templateKey"
                           @handle-search-filter="($event) => fetchAllTemplates($event)"
                           @update-template-iso="updateFieldValue" />
                          <div>
@@ -179,6 +179,7 @@
                         <a-form-item :label="$t('label.hypervisor')">
                           <a-select
                             v-model:value="form.hypervisor"
+                            :preFillContent="dataPreFill"
                             :options="hypervisorSelectOptions"
                             @change="value => hypervisor = value"
                             showSearch
@@ -246,7 +247,7 @@
                       memoryInputDecorator="memory"
                       :preFillContent="dataPreFill"
                       :computeOfferingId="instanceConfig.computeofferingid"
-                      :isConstrained="'serviceofferingdetails' in serviceOffering"
+                      :isConstrained="isOfferingConstrained(serviceOffering)"
                       :minCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.mincpunumber*1 : 0"
                       :maxCpu="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.maxcpunumber*1 : Number.MAX_SAFE_INTEGER"
                       :minMemory="'serviceofferingdetails' in serviceOffering ? serviceOffering.serviceofferingdetails.minmemory*1 : 0"
@@ -736,6 +737,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       dynamicscalingenabled: true,
+      templateKey: 0,
       vm: {
         name: null,
         zoneid: null,
@@ -1285,6 +1287,9 @@ export default {
     }
   },
   methods: {
+    updateTemplateKey () {
+      this.templateKey += 1
+    },
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
@@ -1463,7 +1468,6 @@ export default {
           }
         })
       }
-
       this.fetchBootTypes()
       this.fetchBootModes()
       this.fetchInstaceGroups()
@@ -1477,8 +1481,10 @@ export default {
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
     },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
+    isOfferingConstrained (serviceOffering) {
+      return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
+        'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
+        'minmemory' in serviceOffering.serviceofferingdetails
     },
     updateOverrideRootDiskShowParam (val) {
       if (val) {
@@ -1965,7 +1971,9 @@ export default {
             this.options[name] = response
 
             if (name === 'hypervisors') {
-              this.hypervisor = response[0] && response[0].name ? response[0].name : null
+              const hypervisorFromResponse = response[0] && response[0].name ? response[0].name : null
+              this.dataPreFill.hypervisor = hypervisorFromResponse
+              this.form.hypervisor = hypervisorFromResponse
             }
 
             if (param.field) {
@@ -2112,6 +2120,7 @@ export default {
       } else {
         this.fetchAllIsos()
       }
+      this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
     onSelectPodId (value) {

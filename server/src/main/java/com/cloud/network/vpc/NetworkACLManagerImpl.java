@@ -48,6 +48,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
 public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager {
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
@@ -74,6 +75,15 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     private MessageBus _messageBus;
 
     private List<NetworkACLServiceProvider> _networkAclElements;
+
+    private boolean containsIpv6Cidr(List<String> cidrs) {
+        for (String cidr : cidrs) {
+            if (NetUtils.isValidIp6Cidr(cidr)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -227,7 +237,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                     throw new CloudRuntimeException("Unable to update the state to add for " + networkACLItemVOFromDatabase);
                 }
                 CallContext.current().setEventDetails("ACL Item Id: " + networkACLItemVOFromDatabase.getId());
-
+                CallContext.current().putContextParameter(NetworkACLItem.class, networkACLItemVOFromDatabase.getAclId());
                 return networkACLItemVOFromDatabase;
             }
         });
@@ -339,7 +349,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         if (network.getNetworkACLId() == null) {
             return null;
         }
-        return _networkACLItemDao.listByACL(network.getNetworkACLId());
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
+        return rules;
     }
 
     private void removeRule(final NetworkACLItem rule) {

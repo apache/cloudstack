@@ -397,8 +397,6 @@ export default {
         zoneid: [{ required: true, message: this.$t('message.error.select') }],
         hypervisor: [{ type: 'number', required: true, message: this.$t('message.error.select') }],
         format: [{ required: true, message: this.$t('message.error.select') }],
-        checksum: [{ required: true, message: this.$t('message.error.required.input') }],
-        rootDiskControllerType: [{ required: true, message: this.$t('message.error.select') }],
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
@@ -724,10 +722,10 @@ export default {
       }
       this.hyperVisor.opts = []
 
-      if (this.zoneError !== '') {
+      const allZoneExists = value.filter(zone => zone === this.$t('label.all.zone'))
+      if (allZoneExists.length > 0 && value.length > 1) {
         return
       }
-
       const arrSelectReset = ['hypervisor', 'format', 'rootDiskControllerType', 'nicAdapterType', 'keyboardType']
       this.resetSelect(arrSelectReset)
 
@@ -809,7 +807,9 @@ export default {
             const formattedDetailData = {}
             switch (key) {
               case 'rootDiskControllerType':
-                formattedDetailData['details[0].rootDiskController'] = input
+                if (input) {
+                  formattedDetailData['details[0].rootDiskController'] = input
+                }
                 break
               case 'nicAdapterType':
                 formattedDetailData['details[0].nicAdapter'] = input
@@ -876,10 +876,8 @@ export default {
         return Promise.resolve()
       }
       const allZoneExists = value.filter(zone => zone === this.$t('label.all.zone'))
-      this.zoneError = ''
 
       if (allZoneExists.length > 0 && value.length > 1) {
-        this.zoneError = 'error'
         return Promise.reject(this.$t('message.error.zone.combined'))
       }
 

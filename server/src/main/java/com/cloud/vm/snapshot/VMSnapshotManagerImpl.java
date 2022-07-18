@@ -384,7 +384,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             VMSnapshotStrategy snapshotStrategy = storageStrategyFactory.getVmSnapshotStrategy(userVmVo.getId(), rootVolumePool.getId(), snapshotMemory);
 
             if (snapshotStrategy == null) {
-                throw new CloudRuntimeException("Could not find snapshot strategy for VM snapshot");
+                String message = "KVM does not support the type of snapshot requested";
+                s_logger.debug(message);
+                throw new CloudRuntimeException(message);
             }
         }
 
@@ -454,6 +456,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                     throw new CloudRuntimeException("Failed to create snapshot for vm: " + vmId);
                 }
                 addSupportForCustomServiceOffering(vmId, serviceOfferingId, vmSnapshot.getId());
+                CallContext.current().putContextParameter(VMSnapshot.class, vmSnapshot.getUuid());
                 return vmSnapshot;
             }
         });
@@ -513,7 +516,11 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             VmWorkJobVO placeHolder = null;
             placeHolder = createPlaceHolderWork(vmId);
             try {
-                return orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
+                VMSnapshot snapshot = orchestrateCreateVMSnapshot(vmId, vmSnapshotId, quiescevm);
+                if (snapshot != null) {
+                    CallContext.current().putContextParameter(VMSnapshot.class, snapshot.getUuid());
+                }
+                return snapshot;
             } finally {
                 _workJobDao.expunge(placeHolder.getId());
             }
@@ -539,7 +546,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
                 else if (jobResult instanceof Throwable)
                     throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
-
+            if (result != null) {
+                CallContext.current().putContextParameter(VMSnapshot.class, result.getUuid());
+            }
             return result;
         }
     }

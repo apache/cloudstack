@@ -56,6 +56,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private static final String GET_LAST_SNAPSHOT =
         "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
 
+    private SearchBuilder<SnapshotVO> snapshotIdsSearch;
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeNotDestroyedSearch;
@@ -168,6 +169,9 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         InstanceIdSearch = createSearchBuilder();
         InstanceIdSearch.and("status", InstanceIdSearch.entity().getState(), SearchCriteria.Op.IN);
 
+        snapshotIdsSearch = createSearchBuilder();
+        snapshotIdsSearch.and("id", snapshotIdsSearch.entity().getId(), SearchCriteria.Op.IN);
+
         SearchBuilder<VMInstanceVO> instanceSearch = _instanceDao.createSearchBuilder();
         instanceSearch.and("instanceId", instanceSearch.entity().getId(), SearchCriteria.Op.EQ);
 
@@ -245,6 +249,13 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public List<SnapshotVO> listAllByStatus(Snapshot.State... status) {
         SearchCriteria<SnapshotVO> sc = StatusSearch.create();
         sc.setParameters("status", (Object[])status);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public List<SnapshotVO> listByIds(Object... ids) {
+        SearchCriteria<SnapshotVO> sc = snapshotIdsSearch.create();
+        sc.setParameters("id", ids);
         return listBy(sc, null);
     }
 

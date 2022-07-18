@@ -147,7 +147,7 @@ public class EncryptionSecretKeyChanger {
                     {
                         bwriter.write(newMSKey);
                     } catch (IOException e) {
-                        System.out.println("Failed to write new secret to file. Please update the file manually");
+                        System.out.println(String.format("Please update the file %s manually. Failed to write new secret to file with error %s", keyFile, e.getMessage()));
                     }
                 }
             }

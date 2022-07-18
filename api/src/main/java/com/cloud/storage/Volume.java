@@ -56,7 +56,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         NotUploaded("The volume entry is just created in DB, not yet uploaded"),
         UploadInProgress("Volume upload is in progress"),
         UploadError("Volume upload encountered some error"),
-        UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time"),
+        UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specified time"),
         Attaching("The volume is attaching to a VM from Ready state.");
 
         String _description;
@@ -243,4 +243,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
     boolean isDisplay();
 
     boolean isDeployAsIs();
+
+    String getExternalUuid();
+
+    void setExternalUuid(String externalUuid);
 }

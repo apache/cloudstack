@@ -107,8 +107,8 @@ ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `shared_source_nat_service` i
 
 CREATE TABLE IF NOT EXISTS `cloud`.`op_host_transfer` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Id of the host',
-  `initial_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered from',
-  `future_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transfered to',
+  `initial_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transferred from',
+  `future_mgmt_server_id` bigint unsigned COMMENT 'management server the host is transferred to',
   `state` varchar(32) NOT NULL COMMENT 'the transfer state of the host',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),

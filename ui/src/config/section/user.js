@@ -16,6 +16,7 @@
 // under the License.
 
 import { shallowRef, defineAsyncComponent } from 'vue'
+import store from '@/store'
 
 export default {
   name: 'accountuser',
@@ -26,6 +27,18 @@ export default {
   permission: ['listUsers'],
   columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account'],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'account', 'domain', 'created'],
+  tabs: [
+    {
+      name: 'details',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+    },
+    {
+      name: 'events',
+      resourceType: 'User',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
+    }
+  ],
   actions: [
     {
       api: 'createUser',

@@ -521,7 +521,7 @@ public class OVFHelper {
     public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("no document to parse; returning no prerequiste networks");
+                s_logger.trace("no document to parse; returning no prerequisite networks");
             }
             return Collections.emptyList();
         }

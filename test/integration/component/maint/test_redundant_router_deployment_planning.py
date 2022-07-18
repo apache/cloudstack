@@ -367,7 +367,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
                          )
         enabled_pod = pods[0]
 
-        self.debug("Cheking if pod has atleast 2 clusters")
+        self.debug("Cheking if pod has at least 2 clusters")
         clusters = Cluster.list(
                                 self.apiclient,
                                 podid=enabled_pod.id,
@@ -542,7 +542,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         """
 
         # Steps to validate
-        # 0. listStoragePools should have atleast two pools in a single
+        # 0. listStoragePools should have at least two pools in a single
         #    cluster (disable pods/clusters as necessary)
         # 1. create a network offering for redundant router
         # 2. create a network out of this offering
@@ -781,7 +781,7 @@ class TestRvRDeploymentPlanning(cloudstackTestCase):
         """
 
         # Steps to validate
-        # 0. listHosts should have atleast two hosts in a single cluster
+        # 0. listHosts should have at least two hosts in a single cluster
         #    (disable pods/clusters as necessary)
         # 1. create a network offering for redundant router
         # 2. create a network out of this offering

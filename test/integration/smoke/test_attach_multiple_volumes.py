@@ -18,11 +18,11 @@
 #Import Local Modules
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase
-import unittest
-from marvin.lib.utils import (cleanup_resources,
-                              validateList)
+from marvin.lib.utils import (validateList)
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
+                             Host,
+                             StoragePool,
                              Account,
                              Volume,
                              DiskOffering,
@@ -67,6 +67,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
+        cls._cleanup.append(cls.disk_offering)
 
         template = get_template(
                             cls.apiclient,
@@ -87,10 +88,14 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.account)
+
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offering"]
                                         )
+        cls._cleanup.append(cls.service_offering)
+
         cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
                                     cls.services,
@@ -99,6 +104,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                 )
+        cls._cleanup.append(cls.virtual_machine)
 
         #Create volumes (data disks)
         cls.volume1 = Volume.create(
@@ -107,6 +113,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
                                    )
+        cls._cleanup.append(cls.volume1)
 
         cls.volume2 = Volume.create(
                                    cls.apiclient,
@@ -114,6 +121,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
                                    )
+        cls._cleanup.append(cls.volume2)
 
         cls.volume3 = Volume.create(
                                    cls.apiclient,
@@ -121,6 +129,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
                                    )
+        cls._cleanup.append(cls.volume3)
 
         cls.volume4 = Volume.create(
                                    cls.apiclient,
@@ -128,18 +137,27 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                    account=cls.account.name,
                                    domainid=cls.account.domainid
                                    )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account
-                        ]
+        cls._cleanup.append(cls.volume4)
+
+        cls.volume5 = Volume.create(
+                                   cls.apiclient,
+                                   cls.services,
+                                   account=cls.account.name,
+                                   domainid=cls.account.domainid
+                                   )
+        cls._cleanup.append(cls.volume5)
+
+        cls.volume6 = Volume.create(
+                                   cls.apiclient,
+                                   cls.services,
+                                   account=cls.account.name,
+                                   domainid=cls.account.domainid
+                                   )
+        cls._cleanup.append(cls.volume6)
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestMultipleVolumeAttach, cls).tearDownClass()
 
     def setUp(self):
         self.apiClient = self.testClient.getApiClient()
@@ -151,20 +169,54 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                     available")
 
     def tearDown(self):
-        cleanup_resources(self.apiClient, self.cleanup)
-        return
+
+        self.detach_volume(self.volume1)
+        self.detach_volume(self.volume2)
+        self.detach_volume(self.volume3)
+        self.detach_volume(self.volume4)
+        self.detach_volume(self.volume5)
+        self.detach_volume(self.volume6)
+
+        super(TestMultipleVolumeAttach, self).tearDown
 
     # Method to attach volume but will return immediately as an asynchronous task does.
-    def attach_volume(self, apiclient,virtualmachineid, volume):
+    def attach_volume(self, virtualmachineid, volume):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
         cmd.isAsync = "false"
         cmd.id = volume.id
         cmd.virtualmachineid = virtualmachineid
-        return apiclient.attachVolume(cmd)
+        return self.apiClient.attachVolume(cmd)
+
+    # Method to detach a volume.
+    def detach_volume(self, volume):
+        """Detach volume from instance"""
+        cmd = detachVolume.detachVolumeCmd()
+        cmd.id = volume.id
+        try:
+            self.apiClient.detachVolume(cmd)
+        except Exception as e:
+            self.debug("======exception e %s " % e)
+            if "The specified volume is not attached to a VM." not in str(e):
+                raise e
+
+    # list Primare storage pools
+    def check_storage_pools(self, virtualmachineid):
+        """
+        list storage pools available to the VM
+        """
+        vm = VirtualMachine.list(self.apiClient, id=virtualmachineid)[0]
+        hostid = vm.histid
+        host = Host.list(self.apiClient, id=hostid)[0]
+        clusterid = host.clusterid
+        storage_pools = StoragePool.list(self.apiClient, clusterid=clusterid)
+        if len(storage_pools) < 2:
+            self.skipTest("at least two accesible primary storage pools needed for the vm to perform this test")
+        return storage_pools
+
 
     # Method to check the volume attach async jobs' status
-    def query_async_job(self, apiclient, jobid):
+    def query_async_job(self, jobid):
         """Query the status for Async Job"""
         try:
             asyncTimeout = 3600
@@ -173,7 +225,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
             timeout = asyncTimeout
             async_response = FAILED
             while timeout > 0:
-                async_response = apiclient.queryAsyncJobResult(cmd)
+                async_response = self.apiClient.queryAsyncJobResult(cmd)
                 if async_response != FAILED:
                     job_status = async_response.jobstatus
                     if job_status in [JOB_CANCELLED,
@@ -193,7 +245,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                   str(e))
             return FAILED
 
-    @attr(tags = ["advanced", "advancedns", "basic"], required_hardware="true")
+    @attr(tags = ["advanced", "advancedns", "basic", "blob"], required_hardware="true")
     def test_attach_multiple_volumes(self):
         """Attach multiple Volumes simultaneously to a Running VM
         """
@@ -205,33 +257,33 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                                     self.volume1.id,
                                                     self.virtual_machine.id
                                                     ))
-        vol1_jobId = self.attach_volume(self.apiClient, self.virtual_machine.id,self.volume1)
+        vol1_jobId = self.attach_volume(self.virtual_machine.id,self.volume1)
 
         self.debug(
                 "Attaching volume (ID: %s) to VM (ID: %s)" % (
                                                     self.volume2.id,
                                                     self.virtual_machine.id
                                                     ))
-        vol2_jobId = self.attach_volume(self.apiClient,self.virtual_machine.id, self.volume2)
+        vol2_jobId = self.attach_volume(self.virtual_machine.id, self.volume2)
 
         self.debug(
                 "Attaching volume (ID: %s) to VM (ID: %s)" % (
                                                     self.volume3.id,
                                                     self.virtual_machine.id
                                                     ))
-        vol3_jobId = self.attach_volume(self.apiClient,self.virtual_machine.id, self.volume3)
+        vol3_jobId = self.attach_volume(self.virtual_machine.id, self.volume3)
 
         self.debug(
                 "Attaching volume (ID: %s) to VM (ID: %s)" % (
                                                     self.volume4.id,
                                                     self.virtual_machine.id
                                                     ))
-        vol4_jobId = self.attach_volume(self.apiClient,self.virtual_machine.id, self.volume4)
+        vol4_jobId = self.attach_volume(self.virtual_machine.id, self.volume4)
 
-        self.query_async_job(self.apiClient,vol1_jobId.jobid)
-        self.query_async_job(self.apiClient,vol2_jobId.jobid)
-        self.query_async_job(self.apiClient,vol3_jobId.jobid)
-        self.query_async_job(self.apiClient,vol4_jobId.jobid)
+        self.query_async_job(vol1_jobId.jobid)
+        self.query_async_job(vol2_jobId.jobid)
+        self.query_async_job(vol3_jobId.jobid)
+        self.query_async_job(vol4_jobId.jobid)
 
         # List all the volumes attached to the instance. Includes even the Root disk.
         list_volume_response = Volume.list(
@@ -241,6 +293,7 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                             account=self.account.name,
                                             domainid=self.account.domainid
                                           )
+        self.debug("====== test paralalisation : %s ===" % str(list_volume_response).replace("}, {", "},\n {"))
         self.assertEqual(
             validateList(list_volume_response)[0],
             PASS,
@@ -253,4 +306,58 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                             "All 4 data disks are not attached to VM Successfully"
                             )
 
+        return
+
+    @attr(tags = ["advanced", "advancedns", "basic", "bla"], required_hardware="true")
+    def test_attach_and_distribute_multiple_volumes(self):
+        """
+        Test volume distribution over storages
+
+        Given multiple primary storage pools
+        Attach multiple Volumes to a VM
+        check to see if these do not all end up on the same storage pool
+        """
+        storage_pools = self.check_storage_pools(self.virtual_machine.id)
+        storage_usage={}
+        for storage_pool in storage_pools:
+            storage_usage[storage_pool.name] = 0
+        self.debug("====== test pools for usage : %s ===" % str(storage_usage).replace("}, {", "},\n {"))
+
+        vol1_jobId = self.attach_volume(self.virtual_machine.id,self.volume1)
+        vol2_jobId = self.attach_volume(self.virtual_machine.id,self.volume2)
+        vol3_jobId = self.attach_volume(self.virtual_machine.id,self.volume3)
+        vol4_jobId = self.attach_volume(self.virtual_machine.id,self.volume4)
+        vol5_jobId = self.attach_volume(self.virtual_machine.id,self.volume5)
+        vol6_jobId = self.attach_volume(self.virtual_machine.id,self.volume6)
+
+        self.query_async_job(vol1_jobId.jobid)
+        self.query_async_job(vol2_jobId.jobid)
+        self.query_async_job(vol3_jobId.jobid)
+        self.query_async_job(vol4_jobId.jobid)
+        self.query_async_job(vol5_jobId.jobid)
+        self.query_async_job(vol6_jobId.jobid)
+
+        volumes = Volume.list(self.apiClient,
+                              virtualmachineid=self.virtual_machine.id,
+                              type="DATADISK",
+                              account=self.account.name,
+                              domainid=self.account.domainid
+                             )
+        self.debug("====== test distribution : %s ===" % str(volumes).replace("}, {", "},\n {"))
+        for volume in volumes:
+            self.debug("====== checking storage : %s ===" % str(volume))
+            storage_usage[volume.storage] += 1
+
+        self.debug("====== test distribution : %s ===" % str(storage_usage).replace("}, {", "},\n {"))
+        # TODO decide what an acceptable 'random' distribution is
+        # all of the loads on storages should be less than the number of volumes for a distribution to exist (statistically this may fail once every 6⁵ runs (7776)
+        self.assertEqual(
+            len(volumes),
+            6,
+            "All 6 data disks are not attached to VM Successfully"
+        )
+        for storage_use in storage_usage:
+            self.assertTrue(
+                storage_usage[storage_use] < 6,
+                "not all volumes should be on one storage: %s" % storage_use)
         return

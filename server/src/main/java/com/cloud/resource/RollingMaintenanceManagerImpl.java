@@ -16,6 +16,29 @@
 // under the License.
 package com.cloud.resource;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.affinity.AffinityGroupProcessor;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RollingMaintenanceAnswer;
@@ -48,26 +71,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.affinity.AffinityGroupProcessor;
-import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.resource.StartRollingMaintenanceCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class RollingMaintenanceManagerImpl extends ManagerBase implements RollingMaintenanceManager {
 
@@ -131,12 +134,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         Pair<ResourceType, List<Long>> pair = getResourceTypeIdPair(cmd);
         ResourceType entity = pair.first();
         List<Long> ids = pair.second();
-
+        String cmdResourceType = ApiCommandResourceType.fromString(entity.name()) != null ? ApiCommandResourceType.fromString(entity.name()).toString() : null;
         String description = String.format("Success: %s, details: %s, hosts updated: %s, hosts skipped: %s", success, details,
                 generateReportHostsUpdated(hostsUpdated), generateReportHostsSkipped(hostsSkipped));
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
                 EventVO.LEVEL_INFO, cmd.getEventType(),
-                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, 0);
+                "Completed rolling maintenance for entity " + entity + " with IDs: " + ids + " - " + description, ids.get(0), cmdResourceType, 0);
     }
 
     private String generateReportHostsUpdated(List<HostUpdated> hostsUpdated) {
@@ -500,7 +503,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     /**
      * Execute stage on host
      * @return tuple: (SUCCESS, DETAILS, AVOID_MAINTENANCE) where:
-     *                  - SUCCESS: True if stage is successfull
+     *                  - SUCCESS: True if stage is successful
      *                  - DETAILS: Information retrieved by the host after executing the stage
      *                  - AVOID_MAINTENANCE: True if maintenance stage must be avoided
      */
@@ -516,7 +519,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     /**
      * Send rolling maintenance command to a host to perform a certain stage specified in cmd
      * @return tuple: (SUCCESS, DETAILS, AVOID_MAINTENANCE) where:
-     *                  - SUCCESS: True if stage is successfull
+     *                  - SUCCESS: True if stage is successful
      *                  - DETAILS: Information retrieved by the host after executing the stage
      *                  - AVOID_MAINTENANCE: True if maintenance stage must be avoided
      */
@@ -614,7 +617,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         }
         List<String> hostTags = hostTagsDao.getHostTags(host.getId());
 
-        int sucessfullyCheckedVmMigrations = 0;
+        int successfullyCheckedVmMigrations = 0;
         for (VMInstanceVO runningVM : vmsRunning) {
             boolean canMigrateVm = false;
             ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(runningVM.getServiceOfferingId());
@@ -653,9 +656,9 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 s_logger.error(msg);
                 return new Pair<>(false, msg);
             }
-            sucessfullyCheckedVmMigrations++;
+            successfullyCheckedVmMigrations++;
         }
-        if (sucessfullyCheckedVmMigrations != vmsRunning.size()) {
+        if (successfullyCheckedVmMigrations != vmsRunning.size()) {
             String migrationCheckDetails = String.format("%s cannot enter maintenance mode as capacity check failed for hosts in cluster %s", host, cluster);
             return new Pair<>(false, migrationCheckDetails);
         }

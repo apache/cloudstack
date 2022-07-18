@@ -20,6 +20,7 @@ package com.cloud.api.query.dao;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.query.vo.VpcOfferingJoinVO;
@@ -27,6 +28,7 @@ import com.cloud.network.vpc.VpcOffering;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.net.NetUtils;
 
 public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Long> implements VpcOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(VpcOfferingJoinDaoImpl.class);
@@ -70,6 +72,11 @@ public class VpcOfferingJoinDaoImpl extends GenericDaoBase<VpcOfferingJoinVO, Lo
             offeringResponse.setDomain(offeringJoinVO.getDomainPath());
             offeringResponse.setZoneId(offeringJoinVO.getZoneUuid());
             offeringResponse.setZone(offeringJoinVO.getZoneName());
+            String protocol = offeringJoinVO.getInternetProtocol();
+            if (StringUtils.isEmpty(protocol)) {
+                protocol = NetUtils.InternetProtocol.IPv4.toString();
+            }
+            offeringResponse.setInternetProtocol(protocol);
         }
         offeringResponse.setObjectName("vpcoffering");
 

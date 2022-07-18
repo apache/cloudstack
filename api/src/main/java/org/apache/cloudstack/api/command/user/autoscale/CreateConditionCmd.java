@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -122,8 +122,8 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Condition;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Condition;
     }
 
     @Override

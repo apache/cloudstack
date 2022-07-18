@@ -549,9 +549,7 @@ public class NetworkVO implements Network {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("Ntwk[");
-        buf.append(id).append("|").append(trafficType).append("|").append(networkOfferingId).append("]");
-        return buf.toString();
+        return String.format("Network {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\", \"networkofferingid\": %d}", id, name, uuid, networkOfferingId);
     }
 
     @Override

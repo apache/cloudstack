@@ -41,7 +41,7 @@ public class VolumeMetricsResponse extends VolumeResponse {
 
     public void setDiskSizeGB(final Long size) {
         if (size != null) {
-            this.diskSizeGB = String.format("%.2f GB", size / (1024.0 * 1024.0 * 1024.0));
+            this.diskSizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
 

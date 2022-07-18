@@ -29,7 +29,6 @@ setup_vpcrouter() {
 auto lo eth0
 iface lo inet loopback
 EOF
-  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
 
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
@@ -86,7 +85,6 @@ EOF
   enable_fwding 1
   enable_passive_ftp 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
-  setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt

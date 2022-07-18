@@ -51,9 +51,10 @@
                 v-ctrl-enter="handleSubmit">
                 <a-form-item
                   v-for="(field, index) in fields"
+                  :ref="field.name"
+                  :name="field.name"
                   :key="index"
-                  :label="field.name==='keyword' ?
-                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
+                  :label="retrieveFieldLabel(field.name)">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
@@ -105,6 +106,14 @@
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-auto-complete
+                    v-else-if="field.type==='autocomplete'"
+                    v-model:value="form[field.name]"
+                    :placeholder="$t('message.error.input.value')"
+                    :options="field.opts"
+                    :filterOption="(inputValue, option) => {
+                      return option.value.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1
+                    }" />
                 </a-form-item>
                 <div class="filter-group-button">
                   <a-button
@@ -232,6 +241,19 @@ export default {
       if (!this.visibleFilter) return
       this.initFormFieldData()
     },
+    retrieveFieldLabel (fieldName) {
+      if (fieldName === 'groupid') {
+        fieldName = 'group'
+      }
+      if (fieldName === 'keyword') {
+        if ('listAnnotations' in this.$store.getters.apis) {
+          return this.$t('label.annotation')
+        } else {
+          return this.$t('label.name')
+        }
+      }
+      return this.$t('label.' + fieldName)
+    },
     async initFormFieldData () {
       const arrayField = []
       this.fields = []
@@ -250,10 +272,15 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype'].includes(item)) {
+        if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
+          return true
+        }
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        } else if (item === 'resourcetype') {
+          type = 'autocomplete'
         }
 
         this.fields.push({
@@ -270,6 +297,16 @@ export default {
       let domainIndex = -1
       let podIndex = -1
       let clusterIndex = -1
+      let groupIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
+          this.fields[typeIndex].loading = false
+        }
+      }
 
       if (arrayField.includes('state')) {
         const stateIndex = this.fields.findIndex(item => item.name === 'state')
@@ -309,11 +346,33 @@ export default {
         promises.push(await this.fetchClusters())
       }
 
+      if (arrayField.includes('groupid')) {
+        groupIndex = this.fields.findIndex(item => item.name === 'groupid')
+        this.fields[groupIndex].loading = true
+        promises.push(await this.fetchInstanceGroups())
+      }
+
       if (arrayField.includes('entitytype')) {
         const entityTypeIndex = this.fields.findIndex(item => item.name === 'entitytype')
         this.fields[entityTypeIndex].loading = true
         this.fields[entityTypeIndex].opts = this.fetchEntityType()
         this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('resourcetype')) {
+        const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
+        this.fields[resourceTypeIndex].loading = true
+        this.fields[resourceTypeIndex].opts = [
+          { value: 'Account' },
+          { value: 'Domain' },
+          { value: 'Iso' },
+          { value: 'Network' },
+          { value: 'Template' },
+          { value: 'User' },
+          { value: 'VirtualMachine' },
+          { value: 'Volume' }
+        ]
+        this.fields[resourceTypeIndex].loading = false
       }
 
       Promise.all(promises).then(response => {
@@ -341,6 +400,12 @@ export default {
             this.fields[clusterIndex].opts = this.sortArray(cluster[0].data)
           }
         }
+        if (groupIndex > -1) {
+          const groups = response.filter(item => item.type === 'groupid')
+          if (groups && groups.length > 0) {
+            this.fields[groupIndex].opts = this.sortArray(groups[0].data)
+          }
+        }
       }).finally(() => {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
@@ -353,6 +418,9 @@ export default {
         }
         if (clusterIndex > -1) {
           this.fields[clusterIndex].loading = false
+        }
+        if (groupIndex > -1) {
+          this.fields[groupIndex].loading = false
         }
         this.fillFormFieldValues()
       })
@@ -430,6 +498,37 @@ export default {
           reject(error.response.headers['x-description'])
         })
       })
+    },
+    fetchInstanceGroups () {
+      return new Promise((resolve, reject) => {
+        api('listInstanceGroups', { listAll: true }).then(json => {
+          const instancegroups = json.listinstancegroupsresponse.instancegroup
+          resolve({
+            type: 'groupid',
+            data: instancegroups
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchGuestNetworkTypes () {
+      const types = []
+      if (this.apiName.indexOf('listNetworks') > -1) {
+        types.push({
+          id: 'Isolated',
+          name: 'label.isolated'
+        })
+        types.push({
+          id: 'Shared',
+          name: 'label.shared'
+        })
+        types.push({
+          id: 'L2',
+          name: 'label.l2'
+        })
+      }
+      return types
     },
     fetchState () {
       const state = []
@@ -531,6 +630,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.isFiltered = true
+        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

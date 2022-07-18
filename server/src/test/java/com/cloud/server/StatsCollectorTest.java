@@ -20,13 +20,14 @@ package com.cloud.server;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.Properties;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.influxdb.InfluxDB;
@@ -57,6 +58,8 @@ import com.cloud.vm.VmStatsVO;
 import com.cloud.vm.dao.VmStatsDao;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(DataProviderRunner.class)
@@ -108,7 +111,7 @@ public class StatsCollectorTest {
         statsCollector.externalStatsHost = HOST_ADDRESS;
         statsCollector.externalStatsPort = INFLUXDB_DEFAULT_PORT;
         InfluxDB influxDbConnection = Mockito.mock(InfluxDB.class);
-        Mockito.when(influxDbConnection.databaseExists(DEFAULT_DATABASE_NAME)).thenReturn(databaseExists);
+        when(influxDbConnection.databaseExists(DEFAULT_DATABASE_NAME)).thenReturn(databaseExists);
         PowerMockito.mockStatic(InfluxDBFactory.class);
         PowerMockito.when(InfluxDBFactory.connect(URL)).thenReturn(influxDbConnection);
 
@@ -125,7 +128,7 @@ public class StatsCollectorTest {
         BatchPoints batchPoints = Mockito.mock(BatchPoints.class);
         PowerMockito.mockStatic(BatchPoints.class);
         PowerMockito.when(BatchPoints.database(DEFAULT_DATABASE_NAME)).thenReturn(builder);
-        Mockito.when(builder.build()).thenReturn(batchPoints);
+        when(builder.build()).thenReturn(batchPoints);
         Map<String, String> tagsToAdd = new HashMap<>();
         tagsToAdd.put("hostId", "1");
         Map<String, Object> fieldsToAdd = new HashMap<>();
@@ -133,7 +136,7 @@ public class StatsCollectorTest {
         Point point = Point.measurement("measure").tag(tagsToAdd).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS).fields(fieldsToAdd).build();
         List<Point> points = new ArrayList<>();
         points.add(point);
-        Mockito.when(batchPoints.point(point)).thenReturn(batchPoints);
+        when(batchPoints.point(point)).thenReturn(batchPoints);
 
         statsCollector.writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
 
@@ -376,4 +379,46 @@ public class StatsCollectorTest {
         Assert.assertEquals(6.2, result.getDiskWriteIOs(), 0);
     }
 
+    @Test
+    public void testIsDbIpv6Local() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "::1");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbIpv4Local() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "127.0.0.1");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbSymbolicLocal() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "localhost");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbOnSameIp() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.10");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertTrue(statsCollector.isDbLocal());
+    }
+    @Test
+    public void testIsDbNotLocal() {
+        Properties p = new Properties();
+        p.put("db.cloud.host", "10.10.10.11");
+        p.put("cluster.node.IP", "10.10.10.10");
+        when(statsCollector.getDbProperties()).thenReturn(p);
+
+        Assert.assertFalse(statsCollector.isDbLocal());
+    }
 }
