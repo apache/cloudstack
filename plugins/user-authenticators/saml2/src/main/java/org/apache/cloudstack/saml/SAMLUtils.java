@@ -42,12 +42,15 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -56,6 +59,7 @@ import javax.xml.stream.FactoryConfigurationError;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.utils.security.CertUtils;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.joda.time.DateTime;
@@ -88,6 +92,7 @@ import org.opensaml.xml.io.MarshallingException;
 import org.opensaml.xml.io.Unmarshaller;
 import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.io.UnmarshallingException;
+import org.opensaml.xml.parse.BasicParserPool;
 import org.opensaml.xml.signature.SignatureConstants;
 import org.opensaml.xml.util.Base64;
 import org.opensaml.xml.util.XMLHelper;
@@ -231,7 +236,7 @@ public class SAMLUtils {
     public static Response decodeSAMLResponse(String responseMessage)
             throws ConfigurationException, ParserConfigurationException,
             SAXException, IOException, UnmarshallingException {
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory documentBuilderFactory = ParserUtils.getSaferDocumentBuilderFactory();
         documentBuilderFactory.setNamespaceAware(true);
         DocumentBuilder docBuilder = documentBuilderFactory.newDocumentBuilder();
         byte[] base64DecodedResponse = Base64.decode(responseMessage);
@@ -364,5 +369,20 @@ public class SAMLUtils {
         return CertUtils.generateV1Certificate(keyPair,
                 "CN=ApacheCloudStack", "CN=ApacheCloudStack",
                 3, "SHA256WithRSA");
+    }
+
+    public static BasicParserPool getSaferParserPool() {
+        final Map<String, Boolean> features = new HashMap<>();
+        features.put(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        features.put("http://apache.org/xml/features/disallow-doctype-decl", true);
+        features.put("http://xml.org/sax/features/external-general-entities", false);
+        features.put("http://xml.org/sax/features/external-parameter-entities", false);
+        features.put("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        final BasicParserPool parserPool = new BasicParserPool();
+        parserPool.setXincludeAware(false);
+        parserPool.setIgnoreComments(true);
+        parserPool.setExpandEntityReferences(false);
+        parserPool.setBuilderFeatures(features);
+        return parserPool;
     }
 }

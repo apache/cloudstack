@@ -279,7 +279,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
 
     @Override
-    public NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId,NetUtils.InternetProtocol defaultProtocol) {
+    public NetUtils.InternetProtocol getNetworkOfferingInternetProtocol(long offeringId, NetUtils.InternetProtocol defaultProtocol) {
         NetUtils.InternetProtocol protocol = getNetworkOfferingInternetProtocol(offeringId);
         if (protocol == null) {
             return defaultProtocol;
