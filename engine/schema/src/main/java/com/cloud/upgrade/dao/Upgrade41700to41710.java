@@ -68,7 +68,7 @@ public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
-        updateStorageType();
+        updateStorPoolStorageType();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate
         }
     }
 
-    private void updateStorageType() {
+    private void updateStorPoolStorageType() {
         storageDao = new PrimaryDataStoreDaoImpl();
         List<StoragePoolVO> storPoolPools = storageDao.findPoolsByProvider("StorPool");
         for (StoragePoolVO storagePoolVO : storPoolPools) {
@@ -105,11 +105,11 @@ public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate
                 storagePoolVO.setPoolType(StoragePoolType.StorPool);
                 storageDao.update(storagePoolVO.getId(), storagePoolVO);
             }
-            updateStorPoolVolumesToStorPoolType(storagePoolVO.getId());
+            updateStorageTypeForStorPoolVolumes(storagePoolVO.getId());
         }
     }
 
-    private void updateStorPoolVolumesToStorPoolType(long storagePoolId) {
+    private void updateStorageTypeForStorPoolVolumes(long storagePoolId) {
         volumeDao = new VolumeDaoImpl();
         List<VolumeVO> volumes = volumeDao.findByPoolId(storagePoolId, null);
         for (VolumeVO volumeVO : volumes) {

@@ -149,7 +149,7 @@ public class Storage {
         ManagedNFS(true, false),
         Linstor(true, true),
         DatastoreCluster(true, true), // for VMware, to abstract pool of clusters
-        StorPool(true, false);
+        StorPool(true, true);
 
         private final boolean shared;
         private final boolean overprovisioning;
