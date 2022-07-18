@@ -261,23 +261,30 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 for (final Backup.RestorePoint restorePoint : restorePoints) {
                     boolean backupExists = false;
                     for (final Backup backup : backupsInDb) {
-                        if (restorePoint.getId().equals(backup.getExternalId())) {
-                            backupExists = true;
-                            removeList.remove(backup.getId());
-                            if (metric != null) {
-                                LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
-                                        backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
+                        if (restorePoint.getId() != null) {
+                            if (restorePoint.getId().equals(backup.getExternalId())) {
+                                backupExists = true;
+                                removeList.remove(backup.getId());
+                                if (metric != null) {
+                                    LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                            backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
 
-                                ((BackupVO) backup).setSize(metric.getBackupSize());
-                                ((BackupVO) backup).setProtectedSize(metric.getDataSize());
-                                backupDao.update(backup.getId(), ((BackupVO) backup));
+                                    ((BackupVO) backup).setSize(metric.getBackupSize());
+                                    ((BackupVO) backup).setProtectedSize(metric.getDataSize());
+                                    backupDao.update(backup.getId(), ((BackupVO) backup));
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
+
                     if (backupExists) {
                         continue;
                     }
+                    if (restorePoint.getId() == null || restorePoint.getType() == null || restorePoint.getCreated() == null) {
+                        continue;
+                    }
+
                     BackupVO backup = new BackupVO();
                     backup.setVmId(vm.getId());
                     backup.setExternalId(restorePoint.getId());
