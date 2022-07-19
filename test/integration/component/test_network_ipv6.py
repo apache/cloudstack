@@ -14,7 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" BVT test for IPv6 Network"""
+""" BVT tests for IPv6 Network"""
 
 #Import Local Modules
 from marvin.codes import FAILED
@@ -811,3 +811,125 @@ class TestIpv6Network(cloudstackTestCase):
         self.checkIpv6Network()
         self.checkIpv6NetworkRouting()
         self.checkIpv6FirewallRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_02_verify_ipv6_network_redundant(self):
+        """Test to verify redundant IPv6 network
+
+        # Validate the following:
+        # 1. Create IPv6 network, deploy VM
+        # 2. Verify network has required IPv6 details
+        # 3. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 4. SSH into VR(s) and verify correct details are present for its NICs
+        # 5. Verify VM in network has required IPv6 details
+        # 6. Restart network with cleanup and re-verify network details
+        # 7. Update network with a new offering and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv6NetworkOffering(True)
+        self.createIpv6NetworkOfferingForUpdate(True)
+        self.createTinyServiceOffering()
+        self.deployNetwork()
+        self.deployNetworkVm()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkVm()
+        self.prepareRoutingTestResourcesInBackground()
+        self.restartNetworkWithCleanup()
+        self.checkIpv6Network()
+        self.updateNetworkWithOffering()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
+        self.checkIpv6FirewallRule()
+        self.checkNetworkVRRedundancy()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_03_verify_upgraded_ipv6_network(self):
+        """Test to verify IPv4 network upgraded to IPv6 network
+
+        # Validate the following:
+        # 1. Create IPv4 network, deploy VM
+        # 2. Update network to a IPv6 offering
+        # 3. Verify network has required IPv6 details
+        # 4. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network has required IPv6 details
+        # 7. Restart network with cleanup and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
+        """
+
+        self.createIpv4NetworkOffering(False)
+        self.createIpv6NetworkOfferingForUpdate(False)
+        self.createTinyServiceOffering()
+        self.prepareRoutingTestResourcesInBackground()
+        self.deployNetwork()
+        self.deployNetworkVm()
+        self.updateNetworkWithOffering()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkVm()
+        self.restartNetworkWithCleanup()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
+        self.checkIpv6FirewallRule()
+
+    @attr(
+        tags=[
+            "advanced",
+            "basic",
+            "eip",
+            "sg",
+            "advancedns",
+            "smoke"],
+        required_hardware="false")
+    @skipTestIf("ipv6NotSupported")
+    def test_04_verify_upgraded_ipv6_network_redundant(self):
+        """Test to verify redundant IPv4 network upgraded to redundant IPv6 network
+
+        # Validate the following:
+        # 1. Create IPv4 network, deploy VM
+        # 2. Update network to a IPv6 offering
+        # 3. Verify network has required IPv6 details
+        # 4. List VRs for the network and verify it has required IPv6 details for Guest and Public NIC of the VR
+        # 5. SSH into VR(s) and verify correct details are present for its NICs
+        # 6. Verify VM in network has required IPv6 details
+        # 7. Restart network with cleanup and re-verify network details
+        # 8. Deploy another IPv6 network and check routing between two networks and their VM
+        # 9. Create IPv6 firewall rules and verify in VR if they get implemented
+        # 10. Stop primary router and verify internals in backup VR
+        """
+
+        self.createIpv4NetworkOffering(True)
+        self.createIpv6NetworkOfferingForUpdate(True)
+        self.createTinyServiceOffering()
+        self.prepareRoutingTestResourcesInBackground()
+        self.deployNetwork()
+        self.deployNetworkVm()
+        self.updateNetworkWithOffering()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkVm()
+        self.restartNetworkWithCleanup()
+        self.checkIpv6Network()
+        self.checkIpv6NetworkRouting()
+        self.checkIpv6FirewallRule()
+        self.checkNetworkVRRedundancy()
