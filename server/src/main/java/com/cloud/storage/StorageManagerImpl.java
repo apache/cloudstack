@@ -670,7 +670,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if( host == null )
             throw new InvalidParameterValueException(String.format("host %s not found",hostAddress));
 
-        long capacityBytes = poolInfos.get("capacityBytes") != null ? Long.parseLong(poolInfos.get("capacityBytes").toString()) : -1;
+        long capacityBytes = poolInfos.get("capacityBytes") != null ? Long.parseLong(poolInfos.get("capacityBytes").toString()) : 0;
 
         StoragePoolInfo pInfo = new StoragePoolInfo(poolInfos.get("uuid").toString(),
                                                     host.getPrivateIpAddress(),
@@ -678,7 +678,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                                     poolInfos.get("hostPath").toString(),
                                                     StoragePoolType.Filesystem,
                                                     capacityBytes,
-                                                    -1,
+                                                    0,
                                                     (Map<String,String>)poolInfos.get("details"));
 
         return createLocalStorage(host, pInfo);
