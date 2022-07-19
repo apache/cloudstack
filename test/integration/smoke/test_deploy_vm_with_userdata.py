@@ -33,7 +33,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         testClient = super(TestDeployVmWithUserData, cls).getClsTestClient()
-        cls.apiClient = testClient.getApiClient() 
+        cls.apiClient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiClient, testClient.getZoneForTests())

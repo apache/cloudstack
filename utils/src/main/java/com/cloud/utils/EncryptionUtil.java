@@ -18,19 +18,17 @@
  */
 package com.cloud.utils;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.jasypt.encryption.pbe.PBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 
 public class EncryptionUtil {
     public static final Logger s_logger = Logger.getLogger(EncryptionUtil.class.getName());

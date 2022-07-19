@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -32,6 +35,8 @@ import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
+
+import java.util.List;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -82,6 +87,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Parameter(name = ApiConstants.SHOW_UNIQUE, type = CommandType.BOOLEAN, description = "If set to true, list only unique isos across zones", since = "4.13.2")
     private Boolean showUnique;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the isos")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -126,6 +134,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return showUnique != null && showUnique;
     }
 
+    public Boolean getShowIcon () {
+        return  showIcon != null ? showIcon : false;
+    }
+
     public boolean listInReadyState() {
         Account account = CallContext.current().getCallingAccount();
         // It is account specific if account is admin type and domainId and accountName are not null
@@ -155,14 +167,28 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Iso;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Iso;
     }
 
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listIsos(this);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateIsoResponse(response.getResponses());
+        }
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    private void updateIsoResponse(List<TemplateResponse> response) {
+        for (TemplateResponse templateResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.ISO, templateResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            templateResponse.setResourceIconResponse(iconResponse);
+        }
     }
 }

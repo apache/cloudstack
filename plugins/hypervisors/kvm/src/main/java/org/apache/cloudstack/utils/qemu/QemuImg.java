@@ -24,11 +24,14 @@ import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.commons.lang.NotImplementedException;
 import org.libvirt.LibvirtException;
 
 public class QemuImg {
+    private Logger logger = Logger.getLogger(this.getClass());
+
     public final static String BACKING_FILE = "backing_file";
     public final static String BACKING_FILE_FORMAT = "backing_file_format";
     public final static String CLUSTER_SIZE = "cluster_size";
@@ -225,7 +228,109 @@ public class QemuImg {
     /**
      * Convert a image from source to destination
      *
-     * This method calls 'qemu-img convert' and takes two objects
+     * This method calls 'qemu-img convert' and takes five objects
+     * as an argument.
+     *
+     *
+     * @param srcFile
+     *            The source file
+     * @param destFile
+     *            The destination file
+     * @param options
+     *            Options for the convert. Takes a Map<String, String> with key value
+     *            pairs which are passed on to qemu-img without validation.
+     * @param snapshotName
+     *            If it is provided, convertion uses it as parameter
+     * @param forceSourceFormat
+     *            If true, specifies the source format in the conversion cmd
+     * @return void
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+                        final Map<String, String> options, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException, LibvirtException {
+        Script script = new Script(_qemuImgPath, timeout);
+        if (StringUtils.isNotBlank(snapshotName)) {
+            String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
+            script = new Script(qemuPath, timeout);
+        }
+
+        script.add("convert");
+        Long version  = LibvirtConnection.getConnection().getVersion();
+        if (version >= 2010000) {
+            script.add("-U");
+        }
+
+        // autodetect source format unless specified explicitly
+        if (forceSourceFormat) {
+            script.add("-f");
+            script.add(srcFile.getFormat().toString());
+        }
+
+        script.add("-O");
+        script.add(destFile.getFormat().toString());
+
+        if (options != null && !options.isEmpty()) {
+            script.add("-o");
+            final StringBuffer optionsBuffer = new StringBuffer();
+            for (final Map.Entry<String, String> option : options.entrySet()) {
+                optionsBuffer.append(option.getKey()).append('=').append(option.getValue()).append(',');
+            }
+            String optionsStr = optionsBuffer.toString();
+            optionsStr = optionsStr.replaceAll(",$", "");
+            script.add(optionsStr);
+        }
+
+        addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
+
+        script.add(srcFile.getFileName());
+        script.add(destFile.getFileName());
+
+        final String result = script.execute();
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
+
+        if (srcFile.getSize() < destFile.getSize()) {
+            this.resize(destFile, destFile.getSize());
+        }
+    }
+
+    /**
+     * Qemu version 2.0.0 added (via commit <a href="https://github.com/qemu/qemu/commit/ef80654d0dc1edf2dd2a51feff8cc3e1102a6583">ef80654d0dc1edf2dd2a51feff8cc3e1102a6583</a>) the
+     * flag "-l" to inform the snapshot name or ID
+     */
+    private static final int QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT = 2000000;
+
+    /**
+     * Adds a flag to inform snapshot name or ID on conversion. If the QEMU version is less than {@link QemuImg#QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT), adds the
+     * flag "-s", otherwise, adds the flag "-l".
+     */
+    protected void addSnapshotToConvertCommand(String srcFormat, String snapshotName, boolean forceSourceFormat, Script script, Long qemuVersion) {
+        if (StringUtils.isBlank(snapshotName)) {
+            return;
+        }
+
+        if (qemuVersion >= QEMU_VERSION_THAT_ADDS_FLAG_L_TO_CONVERT_SNAPSHOT) {
+            script.add("-l");
+            script.add(String.format("snapshot.name=%s", snapshotName));
+            return;
+        }
+
+        logger.debug(String.format("Current QEMU version [%s] does not support flag \"-l\" (added on version >= 2.0.0) to inform the snapshot name or ID on conversion."
+                + " Adding the old flag \"-s\" instead.", qemuVersion));
+
+        if (!forceSourceFormat) {
+            script.add("-f");
+            script.add(srcFormat);
+        }
+
+        script.add("-s");
+        script.add(snapshotName);
+    }
+
+    /**
+     * Convert a image from source to destination
+     *
+     * This method calls 'qemu-img convert' and takes four objects
      * as an argument.
      *
      *
@@ -242,59 +347,30 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final String snapshotName) throws QemuImgException, LibvirtException {
-        Script script = new Script(_qemuImgPath, timeout);
-        if (StringUtils.isNotBlank(snapshotName)) {
-            String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
-            script = new Script(qemuPath, timeout);
-        }
+        this.convert(srcFile, destFile, options, snapshotName, false);
+    }
 
-        script.add("convert");
-        Long version  = LibvirtConnection.getConnection().getVersion();
-        if (version >= 2010000) {
-            script.add("-U");
-        }
-
-        // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
-        //s.add("-f");
-        //s.add(srcFile.getFormat().toString());
-        script.add("-O");
-        script.add(destFile.getFormat().toString());
-
-        if (options != null && !options.isEmpty()) {
-            script.add("-o");
-            final StringBuffer optionsBuffer = new StringBuffer();
-            for (final Map.Entry<String, String> option : options.entrySet()) {
-                optionsBuffer.append(option.getKey()).append('=').append(option.getValue()).append(',');
-            }
-            String optionsStr = optionsBuffer.toString();
-            optionsStr = optionsStr.replaceAll(",$", "");
-            script.add(optionsStr);
-        }
-
-        if (StringUtils.isNotBlank(snapshotName)) {
-            script.add("-f");
-            script.add(srcFile.getFormat().toString());
-            script.add("-s");
-            script.add(snapshotName);
-        }
-
-        script.add(srcFile.getFileName());
-        script.add(destFile.getFileName());
-
-        final String result = script.execute();
-        if (result != null) {
-            throw new QemuImgException(result);
-        }
-
-        if (srcFile.getSize() < destFile.getSize()) {
-            this.resize(destFile, destFile.getSize());
-        }
+        /**
+         * Convert a image from source to destination
+         *
+         * This method calls 'qemu-img convert' and takes two objects
+         * as an argument.
+         *
+         *
+         * @param srcFile
+         *            The source file
+         * @param destFile
+         *            The destination file
+         * @return void
+         */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile) throws QemuImgException, LibvirtException {
+        this.convert(srcFile, destFile, null, null);
     }
 
     /**
      * Convert a image from source to destination
      *
-     * This method calls 'qemu-img convert' and takes two objects
+     * This method calls 'qemu-img convert' and takes three objects
      * as an argument.
      *
      *
@@ -302,10 +378,12 @@ public class QemuImg {
      *            The source file
      * @param destFile
      *            The destination file
+     * @param forceSourceFormat
+     *            If true, specifies the source format in the conversion cmd
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile) throws QemuImgException, LibvirtException {
-        this.convert(srcFile, destFile, null, null);
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, final boolean forceSourceFormat) throws QemuImgException, LibvirtException {
+        this.convert(srcFile, destFile, null, null, forceSourceFormat);
     }
 
     /**

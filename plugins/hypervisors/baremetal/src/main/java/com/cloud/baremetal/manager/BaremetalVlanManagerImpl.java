@@ -246,14 +246,14 @@ public class BaremetalVlanManagerImpl extends ManagerBase implements BaremetalVl
         acnt = new AccountVO();
         acnt.setAccountName(BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME);
         acnt.setUuid(UUID.randomUUID().toString());
-        acnt.setState(Account.State.enabled);
+        acnt.setState(Account.State.ENABLED);
         acnt.setDomainId(1);
         acnt.setType(RoleType.User.getAccountType());
         acnt.setRoleId(RoleType.User.getId());
         acnt = acntDao.persist(acnt);
 
         UserVO user = new UserVO();
-        user.setState(Account.State.enabled);
+        user.setState(Account.State.ENABLED);
         user.setUuid(UUID.randomUUID().toString());
         user.setAccountId(acnt.getAccountId());
         user.setUsername(BaremetalUtils.BAREMETAL_SYSTEM_ACCOUNT_NAME);

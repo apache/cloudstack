@@ -21,13 +21,13 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -41,7 +41,7 @@ import com.cloud.projects.Project;
 @APICommand(name = DeleteUserFromProjectCmd.APINAME, description = "Deletes user from the project", responseObject = SuccessResponse.class, since = "4.15.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User})
 public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
-    public static final Logger LOGGER = Logger.getLogger(DeleteProjectCmd.class.getName());
+    public static final Logger LOGGER = Logger.getLogger(DeleteUserFromProjectCmd.class.getName());
     public static final String APINAME = "deleteUserFromProject";
 
     /////////////////////////////////////////////////////
@@ -102,6 +102,16 @@ public class DeleteUserFromProjectCmd extends BaseAsyncCmd {
     @Override
     public List<Long> getEntityOwnerIds() {
         return _projectService.getProjectOwners(projectId);
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return projectId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Project;
     }
 
     @Override

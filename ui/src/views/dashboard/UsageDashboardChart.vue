@@ -16,41 +16,37 @@
 // under the License.
 
 <template>
-  <div>
-    <a-col
-      class="usage-dashboard-chart-tile"
-      :xs="12"
-      :md="8"
-      v-for="stat in stats"
-      :key="stat.type">
-      <a-card
-        class="usage-dashboard-chart-card"
-        :bordered="false"
-        :loading="loading"
-        :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
-        <router-link :to="{ path: stat.path }">
-          <div
-            class="usage-dashboard-chart-card-inner">
-            <h3>{{ stat.name }}</h3>
-            <h2>
-              <a-icon :type="stat.icon" />
-              {{ stat.count == undefined ? 0 : stat.count }}
-            </h2>
-          </div>
-        </router-link>
-      </a-card>
-    </a-col>
-  </div>
+  <a-row :gutter="24">
+    <template v-for="stat in stats" :key="stat.type">
+      <a-col
+        class="usage-dashboard-chart-tile"
+        :xs="12"
+        :md="8">
+        <a-card
+          :class="['usage-dashboard-chart-card', stat.bgcolor ? 'usage-chart-text' : '']"
+          :bordered="false"
+          :loading="loading"
+          :style="stat.bgcolor ? { 'background-color': stat.bgcolor } : {}">
+          <router-link v-if="stat.path" :to="{ path: stat.path, query: stat.query }">
+            <div
+              class="usage-dashboard-chart-card-inner">
+              <h3>{{ stat.name }}</h3>
+              <h2>
+                <render-icon :icon="stat.icon" />
+                {{ stat.count == undefined ? 0 : stat.count }}
+              </h2>
+            </div>
+          </router-link>
+        </a-card>
+      </a-col>
+    </template>
+  </a-row>
 </template>
 
 <script>
-import ChartCard from '@/components/widgets/ChartCard'
 
 export default {
   name: 'UsageDashboardChart',
-  components: {
-    ChartCard
-  },
   props: {
     stats: {
       type: Array,

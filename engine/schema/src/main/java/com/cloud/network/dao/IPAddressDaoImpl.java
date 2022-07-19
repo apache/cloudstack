@@ -62,6 +62,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     @Inject
     protected VlanDao _vlanDao;
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
+    protected SearchBuilder<IPAddressVO> PublicIpSearchByAccountAndState;
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -78,6 +79,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), Op.EQ);
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
         AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), Op.EQ);
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
@@ -137,6 +139,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForAccount.and("allocated", AllocatedIpCountForAccount.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCountForAccount.and().op("network", AllocatedIpCountForAccount.entity().getAssociatedWithNetworkId(), Op.NNULL);
         AllocatedIpCountForAccount.or("vpc", AllocatedIpCountForAccount.entity().getVpcId(), Op.NNULL);
+        AllocatedIpCountForAccount.or("state", AllocatedIpCountForAccount.entity().getState(), Op.EQ);
         AllocatedIpCountForAccount.cp();AllocatedIpCountForAccount.done();
 
         CountFreePublicIps = createSearchBuilder(Long.class);
@@ -151,6 +154,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         DeleteAllExceptGivenIp = createSearchBuilder();
         DeleteAllExceptGivenIp.and("vlanDbId", DeleteAllExceptGivenIp.entity().getVlanId(), Op.EQ);
         DeleteAllExceptGivenIp.and("ip", DeleteAllExceptGivenIp.entity().getAddress(), Op.NEQ);
+
+        PublicIpSearchByAccountAndState = createSearchBuilder();
+        PublicIpSearchByAccountAndState.and("accountId", PublicIpSearchByAccountAndState.entity().getAllocatedToAccountId(), Op.EQ);
+        PublicIpSearchByAccountAndState.and("dcId", PublicIpSearchByAccountAndState.entity().getDataCenterId(), Op.EQ);
+        PublicIpSearchByAccountAndState.and("state", PublicIpSearchByAccountAndState.entity().getState(), Op.EQ);
+        PublicIpSearchByAccountAndState.and("allocated", PublicIpSearchByAccountAndState.entity().getAllocatedTime(), Op.NNULL);
+        PublicIpSearchByAccountAndState.and("ipAddress", PublicIpSearchByAccountAndState.entity().getAddress(), Op.EQ);
     }
 
     @Override
@@ -367,6 +377,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     public long countAllocatedIPsForAccount(long accountId) {
         SearchCriteria<Long> sc = AllocatedIpCountForAccount.create();
         sc.setParameters("account", accountId);
+        sc.setParameters("state", State.Reserved);
         return customSearch(sc, null).get(0);
     }
 
@@ -470,5 +481,23 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("vlan", vlandbId);
         lockRows(sc, null, true);
+    }
+
+    @Override
+    public List<IPAddressVO> listByVlanIdAndState(long vlanId, State state) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vlan", vlanId);
+        sc.setParameters("state", state);
+        return listBy(sc);
+    }
+
+    @Override
+    public IPAddressVO findByAccountIdAndZoneIdAndStateAndIpAddress(long accountId, long dcId, State state, String ipAddress) {
+        SearchCriteria<IPAddressVO> sc = PublicIpSearchByAccountAndState.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("dcId", dcId);
+        sc.setParameters("state", state);
+        sc.setParameters("ipAddress", ipAddress);
+        return findOneBy(sc);
     }
 }

@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.resource.icon.ListResourceIconCmd;
 import org.apache.cloudstack.api.command.admin.router.GetRouterHealthCheckResultsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
@@ -67,6 +68,7 @@ import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceDetailResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.RouterHealthCheckResultResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
@@ -108,6 +110,9 @@ public interface QueryService {
     public static final ConfigKey<Boolean> AllowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
             "allow.user.view.all.domain.accounts", "false",
             "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
+
+    static final ConfigKey<Boolean> SharePublicTemplatesWithOtherDomains = new ConfigKey<>("Advanced", Boolean.class, "share.public.templates.with.other.domains", "true",
+            "If false, templates of this domain will not show up in the list templates of other domains.", true, ConfigKey.Scope.Domain);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
@@ -158,6 +163,8 @@ public interface QueryService {
     ListResponse<TemplateResponse> listIsos(ListIsosCmd cmd);
 
     DetailOptionsResponse listDetailOptions(ListDetailOptionsCmd cmd);
+
+    ListResponse<ResourceIconResponse> listResourceIcons(ListResourceIconCmd cmd);
 
     ListResponse<AffinityGroupResponse> searchForAffinityGroups(ListAffinityGroupsCmd cmd);
 

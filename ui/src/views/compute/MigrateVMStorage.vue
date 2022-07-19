@@ -16,44 +16,56 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
-    <a-spin :spinning="loading">
-      <a-form
-        :form="form"
-        @submit="handleSubmit"
-        layout="vertical">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.storageid') }}
-            <a-tooltip :title="apiParams.storageid.description" v-if="!(apiParams.hostid && apiParams.hostid.required === false)">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-select
-            :loading="loading"
-            v-decorator="['storageid', {
-              rules: [{ required: true, message: `${this.$t('message.error.required.input')}` }]
-            }]">
-            <a-select-option v-for="storagePool in storagePools" :key="storagePool.id">
-              {{ storagePool.name || storagePool.id }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+  <div class="form-layout" v-ctrl-enter="handleKeyboardSubmit">
+    <a-alert type="warning">
+      <template #message>
+        <span v-html="$t('message.migrate.instance.to.ps')" />
+      </template>
+    </a-alert>
+    <a-radio-group
+      v-if="migrateVmWithVolumeAllowed"
+      :defaultValue="migrateMode"
+      @change="e => { handleMigrateModeChange(e.target.value) }">
+      <a-radio class="radio-style" :value="1">
+        {{ $t('label.migrate.instance.single.storage') }}
+      </a-radio>
+      <a-radio class="radio-style" :value="2">
+        {{ $t('label.migrate.instance.specific.storages') }}
+      </a-radio>
+    </a-radio-group>
+    <div v-if="migrateMode == 1">
+      <storage-pool-select-view
+        ref="storagePoolSelection"
+        :resource="resource"
+        @select="handleStoragePoolChange" />
+    </div>
+    <instance-volumes-storage-pool-select-list-view
+      v-else
+      :resource="resource"
+      @select="handleVolumeToPoolChange" />
 
-        <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
-        </div>
-      </a-form>
-    </a-spin>
+    <a-divider />
+
+    <div class="actions">
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" :disabled="!formSubmitAllowed" @click="submitForm">{{ $t('label.ok') }}</a-button>
+    </div>
   </div>
 </template>
 
 <script>
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
+import StoragePoolSelectView from '@/components/view/StoragePoolSelectView'
+import InstanceVolumesStoragePoolSelectListView from '@/components/view/InstanceVolumesStoragePoolSelectListView'
 
 export default {
   name: 'MigrateVMStorage',
+  components: {
+    TooltipLabel,
+    StoragePoolSelectView,
+    InstanceVolumesStoragePoolSelectListView
+  },
   props: {
     resource: {
       type: Object,
@@ -62,50 +74,43 @@ export default {
   },
   data () {
     return {
-      loading: false,
-      storagePools: []
+      migrateMode: 1,
+      selectedPool: {},
+      volumeToPoolSelection: []
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    if (this.$route.meta.name === 'vm') {
-      this.apiConfig = this.$store.getters.apis.migrateVirtualMachineWithVolume || {}
-      this.apiConfig.params.forEach(param => {
-        this.apiParams[param.name] = param
-      })
-      this.apiConfig = this.$store.getters.apis.migrateVirtualMachine || {}
-      this.apiConfig.params.forEach(param => {
-        if (!(param.name in this.apiParams)) {
-          this.apiParams[param.name] = param
+    this.migrateVmWithVolumeApiParams = this.$getApiParams('migrateVirtualMachineWithVolume')
+  },
+  computed: {
+    migrateVmWithVolumeAllowed () {
+      return this.$route.meta.name === 'vm' && this.migrateVmWithVolumeApiParams.hostid && this.migrateVmWithVolumeApiParams.hostid.required === false
+    },
+    formSubmitAllowed () {
+      return this.migrateMode === 2 ? this.volumeToPoolSelection.length > 0 : this.selectedPool.id
+    },
+    isSelectedVolumeOnlyClusterStoragePoolVolume () {
+      if (this.volumesWithClusterStoragePool.length !== 1) {
+        return false
+      }
+      for (const volume of this.volumesWithClusterStoragePool) {
+        if (volume.id === this.selectedVolumeForStoragePoolSelection.id) {
+          return true
         }
-      })
-    } else {
-      this.apiConfig = this.$store.getters.apis.migrateSystemVm || {}
-      this.apiConfig.params.forEach(param => {
-        if (!(param.name in this.apiParams)) {
-          this.apiParams[param.name] = param
-        }
-      })
+      }
+      return false
     }
-  },
-  created () {
-  },
-  mounted () {
-    this.fetchData()
   },
   methods: {
     fetchData () {
-      this.loading = true
-      api('listStoragePools', {
-        zoneid: this.resource.zoneid
-      }).then(response => {
-        if (this.arrayHasItems(response.liststoragepoolsresponse.storagepool)) {
-          this.storagePools = response.liststoragepoolsresponse.storagepool
-        }
-      }).finally(() => {
-        this.loading = false
-      })
+      if (this.migrateMode === 2) {
+        this.fetchVolumes()
+      }
+    },
+    handleMigrateModeChange (value) {
+      this.migrateMode = value
+      this.selectedPool = {}
+      this.volumeToPoolSelection = []
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
@@ -116,93 +121,70 @@ export default {
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
     },
-    handleSubmit (e) {
-      e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
-        this.loading = true
-        var isUserVm = true
-        if (this.$route.meta.name !== 'vm') {
-          isUserVm = false
-        }
-        var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
-        if (isUserVm && this.apiParams.hostid && this.apiParams.hostid.required === false) {
-          migrateApi = 'migrateVirtualMachineWithVolume'
-          var rootVolume = null
-          api('listVolumes', {
-            listAll: true,
-            virtualmachineid: this.resource.id
-          }).then(response => {
-            var volumes = response.listvolumesresponse.volume
-            if (volumes && volumes.length > 0) {
-              volumes = volumes.filter(item => item.type === 'ROOT')
-              if (volumes && volumes.length > 0) {
-                rootVolume = volumes[0]
-              }
-              if (rootVolume == null) {
-                this.$message.error('Failed to find ROOT volume for the VM ' + this.resource.id)
-                this.closeAction()
-              }
-              this.migrateVm(migrateApi, values.storageid, rootVolume.id)
-            }
-          })
-          return
-        }
-        this.migrateVm(migrateApi, values.storageid, null)
-      })
+    handleStoragePoolChange (storagePool) {
+      this.selectedPool = storagePool
     },
-    migrateVm (migrateApi, storageId, rootVolumeId) {
-      var params = {
-        virtualmachineid: this.resource.id,
-        storageid: storageId
+    handleVolumeToPoolChange (volumeToPool) {
+      this.volumeToPoolSelection = volumeToPool
+    },
+    handleKeyboardSubmit () {
+      if (this.formSubmitAllowed) {
+        this.submitForm()
       }
-      if (rootVolumeId !== null) {
-        params = {
-          virtualmachineid: this.resource.id,
-          'migrateto[0].volume': rootVolumeId,
-          'migrateto[0].pool': storageId
+    },
+    submitForm () {
+      var isUserVm = true
+      if (this.$route.meta.name !== 'vm') {
+        isUserVm = false
+      }
+      var migrateApi = isUserVm ? 'migrateVirtualMachine' : 'migrateSystemVm'
+      if (isUserVm && this.migrateMode === 2) {
+        migrateApi = 'migrateVirtualMachineWithVolume'
+        this.migrateVm(migrateApi, null, this.volumeToPoolSelection)
+        return
+      }
+      this.migrateVm(migrateApi, this.selectedPool.id, null)
+    },
+    migrateVm (migrateApi, storageId, volumeToPool) {
+      var params = {
+        virtualmachineid: this.resource.id
+      }
+      if (this.migrateMode === 2) {
+        for (var i = 0; i < volumeToPool.length; i++) {
+          const mapping = volumeToPool[i]
+          params['migrateto[' + i + '].volume'] = mapping.volume
+          params['migrateto[' + i + '].pool'] = mapping.pool
         }
+      } else {
+        params.storageid = storageId
       }
       api(migrateApi, params).then(response => {
-        var jobId = ''
-        if (migrateApi === 'migrateVirtualMachineWithVolume') {
-          jobId = response.migratevirtualmachinewithvolumeresponse.jobid
-        } else if (migrateApi === 'migrateSystemVm') {
-          jobId = response.migratesystemvmresponse.jobid
-        } else {
-          jobId = response.migratevirtualmachine.jobid
-        }
-        this.$store.dispatch('AddAsyncJob', {
-          title: `${this.$t('label.migrating')} ${this.resource.name}`,
-          jobid: jobId,
-          description: this.resource.name,
-          status: 'progress'
-        })
+        const jobId = response[migrateApi.toLowerCase() + 'response'].jobid
         this.$pollJob({
+          title: `${this.$t('label.migrating')} ${this.resource.name}`,
+          description: this.resource.name,
           jobId: jobId,
           successMessage: `${this.$t('message.success.migrating')} ${this.resource.name}`,
           successMethod: () => {
-            this.$parent.$parent.close()
+            this.closeModal()
           },
           errorMessage: this.$t('message.migrating.failed'),
           errorMethod: () => {
-            this.$parent.$parent.close()
+            this.closeModal()
           },
           loadingMessage: `${this.$t('message.migrating.processing')} ${this.resource.name}`,
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
-            this.$parent.$parent.close()
+            this.closeModal()
           }
         })
-        this.$parent.$parent.close()
+        this.closeModal()
       }).catch(error => {
         console.error(error)
         this.$message.error(`${this.$t('message.migrating.vm.to.storage.failed')} ${storageId}`)
       })
     },
-    closeAction () {
+    closeModal () {
       this.$emit('close-action')
     }
   }
@@ -211,18 +193,33 @@ export default {
 
 <style scoped lang="less">
   .form-layout {
-    width: 60vw;
+    width: 80vw;
 
-    @media (min-width: 500px) {
-      width: 450px;
+    @media (min-width: 900px) {
+      width: 850px;
     }
   }
 
-  .action-button {
-    text-align: right;
+  .top-spaced {
+    margin-top: 20px;
+  }
+
+  .radio-style {
+    display: block;
+    margin-left: 10px;
+    height: 40px;
+    line-height: 40px;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
 
     button {
-      margin-right: 5px;
+      &:not(:last-child) {
+        margin-right: 10px;
+      }
     }
   }
 </style>

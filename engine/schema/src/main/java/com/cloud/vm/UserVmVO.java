@@ -28,6 +28,7 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
+import org.apache.commons.lang3.StringUtils;
 
 @Entity
 @Table(name = "user_vm")
@@ -38,7 +39,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name = "iso_id", nullable = true, length = 17)
     private Long isoId = null;
 
-    @Column(name = "user_data", updatable = true, nullable = true, length = 32768)
+    @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
     @Basic(fetch = FetchType.LAZY)
     private String userData;
 
@@ -47,6 +48,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     @Column(name = "update_parameters", updatable = true)
     protected boolean updateParameters = true;
+
+    @Column(name = "user_vm_type", updatable = true)
+    private String userVmType;
 
     transient String password;
 
@@ -70,8 +74,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
 
     public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled,
-                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, String name, Long diskOfferingId) {
-        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse, diskOfferingId);
+                    boolean limitCpuUse, long domainId, long accountId, long userId, long serviceOfferingId, String userData, String name) {
+        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, userId, haEnabled, limitCpuUse);
         this.userData = userData;
         this.displayName = displayName;
         this.details = new HashMap<String, String>();
@@ -124,5 +128,22 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
     public boolean isUpdateParameters() {
         return updateParameters;
+    }
+
+    public String getUserVmType() {
+        return userVmType;
+    }
+
+    public void setUserVmType(String userVmType) {
+        this.userVmType = userVmType;
+    }
+
+    @Override
+    public String getName() {
+        return instanceName;
+    }
+
+    public String getDisplayNameOrHostName() {
+        return StringUtils.isNotBlank(displayName) ? displayName : getHostName();
     }
 }

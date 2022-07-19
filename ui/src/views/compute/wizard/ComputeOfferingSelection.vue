@@ -20,7 +20,7 @@
     <a-input-search
       style="width: 25vw;float: right;margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-table
       :columns="columns"
@@ -32,8 +32,8 @@
       size="middle"
       :scroll="{ y: 225 }"
     >
-      <span slot="cpuTitle"><a-icon type="appstore" /> {{ $t('label.cpu') }}</span>
-      <span slot="ramTitle"><a-icon type="bulb" /> {{ $t('label.memory') }}</span>
+      <template #cpuTitle><appstore-outlined /> {{ $t('label.cpu') }}</template>
+      <template #ramTitle><bulb-outlined /> {{ $t('label.memory') }}</template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -47,7 +47,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -157,11 +157,11 @@ export default {
             (item.iscustomized === true && maxCpuNumber < this.minimumCpunumber))) {
           disabled = true
         }
-        if (disabled === false && this.minimumCpuspeed > 0 && maxCpuSpeed && maxCpuSpeed !== this.minimumCpuspeed) {
+        if (disabled === false && this.minimumCpuspeed > 0 && maxCpuSpeed && maxCpuSpeed < this.minimumCpuspeed) {
           disabled = true
         }
         if (disabled === false && maxMemory && this.minimumMemory > 0 &&
-          ((item.iscustomized === false && maxMemory !== this.minimumMemory) ||
+          ((item.iscustomized === false && maxMemory < this.minimumMemory) ||
             (item.iscustomized === true && maxMemory < this.minimumMemory))) {
           disabled = true
         }
@@ -243,14 +243,12 @@ export default {
     },
     onClickRow (record) {
       return {
-        on: {
-          click: () => {
-            if (record.disabled) {
-              return
-            }
-            this.selectedRowKeys = [record.key]
-            this.$emit('select-compute-item', record.key)
+        onClick: () => {
+          if (record.disabled) {
+            return
           }
+          this.selectedRowKeys = [record.key]
+          this.$emit('select-compute-item', record.key)
         }
       }
     }
@@ -263,7 +261,7 @@ export default {
     margin: 2rem 0;
   }
 
-  /deep/.ant-table-tbody > tr > td {
+  :deep(.ant-table-tbody) > tr > td {
     cursor: pointer;
   }
 </style>

@@ -17,22 +17,42 @@
 
 <template>
   <a-spin :spinning="loading">
-    <div class="form">
+    <div class="form" v-ctrl-enter="handleSubmitForm">
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.zonenamelabel') }}</div>
-        <a-select v-model="zoneId" @change="fetchPods" autoFocus>
+        <a-select
+          v-model:value="zoneId"
+          @change="fetchPods"
+          v-focus="true"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </div>
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.hypervisor') }}</div>
-        <a-select v-model="hypervisor" @change="resetAllFields">
+        <a-select
+          v-model:value="hypervisor"
+          @change="resetAllFields"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="hv in hypervisorsList"
             :value="hv.name"
@@ -44,7 +64,13 @@
 
       <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
-        <a-select v-model="podId">
+        <a-select
+          v-model:value="podId"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="pod in podsList"
             :value="pod.id"
@@ -57,28 +83,28 @@
       <div class="form__item">
         <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
         <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
-        <a-input :placeholder="placeholder.clustername" v-model="clustername"></a-input>
+        <a-input :placeholder="placeholder.clustername" v-model:value="clustername"></a-input>
       </div>
 
       <template v-if="hypervisor === 'VMware'">
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenter.host') }}</div>
-          <a-input v-model="host"></a-input>
+          <a-input v-model:value="host"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterusername') }}</div>
-          <a-input v-model="username"></a-input>
+          <a-input v-model:value="username"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterpassword') }}</div>
-          <a-input type="password" v-model="password"></a-input>
+          <a-input type="password" v-model:value="password"></a-input>
         </div>
 
         <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterdatacenter') }}</div>
-          <a-input v-model="dataCenter"></a-input>
+          <a-input v-model:value="dataCenter"></a-input>
         </div>
       </template>
 
@@ -94,11 +120,11 @@
           :error="domainError" />
       </template>
 
-      <a-divider></a-divider>
+      <a-divider />
 
-      <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmitForm" type="primary">{{ $t('label.ok') }}</a-button>
+      <div :span="24" class="action-button">
+        <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmitForm" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </div>
@@ -108,11 +134,13 @@
 <script>
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ClusterAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -162,7 +190,7 @@ export default {
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
         this.zoneId = this.zonesList[0].id || null
         this.fetchPods()
@@ -202,6 +230,7 @@ export default {
       this.showDedicated = !this.showDedicated
     },
     handleSubmitForm () {
+      if (this.loading) return
       if (!this.clustername) {
         this.$refs.requiredCluster.classList.add('required-label--visible')
         return
@@ -240,10 +269,12 @@ export default {
       this.addCluster()
     },
     addCluster () {
+      let clustername = this.clustername
+
       if (this.hypervisor === 'VMware') {
         const clusternameVal = this.clustername
         this.url = `http://${this.host}/${this.dataCenter}/${clusternameVal}`
-        this.clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
+        clustername = `${this.host}/${this.dataCenter}/${clusternameVal}`
       }
       this.loading = true
       this.parentToggleLoading()
@@ -252,7 +283,7 @@ export default {
         hypervisor: this.hypervisor,
         clustertype: this.clustertype,
         podId: this.podId,
-        clustername: this.clustername,
+        clustername: clustername,
         url: this.url
       }
       if (this.ovm3pool) {
@@ -277,7 +308,7 @@ export default {
         }
         this.parentFetchData()
         this.parentToggleLoading()
-        this.$parent.$parent.close()
+        this.$emit('close-action')
       }).catch(error => {
         this.$notification.error({
           message: `${this.$t('label.error')} ${error.response.status}`,
@@ -297,15 +328,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicateclusterresponse.jobid,
+          title: this.$t('message.cluster.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.cluster.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedicated'),
-              jobid: response.dedicateclusterresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.cluster.failed'),
           errorMethod: () => {
@@ -362,17 +389,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
   }

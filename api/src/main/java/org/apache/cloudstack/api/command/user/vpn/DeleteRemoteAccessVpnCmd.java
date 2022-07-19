@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -96,6 +97,8 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         if (! _ravService.destroyRemoteAccessVpnForIp(publicIpId, CallContext.current().getCallingAccount(), false)) {
                        throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete remote access vpn");
         }
+        SuccessResponse response = new SuccessResponse(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
@@ -108,4 +111,13 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
         return _ravService.getRemoteAccessVpn(publicIpId).getNetworkId();
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return publicIpId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.IpAddress;
+    }
 }

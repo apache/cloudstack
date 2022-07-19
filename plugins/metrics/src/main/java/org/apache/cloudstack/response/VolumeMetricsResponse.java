@@ -21,7 +21,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.serializer.Param;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import com.google.gson.annotations.SerializedName;
 
 public class VolumeMetricsResponse extends VolumeResponse {
@@ -34,14 +34,14 @@ public class VolumeMetricsResponse extends VolumeResponse {
     private Long diskIopsTotal;
 
     public void setStorageType(final String storageType, final String volumeType) {
-        if (!Strings.isNullOrEmpty(storageType) && !Strings.isNullOrEmpty(volumeType)) {
+        if (StringUtils.isNoneEmpty(storageType, volumeType)) {
             this.setStorageType(String.format("%s (%s)", storageType.substring(0, 1).toUpperCase() + storageType.substring(1), volumeType));
         }
     }
 
     public void setDiskSizeGB(final Long size) {
         if (size != null) {
-            this.diskSizeGB = String.format("%.2f GB", size / (1024.0 * 1024.0 * 1024.0));
+            this.diskSizeGB = String.format("%.2f GiB", size / (1024.0 * 1024.0 * 1024.0));
         }
     }
 

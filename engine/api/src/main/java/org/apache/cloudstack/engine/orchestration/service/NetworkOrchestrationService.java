@@ -94,6 +94,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Boolean> ForgedTransmits = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.forged.transmits", "true",
             "Whether to allow or deny forged transmits on nics for applicable network elements such as for vswitch/dvswitch portgroups.", true);
 
+    ConfigKey<Boolean> MacLearning = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.mac.learning", "false",
+            "Whether to allow or deny MAC learning on nics for applicable network elements such as for dvswitch portgroups.", true);
+
     ConfigKey<Boolean> RollingRestartEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "network.rolling.restart", "true",
             "Whether to allow or deny rolling restart of network routers.", true);
 
@@ -174,6 +177,8 @@ public interface NetworkOrchestrationService {
      */
     void rollbackNicForMigration(VirtualMachineProfile src, VirtualMachineProfile dst);
 
+    boolean isSharedNetworkWithoutSpecifyVlan(NetworkOffering offering);
+
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
     boolean destroyNetwork(long networkId, ReservationContext context, boolean forced);
@@ -248,7 +253,7 @@ public interface NetworkOrchestrationService {
 
     NetworkProfile convertNetworkToNetworkProfile(long networkId);
 
-    boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+    boolean restartNetwork(Long networkId, Account callerAccount, User callerUser, boolean cleanup, boolean livePatch) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException;
 
     boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean b, Network network);
@@ -271,6 +276,8 @@ public interface NetworkOrchestrationService {
     List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId, String keyword);
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
+
+    Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, String ip6Cidr, String ip6Gateway, String reserver, Type vmType);
 
     DhcpServiceProvider getDhcpServiceProvider(Network network);
 

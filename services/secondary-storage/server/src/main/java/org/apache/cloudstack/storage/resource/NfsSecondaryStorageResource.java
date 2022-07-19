@@ -16,6 +16,86 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+import static com.cloud.network.NetworkModel.METATDATA_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_FILE;
+import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
+import static com.cloud.network.NetworkModel.USERDATA_DIR;
+import static com.cloud.network.NetworkModel.USERDATA_FILE;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+import javax.net.ssl.SSLContext;
+
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -95,6 +175,7 @@ import com.cloud.vm.SecondaryStorageVm;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -108,86 +189,6 @@ import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.NfsMountManagerImpl.PathParser;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
-import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.UploadEntity;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
-
-import javax.naming.ConfigurationException;
-import javax.net.ssl.SSLContext;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static com.cloud.network.NetworkModel.METATDATA_DIR;
-import static com.cloud.network.NetworkModel.PASSWORD_DIR;
-import static com.cloud.network.NetworkModel.PASSWORD_FILE;
-import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
-import static com.cloud.network.NetworkModel.USERDATA_DIR;
-import static com.cloud.network.NetworkModel.USERDATA_FILE;
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -811,7 +812,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     return new CopyCmdAnswer(errMsg);
                 }
             }
-            File destFile = new File(downloadDirectory, substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
+            File destFile = new File(downloadDirectory, StringUtils.substringAfterLast(srcData.getPath(), S3Utils.SEPARATOR));
             S3Utils.getFile(s3, s3.getBucketName(), srcData.getPath(), destFile).waitForCompletion();
 
             return postProcessing(destFile, downloadPath, destPath, srcData, destData);
@@ -1106,7 +1107,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3TemplateDirectory(final Long accountId, final Long templateId, final String templateUniqueName) {
-        return join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(TEMPLATE_ROOT_DIR, accountId, templateId, templateUniqueName), S3Utils.SEPARATOR);
     }
 
     private String determineS3TemplateNameFromKey(String key) {
@@ -1114,7 +1115,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     protected String determineS3VolumeDirectory(final Long accountId, final Long volId) {
-        return join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
+        return StringUtils.join(asList(VOLUME_ROOT_DIR, accountId, volId), S3Utils.SEPARATOR);
     }
 
     protected Long determineS3VolumeIdFromKey(String key) {
@@ -1122,7 +1123,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     private String determineStorageTemplatePath(final String storagePath, String dataPath, String nfsVersion) {
-        return join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
+        return StringUtils.join(asList(getRootDir(storagePath, nfsVersion), dataPath), File.separator);
     }
 
     protected File downloadFromUrlToNfs(String url, NfsTO nfs, String path, String name) {
@@ -2311,8 +2312,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 answer.setInstallPath(uploadEntity.getTmpltPath());
                 answer.setPhysicalSize(uploadEntity.getPhysicalSize());
                 answer.setDownloadPercent(100);
-                answer.setGuestOsInfo(uploadEntity.getGuestOsInfo());
-                answer.setMinimumHardwareVersion(uploadEntity.getMinimumHardwareVersion());
+                if (uploadEntity.getOvfInformationTO() != null) {
+                    answer.setOvfInformationTO(uploadEntity.getOvfInformationTO());
+                }
                 uploadEntityStateMap.remove(entityUuid);
                 return answer;
             } else if (uploadEntity.getUploadState() == UploadEntity.Status.IN_PROGRESS) {
@@ -3307,12 +3309,12 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 "accountTemplateDirSize: " + accountTemplateDirSize + " accountSnapshotDirSize: " + accountSnapshotDirSize + " accountVolumeDirSize: " + accountVolumeDirSize);
 
         int accountDirSizeInGB = getSizeInGB(accountTemplateDirSize + accountSnapshotDirSize + accountVolumeDirSize);
-        int defaultMaxAccountSecondaryStorageInGB = Integer.parseInt(cmd.getDefaultMaxAccountSecondaryStorage());
+        long defaultMaxSecondaryStorageInGB = cmd.getDefaultMaxSecondaryStorageInGB();
 
-        if (defaultMaxAccountSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxAccountSecondaryStorageInGB) {
-            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxAccountSecondaryStorageInGB: " + defaultMaxAccountSecondaryStorageInGB + " contentLengthInGB:"
+        if (defaultMaxSecondaryStorageInGB != Resource.RESOURCE_UNLIMITED && (accountDirSizeInGB + contentLengthInGB) > defaultMaxSecondaryStorageInGB) {
+            s_logger.error("accountDirSizeInGb: " + accountDirSizeInGB + " defaultMaxSecondaryStorageInGB: " + defaultMaxSecondaryStorageInGB + " contentLengthInGB:"
                     + contentLengthInGB); // extra attention
-            String errorMessage = "Maximum number of resources of type secondary_storage for account has exceeded";
+            String errorMessage = "Maximum number of resources of type secondary_storage for account/project has exceeded";
             updateStateMapWithError(cmd.getEntityUUID(), errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }
@@ -3455,12 +3457,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 uploadEntity.setVirtualSize(info.virtualSize);
                 uploadEntity.setPhysicalSize(info.size);
                 if (info.ovfInformationTO != null) {
-                    if (info.ovfInformationTO.getGuestOsInfo() != null) {
-                        uploadEntity.setGuestOsInfo(info.ovfInformationTO.getGuestOsInfo());
-                    }
-                    if (info.ovfInformationTO.getHardwareSection() != null) {
-                        uploadEntity.setMinimumHardwareVersion(info.ovfInformationTO.getHardwareSection().getMinimiumHardwareVersion());
-                    }
+                    uploadEntity.setOvfInformationTO(info.ovfInformationTO);
                 }
                 break;
             }
@@ -3501,7 +3498,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     public void validatePostUploadRequest(String signature, String metadata, String timeout, String hostname, long contentLength, String uuid)
             throws InvalidParameterValueException {
         // check none of the params are empty
-        if (StringUtils.isEmpty(signature) || StringUtils.isEmpty(metadata) || StringUtils.isEmpty(timeout)) {
+        if (StringUtils.isAnyEmpty(signature, metadata, timeout)) {
             updateStateMapWithError(uuid, "signature, metadata and expires are compulsory fields.");
             throw new InvalidParameterValueException("signature, metadata and expires are compulsory fields.");
         }

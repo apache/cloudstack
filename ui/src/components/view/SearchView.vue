@@ -19,11 +19,11 @@
   <span :style="styleSearch">
     <span v-if="!searchFilters || searchFilters.length === 0" style="display: flex;">
       <a-input-search
-        style="width: 100%; display: table-cell"
+        v-model:value="searchQuery"
         :placeholder="$t('label.search')"
-        v-model="searchQuery"
         allowClear
-        @search="onSearch" />
+        @search="onSearch"
+      />
     </span>
 
     <span
@@ -33,91 +33,134 @@
         allowClear
         class="input-search"
         :placeholder="$t('label.search')"
-        v-model="searchQuery"
+        v-model:value="searchQuery"
         @search="onSearch">
-        <a-popover
-          placement="bottomRight"
-          slot="addonBefore"
-          trigger="click"
-          v-model="visibleFilter">
-          <template slot="content" v-if="visibleFilter">
-            <a-form
-              style="min-width: 170px"
-              :form="form"
-              layout="vertical"
-              @submit="handleSubmit">
-              <a-form-item
-                v-for="(field, index) in fields"
-                :key="index"
-                :label="field.name==='keyword' ? $t('label.name') : $t('label.' + field.name)">
-                <a-select
-                  allowClear
-                  v-if="field.type==='list'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]"
-                  :loading="field.loading">
-                  <a-select-option
-                    v-for="(opt, idx) in field.opts"
-                    :key="idx"
-                    :value="opt.id">{{ $t(opt.name) }}</a-select-option>
-                </a-select>
-                <a-input
-                  v-else-if="field.type==='input'"
-                  v-decorator="[field.name, {
-                    initialValue: fieldValues[field.name] || null
-                  }]" />
-                <div v-else-if="field.type==='tag'">
-                  <div>
+        <template #addonBefore>
+          <a-popover
+            placement="bottomRight"
+            trigger="click"
+            v-model:visible="visibleFilter">
+            <template #content v-if="visibleFilter">
+              <a-form
+                style="min-width: 170px"
+                :ref="formRef"
+                :model="form"
+                :rules="rules"
+                layout="vertical"
+                @finish="handleSubmit"
+                v-ctrl-enter="handleSubmit">
+                <a-form-item
+                  v-for="(field, index) in fields"
+                  :ref="field.name"
+                  :name="field.name"
+                  :key="index"
+                  :label="retrieveFieldLabel(field.name)">
+                  <a-select
+                    allowClear
+                    v-if="field.type==='list'"
+                    v-model:value="form[field.name]"
+                    showSearch
+                    :dropdownMatchSelectWidth="false"
+                    optionFilterProp="label"
+                    :filterOption="(input, option) => {
+                      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }"
+                    :loading="field.loading">
+                    <a-select-option
+                      v-for="(opt, idx) in field.opts"
+                      :key="idx"
+                      :value="opt.id"
+                      :label="$t(opt.name)">
+                      <div>
+                        <span v-if="(field.name.startsWith('zone'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <global-outlined v-else style="margin-right: 5px" />
+                        </span>
+                        <span v-if="(field.name.startsWith('domain'))">
+                          <span v-if="opt.icon">
+                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          </span>
+                          <block-outlined v-else style="margin-right: 5px" />
+                        </span>
+                        {{ $t(opt.path || opt.name) }}
+                      </div>
+                    </a-select-option>
+                  </a-select>
+                  <a-input
+                    v-else-if="field.type==='input'"
+                    v-model:value="form[field.name]" />
+                  <div v-else-if="field.type==='tag'">
                     <a-input-group
                       type="text"
                       size="small"
                       compact>
-                      <a-input ref="input" :value="inputKey" @change="e => inputKey = e.target.value" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
-                      <a-input style=" width: 20px; border-left: 0; pointer-events: none; backgroundColor: #fff" placeholder="=" disabled />
-                      <a-input :value="inputValue" @change="handleValueChange" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
-                      <tooltip-button :tooltip="$t('label.clear')" icon="close" size="small" @click="inputKey = inputValue = ''" />
+                      <a-input ref="input" v-model:value="inputKey" style="width: 50px; text-align: center" :placeholder="$t('label.key')" />
+                      <a-input
+                        class="tag-disabled-input"
+                        style=" width: 20px; border-left: 0; pointer-events: none; text-align: center"
+                        placeholder="="
+                        disabled />
+                      <a-input v-model:value="inputValue" style="width: 50px; text-align: center; border-left: 0" :placeholder="$t('label.value')" />
+                      <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-auto-complete
+                    v-else-if="field.type==='autocomplete'"
+                    v-model:value="form[field.name]"
+                    :placeholder="$t('message.error.input.value')"
+                    :options="field.opts"
+                    :filterOption="(inputValue, option) => {
+                      return option.value.toLowerCase().indexOf(inputValue.toLowerCase()) !== -1
+                    }" />
+                </a-form-item>
+                <div class="filter-group-button">
+                  <a-button
+                    class="filter-group-button-clear"
+                    type="default"
+                    size="small"
+                    @click="onClear">
+                    <template #icon><stop-outlined /></template>
+                    {{ $t('label.reset') }}
+                  </a-button>
+                  <a-button
+                    class="filter-group-button-search"
+                    type="primary"
+                    size="small"
+                    ref="submit"
+                    html-type="submit">
+                    <template #icon><search-outlined /></template>
+                    {{ $t('label.search') }}
+                  </a-button>
                 </div>
-              </a-form-item>
-              <div class="filter-group-button">
-                <a-button
-                  class="filter-group-button-clear"
-                  type="default"
-                  size="small"
-                  icon="stop"
-                  @click="onClear">{{ $t('label.reset') }}</a-button>
-                <a-button
-                  class="filter-group-button-search"
-                  type="primary"
-                  size="small"
-                  icon="search"
-                  html-type="submit"
-                  @click="handleSubmit">{{ $t('label.search') }}</a-button>
-              </div>
-            </a-form>
-          </template>
-          <a-button
-            class="filter-button"
-            size="small"
-            @click="() => { searchQuery = null }">
-            <a-icon type="filter" :theme="isFiltered ? 'twoTone' : 'outlined'" />
-          </a-button>
-        </a-popover>
+              </a-form>
+            </template>
+            <a-button
+              class="filter-button"
+              size="small"
+              @click="() => { searchQuery = null }">
+              <filter-two-tone v-if="isFiltered" />
+              <filter-outlined v-else />
+            </a-button>
+          </a-popover>
+        </template>
       </a-input-search>
     </span>
   </span>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'SearchView',
   components: {
-    TooltipButton
+    TooltipButton,
+    ResourceIcon
   },
   props: {
     searchFilters: {
@@ -133,7 +176,6 @@ export default {
       default: () => {}
     }
   },
-  inject: ['parentSearch', 'parentChangeFilter'],
   data () {
     return {
       searchQuery: null,
@@ -146,8 +188,10 @@ export default {
       isFiltered: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  created () {
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
   },
   watch: {
     visibleFilter (newValue, oldValue) {
@@ -192,6 +236,24 @@ export default {
     }
   },
   methods: {
+    onVisibleForm () {
+      this.visibleFilter = !this.visibleFilter
+      if (!this.visibleFilter) return
+      this.initFormFieldData()
+    },
+    retrieveFieldLabel (fieldName) {
+      if (fieldName === 'groupid') {
+        fieldName = 'group'
+      }
+      if (fieldName === 'keyword') {
+        if ('listAnnotations' in this.$store.getters.apis) {
+          return this.$t('label.annotation')
+        } else {
+          return this.$t('label.name')
+        }
+      }
+      return this.$t('label.' + fieldName)
+    },
     async initFormFieldData () {
       const arrayField = []
       this.fields = []
@@ -210,10 +272,15 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid'].includes(item)) {
+        if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
+          return true
+        }
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
+        } else if (item === 'resourcetype') {
+          type = 'autocomplete'
         }
 
         this.fields.push({
@@ -230,6 +297,16 @@ export default {
       let domainIndex = -1
       let podIndex = -1
       let clusterIndex = -1
+      let groupIndex = -1
+
+      if (arrayField.includes('type')) {
+        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
+          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+          this.fields[typeIndex].loading = true
+          this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
+          this.fields[typeIndex].loading = false
+        }
+      }
 
       if (arrayField.includes('state')) {
         const stateIndex = this.fields.findIndex(item => item.name === 'state')
@@ -269,32 +346,66 @@ export default {
         promises.push(await this.fetchClusters())
       }
 
+      if (arrayField.includes('groupid')) {
+        groupIndex = this.fields.findIndex(item => item.name === 'groupid')
+        this.fields[groupIndex].loading = true
+        promises.push(await this.fetchInstanceGroups())
+      }
+
+      if (arrayField.includes('entitytype')) {
+        const entityTypeIndex = this.fields.findIndex(item => item.name === 'entitytype')
+        this.fields[entityTypeIndex].loading = true
+        this.fields[entityTypeIndex].opts = this.fetchEntityType()
+        this.fields[entityTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('resourcetype')) {
+        const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
+        this.fields[resourceTypeIndex].loading = true
+        this.fields[resourceTypeIndex].opts = [
+          { value: 'Account' },
+          { value: 'Domain' },
+          { value: 'Iso' },
+          { value: 'Network' },
+          { value: 'Template' },
+          { value: 'User' },
+          { value: 'VirtualMachine' },
+          { value: 'Volume' }
+        ]
+        this.fields[resourceTypeIndex].loading = false
+      }
+
       Promise.all(promises).then(response => {
         if (zoneIndex > -1) {
           const zones = response.filter(item => item.type === 'zoneid')
           if (zones && zones.length > 0) {
-            this.fields[zoneIndex].opts = zones[0].data
+            this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
           }
         }
         if (domainIndex > -1) {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
-            this.fields[domainIndex].opts = domain[0].data
+            this.fields[domainIndex].opts = this.sortArray(domain[0].data, 'path')
           }
         }
         if (podIndex > -1) {
           const pod = response.filter(item => item.type === 'podid')
           if (pod && pod.length > 0) {
-            this.fields[podIndex].opts = pod[0].data
+            this.fields[podIndex].opts = this.sortArray(pod[0].data)
           }
         }
         if (clusterIndex > -1) {
           const cluster = response.filter(item => item.type === 'clusterid')
           if (cluster && cluster.length > 0) {
-            this.fields[clusterIndex].opts = cluster[0].data
+            this.fields[clusterIndex].opts = this.sortArray(cluster[0].data)
           }
         }
-        this.$forceUpdate()
+        if (groupIndex > -1) {
+          const groups = response.filter(item => item.type === 'groupid')
+          if (groups && groups.length > 0) {
+            this.fields[groupIndex].opts = this.sortArray(groups[0].data)
+          }
+        }
       }).finally(() => {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
@@ -308,7 +419,18 @@ export default {
         if (clusterIndex > -1) {
           this.fields[clusterIndex].loading = false
         }
+        if (groupIndex > -1) {
+          this.fields[groupIndex].loading = false
+        }
         this.fillFormFieldValues()
+      })
+    },
+    sortArray (data, key = 'name') {
+      return data.sort(function (a, b) {
+        if (a[key] < b[key]) { return -1 }
+        if (a[key] > b[key]) { return 1 }
+
+        return 0
       })
     },
     fillFormFieldValues () {
@@ -319,12 +441,15 @@ export default {
       if (this.$route.meta.params) {
         Object.assign(this.fieldValues, this.$route.meta.params)
       }
+      this.fields.forEach(field => {
+        this.form[field.name] = this.fieldValues[field.name]
+      })
       this.inputKey = this.fieldValues['tags[0].key'] || null
       this.inputValue = this.fieldValues['tags[0].value'] || null
     },
     fetchZones () {
       return new Promise((resolve, reject) => {
-        api('listZones', { listAll: true }).then(json => {
+        api('listZones', { listAll: true, showicon: true }).then(json => {
           const zones = json.listzonesresponse.zone
           resolve({
             type: 'zoneid',
@@ -337,7 +462,7 @@ export default {
     },
     fetchDomains () {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true }).then(json => {
+        api('listDomains', { listAll: true, showicon: true }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -374,6 +499,37 @@ export default {
         })
       })
     },
+    fetchInstanceGroups () {
+      return new Promise((resolve, reject) => {
+        api('listInstanceGroups', { listAll: true }).then(json => {
+          const instancegroups = json.listinstancegroupsresponse.instancegroup
+          resolve({
+            type: 'groupid',
+            data: instancegroups
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchGuestNetworkTypes () {
+      const types = []
+      if (this.apiName.indexOf('listNetworks') > -1) {
+        types.push({
+          id: 'Isolated',
+          name: 'label.isolated'
+        })
+        types.push({
+          id: 'Shared',
+          name: 'label.shared'
+        })
+        types.push({
+          id: 'L2',
+          name: 'label.l2'
+        })
+      }
+      return types
+    },
     fetchState () {
       const state = []
       if (this.apiName.indexOf('listVolumes') > -1) {
@@ -400,6 +556,45 @@ export default {
       }
       return state
     },
+    fetchEntityType () {
+      const entityType = []
+      if (this.apiName.indexOf('listAnnotations') > -1) {
+        const allowedTypes = {
+          VM: 'Virtual Machine',
+          HOST: 'Host',
+          VOLUME: 'Volume',
+          SNAPSHOT: 'Snapshot',
+          VM_SNAPSHOT: 'VM Snapshot',
+          INSTANCE_GROUP: 'Instance Group',
+          NETWORK: 'Network',
+          VPC: 'VPC',
+          PUBLIC_IP_ADDRESS: 'Public IP Address',
+          VPN_CUSTOMER_GATEWAY: 'VPC Customer Gateway',
+          TEMPLATE: 'Template',
+          ISO: 'ISO',
+          SSH_KEYPAIR: 'SSH Key Pair',
+          DOMAIN: 'Domain',
+          SERVICE_OFFERING: 'Service Offfering',
+          DISK_OFFERING: 'Disk Offering',
+          NETWORK_OFFERING: 'Network Offering',
+          POD: 'Pod',
+          ZONE: 'Zone',
+          CLUSTER: 'Cluster',
+          PRIMARY_STORAGE: 'Primary Storage',
+          SECONDARY_STORAGE: 'Secondary Storage',
+          VR: 'Virtual Router',
+          SYSTEM_VM: 'System VM',
+          KUBERNETES_CLUSTER: 'Kubernetes Cluster'
+        }
+        for (var key in allowedTypes) {
+          entityType.push({
+            id: key,
+            name: allowedTypes[key]
+          })
+        }
+      }
+      return entityType
+    },
     fetchLevel () {
       const levels = []
       levels.push({
@@ -419,29 +614,23 @@ export default {
     onSearch (value) {
       this.paramsFilter = {}
       this.searchQuery = value
-      this.parentSearch({ searchQuery: this.searchQuery })
+      this.$emit('search', { searchQuery: this.searchQuery })
     },
     onClear () {
-      this.searchFilters.map(item => {
-        const field = {}
-        field[item] = undefined
-        this.form.setFieldsValue(field)
-      })
+      this.formRef.value.resetFields()
       this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
-      this.parentSearch(this.paramsFilter)
+      this.$emit('search', this.paramsFilter)
     },
-    handleSubmit (e) {
-      e.preventDefault()
+    handleSubmit () {
       this.paramsFilter = {}
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.isFiltered = true
+        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {
@@ -455,17 +644,11 @@ export default {
             this.paramsFilter['tags[0].value'] = this.inputValue
           }
         }
-        this.parentSearch(this.paramsFilter)
+        this.$emit('search', this.paramsFilter)
       })
     },
-    handleKeyChange (e) {
-      this.inputKey = e.target.value
-    },
-    handleValueChange (e) {
-      this.inputValue = e.target.value
-    },
     changeFilter (filter) {
-      this.parentChangeFilter(filter)
+      this.$emit('change-filter', filter)
     }
   }
 }
@@ -477,7 +660,7 @@ export default {
 }
 
 .filter-group {
-  /deep/.ant-input-group-addon {
+  :deep(.ant-input-group-addon) {
     padding: 0 5px;
   }
 
@@ -503,7 +686,7 @@ export default {
     }
   }
 
-  /deep/.ant-input-group {
+  :deep(.ant-input-group) {
     .ant-input-affix-wrapper {
       width: calc(100% - 10px);
     }

@@ -82,6 +82,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -180,6 +181,8 @@ public class UnmanagedVMsManagerImplTest {
     private UserVmDao userVmDao;
     @Mock
     private NicDao nicDao;
+    @Mock
+    private HostDao hostDao;
 
     @Mock
     private VMInstanceVO virtualMachine;
@@ -192,7 +195,7 @@ public class UnmanagedVMsManagerImplTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
-        AccountVO account = new AccountVO("admin", 1L, "", Account.ACCOUNT_TYPE_ADMIN, "uuid");
+        AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
 
@@ -235,6 +238,7 @@ public class UnmanagedVMsManagerImplTest {
         HostVO hostVO = Mockito.mock(HostVO.class);
         when(hostVO.isInMaintenanceStates()).thenReturn(false);
         hosts.add(hostVO);
+        when(hostVO.checkHostServiceOfferingTags(Mockito.any())).thenReturn(true);
         when(resourceManager.listHostsInClusterByStatus(Mockito.anyLong(), Mockito.any(Status.class))).thenReturn(hosts);
         List<VMTemplateStoragePoolVO> templates = new ArrayList<>();
         when(templatePoolDao.listAll()).thenReturn(templates);
@@ -262,13 +266,13 @@ public class UnmanagedVMsManagerImplTest {
         when(templateDao.findByName(Mockito.anyString())).thenReturn(template);
         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
         when(serviceOffering.getId()).thenReturn(1L);
-        when(serviceOffering.getTags()).thenReturn("");
         when(serviceOffering.isDynamic()).thenReturn(false);
         when(serviceOffering.getCpu()).thenReturn(instance.getCpuCores());
         when(serviceOffering.getRamSize()).thenReturn(instance.getMemory());
         when(serviceOffering.getSpeed()).thenReturn(instance.getCpuSpeed());
         when(serviceOfferingDao.findById(Mockito.anyLong())).thenReturn(serviceOffering);
         DiskOfferingVO diskOfferingVO = Mockito.mock(DiskOfferingVO.class);
+        when(diskOfferingVO.getTags()).thenReturn("");
         when(diskOfferingVO.isCustomized()).thenReturn(false);
         when(diskOfferingVO.getDiskSize()).thenReturn(Long.MAX_VALUE);
         when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskOfferingVO);
@@ -355,7 +359,7 @@ public class UnmanagedVMsManagerImplTest {
     @Test(expected = PermissionDeniedException.class)
     public void listUnmanagedInstancesInvalidCallerTest() {
         CallContext.unregister();
-        AccountVO account = new AccountVO("user", 1L, "", Account.ACCOUNT_TYPE_NORMAL, "uuid");
+        AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
@@ -368,6 +372,7 @@ public class UnmanagedVMsManagerImplTest {
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getAccountName()).thenReturn(null);
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        doNothing().when(hostDao).loadHostTags(null);
         PowerMockito.mockStatic(UsageEventUtils.class);
         unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
     }

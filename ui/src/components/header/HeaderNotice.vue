@@ -23,33 +23,50 @@
     :autoAdjustOverflow="true"
     :arrowPointAtCenter="true"
     overlayClassName="header-notice-popover">
-    <template slot="content">
+    <template #content>
       <a-spin :spinning="loading">
         <a-list style="min-width: 200px; max-width: 300px">
           <a-list-item>
             <a-list-item-meta :title="$t('label.notifications')">
-              <a-avatar :style="{backgroundColor: '#6887d0', verticalAlign: 'middle'}" icon="notification" slot="avatar"/>
-              <a-button size="small" slot="description" @click="clearJobs">{{ $t('label.clear.list') }}</a-button>
+              <template #avatar>
+                <a-avatar :style="{ backgroundColor: '#6887d0', verticalAlign: 'middle' }">
+                  <template #icon><notification-outlined /></template>
+                </a-avatar>
+              </template>
+              <template #description><a-button size="small" @click="clearJobs">{{ $t('label.clear.list') }}</a-button></template>
             </a-list-item-meta>
           </a-list-item>
-          <a-list-item v-for="(job, index) in jobs" :key="index">
-            <a-list-item-meta :title="job.title" :description="job.description">
-              <a-avatar :style="notificationAvatar[job.status].style" :icon="notificationAvatar[job.status].icon" slot="avatar"/>
+          <a-list-item v-for="(notice, index) in notices" :key="index">
+            <template #title>{{ notice.path }} </template>
+            <a-list-item-meta :title="notice.title">
+              <template #avatar>
+                <a-avatar :style="notificationAvatar[notice.status].style">
+                  <template #icon>
+                    <render-icon :icon="notificationAvatar[notice.status].icon" />
+                  </template>
+                </a-avatar>
+              </template>
+              <template #description>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path">
+                  <router-link :to="{ path: notice.path}"> {{ getResourceName(notice.description, "name") + ' - ' }}</router-link>
+                </span>
+                <span v-if="getResourceName(notice.description, 'name') && notice.path"> {{ getResourceName(notice.description, "msg") }}</span>
+                <span v-else>{{ notice.description }}</span>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </a-list>
       </a-spin>
     </template>
     <span @click="showNotifications" class="header-notice-opener">
-      <a-badge :count="jobs.length">
-        <a-icon class="header-notice-icon" type="bell" />
+      <a-badge :count="notices.length">
+        <bell-outlined class="header-notice-icon" />
       </a-badge>
     </span>
   </a-popover>
 </template>
 
 <script>
-import { api } from '@/api'
 import store from '@/store'
 
 export default {
@@ -58,12 +75,12 @@ export default {
     return {
       loading: false,
       visible: false,
-      jobs: [],
+      notices: [],
       poller: null,
       notificationAvatar: {
-        done: { icon: 'check-circle', style: 'backgroundColor:#87d068' },
-        progress: { icon: 'loading', style: 'backgroundColor:#ffbf00' },
-        failed: { icon: 'close-circle', style: 'backgroundColor:#f56a00' }
+        done: { icon: 'check-circle-outlined', style: { backgroundColor: '#87d068' } },
+        progress: { icon: 'loading-outlined', style: { backgroundColor: '#ffbf00' } },
+        failed: { icon: 'close-circle-outlined', style: { backgroundColor: '#f56a00' } }
       }
     }
   },
@@ -72,66 +89,27 @@ export default {
       this.visible = !this.visible
     },
     clearJobs () {
-      this.jobs = this.jobs.filter(x => x.status === 'progress')
-      this.$store.commit('SET_ASYNC_JOB_IDS', this.jobs)
+      this.notices = this.notices.filter(x => x.status === 'progress')
+      this.$store.commit('SET_HEADER_NOTICES', this.notices)
     },
-    startPolling () {
-      this.poller = setInterval(() => {
-        this.pollJobs()
-      }, 4000)
-    },
-    async pollJobs () {
-      var hasUpdated = false
-      for (var i in this.jobs) {
-        if (this.jobs[i].status === 'progress') {
-          await api('queryAsyncJobResult', { jobid: this.jobs[i].jobid }).then(json => {
-            var result = json.queryasyncjobresultresponse
-            if (result.jobstatus === 1 && this.jobs[i].status !== 'done') {
-              hasUpdated = true
-              const title = this.jobs[i].title
-              const description = this.jobs[i].description
-              this.$message.success({
-                content: title + (description ? ' - ' + description : ''),
-                key: this.jobs[i].jobid,
-                duration: 2
-              })
-              this.jobs[i].status = 'done'
-            } else if (result.jobstatus === 2 && this.jobs[i].status !== 'failed') {
-              hasUpdated = true
-              this.jobs[i].status = 'failed'
-              if (result.jobresult.errortext !== null) {
-                this.jobs[i].description = '(' + this.jobs[i].description + ') ' + result.jobresult.errortext
-              }
-              this.$notification.error({
-                message: this.jobs[i].title,
-                description: this.jobs[i].description,
-                key: this.jobs[i].jobid,
-                duration: 0
-              })
-            }
-          }).catch(function (e) {
-            console.log(this.$t('error.fetching.async.job.result') + e)
-          })
+    getResourceName (description, data) {
+      if (description) {
+        if (data === 'name') {
+          const name = description.match(/\(([^)]+)\)/)
+          return name ? name[1] : null
         }
-      }
-      if (hasUpdated) {
-        this.$store.commit('SET_ASYNC_JOB_IDS', this.jobs.reverse())
+        const msg = description.substring(description.indexOf(')') + 1)
+        return msg
       }
     }
   },
-  beforeDestroy () {
-    clearInterval(this.poller)
-  },
-  created () {
-    this.startPolling()
-  },
   mounted () {
-    this.jobs = (store.getters.asyncJobIds || []).reverse()
+    this.notices = (store.getters.headerNotices || []).reverse()
     this.$store.watch(
-      (state, getters) => getters.asyncJobIds,
+      (state, getters) => getters.headerNotices,
       (newValue, oldValue) => {
         if (oldValue !== newValue && newValue !== undefined) {
-          this.jobs = newValue.reverse()
+          this.notices = newValue.reverse()
         }
       }
     )

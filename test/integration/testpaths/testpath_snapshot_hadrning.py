@@ -448,7 +448,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
         """snapshot hardning
             1. Take VM snapshot then migrate the VM to another host
                 and again take volume snapshot and check its integrity
-            2. Verify that snapshot gets created successfuly while VM
+            2. Verify that snapshot gets created successfully while VM
                 is getting Migrated to another host
             3. Verify that snapshot should succeed after vm's are HA-ed
                 to different host and also check its integrity
@@ -860,7 +860,7 @@ class TestSnapshotsHardning(cloudstackTestCase):
             1. Take VM snapshot then migrate the VM to another
                 host and again take
                 volume snapshot and check its intigrity
-            2. Verify that snapshot gets created successfuly
+            2. Verify that snapshot gets created successfully
                 while VM is getting
                 Migrated to another host
             3. Verify that snapshot should succeed after vm's are
@@ -1440,8 +1440,8 @@ class TestHardening(cloudstackTestCase):
             # which indicate two Storage Pools exist.
             assert (len(clusterid_tag_mapping)) >= 2 and\
                 (len(tags) for tags in clusterid_tag_mapping.values(
-                )) >= 2, "There must be atleast two Clusters and\
-                each must have atleast two cluster wide storage pools in\
+                )) >= 2, "There must be at least two Clusters and\
+                each must have at least two cluster wide storage pools in\
                 Up state in the setup"
 
         except Exception as e:

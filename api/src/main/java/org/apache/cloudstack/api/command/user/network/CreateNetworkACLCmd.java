@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
@@ -30,7 +31,7 @@ import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -121,6 +122,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         } else {
             List<String> oneCidrList = new ArrayList<String>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
+            oneCidrList.add(NetUtils.ALL_IP6_CIDRS);
             return oneCidrList;
         }
     }
@@ -246,5 +248,10 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create network ACL Item");
             }
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAclItem;
     }
 }

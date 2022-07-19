@@ -65,7 +65,7 @@ class Services:
                     "type": "host anti-affinity",
                 },
             "virtual_machine" : {
-                
+
             },
             "new_domain": {
                 "name": "New Domain",
@@ -1041,7 +1041,8 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
+    # @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
+    @attr(tags=["TODO"])
     def test_04_update_aff_grp_remove_all(self):
         """
             Update the list of Affinity Groups to empty list
@@ -1087,7 +1088,8 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
-    @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
+    # @attr(tags=["simulator", "basic", "advanced", "multihost", "NotRun"])
+    @attr(tags=["TODO"])
     def test_06_update_aff_grp_invalid_args(self):
         """
             Update the list of Affinity Groups with either both args or none

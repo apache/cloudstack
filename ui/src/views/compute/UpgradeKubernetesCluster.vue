@@ -16,36 +16,33 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.kubernetes.cluster.upgrade')" />
+        <template #message>{{ $t('message.kubernetes.cluster.upgrade') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <a-form-item>
-          <span slot="label">
-            {{ $t('label.kubernetesversionid') }}
-            <a-tooltip :title="apiParams.kubernetesversionid.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
+        <a-form-item name="kubernetesversionid" ref="kubernetesversionid">
+          <template #label>
+            <tooltip-label :title="$t('label.kubernetesversionid')" :tooltip="apiParams.kubernetesversionid.description"/>
+          </template>
           <a-select
             id="version-selection"
-            v-decorator="['kubernetesversionid', {
-              rules: [{ required: true }]
-            }]"
+            v-model:value="form.kubernetesversionid"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="kubernetesVersionLoading"
             :placeholder="apiParams.kubernetesversionid.description"
-            autoFocus >
+            v-focus="true" >
             <a-select-option v-for="(opt, optIndex) in this.kubernetesVersions" :key="optIndex">
               {{ opt.name || opt.description }}
             </a-select-option>
@@ -53,8 +50,8 @@
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -62,10 +59,15 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'UpgradeKubernetesCluster',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -82,17 +84,20 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.upgradeKubernetesCluster || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('upgradeKubernetesCluster')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        kubernetesversionid: [{ required: true }]
+      })
+    },
     fetchData () {
       this.fetchKubernetesVersionData()
     },
@@ -136,18 +141,15 @@ export default {
       }).finally(() => {
         this.kubernetesVersionLoading = false
         if (this.arrayHasItems(this.kubernetesVersions)) {
-          this.form.setFieldsValue({
-            kubernetesversionid: 0
-          })
+          this.form.kubernetesversionid = 0
         }
       })
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         this.loading = true
         const params = {
           id: this.resource.id
@@ -158,28 +160,22 @@ export default {
         api('upgradeKubernetesCluster', params).then(json => {
           this.$emit('refresh-data')
           const jobId = json.upgradekubernetesclusterresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.kubernetes.cluster.upgrade'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.kubernetes.cluster.upgrade'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.kubernetes.cluster.upgrade')} ${this.resource.name} ${this.$t('label.in.progress')}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
-            successMessage: `${this.$t('message.success.upgrade.kubernetes')} ${this.resource.name}`,
-            successMethod: result => {
-              this.$emit('refresh-data')
-            }
+            successMessage: `${this.$t('message.success.upgrade.kubernetes')} ${this.resource.name}`
           })
-          this.$emit('refresh-data')
           this.closeAction()
         }).catch(error => {
           this.$notifyError(error)
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
@@ -195,14 +191,6 @@ export default {
 
     @media (min-width: 500px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

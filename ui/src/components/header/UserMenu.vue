@@ -20,60 +20,128 @@
 
     <translation-menu class="action"/>
     <header-notice class="action"/>
+    <label class="user-menu-server-info action" v-if="$config.multipleServer">
+      <database-outlined />
+      {{ server.name || server.apiBase || 'Local-Server' }}
+    </label>
     <a-dropdown>
       <span class="user-menu-dropdown action">
-        <a-avatar class="user-menu-avatar avatar" size="small" :src="avatar()"/>
+        <span v-if="image">
+          <resource-icon :image="image" size="2x" style="margin-right: 5px"/>
+        </span>
+        <a-avatar v-else-if="userInitials" class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+          {{ userInitials }}
+        </a-avatar>
+        <a-avatar v-else class="user-menu-avatar avatar" size="small" :style="{ backgroundColor: '#1890ff', color: 'white' }">
+          <template #icon><user-outlined /></template>
+        </a-avatar>
         <span>{{ nickname() }}</span>
       </span>
-      <a-menu slot="overlay" class="user-menu-wrapper">
-        <a-menu-item class="user-menu-item" key="0">
+      <template #overlay>
+        <a-menu class="user-menu-wrapper">
           <router-link :to="{ path: '/accountuser/' + $store.getters.userInfo.id }">
-            <a-icon class="user-menu-item-icon" type="user"/>
-            <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
+            <a-menu-item class="user-menu-item" key="0">
+                <UserOutlined class="user-menu-item-icon" />
+                <span class="user-menu-item-name">{{ $t('label.profilename') }}</span>
+            </a-menu-item>
           </router-link>
-        </a-menu-item>
-        <a-menu-item class="user-menu-item" key="1">
           <a @click="toggleUseBrowserTimezone">
-            <a-icon class="user-menu-item-icon" type="clock-circle"/>
-            <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
-            <a-switch
-              :checked="$store.getters.usebrowsertimezone" />
+            <a-menu-item class="user-menu-item" key="1">
+                <ClockCircleOutlined class="user-menu-item-icon" />
+                <span class="user-menu-item-name" style="margin-right: 5px">{{ $t('label.use.local.timezone') }}</span>
+                <a-switch :checked="$store.getters.usebrowsertimezone" />
+            </a-menu-item>
           </a>
-        </a-menu-item>
-        <a-menu-item class="user-menu-item" key="2" disabled>
           <a :href="$config.docBase" target="_blank">
-            <a-icon class="user-menu-item-icon" type="question-circle-o"></a-icon>
-            <span class="user-menu-item-name">{{ $t('label.help') }}</span>
+            <a-menu-item class="user-menu-item" key="2">
+              <QuestionCircleOutlined class="user-menu-item-icon" />
+              <span class="user-menu-item-name">{{ $t('label.help') }}</span>
+            </a-menu-item>
           </a>
-        </a-menu-item>
-        <a-menu-divider/>
-        <a-menu-item class="user-menu-item" key="3">
+          <a-menu-divider/>
           <a href="javascript:;" @click="handleLogout">
-            <a-icon class="user-menu-item-icon" type="logout"/>
-            <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
+            <a-menu-item class="user-menu-item" key="3">
+              <LogoutOutlined class="user-menu-item-icon" />
+              <span class="user-menu-item-name">{{ $t('label.logout') }}</span>
+            </a-menu-item>
           </a>
-        </a-menu-item>
-      </a-menu>
+        </a-menu>
+      </template>
     </a-dropdown>
   </div>
 </template>
 
 <script>
+import { api } from '@/api'
 import HeaderNotice from './HeaderNotice'
 import TranslationMenu from './TranslationMenu'
 import { mapActions, mapGetters } from 'vuex'
+import ResourceIcon from '@/components/view/ResourceIcon'
+import eventBus from '@/config/eventBus'
+import { SERVER_MANAGER } from '@/store/mutation-types'
 
 export default {
   name: 'UserMenu',
   components: {
     TranslationMenu,
-    HeaderNotice
+    HeaderNotice,
+    ResourceIcon
+  },
+  data () {
+    return {
+      image: '',
+      userInitials: '',
+      countNotify: 0
+    }
+  },
+  created () {
+    this.userInitials = (this.$store.getters.userInfo.firstname.toUpperCase().charAt(0) || '') +
+      (this.$store.getters.userInfo.lastname.toUpperCase().charAt(0) || '')
+    this.getIcon()
+    eventBus.on('refresh-header', () => {
+      this.getIcon()
+    })
+    this.$store.watch(
+      (state, getters) => getters.countNotify,
+      (newValue, oldValue) => {
+        this.countNotify = newValue
+      }
+    )
+  },
+  watch: {
+    image () {
+      this.getIcon()
+    }
+  },
+  computed: {
+    server () {
+      return this.$localStorage.get(SERVER_MANAGER) || this.$config.servers[0]
+    }
   },
   methods: {
     ...mapActions(['Logout']),
     ...mapGetters(['nickname', 'avatar']),
     toggleUseBrowserTimezone () {
       this.$store.dispatch('SetUseBrowserTimezone', !this.$store.getters.usebrowsertimezone)
+    },
+    async getIcon () {
+      await this.fetchResourceIcon(this.$store.getters.userInfo.id)
+    },
+    fetchResourceIcon (id) {
+      return new Promise((resolve, reject) => {
+        api('listUsers', {
+          id: id,
+          showicon: true
+        }).then(json => {
+          const response = json.listusersresponse.user || []
+          if (response?.[0]) {
+            this.image = response[0]?.icon?.base64image || ''
+            resolve(this.image)
+          }
+        }).catch(error => {
+          reject(error)
+        })
+      })
     },
     handleLogout () {
       return this.Logout({}).then(() => {
@@ -84,6 +152,10 @@ export default {
           description: err.message
         })
       })
+    },
+    clearAllNotify () {
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+      this.$notification.destroy()
     }
   }
 }
@@ -107,6 +179,12 @@ export default {
   &-item-icon i {
     min-width: 12px;
     margin-right: 8px;
+  }
+
+  &-server-info {
+    .anticon {
+      margin-right: 5px;
+    }
   }
 }
 </style>

@@ -48,6 +48,7 @@ tools/cli/cloudmonkey/precache.py
 tools/marvin/marvin/cloudstackAPI/
 tools/marvin/build/
 tools/cli/build/
+tools/appliance/systemvmtemplate/packer_cache/
 *.jar
 *.war
 *.mar
@@ -68,7 +69,6 @@ target-eclipse
 db.properties.override
 replace.properties.override
 tools/marvin/marvin/cloudstackAPI/*
-*.egg-info/
 docs/tmp
 docs/publish
 docs/runbook/tmp

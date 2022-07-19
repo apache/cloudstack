@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
@@ -31,8 +30,12 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
 
 @APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Restricted, entityType = {Account.class},
@@ -46,9 +49,9 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ACCOUNT_TYPE,
-               type = CommandType.LONG,
+               type = CommandType.INTEGER,
                description = "list accounts by account type. Valid account types are 1 (admin), 2 (domain-admin), and 0 (user).")
-    private Long accountType;
+    private Integer accountType;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "list account by account ID")
     private Long id;
@@ -68,12 +71,16 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
                description = "comma separated list of account details requested, value can be a list of [ all, resource, min]")
     private List<String> viewDetails;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
+            description = "flag to display the resource icon for accounts")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getAccountType() {
-        return accountType;
+    public Account.Type getAccountType() {
+        return Account.Type.getFromValue(accountType);
     }
 
     public Long getId() {
@@ -111,6 +118,10 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         return dv;
     }
 
+    public Boolean getShowIcon() {
+        return showIcon != null ? showIcon : false;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -125,5 +136,24 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd implements UserC
         ListResponse<AccountResponse> response = _queryService.searchForAccounts(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateAccountResponse(response.getResponses());
+        }
+    }
+
+    private void updateAccountResponse(List<AccountResponse> response) {
+        for (AccountResponse accountResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Account, accountResponse.getObjectId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            accountResponse.setResourceIconResponse(iconResponse);
+        }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Account;
     }
 }

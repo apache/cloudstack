@@ -20,7 +20,7 @@ import java.io.File;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.ssh.SshHelper;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -45,6 +45,6 @@ public class XenServerUtilitiesHelper {
     }
 
     public static boolean isXenServerToolsSR(final String label) {
-        return !Strings.isNullOrEmpty(label) && (label.startsWith("XenServer Tools") || label.startsWith("Citrix Hypervisor Tools") || label.startsWith("XCP-ng Tools"));
+        return StringUtils.isNotEmpty(label) && (label.startsWith("XenServer Tools") || label.startsWith("Citrix Hypervisor Tools") || label.startsWith("XCP-ng Tools"));
     }
 }

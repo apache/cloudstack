@@ -17,6 +17,9 @@
 package org.apache.cloudstack.api.command.user.template;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -24,7 +27,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -161,9 +164,16 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         return onlyReady;
     }
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN, description = "flag to display the resource image for the templates")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public Boolean getShowIcon () {
+        return  showIcon != null ? showIcon : false;
+    }
 
     @Override
     public String getCommandName() {
@@ -171,15 +181,29 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Template;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Template;
     }
 
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
+        if (response != null && response.getCount() > 0 && getShowIcon()) {
+            updateTemplateResponse(response.getResponses());
+        }
         response.setResponseName(getCommandName());
         setResponseObject(response);
+    }
+
+    private void updateTemplateResponse(List<TemplateResponse> response) {
+        for (TemplateResponse templateResponse : response) {
+            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, templateResponse.getId());
+            if (resourceIcon == null) {
+                continue;
+            }
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
+            templateResponse.setResourceIconResponse(iconResponse);
+        }
     }
 
     public List<Long> getIds() {

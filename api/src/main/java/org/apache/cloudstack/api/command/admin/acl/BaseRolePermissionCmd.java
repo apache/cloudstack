@@ -19,12 +19,11 @@ package org.apache.cloudstack.api.command.admin.acl;
 
 import org.apache.cloudstack.acl.RolePermissionEntity.Permission;
 import org.apache.cloudstack.acl.Rule;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.commons.lang3.StringUtils;
 
-import com.google.common.base.Strings;
 
 public abstract class BaseRolePermissionCmd extends BaseCmd {
 
@@ -32,8 +31,7 @@ public abstract class BaseRolePermissionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.RULE, type = CommandType.STRING, required = true, description = "The API name or wildcard rule such as list*",
-            validations = {ApiArgValidator.NotNullOrEmpty})
+    @Parameter(name = ApiConstants.RULE, type = CommandType.STRING, required = true, description = "The API name or wildcard rule such as list*")
     private String rule;
 
     @Parameter(name = ApiConstants.PERMISSION, type = CommandType.STRING, required = true, description = "The rule permission, allow or deny. Default: deny.")
@@ -51,7 +49,7 @@ public abstract class BaseRolePermissionCmd extends BaseCmd {
     }
 
     public Permission getPermission() {
-        if (Strings.isNullOrEmpty(permission)) {
+        if (StringUtils.isEmpty(permission)) {
             return null;
         }
         return Permission.valueOf(permission.toUpperCase());

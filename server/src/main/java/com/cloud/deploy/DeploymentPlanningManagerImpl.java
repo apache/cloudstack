@@ -17,12 +17,12 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
@@ -35,7 +35,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.StringUtils;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
@@ -43,7 +42,7 @@ import com.cloud.utils.fsm.StateMachine2;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -112,7 +111,6 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -302,8 +300,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
             HostVO host = _hostDao.findById(hostIdSpecified);
             if (host != null && StringUtils.isNotBlank(uefiFlag) && "yes".equalsIgnoreCase(uefiFlag)) {
-                _hostDao.loadDetails(host);
-                if (MapUtils.isNotEmpty(host.getDetails()) && host.getDetails().containsKey(Host.HOST_UEFI_ENABLE) && "false".equalsIgnoreCase(host.getDetails().get(Host.HOST_UEFI_ENABLE))) {
+                DetailVO uefiHostDetail = _hostDetailsDao.findDetail(host.getId(), Host.HOST_UEFI_ENABLE);
+                if (uefiHostDetail == null || "false".equalsIgnoreCase(uefiHostDetail.getValue())) {
                     s_logger.debug("Cannot deploy to specified host as host does n't support uefi vm deployment, returning.");
                     return null;
 
@@ -423,14 +421,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 if (host.getStatus() == Status.Up) {
-                    boolean hostTagsMatch = true;
-                    if(offering.getHostTag() != null){
-                        _hostDao.loadHostTags(host);
-                        if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
-                            hostTagsMatch = false;
-                        }
-                    }
-                    if (hostTagsMatch) {
+                    if (checkVmProfileAndHost(vmProfile, host)) {
                         long cluster_id = host.getClusterId();
                         ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id,
                                 "cpuOvercommitRatio");
@@ -677,7 +668,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         ServiceOffering offering = vmProfile.getServiceOffering();
         if (offering.getHostTag() != null) {
             _hostDao.loadHostTags(host);
-            if (!(host.getHostTags() != null && host.getHostTags().contains(offering.getHostTag()))) {
+            if (!host.checkHostServiceOfferingTags(offering)) {
                 s_logger.debug("Service Offering host tag does not match the last host of this VM");
                 return false;
             }
@@ -753,9 +744,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         //Only when the type is instance VM and not explicitly dedicated.
         if (vm.getType() == VirtualMachine.Type.User && !isExplicit) {
             //add explicitly dedicated resources in avoidList
-
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding pods to avoid lists for non-explicit VM deployment: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding clusters to avoid lists for non-explicit VM deployment: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding hosts to avoid lists for non-explicit VM deployment: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
 
@@ -834,8 +833,17 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             }
 
             //Add in avoid list or no addition if no dedication
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding pods to avoid lists: " + allPodsInDc);
+            }
             avoids.addPodList(allPodsInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding clusters to avoid lists: " + allClustersInDc);
+            }
             avoids.addClusterList(allClustersInDc);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Adding hosts to avoid lists: " + allHostsInDc);
+            }
             avoids.addHostList(allHostsInDc);
         }
     }
@@ -1403,6 +1411,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
                 List<Volume> allVolumes = new ArrayList<>();
                 allVolumes.addAll(volumesOrderBySizeDesc);
+                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = getVolumeDiskProfilePairs(allVolumes);
                 for (StoragePool storagePool : suitablePools) {
                     haveEnoughSpace = false;
                     hostCanAccessPool = false;
@@ -1411,7 +1420,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         hostCanAccessPool = true;
                         if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                             try {
-                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(allVolumes, storagePool);
+                                boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, storagePool);
                                 if (!isStoragePoolStoragepolicyComplaince) {
                                     continue;
                                 }
@@ -1447,10 +1456,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                 else
                                     requestVolumes = new ArrayList<Volume>();
                                 requestVolumes.add(vol);
-
+                                List<Pair<Volume, DiskProfile>> volumeDiskProfilePair = getVolumeDiskProfilePairs(requestVolumes);
                                 if (potentialHost.getHypervisorType() == HypervisorType.VMware) {
                                     try {
-                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolComplaintWithStoragePolicy(requestVolumes, potentialSPool);
+                                        boolean isStoragePoolStoragepolicyComplaince = _storageMgr.isStoragePoolCompliantWithStoragePolicy(volumeDiskProfilePair, potentialSPool);
                                         if (!isStoragePoolStoragepolicyComplaince) {
                                             continue;
                                         }
@@ -1460,8 +1469,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                     }
                                 }
 
-                                if (!_storageMgr.storagePoolHasEnoughIops(requestVolumes, potentialSPool) ||
-                                        !_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool, potentialHost.getClusterId()))
+                                if (!_storageMgr.storagePoolHasEnoughIops(volumeDiskProfilePair, potentialSPool) ||
+                                        !_storageMgr.storagePoolHasEnoughSpace(volumeDiskProfilePair, potentialSPool, potentialHost.getClusterId()))
                                     continue;
                                 volumeAllocationMap.put(potentialSPool, requestVolumes);
                             }
@@ -1495,6 +1504,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
         s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");
         return null;
+    }
+
+    private  List<Pair<Volume, DiskProfile>> getVolumeDiskProfilePairs(List<Volume> volumes) {
+        List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs = new ArrayList<>();
+        for (Volume volume: volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            DiskProfile diskProfile = new DiskProfile(volume, diskOffering, _volsDao.getHypervisorType(volume.getId()));
+            volumeDiskProfilePairs.add(new Pair<>(volume, diskProfile));
+        }
+        return volumeDiskProfilePairs;
     }
 
     /**
@@ -1544,7 +1563,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 
-        // There should be atleast the ROOT volume of the VM in usable state
+        // There should be at least the ROOT volume of the VM in usable state
         if (volumesTobeCreated.isEmpty()) {
             // OfflineVmwareMigration: find out what is wrong with the id of the vm we try to start
             throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM: " + vmProfile.getId());
@@ -1638,9 +1657,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
-            if (vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO && vmProfile.getServiceOffering().getTagsArray().length != 0) {
-                diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
-            }
+            //FR123 check how is it different for service offering getTagsArray and disk offering's
+            //if ((vmProfile.getTemplate().getFormat() == Storage.ImageFormat.ISO || toBeCreated.getVolumeType() == Volume.Type.ROOT)
+            //        && vmProfile.getServiceOffering().getTagsArray().length != 0) {
+            //    diskOffering.setTagsArray(Arrays.asList(vmProfile.getServiceOffering().getTagsArray()));
+            //}
 
             DiskProfile diskProfile = new DiskProfile(toBeCreated, diskOffering, vmProfile.getHypervisorType());
             boolean useLocalStorage = false;
@@ -1654,19 +1675,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 }
             } else {
                 useLocalStorage = diskOffering.isUseLocalStorage();
-
-                // TODO: this is a hacking fix for the problem of deploy
-                // ISO-based VM on local storage
-                // when deploying VM based on ISO, we have a service offering
-                // and an additional disk offering, use-local storage flag is
-                // actually
-                // saved in service offering, override the flag from service
-                // offering when it is a ROOT disk
-                if (!useLocalStorage && vmProfile.getServiceOffering().isUseLocalStorage()) {
-                    if (toBeCreated.getVolumeType() == Volume.Type.ROOT) {
-                        useLocalStorage = true;
-                    }
-                }
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
 
@@ -1674,7 +1682,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             for (StoragePoolAllocator allocator : _storagePoolAllocators) {
                 final List<StoragePool> suitablePools = allocator.allocateToPool(diskProfile, vmProfile, plan, avoid, returnUpTo);
                 if (suitablePools != null && !suitablePools.isEmpty()) {
-                    suitableVolumeStoragePools.put(toBeCreated, suitablePools);
+                    checkForPreferredStoragePool(suitablePools, vmProfile.getVirtualMachine(), suitableVolumeStoragePools, toBeCreated);
                     foundPotentialPools = true;
                     break;
                 }
@@ -1713,6 +1721,43 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         }
 
         return new Pair<Map<Volume, List<StoragePool>>, List<Volume>>(suitableVolumeStoragePools, readyAndReusedVolumes);
+    }
+
+    private void checkForPreferredStoragePool(List<StoragePool> suitablePools,
+                                              VirtualMachine vm,
+                                              Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
+                                              VolumeVO toBeCreated) {
+        List<StoragePool> pools = new ArrayList<>();
+        Optional<StoragePool> storagePool = getPreferredStoragePool(suitablePools, vm);
+        storagePool.ifPresent(pools::add);
+
+        pools.addAll(suitablePools);
+        suitableVolumeStoragePools.put(toBeCreated, pools);
+    }
+
+    private Optional<StoragePool> getMatchingStoragePool(String preferredPoolId, List<StoragePool> storagePools) {
+        if (preferredPoolId == null) {
+            return Optional.empty();
+        }
+        return storagePools.stream()
+                .filter(pool -> pool.getUuid().equalsIgnoreCase(preferredPoolId))
+                .findFirst();
+    }
+
+    private Optional<StoragePool> getPreferredStoragePool(List<StoragePool> poolList, VirtualMachine vm) {
+        String accountStoragePoolUuid = StorageManager.PreferredStoragePool.valueIn(vm.getAccountId());
+        Optional<StoragePool> storagePool = getMatchingStoragePool(accountStoragePoolUuid, poolList);
+
+        if (storagePool.isPresent()) {
+            s_logger.debug("A storage pool is specified for this account, so we will use this storage pool for allocation: "
+                    + storagePool.get().getUuid());
+        } else {
+            String globalStoragePoolUuid = StorageManager.PreferredStoragePool.value();
+            storagePool = getMatchingStoragePool(globalStoragePoolUuid, poolList);
+            storagePool.ifPresent(pool -> s_logger.debug("A storage pool is specified in global setting, so we will use this storage pool for allocation: "
+                    + pool.getUuid()));
+        }
+        return storagePool;
     }
 
     private boolean isEnabledForAllocation(long zoneId, Long podId, Long clusterId) {

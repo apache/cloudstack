@@ -27,7 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -38,12 +38,12 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
-import com.cloud.utils.StringUtils;
 
 @APICommand(name = "authorizeSecurityGroupIngress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group", entityType = {SecurityGroup.class},
             requestHasSensitiveInfo = false,
@@ -228,12 +228,12 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.SecurityGroup;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.SecurityGroup;
     }
 
     @Override
-    public Long getInstanceId() {
+    public Long getApiResourceId() {
         return getSecurityGroupId();
     }
 }

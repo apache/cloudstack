@@ -16,73 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.ApiConstants.DomainDetails;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.BackupOfferingResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.BackupScheduleResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HostTagResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.StorageTagResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupOffering;
-import org.apache.cloudstack.backup.BackupSchedule;
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
-import org.apache.cloudstack.backup.dao.BackupScheduleDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
@@ -159,6 +92,7 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.event.Event;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -252,7 +186,12 @@ import com.cloud.projects.ProjectInvitation;
 import com.cloud.projects.ProjectService;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.resource.icon.dao.ResourceIconDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementServerHostStats;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -311,7 +250,6 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroup;
@@ -335,6 +273,73 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HostTagResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.StorageTagResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupOffering;
+import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.BackupScheduleDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -402,6 +407,7 @@ public class ApiDBUtils {
     static ResourceLimitService s_resourceLimitMgr;
     static ProjectService s_projectMgr;
     static ResourceManager s_resourceMgr;
+    static DomainDetailsDao s_domainDetailsDao;
     static AccountDetailsDao s_accountDetailsDao;
     static NetworkDomainDao s_networkDomainDao;
     static HighAvailabilityManager s_haMgr;
@@ -418,6 +424,7 @@ public class ApiDBUtils {
     static AutoScaleVmGroupDao s_asVmGroupDao;
     static CounterDao s_counterDao;
     static ResourceTagJoinDao s_tagJoinDao;
+    static ResourceIconDao s_resourceIconDao;
     static EventJoinDao s_eventJoinDao;
     static InstanceGroupJoinDao s_vmGroupJoinDao;
     static UserAccountJoinDao s_userAccountJoinDao;
@@ -462,6 +469,7 @@ public class ApiDBUtils {
     static BackupScheduleDao s_backupScheduleDao;
     static BackupOfferingDao s_backupOfferingDao;
     static NicDao s_nicDao;
+    static ResourceManagerUtil s_resourceManagerUtil;
 
     @Inject
     private ManagementServer ms;
@@ -589,6 +597,8 @@ public class ApiDBUtils {
     @Inject
     private ResourceManager resourceMgr;
     @Inject
+    private DomainDetailsDao domainDetailsDao;
+    @Inject
     private AccountDetailsDao accountDetailsDao;
     @Inject
     private NetworkDomainDao networkDomainDao;
@@ -708,6 +718,10 @@ public class ApiDBUtils {
     private BackupScheduleDao backupScheduleDao;
     @Inject
     private NicDao nicDao;
+    @Inject
+    private ResourceIconDao resourceIconDao;
+    @Inject
+    private ResourceManagerUtil resourceManagerUtil;
 
     @PostConstruct
     void init() {
@@ -773,6 +787,7 @@ public class ApiDBUtils {
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
         s_resourceMgr = resourceMgr;
+        s_domainDetailsDao = domainDetailsDao;
         s_accountDetailsDao = accountDetailsDao;
         s_networkDomainDao = networkDomainDao;
         s_haMgr = haMgr;
@@ -834,6 +849,8 @@ public class ApiDBUtils {
         s_backupDao = backupDao;
         s_backupScheduleDao = backupScheduleDao;
         s_backupOfferingDao = backupOfferingDao;
+        s_resourceIconDao = resourceIconDao;
+        s_resourceManagerUtil = resourceManagerUtil;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -974,12 +991,20 @@ public class ApiDBUtils {
         return s_statsCollector.getHostStats(hostId);
     }
 
+    public static ManagementServerHostStats getManagementServerHostStatistics(String mgmtSrvrUuid) {
+        return s_statsCollector.getManagementServerHostStats(mgmtSrvrUuid);
+    }
+
+    public static Map<String,Object> getDbStatistics() {
+        return s_statsCollector.getDbStats();
+    }
+
     public static StorageStats getStoragePoolStatistics(long id) {
         return s_statsCollector.getStoragePoolStats(id);
     }
 
-    public static VmStats getVmStatistics(long hostId) {
-        return s_statsCollector.getVmStats(hostId);
+    public static VmStats getVmStatistics(long vmId, Boolean accumulate) {
+        return s_statsCollector.getVmStats(vmId, accumulate);
     }
 
     public static VolumeStats getVolumeStatistics(String volumeUuid) {
@@ -1027,14 +1052,29 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findComputeOnlyDiskOfferingById(Long diskOfferingId) {
         DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
-        if (off.getType() == DiskOfferingVO.Type.Disk) {
+        if (off.isComputeOnly()) {
             return off;
         }
         return null;
     }
 
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        if (diskOfferingId == null) {
+            return null;
+        }
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        if (off != null && !off.isComputeOnly()) {
+            return off;
+        }
+        return null;
+    }
+
+    public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId) {
+        ServiceOfferingVO off = s_serviceOfferingDao.findServiceOfferingByComputeOnlyDiskOffering(diskOfferingId);
+        return off;
+    }
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
     }
@@ -1222,7 +1262,7 @@ public class ApiDBUtils {
             // Currently, KVM only supports RBD and PowerFlex images of type RAW.
             // This results in a weird collision with OVM volumes which
             // can only be raw, thus making KVM RBD volumes show up as OVM
-            // rather than RBD. This block of code can (hopefuly) by checking to
+            // rather than RBD. This block of code can (hopefully) by checking to
             // see if the pool is using either RBD or NFS. However, it isn't
             // quite clear what to do if both storage types are used. If the image
             // format is RAW, it narrows the hypervisor choice down to OVM and KVM / RBD or KVM / CLVM
@@ -1231,7 +1271,10 @@ public class ApiDBUtils {
             ListIterator<StoragePoolVO> itr = pools.listIterator();
             while(itr.hasNext()) {
                 StoragePoolVO pool = itr.next();
-                if(pool.getPoolType() == StoragePoolType.RBD || pool.getPoolType() == StoragePoolType.PowerFlex || pool.getPoolType() == StoragePoolType.CLVM) {
+                if(pool.getPoolType() == StoragePoolType.RBD ||
+                    pool.getPoolType() == StoragePoolType.PowerFlex ||
+                    pool.getPoolType() == StoragePoolType.CLVM ||
+                    pool.getPoolType() == StoragePoolType.Linstor) {
                   // This case will note the presence of non-qcow2 primary stores, suggesting KVM without NFS. Otherwse,
                   // If this check is not passed, the hypervisor type will remain OVM.
                   type = HypervisorType.KVM;
@@ -1420,6 +1463,11 @@ public class ApiDBUtils {
         return s_projectMgr.getProjectOwner(projectId).getId();
     }
 
+    public static Map<String, String> getDomainDetails(long domainId) {
+        Map<String, String> details = s_domainDetailsDao.findDetails(domainId);
+        return details.isEmpty() ? null : details;
+    }
+
     public static Map<String, String> getAccountDetails(long accountId) {
         Map<String, String> details = s_accountDetailsDao.findDetails(accountId);
         return details.isEmpty() ? null : details;
@@ -1484,7 +1532,7 @@ public class ApiDBUtils {
     }
 
     public static String getUuid(String resourceId, ResourceObjectType resourceType) {
-        return s_taggedResourceService.getUuid(resourceId, resourceType);
+        return s_resourceManagerUtil.getUuid(resourceId, resourceType);
     }
 
     public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
@@ -1615,7 +1663,7 @@ public class ApiDBUtils {
             return null;
         }
         String jobInstanceId = null;
-        ApiCommandJobType jobInstanceType = EnumUtils.fromString(ApiCommandJobType.class, job.getInstanceType(), ApiCommandJobType.None);
+        ApiCommandResourceType jobInstanceType = EnumUtils.fromString(ApiCommandResourceType.class, job.getInstanceType(), ApiCommandResourceType.None);
 
         if (job.getInstanceId() == null) {
             // when assert is hit, implement 'getInstanceId' of BaseAsyncCmd and return appropriate instance id
@@ -1623,118 +1671,118 @@ public class ApiDBUtils {
             return null;
         }
 
-        if (jobInstanceType == ApiCommandJobType.Volume) {
+        if (jobInstanceType == ApiCommandResourceType.Volume) {
             VolumeVO volume = ApiDBUtils.findVolumeById(job.getInstanceId());
             if (volume != null) {
                 jobInstanceId = volume.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Template || jobInstanceType == ApiCommandJobType.Iso) {
+        } else if (jobInstanceType == ApiCommandResourceType.Template || jobInstanceType == ApiCommandResourceType.Iso) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(job.getInstanceId());
             if (template != null) {
                 jobInstanceId = template.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.VirtualMachine || jobInstanceType == ApiCommandJobType.ConsoleProxy ||
-            jobInstanceType == ApiCommandJobType.SystemVm || jobInstanceType == ApiCommandJobType.DomainRouter) {
+        } else if (jobInstanceType == ApiCommandResourceType.VirtualMachine || jobInstanceType == ApiCommandResourceType.ConsoleProxy ||
+            jobInstanceType == ApiCommandResourceType.SystemVm || jobInstanceType == ApiCommandResourceType.DomainRouter) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
             if (vm != null) {
                 jobInstanceId = vm.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Snapshot) {
+        } else if (jobInstanceType == ApiCommandResourceType.Snapshot) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(job.getInstanceId());
             if (snapshot != null) {
                 jobInstanceId = snapshot.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Host) {
+        } else if (jobInstanceType == ApiCommandResourceType.Host) {
             Host host = ApiDBUtils.findHostById(job.getInstanceId());
             if (host != null) {
                 jobInstanceId = host.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.StoragePool) {
+        } else if (jobInstanceType == ApiCommandResourceType.StoragePool) {
             StoragePoolVO spool = ApiDBUtils.findStoragePoolById(job.getInstanceId());
             if (spool != null) {
                 jobInstanceId = spool.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.IpAddress) {
+        } else if (jobInstanceType == ApiCommandResourceType.IpAddress) {
             IPAddressVO ip = ApiDBUtils.findIpAddressById(job.getInstanceId());
             if (ip != null) {
                 jobInstanceId = ip.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.SecurityGroup) {
+        } else if (jobInstanceType == ApiCommandResourceType.SecurityGroup) {
             SecurityGroup sg = ApiDBUtils.findSecurityGroupById(job.getInstanceId());
             if (sg != null) {
                 jobInstanceId = sg.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.PhysicalNetwork) {
+        } else if (jobInstanceType == ApiCommandResourceType.PhysicalNetwork) {
             PhysicalNetworkVO pnet = ApiDBUtils.findPhysicalNetworkById(job.getInstanceId());
             if (pnet != null) {
                 jobInstanceId = pnet.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.TrafficType) {
+        } else if (jobInstanceType == ApiCommandResourceType.TrafficType) {
             PhysicalNetworkTrafficTypeVO trafficType = ApiDBUtils.findPhysicalNetworkTrafficTypeById(job.getInstanceId());
             if (trafficType != null) {
                 jobInstanceId = trafficType.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.PhysicalNetworkServiceProvider) {
+        } else if (jobInstanceType == ApiCommandResourceType.PhysicalNetworkServiceProvider) {
             PhysicalNetworkServiceProvider sp = ApiDBUtils.findPhysicalNetworkServiceProviderById(job.getInstanceId());
             if (sp != null) {
                 jobInstanceId = sp.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.FirewallRule) {
+        } else if (jobInstanceType == ApiCommandResourceType.FirewallRule) {
             FirewallRuleVO fw = ApiDBUtils.findFirewallRuleById(job.getInstanceId());
             if (fw != null) {
                 jobInstanceId = fw.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Account) {
+        } else if (jobInstanceType == ApiCommandResourceType.Account) {
             Account acct = ApiDBUtils.findAccountById(job.getInstanceId());
             if (acct != null) {
                 jobInstanceId = acct.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.User) {
+        } else if (jobInstanceType == ApiCommandResourceType.User) {
             User usr = ApiDBUtils.findUserById(job.getInstanceId());
             if (usr != null) {
                 jobInstanceId = usr.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.StaticRoute) {
+        } else if (jobInstanceType == ApiCommandResourceType.StaticRoute) {
             StaticRouteVO route = ApiDBUtils.findStaticRouteById(job.getInstanceId());
             if (route != null) {
                 jobInstanceId = route.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.PrivateGateway) {
+        } else if (jobInstanceType == ApiCommandResourceType.PrivateGateway) {
             VpcGatewayVO gateway = ApiDBUtils.findVpcGatewayById(job.getInstanceId());
             if (gateway != null) {
                 jobInstanceId = gateway.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Counter) {
+        } else if (jobInstanceType == ApiCommandResourceType.Counter) {
             CounterVO counter = ApiDBUtils.getCounter(job.getInstanceId());
             if (counter != null) {
                 jobInstanceId = counter.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Condition) {
+        } else if (jobInstanceType == ApiCommandResourceType.Condition) {
             ConditionVO condition = ApiDBUtils.findConditionById(job.getInstanceId());
             if (condition != null) {
                 jobInstanceId = condition.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.AutoScalePolicy) {
+        } else if (jobInstanceType == ApiCommandResourceType.AutoScalePolicy) {
             AutoScalePolicyVO policy = ApiDBUtils.findAutoScalePolicyById(job.getInstanceId());
             if (policy != null) {
                 jobInstanceId = policy.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.AutoScaleVmProfile) {
+        } else if (jobInstanceType == ApiCommandResourceType.AutoScaleVmProfile) {
             AutoScaleVmProfileVO profile = ApiDBUtils.findAutoScaleVmProfileById(job.getInstanceId());
             if (profile != null) {
                 jobInstanceId = profile.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.AutoScaleVmGroup) {
+        } else if (jobInstanceType == ApiCommandResourceType.AutoScaleVmGroup) {
             AutoScaleVmGroupVO group = ApiDBUtils.findAutoScaleVmGroupById(job.getInstanceId());
             if (group != null) {
                 jobInstanceId = group.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.Network) {
+        } else if (jobInstanceType == ApiCommandResourceType.Network) {
             NetworkVO networkVO = ApiDBUtils.findNetworkById(job.getInstanceId());
             if(networkVO != null) {
                 jobInstanceId = networkVO.getUuid();
             }
-        } else if (jobInstanceType != ApiCommandJobType.None) {
+        } else if (jobInstanceType != ApiCommandResourceType.None) {
             // TODO : when we hit here, we need to add instanceType -> UUID
             // entity table mapping
             assert (false);
@@ -1769,7 +1817,11 @@ public class ApiDBUtils {
     }
 
     public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
-        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, caller);
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, null, caller);
+    }
+
+    public static UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller) {
+        return s_userVmJoinDao.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
     }
 
     public static UserVmResponse fillVmDetails(ResponseView view, UserVmResponse vmData, UserVmJoinVO vm) {
@@ -1798,6 +1850,10 @@ public class ApiDBUtils {
 
     public static ResourceTagResponse newResourceTagResponse(ResourceTagJoinVO vsg, boolean keyValueOnly) {
         return s_tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
+    }
+
+    public static ResourceIconResponse newResourceIconResponse(ResourceIcon resourceIcon) {
+        return s_resourceIconDao.newResourceIconResponse(resourceIcon);
     }
 
     public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
@@ -1891,16 +1947,8 @@ public class ApiDBUtils {
         return s_hostJoinDao.newHostResponse(vr, details);
     }
 
-    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostResponse(vrData, vr);
-    }
-
     public static HostForMigrationResponse newHostForMigrationResponse(HostJoinVO vr, EnumSet<HostDetails> details) {
         return s_hostJoinDao.newHostForMigrationResponse(vr, details);
-    }
-
-    public static HostForMigrationResponse fillHostForMigrationDetails(HostForMigrationResponse vrData, HostJoinVO vr) {
-        return s_hostJoinDao.setHostForMigrationResponse(vrData, vr);
     }
 
     public static List<HostJoinVO> newHostView(Host vr) {
@@ -2009,8 +2057,8 @@ public class ApiDBUtils {
         return s_serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
-        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities, Boolean showResourceImage) {
+        return s_dcJoinDao.newDataCenterResponse(view, dc, showCapacities, showResourceImage);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
@@ -2087,6 +2135,10 @@ public class ApiDBUtils {
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+
+    public static ResourceIconVO getResourceIconByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+        return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
     public static BackupResponse newBackupResponse(Backup backup) {

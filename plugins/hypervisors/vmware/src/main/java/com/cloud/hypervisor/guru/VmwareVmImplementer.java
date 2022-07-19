@@ -214,7 +214,7 @@ class VmwareVmImplementer {
             NicTO[] nics = to.getNics();
 
             // reserve extra NICs
-            NicTO[] expandedNics = new NicTO[nics.length + vmwareMgr.getRouterExtraPublicNics()];
+            NicTO[] expandedNics = new NicTO[nics.length];
             int i = 0;
             int deviceId = -1;
             for (i = 0; i < nics.length; i++) {
@@ -227,7 +227,7 @@ class VmwareVmImplementer {
             long networkId = publicNicProfile.getNetworkId();
             NetworkVO network = networkDao.findById(networkId);
 
-            for (; i < nics.length + vmwareMgr.getRouterExtraPublicNics(); i++) {
+            for (; i < nics.length; i++) {
                 NicTO nicTo = new NicTO();
 
                 nicTo.setDeviceId(deviceId++);

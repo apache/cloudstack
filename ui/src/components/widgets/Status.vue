@@ -16,9 +16,9 @@
 // under the License.
 
 <template>
-  <a-tooltip placement="bottom" :title="$t(getTooltip(text))">
+  <a-tooltip placement="bottom" :title="getTooltip(text)">
     <a-badge
-      style="display: inline-flex"
+      :style="getStyle()"
       :title="text"
       :color="getStatusColor(text)"
       :status="getBadgeStatus(text)"
@@ -38,39 +38,52 @@ export default {
     displayText: {
       type: Boolean,
       default: false
+    },
+    styles: {
+      type: Object,
+      default: () => {}
     }
   },
   methods: {
     getText () {
       if (this.displayText && this.text) {
         var state = this.text
-        switch (state) {
-          case 'Running':
+        switch (state.toLowerCase()) {
+          case 'running':
             state = this.$t('state.running')
             break
-          case 'Stopped':
+          case 'stopped':
             state = this.$t('state.stopped')
             break
-          case 'Starting':
+          case 'starting':
             state = this.$t('state.starting')
             break
-          case 'Stopping':
+          case 'stopping':
             state = this.$t('state.stopping')
             break
-          case 'Suspended':
+          case 'suspended':
             state = this.$t('state.suspended')
             break
-          case 'Pending':
+          case 'pending':
             state = this.$t('state.pending')
             break
-          case 'Migrating':
+          case 'migrating':
             state = this.$t('state.migrating')
             break
-          case 'Expunging':
+          case 'expunging':
             state = this.$t('state.expunging')
             break
-          case 'Error':
+          case 'error':
             state = this.$t('state.error')
+            break
+          case 'ReadOnly':
+            state = this.$t('state.readonly')
+            break
+          case 'ReadWrite':
+            state = this.$t('state.readwrite')
+            break
+          case 'InProgress':
+            state = this.$t('state.inprogress')
             break
         }
         return state.charAt(0).toUpperCase() + state.slice(1)
@@ -79,95 +92,122 @@ export default {
     },
     getBadgeStatus (state) {
       var status = 'default'
-      switch (state) {
-        case 'Active':
-        case 'BackedUp':
-        case 'Completed':
-        case 'Connected':
-        case 'Download Complete':
-        case 'Enabled':
-        case 'Implemented':
-        case 'Ready':
-        case 'Running':
-        case 'Setup':
-        case 'Started':
-        case 'Successfully Installed':
-        case 'ReadWrite':
-        case 'True':
-        case 'Up':
+      switch (state.toLowerCase()) {
+        case 'active':
+        case 'backedup':
+        case 'completed':
+        case 'connected':
+        case 'download complete':
         case 'enabled':
+        case 'implemented':
+        case 'on':
+        case 'readwrite':
+        case 'ready':
+        case 'running':
+        case 'setup':
+        case 'started':
+        case 'successfully installed':
+        case 'true':
+        case 'up':
+        case 'success':
+        case 'poweron':
           status = 'success'
           break
-        case 'Alert':
-        case 'Declined':
-        case 'Disabled':
-        case 'Disconnected':
-        case 'Down':
-        case 'Error':
-        case 'False':
-        case 'Stopped':
-        case 'ReadOnly':
+        case 'alert':
+        case 'declined':
+        case 'disabled':
+        case 'disconnected':
+        case 'down':
+        case 'error':
+        case 'false':
+        case 'off':
+        case 'readonly':
+        case 'poweroff':
+        case 'stopped':
+        case 'failed':
           status = 'error'
           break
-        case 'Migrating':
-        case 'Scaling':
-        case 'Starting':
-        case 'Stopping':
-        case 'Upgrading':
+        case 'migrating':
+        case 'scaling':
+        case 'starting':
+        case 'stopping':
+        case 'upgrading':
+        case 'inprogress':
           status = 'processing'
           break
-        case 'Allocated':
+        case 'allocated':
           if (this.$route.path.startsWith('/publicip')) {
             status = 'success'
           } else {
             status = 'warning'
           }
           break
-        case 'Created':
-        case 'Maintenance':
-        case 'Pending':
+        case 'created':
+        case 'maintenance':
+        case 'pending':
+        case 'unsecure':
+        case 'warning':
           status = 'warning'
           break
       }
       return status
     },
     getStatusColor (state) {
-      if (state === 'Scheduled') {
-        return 'blue'
+      switch (state.toLowerCase()) {
+        case 'scheduled':
+          return 'blue'
+        case 'reserved':
+          return 'orange'
+        default:
+          return null
       }
-
-      return null
     },
     getTooltip (state) {
       if (!(state && this.displayText)) {
-        return
+        return ''
       }
       if (this.$route.path === '/vmsnapshot' || this.$route.path.includes('/vmsnapshot/')) {
-        return 'message.vmsnapshot.state.' + state.toLowerCase()
+        return this.$t('message.vmsnapshot.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/vm' || this.$route.path.includes('/vm/')) {
-        return 'message.vm.state.' + state.toLowerCase()
+        return this.$t('message.vm.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/volume' || this.$route.path.includes('/volume/')) {
-        return 'message.volume.state.' + state.toLowerCase()
+        return this.$t('message.volume.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-        return 'message.guestnetwork.state.' + state.toLowerCase()
+        return this.$t('message.guestnetwork.state.' + state.toLowerCase())
       }
       if (this.$route.path === '/publicip' || this.$route.path.includes('/publicip/')) {
-        return 'message.publicip.state.' + state.toLowerCase()
+        return this.$t('message.publicip.state.' + state.toLowerCase())
       }
       // Nothing for snapshots, vpcs, gateways, vnpnconn, vpnuser, kubectl, event, project, account, infra. They're all self explanatory
-      return state
+      return this.$t(state)
+    },
+    getStyle () {
+      let styles = { display: 'inline-flex' }
+      if (this.styles && typeof this.styles === 'object') {
+        styles = Object.assign({}, styles, this.styles)
+      }
+
+      return styles
     }
   }
 }
 </script>
 
-<style scoped>
-/deep/ .ant-badge-status-dot {
+<style scoped lang="less">
+:deep(.ant-badge-status-dot) {
   width: 12px;
   height: 12px;
   margin-top: 5px;
+}
+
+.status {
+  margin-top: -5px;
+
+  &--end {
+    margin-left: 5px;
+  }
 }
 </style>

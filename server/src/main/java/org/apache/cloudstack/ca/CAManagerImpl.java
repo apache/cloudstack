@@ -72,7 +72,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 public class CAManagerImpl extends ManagerBase implements CAManager {
     public static final Logger LOG = Logger.getLogger(CAManagerImpl.class);
@@ -107,7 +107,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     }
 
     private CAProvider getCAProvider(final String provider) {
-        if (Strings.isNullOrEmpty(provider)) {
+        if (StringUtils.isEmpty(provider)) {
             return getConfiguredCaProvider();
         }
         final String caProviderName = provider.toLowerCase();
@@ -155,7 +155,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (validityDuration != null) {
             validity = validityDuration;
         }
-        if (Strings.isNullOrEmpty(csr)) {
+        if (StringUtils.isEmpty(csr)) {
             if (domainNames == null || domainNames.isEmpty()) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "No domains or CSR provided");
             }
@@ -184,11 +184,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         }
         CallContext.current().setEventDetails("host id: " + host.getId());
         CallContext.current().putContextParameter(Host.class, host.getUuid());
-        final String csr;
+        String csr = null;
+
         try {
-            csr = generateKeyStoreAndCsr(host, null);
-            if (Strings.isNullOrEmpty(csr)) {
-                return false;
+            if (host.getType() != Host.Type.ConsoleProxy && host.getType() != Host.Type.SecondaryStorageVM) {
+                csr = generateKeyStoreAndCsr(host, null);
+                if (StringUtils.isEmpty(csr)) {
+                    return false;
+                }
             }
             final Certificate certificate = issueCertificate(csr, Arrays.asList(host.getName(), host.getPrivateIpAddress()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
@@ -207,6 +210,11 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         CallContext.current().setEventDetails("generating keystore and CSR for host id: " + host.getId());
         final SetupKeystoreAnswer answer = (SetupKeystoreAnswer)agentManager.send(host.getId(), cmd);
         return answer.getCsr();
+    }
+
+    private boolean isValidSystemVMType(Host.Type type) {
+        return Host.Type.SecondaryStorageVM.equals(type) ||
+                Host.Type.ConsoleProxy.equals(type);
     }
 
     @Override
@@ -247,10 +255,10 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         final String privateAddress = host.getPrivateIpAddress();
         final String publicAddress = host.getPublicIpAddress();
         final Map<String, X509Certificate> activeCertsMap = getActiveCertificatesMap();
-        if (!Strings.isNullOrEmpty(privateAddress) && activeCertsMap.containsKey(privateAddress)) {
+        if (StringUtils.isNotEmpty(privateAddress) && activeCertsMap.containsKey(privateAddress)) {
             activeCertsMap.remove(privateAddress);
         }
-        if (!Strings.isNullOrEmpty(publicAddress) && activeCertsMap.containsKey(publicAddress)) {
+        if (StringUtils.isNotEmpty(publicAddress) && activeCertsMap.containsKey(publicAddress)) {
             activeCertsMap.remove(publicAddress);
         }
     }
@@ -268,7 +276,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (sslContext == null) {
             throw new CloudRuntimeException("SSLContext provided to create SSLEngine is null, aborting");
         }
-        if (Strings.isNullOrEmpty(remoteAddress)) {
+        if (StringUtils.isEmpty(remoteAddress)) {
             throw new CloudRuntimeException("Remote client address connecting to mgmt server cannot be empty/null");
         }
         return getConfiguredCaProvider().createSSLEngine(sslContext, remoteAddress, getActiveCertificatesMap());

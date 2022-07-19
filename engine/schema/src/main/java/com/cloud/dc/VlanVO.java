@@ -118,9 +118,17 @@ public class VlanVO implements Vlan {
         return vlanGateway;
     }
 
+    public void setVlanGateway(String vlanGateway) {
+        this.vlanGateway = vlanGateway;
+    }
+
     @Override
     public String getVlanNetmask() {
         return vlanNetmask;
+    }
+
+    public void setVlanNetmask(String vlanNetmask) {
+        this.vlanNetmask = vlanNetmask;
     }
 
     @Override
@@ -197,8 +205,8 @@ public class VlanVO implements Vlan {
                     .append("|")
                     .append(ipRange)
                     .append("|")
-                    .append("|")
                     .append(ip6Range)
+                    .append("|")
                     .append(networkId)
                     .append("]")
                     .toString();
@@ -234,6 +242,6 @@ public class VlanVO implements Vlan {
     }
 
     public void setIpRange(String ipRange) {
-        this.ip6Range = ipRange;
+        this.ipRange = ipRange;
     }
 }

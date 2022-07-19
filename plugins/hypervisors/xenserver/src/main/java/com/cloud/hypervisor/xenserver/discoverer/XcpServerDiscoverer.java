@@ -31,7 +31,9 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.AgentManager;
@@ -84,6 +86,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.QueryBuilder;
@@ -118,8 +121,18 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     private HostPodDao _podDao;
 
-    private String xenServerIsoName = "xs-tools.iso";
+    private String xenServerIsoName = TemplateManager.XS_TOOLS_ISO;
     private String xenServerIsoDisplayText = "XenServer Tools Installer ISO (xen-pv-drv-iso)";
+
+    public final static String MIN_UEFI_SUPPORTED_VERSION = "8.2";
+
+    public static boolean isUefiSupported(String hostProductVersion) {
+        if (StringUtils.isEmpty(hostProductVersion)) {
+            return false;
+        }
+        ComparableVersion version = new ComparableVersion(hostProductVersion);
+        return version.compareTo(new ComparableVersion(MIN_UEFI_SUPPORTED_VERSION)) >= 0;
+    }
 
     protected XcpServerDiscoverer() {
     }

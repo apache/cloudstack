@@ -71,9 +71,9 @@ class DeployDataCenters(object):
                 ts = strftime("%b_%d_%Y_%H_%M_%S", localtime())
                 dc_file_path = "dc_entries_" + str(ts) + ".obj"
 
-            file_to_write = open(dc_file_path, 'w')
+            file_to_write = open(dc_file_path, 'wb')
             if file_to_write:
-                pickle.dump(self.__cleanUp, file_to_write)
+                pickle.dump(self.__cleanUp, file_to_write, protocol=0)
                 print("\n=== Data Center Settings are dumped to %s===" % dc_file_path)
                 self.__tcRunLogger.debug("\n=== Data Center Settings are dumped to %s===" % dc_file_path)
         except Exception as e:
@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
             2. Removes a created DataCenter by providing
             the input configuration file and data center settings file
               EX: python deployDataCenter.py -i <inp-cfg-file>
-              -r <dc_exported_entries> [-l <directory with logs and output data location>] 
+              -r <dc_exported_entries> [-l <directory with logs and output data location>]
     '''
     parser = OptionParser()
     parser.add_option("-i", "--input", action="store", default=None, dest="input",

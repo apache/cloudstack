@@ -61,6 +61,12 @@ public class EventVO implements Event {
     @Column(name = "domain_id")
     private long domainId;
 
+    @Column(name = "resource_id")
+    private long resourceId;
+
+    @Column(name = "resource_type")
+    private String resourceType;
+
     @Column(name = "level")
     private String level = LEVEL_INFO;
 
@@ -159,6 +165,24 @@ public class EventVO implements Event {
     }
 
     @Override
+    public Long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    @Override
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    @Override
     public int getTotalSize() {
         return totalSize;
     }
@@ -223,5 +247,10 @@ public class EventVO implements Event {
     @Override
     public Class<?> getEntityType() {
         return Event.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 }

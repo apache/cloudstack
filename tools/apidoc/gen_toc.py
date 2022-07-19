@@ -95,7 +95,7 @@ known_categories = {
     'StorageMaintenance': 'Storage Pool',
     'StoragePool': 'Storage Pool',
     'StorageProvider': 'Storage Pool',
-    'syncStoragePool': 'Storage Pool',
+    'updateStorageCapabilities' : 'Storage Pool',
     'SecurityGroup': 'Security Group',
     'SSH': 'SSH',
     'register': 'Registration',
@@ -136,6 +136,7 @@ known_categories = {
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',
+    'Icon': 'Resource Icon',
     'NiciraNvpDevice': 'Nicira NVP',
     'BrocadeVcsDevice': 'Brocade VCS',
     'BigSwitchBcfDevice': 'BigSwitch BCF',
@@ -185,6 +186,7 @@ known_categories = {
     'listAnnotations' : 'Annotations',
     'addAnnotation' : 'Annotations',
     'removeAnnotation' : 'Annotations',
+    'updateAnnotationVisibility' : 'Annotations',
     'CA': 'Certificate',
     'listElastistorInterface': 'Misc',
     'cloudian': 'Cloudian',
@@ -232,6 +234,7 @@ for f in sys.argv:
             dom = minidom.parse(data)
         name = dom.getElementsByTagName('name')[0].firstChild.data
         isAsync = dom.getElementsByTagName('isAsync')[0].firstChild.data
+        isDeprecated = dom.getElementsByTagName('isDeprecated')[0].firstChild.data
         category = choose_category(fn)
         if category not in categories:
             categories[category] = []
@@ -239,6 +242,7 @@ for f in sys.argv:
             'name': name,
             'dirname': dirname_to_dirname[dirname],
             'async': isAsync == 'true',
+            'deprecated': isDeprecated == 'true',
             'user': dirname_to_user[dirname],
             })
     except ExpatError as e:
@@ -250,9 +254,10 @@ for f in sys.argv:
 def xml_for(command):
     name = command['name']
     isAsync = command['async'] and ' (A)' or ''
+    isDeprecated = command['deprecated'] and ' (D)' or ''
     dirname = command['dirname']
     return '''<xsl:if test="name=\'%(name)s\'">
-<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s</a></li>
+<li><a href="%(dirname)s/%(name)s.html"><xsl:value-of select="name"/>%(isAsync)s %(isDeprecated)s</a></li>
 </xsl:if>
 ''' % locals()
 

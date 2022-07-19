@@ -25,6 +25,8 @@ import com.cloud.kubernetes.version.KubernetesSupportedVersion;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
+
 @SuppressWarnings("unused")
 @EntityReference(value = {KubernetesSupportedVersion.class})
 public class KubernetesSupportedVersionResponse extends BaseResponse {
@@ -64,6 +66,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @Param(description = "whether Kubernetes supported version supports HA, multi-control nodes")
     private Boolean supportsHA;
 
+    @SerializedName(ApiConstants.SUPPORTS_AUTOSCALING)
+    @Param(description = "whether Kubernetes supported version supports Autoscaling")
+    private Boolean supportsAutoscaling;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the enabled or disabled state of the Kubernetes supported version")
     private String state;
@@ -75,6 +81,10 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
     @SerializedName(ApiConstants.MIN_MEMORY)
     @Param(description = "the minimum RAM size in MB needed for the Kubernetes supported version")
     private Integer minimumRamSize;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "the date when this Kubernetes supported version was created")
+    private Date created;
 
     public String getId() {
         return id;
@@ -170,5 +180,17 @@ public class KubernetesSupportedVersionResponse extends BaseResponse {
 
     public void setMinimumRamSize(Integer minimumRamSize) {
         this.minimumRamSize = minimumRamSize;
+    }
+
+    public Boolean getSupportsAutoscaling() {
+        return supportsAutoscaling;
+    }
+
+    public void setSupportsAutoscaling(Boolean supportsAutoscaling) {
+        this.supportsAutoscaling = supportsAutoscaling;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

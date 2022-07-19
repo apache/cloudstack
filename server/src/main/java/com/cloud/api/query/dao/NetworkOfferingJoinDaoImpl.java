@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.log4j.Logger;
 
@@ -27,6 +28,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.net.NetUtils;
 
 public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJoinVO, Long> implements NetworkOfferingJoinDao {
     public static final Logger s_logger = Logger.getLogger(NetworkOfferingJoinDaoImpl.class);
@@ -88,15 +90,22 @@ public class NetworkOfferingJoinDaoImpl extends GenericDaoBase<NetworkOfferingJo
         networkOfferingResponse.setConcurrentConnections(offering.getConcurrentConnections());
         networkOfferingResponse.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
         networkOfferingResponse.setSupportsPublicAccess(offering.isSupportingPublicAccess());
+        networkOfferingResponse.setCreated(offering.getCreated());
         if (offering.getGuestType() != null) {
             networkOfferingResponse.setGuestIpType(offering.getGuestType().toString());
         }
         networkOfferingResponse.setState(offering.getState().name());
         if (offering instanceof NetworkOfferingJoinVO) {
-            networkOfferingResponse.setDomainId(((NetworkOfferingJoinVO) offering).getDomainUuid());
-            networkOfferingResponse.setDomain(((NetworkOfferingJoinVO) offering).getDomainPath());
-            networkOfferingResponse.setZoneId(((NetworkOfferingJoinVO) offering).getZoneUuid());
-            networkOfferingResponse.setZone(((NetworkOfferingJoinVO) offering).getZoneName());
+            NetworkOfferingJoinVO networkOfferingJoinVO = (NetworkOfferingJoinVO)offering;
+            networkOfferingResponse.setDomainId(networkOfferingJoinVO.getDomainUuid());
+            networkOfferingResponse.setDomain(networkOfferingJoinVO.getDomainPath());
+            networkOfferingResponse.setZoneId(networkOfferingJoinVO.getZoneUuid());
+            networkOfferingResponse.setZone(networkOfferingJoinVO.getZoneName());
+            String protocol = networkOfferingJoinVO.getInternetProtocol();
+            if (StringUtils.isEmpty(protocol)) {
+                protocol = NetUtils.InternetProtocol.IPv4.toString();
+            }
+            networkOfferingResponse.setInternetProtocol(protocol);
         }
         networkOfferingResponse.setObjectName("networkoffering");
 

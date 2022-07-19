@@ -85,7 +85,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
 
         QuotaAccountVO acc = new QuotaAccountVO(2L);
@@ -123,7 +123,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         AccountVO account = new AccountVO();
         account.setId(2L);
         account.setDomainId(1L);
-        account.setType(Account.ACCOUNT_TYPE_NORMAL);
+        account.setType(Account.Type.NORMAL);
         account.setAccountName("admin");
         account.setUuid("uuid");
 
@@ -157,11 +157,12 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
 
         quotaAlertManager.mailSender = Mockito.mock(SMTPMailSender.class);
-        Mockito.when(quotaAlertManager.mailSender.sendMail(Mockito.anyObject())).thenReturn(Boolean.TRUE);
+        Mockito.doNothing().when(quotaAlertManager.mailSender).sendMail(Mockito.any());
 
         quotaAlertManager.sendQuotaAlert(email);
         assertTrue(email.getSendDate() != null);
-        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
+
+        Mockito.verify(quotaAlertManager, Mockito.times(1)).sendQuotaAlert(Mockito.anyString(), Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
         Mockito.verify(quotaAlertManager.mailSender, Mockito.times(1)).sendMail(Mockito.any(SMTPMailProperties.class));
     }
 
@@ -181,8 +182,8 @@ public class QuotaAlertManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
-        accountVO.setState(Account.State.enabled);
+        accountVO.setType(Account.Type.NORMAL);
+        accountVO.setState(Account.State.ENABLED);
         Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountVO);
         Mockito.when(accountDao.createForUpdate()).thenReturn(accountVO);
         Mockito.when(accountDao.update(Mockito.eq(accountVO.getId()), Mockito.eq(accountVO))).thenReturn(true);

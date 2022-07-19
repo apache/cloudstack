@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -103,6 +105,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     VpcManager _vpcMgr;
     @Inject
     AccountManager _accountMgr;
+    @Inject
+    private AnnotationDao annotationDao;
 
     String _name;
     int _connLimit;
@@ -244,7 +248,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         Site2SiteCustomerGatewayVO gw =
             new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, peerCidrList, ipsecPsk, ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd, encap, splitConnections, ikeVersion);
-        _customerGatewayDao.persist(gw);
+        gw = _customerGatewayDao.persist(gw);
+        CallContext.current().putContextParameter(Site2SiteCustomerGateway.class, gw.getUuid());
         return gw;
     }
 
@@ -347,7 +352,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 if (conn.isPassive()) {
                     conn.setState(State.Disconnected);
                 } else {
-                    conn.setState(State.Connected);
+                    conn.setState(State.Connecting);
                 }
                 _vpnConnectionDao.persist(conn);
                 return conn;
@@ -363,6 +368,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
     @Override
     public Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId) {
         return _vpnGatewayDao.findById(vpnGatewayId);
+    }
+
+    @Override
+    public Site2SiteCustomerGateway getCustomerGateway(Long customerGatewayId) {
+        return _customerGatewayDao.findById(customerGatewayId);
     }
 
     @Override
@@ -387,6 +397,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (vpnConnections != null && vpnConnections.size() != 0) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
+        annotationDao.removeByEntityType(AnnotationService.EntityType.VPN_CUSTOMER_GATEWAY.name(), gw.getUuid());
         _customerGatewayDao.remove(id);
         return true;
     }
@@ -530,7 +541,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                     continue;
                 }
                 try {
-                    if (conn.getState() == State.Connected || conn.getState() == State.Error) {
+                    if (conn.getState() == State.Connected || conn.getState() == State.Connecting || conn.getState() == State.Error) {
                         stopVpnConnection(conn.getId());
                     }
                     startVpnConnection(conn.getId());
@@ -605,12 +616,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         }
         _accountMgr.checkAccess(caller, null, false, conn);
 
-        if (conn.getState() == State.Pending) {
-            conn.setState(State.Disconnected);
-        }
-        if (conn.getState() == State.Connected || conn.getState() == State.Error || conn.getState() == State.Disconnected) {
-            stopVpnConnection(id);
-        }
+        // Set vpn state to disconnected
+        conn.setState(State.Disconnected);
+        _vpnConnectionDao.persist(conn);
+
+        // Stop and start the connection again
+        stopVpnConnection(id);
         startVpnConnection(id);
         conn = _vpnConnectionDao.findById(id);
         return conn;
@@ -795,7 +806,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 throw new CloudRuntimeException("Unable to acquire lock on " + conn);
             }
             try {
-                if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
+                if (conn.getState() == Site2SiteVpnConnection.State.Connected || conn.getState() == Site2SiteVpnConnection.State.Connecting) {
                     conn.setState(Site2SiteVpnConnection.State.Disconnected);
                     _vpnConnectionDao.persist(conn);
                 }

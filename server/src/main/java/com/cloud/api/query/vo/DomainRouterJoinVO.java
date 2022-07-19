@@ -31,6 +31,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -56,7 +57,8 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -249,6 +251,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Enumerated(value = EnumType.STRING)
     private VirtualRouter.Role role;
 
+    @Column(name = "software_version")
+    private String softwareVersion;
+
     public DomainRouterJoinVO() {
     }
 
@@ -282,7 +287,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -531,5 +536,9 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Override
     public Class<?> getEntityType() {
         return VirtualMachine.class;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
     }
 }

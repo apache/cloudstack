@@ -26,18 +26,18 @@
         <DetailsTab :resource="resource" :loading="loading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.access')" key="access">
-        <a-card :title="$t('label.kubeconfig.cluster')" :loading="this.versionLoading">
-          <div v-if="this.clusterConfig !== ''">
-            <a-textarea :value="this.clusterConfig" :rows="5" readonly />
+        <a-card :title="$t('label.kubeconfig.cluster')" :loading="versionLoading">
+          <div v-if="clusterConfig !== ''">
+            <a-textarea :value="clusterConfig" :rows="5" readonly />
             <div :span="24" class="action-button">
-              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ this.$t('label.download.kubernetes.cluster.config') }}</a-button>
+              <a-button @click="downloadKubernetesClusterConfig" type="primary">{{ $t('label.download.kubernetes.cluster.config') }}</a-button>
             </div>
           </div>
           <div v-else>
             <p>{{ $t('message.kubeconfig.cluster.not.available') }}</p>
           </div>
         </a-card>
-        <a-card :title="$t('label.using.cli')" :loading="this.versionLoading">
+        <a-card :title="$t('label.using.cli')" :loading="versionLoading">
           <a-timeline>
             <a-timeline-item>
               <p v-html="$t('label.download.kubeconfig.cluster')">
@@ -46,9 +46,9 @@
             <a-timeline-item>
               <p v-html="$t('label.download.kubectl')"></p>
               <p>
-                {{ $t('label.linux') }}: <a :href="this.kubectlLinuxLink">{{ this.kubectlLinuxLink }}</a><br>
-                {{ $t('label.macos') }}: <a :href="this.kubectlMacLink">{{ this.kubectlMacLink }}</a><br>
-                {{ $t('label.windows') }}: <a :href="this.kubectlWindowsLink">{{ this.kubectlWindowsLink }}</a>
+                {{ $t('label.linux') }}: <a :href="kubectlLinuxLink">{{ kubectlLinuxLink }}</a><br>
+                {{ $t('label.macos') }}: <a :href="kubectlMacLink">{{ kubectlMacLink }}</a><br>
+                {{ $t('label.windows') }}: <a :href="kubectlWindowsLink">{{ kubectlWindowsLink }}</a>
               </p>
             </a-timeline-item>
             <a-timeline-item>
@@ -88,35 +88,65 @@
           </a-timeline>
           <p>{{ $t('label.more.access.dashboard.ui') }}, <a href="https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui">https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/#accessing-the-dashboard-ui</a></p>
         </a-card>
+        <a-card :title="$t('label.acess.kubernetes.nodes')">
+          <p v-html="$t('label.kubernetes.access.details')"></p>
+        </a-card>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.instances')" key="instances">
         <a-table
           class="table"
           size="small"
-          :columns="this.vmColumns"
-          :dataSource="this.virtualmachines"
+          :columns="vmColumns"
+          :dataSource="virtualmachines"
           :rowKey="item => item.id"
           :pagination="false"
         >
-          <template slot="name" slot-scope="text, record">
+          <template #name="{ text, record }" :name="text">
             <router-link :to="{ path: '/vm/' + record.id }">{{ record.name }}</router-link>
           </template>
-          <template slot="state" slot-scope="text">
+          <template #state="{ text }">
             <status :text="text ? text : ''" displayText />
           </template>
-          <template slot="port" slot-scope="text, record, index">
+          <template #port="{ text, record, index }" :name="text" :record="record">
             {{ cksSshStartingPort + index }}
+          </template>
+          <template #action="{record}">
+            <a-tooltip placement="bottom" >
+              <template #title>
+                {{ $t('label.action.delete.node') }}
+              </template>
+              <a-popconfirm
+                :title="$t('message.action.delete.node')"
+                @confirm="deleteNode(record)"
+                :okText="$t('label.yes')"
+                :cancelText="$t('label.no')"
+                :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled"
+              >
+                <a-button
+                  type="danger"
+                  shape="circle"
+                  :disabled="!['Created', 'Running'].includes(resource.state) || resource.autoscalingenabled">
+                  <template #icon><delete-outlined /></template>
+                </a-button>
+              </a-popconfirm>
+            </a-tooltip>
           </template>
         </a-table>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.firewall')" key="firewall" v-if="publicIpAddress">
-        <FirewallRules :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <FirewallRules :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.portforwarding')" key="portforwarding" v-if="publicIpAddress">
-        <PortForwarding :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <PortForwarding :resource="publicIpAddress" :loading="networkLoading" />
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.loadbalancing')" key="loadbalancing" v-if="publicIpAddress">
-        <LoadBalancing :resource="this.publicIpAddress" :loading="this.networkLoading" />
+        <LoadBalancing :resource="publicIpAddress" :loading="networkLoading" />
+      </a-tab-pane>
+      <a-tab-pane :tab="$t('label.annotations')" key="comments" v-if="'listAnnotations' in $store.getters.apis">
+        <AnnotationsTab
+          :resource="resource"
+          :items="annotations">
+        </AnnotationsTab>
       </a-tab-pane>
     </a-tabs>
   </a-spin>
@@ -124,12 +154,14 @@
 
 <script>
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import FirewallRules from '@/views/network/FirewallRules'
 import PortForwarding from '@/views/network/PortForwarding'
 import LoadBalancing from '@/views/network/LoadBalancing'
 import Status from '@/components/widgets/Status'
+import AnnotationsTab from '@/components/view/AnnotationsTab'
 
 export default {
   name: 'KubernetesServiceTab',
@@ -138,9 +170,11 @@ export default {
     FirewallRules,
     PortForwarding,
     LoadBalancing,
-    Status
+    Status,
+    AnnotationsTab
   },
   mixins: [mixinDevice],
+  inject: ['parentFetchData'],
   props: {
     resource: {
       type: Object,
@@ -167,7 +201,8 @@ export default {
       network: {},
       publicIpAddress: {},
       currentTab: 'details',
-      cksSshStartingPort: 2222
+      cksSshStartingPort: 2222,
+      annotations: []
     }
   },
   created () {
@@ -175,12 +210,12 @@ export default {
       {
         title: this.$t('label.name'),
         dataIndex: 'name',
-        scopedSlots: { customRender: 'name' }
+        slots: { customRender: 'name' }
       },
       {
         title: this.$t('label.state'),
         dataIndex: 'state',
-        scopedSlots: { customRender: 'state' }
+        slots: { customRender: 'state' }
       },
       {
         title: this.$t('label.instancename'),
@@ -193,34 +228,49 @@ export default {
       {
         title: this.$t('label.ssh.port'),
         dataIndex: 'port',
-        scopedSlots: { customRender: 'port' }
+        slots: { customRender: 'port' }
       },
       {
         title: this.$t('label.zonename'),
         dataIndex: 'zonename'
       }
     ]
-    if (!this.isAdmin()) {
+    if (!isAdmin()) {
       this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'instancename')
     }
     this.handleFetchData()
+    const self = this
+    window.addEventListener('popstate', function () {
+      self.setCurrentTab()
+    })
   },
   watch: {
-    resource (newData, oldData) {
-      if (newData && newData !== oldData) {
-        this.handleFetchData()
-        if (this.resource.ipaddress) {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
-        } else {
-          this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+    resource: {
+      deep: true,
+      handler (newData, oldData) {
+        if (newData && newData !== oldData) {
+          this.handleFetchData()
+          if (this.resource.ipaddress) {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'ipaddress')
+          } else {
+            this.vmColumns = this.vmColumns.filter(x => x.dataIndex !== 'port')
+          }
         }
       }
     },
-    $route: function (newItem, oldItem) {
+    '$route.fullPath': function () {
       this.setCurrentTab()
     }
   },
   mounted () {
+    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0) {
+      this.vmColumns.push({
+        title: this.$t('label.action'),
+        dataIndex: 'action',
+        slots: { customRender: 'action' }
+      })
+    }
+    this.handleFetchData()
     this.setCurrentTab()
   },
   methods: {
@@ -231,7 +281,7 @@ export default {
       this.currentTab = e
       const query = Object.assign({}, this.$route.query)
       query.tab = e
-      history.replaceState(
+      history.pushState(
         {},
         null,
         '#' + this.$route.path + '?' + Object.keys(query).map(key => {
@@ -240,12 +290,6 @@ export default {
           )
         }).join('&')
       )
-    },
-    isAdmin () {
-      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
-    },
-    isAdminOrDomainAdmin () {
-      return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
@@ -261,6 +305,19 @@ export default {
       this.fetchKubernetesVersion()
       this.fetchInstances()
       this.fetchPublicIpAddress()
+      this.fetchComments()
+    },
+    fetchComments () {
+      this.clusterConfigLoading = true
+      api('listAnnotations', { entityid: this.resource.id, entitytype: 'KUBERNETES_CLUSTER', annotationfilter: 'all' }).then(json => {
+        if (json.listannotationsresponse?.annotation) {
+          this.annotations = json.listannotationsresponse.annotation
+        }
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.clusterConfigLoading = false
+      })
     },
     fetchKubernetesClusterConfig () {
       this.clusterConfigLoading = true
@@ -359,6 +416,35 @@ export default {
         elem.click()
         document.body.removeChild(elem)
       }
+    },
+    deleteNode (node) {
+      const params = {
+        id: this.resource.id,
+        nodeids: node.id
+      }
+      api('scaleKubernetesCluster', params).then(json => {
+        const jobId = json.scalekubernetesclusterresponse.jobid
+        console.log(jobId)
+        this.$store.dispatch('AddAsyncJob', {
+          title: this.$t('label.action.delete.node'),
+          jobid: jobId,
+          description: node.name,
+          status: 'progress'
+        })
+        this.$pollJob({
+          jobId,
+          loadingMessage: `${this.$t('message.deleting.node')} ${node.name}`,
+          catchMessage: this.$t('error.fetching.async.job.result'),
+          successMessage: `${this.$t('message.success.delete.node')} ${node.name}`,
+          successMethod: () => {
+            this.parentFetchData()
+          }
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.parentFetchData()
+      })
     }
   }
 }
@@ -397,14 +483,5 @@ export default {
   .table {
     margin-top: 20px;
     overflow-y: auto;
-  }
-
-  .action-button {
-    margin-top: 10px;
-    text-align: right;
-
-    button {
-      margin-right: 5px;
-    }
   }
 </style>

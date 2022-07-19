@@ -17,8 +17,8 @@
 
 <template>
   <a-spin :spinning="componentLoading">
-    <div class="new-route">
-      <a-input v-model="newRoute" icon="plus" :placeholder="$t('label.cidr.destination.network')" autoFocus></a-input>
+    <div class="new-route" v-ctrl-enter="handleAdd">
+      <a-input v-model:value="newRoute" :placeholder="$t('label.cidr.destination.network')" v-focus="true"></a-input>
       <a-button type="primary" :disabled="!('createStaticRoute' in $store.getters.apis)" @click="handleAdd">{{ $t('label.add.route') }}</a-button>
     </div>
 
@@ -29,39 +29,51 @@
           <div>{{ route.cidr }}</div>
         </div>
         <div class="actions">
-          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag" @click="() => openTagsModal(route)" />
-          <tooltip-button :tooltip="$t('label.delete')" :disabled="!('deleteStaticRoute' in $store.getters.apis)" icon="delete" type="danger" @click="() => handleDelete(route)" />
+          <tooltip-button :tooltip="$t('label.edit.tags')" icon="tag-outlined" @onClick="() => openTagsModal(route)" />
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteStaticRoute' in $store.getters.apis)"
+            icon="delete-outlined"
+            type="primary"
+            :danger="true"
+            @onClick="() => handleDelete(route)" />
         </div>
       </div>
     </div>
 
-    <a-modal title="Edit Tags" v-model="tagsModalVisible" :footer="null" :maskClosable="false">
+    <a-modal
+      :title="$t('label.edit.tags')"
+      :visible="tagsModalVisible"
+      :footer="null"
+      :closable="true"
+      :maskClosable="false"
+      @cancel="tagsModalVisible = false">
       <a-spin v-if="tagsLoading"></a-spin>
 
-      <div v-else>
-        <a-form :form="newTagsForm" class="add-tags" @submit="handleAddTag">
+      <div v-else v-ctrl-enter="handleAddTag">
+        <a-form :ref="formRef" :model="form" :rules="rules" class="add-tags">
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.key') }}</p>
-            <a-form-item>
+            <a-form-item name="key" ref="key">
               <a-input
-                autoFocus
-                v-decorator="['key', { rules: [{ required: true, message: this.$t('message.specifiy.tag.key')}] }]" />
+                v-focus="true"
+                v-model:value="form.key" />
             </a-form-item>
           </div>
           <div class="add-tags__input">
             <p class="add-tags__label">{{ $t('label.value') }}</p>
-            <a-form-item>
-              <a-input v-decorator="['value', { rules: [{ required: true, message: this.$t('message.specifiy.tag.value')}] }]" />
+            <a-form-item name="value" ref="value">
+              <a-input v-model:value="form.value" />
             </a-form-item>
           </div>
-          <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" html-type="submit">{{ $t('label.add') }}</a-button>
+          <a-button type="primary" :disabled="!('createTags' in $store.getters.apis)" @click="handleAddTag">{{ $t('label.add') }}</a-button>
         </a-form>
 
-        <a-divider style="margin-top: 0;"></a-divider>
+        <a-divider style="margin-top: 0;" />
 
         <div class="tags-container">
           <div class="tags" v-for="(tag, index) in tags" :key="index">
-            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" :afterClose="() => handleDeleteTag(tag)">
+            <a-tag :key="index" :closable="'deleteTags' in $store.getters.apis" @close="() => handleDeleteTag(tag)">
               {{ tag.key }} = {{ tag.value }}
             </a-tag>
           </div>
@@ -75,8 +87,9 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'StaticRoutesTab',
@@ -99,13 +112,13 @@ export default {
       componentLoading: false,
       selectedRule: null,
       tagsModalVisible: false,
-      newTagsForm: this.$form.createForm(this),
       tags: [],
       tagsLoading: false,
       newRoute: null
     }
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   watch: {
@@ -116,9 +129,22 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        start: true
+      })
+      this.rules = reactive({
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
+      })
+    },
     fetchData () {
       this.componentLoading = true
-      api('listStaticRoutes', { gatewayid: this.resource.id }).then(json => {
+      api('listStaticRoutes', {
+        gatewayid: this.resource.id,
+        listall: true
+      }).then(json => {
         this.routes = json.liststaticroutesresponse.staticroute
       }).catch(error => {
         this.$notifyError(error)
@@ -127,6 +153,7 @@ export default {
       })
     },
     handleAdd () {
+      if (this.componentLoading) return
       if (!this.newRoute) return
 
       this.componentLoading = true
@@ -136,13 +163,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.createstaticrouteresponse.jobid,
+          title: this.$t('message.success.add.static.route'),
+          description: this.newRoute,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.add.static.route'),
-              jobid: response.createstaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
             this.newRoute = null
           },
@@ -171,13 +195,10 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.deletestaticrouteresponse.jobid,
+          title: this.$t('message.success.delete.static.route'),
+          description: route.id,
           successMethod: () => {
             this.fetchData()
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.success.delete.static.route'),
-              jobid: response.deletestaticrouteresponse.jobid,
-              status: 'progress'
-            })
             this.componentLoading = false
           },
           errorMessage: this.$t('message.delete.static.route.failed'),
@@ -242,14 +263,11 @@ export default {
       })
     },
     handleAddTag (e) {
+      if (this.tagsLoading) return
       this.tagsLoading = true
 
-      e.preventDefault()
-      this.newTagsForm.validateFields((err, values) => {
-        if (err) {
-          this.tagsLoading = false
-          return
-        }
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -279,12 +297,14 @@ export default {
         }).catch(error => {
           this.$notifyError(error)
           this.tagsLoading = false
-        })
+        }).finally(() => { this.tagsLoading = false })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     openTagsModal (route) {
       this.selectedRule = route
-      this.newTagsForm.resetFields()
+      this.rulesRef.value.resetFields()
       this.fetchTags(this.selectedRule)
       this.tagsModalVisible = true
     }

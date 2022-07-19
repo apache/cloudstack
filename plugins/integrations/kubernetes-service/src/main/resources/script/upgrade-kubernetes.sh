@@ -37,6 +37,9 @@ if [ $# -gt 3 ]; then
 fi
 
 export PATH=$PATH:/opt/bin
+if [[ "$PATH" != *:/usr/sbin && "$PATH" != *:/usr/sbin:* ]]; then
+  export PATH=$PATH:/usr/sbin
+fi
 
 ISO_MOUNT_DIR=/mnt/k8sdisk
 BINARIES_DIR=${ISO_MOUNT_DIR}/
@@ -93,41 +96,63 @@ if [ -d "$BINARIES_DIR" ]; then
   output=`ls ${BINARIES_DIR}/docker/`
   if [ "$output" != "" ]; then
     while read -r line; do
-        docker load < "${BINARIES_DIR}/docker/$line"
+        ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
     done <<< "$output"
   fi
+  if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+    mkdir -p /opt/provider
+    cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+  fi
 
-  tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
-  tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
+  # Fetch the autoscaler if present
+  if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+    mkdir -p /opt/autoscaler
+    cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+  fi
+
+  PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+  echo $PAUSE_IMAGE
+  if [ -n "$PAUSE_IMAGE" ]; then
+    sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+  fi
+
+  tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
+  tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
     set +e
-    kubeadm upgrade apply ${UPGRADE_VERSION} -y
+    kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} -y
     retval=$?
     set -e
     if [ $retval -ne 0 ]; then
-      kubeadm upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
+      kubeadm --v=5 upgrade apply ${UPGRADE_VERSION} --ignore-preflight-errors=CoreDNSUnsupportedPlugins -y
     fi
   else
     if [ "${IS_OLD_VERSION}" == 'true' ]; then
-      kubeadm upgrade node config --kubelet-version ${UPGRADE_VERSION}
+      kubeadm --v=5 upgrade node config --kubelet-version ${UPGRADE_VERSION}
     else
-      kubeadm upgrade node
+      kubeadm --v=5 upgrade node
     fi
   fi
 
   systemctl stop kubelet
   cp -a ${BINARIES_DIR}/k8s/{kubelet,kubectl} /opt/bin
   chmod +x {kubelet,kubectl}
+
+  systemctl daemon-reload
+  systemctl restart containerd
   systemctl restart kubelet
 
   if [ "${IS_MAIN_CONTROL}" == 'true' ]; then
-    kubectl apply -f ${BINARIES_DIR}/network.yaml
-    kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/network.yaml
+    /opt/bin/kubectl apply -f ${BINARIES_DIR}/dashboard.yaml
   fi
 
   umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
   if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
     eject "${iso_drive_path}"
   fi
+else
+  echo "ERROR: Unable to access Binaries directory for upgrade version ${UPGRADE_VERSION}"
+  exit 1
 fi

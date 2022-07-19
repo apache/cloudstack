@@ -21,8 +21,10 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,6 +40,11 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.mailing.MailAddress;
+import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
+import org.apache.cloudstack.utils.mailing.SMTPMailSender;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
@@ -64,24 +71,20 @@ import com.cloud.event.AlertGenerator;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.cloudstack.utils.mailing.MailAddress;
-import org.apache.cloudstack.utils.mailing.SMTPMailProperties;
-import org.apache.cloudstack.utils.mailing.SMTPMailSender;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
+    protected Logger logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
 
@@ -118,6 +121,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     protected ConfigDepot _configDepot;
     @Inject
     ServiceOfferingDao _offeringsDao;
+    @Inject
+    Ipv6Service ipv6Service;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -195,6 +200,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VLAN, _vlanCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, _directNetworkPublicIpCapacityThreshold);
         _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_LOCAL_STORAGE, _localStorageCapacityThreshold);
+        _capacityTypeThresholdMap.put(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET, Ipv6SubnetCapacityThreshold.value());
 
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
@@ -226,7 +232,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         try {
             clearAlert(alertType.getType(), dataCenterId, podId);
         } catch (Exception ex) {
-            s_logger.error("Problem clearing email alert", ex);
+            logger.error("Problem clearing email alert", ex);
         }
     }
 
@@ -242,11 +248,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             if (mailSender != null) {
                 sendAlert(alertType, dataCenterId, podId, null, subject, body);
             } else {
-                s_logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
+                logger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " + podId +
                         " | message:: " + subject + " | body:: " + body);
             }
         } catch (Exception ex) {
-            s_logger.error("Problem sending email alert", ex);
+            logger.error("Problem sending email alert", ex);
         }
     }
 
@@ -261,9 +267,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         try {
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("recalculating system capacity");
-                s_logger.debug("Executing cpu/ram capacity update");
+            if (logger.isDebugEnabled()) {
+                logger.debug("recalculating system capacity");
+                logger.debug("Executing cpu/ram capacity update");
             }
 
             // Calculate CPU and RAM capacities
@@ -280,9 +286,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                     _capacityMgr.updateCapacityForHost(host, offeringsMap);
                 }
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing cpu/ram capacity update");
-                s_logger.debug("Executing storage capacity update");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing cpu/ram capacity update");
+                logger.debug("Executing storage capacity update");
             }
             // Calculate storage pool capacity
             List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
@@ -295,9 +301,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 }
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing storage capacity update");
-                s_logger.debug("Executing capacity updates for public ip and Vlans");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing storage capacity update");
+                logger.debug("Executing capacity updates for public ip and Vlans");
             }
 
             List<DataCenterVO> datacenters = _dcDao.listAll();
@@ -313,6 +319,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 // Calculate new Public IP capacity for Virtual Network
                 if (datacenter.getNetworkType() == NetworkType.Advanced) {
                     createOrUpdateIpCapacity(dcId, null, Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, datacenter.getAllocationState());
+                    createOrUpdateIpv6Capacity(dcId, datacenter.getAllocationState());
                 }
 
                 // Calculate new Public IP capacity for Direct Attached Network
@@ -324,9 +331,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 }
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done capacity updates for public ip and Vlans");
-                s_logger.debug("Executing capacity updates for private ip");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done capacity updates for public ip and Vlans");
+                logger.debug("Executing capacity updates for private ip");
             }
 
             // Calculate new Private IP capacity
@@ -338,13 +345,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 createOrUpdateIpCapacity(dcId, podId, Capacity.CAPACITY_TYPE_PRIVATE_IP, _configMgr.findPodAllocationState(pod));
             }
 
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Done executing capacity updates for private ip");
-                s_logger.debug("Done recalculating system capacity");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Done executing capacity updates for private ip");
+                logger.debug("Done recalculating system capacity");
             }
 
         } catch (Throwable t) {
-            s_logger.error("Caught exception in recalculating capacity", t);
+            logger.error("Caught exception in recalculating capacity", t);
         }
     }
 
@@ -415,15 +422,40 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    public void createOrUpdateIpv6Capacity(Long dcId, AllocationState capacityState) {
+        final short capacityType = Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+        capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
+
+        List<CapacityVO>  capacities = _capacityDao.search(capacitySC, null);
+        Pair<Integer, Integer> usedTotal =  ipv6Service.getUsedTotalIpv6SubnetForZone(dcId);
+        int total = usedTotal.second();
+        int allocated = usedTotal.first();
+        CapacityState state = (capacityState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
+        if (capacities.size() == 0) {
+            CapacityVO capacityVO = new CapacityVO(null, dcId, null, null, allocated, total, capacityType);
+            capacityVO.setCapacityState(state);
+            _capacityDao.persist(capacityVO);
+        } else if (!(capacities.get(0).getUsedCapacity() == allocated && capacities.get(0).getTotalCapacity() == total
+                && capacities.get(0).getCapacityState() == state)) {
+            CapacityVO capacity = capacities.get(0);
+            capacity.setUsedCapacity(allocated);
+            capacity.setTotalCapacity(total);
+            capacity.setCapacityState(state);
+            _capacityDao.update(capacity.getId(), capacity);
+        }
+    }
+
     class CapacityChecker extends ManagedContextTimerTask {
         @Override
         protected void runInContext() {
             try {
-                s_logger.debug("Running Capacity Checker ... ");
+                logger.debug("Running Capacity Checker ... ");
                 checkForAlerts();
-                s_logger.debug("Done running Capacity Checker ... ");
+                logger.debug("Done running Capacity Checker ... ");
             } catch (Throwable t) {
-                s_logger.error("Exception in CapacityChecker", t);
+                logger.error("Exception in CapacityChecker", t);
             }
         }
     }
@@ -625,16 +657,23 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
             alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
             break;
+        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
+            msgSubject = "System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Number of unallocated virtual network guest IPv6 subnets is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
+            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+            break;
         }
 
         try {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msgSubject);
-                s_logger.debug(msgContent);
+            if (logger.isDebugEnabled()) {
+                logger.debug(msgSubject);
+                logger.debug(msgContent);
             }
             sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
-            s_logger.error("Exception in CapacityChecker", ex);
+            logger.error("Exception in CapacityChecker", ex);
         }
     }
 
@@ -645,6 +684,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
         dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VLAN);
+        dataCenterCapacityTypes.add(Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET);
         return dataCenterCapacityTypes;
 
     }
@@ -682,7 +722,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
-        s_logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
+        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
         AlertVO alert = null;
         if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
@@ -706,9 +746,13 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             newAlert.setName(alertType.getName());
             _alertDao.persist(newAlert);
         } else {
-            if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
-                }
+            logger.debug("Have already sent: " + alert.getSentCount() + " emails for alert type '" + alertType + "' -- skipping send email");
+            return;
+        }
+
+        if (ArrayUtils.isEmpty(recipients)) {
+            logger.warn(String.format("No recipients set in global setting 'alert.email.addresses', "
+                    + "skipping sending alert with subject [%s] and content [%s].", subject, content));
             return;
         }
 
@@ -729,7 +773,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     }
 
-    private void sendMessage(SMTPMailProperties mailProps) {
+    protected void sendMessage(SMTPMailProperties mailProps) {
         _executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -754,7 +798,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold};
+        return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold, AlertSmtpEnabledSecurityProtocols,
+            AlertSmtpUseStartTLS, Ipv6SubnetCapacityThreshold};
     }
 
     @Override
@@ -764,7 +809,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             sendAlert(alertType, dataCenterId, podId, msg, msg);
             return true;
         } catch (Exception ex) {
-            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
+            logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
             return false;
         }
     }

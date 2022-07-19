@@ -23,12 +23,17 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
@@ -44,6 +49,7 @@ import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
@@ -58,6 +64,7 @@ import com.cloud.configuration.ConfigurationService;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterGuestIpv6Prefix;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
@@ -83,6 +90,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.net.NetUtils;
 
 @Component
 public class MockConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService {
@@ -204,6 +212,41 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updatePodIpRange(org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd)
+     */
+    public void updatePodIpRange(final UpdatePodManagementNetworkIpRangeCmd cmd) throws ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#createDataCenterGuestIpv6Prefix(org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd)
+     */
+    @Override
+    public DataCenterGuestIpv6Prefix createDataCenterGuestIpv6Prefix(CreateGuestNetworkIpv6PrefixCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#listDataCenterGuestIpv6Prefixes(org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd)
+     */
+    @Override
+    public List<? extends DataCenterGuestIpv6Prefix> listDataCenterGuestIpv6Prefixes(ListGuestNetworkIpv6PrefixesCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#deleteDataCenterGuestIpv6Prefix(org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6RangeCmd)
+     */
+    @Override
+    public boolean deleteDataCenterGuestIpv6Prefix(DeleteGuestNetworkIpv6PrefixCmd cmd) {
+        // TODO Auto-generated method stub
+        return true;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.configuration.ConfigurationService#editPod(org.apache.cloudstack.api.commands.UpdatePodCmd)
      */
     @Override
@@ -254,6 +297,17 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     @Override
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException,
         ResourceAllocationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#updateVlanAndPublicIpRange(org.apache.cloudstack.api
+     * .commands.UpdateVlanIpRangeCmd)
+     */
+    @Override
+    public Vlan updateVlanAndPublicIpRange(UpdateVlanIpRangeCmd cmd) throws ConcurrentOperationException,
+            ResourceUnavailableException, ResourceAllocationException{
         // TODO Auto-generated method stub
         return null;
     }
@@ -486,7 +540,8 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
                                                    Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
                                                    boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
-                                                   Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc, List<Long> domainIds, List<Long> zoneIds, boolean enableOffering) {
+                                                   Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive, Boolean forVpc,
+                                                   List<Long> domainIds, List<Long> zoneIds, boolean enableOffering, NetUtils.InternetProtocol internetProtocol) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -590,6 +645,12 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
 
     @Override
     public Domain getVlanDomain(long vlanId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<Configuration, String> resetConfiguration(ResetCfgCmd cmd) throws InvalidParameterValueException {
         // TODO Auto-generated method stub
         return null;
     }

@@ -18,61 +18,86 @@
 <template>
   <a-layout class="layout" :class="[device]">
 
-    <template v-if="isSideMenu()">
-      <a-drawer
-        v-if="isMobile()"
-        :wrapClassName="'drawer-sider ' + navTheme"
-        :closable="false"
-        :visible="collapsed"
-        placement="left"
-        @close="() => this.collapsed = false"
-      >
-        <side-menu
-          :menus="menus"
-          :theme="navTheme"
-          :collapsed="false"
-          :collapsible="true"
-          mode="inline"
-          @menuSelect="menuSelect"></side-menu>
-      </a-drawer>
+    <a-affix style="z-index: 200">
 
-      <side-menu
-        v-else
-        mode="inline"
-        :menus="menus"
-        :theme="navTheme"
-        :collapsed="collapsed"
-        :collapsible="true"></side-menu>
-    </template>
-    <template v-else>
-      <a-drawer
-        v-if="isMobile()"
-        :wrapClassName="'drawer-sider ' + navTheme"
-        placement="left"
-        @close="() => this.collapsed = false"
-        :closable="false"
-        :visible="collapsed"
-      >
+      <template v-if="isSideMenu()">
+        <a-drawer
+          v-if="isMobile()"
+          :wrapClassName="'drawer-sider ' + navTheme"
+          :closable="false"
+          :visible="collapsed"
+          placement="left"
+          @close="() => this.collapsed = false"
+        >
+          <side-menu
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="false"
+            :collapsible="true"
+            mode="inline"
+            @menuSelect="menuSelect"></side-menu>
+        </a-drawer>
+
         <side-menu
+          v-else
+          mode="inline"
           :menus="menus"
           :theme="navTheme"
-          :collapsed="false"
-          :collapsible="true"
-          mode="inline"
-          @menuSelect="menuSelect"></side-menu>
-      </a-drawer>
-    </template>
+          :collapsed="collapsed"
+          :collapsible="true"></side-menu>
+      </template>
+      <template v-else>
+        <a-drawer
+          v-if="isMobile()"
+          :wrapClassName="'drawer-sider ' + navTheme"
+          placement="left"
+          @close="() => this.collapsed = false"
+          :closable="false"
+          :visible="collapsed"
+        >
+          <side-menu
+            :menus="menus"
+            :theme="navTheme"
+            :collapsed="false"
+            :collapsible="true"
+            mode="inline"
+            @menuSelect="menuSelect"></side-menu>
+        </a-drawer>
+      </template>
+
+      <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
+        <template #handler>
+          <a-button type="primary" size="large">
+            <close-outlined v-if="showSetting" />
+            <setting-outlined v-else />
+          </a-button>
+        </template>
+        <template #drawer>
+          <setting :visible="showSetting" />
+        </template>
+      </drawer>
+
+    </a-affix>
 
     <a-layout :class="[layoutMode, `content-width-${contentWidth}`]" :style="{ paddingLeft: contentPaddingLeft, minHeight: '100vh' }">
       <!-- layout header -->
-      <global-header
-        :mode="layoutMode"
-        :menus="menus"
-        :theme="navTheme"
-        :collapsed="collapsed"
-        :device="device"
-        @toggle="toggle"
-      />
+      <a-affix style="z-index: 100">
+        <global-header
+          :mode="layoutMode"
+          :menus="menus"
+          :theme="navTheme"
+          :collapsed="collapsed"
+          :device="device"
+          @toggle="toggle"
+        />
+      </a-affix>
+
+      <a-button
+        v-if="showClear"
+        type="default"
+        size="small"
+        class="button-clear-notification"
+        @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
 
       <!-- layout content -->
       <a-layout-content class="layout-content" :class="{'is-header-fixed': fixedHeader}">
@@ -94,25 +119,41 @@ import GlobalFooter from '@/components/page/GlobalFooter'
 import { triggerWindowResizeEvent } from '@/utils/util'
 import { mapState, mapActions } from 'vuex'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
+import { isAdmin } from '@/role'
+import Drawer from '@/components/widgets/Drawer'
+import Setting from '@/components/view/Setting.vue'
 
 export default {
   name: 'GlobalLayout',
   components: {
     SideMenu,
     GlobalHeader,
-    GlobalFooter
+    GlobalFooter,
+    Drawer,
+    Setting
   },
   mixins: [mixin, mixinDevice],
   data () {
     return {
       collapsed: false,
-      menus: []
+      menus: [],
+      showSetting: false,
+      showClear: false
     }
   },
   computed: {
     ...mapState({
       mainMenu: state => state.permission.addRouters
     }),
+    isAdmin () {
+      return isAdmin()
+    },
+    isDevelopmentMode () {
+      return process.env.NODE_ENV === 'development'
+    },
+    allowSettingTheme () {
+      return this.$config.allowSettingTheme
+    },
     contentPaddingLeft () {
       if (!this.fixSidebar || this.isMobile()) {
         return '0'
@@ -129,6 +170,24 @@ export default {
     },
     mainMenu (newMenu) {
       this.menus = newMenu.find((item) => item.path === '/').children
+    },
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark-mode')
+      } else {
+        document.body.classList.remove('dark-mode')
+      }
+    },
+    '$store.getters.countNotify' (countNotify) {
+      this.showClear = false
+      if (countNotify && countNotify > 0) {
+        this.showClear = true
+      }
+    }
+  },
+  provide: function () {
+    return {
+      parentToggleSetting: this.toggleSetting
     }
   },
   created () {
@@ -136,6 +195,11 @@ export default {
     this.collapsed = !this.sidebarOpened
   },
   mounted () {
+    const layoutMode = this.$config.theme['@layout-mode'] || 'light'
+    this.$store.dispatch('SetDarkMode', (layoutMode === 'dark'))
+    if (layoutMode === 'dark') {
+      document.body.classList.add('dark-mode')
+    }
     const userAgent = navigator.userAgent
     if (userAgent.indexOf('Edge') > -1) {
       this.$nextTick(() => {
@@ -145,6 +209,14 @@ export default {
         }, 16)
       })
     }
+    const countNotify = this.$store.getters.countNotify
+    this.showClear = false
+    if (countNotify && countNotify > 0) {
+      this.showClear = true
+    }
+  },
+  beforeUnmount () {
+    document.body.classList.remove('dark')
   },
   methods: {
     ...mapActions(['setSidebar']),
@@ -158,7 +230,7 @@ export default {
       if (this.sidebarOpened) {
         left = this.isDesktop() ? '256px' : '80px'
       } else {
-        left = this.isMobile() && '0' || (this.fixSidebar && '80px' || '0')
+        left = this.isMobile() ? '0' : (this.fixSidebar ? '80px' : '0')
       }
       return left
     },
@@ -166,6 +238,13 @@ export default {
       if (!this.isDesktop()) {
         this.collapsed = false
       }
+    },
+    toggleSetting (showSetting) {
+      this.showSetting = showSetting
+    },
+    onClearNotification () {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
     }
   }
 }

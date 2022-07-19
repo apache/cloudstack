@@ -27,9 +27,23 @@ import org.apache.cloudstack.response.VmMetricsResponse;
 import javax.inject.Inject;
 import java.util.List;
 
+/**
+ * API supported for backward compatibility. Use the {@link ListVMsUsageHistoryCmd} API instead. <br>
+ * The reasons for this are: <br>
+ * <ul>
+ *     <li>While API {@link ListVMsMetricsCmd} allows ACS users to get only the most recent stats data
+ *     from VMs or their cumulative data, the {@link ListVMsUsageHistoryCmd} API allows getting historical
+ *     data by filtering by specific VMs and periods.</li>
+ *     <li>{@link ListVMsMetricsCmd} just extends the {@link ListVMsCmd} API, so it inherits all of
+ *     its parameters, even if some of them are not suitable/useful for the API purpose.</li>
+ *     <li>{@link ListVMsMetricsCmd} returns all VM information just like the {@link ListVMsCmd} API,
+ *     although most of it is not suitable/useful for the API purpose.</li>
+ * </ul>
+ */
 @APICommand(name = ListVMsMetricsCmd.APINAME, description = "Lists VM metrics", responseObject = VmMetricsResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,  responseView = ResponseObject.ResponseView.Full,
         since = "4.9.3", authorized = {RoleType.Admin,  RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+@Deprecated(since = "4.17.0")
 public class ListVMsMetricsCmd extends ListVMsCmd {
     public static final String APINAME = "listVirtualMachinesMetrics";
 
@@ -44,6 +58,7 @@ public class ListVMsMetricsCmd extends ListVMsCmd {
     @Override
     public void execute() {
         ListResponse<UserVmResponse> userVms = _queryService.searchForUserVMs(this);
+        updateVMResponse(userVms.getResponses());
         final List<VmMetricsResponse> metricsResponses = metricsService.listVmMetrics(userVms.getResponses());
         ListResponse<VmMetricsResponse> response = new ListResponse<>();
         response.setResponses(metricsResponses, userVms.getCount());

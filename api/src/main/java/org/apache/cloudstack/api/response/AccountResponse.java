@@ -30,7 +30,7 @@ import com.cloud.user.Account;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Account.class)
-public class AccountResponse extends BaseResponse implements ResourceLimitAndCountResponse {
+public class AccountResponse extends BaseResponse implements ResourceLimitAndCountResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the account")
     private String id;
@@ -41,7 +41,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
 
     @SerializedName(ApiConstants.ACCOUNT_TYPE)
     @Param(description = "account type (admin, domain-admin, user)")
-    private Short accountType;
+    private Integer accountType;
 
     @SerializedName(ApiConstants.ROLE_ID)
     @Param(description = "the ID of the role")
@@ -263,6 +263,10 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the list of acl groups that account belongs to", since = "4.4")
     private List<String> groups;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
     @Override
     public String getObjectId() {
         return id;
@@ -276,7 +280,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
         this.name = name;
     }
 
-    public void setAccountType(Short accountType) {
+    public void setAccountType(Integer accountType) {
         this.accountType = accountType;
     }
 
@@ -537,4 +541,8 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
         this.groups = groups;
     }
 
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
 }

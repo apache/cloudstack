@@ -31,6 +31,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -339,7 +341,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
@@ -1011,9 +1013,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
-            if (vm.getAccountId() != loadBalancer.getAccountId()) {
-                throw new PermissionDeniedException("Cannot add virtual machines that do not belong to the same owner.");
-            }
+            Account vmOwner = _accountDao.findById(vm.getAccountId());
+            Network network = _networkDao.findById(loadBalancer.getNetworkId());
+            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
             // Let's check to make sure the vm has a nic in the same network as
             // the load balancing rule.
@@ -2104,6 +2106,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String lbProtocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2130,6 +2133,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (forDisplay != null) {
             lb.setDisplay(forDisplay);
+        }
+
+        if (StringUtils.isNotBlank(lbProtocol)) {
+            lb.setLbProtocol(lbProtocol);
         }
 
         // Validate rule in LB provider
@@ -2338,7 +2345,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
         sb.and("scheme", sb.entity().getScheme(), SearchCriteria.Op.EQ);
@@ -2379,7 +2386,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
+            sc.setParameters("name", name);
         }
 
         if (id != null) {

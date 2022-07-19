@@ -67,6 +67,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected SearchBuilder<UserVmVO> LastHostSearch;
     protected SearchBuilder<UserVmVO> HostUpSearch;
     protected SearchBuilder<UserVmVO> HostRunningSearch;
+    protected SearchBuilder<UserVmVO> RunningSearch;
     protected SearchBuilder<UserVmVO> StateChangeSearch;
     protected SearchBuilder<UserVmVO> AccountHostSearch;
 
@@ -134,9 +135,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();
 
-        LastHostSearch = createSearchBuilder();
+        LastHostSearch = createSearchBuilderWithStateCriteria(SearchCriteria.Op.EQ);
         LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
-        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
         LastHostSearch.done();
 
         HostUpSearch = createSearchBuilder();
@@ -144,10 +144,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.NIN);
         HostUpSearch.done();
 
-        HostRunningSearch = createSearchBuilder();
+        HostRunningSearch = createSearchBuilderWithStateCriteria(SearchCriteria.Op.EQ);
         HostRunningSearch.and("host", HostRunningSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        HostRunningSearch.and("state", HostRunningSearch.entity().getState(), SearchCriteria.Op.EQ);
         HostRunningSearch.done();
+
+        RunningSearch = createSearchBuilderWithStateCriteria(SearchCriteria.Op.EQ);
+        RunningSearch.done();
 
         AccountPodSearch = createSearchBuilder();
         AccountPodSearch.and("account", AccountPodSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -193,6 +195,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         nicSearch.and("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
+        nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         AccountDataCenterVirtualSearch = createSearchBuilder();
         AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -207,6 +210,19 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
+    }
+
+    /**
+     * Creates an {@link com.cloud.vm.UserVmVO UserVmVO} search builder with a
+     * {@link com.cloud.utils.db.SearchCriteria.Op SearchCriteria.Op} condition
+     * to the 'state' criteria already included.
+     * @param searchCriteria the {@link com.cloud.utils.db.SearchCriteria.Op SearchCriteria.Op} to 'state' criteria.
+     * @return the {@link com.cloud.vm.UserVmVO UserVmVO} search builder.
+     */
+    protected SearchBuilder<UserVmVO> createSearchBuilderWithStateCriteria(SearchCriteria.Op searchCriteria) {
+        SearchBuilder<UserVmVO> genericSearchBuilderWithStateCriteria = createSearchBuilder();
+        genericSearchBuilderWithStateCriteria.and("state", genericSearchBuilderWithStateCriteria.entity().getState(), searchCriteria);
+        return genericSearchBuilderWithStateCriteria;
     }
 
     @Override
@@ -293,6 +309,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public List<UserVmVO> listRunningByHostId(long hostId) {
         SearchCriteria<UserVmVO> sc = HostRunningSearch.create();
         sc.setParameters("host", hostId);
+        sc.setParameters("state", State.Running);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmVO> listAllRunning() {
+        SearchCriteria<UserVmVO> sc = RunningSearch.create();
         sc.setParameters("state", State.Running);
 
         return listBy(sc);
@@ -618,7 +642,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicResponse.setMacAddress(rs.getString("nics.mac_address"));
 
             int account_type = rs.getInt("account.type");
-            if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+            if (account_type == Account.Type.ADMIN.ordinal()) {
                 nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
                 nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
             }

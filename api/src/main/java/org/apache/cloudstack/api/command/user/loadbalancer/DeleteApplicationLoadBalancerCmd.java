@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -33,7 +33,7 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = "deleteLoadBalancer", description = "Deletes a load balancer", responseObject = SuccessResponse.class, since = "4.2.0",
+@APICommand(name = "deleteLoadBalancer", description = "Deletes an internal load balancer", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteApplicationLoadBalancerCmd.class.getName());
@@ -110,7 +110,7 @@ public class DeleteApplicationLoadBalancerCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.FirewallRule;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.FirewallRule;
     }
 }

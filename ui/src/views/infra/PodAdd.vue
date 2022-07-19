@@ -17,72 +17,71 @@
 
 <template>
   <a-spin :spinning="loading">
-    <a-form :form="form" layout="vertical" class="form">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      class="form"
+      @finish="handleSubmit"
+      v-ctrl-enter="handleSubmit"
+     >
 
-      <a-form-item class="form__item" :label="$t('label.zone')">
+      <a-form-item name="zoneid" ref="zoneid" class="form__item" :label="$t('label.zone')">
         <a-select
-          v-decorator="['zoneid', {
-            initialValue: this.zoneId,
-            rules: [{ required: true, message: `${$t('label.required')}` }] }
-          ]"
-          autoFocus>
+          v-model:value="form.zoneid"
+          v-focus="true"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
           <a-select-option
             v-for="zone in zonesList"
             :value="zone.id"
-            :key="zone.id">
-            {{ zone.name }}
+            :key="zone.id"
+            :label="zone.name">
+            <span>
+              <resource-icon v-if="zone.icon" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
+              <global-outlined v-else style="margin-right: 5px" />
+              {{ zone.name }}
+            </span>
           </a-select-option>
         </a-select>
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.podname')">
+      <a-form-item name="name" ref="name" class="form__item" :label="$t('label.podname')">
         <a-input
           :placeholder="placeholder.name"
-          v-decorator="[
-            'name',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.name"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemgateway')">
+      <a-form-item name="gateway" ref="gateway" class="form__item" :label="$t('label.reservedsystemgateway')">
         <a-input
           :placeholder="placeholder.gateway"
-          v-decorator="[
-            'gateway',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.gateway"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemnetmask')">
+      <a-form-item name="netmask" ref="netmask" class="form__item" :label="$t('label.reservedsystemnetmask')">
         <a-input
           :placeholder="placeholder.netmask"
-          v-decorator="[
-            'netmask',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.netmask"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemstartip')">
+      <a-form-item name="startip" ref="startip" class="form__item" :label="$t('label.reservedsystemstartip')">
         <a-input
           :placeholder="placeholder.startip"
-          v-decorator="[
-            'startip',
-            {
-              rules: [{ required: true, message: `${$t('label.required')}` }]
-            }]"
+          v-model:value="form.startip"
         />
       </a-form-item>
 
-      <a-form-item class="form__item" :label="$t('label.reservedsystemendip')">
+      <a-form-item name="endip" ref="endip" class="form__item" :label="$t('label.reservedsystemendip')">
         <a-input
           :placeholder="placeholder.endip"
-          v-decorator="['endip']"
+          v-model:value="form.endip"
         />
       </a-form-item>
 
@@ -98,11 +97,11 @@
           :error="domainError" />
       </template>
 
-      <a-divider></a-divider>
+      <a-divider />
 
-      <div class="actions">
-        <a-button @click="() => this.$parent.$parent.close()">{{ $t('label.cancel') }}</a-button>
-        <a-button @click="handleSubmit" type="primary">{{ $t('label.ok') }}</a-button>
+      <div :span="24" class="action-button">
+        <a-button @click="() => $emit('close-action')">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="handleSubmit" ref="submit" type="primary">{{ $t('label.ok') }}</a-button>
       </div>
 
     </a-form>
@@ -110,13 +109,16 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import DedicateDomain from '../../components/view/DedicateDomain'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ClusterAdd',
   components: {
-    DedicateDomain
+    DedicateDomain,
+    ResourceIcon
   },
   props: {
     resource: {
@@ -129,7 +131,6 @@ export default {
     return {
       loading: false,
       zonesList: [],
-      zoneId: null,
       showDedicated: false,
       dedicatedDomainId: null,
       dedicatedAccount: null,
@@ -144,21 +145,30 @@ export default {
       }
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        zoneid: [{ required: true, message: this.$t('label.required') }],
+        name: [{ required: true, message: this.$t('label.required') }],
+        gateway: [{ required: true, message: this.$t('label.required') }],
+        netmask: [{ required: true, message: this.$t('label.required') }],
+        startip: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.fetchZones()
     },
     fetchZones () {
       this.loading = true
-      api('listZones').then(response => {
+      api('listZones', { showicon: true }).then(response => {
         this.zonesList = response.listzonesresponse.zone || []
-        this.zoneId = this.zonesList[0].id
+        this.form.zoneid = this.zonesList[0].id
         this.params = this.$store.getters.apis.createPod.params
         Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
       }).catch(error => {
@@ -174,8 +184,9 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) return
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         api('createPod', {
@@ -192,7 +203,7 @@ export default {
           }
           this.loading = false
           this.parentFetchData()
-          this.$parent.$parent.close()
+          this.$emit('close-action')
         }).catch(error => {
           this.$notification.error({
             message: `${this.$t('label.error')} ${error.response.status}`,
@@ -201,6 +212,8 @@ export default {
           })
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     dedicatePod (podId) {
@@ -212,15 +225,11 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.dedicatepodresponse.jobid,
+          title: this.$t('message.pod.dedicated'),
+          description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
           successMessage: this.$t('message.pod.dedicated'),
           successMethod: () => {
             this.loading = false
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.pod.dedicated'),
-              jobid: response.dedicatepodresponse.jobid,
-              description: `${this.$t('label.domainid')} : ${this.dedicatedDomainId}`,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.dedicate.pod.failed'),
           errorMethod: () => {
@@ -266,18 +275,6 @@ export default {
 
       @media (min-width: 760px) {
         width: 400px;
-      }
-    }
-
-  }
-
-  .actions {
-    display: flex;
-    justify-content: flex-end;
-
-    button {
-      &:not(:last-child) {
-        margin-right: 10px;
       }
     }
 

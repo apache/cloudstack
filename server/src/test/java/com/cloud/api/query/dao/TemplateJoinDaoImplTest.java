@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.storage.Storage;
-import com.cloud.user.Account;
+import java.util.Date;
+import java.util.Map;
+
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,13 +27,14 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.TemplateJoinVO;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Date;
-import java.util.Map;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
+import com.cloud.template.TemplateManager;
+import com.cloud.user.Account;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ApiDBUtils.class)
@@ -47,7 +48,7 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
 
     //TemplateJoinVO fields
     private String uuid = "1234567890abc";
-    private String name = "xs-tools.iso";
+    private String name = TemplateManager.XS_TOOLS_ISO;
     private String displayText = "xen-pv-drv-iso";
     private boolean publicTemplate = true;
     private Date created = new Date();
@@ -57,7 +58,7 @@ public class TemplateJoinDaoImplTest extends GenericDaoBaseWithTagInformationBas
     private boolean bootable = true;
     private Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.XenServer;
     private boolean dynamicallyScalable = true;
-    private short accountType = Account.ACCOUNT_TYPE_NORMAL;
+    private Account.Type accountType = Account.Type.NORMAL;
     private String accountName = "system";
     private String domainUuid = "abcde1234567890";
     private String domainName = "ROOT";

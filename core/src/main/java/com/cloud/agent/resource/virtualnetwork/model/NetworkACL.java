@@ -25,6 +25,7 @@ public class NetworkACL extends ConfigBase {
     private boolean privateGatewayAcl;
     private String nicIp;
     private String nicNetmask;
+    private String nicIp6Cidr;
     private AclRule[] ingressRules;
     private AclRule[] egressRules;
 
@@ -81,6 +82,14 @@ public class NetworkACL extends ConfigBase {
 
     public void setNicNetmask(String nicNetmask) {
         this.nicNetmask = nicNetmask;
+    }
+
+    public String getNicIp6Cidr() {
+        return nicIp6Cidr;
+    }
+
+    public void setNicIp6Cidr(String nicIp6Cidr) {
+        this.nicIp6Cidr = nicIp6Cidr;
     }
 
     public AclRule[] getIngressRules() {

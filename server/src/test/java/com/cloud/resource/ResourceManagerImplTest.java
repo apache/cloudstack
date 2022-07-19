@@ -35,7 +35,10 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
+import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +47,7 @@ import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
@@ -55,6 +59,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -62,7 +67,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StorageManager;
-import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.ssh.SSHCmdHelper;
@@ -120,6 +125,7 @@ public class ResourceManagerImplTest {
     private static long hostId = 1L;
     private static final String hostUsername = "user";
     private static final String hostPassword = "password";
+    private static final String hostPrivateKey = "privatekey";
     private static final String hostPrivateIp = "192.168.1.10";
 
     private static long vm1Id = 1L;
@@ -143,6 +149,7 @@ public class ResourceManagerImplTest {
         when(hostDao.findById(hostId)).thenReturn(host);
         when(host.getDetail("username")).thenReturn(hostUsername);
         when(host.getDetail("password")).thenReturn(hostPassword);
+        when(configurationDao.getValue("ssh.privatekey")).thenReturn(hostPrivateKey);
         when(host.getStatus()).thenReturn(Status.Up);
         when(host.getPrivateIpAddress()).thenReturn(hostPrivateIp);
         when(vm1.getId()).thenReturn(vm1Id);
@@ -153,7 +160,7 @@ public class ResourceManagerImplTest {
         when(vmInstanceDao.listVmsMigratingFromHost(hostId)).thenReturn(new ArrayList<>());
         when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(hostId)).thenReturn(new ArrayList<>());
         PowerMockito.mockStatic(ActionEventUtils.class);
-        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong()))
+        BDDMockito.given(ActionEventUtils.onCompletedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyString(), anyLong(), anyString(), anyLong()))
                 .willReturn(1L);
         when(getVncPortAnswerVm1.getAddress()).thenReturn(vm1VncAddress);
         when(getVncPortAnswerVm1.getPort()).thenReturn(vm1VncPort);
@@ -166,7 +173,7 @@ public class ResourceManagerImplTest {
 
         PowerMockito.mockStatic(SSHCmdHelper.class);
         BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
-                eq(hostUsername), eq(hostPassword))).willReturn(sshConnection);
+                eq(hostUsername), eq(hostPassword), eq(hostPrivateKey))).willReturn(sshConnection);
         BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
                 eq("service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
@@ -287,34 +294,36 @@ public class ResourceManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testGetHostCredentialsMissingParameter() {
         when(host.getDetail("password")).thenReturn(null);
+        when(configurationDao.getValue("ssh.privatekey")).thenReturn(null);
         resourceManager.getHostCredentials(host);
     }
 
     @Test
     public void testGetHostCredentials() {
-        Pair<String, String> credentials = resourceManager.getHostCredentials(host);
+        Ternary<String, String, String> credentials = resourceManager.getHostCredentials(host);
         Assert.assertNotNull(credentials);
         Assert.assertEquals(hostUsername, credentials.first());
         Assert.assertEquals(hostPassword, credentials.second());
+        Assert.assertEquals(hostPrivateKey, credentials.third());
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testConnectAndRestartAgentOnHostCannotConnect() {
         BDDMockito.given(SSHCmdHelper.acquireAuthorizedConnection(eq(hostPrivateIp), eq(22),
-                eq(hostUsername), eq(hostPassword))).willReturn(null);
-        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+                eq(hostUsername), eq(hostPassword), eq(hostPrivateKey))).willReturn(null);
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testConnectAndRestartAgentOnHostCannotRestart() throws Exception {
         BDDMockito.given(SSHCmdHelper.sshExecuteCmdOneShot(eq(sshConnection),
                 eq("service cloudstack-agent restart"))).willThrow(new SshException("exception"));
-        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test
     public void testConnectAndRestartAgentOnHost() {
-        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword);
+        resourceManager.connectAndRestartAgentOnHost(host, hostUsername, hostPassword, hostPrivateKey);
     }
 
     @Test
@@ -322,7 +331,7 @@ public class ResourceManagerImplTest {
         when(host.getStatus()).thenReturn(Status.Disconnected);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager).getHostCredentials(eq(host));
-        verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+        verify(resourceManager).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
     @Test
@@ -330,7 +339,7 @@ public class ResourceManagerImplTest {
         when(host.getStatus()).thenReturn(Status.Up);
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager, never()).getHostCredentials(eq(host));
-        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
     @Test(expected = CloudRuntimeException.class)
@@ -346,14 +355,14 @@ public class ResourceManagerImplTest {
         when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager, never()).getHostCredentials(eq(host));
-        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
     @Test
     public void testHandleAgentVMsMigrating() {
         resourceManager.handleAgentIfNotConnected(host, true);
         verify(resourceManager, never()).getHostCredentials(eq(host));
-        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
+        verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword), eq(hostPrivateKey));
     }
 
     private void setupNoPendingMigrationRetries() {
@@ -426,5 +435,96 @@ public class ResourceManagerImplTest {
         verify(resourceManager, never()).setHostIntoPrepareForMaintenanceAfterErrorsFixed(anyObject());
         verify(resourceManager, never()).resourceStateTransitTo(anyObject(), any(), anyLong());
         Assert.assertFalse(enterMaintenanceMode);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestDisconnected() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Disconnected, ResourceState.Enabled, ResourceState.Degraded);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestAlert() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Enabled, ResourceState.Degraded);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void declareHostAsDegradedExpectNoTransitionException() throws NoTransitionException {
+        Status[] statusArray = Status.values();
+        for (int i = 0; i < statusArray.length - 1; i++) {
+            if (statusArray[i] != Status.Alert && statusArray[i] != Status.Disconnected) {
+                prepareAndTestDeclareHostAsDegraded(statusArray[i], ResourceState.Enabled, ResourceState.Enabled);
+            }
+        }
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestAlreadyDegraded() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Degraded, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnError() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Error, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnCreating() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.Creating, ResourceState.Degraded);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void declareHostAsDegradedTestOnErrorInMaintenance() throws NoTransitionException {
+        prepareAndTestDeclareHostAsDegraded(Status.Alert, ResourceState.ErrorInPrepareForMaintenance, ResourceState.Degraded);
+    }
+
+    @Test
+    public void declareHostAsDegradedTestSupportedStates() throws NoTransitionException {
+        ResourceState[] states = ResourceState.values();
+        for (int i = 0; i < states.length - 1; i++) {
+            if (states[i] == ResourceState.Enabled
+                    || states[i] == ResourceState.Maintenance
+                    || states[i] == ResourceState.Disabled) {
+                prepareAndTestDeclareHostAsDegraded(Status.Alert, states[i], ResourceState.Degraded);
+            }
+        }
+    }
+
+    private void prepareAndTestDeclareHostAsDegraded(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
+        DeclareHostAsDegradedCmd declareHostAsDegradedCmd = Mockito.spy(new DeclareHostAsDegradedCmd());
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(declareHostAsDegradedCmd.getId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
+
+        Host result = resourceManager.declareHostAsDegraded(declareHostAsDegradedCmd);
+
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    @Test
+    public void cancelHostAsDegradedTest() throws NoTransitionException {
+        prepareAndTestCancelHostAsDegraded(Status.Alert, ResourceState.Degraded, ResourceState.Enabled);
+    }
+
+    @Test(expected = NoTransitionException.class)
+    public void cancelHostAsDegradedTestHostNotDegraded() throws NoTransitionException {
+        prepareAndTestCancelHostAsDegraded(Status.Alert, ResourceState.Enabled, ResourceState.Enabled);
+    }
+
+    private void prepareAndTestCancelHostAsDegraded(Status hostStatus, ResourceState originalState, ResourceState expectedResourceState) throws NoTransitionException {
+        CancelHostAsDegradedCmd cancelHostAsDegradedCmd = Mockito.spy(new CancelHostAsDegradedCmd());
+        HostVO hostVo = createDummyHost(hostStatus);
+        hostVo.setResourceState(originalState);
+        when(cancelHostAsDegradedCmd.getId()).thenReturn(0l);
+        when(hostDao.findById(0l)).thenReturn(hostVo);
+
+        Host result = resourceManager.cancelHostAsDegraded(cancelHostAsDegradedCmd);
+
+        Assert.assertEquals(expectedResourceState, hostVo.getResourceState());
+    }
+
+    private HostVO createDummyHost(Status hostStatus) {
+        return new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null, UUID.randomUUID().toString(),
+                hostStatus, "1.0", null, null, 1L, null, 0, 0, null, 0, null);
     }
 }

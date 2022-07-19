@@ -26,7 +26,7 @@ import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -70,12 +70,10 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true,
-            validations = {ApiArgValidator.NotNullOrEmpty},
             description = "The IP/Domain address to test connection to")
     private String address;
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
-            validations = {ApiArgValidator.NotNullOrEmpty},
             description = "The system VM diagnostics type  valid options are: ping, traceroute, arping")
     private String type;
 
@@ -143,8 +141,23 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.SystemVm;
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+
+        VirtualMachine.Type vmType = _entityMgr.findById(VirtualMachine.class, getId()).getType();
+        switch (vmType) {
+            case ConsoleProxy:
+                return ApiCommandResourceType.ConsoleProxy;
+            case SecondaryStorageVm:
+                return ApiCommandResourceType.SystemVm;
+            case DomainRouter:
+                return ApiCommandResourceType.DomainRouter;
+        }
+        return null;
     }
 
     @Override

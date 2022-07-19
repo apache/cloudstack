@@ -276,7 +276,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         for (VMInstanceVO vm : reorderedVMList) {
             ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-            if (vmOffering.isUseLocalStorage()) {
+            if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (s_logger.isDebugEnabled()){
                     s_logger.debug("Skipping HA on vm " + vm + ", because it uses local storage. Its fate is tied to the host.");
                 }
@@ -608,7 +608,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
-                s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
+                String message = String.format("HA starting VM: %s (%s)", started.getHostName(), started.getInstanceName());
+                HostVO hostVmHasStarted = _hostDao.findById(started.getHostId());
+                s_logger.info(String.format("HA is now restarting %s on %s", started, hostVmHasStarted));
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodIdToDeployIn(), message, message);
                 return null;
             }
 

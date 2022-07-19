@@ -1,0 +1,962 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+@dark-bgColor: #090c10;
+@dark-secondary-bgColor: #141414;
+@dark-text-color-1: rgba(255, 255, 255, 0.25);
+@dark-text-color-2: rgba(255, 255, 255, 0.45);
+@dark-text-color-3: rgba(255, 255, 255, 0.65);
+@dark-text-color-4: rgba(255, 255, 255, 0.85);
+@box-shadow-1: rgba(0, 0, 0, 0.32);
+@box-shadow-2: rgba(0, 0, 0, 0.20);
+@box-shadow-3: rgba(0, 0, 0, 0.12);
+@light-text-color: rgba(0, 0, 0, 0.65);
+@dark-border-color: #434343;
+@dropdown-bgColor: #1f1f1f;
+@dropdown-hover-bgColor: rgba(255, 255, 255, 0.08);
+@table-header-bgColor: #1d1d1d;
+@table-header-hover-bgColor: #303030;
+@table-body-hover-bgColor: #262626;
+@disabled-bgColor: #555;
+
+.dark-mode {
+  background: @dark-bgColor;
+
+  h1, h2, h3, h4, h5, h6 {
+    color: @dark-text-color-3;
+  }
+
+  .user-layout, .ant-layout {
+    background: @dark-bgColor;
+  }
+
+  .layout.ant-layout .header {
+    background: @dark-secondary-bgColor;
+    box-shadow: 0 1px 4px #090c10;
+  }
+
+  .layout.ant-layout .trigger,
+  .layout.ant-layout .header .user-menu .action,
+  .layout.ant-layout .top-nav-header-index .user-menu .action,
+  .ant-tabs {
+    color: @dark-text-color-3;
+
+    .ant-badge {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-layout-footer {
+    background: @dark-secondary-bgColor;
+    color: @dark-text-color-3;
+
+    .footer {
+      .line {
+        a {
+          color: @dark-text-color-3;
+
+          &:hover {
+            color: @dark-text-color-4;
+          }
+        }
+      }
+
+      .copyright {
+        color: @dark-text-color-3;
+      }
+    }
+  }
+
+  .sider.light {
+    background: @dark-secondary-bgColor;
+
+    .logo {
+      background-color: @dark-secondary-bgColor;
+      box-shadow: 1px 1px 0px 0px @dark-border-color;
+    }
+
+    .ant-menu-light,
+    .ant-menu-submenu > .ant-menu {
+      background: @dark-secondary-bgColor;
+    }
+  }
+
+  .ant-menu-submenu-popup.ant-menu-light,
+  .ant-menu-light > .ant-menu {
+    background: @dark-secondary-bgColor;
+  }
+
+  .ant-menu {
+    &-inline-collapsed {
+      .ant-menu-item,
+      .ant-menu-submenu-title {
+        left: 0;
+        padding: 0 32px!important;
+        text-overflow: clip;
+      }
+    }
+
+    .ant-menu-item:not(.ant-menu-item-selected) a:not(:hover) {
+      color: @dark-text-color-3;
+    }
+
+    .ant-menu-item:not(.ant-menu-item-selected) a:not(:hover) .anticon .custom-icon {
+      fill: @dark-text-color-3;
+    }
+
+    &-vertical:not(.ant-menu-dark) {
+      .ant-menu-item,
+      .ant-menu-submenu-title:not(:hover),
+      .ant-menu-item:not(.ant-menu-item-selected, :hover) > a {
+        color: @dark-text-color-3;
+      }
+    }
+
+    &-inline:not(.ant-menu-dark, .ant-menu-sub) {
+      .ant-menu-item,
+      .ant-menu-item:not(.ant-menu-item-selected) > a:not(:hover),
+      .ant-menu-submenu-title:not(:hover) {
+        color: @dark-text-color-3;
+      }
+    }
+
+    &-submenu:not(.ant-menu-dark, .ant-menu-submenu-inline) {
+      .ant-menu-item:not(.ant-menu-item-selected, :hover) > a {
+        color: @dark-text-color-3;
+      }
+    }
+  }
+
+  .kubernet-icon path
+  {
+    color: @dark-text-color-3;
+  }
+
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::before,
+  .ant-menu-submenu-vertical > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-left > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-vertical-right > .ant-menu-submenu-title .ant-menu-submenu-arrow::after,
+  .ant-menu-submenu-inline > .ant-menu-submenu-title .ant-menu-submenu-arrow::after {
+    background-color: @dark-text-color-3;
+  }
+
+  .ant-card {
+    background: @dark-secondary-bgColor;
+    color: @dark-text-color-3;
+
+    &-head, &-bottom, &-body {
+      color: @dark-text-color-3;
+      border-color: @dark-border-color;
+    }
+
+    .ant-progress-circle, .ant-progress-outer {
+      .ant-progress-text {
+        color: @dark-text-color-3;
+      }
+    }
+
+    &-bordered {
+      border-color: @dark-border-color;
+    }
+  }
+
+  .chart-card-footer {
+    border-color: @dark-border-color;
+  }
+
+  .vm-info-card .resource-detail-item__details a,
+  .vm-info-card .resource-detail-item a {
+    color: @dark-text-color-3;
+  }
+
+  .ant-breadcrumb {
+    a:not(:hover), &-separator {
+      color: @dark-text-color-3;
+    }
+
+    span:last-child, span:last-child a {
+      color: @dark-text-color-4;
+    }
+  }
+
+  .ant-btn {
+    &:not(.ant-btn-primary, .ant-btn-danger, :disabled) {
+      color: @dark-text-color-3;
+      background-color: transparent;
+      border-color: @dark-border-color;
+    }
+
+    &:disabled {
+      background-color: @disabled-bgColor;
+      color: @dark-text-color-3;
+    }
+
+    &-primary-disabled,
+    &-primary.disabled,
+    &-primary[disabled],
+    &-primary-disabled:hover,
+    &-primary.disabled:hover,
+    &-primary[disabled]:hover,
+    &-primary-disabled:focus,
+    &-primary.disabled:focus,
+    &-primary[disabled]:focus,
+    &-primary-disabled:active,
+    &-primary.disabled:active,
+    &-primary[disabled]:active,
+    &-primary-disabled.active,
+    &-primary.disabled.active,
+    &-primary[disabled].active {
+      color: @dark-text-color-3;
+      background-color: @disabled-bgColor;
+    }
+  }
+
+  .ant-form-item-has-error .ant-input-affix-wrapper .ant-input,
+  .ant-form-item-has-error .ant-input-affix-wrapper .ant-input:hover,
+  .ant-form-item-has-error .ant-input-affix-wrapper,
+  .ant-form-item-has-error .ant-input-affix-wrapper:hover,
+  .ant-form-item-has-error .ant-input,
+  .ant-form-item-has-error .ant-input:hover,
+  .ant-form-item-has-error .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: transparent;
+    background-image: none;
+  }
+
+  .ant-badge-status-text {
+    color: @dark-text-color-3;
+  }
+
+  .ant-table {
+    background-color: transparent;
+    color: @dark-text-color-3;
+
+    &-thead {
+      background-color: @table-header-bgColor;
+
+      tr th {
+        color: @dark-text-color-4;
+        background-color: @table-header-bgColor;
+        border-color: @dark-border-color;
+
+        .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
+        .ant-table-column-has-actions.ant-table-column-has-sorters:hover,
+        .ant-table-column-has-actions.ant-table-column-has-sorters:hover .ant-table-filter-icon,
+        .ant-table-column-has-actions.ant-table-column-has-sorters:hover .anticon-filter {
+          background-color: @table-header-hover-bgColor;
+        }
+      }
+
+      & > tr > th.ant-table-column-has-actions.ant-table-column-has-sorters:hover {
+        background-color: @table-header-hover-bgColor;
+      }
+
+      & > tr:hover.ant-table-row-selected > td,
+      & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
+      & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
+        background-color: transparent;
+      }
+    }
+
+    &-tbody {
+      & > tr > td {
+        border-color: @dark-border-color;
+      }
+
+      & > tr.ant-table-row-selected td,
+      & > tr:hover.ant-table-row-selected > td,
+      & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
+      & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
+        background-color: @table-body-hover-bgColor !important;
+      }
+
+      & > tr > th.ant-table-column-sort {
+        background-color: @dark-bgColor;
+      }
+    }
+
+    &-footer {
+      background-color: @dark-secondary-bgColor;
+      color: @dark-text-color-3;
+      border-color: @dark-border-color;
+
+      &::before {
+        background-color: @dark-border-color;
+      }
+    }
+
+    &-header {
+      background-color: @dark-secondary-bgColor;
+    }
+
+    &-small {
+      border-color: @dark-border-color;
+
+      & > .ant-table-content > .ant-table-body .ant-table-thead {
+        background-color: transparent;
+      }
+    }
+
+    tr.ant-table-expanded-row,
+    tr.ant-table-expanded-row:hover {
+      background-color: @dark-bgColor;
+    }
+
+    &-placeholder {
+      border-color: @dark-border-color;
+      background-color: @dark-secondary-bgColor;
+    }
+
+    &-row-expand-icon {
+      border-color: @dark-text-color-3;
+      color: @dark-text-color-3;
+      background-color: transparent;
+    }
+
+    &-filter-dropdown {
+      background-color: @dark-secondary-bgColor;
+
+      &-btns {
+        border-color: @dark-border-color;
+      }
+    }
+  }
+
+  .light-row, .dark-row {
+    background-color: @dark-secondary-bgColor;
+  }
+
+  .ant-pagination {
+    color: @dark-text-color-3;
+
+    &-prev, &-next, &-jump-prev, &-jump-next, &-prev a, &-next a {
+      color: @dark-text-color-3;
+    }
+
+    &-disabled a,
+    &-disabled:hover a,
+    &-disabled:focus a,
+    &-disabled .ant-pagination-item-link,
+    &-disabled:hover .ant-pagination-item-link,
+    &-disabled:focus .ant-pagination-item-link {
+      color: @dark-text-color-1;
+    }
+
+    &-item {
+      a:not(:hover) {
+        color: @dark-text-color-3;
+      }
+
+      &-active {
+        background-color: transparent;
+      }
+    }
+
+    &-options-quick-jumper input {
+      background-color: transparent;
+      background-image: none;
+      border-color: @dark-border-color;
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-popover {
+    &-message {
+      color: @dark-text-color-3;
+    }
+
+    &-inner-content {
+      color: @dark-text-color-3;
+      background-color: @dark-secondary-bgColor;
+      border: 1px solid @dark-border-color;
+      box-shadow:
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
+    }
+
+    &-placement {
+      &-bottom > .ant-popover-content > .ant-popover-arrow,
+      &-bottomLeft > .ant-popover-content > .ant-popover-arrow,
+      &-bottomRight > .ant-popover-content > .ant-popover-arrow {
+        border-top-color: @dark-border-color;
+        border-left-color: @dark-border-color;
+      }
+
+      &-top > .ant-popover-content > .ant-popover-arrow,
+      &-topLeft > .ant-popover-content > .ant-popover-arrow,
+      &-topRight > .ant-popover-content > .ant-popover-arrow {
+        border-right-color: @dark-border-color;
+        border-bottom-color: @dark-border-color;
+      }
+    }
+  }
+
+  .ant-list-item {
+    color: @dark-text-color-3;
+    border-color: @dark-border-color;
+
+    &-meta-title, &-meta-description {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-tag {
+    background-color: transparent;
+    background-image: none;
+    border-color: @dark-border-color;
+
+    &> a {
+      color: @dark-text-color-3;
+
+      .anticon-close {
+        color: @dark-text-color-3;
+
+        &:hover {
+          color: @dark-text-color-4;
+        }
+      }
+    }
+  }
+
+  .ant-avatar {
+    background-color: transparent;
+    background-image: none;
+    border: 1px solid @dark-border-color;
+    color: @dark-text-color-3;
+  }
+
+  .ant-form {
+    color: @dark-text-color-3;
+
+    &-item-label > label {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-modal {
+    color: @dark-text-color-3;
+
+    &-content {
+      background-color: @dark-secondary-bgColor;
+      box-shadow:
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
+    }
+
+    &-header {
+      background-color: @dark-secondary-bgColor;
+      border-color: @dark-border-color;
+    }
+
+    &-footer {
+      border-color: @dark-border-color;
+    }
+
+    &-confirm-body &-confirm-title,
+    &-title, &-close-x {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-input,
+  .ant-select-selection,
+  .ant-input-group-addon,
+  .ant-checkbox-inner,
+  .ant-radio-inner,
+  .ant-radio-button-wrapper,
+  .ant-input-number,
+  .ant-time-picker-input,
+  .ant-input-affix-wrapper {
+    background-color: transparent;
+    color: @dark-text-color-3;
+
+    &:not(:hover, :focus) {
+      border-color: @dark-border-color;
+    }
+
+    &:disabled, &-disabled {
+      background-color: @disabled-bgColor;
+    }
+  }
+
+  .ant-input-group-addon:hover {
+    border-color: @dark-border-color;
+  }
+
+  .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: transparent;
+    color: @dark-text-color-3;
+    border-color: @dark-border-color;
+  }
+
+  .ant-select-disabled {
+    background-color: @disabled-bgColor;
+  }
+
+  .ant-checkbox-wrapper,
+  .ant-select-arrow {
+    color: @dark-text-color-3;
+  }
+
+  .ant-switch {
+    color: @light-text-color;
+    background-color: @dark-text-color-2;
+
+    &-checked {
+      background-color: #1890ff;
+    }
+
+    &-loading-icon, &:after {
+      background-color: @dark-secondary-bgColor;
+    }
+
+    &:disabled {
+      background-color: @disabled-bgColor;
+    }
+  }
+
+  .ant-select-dropdown {
+    background-color: @dropdown-bgColor;
+    color: @dark-text-color-3;
+    box-shadow:
+      0 3px 6px -4px @box-shadow-1,
+      0 6px 16px 0 @box-shadow-2,
+      0 9px 28px 8px @box-shadow-3;
+
+    .ant-select-item {
+      color: @dark-text-color-3;
+
+      &-option-selected {
+        background-color: @dropdown-hover-bgColor;
+      }
+
+      &-option-active:not(.ant-select-item-option-disabled),
+      &:hover:not(.ant-select-item-disabled),
+      &-active:hover:not(.ant-select-item-disabled) {
+        background-color: @dropdown-hover-bgColor !important;
+      }
+    }
+  }
+
+  .ant-calendar {
+    background-color: @dropdown-bgColor;
+    border-color: @dark-border-color;
+
+    &-last-month-cell .ant-calendar-date,
+    &-last-month-cell .ant-calendar-date:hover,
+    &-next-month-btn-day .ant-calendar-date,
+    &-next-month-btn-day .ant-calendar-date:hover {
+      color: @dark-text-color-1;
+    }
+
+    &-picker-container, &-date {
+      color: @dark-text-color-3;
+    }
+
+    &-input-wrap {
+      border-color: @dark-border-color;
+    }
+
+    &-range {
+      .ant-calendar-input,
+      .ant-calendar-time-picker-input,
+      .ant-calendar-input:placeholder-shown,
+      .ant-calendar-time-picker-input:placeholder-shown {
+        background-color: transparent;
+        color: @dark-text-color-3;
+      }
+
+      &-middle, &-picker-separator {
+        color: @dark-text-color-3;
+      }
+
+      .ant-calendar-body,
+      .ant-calendar-decade-panel-body,
+      .ant-calendar-month-panel-body,
+      .ant-calendar-year-panel-body {
+        border-color: @dark-border-color;
+      }
+
+      .ant-calendar-in-range-cell > div {
+        color: #000;
+      }
+    }
+
+    &-header {
+      .ant-calendar-next-century-btn,
+      .ant-calendar-next-decade-btn,
+      .ant-calendar-next-month-btn,
+      .ant-calendar-next-year-btn,
+      .ant-calendar-prev-century-btn,
+      .ant-calendar-prev-decade-btn,
+      .ant-calendar-prev-month-btn,
+      .ant-calendar-prev-year-btn {
+        color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-month-btn:after,
+      .ant-calendar-prev-month-btn:before,
+      .ant-calendar-next-month-btn::before,
+      .ant-calendar-next-month-btn::after {
+        border-color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-month-btn:hover:after,
+      .ant-calendar-prev-month-btn:hover:before,
+      .ant-calendar-next-month-btn:hover::before,
+      .ant-calendar-next-month-btn:hover::after {
+        border-color: @dark-text-color-4;
+      }
+
+      .ant-calendar-century-select:not(:hover),
+      .ant-calendar-decade-select:not(:hover),
+      .ant-calendar-month-select:not(:hover),
+      .ant-calendar-year-select:not(:hover) {
+        color: @dark-text-color-3;
+      }
+
+
+      .ant-calendar-prev-century-btn::before,
+      .ant-calendar-prev-decade-btn::before,
+      .ant-calendar-prev-year-btn::before,
+      .ant-calendar-prev-century-btn::after,
+      .ant-calendar-prev-decade-btn::after,
+      .ant-calendar-prev-year-btn::after,
+      .ant-calendar-next-century-btn::before,
+      .ant-calendar-next-decade-btn::before,
+      .ant-calendar-next-year-btn::before,
+      .ant-calendar-next-century-btn::after,
+      .ant-calendar-next-decade-btn::after,
+      .ant-calendar-next-year-btn::after {
+        border-color: @dark-text-color-2;
+      }
+
+      .ant-calendar-prev-century-btn:hover::before,
+      .ant-calendar-prev-decade-btn:hover::before,
+      .ant-calendar-prev-year-btn:hover::before,
+      .ant-calendar-prev-century-btn:hover::after,
+      .ant-calendar-prev-decade-btn:hover::after,
+      .ant-calendar-prev-year-btn:hover::after {
+        border-color: @dark-text-color-4;
+      }
+    }
+
+    &-date:hover {
+      color: #000;
+    }
+
+    &-picker-clear {
+      color: @dark-text-color-2;
+      background: transparent;
+
+      &:hover {
+        color: @dark-text-color-4;
+      }
+    }
+  }
+
+  .ant-time {
+    &-picker-panel {
+      color: @dark-text-color-3;
+
+      &-inner {
+        background-color: @dropdown-bgColor;
+        box-shadow:
+          0 3px 6px -4px @box-shadow-1,
+          0 6px 16px 0 @box-shadow-2,
+          0 9px 28px 8px @box-shadow-3;
+      }
+
+      &-input {
+        background-color: transparent;
+
+        &-wrap {
+          border-color: @dark-border-color;
+        }
+      }
+
+      &-select {
+        border-color: @dark-border-color;
+
+        li:hover,
+        li.ant-time-picker-panel-select-option-selected,
+        li.ant-time-picker-panel-select-option-selected:hover {
+          background-color: @dropdown-hover-bgColor;
+        }
+      }
+    }
+  }
+
+  .ant-dropdown-menu {
+    background-color: @dropdown-bgColor;
+    box-shadow:
+      0 6px 16px -8px @box-shadow-1,
+      0 9px 28px 0 @box-shadow-2,
+      0 12px 48px 16px @box-shadow-3;
+
+    &-item:not(.ant-dropdown-menu-item-selected):hover,
+    &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
+      background-color: @dropdown-hover-bgColor !important;
+    }
+
+    &-title-content > a,
+    &-item:not(.ant-dropdown-menu-item-selected),
+    &-submenu-title:not(.ant-dropdown-menu-item-selected),
+    &-item:not(.ant-dropdown-menu-item-selected) > a,
+    &-submenu-title:not(.ant-dropdown-menu-item-selected) > a {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .user-layout .ant-input-affix-wrapper .ant-input-prefix,
+  .user-layout .ant-input-affix-wrapper .ant-input-suffix {
+    color: @dark-text-color-3;
+  }
+
+  .ant-input-affix-wrapper .ant-input-prefix,
+  .ant-input-affix-wrapper .ant-input-suffix,
+  .ant-input-password-icon {
+    color: @dark-text-color-3;
+  }
+
+  .ant-input-number-handler-wrap {
+    background-color: @dark-secondary-bgColor;
+  }
+
+  .ant-input-number-handler,
+  .ant-time-picker-icon,
+  .ant-time-picker-clear,
+  .ant-time-picker-icon .ant-time-picker-clock-icon,
+  .ant-time-picker-clear .ant-time-picker-clock-icon {
+    color: @dark-text-color-3;
+  }
+
+  .ant-steps-item-finish .ant-steps-item-icon {
+    background-color: transparent;
+  }
+
+  .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title,
+  .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-description {
+    color: @dark-text-color-3;
+  }
+
+  .ant-steps-item-wait .ant-steps-item-icon {
+    background-color: transparent;
+    border-color: @dark-border-color;
+  }
+
+  .ant-steps-item-process > .ant-steps-item-container > .ant-steps-item-tail::after,
+  .ant-steps-item-wait > .ant-steps-item-container > .ant-steps-item-tail::after {
+    background-color: @dark-border-color;
+  }
+
+  .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon,
+  .ant-steps-item-wait > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title {
+    color: @dark-text-color-3;
+  }
+
+  .ant-form-item,
+  .ant-radio-wrapper {
+    color: @dark-text-color-3;
+  }
+
+  .ant-table-fixed-left table, .ant-table-fixed-right table,
+  .ant-table-fixed-header > .ant-table-content > .ant-table-scroll > .ant-table-body {
+    background-color: @dark-secondary-bgColor;
+  }
+
+  .ant-upload.ant-upload-drag {
+    background-color: transparent;
+    border-color: @dark-border-color;
+  }
+
+  .ant-upload.ant-upload-drag p.ant-upload-text {
+    color: @dark-text-color-3;
+  }
+
+  .ant-tree.ant-tree-show-line li span.ant-tree-switcher {
+    background-color: transparent;
+    color: @dark-text-color-3;
+  }
+
+  .ant-tree li .ant-tree-node-content-wrapper {
+    color: @dark-text-color-3;
+  }
+
+  .ant-tree-icon__customize {
+    color: @dark-text-color-3;
+    background-color: transparent;
+  }
+
+  .ant-tree li .ant-tree-node-content-wrapper.ant-tree-node-selected {
+    .ant-tree-icon__customize {
+      color: #000;
+    }
+
+    color: #000;
+  }
+
+  .ant-tree li .ant-tree-node-content-wrapper:hover {
+    .ant-tree-icon__customize {
+      color: #000;
+    }
+
+    .ant-tree-title {
+      color: #000;
+    }
+  }
+
+  .form-content, .zone-support {
+    background-color: @dark-bgColor;
+    border-color: @dark-border-color;
+  }
+
+  .ant-steps-item-wait .ant-steps-item-icon > .ant-steps-icon .ant-steps-icon-dot {
+    background-color: @dark-text-color-3;
+  }
+
+  .ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-content > .ant-steps-item-title {
+    color: @dark-text-color-3;
+  }
+
+  .ant-select-selection__clear {
+    background-color: transparent;
+    color: @dark-text-color-3;
+
+    &:hover {
+      color: @dark-text-color-2;
+    }
+  }
+
+  .anticon {
+    &-info-circle {
+      color: @dark-text-color-3;
+    }
+  }
+
+  .ant-message-notice-content {
+    background-color: @dropdown-bgColor;
+    color: @dark-text-color-3;
+    box-shadow:
+      0 3px 6px -4px @box-shadow-1,
+      0 6px 16px 0 @box-shadow-2,
+      0 9px 28px 8px @box-shadow-3;
+  }
+
+  .btn-add-tag {
+    background-color: transparent;
+  }
+
+  .tag-disabled-input.ant-input-disabled {
+    background-color: transparent;
+  }
+
+  .tagsTitle {
+    color: @dark-text-color-3;
+  }
+
+  .ant-notification {
+    color: @dark-text-color-3;
+
+    &-notice {
+      background-color: @dark-secondary-bgColor;
+      border: 1px solid @dark-border-color;
+      box-shadow:
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
+
+      &-message {
+        color: @dark-text-color-4;
+      }
+
+      &-close {
+        color: @dark-text-color-3;
+
+        &:hover {
+          color: @dark-text-color-4;
+        }
+      }
+    }
+  }
+
+  .ant-collapse {
+    background-color: @dark-secondary-bgColor;
+
+    &--borderless {
+      background-color: @dark-secondary-bgColor;
+    }
+
+    & > .ant-collapse-item {
+      background-color: @dark-bgColor;
+
+      & > .ant-collapse-header {
+        color: @dark-text-color-3;
+      }
+
+      &-disabled > .ant-collapse-header,
+      &-disabled > .ant-collapse-header > .arrow {
+        color: @dark-text-color-1;
+      }
+    }
+  }
+
+  .drawer {
+    .content {
+      background-color: @dark-secondary-bgColor;
+      box-shadow:
+        0 3px 6px -4px @box-shadow-1,
+        0 6px 16px 0 @box-shadow-2,
+        0 9px 28px 8px @box-shadow-3;
+    }
+  }
+
+  ::placeholder {
+    color: @dark-text-color-1;
+  }
+
+  .ant-card.usage-dashboard-chart-card.usage-chart-text {
+    h1, h2, h3, h4, h5, h6 {
+      color: initial;
+    }
+  }
+
+  .ant-empty-normal {
+    color: @dark-text-color-3;
+  }
+
+  .custom-suffix-icon {
+    color: @dark-text-color-3;
+  }
+
+  .ant-comment-content-author-name,
+  .ant-comment-actions > li,
+  .ant-comment-actions > li > span,
+  .ant-tag,
+  .ant-tag a,
+  .ant-tag a:hover {
+    color: @dark-text-color-3;
+  }
+
+  .button-clear-notification {
+    background-color: @dark-secondary-bgColor;
+  }
+}

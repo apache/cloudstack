@@ -28,30 +28,30 @@
       :rowKey="record => record.id || record.name || record.nvpdeviceid || record.resourceid"
       :pagination="false"
       :scroll="scrollable">
-      <template slot="name" slot-scope="text, record">
+      <template #name="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/router' + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="hostname" slot-scope="text, record">
+      <template #hostname="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/host' + '/' + record.hostid }" v-if="record.hostid">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="zonename" slot-scope="text, record">
+      <template #zonename="{text, record}">
         <span v-if="record.role==='VIRTUAL_ROUTER'">
           <router-link :to="{ path: '/zone' + '/' + record.zoneid }" v-if="record.zoneid">{{ text }}</router-link>
           <label v-else>{{ text }}</label>
         </span>
         <span v-else>{{ text }}</span>
       </template>
-      <template slot="action" slot-scope="text, record">
+      <template #action="{record}">
         <a-tooltip placement="top">
-          <template slot="title">
+          <template #title>
             <span v-if="resource.name==='BigSwitchBcf'">{{ $t('label.delete.bigswitchbcf') }}</span>
             <span v-else-if="resource.name==='BrocadeVcs'">{{ $t('label.delete.brocadevcs') }}</span>
             <span v-else-if="resource.name==='NiciraNvp'">{{ $t('label.delete.niciranvp') }}</span>
@@ -70,27 +70,28 @@
           <tooltip-button
             v-if="resource.name==='Ovs'"
             :tooltip="$t('label.configure')"
-            icon="setting"
+            icon="setting-outlined"
             size="small"
             :loading="actionLoading"
-            @click="onConfigureOvs(record)"/>
+            @onClick="onConfigureOvs(record)"/>
           <tooltip-button
             v-else
             :tooltip="$t('label.delete')"
-            type="danger"
-            icon="close"
+            type="primary"
+            :danger="true"
+            icon="close-outlined"
             size="small"
             :loading="actionLoading"
-            @click="onDelete(record)"/>
+            @onClick="onDelete(record)"/>
         </a-tooltip>
       </template>
-      <template slot="lbdevicestate" slot-scope="text">
+      <template #lbdevicestate="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template slot="status" slot-scope="text">
+      <template #status="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
-      <template slot="state" slot-scope="text">
+      <template #state="{text}">
         <status :text="text ? text : ''" displayText />
       </template>
     </a-table>
@@ -106,7 +107,7 @@
       @showSizeChange="changePageSize"
       showSizeChanger
       showQuickJumper>
-      <template slot="buildOptionText" slot-scope="props">
+      <template #buildOptionText="props">
         <span>{{ props.value }} / {{ $t('label.page') }}</span>
       </template>
     </a-pagination>
@@ -116,7 +117,7 @@
 <script>
 import { api } from '@/api'
 import Status from '@/components/widgets/Status'
-import TooltipButton from '@/components/view/TooltipButton'
+import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ProviderListView',
@@ -188,7 +189,7 @@ export default {
       return columns
     }
   },
-  inject: ['providerChangePage', 'provideReload', 'parentPollActionCompletion'],
+  inject: ['providerChangePage', 'provideReload'],
   methods: {
     changePage (page, pageSize) {
       this.providerChangePage(this.title, page, pageSize)
@@ -286,13 +287,13 @@ export default {
             try {
               const jobId = await this.executeDeleteRecord(apiName, params)
               if (jobId) {
-                this.$store.dispatch('AddAsyncJob', {
+                this.$pollJob({
+                  jobId,
                   title: this.$t(label),
-                  jobid: jobId,
                   description: this.$t(name),
-                  status: 'progress'
+                  loadingMessage: `${this.$t(label)} - ${this.$t(name)}`,
+                  catchMessage: this.$t('error.fetching.async.job.result')
                 })
-                this.parentPollActionCompletion(jobId, this.action)
               } else {
                 this.$success('Success')
                 this.provideReload()
@@ -322,13 +323,13 @@ export default {
           try {
             const jobId = await this.configureOvsElement(params)
             if (jobId) {
-              this.$store.dispatch('AddAsyncJob', {
+              this.$pollJob({
+                jobId,
                 title: this.$t('label.configure.ovs'),
-                jobid: jobId,
                 description: this.$t(record.id),
-                status: 'progress'
+                loadingMessage: `${this.$t('label.configure.ovs')} - ${this.$t(record.id)}`,
+                catchMessage: this.$t('error.fetching.async.job.result')
               })
-              this.parentPollActionCompletion(jobId, this.action)
             } else {
               this.$success('Success')
               this.provideReload()

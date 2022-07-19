@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -608,7 +608,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         List<String> sourceCidrList = networkACLItemVO.getSourceCidrList();
         if (CollectionUtils.isNotEmpty(sourceCidrList)) {
             for (String cidr : sourceCidrList) {
-                if (!NetUtils.isValidIp4Cidr(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
@@ -947,7 +947,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String nextAclRuleUuid = moveNetworkAclItemCmd.getNextAclRuleUuid();
         String previousAclRuleUuid = moveNetworkAclItemCmd.getPreviousAclRuleUuid();
 
-        if (StringUtils.isBlank(previousAclRuleUuid) && StringUtils.isBlank(nextAclRuleUuid)) {
+        if (StringUtils.isAllBlank(previousAclRuleUuid, nextAclRuleUuid)) {
             throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be blank.");
         }
 
@@ -1145,6 +1145,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         NetworkACLVO acl = _networkACLDao.findById(aclId);
         Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Re-ordering rules for a default ACL is prohibited");
+        }
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vpc);
     }

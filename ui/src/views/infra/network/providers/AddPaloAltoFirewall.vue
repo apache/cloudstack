@@ -16,49 +16,53 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-form
-      :form="form"
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
       layout="vertical"
-      @submit="handleSubmit">
+      @finish="handleSubmit"
+     >
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.ip')">
+          <a-form-item name="ip" ref="ip" :label="$t('label.ip')">
             <a-input
-              autoFocus
-              v-decorator="['ip', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              :placeholder="apiParams.url.description"
+              v-focus="true"
+              v-model:value="form.ip" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.username')">
+          <a-form-item name="username" ref="username" :label="$t('label.username')">
             <a-input
-              v-decorator="['username', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              :placeholder="apiParams.username.description"
+              v-model:value="form.username" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.password')">
+          <a-form-item name="password" ref="password" :label="$t('label.password')">
             <a-input-password
-              v-decorator="['password', {
-                rules: [{ required: true, message: $t('message.error.required.input') }]
-              }]" />
+              :placeholder="apiParams.password.description"
+              v-model:value="form.password" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.networkdevicetype')">
+          <a-form-item name="networkdevicetype" ref="networkdevicetype" :label="$t('label.networkdevicetype')">
             <a-select
-              v-decorator="['networkdevicetype', {
-                rules: [{ required: true, message: $t('message.error.select') }]
-              }]">
+              :placeholder="apiParams.networkdevicetype.description"
+              v-model:value="form.networkdevicetype"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }" >
               <a-select-option
                 v-for="opt in networkDeviceType"
                 :key="opt.id">{{ $t(opt.description) }}</a-select-option>
@@ -68,99 +72,93 @@
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.publicinterface')">
-            <a-input
-              v-decorator="['publicinterface']" />
+          <a-form-item name="publicinterface" ref="publicinterface" :label="$t('label.publicinterface')">
+            <a-input v-model:value="form.publicinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.privateinterface')">
-            <a-input
-              v-decorator="['privateinterface']" />
+          <a-form-item name="privateinterface" ref="privateinterface" :label="$t('label.privateinterface')">
+            <a-input v-model:value="form.privateinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.usageinterface')">
-            <a-input
-              v-decorator="['usageinterface']" />
+          <a-form-item name="usageinterface" ref="usageinterface" :label="$t('label.usageinterface')">
+            <a-input v-model:value="form.usageinterface" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.numretries')">
+          <a-form-item name="numretries" ref="numretries" :label="$t('label.numretries')">
             <a-input-number
               style="width: 100%"
-              v-decorator="['numretries', { initialValue: 2 }]" />
+              v-model:value="form.numretries" />
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.timeout')">
+          <a-form-item name="timeout" ref="timeout" :label="$t('label.timeout')">
             <a-input-number
               style="width: 100%"
-              v-decorator="['timeout', { initialValue: 300 }]" />
+              v-model:value="form.timeout" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.publicnetwork')">
+          <a-form-item name="publicnetwork" ref="publicnetwork" :label="$t('label.publicnetwork')">
             <a-input
-              v-decorator="['publicnetwork', { initialValue: 'untrusted' }]"
+              v-model:value="form.publicnetwork"
               :disabled="true" />
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.privatenetwork')">
+          <a-form-item name="privatenetwork" ref="privatenetwork" :label="$t('label.privatenetwork')">
             <a-input
-              v-decorator="['privatenetwork', { initialValue: 'trusted' }]"
+              v-model:value="form.privatenetwork"
               :disabled="true" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.pavr')">
-            <a-input
-              v-decorator="['pavr']" />
+          <a-form-item name="pavr" ref="pavr" :label="$t('label.pavr')">
+            <a-input v-model:value="form.pavr" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.patp')">
-            <a-input
-              v-decorator="['patp']" />
+          <a-form-item name="patp" ref="patp" :label="$t('label.patp')">
+            <a-input v-model:value="form.patp" />
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item :label="$t('label.palp')">
-            <a-input
-              v-decorator="['palp']" />
+          <a-form-item name="palp" ref="palp" :label="$t('label.palp')">
+            <a-input v-model:value="form.palp" />
           </a-form-item>
         </a-col>
       </a-row>
       <a-row :gutter="12">
         <a-col :md="24" :lg="24">
-          <a-form-item :label="$t('label.capacity')">
-            <a-input
-              v-decorator="['capacity']" />
+          <a-form-item name="capacity" ref="capacity" :label="$t('label.capacity')">
+            <a-input v-model:value="form.capacity" />
           </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
-        <a-button :loading="loading" @click="onCloseAction">{{ this.$t('label.cancel') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+        <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -177,6 +175,7 @@ export default {
   },
   data () {
     return {
+      apiParams: {},
       loading: false,
       nsp: {}
     }
@@ -192,8 +191,9 @@ export default {
       return items
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  created () {
+    this.initForm()
+    this.apiParams = this.$getApiParams('addPaloAltoFirewall')
   },
   mounted () {
     if (this.resource && Object.keys(this.resource).length > 0) {
@@ -205,12 +205,28 @@ export default {
     onCloseAction () {
       this.provideCloseAction()
     },
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({
+        numretries: 2,
+        timeout: 300,
+        publicnetwork: 'untrusted',
+        privatenetwork: 'untrusted'
+      })
+      this.rules = reactive({
+        ip: [{ required: true, message: this.$t('message.error.required.input') }],
+        username: [{ required: true, message: this.$t('message.error.required.input') }],
+        password: [{ required: true, message: this.$t('message.error.required.input') }],
+        networkdevicetype: [{ required: true, message: this.$t('message.error.select') }],
+        numretries: [{ type: 'number' }],
+        timeout: [{ type: 'number' }]
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields(async (err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(async () => {
+        const values = toRaw(this.form)
         const params = {}
         params.physicalnetworkid = this.resource.physicalnetworkid
         params.username = values.username
@@ -366,17 +382,9 @@ export default {
           }
           params.id = this.nsp.id
           const jobId = await this.addPaloAltoFirewall(params)
-          if (jobId) {
-            await this.$store.dispatch('AddAsyncJob', {
-              title: this.$t(this.action.label),
-              jobid: jobId,
-              description: this.$t(this.nsp.name),
-              status: 'progress'
-            })
-            await this.parentPollActionCompletion(jobId, this.action)
-          }
+          this.parentPollActionCompletion(jobId, this.action, this.$t(this.nsp.name))
+          this.provideCloseAction()
           this.loading = false
-          await this.provideCloseAction()
         } catch (error) {
           this.loading = false
           this.$notification.error({
@@ -384,20 +392,26 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     addNetworkServiceProvider (args) {
       return new Promise((resolve, reject) => {
         api('addNetworkServiceProvider', args).then(async json => {
-          const jobId = json.addnetworkserviceproviderresponse.jobid
-          if (jobId) {
-            const result = await this.pollJob(jobId)
-            if (result.jobstatus === 2) {
+          this.$pollJob({
+            jobId: json.addnetworkserviceproviderresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.networkserviceprovider)
+            },
+            errorMethod: (result) => {
               reject(result.jobresult.errortext)
-              return
+            },
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            action: {
+              isFetchData: false
             }
-            resolve(result.jobresult.networkserviceprovider)
-          }
+          })
         }).catch(error => {
           reject(error)
         })
@@ -412,35 +426,7 @@ export default {
           reject(error)
         })
       })
-    },
-    async pollJob (jobId) {
-      return new Promise(resolve => {
-        const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
-            const result = json.queryasyncjobresultresponse
-            if (result.jobstatus === 0) {
-              return
-            }
-
-            clearInterval(asyncJobInterval)
-            resolve(result)
-          })
-        }, 1000)
-      })
     }
   }
 }
 </script>
-
-<style scoped lang="less">
-.form-layout {
-  .action-button {
-    text-align: right;
-    margin-top: 20px;
-
-    button {
-      margin-right: 5px;
-    }
-  }
-}
-</style>

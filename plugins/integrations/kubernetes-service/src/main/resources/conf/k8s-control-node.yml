@@ -17,10 +17,14 @@
 # under the License.
 
 ---
-ssh_authorized_keys:
-  {{ k8s.ssh.pub.key }}
+users:
+  - name: cloud
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      {{ k8s.ssh.pub.key }}
 
-write-files:
+write_files:
   - path: /etc/conf.d/nfs
     permissions: '0644'
     content: |
@@ -29,25 +33,25 @@ write-files:
   - path: /etc/kubernetes/pki/cloudstack/ca.crt
     permissions: '0644'
     content: |
-      {{ k8s_master.ca.crt }}
+      {{ k8s_control_node.ca.crt }}
 
   - path: /etc/kubernetes/pki/cloudstack/apiserver.crt
     permissions: '0644'
     content: |
-      {{ k8s_master.apiserver.crt }}
+      {{ k8s_control_node.apiserver.crt }}
 
   - path: /etc/kubernetes/pki/cloudstack/apiserver.key
     permissions: '0600'
     content: |
-      {{ k8s_master.apiserver.key }}
+      {{ k8s_control_node.apiserver.key }}
 
   - path: /opt/bin/setup-kube-system
-    permissions: 0700
+    permissions: '0700'
     owner: root:root
     content: |
       #!/bin/bash -e
 
-      if [[ -f "/home/core/success" ]]; then
+      if [[ -f "/home/cloud/success" ]]; then
       echo "Already provisioned!"
       exit 0
       fi
@@ -109,19 +113,21 @@ write-files:
         ### Binaries available offline ###
         echo "Installing binaries from ${BINARIES_DIR}"
         mkdir -p /opt/cni/bin
-        tar -f "${BINARIES_DIR}/cni/cni-plugins-amd64.tgz" -C /opt/cni/bin -xz
+        tar -f "${BINARIES_DIR}/cni/cni-plugins-"*64.tgz -C /opt/cni/bin -xz
 
         mkdir -p /opt/bin
-        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-amd64.tar.gz" -C /opt/bin -xz
+        tar -f "${BINARIES_DIR}/cri-tools/crictl-linux-"*64.tar.gz -C /opt/bin -xz
 
         mkdir -p /opt/bin
         cd /opt/bin
-        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} /opt/bin
+        cp -a ${BINARIES_DIR}/k8s/{kubeadm,kubelet,kubectl} .
         chmod +x {kubeadm,kubelet,kubectl}
 
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/kubelet.service > /etc/systemd/system/kubelet.service
         mkdir -p /etc/systemd/system/kubelet.service.d
         sed "s:/usr/bin:/opt/bin:g" ${BINARIES_DIR}/10-kubeadm.conf > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+
+        echo "KUBELET_EXTRA_ARGS=--cgroup-driver=systemd" > /etc/default/kubelet
 
         output=`ls ${BINARIES_DIR}/docker/`
         if [ "$output" != "" ]; then
@@ -134,7 +140,7 @@ write-files:
               fi
               retval=0
               set +e
-              docker load < "${BINARIES_DIR}/docker/$line"
+              ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
               retval=$?
               set -e
               if [ $retval -eq 0 ]; then
@@ -147,6 +153,23 @@ write-files:
         fi
         mkdir -p "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
         cp ${BINARIES_DIR}/*.yaml "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
+        if [ -e "${BINARIES_DIR}/autoscaler.yaml" ]; then
+          mkdir -p /opt/autoscaler
+          cp "${BINARIES_DIR}/autoscaler.yaml" /opt/autoscaler/autoscaler_tmpl.yaml
+        fi
+        if [ -e "${BINARIES_DIR}/provider.yaml" ]; then
+          mkdir -p /opt/provider
+          cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
+        fi
+
+        PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+        echo $PAUSE_IMAGE
+        if [ -n "$PAUSE_IMAGE" ]; then
+          sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+        fi
+        systemctl daemon-reload
+        systemctl restart containerd
+
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"
@@ -175,7 +198,7 @@ write-files:
       fi
 
       systemctl enable kubelet && systemctl start kubelet
-      modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
+      modprobe overlay && modprobe br_netfilter && sysctl net.bridge.bridge-nf-call-iptables=1
 
       if [ -d "$BINARIES_DIR" ] && [ "$ATTEMPT_ONLINE_INSTALL" = true ]; then
         crucial_cmd_attempts=1
@@ -186,7 +209,7 @@ write-files:
           fi
           retval=0
           set +e
-          kubeadm config images pull
+          kubeadm config images pull --cri-socket /run/containerd/containerd.sock
           retval=$?
           set -e
           if [ $retval -eq 0 ]; then
@@ -196,6 +219,22 @@ write-files:
         done
       fi
 
+  - path: /opt/bin/deploy-kube-system
+    permissions: '0700'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
+
+      if [[ -f "/home/cloud/success" ]]; then
+      echo "Already provisioned!"
+      exit 0
+      fi
+
+      if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
+        export PATH=$PATH:/opt/bin
+      fi
+
+      MAX_SETUP_CRUCIAL_CMD_ATTEMPTS=3
       crucial_cmd_attempts=1
       while true; do
         if (( "$crucial_cmd_attempts" > "$MAX_SETUP_CRUCIAL_CMD_ATTEMPTS" )); then
@@ -204,7 +243,7 @@ write-files:
         fi
         retval=0
         set +e
-        kubeadm init --token {{ k8s_master.cluster.token }} --token-ttl 0 {{ k8s_master.cluster.initargs }}
+        kubeadm init --token {{ k8s_control_node.cluster.token }} --token-ttl 0 {{ k8s_control_node.cluster.initargs }} --cri-socket /run/containerd/containerd.sock
         retval=$?
         set -e
         if [ $retval -eq 0 ]; then
@@ -212,17 +251,6 @@ write-files:
         fi
         crucial_cmd_attempts=$[$crucial_cmd_attempts + 1]
       done
-
-  - path: /opt/bin/deploy-kube-system
-    permissions: 0700
-    owner: root:root
-    content: |
-      #!/bin/bash -e
-
-      if [[ -f "/home/core/success" ]]; then
-      echo "Already provisioned!"
-      exit 0
-      fi
 
       K8S_CONFIG_SCRIPTS_COPY_DIR=/tmp/k8sconfigscripts/
 
@@ -243,52 +271,59 @@ write-files:
       if [ -d "$K8S_CONFIG_SCRIPTS_COPY_DIR" ]; then
         ### Network, dashboard configs available offline ###
         echo "Offline configs are available!"
-        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
-        kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
+        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/network.yaml
+        /opt/bin/kubectl apply -f ${K8S_CONFIG_SCRIPTS_COPY_DIR}/dashboard.yaml
         rm -rf "${K8S_CONFIG_SCRIPTS_COPY_DIR}"
       else
-        kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
+        /opt/bin/kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(/opt/bin/kubectl version | base64 | tr -d '\n')"
+        /opt/bin/kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta6/aio/deploy/recommended.yaml
       fi
 
-      kubectl create rolebinding admin-binding --role=admin --user=admin || true
-      kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
-      kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
+      /opt/bin/kubectl create rolebinding admin-binding --role=admin --user=admin || true
+      /opt/bin/kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=admin || true
+      /opt/bin/kubectl create clusterrolebinding kubernetes-dashboard-ui --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard || true
 
-      sudo touch /home/core/success
-      echo "true" > /home/core/success
+      sudo touch /home/cloud/success
+      echo "true" > /home/cloud/success
 
-coreos:
-  units:
-    - name: docker.service
-      command: start
-      enable: true
+  - path: /opt/bin/setup-containerd
+    permissions: '0755'
+    owner: root:root
+    content: |
+      #!/bin/bash -e
 
-    - name: setup-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        Requires=docker.service
-        After=docker.service
+      export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
+      export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n\tusername = \"{{registry.username}}\" \n\tpassword = \"{{registry.password}}\" \n\tidentitytoken = \"{{registry.token}}\""
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        ExecStart=/opt/bin/setup-kube-system
+      echo "creating config file for containerd"
+      containerd config default > /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry\]/a '"${registryCredentials}"'' /etc/containerd/config.toml
+      sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]/a '"${registryConfig}"'' /etc/containerd/config.toml
 
-    - name: deploy-kube-system.service
-      command: start
-      content: |
-        [Unit]
-        After=setup-kube-system.service
+      echo "Restarting containerd service"
+      systemctl daemon-reload
+      systemctl restart containerd
 
-        [Service]
-        Type=simple
-        StartLimitInterval=0
-        Restart=on-failure
-        ExecStartPre=/usr/bin/curl -k https://127.0.0.1:6443/version
-        ExecStart=/opt/bin/deploy-kube-system
+  - path: /etc/systemd/system/deploy-kube-system.service
+    permissions: '0755'
+    owner: root:root
+    content: |
+      [Unit]
+      Requires=containerd.service
+      After=containerd.service
 
-  update:
-    group: stable
-    reboot-strategy: off
+      [Service]
+      Type=simple
+      StartLimitInterval=0
+      Restart=on-failure
+      ExecStart=/opt/bin/deploy-kube-system
+
+runcmd:
+  - chown -R cloud:cloud /home/cloud/.ssh
+  - containerd config default > /etc/containerd/config.toml
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  - until [ -f /opt/bin/setup-kube-system ]; do sleep 5; done
+  - /opt/bin/setup-kube-system
+  - until [ -f /etc/systemd/system/deploy-kube-system.service ]; do sleep 5; done
+  - systemctl start deploy-kube-system
+

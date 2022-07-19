@@ -68,6 +68,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
 
+    SnapshotDataStoreVO findByVolume(long snapshotId, long volumeId, DataStoreRole role);
+
     /**
      * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.
      */
@@ -78,4 +80,15 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> findSnapshots(Long storeId, Date start, Date end);
 
     SnapshotDataStoreVO findDestroyedReferenceBySnapshot(long snapshotId, DataStoreRole role);
+
+    /**
+     * Removes the snapshot reference from the database according to its id and data store role.
+     * @return true if success, otherwise, false.
+     */
+    boolean expungeReferenceBySnapshotIdAndDataStoreRole(long snapshotId, DataStoreRole dataStorerole);
+
+    /**
+     * List all snapshots in 'snapshot_store_ref' with state 'Ready' by volume ID.
+     */
+    List<SnapshotDataStoreVO> listReadyByVolumeId(long volumeId);
 }

@@ -25,8 +25,12 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -36,6 +40,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.gpu.GPU;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.Network;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
@@ -61,21 +66,21 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.commons.lang3.StringUtils;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru, Configurable {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
 
     @Inject
-    private NicDao _nicDao;
+    protected
+    NicDao nicDao;
     @Inject
-    private NetworkDao _networkDao;
+    protected
+    NetworkDao networkDao;
     @Inject
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
-    private VMInstanceDao _virtualMachineDao;
+    protected
+    VMInstanceDao virtualMachineDao;
     @Inject
     private UserVmDetailsDao _userVmDetailsDao;
     @Inject
@@ -85,17 +90,37 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
+    protected ServiceOfferingDao serviceOfferingDao;
     @Inject
     private NetworkDetailsDao networkDetailsDao;
     @Inject
-    private HostDao hostDao;
+    protected
+    HostDao hostDao;
 
     public static ConfigKey<Boolean> VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.memory.equals.memory.divided.by.mem.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum memory (memory/ mem.overprovisioning.factor) will be set to the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
 
     public static ConfigKey<Boolean> VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.min.cpu.speed.equals.cpu.speed.divided.by.cpu.overprovisioning.factor", "true",
             "If we set this to 'true', a minimum CPU speed (cpu speed/ cpu.overprovisioning.factor) will be set on the VM, independent of using a scalable service offering or not.", true, ConfigKey.Scope.Cluster);
+
+    private Map<NetworkOffering.Detail, String> getNicDetails(Network network) {
+        if (network == null) {
+            s_logger.debug("Unable to get NIC details as the network is null");
+            return null;
+        }
+        Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+        if (details != null) {
+            details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+            details.putIfAbsent(NetworkOffering.Detail.MacLearning, NetworkOrchestrationService.MacLearning.value().toString());
+        }
+        NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
+        if (pvlantypeDetail != null) {
+            details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
+        }
+        return details;
+    }
 
     @Override
     public NicTO toNicTO(NicProfile profile) {
@@ -116,13 +141,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setName(profile.getName());
         to.setSecurityGroupEnabled(profile.isSecurityGroupEnabled());
         to.setIp6Address(profile.getIPv6Address());
+        to.setIp6Gateway(profile.getIPv6Gateway());
         to.setIp6Cidr(profile.getIPv6Cidr());
 
-        NetworkVO network = _networkDao.findById(profile.getNetworkId());
+        NetworkVO network = networkDao.findById(profile.getNetworkId());
         to.setNetworkUuid(network.getUuid());
 
         // Workaround to make sure the TO has the UUID we need for Nicira integration
-        NicVO nicVO = _nicDao.findById(profile.getId());
+        NicVO nicVO = nicDao.findById(profile.getId());
         if (nicVO != null) {
             to.setUuid(nicVO.getUuid());
             // disable pxe on system vm nics to speed up boot time
@@ -140,6 +166,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
         }
+        to.setDetails(getNicDetails(network));
 
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
@@ -176,12 +203,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
-        ServiceOffering offering = _serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
+        ServiceOffering offering = serviceOfferingDao.findById(vmProfile.getId(), vmProfile.getServiceOfferingId());
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        HostVO host = hostDao.findById(vm.getHostId());
+        Long clusterId = findClusterOfVm(vm);
+        boolean divideMemoryByOverprovisioning = true;
+        boolean divideCpuByOverprovisioning = true;
 
-        boolean divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(host.getClusterId());
-        boolean divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(host.getClusterId());
+        if (clusterId != null) {
+            divideMemoryByOverprovisioning = VmMinMemoryEqualsMemoryDividedByMemOverprovisioningFactor.valueIn(clusterId);
+            divideCpuByOverprovisioning = VmMinCpuSpeedEqualsCpuSpeedDividedByCpuOverprovisioningFactor.valueIn(clusterId);
+        }
 
         Long minMemory = (long)(offering.getRamSize() / (divideMemoryByOverprovisioning ? vmProfile.getMemoryOvercommitRatio() : 1));
         int minspeed = (int)(offering.getSpeed() / (divideCpuByOverprovisioning ? vmProfile.getCpuOvercommitRatio() : 1));
@@ -213,20 +244,6 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
                 nicProfile.setBroadcastType(BroadcastDomainType.Native);
             }
             NicTO nicTo = toNicTO(nicProfile);
-            final NetworkVO network = _networkDao.findByUuid(nicTo.getNetworkUuid());
-            if (network != null) {
-                final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
-                if (details != null) {
-                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
-                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
-                }
-                NetworkDetailVO pvlantypeDetail = networkDetailsDao.findDetail(network.getId(), ApiConstants.ISOLATED_PVLAN_TYPE);
-                if (pvlantypeDetail != null) {
-                    details.putIfAbsent(NetworkOffering.Detail.pvlanType, pvlantypeDetail.getValue());
-                }
-                nicTo.setDetails(details);
-            }
             nics[i++] = nicTo;
         }
 
@@ -255,7 +272,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         }
 
         // Workaround to make sure the TO has the UUID we need for Niciri integration
-        VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
+        VMInstanceVO vmInstance = virtualMachineDao.findById(to.getId());
         to.setEnableDynamicallyScaleVm(vmInstance.isDynamicallyScalable());
         to.setUuid(vmInstance.getUuid());
 
@@ -267,6 +284,22 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setState(vm.getState());
 
         return to;
+    }
+
+    protected Long findClusterOfVm(VirtualMachine vm) {
+        HostVO host = hostDao.findById(vm.getHostId());
+        if (host != null) {
+            return host.getClusterId();
+        }
+
+        s_logger.debug(String.format("VM [%s] does not have a host id. Trying the last host.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        host = hostDao.findById(vm.getLastHostId());
+        if (host != null) {
+            return host.getClusterId();
+        }
+
+        s_logger.debug(String.format("VM [%s] does not have a last host id.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "instanceName", "id", "uuid")));
+        return null;
     }
 
     @Override

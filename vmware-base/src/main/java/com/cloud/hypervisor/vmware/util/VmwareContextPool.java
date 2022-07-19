@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 import org.joda.time.Duration;
@@ -58,7 +58,7 @@ public class VmwareContextPool {
 
     public VmwareContext getContext(final String vCenterAddress, final String vCenterUserName) {
         final String poolKey = composePoolKey(vCenterAddress, vCenterUserName).intern();
-        if (Strings.isNullOrEmpty(poolKey)) {
+        if (StringUtils.isEmpty(poolKey)) {
             return null;
         }
         synchronized (poolKey) {
@@ -116,7 +116,7 @@ public class VmwareContextPool {
         final String poolKey = context.getPoolKey().intern();
         final Queue<VmwareContext> ctxList = _pool.get(poolKey);
         synchronized (poolKey) {
-            if (!Strings.isNullOrEmpty(poolKey) && ctxList != null && ctxList.contains(context)) {
+            if (StringUtils.isNotEmpty(poolKey) && ctxList != null && ctxList.contains(context)) {
                 ctxList.remove(context);
             }
         }

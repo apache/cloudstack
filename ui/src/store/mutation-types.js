@@ -29,10 +29,14 @@ export const DEFAULT_CONTENT_WIDTH_TYPE = 'DEFAULT_CONTENT_WIDTH_TYPE'
 export const DEFAULT_MULTI_TAB = 'DEFAULT_MULTI_TAB'
 export const APIS = 'APIS'
 export const ZONES = 'ZONES'
-export const ASYNC_JOB_IDS = 'ASYNC_JOB_IDS'
+export const HEADER_NOTICES = 'HEADER_NOTICES'
 export const TIMEZONE_OFFSET = 'TIMEZONE_OFFSET'
 export const USE_BROWSER_TIMEZONE = 'USE_BROWSER_TIMEZONE'
+export const SERVER_MANAGER = 'SERVER_MANAGER'
 export const DOMAIN_STORE = 'DOMAIN_STORE'
+export const DARK_MODE = 'DARK_MODE'
+export const VUE_VERSION = 'VUE_VERSION'
+export const CUSTOM_COLUMNS = 'CUSTOM_COLUMNS'
 
 export const CONTENT_WIDTH_TYPE = {
   Fluid: 'Fluid',

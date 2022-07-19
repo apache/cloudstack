@@ -1144,8 +1144,8 @@ def get_free_vlan(apiclient, zoneid):
     usedVlanIds = []
 
     if isinstance(networks, list) and len(networks) > 0:
-        usedVlanIds = [int(nw.vlan)
-                       for nw in networks if (nw.vlan and str(nw.vlan).lower() != "untagged")]
+        usedVlanIds = [int(nw.broadcasturi.split("//")[-1])
+                       for nw in networks if (nw.broadcasturi and nw.broadcasturi.lower() != "vlan://untagged")]
 
     ipranges = list_vlan_ipranges(apiclient, zoneid=zoneid)
     if isinstance(ipranges, list) and len(ipranges) > 0:
@@ -1273,7 +1273,7 @@ def isIpInDesiredState(apiclient, ipaddressid, state):
     and return True/False accordingly"""
     retriesCount = 10
     ipInDesiredState = False
-    exceptionOccured = False
+    exceptionOccurred = False
     exceptionMessage = ""
     try:
         while retriesCount >= 0:
@@ -1286,9 +1286,9 @@ def isIpInDesiredState(apiclient, ipaddressid, state):
             retriesCount -= 1
             time.sleep(60)
     except Exception as e:
-        exceptionOccured = True
+        exceptionOccurred = True
         exceptionMessage = e
-        return [exceptionOccured, ipInDesiredState, e]
+        return [exceptionOccurred, ipInDesiredState, e]
     if not ipInDesiredState:
         exceptionMessage = "Ip should be in %s state, it is in %s" %\
                             (state, portableips[0].state)
@@ -1349,7 +1349,7 @@ def verifyNetworkState(apiclient, networkid, state, listall=True):
     """List networks and check if the network state matches the given state"""
     retriesCount = 10
     isNetworkInDesiredState = False
-    exceptionOccured = False
+    exceptionOccurred = False
     exceptionMessage = ""
     try:
         while retriesCount >= 0:
@@ -1365,10 +1365,10 @@ def verifyNetworkState(apiclient, networkid, state, listall=True):
             exceptionMessage = "Network state should be %s, it is %s" %\
                                 (state, networks[0].state)
     except Exception as e:
-        exceptionOccured = True
+        exceptionOccurred = True
         exceptionMessage = e
-        return [exceptionOccured, isNetworkInDesiredState, exceptionMessage]
-    return [exceptionOccured, isNetworkInDesiredState, exceptionMessage]
+        return [exceptionOccurred, isNetworkInDesiredState, exceptionMessage]
+    return [exceptionOccurred, isNetworkInDesiredState, exceptionMessage]
 
 def verifyComputeOfferingCreation(apiclient, computeofferingid):
     """List Compute offerings by ID and verify that the offering exists"""
@@ -1476,6 +1476,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
                               accountid=None, projectid=None):
     """Match the resource count of account/project with the expected
     resource count"""
+    expected = int(expectedCount)  # initialise as int to make sure floats passed are acceptable
     try:
         resourceholderlist = None
         if accountid:
@@ -1489,6 +1490,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
             resourceCount = resourceholderlist[0].primarystoragetotal
         elif resourceType == RESOURCE_SECONDARY_STORAGE:
             resourceCount = resourceholderlist[0].secondarystoragetotal
+            expected = expectedCount  # as the exception, an original value is needed here (should be of type float)
         elif resourceType == RESOURCE_CPU:
             resourceCount = resourceholderlist[0].cputotal
         elif resourceType == RESOURCE_MEMORY:
@@ -1507,7 +1509,7 @@ def matchResourceCount(apiclient, expectedCount, resourceType,
             resourceCount = resourceholderlist[0].networktotal
         elif resourceType == RESOURCE_VPC:
             resourceCount = resourceholderlist[0].vpctotal
-        assert str(resourceCount) == str(expectedCount),\
+        assert str(resourceCount) == str(expected),\
                 "Resource count %s should match with the expected resource count %s" %\
                 (resourceCount, expectedCount)
     except Exception as e:
@@ -1555,17 +1557,17 @@ def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount
                                               resourcetype):
     """Get the resource count of specific domain and match
     it with the expected count
-    Return list [isExceptionOccured, reasonForException, isResourceCountEqual]"""
+    Return list [isExceptionOccurred, reasonForException, isResourceCountEqual]"""
     isResourceCountEqual = False
-    isExceptionOccured = False
+    isExceptionOccurred = False
     reasonForException = None
     try:
         response = Resources.updateCount(apiclient, domainid=domainid,
                                          resourcetype=resourcetype)
     except Exception as e:
         reasonForException = "Failed while updating resource count: %s" % e
-        isExceptionOccured = True
-        return [isExceptionOccured, reasonForException, isResourceCountEqual]
+        isExceptionOccurred = True
+        return [isExceptionOccurred, reasonForException, isResourceCountEqual]
 
     if resourcetype == RESOURCE_PRIMARY_STORAGE or resourcetype == RESOURCE_SECONDARY_STORAGE:
         resourcecount = (response[0].resourcecount / (1024**3))
@@ -1574,23 +1576,23 @@ def isDomainResourceCountEqualToExpectedCount(apiclient, domainid, expectedcount
 
     if resourcecount == expectedcount:
         isResourceCountEqual = True
-    return [isExceptionOccured, reasonForException, isResourceCountEqual]
+    return [isExceptionOccurred, reasonForException, isResourceCountEqual]
 
 def isAccountResourceCountEqualToExpectedCount(apiclient, domainid, account, expectedcount,
                                               resourcetype):
     """Get the resource count of specific account and match
     it with the expected count
-    Return list [isExceptionOccured, reasonForException, isResourceCountEqual]"""
+    Return list [isExceptionOccurred, reasonForException, isResourceCountEqual]"""
     isResourceCountEqual = False
-    isExceptionOccured = False
+    isExceptionOccurred = False
     reasonForException = None
     try:
         response = Resources.updateCount(apiclient, domainid=domainid, account=account,
                                          resourcetype=resourcetype)
     except Exception as e:
         reasonForException = "Failed while updating resource count: %s" % e
-        isExceptionOccured = True
-        return [isExceptionOccured, reasonForException, isResourceCountEqual]
+        isExceptionOccurred = True
+        return [isExceptionOccurred, reasonForException, isResourceCountEqual]
 
     if resourcetype == RESOURCE_PRIMARY_STORAGE or resourcetype == RESOURCE_SECONDARY_STORAGE:
         resourcecount = (response[0].resourcecount / (1024**3))
@@ -1599,7 +1601,7 @@ def isAccountResourceCountEqualToExpectedCount(apiclient, domainid, account, exp
 
     if resourcecount == expectedcount:
         isResourceCountEqual = True
-    return [isExceptionOccured, reasonForException, isResourceCountEqual]
+    return [isExceptionOccurred, reasonForException, isResourceCountEqual]
 
 def isNetworkDeleted(apiclient, networkid, timeout=600):
     """ List the network and check that the list is empty or not"""
@@ -1761,7 +1763,7 @@ def verifyRouterState(apiclient, routerid, state, listall=True):
     """List router and check if the router state matches the given state"""
     retriesCount = 10
     isRouterInDesiredState = False
-    exceptionOccured = False
+    exceptionOccurred = False
     exceptionMessage = ""
     try:
         while retriesCount >= 0:
@@ -1777,10 +1779,10 @@ def verifyRouterState(apiclient, routerid, state, listall=True):
             exceptionMessage = "Router state should be %s, it is %s" %\
                                 (state, routers[0].state)
     except Exception as e:
-        exceptionOccured = True
+        exceptionOccurred = True
         exceptionMessage = e
-        return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
-    return [exceptionOccured, isRouterInDesiredState, exceptionMessage]
+        return [exceptionOccurred, isRouterInDesiredState, exceptionMessage]
+    return [exceptionOccurred, isRouterInDesiredState, exceptionMessage]
 
 def isIpRangeInUse(api_client, publicIpRange):
     ''' Check that if any Ip in the IP Range is in use

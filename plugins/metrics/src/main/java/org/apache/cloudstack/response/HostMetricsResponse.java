@@ -138,6 +138,10 @@ public class HostMetricsResponse extends HostResponse {
         }
     }
 
+    public String getCpuAllocatedGhz() {
+        return cpuAllocated;
+    }
+
     public void setMemTotal(final Long memTotal) {
         if (memTotal != null) {
             this.memTotal = String.format("%.2f GB", memTotal / (1024.0 * 1024.0 * 1024.0));
@@ -182,13 +186,13 @@ public class HostMetricsResponse extends HostResponse {
 
     public void setCpuAllocatedThreshold(final String cpuAllocated, final Double threshold) {
         if (cpuAllocated != null && threshold != null) {
-            this.cpuAllocatedThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold );
+            this.cpuAllocatedThresholdExceeded = parseCPU(cpuAllocated) > (100.0 * threshold );
         }
     }
 
     public void setCpuAllocatedDisableThreshold(final String cpuAllocated, final Float threshold) {
         if (cpuAllocated != null && threshold != null) {
-            this.cpuAllocatedDisableThresholdExceeded = Double.valueOf(cpuAllocated.replace("%", "")) > (100.0 * threshold);
+            this.cpuAllocatedDisableThresholdExceeded = parseCPU(cpuAllocated) > (100.0 * threshold);
         }
     }
 

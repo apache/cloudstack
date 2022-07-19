@@ -22,18 +22,25 @@
       :loading="loading"
       :defaultValue="currentAccount"
       :value="currentAccount"
+      showSearch
+      optionFilterProp="label"
+      :filterOption="(input, option) => {
+        return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      }"
       @change="changeAccount"
       @focus="fetchData" >
 
-      <a-tooltip placement="bottom" slot="suffixIcon">
-        <template slot="title">
-          <span>{{ $t('label.domain') }}</span>
-        </template>
-        <span style="font-size: 20px; color: #999; margin-top: -5px">
-          <a-icon v-if="!loading" type="block" />
-          <a-icon v-else type="loading" />
-        </span>
-      </a-tooltip>
+      <template #suffixIcon>
+        <a-tooltip placement="bottom">
+          <template #title>
+            <span>{{ $t('label.domain') }}</span>
+          </template>
+          <span class="custom-suffix-icon">
+            <BlockOutlined v-if="!loading" />
+            <LoadingOutlined v-else />
+          </span>
+        </a-tooltip>
+      </template>
 
       <a-select-option v-for="(account, index) in samlAccounts" :key="index">
         {{ `${account.accountName} (${account.domainName})` }}
@@ -98,7 +105,7 @@ export default {
         userid: account.userId,
         domainid: account.domainId
       }).then(response => {
-        store.dispatch('GetInfo').then(() => {
+        store.dispatch('GetInfo', true).then(() => {
           this.$message.success(`Switched to "${account.accountName} (${account.domainPath})"`)
           this.$router.go()
         })
@@ -120,5 +127,13 @@ export default {
     padding-top: 5px;
     padding-right: 5px;
   }
+}
+
+.custom-suffix-icon {
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin-top: -8px;
 }
 </style>

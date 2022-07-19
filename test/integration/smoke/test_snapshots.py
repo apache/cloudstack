@@ -97,6 +97,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
                     mode=cls.services["mode"]
                 )
 
+            cls._cleanup.append(cls.virtual_machine_with_disk)
             cls._cleanup.append(cls.service_offering)
             cls._cleanup.append(cls.account)
             cls._cleanup.append(cls.disk_offering)
@@ -224,7 +225,7 @@ class TestSnapshotRootDisk(cloudstackTestCase):
         # 4 - Migrate volume V to PS
         # 5 - Take volume V snapshot -> S
         # 6 - List snapshot and verify it gets properly listed although Primary Storage was removed
-        
+
         # Create new volume
         vol = Volume.create(
             self.apiclient,
@@ -245,23 +246,28 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             PASS,
             "Invalid response returned for list volumes")
         vol_uuid = vol_res[0].id
-        
-        # Create new Primary Storage
         clusters = list_clusters(
             self.apiclient,
             zoneid=self.zone.id
         )
         assert isinstance(clusters,list) and len(clusters)>0
 
+        # Attach created volume to vm, then detach it to be able to migrate it
+        self.virtual_machine_with_disk.stop(self.apiclient)
+        self.virtual_machine_with_disk.attach_volume(
+            self.apiclient,
+            vol
+        )
+
+        # Create new Primary Storage
         storage = StoragePool.create(self.apiclient,
                                      self.services["nfs2"],
                                      clusterid=clusters[0].id,
                                      zoneid=self.zone.id,
                                      podid=self.pod.id
                                      )
-        self.cleanup.append(self.virtual_machine_with_disk)
-        self.cleanup.append(storage)
 
+        self.cleanup.append(storage)
         self.assertEqual(
             storage.state,
             'Up',
@@ -296,12 +302,6 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             "Check storage pool type "
         )
 
-        # Attach created volume to vm, then detach it to be able to migrate it
-        self.virtual_machine_with_disk.stop(self.apiclient)
-        self.virtual_machine_with_disk.attach_volume(
-            self.apiclient,
-            vol
-        )
         self.virtual_machine_with_disk.detach_volume(
             self.apiclient,
             vol

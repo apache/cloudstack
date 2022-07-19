@@ -94,7 +94,7 @@ public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
         if (pageSizeInt != null) {
             defaultPageSize = pageSizeInt.longValue();
         }
-        if (defaultPageSize.longValue() == s_pageSizeUnlimited) {
+        if (s_pageSizeUnlimited.equals(defaultPageSize)) {
             defaultPageSize = null;
         }
 
@@ -115,11 +115,6 @@ public abstract class BaseListCmd extends BaseCmd implements IBaseListCmd {
             }
         }
         return startIndex;
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.None;
     }
 
     @Override

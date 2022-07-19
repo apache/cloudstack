@@ -24,7 +24,7 @@
       CloudStack {{ $store.getters.features.cloudstackversion }}
       <a-divider type="vertical" />
       <a href="https://github.com/apache/cloudstack/issues/new" target="_blank">
-        <a-icon type="github"/>
+        <github-outlined />
         {{ $t('label.report.bug') }}
       </a>
     </div>
@@ -49,18 +49,8 @@ export default {
 
     .line {
       margin-bottom: 8px;
-
-      a {
-        color: rgba(0, 0, 0, .45);
-
-        &:hover {
-          color: rgba(0, 0, 0, .65);
-        }
-
-      }
     }
     .copyright {
-      color: rgba(0, 0, 0, .45);
       font-size: 14px;
     }
   }

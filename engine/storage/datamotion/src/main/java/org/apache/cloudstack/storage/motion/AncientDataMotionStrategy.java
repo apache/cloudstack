@@ -19,10 +19,13 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -44,6 +47,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.log4j.Logger;
@@ -57,7 +62,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
@@ -67,6 +71,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -85,6 +90,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     DataStoreManager dataStoreMgr;
     @Inject
     StorageCacheManager cacheMgr;
+    @Inject
+    VolumeDataStoreDao volumeDataStoreDao;
+
+    @Inject
+    StorageManager storageManager;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -164,7 +174,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
-            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), primaryStorageDownloadWait,
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
@@ -218,17 +228,19 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
      * @param dataTO Dest data store TO
      * @return dataTO including fullCloneFlag, if provided
      */
-    protected DataTO addFullCloneFlagOnVMwareDest(DataTO dataTO) {
+    protected DataTO addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(DataTO dataTO) {
         if (dataTO != null && dataTO.getHypervisorType().equals(Hypervisor.HypervisorType.VMware)){
             DataStoreTO dataStoreTO = dataTO.getDataStore();
             if (dataStoreTO != null && dataStoreTO instanceof PrimaryDataStoreTO){
                 PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
-                Boolean value = CapacityManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId());
-                primaryDataStoreTO.setFullCloneFlag(value);
+                primaryDataStoreTO.setFullCloneFlag(StorageManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
+                StoragePool pool = storageManager.getStoragePool(primaryDataStoreTO.getId());
+                primaryDataStoreTO.setDiskProvisioningStrictnessFlag(storageManager.DiskProvisioningStrictness.valueIn(pool.getDataCenterId()));
             }
         }
         return dataTO;
     }
+
 
     protected Answer copyObject(DataObject srcData, DataObject destData) {
         return copyObject(srcData, destData, null);
@@ -286,7 +298,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 ep = selector.select(srcData, volObj);
             }
 
-            CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneFlagOnVMwareDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
+            CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volObj.getTO()), _createVolumeFromSnapshotWait, VirtualMachineManager.ExecuteInSequence.value());
+
             Answer answer = null;
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -309,7 +322,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer cloneVolume(DataObject template, DataObject volume) {
-        CopyCommand cmd = new CopyCommand(template.getTO(), addFullCloneFlagOnVMwareDest(volume.getTO()), 0, VirtualMachineManager.ExecuteInSequence.value());
+        CopyCommand cmd = new CopyCommand(template.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(volume.getTO()), 0, VirtualMachineManager.ExecuteInSequence.value());
         try {
             EndPoint ep = selector.select(volume.getDataStore());
             Answer answer = null;
@@ -324,6 +337,15 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         } catch (Exception e) {
             s_logger.debug("Failed to send to storage pool", e);
             throw new CloudRuntimeException("Failed to send to storage pool", e);
+        }
+    }
+
+    private void deleteVolumeOnSecondaryStore(DataObject objectInStore) {
+        ImageStoreEntity store = (ImageStoreEntity) objectInStore.getDataStore();
+        store.delete(objectInStore);
+        List<VolumeDataStoreVO> volumesOnStore =  volumeDataStoreDao.listByVolume(objectInStore.getId(), store.getId());
+        for (VolumeDataStoreVO volume : volumesOnStore) {
+            volumeDataStoreDao.remove(volume.getId());
         }
     }
 
@@ -362,10 +384,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             }
 
             DataObject objOnImageStore = imageStore.create(srcData);
-            objOnImageStore.processEvent(Event.CreateOnlyRequested);
-
             Answer answer = null;
             try {
+                objOnImageStore.processEvent(Event.CreateOnlyRequested);
                 answer = copyObject(srcData, objOnImageStore);
 
                 if (answer == null || !answer.getResult()) {
@@ -381,7 +402,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 objOnImageStore.processEvent(Event.CopyingRequested);
 
-                CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand cmd = new CopyCommand(objOnImageStore.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _copyvolumewait, VirtualMachineManager.ExecuteInSequence.value());
                 EndPoint ep = selector.select(objOnImageStore, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -404,11 +425,12 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     objOnImageStore.processEvent(Event.OperationFailed);
                     imageStore.delete(objOnImageStore);
                 }
+                s_logger.error("Failed to perform operation: "+ e.getLocalizedMessage());
                 throw e;
             }
 
             objOnImageStore.processEvent(Event.OperationSuccessed);
-            imageStore.delete(objOnImageStore);
+            deleteVolumeOnSecondaryStore(objOnImageStore);
             return answer;
         } else {
             DataObject cacheData = cacheMgr.createCacheObject(srcData, destScope);
@@ -436,8 +458,13 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int waitInterval = NumbersUtil.parseInt(value, Integer.parseInt(Config.MigrateWait.getDefaultValue()));
 
         VolumeInfo volume = (VolumeInfo)srcData;
+        StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
-        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval);
+        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval, volume.getChainInfo());
+        if (srcPool.getParent() != 0) {
+            command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
+        }
+
         EndPoint ep = selector.select(srcData, StorageAction.MIGRATEVOLUME);
         Answer answer = null;
         if (ep == null) {
@@ -534,7 +561,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             ep = selector.select(srcData, destData);
         }
 
-        CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
+        CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _createprivatetemplatefromsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -564,13 +591,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());
+        options.put(BackupSnapshotAfterTakingSnapshot.key(), String.valueOf(BackupSnapshotAfterTakingSnapshot.value()));
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
                 Scope selectedScope = pickCacheScopeForCopy(srcData, destData);
                 cacheData = cacheMgr.getCacheObject(srcData, selectedScope);
 
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO()), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData);
@@ -582,7 +610,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     answer = ep.sendMessage(cmd);
                 }
             } else {
-                addFullCloneFlagOnVMwareDest(destData.getTO());
+                addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(destData.getTO());
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT);

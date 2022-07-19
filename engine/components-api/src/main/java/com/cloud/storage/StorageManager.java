@@ -19,7 +19,6 @@ package com.cloud.storage;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -27,6 +26,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -143,8 +143,64 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer>  SecStorageMaxMigrateSessions = new ConfigKey<Integer>("Advanced", Integer.class, "secstorage.max.migrate.sessions", "2",
             "The max number of concurrent copy command execution sessions that an SSVM can handle", false, ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean>  SecStorageVMAutoScaleDown = new ConfigKey<Boolean>("Advanced", Boolean.class, "secstorage.vm.auto.scale.down", "false",
+            "Setting this to 'true' will auto scale down SSVMs", true, ConfigKey.Scope.Global);
+
     ConfigKey<Integer> MaxDataMigrationWaitTime = new ConfigKey<Integer>("Advanced", Integer.class, "max.data.migration.wait.time", "15",
             "Maximum wait time for a data migration task before spawning a new SSVM", false, ConfigKey.Scope.Global);
+    ConfigKey<Boolean> DiskProvisioningStrictness = new ConfigKey<Boolean>("Storage", Boolean.class, "disk.provisioning.type.strictness", "false",
+            "If set to true, the disk is created only when there is a suitable storage pool that supports the disk provisioning type specified by the service/disk offering. " +
+                    "If set to false, the disk is created with a disk provisioning type supported by the pool. Default value is false, and this is currently supported for VMware only.",
+            true, ConfigKey.Scope.Zone);
+    ConfigKey<String> PreferredStoragePool = new ConfigKey<String>(String.class, "preferred.storage.pool", "Advanced", "",
+            "The UUID of preferred storage pool for allocation.", true, ConfigKey.Scope.Account, null);
+
+    ConfigKey<Boolean> MountDisabledStoragePool = new ConfigKey<>(Boolean.class,
+            "mount.disabled.storage.pool",
+            "Storage",
+            "false",
+            "Mount all zone-wide or cluster-wide disabled storage pools after node reboot",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
+    ConfigKey<Boolean> VmwareCreateCloneFull = new ConfigKey<>(Boolean.class,
+            "vmware.create.full.clone",
+            "Storage",
+            "false",
+            "If set to true, creates VMs as full clones on ESX hypervisor",
+            true,
+            ConfigKey.Scope.StoragePool,
+            null);
+    ConfigKey<Boolean> VmwareAllowParallelExecution = new ConfigKey<>(Boolean.class,
+            "vmware.allow.parallel.command.execution",
+            "Advanced",
+            "false",
+            "allow commands to be executed in parallel in spite of 'vmware.create.full.clone' being set to true.",
+            true,
+            ConfigKey.Scope.Global,
+            null);
+
+    /**
+     * should we execute in sequence not involving any storages?
+     * @return tru if commands should execute in sequence
+     */
+    static boolean shouldExecuteInSequenceOnVmware() {
+        return shouldExecuteInSequenceOnVmware(null, null);
+    }
+
+    static boolean shouldExecuteInSequenceOnVmware(Long srcStoreId, Long dstStoreId) {
+        final Boolean fullClone = getFullCloneConfiguration(srcStoreId) || getFullCloneConfiguration(dstStoreId);
+        final Boolean allowParallel = getAllowParallelExecutionConfiguration();
+        return fullClone && !allowParallel;
+    }
+
+    static Boolean getAllowParallelExecutionConfiguration() {
+        return VmwareAllowParallelExecution.value();
+    }
+
+    static Boolean getFullCloneConfiguration(Long storeId) {
+        return VmwareCreateCloneFull.valueIn(storeId);
+    }
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
@@ -173,6 +229,8 @@ public interface StorageManager extends StorageService {
     Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
 
     public Answer getVolumeStats(StoragePool pool, Command cmd);
+
+    boolean canPoolProvideStorageStats(StoragePool pool);
 
     /**
      * Checks if a host has running VMs that are using its local storage pool.
@@ -220,9 +278,9 @@ public interface StorageManager extends StorageService {
 
     HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 
-    boolean storagePoolHasEnoughIops(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughIops(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volumeDiskProfilePairs, StoragePool pool);
 
     /**
      * This comment is relevant to managed storage only.
@@ -246,19 +304,21 @@ public interface StorageManager extends StorageService {
      *
      *  Cloning volumes on the back-end instead of copying down a new template for each new volume helps to alleviate load on the hypervisors.
      */
-    boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
+    boolean storagePoolHasEnoughSpace(List<Pair<Volume, DiskProfile>> volume, StoragePool pool, Long clusterId);
 
     boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSize);
 
     boolean storagePoolCompatibleWithVolumePool(StoragePool pool, Volume volume);
 
-    boolean isStoragePoolComplaintWithStoragePolicy(List<Volume> volumes, StoragePool pool) throws StorageUnavailableException;
+    boolean isStoragePoolCompliantWithStoragePolicy(List<Pair<Volume, DiskProfile>> volumes, StoragePool pool) throws StorageUnavailableException;
 
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
-    void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
 
     void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+
+    void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 
     void createCapacityEntry(long poolId);
 

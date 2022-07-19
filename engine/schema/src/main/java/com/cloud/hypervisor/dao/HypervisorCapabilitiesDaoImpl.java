@@ -105,7 +105,7 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     @Override
     public Boolean isVmSnapshotEnabled(HypervisorType hypervisorType, String hypervisorVersion) {
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
-        return result.getVmSnapshotEnabled();
+        return result.isVmSnapshotEnabled();
     }
 
     @Override
@@ -121,7 +121,7 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     }
 
     @Override
-    public Boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion) {
+    public boolean isStorageMotionSupported(HypervisorType hypervisorType, String hypervisorVersion) {
         HypervisorCapabilitiesVO hostCapabilities = findByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
         if (hostCapabilities == null && HypervisorType.KVM.equals(hypervisorType)) {
             List<HypervisorCapabilitiesVO> hypervisorCapabilitiesList = listAllByHypervisorType(HypervisorType.KVM);

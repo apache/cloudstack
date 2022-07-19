@@ -36,6 +36,7 @@ import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "volumes")
@@ -159,6 +160,9 @@ public class VolumeVO implements Volume {
     @Column(name = "iso_id")
     private Long isoId;
 
+    @Column(name = "external_uuid")
+    private String externalUuid = null;
+
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -265,6 +269,7 @@ public class VolumeVO implements Volume {
         provisioningType = that.getProvisioningType();
         uuid = UUID.randomUUID().toString();
         deployAsIs = that.isDeployAsIs();
+        externalUuid = that.getExternalUuid();
     }
 
     @Override
@@ -643,4 +648,19 @@ public class VolumeVO implements Volume {
     public Class<?> getEntityType() {
         return Volume.class;
     }
+
+    public String getVolumeDescription(){
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "name", "uuid");
+    }
+
+    @Override
+    public String getExternalUuid() {
+        return externalUuid;
+    }
+
+    @Override
+    public void setExternalUuid(String externalUuid) {
+        this.externalUuid = externalUuid;
+    }
+
 }

@@ -8,5 +8,5 @@ WantedBy=multi-user.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/cloud/bin
-ExecStart=/usr/bin/python /opt/cloud/bin/baremetal-vr.py
+ExecStart=/usr/bin/python3 /opt/cloud/bin/baremetal-vr.py
 Restart=on-failure

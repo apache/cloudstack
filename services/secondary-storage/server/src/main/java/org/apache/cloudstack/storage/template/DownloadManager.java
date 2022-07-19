@@ -16,21 +16,21 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.template.Processor;
-import com.cloud.storage.template.TemplateDownloader;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.utils.component.Manager;
-import com.cloud.utils.net.Proxy;
+import java.util.Map;
+
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
-import java.util.Map;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.TemplateDownloader;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.net.Proxy;
 
 public interface DownloadManager extends Manager {
 

@@ -97,7 +97,7 @@ mounts=$(cat /proc/mounts |grep nfs|grep $MountPoint)
 if [ $? -gt 0 ]
 then
    # remount it
-   mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac,timeo=133,retrans=10 &> /dev/null
+   mount $NfsSvrIP:$NfsSvrPath $MountPoint -o sync,soft,proto=tcp,acregmin=0,acregmax=0,acdirmin=0,acdirmax=0,noac &> /dev/null
    if [ $? -gt 0 ]
    then
       printf "Failed to remount $NfsSvrIP:$NfsSvrPath under $MountPoint" 
@@ -138,7 +138,7 @@ check_hbLog() {
   diff=`expr $now - $hb`
   if [ $diff -gt $interval ]
   then
-    return 1
+    return $diff
   fi
   return 0
 }
@@ -146,11 +146,12 @@ check_hbLog() {
 if [ "$rflag" == "1" ]
 then
   check_hbLog
-  if [ $? == 0 ]
+  diff=$?
+  if [ $diff == 0 ]
   then
     echo "=====> ALIVE <====="
   else
-    echo "=====> DEAD <======"
+    echo "=====> Considering host as DEAD because last write on [$hbFile] was [$diff] seconds ago, but the max interval is [$interval] <======"
   fi
   exit 0
 elif [ "$cflag" == "1" ]

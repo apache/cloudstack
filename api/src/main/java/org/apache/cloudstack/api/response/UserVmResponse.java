@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -35,7 +37,7 @@ import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
-public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse {
+public class UserVmResponse extends BaseResponseWithTagInformation implements ControlledEntityResponse, SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the virtual machine")
     private String id;
@@ -79,6 +81,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the date when this virtual machine was created")
     private Date created;
+
+    @SerializedName("lastupdated")
+    @Param(description="the date when this virtual machine was updated last time", since="4.16.0")
+    private Date lastUpdated;
 
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the virtual machine")
@@ -169,11 +175,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Boolean forVirtualNetwork;
 
     @SerializedName(ApiConstants.CPU_NUMBER)
-    @Param(description = "the number of cpu this virtual machine is running with")
+    @Param(description = "the number of vCPUs this virtual machine is using")
     private Integer cpuNumber;
 
     @SerializedName(ApiConstants.CPU_SPEED)
-    @Param(description = "the speed of each cpu")
+    @Param(description = "the speed of each vCPU")
     private Integer cpuSpeed;
 
     @SerializedName(ApiConstants.MEMORY)
@@ -181,7 +187,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private Integer memory;
 
     @SerializedName(ApiConstants.VGPU)
-    @Param(description = "the vgpu type used by the virtual machine", since = "4.4")
+    @Param(description = "the vGPU type used by the virtual machine", since = "4.4")
     private String vgpu;
 
     @SerializedName("cpuused")
@@ -189,39 +195,39 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String cpuUsed;
 
     @SerializedName("networkkbsread")
-    @Param(description = "the incoming network traffic on the vm")
+    @Param(description = "the incoming network traffic on the VM in KiB")
     private Long networkKbsRead;
 
     @SerializedName("networkkbswrite")
-    @Param(description = "the outgoing network traffic on the host")
+    @Param(description = "the outgoing network traffic on the host in KiB")
     private Long networkKbsWrite;
 
     @SerializedName(ApiConstants.DISK_KBS_READ)
-    @Param(description = "the read (bytes) of disk on the vm")
+    @Param(description = "the VM's disk read in KiB")
     private Long diskKbsRead;
 
     @SerializedName(ApiConstants.DISK_KBS_WRITE)
-    @Param(description = "the write (bytes) of disk on the vm")
+    @Param(description = "the VM's disk write in KiB")
     private Long diskKbsWrite;
 
     @SerializedName("memorykbs")
-    @Param(description = "the memory used by the vm")
+    @Param(description = "the memory used by the VM in KiB")
     private Long memoryKBs;
 
     @SerializedName("memoryintfreekbs")
-    @Param(description = "the internal memory that's free in vm or zero if it can not be calculated")
+    @Param(description = "the internal memory (KiB) that's free in VM or zero if it can not be calculated")
     private Long memoryIntFreeKBs;
 
     @SerializedName("memorytargetkbs")
-    @Param(description = "the target memory in vm")
+    @Param(description = "the target memory in VM (KiB)")
     private Long memoryTargetKBs;
 
     @SerializedName(ApiConstants.DISK_IO_READ)
-    @Param(description = "the read (io) of disk on the vm")
+    @Param(description = "the read (IO) of disk on the VM")
     private Long diskIORead;
 
     @SerializedName(ApiConstants.DISK_IO_WRITE)
-    @Param(description = "the write (io) of disk on the vm")
+    @Param(description = "the write (IO) of disk on the VM")
     private Long diskIOWrite;
 
     @SerializedName("guestosid")
@@ -274,9 +280,9 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "List of read-only Vm details as comma separated string.", since = "4.16.0")
     private String readOnlyDetails;
 
-    @SerializedName(ApiConstants.SSH_KEYPAIR)
-    @Param(description = "ssh key-pair")
-    private String keyPairName;
+    @SerializedName(ApiConstants.SSH_KEYPAIRS)
+    @Param(description = "ssh key-pairs")
+    private String keyPairNames;
 
     @SerializedName("affinitygroup")
     @Param(description = "list of affinity groups associated with the virtual machine", responseObject = AffinityGroupResponse.class)
@@ -314,9 +320,21 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the pool type of the virtual machine", since = "4.16")
     private String poolType;
 
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
+    private Long bytesReceived;
+
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
+    private Long bytesSent;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse resourceIconResponse;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
-        nics = new LinkedHashSet<NicResponse>();
+        nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
         tags = new LinkedHashSet<ResourceTagResponse>();
         tagIds = new LinkedHashSet<Long>();
         affinityGroupList = new LinkedHashSet<AffinityGroupResponse>();
@@ -570,8 +588,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return instanceName;
     }
 
-    public String getKeyPairName() {
-        return keyPairName;
+    public String getKeyPairNames() {
+        return keyPairNames;
     }
 
     public Set<AffinityGroupResponse> getAffinityGroupList() {
@@ -830,8 +848,8 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.tags = tags;
     }
 
-    public void setKeyPairName(String keyPairName) {
-        this.keyPairName = keyPairName;
+    public void setKeyPairNames(String keyPairNames) {
+        this.keyPairNames = keyPairNames;
     }
 
     public void setAffinityGroupList(Set<AffinityGroupResponse> affinityGroups) {
@@ -909,4 +927,29 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public String getPoolType() { return poolType; }
 
     public void setPoolType(String poolType) { this.poolType = poolType; }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse resourceIconResponse) {
+        this.resourceIconResponse = resourceIconResponse;
+    }
+
+    public ResourceIconResponse getResourceIconResponse() {
+        return resourceIconResponse;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setBytesReceived(Long bytesReceived) {
+        this.bytesReceived = bytesReceived;
+    }
+
+    public void setBytesSent(Long bytesSent) {
+        this.bytesSent = bytesSent;
+    }
 }

@@ -37,7 +37,7 @@ from marvin.lib.common import (get_domain,
                                            list_routers,
                                            list_virtual_machines
                                            )
-from marvin.lib.utils import cleanup_resources, validateList
+from marvin.lib.utils import validateList
 from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
@@ -160,13 +160,9 @@ class TestEgressFWRules(cloudstackTestCase):
         # Cleanup
         cls._cleanup.append(cls.service_offering)
 
-
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.api_client, reversed(cls._cleanup))
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestEgressFWRules, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.api_client
@@ -175,12 +171,11 @@ class TestEgressFWRules(cloudstackTestCase):
         self.cleanup   = []
         self.domain  =  Domain.create(self.apiclient,
                                       self.services["domain"])
-        # Create an Account associated with domain
+        self.cleanup.append(self.domain)
         self.account = Account.create(self.apiclient,
                                       self.services["account"],
                                       domainid=self.domain.id)
         self.cleanup.append(self.account)
-        self.cleanup.append(self.domain)
         return
 
     def create_network_offering(self, egress_policy=True, RR=False):
@@ -198,7 +193,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                                        conservemode=True)
 
         # Cleanup
-        self.cleanup.append(self.network_offering)
+        # self.cleanup.append(self.network_offering)
 
         # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
@@ -214,6 +209,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                       domainid=self.account.domainid,
                                       networkofferingid=self.network_offering.id,
                                       zoneid=self.zone.id)
+        self.cleanup.append(self.network)
         self.debug("Created network with ID: %s" % self.network.id)
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
@@ -226,6 +222,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype if pfrule else 'basic',
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
+        self.cleanup.append(self.virtual_machine)
         self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
 
         # Checking if VM is running or not, in case it is deployed in error state, test case fails
@@ -241,9 +238,10 @@ class TestEgressFWRules(cloudstackTestCase):
                                     domainid=self.account.domainid,
                                     networkid=self.network.id
                                     )
+        self.cleanup.append(self.public_ip)
 
         # Open up firewall port for SSH
-        FireWallRule.create(
+        fwr = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=self.public_ip.ipaddress.id,
                             protocol=self.services["natrule"]["protocol"],
@@ -251,15 +249,17 @@ class TestEgressFWRules(cloudstackTestCase):
                             startport=self.services["natrule"]["publicport"],
                             endport=self.services["natrule"]["publicport"]
                             )
+        self.cleanup.append(fwr)
 
         self.debug("Creating NAT rule for VM ID: %s" % self.virtual_machine.id)
         #Create NAT rule
-        NATRule.create(
+        nr = NATRule.create(
                         self.apiclient,
                         self.virtual_machine,
                         self.services["natrule"],
                         self.public_ip.ipaddress.id
                         )
+        self.cleanup.append(nr)
         return
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
@@ -332,22 +332,17 @@ class TestEgressFWRules(cloudstackTestCase):
             cmd.startport = start_port
         if end_port:
             cmd.endport   = end_port
-        rule = self.apiclient.createEgressFirewallRule(cmd)
-        self.debug('Created rule=%s' % rule.id)
-        self.egressruleid = rule.id
+        self.egressrule = self.apiclient.createEgressFirewallRule(cmd)
+        self.debug('Created rule=%s' % self.egressrule.id)
 
     def deleteEgressRule(self):
         cmd = deleteEgressFirewallRuleCmd()
-        cmd.id = self.egressruleid
+        cmd.id = self.egressrule.id
         self.apiclient.deleteEgressFirewallRule(cmd)
-        self.egressruleid = None
+        self.egressrule = None
 
     def tearDown(self):
-        try:
-            self.debug("Cleaning up the resources")
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            self.fail("Warning! Cleanup failed: %s" % e)
+        super(TestEgressFWRules, self).tearDown()
 
     def create_another_vm(self):
         self.debug("Deploying instance in the account: %s and network: %s" % (self.account.name, self.network.id))
@@ -361,6 +356,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          mode=self.zone.networktype,
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
+        self.cleanup.append(self.virtual_machine1)
         self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
 
         # Checking if VM is running or not, in case it is deployed in error state, test case fails
@@ -420,7 +416,9 @@ class TestEgressFWRules(cloudstackTestCase):
         # 6. public network should not be reachable from the first VM.
         self.create_vm(egress_policy=False)
         self.create_another_vm()
-        self.createEgressRule(protocol='all', cidr=self.virtual_machine1.ipaddress+"/32")
+        self.createEgressRule(cidr=self.virtual_machine1.ipaddress+"/32")
+        # this should read protocol='all' as below, see CLOUDSTACK-10075, now testing only 'ICMP'
+        # self.createEgressRule(protocol='all', cidr=self.virtual_machine1.ipaddress+"/32")
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
@@ -530,7 +528,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm()
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
-        qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
+        qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressrule.id)
         self.assertEqual(isinstance(qresultset, list),
                          True,
                          "Check DB query result set for valid data")
@@ -567,7 +565,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 3. check the table Firewall_Rules, Firewall and Traffic_type should be "Egress".
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
-        qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressruleid)
+        qresultset = self.dbclient.execute("select purpose, traffic_type from firewall_rules where uuid='%s';" % self.egressrule.id)
         self.assertEqual(isinstance(qresultset, list),
                          True,
                          "Check DB query result set for valid data")
@@ -593,44 +591,6 @@ class TestEgressFWRules(cloudstackTestCase):
                          0,
                          "DB results not matching, expected: 0, found: %s" % qresultset[0][0])
 
-    @unittest.skip("Skip")
-    @attr(tags=["advanced", "NotRun"])
-    def test_05_egress_fr5(self):
-        """Test Create Egress rule and check the IP tables
-        """
-        # Validate the following:
-        # 1. deploy VM using network offering with egress policy true.
-        # 2. create egress rule with specific CIDR + port range.
-        # 3. login to VR.
-        # 4. Check iptables for rules settings.
-        #  -A FW_OUTBOUND -j FW_EGRESS_RULES
-        #  -A FW_EGRESS_RULES -m state --state RELATED,ESTABLISHED -j ACCEPT
-        #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
-        #  -A FW_EGRESS_RULES -j DROP
-        self.create_vm()
-        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
-        #TODO: Query VR for expected route rules.
-
-
-    @unittest.skip("Skip")
-    @attr(tags=["advanced", "NotRun"])
-    def test_05_1_egress_fr5(self):
-        """Test Create Egress rule and check the IP tables
-        """
-        # Validate the following:
-        # 1. deploy VM using network offering with egress policy false.
-        # 2. create egress rule with specific CIDR + port range.
-        # 3. login to VR.
-        # 4. Check iptables for rules settings.
-        #  -A FW_OUTBOUND -j FW_EGRESS_RULES
-        #  -A FW_EGRESS_RULES -m state --state RELATED,ESTABLISHED -j ACCEPT
-        #  -A FW_EGRESS_RULES -d 10.147.28.0/24 -p tcp -m tcp --dport 22 -j ACCEPT
-        #  -A FW_EGRESS_RULES -j DROP
-        self.create_vm(egress_policy=False)
-        self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
-        #TODO: Query VR for expected route rules.
-
-
     @attr(tags=["advanced"], required_hardware="true")
     def test_06_egress_fr6(self):
         """Test Create Egress rule without CIDR
@@ -639,7 +599,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM.using network offering with egress policy true.
         # 2. create egress rule without specific CIDR.
         # 3. login to VM.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(cidr=None)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
@@ -655,7 +615,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM.using network offering with egress policy false.
         # 2. create egress rule without specific CIDR.
         # 3. login to VM.
-        # 4. access to public network should be successfull.
+        # 4. access to public network should be successful.
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=None)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
@@ -671,7 +631,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy true.
         # 2. create egress rule without specific end port.
         # 3. login to VM.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
@@ -791,7 +751,6 @@ class TestEgressFWRules(cloudstackTestCase):
         self.create_vm(egress_policy=False)
         self.assertRaises(Exception, self.createEgressRule, cidr='10.2.2.0/24')
 
-
     @attr(tags=["advanced"], required_hardware="false")
     def test_11_egress_fr11(self):
         """Test Regression on Firewall + PF + LB + SNAT
@@ -820,7 +779,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy true.
         # 2. create egress rule valid cidr and port range.
         # 3. reboot router.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
@@ -837,7 +796,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy false.
         # 2. create egress rule valid  cidr port range.
         # 3. reboot router.
-        # 4. access to public network should be successfull.
+        # 4. access to public network should be successful.
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()

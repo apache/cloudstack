@@ -16,15 +16,15 @@
 // under the License.
 package com.cloud.network.vpn;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
@@ -33,6 +33,8 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -91,9 +93,6 @@ import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import java.lang.reflect.InvocationTargetException;
-import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
@@ -137,6 +136,24 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     int _userLimit;
     int _pskLength;
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
+
+    private List<RemoteAccessVpnVO> getValidRemoteAccessVpnForAccount(long accountId) {
+        List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(accountId);
+        if (CollectionUtils.isNotEmpty(vpns)) {
+            List<RemoteAccessVpnVO> validVpns = new ArrayList<>();
+            for (RemoteAccessVpnVO vpn : vpns) {
+                if (vpn.getNetworkId() != null) {
+                    Network network = _networkMgr.getNetwork(vpn.getNetworkId());
+                    if (!Network.State.Implemented.equals(network.getState())) {
+                        continue;
+                    }
+                }
+                validVpns.add(vpn);
+            }
+            vpns = validVpns;
+        }
+        return vpns;
+    }
 
     @Override
     @DB
@@ -417,7 +434,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
         final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
         if (user == null) {
-            throw new InvalidParameterValueException(String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId));
+            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
+            s_logger.debug(errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         }
         _accountMgr.checkAccess(caller, null, true, user);
 
@@ -498,18 +517,35 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @DB
+    private boolean removeVpnUserWithoutRemoteAccessVpn(long vpnOwnerId, String userName) {
+        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, userName);
+        if (vpnUser == null) {
+            s_logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
+            return false;
+        }
+        if (!State.Revoke.equals(vpnUser.getState())) {
+            s_logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
+            return false;
+        }
+        return _vpnUsersDao.remove(vpnUser.getId());
+    }
+
+    @DB
     @Override
-    public boolean applyVpnUsers(long vpnOwnerId, String userName) throws  ResourceUnavailableException {
+    public boolean applyVpnUsers(long vpnOwnerId, String userName, boolean forRemove) throws  ResourceUnavailableException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountDao.findById(vpnOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
         s_logger.debug(String.format("Applying VPN users for %s.", owner.toString()));
-        List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
+        List<RemoteAccessVpnVO> vpns = getValidRemoteAccessVpnForAccount(vpnOwnerId);
 
         if (CollectionUtils.isEmpty(vpns)) {
-            s_logger.debug(String.format("Unable to add VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
-            return false;
+            if (forRemove) {
+                return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
+            }
+            s_logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
+            return true;
         }
 
         RemoteAccessVpnVO vpnTemp  = null;
@@ -593,6 +629,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         return success;
+    }
+
+    @DB
+    @Override
+    public boolean applyVpnUsers(long vpnOwnerId, String userName) throws  ResourceUnavailableException {
+        return applyVpnUsers(vpnOwnerId, userName, false);
     }
 
     @Override

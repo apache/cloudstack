@@ -32,10 +32,9 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ProjectRolePermissionResponse;
 import org.apache.cloudstack.api.response.ProjectRoleResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = ListProjectRolePermissionsCmd.APINAME, description = "Lists a project's project role permissions", responseObject = SuccessResponse.class,
+@APICommand(name = ListProjectRolePermissionsCmd.APINAME, description = "Lists a project's project role permissions", responseObject = ProjectRolePermissionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {
         RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User}, since = "4.15.0")
 public class ListProjectRolePermissionsCmd extends BaseCmd {

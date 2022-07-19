@@ -41,7 +41,7 @@ class TestHostHA(cloudstackTestCase):
         self.logger.addHandler(self.stream_handler)
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
-        self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__        
+        self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__
         self.dbclient = self.testClient.getDbConnection()
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
@@ -85,7 +85,7 @@ class TestHostHA(cloudstackTestCase):
                          "sleep": 60,
                          "timeout": 10,
                          }
-        
+
 
     def tearDown(self):
         try:
@@ -96,10 +96,10 @@ class TestHostHA(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-    
+
     def checkHostDown(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password") 
+            ssh = SshClient(fromHostIp, 22, "root", "password")
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count("100% packet loss") == 1:
@@ -109,10 +109,10 @@ class TestHostHA(cloudstackTestCase):
         except Exception as e:
             self.logger.debug("Got exception %s" % e)
             return False, 1
-        
+
     def checkHostUp(self, fromHostIp, testHostIp):
         try:
-            ssh = SshClient(fromHostIp, 22, "root", "password") 
+            ssh = SshClient(fromHostIp, 22, "root", "password")
             res = ssh.execute("ping -c 1 %s" % testHostIp)
             result = str(res)
             if result.count(" 0% packet loss") == 1:
@@ -122,7 +122,7 @@ class TestHostHA(cloudstackTestCase):
         except Exception as e:
             self.logger.debug("Got exception %s" % e)
             return False, 1
-      
+
     def checkHostStateInCloudstack(self, state, hostId):
         try:
             listHost = Host.list(
@@ -137,7 +137,7 @@ class TestHostHA(cloudstackTestCase):
                            True,
                            "Check if listHost returns a valid response"
                            )
-            
+
             self.assertEqual(
                            len(listHost),
                            1,
@@ -181,7 +181,7 @@ class TestHostHA(cloudstackTestCase):
     def test_01_host_ha_with_nfs_storagepool_with_vm(self):
         Configurations.update(self.apiclient, "ping.timeout", "150")
         self.updateConfigurAndRestart("ping.interval", "150")
-        
+
         listHost = Host.list(
             self.apiclient,
             type='Routing',
@@ -190,11 +190,11 @@ class TestHostHA(cloudstackTestCase):
         )
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
-            
+
 
         hostToTest = listHost[0]
         hostUpInCloudstack = wait_until(40, 10, self.checkHostStateInCloudstack, "Up", hostToTest.id)
 
-        if not(hostUpInCloudstack): 
+        if not(hostUpInCloudstack):
             raise self.fail("Host is not up %s, in cloudstack so failing test " % (hostToTest.ipaddress))
-        return        
+        return

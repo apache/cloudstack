@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.admin.user;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -25,7 +26,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
@@ -171,5 +172,10 @@ public class CreateUserCmd extends BaseCmd {
         if(StringUtils.isEmpty(getPassword())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Empty passwords are not allowed");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.User;
     }
 }

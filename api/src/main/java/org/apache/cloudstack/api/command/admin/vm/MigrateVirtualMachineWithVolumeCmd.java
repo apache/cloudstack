@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -50,7 +51,7 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
     private static final String s_name = "migratevirtualmachinewithvolumeresponse";
 
@@ -136,6 +137,16 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Attempting to migrate VM Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) + " to host Id: " + this._uuidMgr.getUuid(Host.class, getHostId());
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return virtualMachineId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VirtualMachine;
     }
 
     @Override

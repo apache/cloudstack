@@ -16,37 +16,44 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
-    <a-form :form="form" @submit="handleSubmit" layout="vertical" :loading="loading">
-      <a-form-item :label="$t('label.samlenable')">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
+    <a-form
+      :ref="formRef"
+      :model="form"
+      :rules="rules"
+      layout="vertical"
+      :loading="loading"
+      @finish="handleSubmit">
+      <a-form-item name="samlEnable" ref="samlEnable" :label="$t('label.samlenable')">
         <a-switch
-          v-decorator="['samlEnable', {
-            initialValue: isSamlEnabled
-          }]"
-          :checked="isSamlEnabled"
-          @change="val => { isSamlEnabled = val }"
-          autoFocus
+          v-model:checked="form.samlEnable"
+          v-focus="true"
         />
       </a-form-item>
-      <a-form-item :label="$t('label.samlentity')">
+      <a-form-item name="samlEntity" ref="samlEntity" :label="$t('label.samlentity')">
         <a-select
-          v-decorator="['samlEntity', {
-            initialValue: selectedIdp,
-          }]">
-          <a-select-option v-for="(idp, idx) in idps" :key="idx">
+          v-model:value="form.samlEntity"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option v-for="idp in idps" :key="idp.id">
             {{ idp.orgName }}
           </a-select-option>
         </a-select>
       </a-form-item>
-      <div class="card-footer">
+      <div class="action-button">
         <a-button @click="handleClose">{{ $t('label.close') }}</a-button>
-        <a-button :loading="loading" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
   </div>
 </template>
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'ConfigureSamlSsoAuth',
   props: {
@@ -57,19 +64,20 @@ export default {
   },
   data () {
     return {
-      selectedIdp: '',
       idps: [],
-      isSamlEnabled: false,
       loading: false
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
-  },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchData () {
       this.IsUserSamlAuthorized()
       this.loading = true
@@ -83,8 +91,8 @@ export default {
       api('listSamlAuthorization', {
         userid: this.resource.id
       }).then(response => {
-        this.isSamlEnabled = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
-        this.selectedIdp = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
+        this.form.samlEnable = response.listsamlauthorizationsresponse.samlauthorization[0].status || false
+        this.form.samlEntity = response.listsamlauthorizationsresponse.samlauthorization[0].idpid || ''
       })
     },
     handleClose () {
@@ -92,15 +100,15 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
         api('authorizeSamlSso', {
           enable: values.samlEnable,
           userid: this.resource.id,
           entityid: values.samlEntity
         }).then(response => {
+          this.$emit('refresh-data')
           this.$notification.success({
             message: values.samlEnable ? this.$t('label.saml.enable') : this.$t('label.saml.disable'),
             description: values.samlEnable ? `${this.$t('message.success.enable.saml.auth')} ${this.$t('label.for')} ${this.resource.username}`
@@ -116,6 +124,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }
@@ -127,13 +137,6 @@ export default {
 
   @media (min-width: 700px) {
     width: 40vw;
-  }
-}
-.card-footer {
-  text-align: right;
-
-  button + button {
-    margin-left: 8px;
   }
 }
 </style>

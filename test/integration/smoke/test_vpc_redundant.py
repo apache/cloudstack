@@ -271,7 +271,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             zoneid=self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)
-        
+
         self.cleanup = [self.vpc, self.vpc_off, self.account]
         return
 
@@ -354,7 +354,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                         self.skipTest(
                             "Marvin configuration has no host credentials to\
                                     check router services")
-            
+
                 if result.count(status_to_check) == 1:
                     cnts[vals.index(status_to_check)] += 1
 
@@ -508,7 +508,7 @@ class TestVPCRedundancy(cloudstackTestCase):
             traffictype='Ingress'
         )
         self.logger.debug('nwacl_nat=%s' % nwacl_nat.__dict__)
-        
+
         return nat_rule
 
     def check_ssh_into_vm(self, vm, public_ip, expectFail=False, retries=5):
@@ -542,7 +542,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
-        
+
         self.stop_router_by_type("PRIMARY")
         self.check_routers_state(1)
         self.do_vpc_test(False)
@@ -567,7 +567,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_default_routes_test()
-    
+
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_03_create_redundant_VPC_1tier_2VMs_2IPs_2PF_ACL_reboot_routers(self):
         """ Create a redundant VPC with two networks with two VMs in each network """
@@ -577,7 +577,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
-        
+
         self.reboot_router_by_type("PRIMARY")
         self.check_routers_state()
         self.do_vpc_test(False)
@@ -604,13 +604,13 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
         self.logger.debug("network.gc.interval is ==> %s" % gc_interval)
 
-        total_sleep = 120
+        total_sleep = 360
         if gc_wait and gc_interval:
-            total_sleep = int(gc_wait[0].value) + int(gc_interval[0].value)
+            total_sleep = max(int(gc_wait[0].value), int(gc_interval[0].value)) * 2 + 60
         else:
-            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 2 minutes.")
+            self.logger.debug("Could not retrieve the keys 'network.gc.interval' and 'network.gc.wait'. Sleeping for 6 minutes.")
 
-        time.sleep(total_sleep * 3)
+        time.sleep(total_sleep)
 
         # Router will be in FAULT state, i.e. keepalived is stopped
         self.check_routers_state(status_to_check="FAULT", expected_count=2)
@@ -627,7 +627,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.networks.append(network)
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.2.1", nr_vms=1))
         self.networks.append(self.create_network(self.services["network_offering_no_lb"], "10.1.3.1", nr_vms=1))
-        
+
         self.check_routers_state()
         self.add_nat_rules()
         self.do_vpc_test(False)
@@ -635,7 +635,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.destroy_vm(network)
         network.get_net().delete(self.apiclient)
         self.networks.remove(network)
-        
+
         self.check_routers_state(status_to_check="PRIMARY")
         self.do_vpc_test(False)
 
@@ -700,9 +700,9 @@ class TestVPCRedundancy(cloudstackTestCase):
                     vm = vmObj.get_vm()
                     public_ip = vmObj.get_ip()
                     self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
-                    
+
                     ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
-        
+
                     self.logger.debug("Ping to google.com from VM")
                     result = ssh.execute(ssh_command)
 

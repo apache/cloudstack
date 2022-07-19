@@ -25,6 +25,7 @@ import javax.persistence.Table;
 
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.user.Account;
 
 @Entity
 @Table(name = "resource_tag_view")
@@ -66,7 +67,8 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -118,7 +120,7 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -183,6 +185,11 @@ public class ResourceTagJoinVO extends BaseViewVO implements ControlledViewEntit
     @Override
     public Class<?> getEntityType() {
         return ResourceTag.class;
+    }
+
+    @Override
+    public String getName() {
+        return null;
     }
 
     public void setId(long id) {

@@ -37,6 +37,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
         StopRequested,
         DestroyRequested,
         RecoveryRequested,
+        AutoscaleRequested,
         ScaleUpRequested,
         ScaleDownRequested,
         UpgradeRequested,
@@ -81,6 +82,7 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
 
             s_fsm.addTransition(State.Running, Event.FaultsDetected, State.Alert);
 
+            s_fsm.addTransition(State.Running, Event.AutoscaleRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleUpRequested, State.Scaling);
             s_fsm.addTransition(State.Running, Event.ScaleDownRequested, State.Scaling);
             s_fsm.addTransition(State.Scaling, Event.OperationSucceeded, State.Running);
@@ -131,4 +133,8 @@ public interface KubernetesCluster extends ControlledEntity, com.cloud.utils.fsm
     @Override
     State getState();
     Date getCreated();
+    boolean getAutoscalingEnabled();
+    Long getMinSize();
+    Long getMaxSize();
+    Long getSecurityGroupId();
 }

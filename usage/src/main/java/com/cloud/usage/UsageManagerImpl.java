@@ -75,7 +75,7 @@ import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.BackupUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
-import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
+import com.cloud.usage.parser.VMSnapshotOnPrimaryParser;
 import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
@@ -669,7 +669,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     if (userStats != null) {
                         for (UserStatisticsVO userStat : userStats) {
                             if (userStat.getDeviceId() != null) {
-                                String hostKey = userStat.getDataCenterId() + "-" + userStat.getAccountId() + "-Host-" + userStat.getDeviceId();
+                                String hostKey = userStat.getDataCenterId() + "-" + userStat.getAccountId() + "-Host-" + userStat.getDeviceId() + "-Network-" + userStat.getNetworkId();
                                 UserStatisticsVO hostAggregatedStat = aggregatedStats.get(hostKey);
                                 if (hostAggregatedStat == null) {
                                     hostAggregatedStat =
@@ -958,13 +958,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
-        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
-        if (s_logger.isDebugEnabled()) {
-            if (!parsed) {
-                s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
-            }
-        }
-        parsed = VMSanpshotOnPrimaryParser.parse(account, currentStartDate, currentEndDate);
+        parsed = VMSnapshotOnPrimaryParser.parse(account, currentStartDate, currentEndDate);
         if (s_logger.isDebugEnabled()) {
             if (!parsed) {
                 s_logger.debug("VM Snapshot on primary usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");

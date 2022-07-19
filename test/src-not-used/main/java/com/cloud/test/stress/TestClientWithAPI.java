@@ -2037,7 +2037,7 @@ public class TestClientWithAPI {
                 if (isAuthenticated == false) {
                     return "Authentication failed";
                 } else {
-                    s_logger.info("Authentication is successfull");
+                    s_logger.info("Authentication is successful");
                 }
 
                 try {
@@ -2273,7 +2273,7 @@ public class TestClientWithAPI {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        s_logger.debug("[ignored] interupted while during async job result query.");
+                        s_logger.debug("[ignored] interrupted while during async job result query.");
                     }
                 } else {
                     break;

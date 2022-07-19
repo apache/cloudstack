@@ -18,28 +18,36 @@
 <template>
   <span class="header-notice-opener">
     <a-select
+      v-if="!isDisabled()"
       class="project-select"
-      :defaultValue="$t('label.default.view')"
       :loading="loading"
-      :value="($store.getters.project && 'id' in $store.getters.project) ? ($store.getters.project.displaytext || $store.getters.project.name) : $t('label.default.view')"
-      :disabled="isDisabled()"
+      v-model:value="projectSelected"
       :filterOption="filterProject"
       @change="changeProject"
       @focus="fetchData"
       showSearch>
 
-      <a-tooltip placement="bottom" slot="suffixIcon">
-        <template slot="title">
-          <span>{{ $t('label.projects') }}</span>
-        </template>
-        <span style="font-size: 20px; color: #999; margin-top: -5px">
-          <a-icon v-if="!loading" type="project" />
-          <a-icon v-else type="loading" />
-        </span>
-      </a-tooltip>
+      <template #suffixIcon>
+        <a-tooltip placement="bottom">
+          <template #title>
+            <span>{{ $t('label.projects') }}</span>
+          </template>
+          <span class="custom-suffix-icon">
+            <ProjectOutlined v-if="!loading" />
+            <LoadingOutlined v-else />
+          </span>
+        </a-tooltip>
+      </template>
 
-      <a-select-option v-for="(project, index) in projects" :key="index">
-        {{ project.displaytext || project.name }}
+      <a-select-option
+        v-for="(project, index) in projects"
+        :key="index"
+        :label="project.displaytext || project.name">
+        <span>
+          <resource-icon v-if="project.icon && project.icon.base64image" :image="project.icon.base64image" size="1x" style="margin-right: 5px"/>
+          <project-outlined v-else style="margin-right: 5px" />
+          {{ project.displaytext || project.name }}
+        </span>
       </a-select-option>
     </a-select>
   </span>
@@ -49,9 +57,13 @@
 import store from '@/store'
 import { api } from '@/api'
 import _ from 'lodash'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'ProjectMenu',
+  components: {
+    ResourceIcon
+  },
   data () {
     return {
       projects: [],
@@ -60,6 +72,16 @@ export default {
   },
   created () {
     this.fetchData()
+  },
+  computed: {
+    projectSelected () {
+      let projectIndex = 0
+      if (this.$store.getters?.project?.id) {
+        projectIndex = this.projects.findIndex(project => project.id === this.$store.getters.project.id)
+      }
+
+      return projectIndex
+    }
   },
   methods: {
     fetchData () {
@@ -70,8 +92,8 @@ export default {
       const projects = []
       const getNextPage = () => {
         this.loading = true
-        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500 }).then(json => {
-          if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+        api('listProjects', { listAll: true, details: 'min', page: page, pageSize: 500, showIcon: true }).then(json => {
+          if (json?.listprojectsresponse?.project) {
             projects.push(...json.listprojectsresponse.project)
           }
           if (projects.length < json.listprojectsresponse.count) {
@@ -100,7 +122,7 @@ export default {
       }
     },
     filterProject (input, option) {
-      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
   }
 }
@@ -118,5 +140,13 @@ export default {
     padding-top: 5px;
     padding-right: 5px;
   }
+}
+
+.custom-suffix-icon {
+  font-size: 20px;
+  position: absolute;
+  top: 0;
+  right: 1px;
+  margin-top: -5px;
 }
 </style>

@@ -28,6 +28,7 @@ import org.apache.cloudstack.acl.RolePermissionEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.UnavailableCommandException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.dao.VpcOfferingDetailsDao;
 import com.cloud.offering.DiskOffering;
@@ -102,10 +104,42 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         super();
     }
 
+    /**
+     *
+     * public template can be used by other accounts in:
+     *
+     *  1. the same domain
+     *  2. in sub-domains
+     *  3. domain admin of parent domains
+     *
+     *  In addition to those, everyone can access the public templates in domains that set "share.public.templates.with.other.domains" config to true.
+     *
+     * @param template template object
+     * @param owner owner of the template
+     * @param caller who wants to access to the template
+     */
+
+    private void checkPublicTemplateAccess(VirtualMachineTemplate template, Account owner, Account caller){
+        if (!QueryService.SharePublicTemplatesWithOtherDomains.valueIn(owner.getDomainId()) ||
+                caller.getDomainId() == owner.getDomainId() ||
+                _domainDao.isChildDomain(owner.getDomainId(), caller.getDomainId())) {
+            return;
+        }
+
+        if (caller.getType() == Account.Type.NORMAL || caller.getType() == Account.Type.PROJECT) {
+            throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+        } else if (caller.getType() == Account.Type.DOMAIN_ADMIN || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
+            if (!_domainDao.isChildDomain(caller.getDomainId(), owner.getDomainId())) {
+                throw new PermissionDeniedException(caller + "is not allowed to access the template " + template);
+            }
+        }
+    }
+
+
     @Override
     public boolean checkAccess(Account caller, Domain domain) throws PermissionDeniedException {
-        if (caller.getState() != Account.State.enabled) {
-            throw new PermissionDeniedException(caller + " is disabled.");
+        if (caller.getState() != Account.State.ENABLED) {
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " is disabled.");
         }
 
         if (domain == null) {
@@ -116,10 +150,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
         if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
-                throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+                throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
             }
         } else if (!_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-            throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getUuid());
+            throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not have permission to operate within domain id=" + domain.getUuid());
         }
 
         return true;
@@ -147,7 +181,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     return true;
                 }
                 //special handling for the project case
-                if (owner.getType() == Account.ACCOUNT_TYPE_PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
+                if (owner.getType() == Account.Type.PROJECT && _projectMgr.canAccessProjectAccount(caller, owner.getId())) {
                     return true;
                 }
 
@@ -155,41 +189,49 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 // account can launch a VM from this template
                 LaunchPermissionVO permission = _launchPermissionDao.findByTemplateAndAccount(template.getId(), caller.getId());
                 if (permission == null) {
-                    throw new PermissionDeniedException(caller + " does not have permission to launch instances from " + template);
+                    throw new PermissionDeniedException("Account " + caller.getAccountName() +
+                            " does not have permission to launch instances from template " + template.getName());
                 }
             } else {
                 // Domain admin and regular user can delete/modify only templates created by them
                 if (accessType != null && accessType == AccessType.OperateEntry) {
                     if (!_accountService.isRootAdmin(caller.getId()) && owner.getId() != caller.getId()) {
                         // For projects check if the caller account can access the project account
-                        if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
+                        if (owner.getType() != Account.Type.PROJECT || !(_projectMgr.canAccessProjectAccount(caller, owner.getId()))) {
                             throw new PermissionDeniedException("Domain Admin and regular users can modify only their own Public templates");
                         }
                     }
+                } else if (caller.getType() != Account.Type.ADMIN) {
+                    checkPublicTemplateAccess(template, owner, caller);
                 }
             }
 
             return true;
         } else if (entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) {
             _networkMgr.checkNetworkPermissions(caller, (Network)entity);
+        } else if (entity instanceof Network && accessType != null && accessType == AccessType.OperateEntry) {
+            _networkMgr.checkNetworkOperatePermissions(caller, (Network)entity);
+        } else if (entity instanceof VirtualRouter) {
+            _networkMgr.checkRouterPermissions(caller, (VirtualRouter)entity);
         } else if (entity instanceof AffinityGroup) {
             return false;
         } else {
             if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
-                if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                String errorMessage = String.format("%s does not have permission to operate with resource", caller);
+                if (account != null && account.getType() == Account.Type.PROJECT) {
                     //only project owner can delete/modify the project
                     if (accessType != null && accessType == AccessType.ModifyProject) {
                         if (!_projectMgr.canModifyProjectAccount(caller, account.getId())) {
-                            throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                            throw new PermissionDeniedException(errorMessage);
                         }
                     } else if (!_projectMgr.canAccessProjectAccount(caller, account.getId())) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                     checkOperationPermitted(caller, entity);
                 } else {
                     if (caller.getId() != entity.getAccountId()) {
-                        throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                        throw new PermissionDeniedException(errorMessage);
                     }
                 }
             }
@@ -270,9 +312,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> doDomainIds = diskOfferingDetailsDao.findDomainIds(dof.getId());
                 if (doDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -308,9 +350,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for service offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
                 if (soDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -346,9 +388,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> noDomainIds = networkOfferingDetailsDao.findDomainIds(nof.getId());
                 if (noDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -384,9 +426,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || account.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
-                    || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                    || account.getType() == Account.Type.PROJECT) {
                 final List<Long> voDomainIds = vpcOfferingDetailsDao.findDomainIds(vof.getId());
                 if (voDomainIds.isEmpty()) {
                     hasAccess = true;
@@ -419,7 +461,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             }
             //if account is normal user
             //check if account's domain is a child of zone's domain
-            else if (_accountService.isNormalUser(account.getId()) || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            else if (_accountService.isNormalUser(account.getId()) || account.getType() == Account.Type.PROJECT) {
                 // if zone is dedicated to an account check that the accountId
                 // matches.
                 DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
@@ -494,19 +536,19 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             throws PermissionDeniedException {
 
         if (action != null && ("SystemCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.ADMIN) {
                 return true;
             } else {
                 return false;
             }
         } else if (action != null && ("DomainCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.DOMAIN_ADMIN) {
                 return true;
             } else {
                 return false;
             }
         } else if (action != null && ("DomainResourceCapability".equals(action))) {
-            if (caller != null && caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+            if (caller != null && caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN) {
                 return true;
             } else {
                 return false;

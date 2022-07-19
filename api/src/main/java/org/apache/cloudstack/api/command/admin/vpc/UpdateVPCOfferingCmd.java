@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -34,7 +36,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
-import com.google.common.base.Strings;
 
 @APICommand(name = "updateVPCOffering", description = "Updates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -60,7 +61,8 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.STRING,
-            description = "the ID of the containing domain(s) as comma separated string, public for public offerings")
+            description = "the ID of the containing domain(s) as comma separated string, public for public offerings",
+            length = 4096)
     private String domainIds;
 
     @Parameter(name = ApiConstants.ZONE_ID,
@@ -94,7 +96,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     public List<Long> getDomainIds() {
         List<Long> validDomainIds = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(domainIds)) {
+        if (StringUtils.isNotEmpty(domainIds)) {
             if (domainIds.contains(",")) {
                 String[] domains = domainIds.split(",");
                 for (String domain : domains) {
@@ -124,7 +126,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
 
     public List<Long> getZoneIds() {
         List<Long> validZoneIds = new ArrayList<>();
-        if (!Strings.isNullOrEmpty(zoneIds)) {
+        if (StringUtils.isNotEmpty(zoneIds)) {
             if (zoneIds.contains(",")) {
                 String[] zones = zoneIds.split(",");
                 for (String zone : zones) {
@@ -189,5 +191,15 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Updating VPC offering id=" + getId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VpcOffering;
     }
 }

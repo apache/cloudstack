@@ -26,17 +26,18 @@ import secondaryStorages from '@/config/section/infra/secondaryStorages'
 import systemVms from '@/config/section/infra/systemVms'
 import routers from '@/config/section/infra/routers'
 import ilbvms from '@/config/section/infra/ilbvms'
+import managementServers from '@/config/section/infra/managementServers'
 
 export default {
   name: 'infra',
   title: 'label.infrastructure',
-  icon: 'bank',
+  icon: 'BankOutlined',
   permission: ['listInfrastructure'],
   children: [
     {
       name: 'infrasummary',
       title: 'label.summary',
-      icon: 'read',
+      icon: 'ReadOutlined',
       permission: ['listInfrastructure'],
       component: () => import('@/views/infra/InfraSummary.vue')
     },
@@ -51,25 +52,27 @@ export default {
     systemVms,
     routers,
     ilbvms,
+    managementServers,
     {
       name: 'cpusocket',
       title: 'label.cpu.sockets',
-      icon: 'inbox',
+      icon: 'InboxOutlined',
       docHelp: 'adminguide/management.html#reporting-cpu-sockets',
       permission: ['listHosts'],
       component: () => import('@/views/infra/CpuSockets.vue')
     },
     {
-      name: 'managementserver',
-      title: 'label.management.servers',
-      icon: 'rocket',
-      permission: ['listManagementServers'],
-      columns: ['name', 'state', 'version']
+      name: 'metric',
+      title: 'label.db.usage.metrics',
+      icon: 'bar-chart-outlined',
+      docHelp: 'adminguide/management.html#metrics',
+      permission: ['listDbMetrics', 'listUsageServerMetrics'],
+      component: () => import('@/views/infra/Metrics.vue')
     },
     {
       name: 'alert',
       title: 'label.alerts',
-      icon: 'flag',
+      icon: 'FlagOutlined',
       docHelp: 'adminguide/management.html#administrator-alerts',
       permission: ['listAlerts'],
       columns: ['name', 'description', 'type', 'sent'],
@@ -77,7 +80,7 @@ export default {
       actions: [
         {
           api: 'archiveAlerts',
-          icon: 'book',
+          icon: 'book-outlined',
           label: 'label.archive.alerts',
           message: 'message.confirm.archive.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',
@@ -93,7 +96,7 @@ export default {
         },
         {
           api: 'deleteAlerts',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.alerts',
           message: 'message.confirm.remove.selected.alerts',
           docHelp: 'adminguide/events.html#deleting-and-archiving-events-and-alerts',

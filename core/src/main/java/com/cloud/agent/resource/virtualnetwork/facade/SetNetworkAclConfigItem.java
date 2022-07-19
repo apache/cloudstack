@@ -60,7 +60,7 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
 
         for (int i = 0; i < aclRules.length; i++) {
             AclRule aclRule;
-            final String[] ruleParts = aclRules[i].split(":");
+            final String[] ruleParts = aclRules[i].split(SetNetworkACLCommand.RULE_DETAIL_SEPARATOR);
             switch (ruleParts[1].toLowerCase()) {
             case "icmp":
                 aclRule = new IcmpAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]), Integer.parseInt(ruleParts[2]), Integer.parseInt(ruleParts[3]));
@@ -81,7 +81,7 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
                 try {
                     aclRule = new ProtocolAclRule(ruleParts[4], "ACCEPT".equals(ruleParts[5]), Integer.parseInt(ruleParts[1]));
                 } catch (final Exception e) {
-                    s_logger.warn("Problem occured when reading the entries in the ruleParts array. Actual array size is '" + ruleParts.length + "', but trying to read from index 5.");
+                    s_logger.warn("Problem occurred when reading the entries in the ruleParts array. Actual array size is '" + ruleParts.length + "', but trying to read from index 5.");
                     continue;
                 }
             }
@@ -94,7 +94,7 @@ public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
 
         final NetworkACL networkACL = new NetworkACL(dev, nic.getMac(), privateGw != null, nic.getIp(), netmask, ingressRules.toArray(new AclRule[ingressRules.size()]),
                 egressRules.toArray(new AclRule[egressRules.size()]));
-
+        networkACL.setNicIp6Cidr(nic.getIp6Cidr());
         return generateConfigItems(networkACL);
     }
 

@@ -27,6 +27,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.any;
 
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.junit.Before;
@@ -57,6 +59,10 @@ public class AncientDataMotionStrategyTest {
     PrimaryDataStoreTO dataStoreTO;
     @Mock
     ConfigKey<Boolean> vmwareKey;
+    @Mock
+    StorageManager storageManager;
+    @Mock
+    StoragePool storagePool;
 
     private static final long POOL_ID = 1l;
     private static final Boolean FULL_CLONE_FLAG = true;
@@ -72,10 +78,11 @@ public class AncientDataMotionStrategyTest {
         when(dataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
         when(dataTO.getDataStore()).thenReturn(dataStoreTO);
         when(dataStoreTO.getId()).thenReturn(POOL_ID);
+        when(storageManager.getStoragePool(POOL_ID)).thenReturn(storagePool);
     }
 
     private void replaceVmwareCreateCloneFullField() throws Exception {
-        Field field = CapacityManager.class.getDeclaredField("VmwareCreateCloneFull");
+        Field field = StorageManager.class.getDeclaredField("VmwareCreateCloneFull");
         field.setAccessible(true);
         // remove final modifier from field
         Field modifiersField = Field.class.getDeclaredField("modifiers");
@@ -86,7 +93,7 @@ public class AncientDataMotionStrategyTest {
 
     @Test
     public void testAddFullCloneFlagOnVMwareDest(){
-        strategy.addFullCloneFlagOnVMwareDest(dataTO);
+        strategy.addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
         verify(dataStoreTO).setFullCloneFlag(FULL_CLONE_FLAG);
     }
 

@@ -20,6 +20,17 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.security.CertUtils;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 /**
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
  *
@@ -60,4 +71,30 @@ public interface VirtualMachineGuru {
     void prepareStop(VirtualMachineProfile profile);
 
     void finalizeUnmanage(VirtualMachine vm);
+
+    static String getEncodedMsPublicKey(String pubKey) {
+        String base64EncodedPublicKey = null;
+        if (pubKey != null) {
+            base64EncodedPublicKey = Base64.getEncoder().encodeToString(pubKey.getBytes(StandardCharsets.UTF_8));
+        }
+        return base64EncodedPublicKey;
+    }
+
+    public static String getEncodedString(String certificate) {
+        return Base64.getEncoder().encodeToString(certificate.replace("\n", KeyStoreUtils.CERT_NEWLINE_ENCODER).replace(" ", KeyStoreUtils.CERT_SPACE_ENCODER).getBytes(StandardCharsets.UTF_8));
+    }
+
+    static void appendCertificateDetails(StringBuilder buf, Certificate certificate) {
+        try {
+            buf.append(" certificate=").append(getEncodedString(CertUtils.x509CertificateToPem(certificate.getClientCertificate())));
+            buf.append(" cacertificate=").append(getEncodedString(CertUtils.x509CertificatesToPem(certificate.getCaCertificates())));
+            if (certificate.getPrivateKey() != null) {
+                buf.append(" privatekey=").append(getEncodedString(CertUtils.privateKeyToPem(certificate.getPrivateKey())));
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Failed to transform X509 cert to PEM format", e);
+        }
+        buf.append(" keystore_password=").append(getEncodedString(PasswordGenerator.generateRandomPassword(16)));
+        buf.append(" validity=").append(CAManager.CertValidityPeriod.value());
+    }
 }

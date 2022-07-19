@@ -28,7 +28,7 @@ public abstract class DownloadState {
         DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, TIMEOUT_CHECK, DISCONNECT
     };
 
-    protected static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
+    protected static final Logger s_logger = Logger.getLogger(DownloadState.class.getName());
 
     private DownloadListener dl;
 

@@ -88,6 +88,10 @@ public interface SnapshotApiService {
 
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;
 
+    Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, Boolean isFromVmSnapshot)
+            throws ResourceAllocationException;
+
+
     /**
      * Create a snapshot of a volume
      *
@@ -118,4 +122,6 @@ public interface SnapshotApiService {
     Snapshot backupSnapshotFromVmSnapshot(Long snapshotId, Long vmId, Long volumeId, Long vmSnapshotId);
 
     SnapshotPolicy updateSnapshotPolicy(UpdateSnapshotPolicyCmd updateSnapshotPolicyCmd);
+
+    void markVolumeSnapshotsAsDestroyed(Volume volume);
 }

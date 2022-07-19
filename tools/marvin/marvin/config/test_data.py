@@ -49,6 +49,15 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
+    "publicip6range": {
+        "ip6gateway": "fd17:ac56:1234:2000::1",
+        "ip6cidr": "fd17:ac56:1234:2000::/64",
+        "vlan": 301,
+        "forvirtualnetwork": "true"
+    },
+    "guestip6prefix": {
+        "prefix": "fd17:ac56:1234:1000::/52"
+    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",
@@ -205,7 +214,7 @@ test_data = {
     "network2": {
         "name": "Test Network Shared",
         "displaytext": "Test Network Shared",
-        "vlan": 1201,
+        "vlan": 4000,
         "gateway": "172.16.15.1",
         "netmask": "255.255.255.0",
         "startip": "172.16.15.21",
@@ -232,6 +241,16 @@ test_data = {
             "Dns": 'VirtualRouter',
             "SourceNat": 'VirtualRouter',
             "PortForwarding": 'VirtualRouter',
+        },
+    },
+    "nw_off_no_services": {
+        "name": 'Test Network offering without services',
+        "displaytext": 'Test Network offering without services',
+        "guestiptype": 'Isolated',
+        "supportedservices": '',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
         },
     },
     "nw_off_isolated_netscaler": {
@@ -1005,7 +1024,8 @@ test_data = {
             "ostype": "Other Linux (64-bit)",
             "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
             "requireshvm": "True",
-            "ispublic": "True"
+            "ispublic": "True",
+            "deployasis": "True"
         }
     },
     "test_ovf_templates": [
@@ -1745,7 +1765,7 @@ test_data = {
             "netmask": "255.255.255.0",
             "startip": "10.223.59.200",
             "endip": "10.223.59.240",
-            "vlan": "1000"
+            "vlan": "4005"
         },
         "netscaler": {
             "ipaddress": "",
@@ -1928,7 +1948,7 @@ test_data = {
             "netmask": "255.255.255.0",
             "startip": "10.223.59.200",
             "endip": "10.223.59.240",
-            "vlan": "1000"
+            "vlan": "4005"
         },
         "netscaler": {
             "ipaddress": "",
@@ -2038,12 +2058,6 @@ test_data = {
         }
     },
     "cks_kubernetes_versions": {
-        "1.14.9": {
-            "semanticversion": "1.14.9",
-            "url": "http://download.cloudstack.org/cks/setup-1.14.9.iso",
-            "mincpunumber": 2,
-            "minmemory": 2048
-        },
         "1.15.0": {
             "semanticversion": "1.15.0",
             "url": "http://download.cloudstack.org/cks/setup-1.15.0.iso",
@@ -2061,41 +2075,18 @@ test_data = {
             "url": "http://download.cloudstack.org/cks/setup-1.16.3.iso",
             "mincpunumber": 2,
             "minmemory": 2048
-        }
-    },
-    "cks_templates": {
-        "kvm": {
-            "name": "Kubernetes-Service-Template-kvm",
-            "displaytext": "Kubernetes-Service-Template kvm",
-            "format": "qcow2",
-            "hypervisor": "kvm",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-kvm.qcow2.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
         },
-        "xenserver": {
-            "name": "Kubernetes-Service-Template-xen",
-            "displaytext": "Kubernetes-Service-Template xen",
-            "format": "vhd",
-            "hypervisor": "xenserver",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "isextractable": "True"
+        "1.23.3": {
+            "semanticversion": "1.23.3",
+            "url": "http://download.cloudstack.org/cks/setup-1.23.3.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
         },
-        "vmware": {
-            "name": "Kubernetes-Service-Template-vmware",
-            "displaytext": "Kubernetes-Service-Template vmware",
-            "format": "ova",
-            "hypervisor": "vmware",
-            "ostype": "CoreOS",
-            "url": "http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
-            "requireshvm": "True",
-            "ispublic": "True",
-            "details": [{"keyboard":"us","nicAdapter":"Vmxnet3","rootDiskController":"pvscsi"}]
+        "1.24.0": {
+            "semanticversion": "1.24.0",
+            "url": "http://download.cloudstack.org/cks/setup-1.24.0.iso",
+            "mincpunumber": 2,
+            "minmemory": 2048
         }
     },
     "cks_service_offering": {

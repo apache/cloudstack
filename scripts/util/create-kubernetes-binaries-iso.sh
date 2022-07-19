@@ -25,6 +25,7 @@ if [ $# -lt 6 ]; then
 fi
 
 RELEASE="v${2}"
+VAL="1.18.0"
 output_dir="${1}"
 start_dir="$PWD"
 iso_dir="/tmp/iso"
@@ -60,12 +61,20 @@ echo "Downloading kubelet.service ${RELEASE}..."
 cd "${start_dir}"
 kubelet_service_file="${working_dir}/kubelet.service"
 touch "${kubelet_service_file}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+if [[ `echo "${2} $VAL" | awk '{print ($1 < $2)}'` == 1 ]]; then
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+else
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/kubelet.service" | sed "s:/usr/bin:/opt/bin:g" > ${kubelet_service_file}
+fi
 
 echo "Downloading 10-kubeadm.conf ${RELEASE}..."
 kubeadm_conf_file="${working_dir}/10-kubeadm.conf"
 touch "${kubeadm_conf_file}"
-curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+if [[ `echo "${2} $val" | awk '{print ($1 < $2)}'` == 1 ]]; then
+  curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+else
+  curl -sSL "https://raw.githubusercontent.com/shapeblue/cloudstack-nonoss/main/cks/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > ${kubeadm_conf_file}
+fi
 
 NETWORK_CONFIG_URL="${5}"
 echo "Downloading network config ${NETWORK_CONFIG_URL}"
@@ -77,20 +86,30 @@ echo "Downloading dashboard config ${DASHBORAD_CONFIG_URL}"
 dashboard_conf_file="${working_dir}/dashboard.yaml"
 curl -sSL ${DASHBORAD_CONFIG_URL} -o ${dashboard_conf_file}
 
+# TODO : Change the url once merged
+AUTOSCALER_URL="https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/cloudstack/examples/cluster-autoscaler-standard.yaml"
+echo "Downloading kubernetes cluster autoscaler ${AUTOSCALER_URL}"
+autoscaler_conf_file="${working_dir}/autoscaler.yaml"
+curl -sSL ${AUTOSCALER_URL} -o ${autoscaler_conf_file}
+
+PROVIDER_URL="https://raw.githubusercontent.com/apache/cloudstack-kubernetes-provider/main/deployment.yaml"
+echo "Downloading kubernetes cluster provider ${PROVIDER_URL}"
+provider_conf_file="${working_dir}/provider.yaml"
+curl -sSL ${PROVIDER_URL} -o ${provider_conf_file}
+
 echo "Fetching k8s docker images..."
-docker -v
+ctr -v
 if [ $? -ne 0 ]; then
-    echo "Installing docker..."
+    echo "Installing containerd..."
     if [ -f /etc/redhat-release ]; then
       sudo yum -y remove docker-common docker container-selinux docker-selinux docker-engine
       sudo yum -y install lvm2 device-mapper device-mapper-persistent-data device-mapper-event device-mapper-libs device-mapper-event-libs
       sudo yum install -y http://mirror.centos.org/centos/7/extras/x86_64/Packages/container-selinux-2.107-3.el7.noarch.rpm
-      sudo wget https://download.docker.com/linux/centos/docker-ce.repo -O /etc/yum.repos.d/docker-ce.repo && sudo yum -y install docker-ce
-      sudo systemctl enable docker && sudo systemctl start docker
+      sudo yum install -y containerd.io
     elif [ -f /etc/lsb-release ]; then
-      sudo apt update && sudo apt install docker.io -y
-      sudo systemctl enable docker && sudo systemctl start docker
+      sudo apt update && sudo apt install containerd.io -y
     fi
+    sudo systemctl enable containerd && sudo systemctl start containerd
 fi
 mkdir -p "${working_dir}/docker"
 output=`${k8s_dir}/kubeadm config images list --kubernetes-version=${RELEASE}`
@@ -102,12 +121,22 @@ do
   output=`printf "%s\n" ${output} ${images}`
 done
 
+# Don't forget about the other image !
+autoscaler_image=`grep "image:" ${autoscaler_conf_file} | cut -d ':' -f2- | tr -d ' '`
+output=`printf "%s\n" ${output} ${autoscaler_image}`
+
+provider_image=`grep "image:" ${provider_conf_file} | cut -d ':' -f2- | tr -d ' '`
+output=`printf "%s\n" ${output} ${provider_image}`
+
 while read -r line; do
-    echo "Downloading docker image $line ---"
-    sudo docker pull "$line"
+    echo "Downloading image $line ---"
+    if [[ $line == kubernetesui* ]] || [[ $line == apache* ]] || [[ $line == weaveworks* ]]; then
+      line="docker.io/${line}"
+    fi
+    sudo ctr image pull "$line"
     image_name=`echo "$line" | grep -oE "[^/]+$"`
-    sudo docker save "$line" > "${working_dir}/docker/$image_name.tar"
-    sudo docker image rm "$line"
+    sudo ctr image export "${working_dir}/docker/$image_name.tar" "$line"
+    sudo ctr image rm "$line"
 done <<< "$output"
 
 echo "Restore kubeadm permissions..."

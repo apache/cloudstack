@@ -719,7 +719,7 @@ public class Upgrade410to420 implements DbUpgrade {
                         dcList = new ArrayList<String>();
                         count = 0L;
                         // Legacy zone term is meant only for VMware
-                        // Legacy zone is a zone with atleast 2 clusters & with multiple DCs or VCs
+                        // Legacy zone is a zone with at least 2 clusters & with multiple DCs or VCs
                         clusters = clustersQuery.executeQuery();
                         if (!clusters.next()) {
                             continue; // Ignore the zone without any clusters
@@ -2388,19 +2388,32 @@ public class Upgrade410to420 implements DbUpgrade {
                                 conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");) {
                             alter_iso_pstmt.executeUpdate();
                         }catch (SQLException e) {
-                            s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                            s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
+                            if (s_logger.isTraceEnabled()) {
+                                s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
+                            }
                             //implies iso_id1 is not present, so do nothing.
                         }
                     }catch (SQLException e) {
-                        s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                        s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
+                        if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
+                        }
                         //implies iso_id1 is not present, so do nothing.
                     }
                 }
             }catch (SQLException e) {
-                s_logger.error("migrateDatafromIsoIdInVolumesTable:Exception:"+e.getMessage(),e);
+                s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
+                }
                 //implies iso_id1 is not present, so do nothing.
             }
         } catch (SQLException e) {
+          s_logger.info("migrateDatafromIsoIdInVolumesTable: ignoring Exception: " + e.getMessage());
+          if (s_logger.isTraceEnabled()) {
+              s_logger.trace("migrateDatafromIsoIdInVolumesTable: ignored Exception",e);
+          }
             //implies iso_id1 is not present, so do nothing.
         }
     }

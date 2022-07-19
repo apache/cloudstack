@@ -30,6 +30,8 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -91,6 +93,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
@@ -136,6 +139,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private VMTemplateDetailsDao templateDetailsDao;
     @Inject
     private TemplateDeployAsIsDetailsDao templateDeployAsIsDetailsDao;
+    @Inject
+    private AnnotationDao annotationDao;
 
     @Override
     public String getName() {
@@ -212,7 +217,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepare(RegisterTemplateCmd cmd) throws ResourceAllocationException {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
-        UriUtils.validateUrl(cmd.getFormat(), url);
+        UriUtils.validateUrl(cmd.getFormat(), url, cmd.isDirectDownload());
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(cmd.getFormat(), url, cmd.getZoneIds());
@@ -394,8 +399,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             templateOnStore.getDataStore().getRole().toString());
                     //using the existing max template size configuration
                     payload.setMaxUploadSize(_configDao.getValue(Config.MaxTemplateAndIsoSize.key()));
-                    payload.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
                     payload.setAccountId(template.getAccountId());
+                    Account account = _accountDao.findById(template.getAccountId());
+                    if (account.getType().equals(Account.Type.PROJECT)) {
+                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxProjectSecondaryStorage.value());
+                    } else {
+                        payload.setDefaultMaxSecondaryStorageInGB(ResourceLimitService.MaxAccountSecondaryStorage.value());
+                    }
                     payload.setRemoteEndPoint(ep.getPublicAddr());
                     payload.setRequiresHvm(template.requiresHvm());
                     payload.setDescription(template.getDisplayText());
@@ -650,6 +660,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
             // Remove deploy-as-is details (if any)
             templateDeployAsIsDetailsDao.removeDetails(template.getId());
+
+            // Remove comments (if any)
+            AnnotationService.EntityType entityType = template.getFormat().equals(ImageFormat.ISO) ?
+                    AnnotationService.EntityType.ISO : AnnotationService.EntityType.TEMPLATE;
+            annotationDao.removeByEntityType(entityType.name(), template.getUuid());
 
         }
         return success;

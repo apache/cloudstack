@@ -48,7 +48,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -1618,5 +1618,23 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean canHostAccessStoragePool(Host host, StoragePool pool) {
         return true;
+    }
+
+    @Override
+    public boolean isVmInfoNeeded() {
+        return false;
+    }
+
+    @Override
+    public void provideVmInfo(long vmId, long volumeId) {
+    }
+
+    @Override
+    public boolean isVmTagsNeeded(String tagKey) {
+        return false;
+    }
+
+    @Override
+    public void provideVmTags(long vmId, long volumeId, String tagValue) {
     }
 }

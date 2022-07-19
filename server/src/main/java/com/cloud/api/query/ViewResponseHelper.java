@@ -134,14 +134,16 @@ public class ViewResponseHelper {
         return respList;
     }
 
-
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVmJoinVO... userVms) {
-        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), userVms);
+        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), null, userVms);
     }
 
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
-        Account caller = CallContext.current().getCallingAccount();
+        return createUserVmResponse(view, objectName, details, null, userVms);
+    }
 
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, UserVmJoinVO... userVms) {
+        Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
         // Initialise the vmdatalist with the input data
 
@@ -149,7 +151,7 @@ public class ViewResponseHelper {
             UserVmResponse userVmData = vmDataList.get(userVm.getId());
             if (userVmData == null) {
                 // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, caller);
+                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
             } else{
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);
@@ -242,14 +244,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostResponse> vrDataList = new Hashtable<Long, HostResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostDetails(vrData, vr);
-            }
+            HostResponse vrData = ApiDBUtils.newHostResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostResponse>(vrDataList.values());
@@ -259,14 +254,7 @@ public class ViewResponseHelper {
         Hashtable<Long, HostForMigrationResponse> vrDataList = new Hashtable<Long, HostForMigrationResponse>();
         // Initialise the vrdatalist with the input data
         for (HostJoinVO vr : hosts) {
-            HostForMigrationResponse vrData = vrDataList.get(vr.getId());
-            if (vrData == null) {
-                // first time encountering this vm
-                vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
-            } else {
-                // update tags
-                vrData = ApiDBUtils.fillHostForMigrationDetails(vrData, vr);
-            }
+            HostForMigrationResponse vrData = ApiDBUtils.newHostForMigrationResponse(vr, details);
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<HostForMigrationResponse>(vrDataList.values());
@@ -574,10 +562,10 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, DataCenterJoinVO... dcs) {
+    public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
         for (DataCenterJoinVO vt : dcs){
-            respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities));
+            respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
         }
         return respList;
     }

@@ -1,9 +1,18 @@
 {
   "apiBase": "/client/api",
+  "servers": [
+    {
+      "name": "Local-Server",
+      "apiHost": "",
+      "apiBase": "/client/api"
+    }
+  ],
   "docBase": "http://docs.cloudstack.apache.org/en/latest",
   "appTitle": "CloudStack",
   "footer": "Licensed under the <a href='http://www.apache.org/licenses/' target='_blank'>Apache License</a>, Version 2.0.",
+  "loginFooter": "",
   "logo": "assets/logo.svg",
+  "minilogo": "assets/mini-logo.svg",
   "banner": "assets/banner.svg",
   "error": {
     "403": "assets/403.png",
@@ -11,7 +20,9 @@
     "500": "assets/500.png"
   },
   "theme": {
+    "@layout-mode": "light",
     "@logo-background-color": "#ffffff",
+    "@mini-logo-background-color": "#ffffff",
     "@navigation-background-color": "#ffffff",
     "@project-nav-background-color": "#001529",
     "@project-nav-text-color": "rgba(255, 255, 255, 0.65)",
@@ -34,6 +45,8 @@
     "@box-shadow-base": "0 2px 8px rgba(0, 0, 0, 0.15)",
     "@logo-width": "256px",
     "@logo-height": "64px",
+    "@mini-logo-width": "80px",
+    "@mini-logo-height": "64px",
     "@banner-width": "700px",
     "@banner-height": "110px",
     "@error-width": "256px",
@@ -48,5 +61,7 @@
   },
   "plugins": [],
   "basicZoneEnabled": true,
+  "multipleServer": false,
+  "allowSettingTheme": true,
   "docHelpMappings": {}
 }

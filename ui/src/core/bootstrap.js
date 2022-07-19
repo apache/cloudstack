@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vue from 'vue'
+import { vueProps } from '@/vue-app'
 import config from '@/config/settings'
 import store from '@/store/'
 import {
@@ -31,21 +31,31 @@ import {
   DEFAULT_FIXED_SIDEMENU,
   DEFAULT_CONTENT_WIDTH_TYPE,
   DEFAULT_MULTI_TAB,
-  ASYNC_JOB_IDS
+  HEADER_NOTICES,
+  VUE_VERSION
 } from '@/store/mutation-types'
 
-export default function Initializer () {
-  store.commit('SET_SIDEBAR_TYPE', Vue.ls.get(SIDEBAR_TYPE, true))
-  store.commit('TOGGLE_THEME', Vue.ls.get(DEFAULT_THEME, config.navTheme))
-  store.commit('TOGGLE_LAYOUT_MODE', Vue.ls.get(DEFAULT_LAYOUT_MODE, config.layout))
-  store.commit('TOGGLE_FIXED_HEADER', Vue.ls.get(DEFAULT_FIXED_HEADER, config.fixedHeader))
-  store.commit('TOGGLE_FIXED_SIDERBAR', Vue.ls.get(DEFAULT_FIXED_SIDEMENU, config.fixSiderbar))
-  store.commit('TOGGLE_CONTENT_WIDTH', Vue.ls.get(DEFAULT_CONTENT_WIDTH_TYPE, config.contentWidth))
-  store.commit('TOGGLE_FIXED_HEADER_HIDDEN', Vue.ls.get(DEFAULT_FIXED_HEADER_HIDDEN, config.autoHideHeader))
-  store.commit('TOGGLE_INVERTED', Vue.ls.get(DEFAULT_COLOR_INVERTED, config.invertedMode))
-  store.commit('TOGGLE_COLOR', Vue.ls.get(DEFAULT_COLOR, config.primaryColor))
-  store.commit('TOGGLE_MULTI_TAB', Vue.ls.get(DEFAULT_MULTI_TAB, config.multiTab))
-  store.commit('SET_TOKEN', Vue.ls.get(ACCESS_TOKEN))
-  store.commit('SET_PROJECT', Vue.ls.get(CURRENT_PROJECT))
-  store.commit('SET_ASYNC_JOB_IDS', Vue.ls.get(ASYNC_JOB_IDS) || [])
+export default {
+  install: (app) => {
+    let vueVersion = vueProps.$localStorage.get(VUE_VERSION)
+    if (vueVersion !== app.version) {
+      vueVersion = app.version
+      vueProps.$localStorage.clear()
+    }
+
+    store.commit('SET_VUE_VERSION', vueVersion)
+    store.commit('SET_SIDEBAR_TYPE', vueProps.$localStorage.get(SIDEBAR_TYPE, true))
+    store.commit('TOGGLE_THEME', vueProps.$localStorage.get(DEFAULT_THEME, config.navTheme))
+    store.commit('TOGGLE_LAYOUT_MODE', vueProps.$localStorage.get(DEFAULT_LAYOUT_MODE, config.layout))
+    store.commit('TOGGLE_FIXED_HEADER', vueProps.$localStorage.get(DEFAULT_FIXED_HEADER, config.fixedHeader))
+    store.commit('TOGGLE_FIXED_SIDERBAR', vueProps.$localStorage.get(DEFAULT_FIXED_SIDEMENU, config.fixSiderbar))
+    store.commit('TOGGLE_CONTENT_WIDTH', vueProps.$localStorage.get(DEFAULT_CONTENT_WIDTH_TYPE, config.contentWidth))
+    store.commit('TOGGLE_FIXED_HEADER_HIDDEN', vueProps.$localStorage.get(DEFAULT_FIXED_HEADER_HIDDEN, config.autoHideHeader))
+    store.commit('TOGGLE_INVERTED', vueProps.$localStorage.get(DEFAULT_COLOR_INVERTED, config.invertedMode))
+    store.commit('TOGGLE_COLOR', vueProps.$localStorage.get(DEFAULT_COLOR, config.primaryColor))
+    store.commit('TOGGLE_MULTI_TAB', vueProps.$localStorage.get(DEFAULT_MULTI_TAB, config.multiTab))
+    store.commit('SET_TOKEN', vueProps.$localStorage.get(ACCESS_TOKEN))
+    store.commit('SET_PROJECT', vueProps.$localStorage.get(CURRENT_PROJECT))
+    store.commit('SET_HEADER_NOTICES', vueProps.$localStorage.get(HEADER_NOTICES) || [])
+  }
 }

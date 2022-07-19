@@ -27,4 +27,6 @@ public interface ServiceOfferingDetailsDao extends GenericDao<ServiceOfferingDet
     List<Long> findDomainIds(final long resourceId);
     List<Long> findZoneIds(final long resourceId);
     String getDetail(Long diskOfferingId, String key);
+    List<Long> findOfferingIdsByDomainIds(List<Long> domainIds);
 }
+

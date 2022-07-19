@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.NetworkOffering;
@@ -30,7 +30,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = NetworkOffering.class)
 @SuppressWarnings("unused")
-public class NetworkOfferingResponse extends BaseResponse {
+public class NetworkOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName("id")
     @Param(description = "the id of the network offering")
     private String id;
@@ -138,6 +138,10 @@ public class NetworkOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE)
     @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
     private String zone;
+
+    @SerializedName(ApiConstants.INTERNET_PROTOCOL)
+    @Param(description = "the internet protocol of the network offering")
+    private String internetProtocol;
 
     public void setId(String id) {
         this.id = id;
@@ -261,5 +265,13 @@ public class NetworkOfferingResponse extends BaseResponse {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public String getInternetProtocol() {
+        return internetProtocol;
+    }
+
+    public void setInternetProtocol(String internetProtocol) {
+        this.internetProtocol = internetProtocol;
     }
 }

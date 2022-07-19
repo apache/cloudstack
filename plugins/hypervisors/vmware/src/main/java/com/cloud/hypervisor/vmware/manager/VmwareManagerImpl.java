@@ -16,6 +16,55 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -49,6 +98,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
@@ -100,6 +150,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -114,52 +165,9 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.base.Strings;
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.management.ManagementServerHost;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -244,7 +252,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private String _recycleHungWorker = "false";
     private int _additionalPortRangeStart;
     private int _additionalPortRangeSize;
-    private int _routerExtraPublicNics = 2;
     private int _vCenterSessionTimeout = 1200000; // Timeout in milliseconds
     private String _rootDiskController = DiskControllerType.ide.toString();
 
@@ -263,6 +270,24 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         _storageMgr = new VmwareStorageManagerImpl(this);
     }
 
+    private boolean isSystemVmIsoCopyNeeded(File srcIso, File destIso) {
+        if (!destIso.exists()) {
+            return true;
+        }
+        boolean copyNeeded = false;
+        try {
+            String srcIsoMd5 = DigestUtils.md5Hex(new FileInputStream(srcIso));
+            String destIsoMd5 = DigestUtils.md5Hex(new FileInputStream(destIso));
+            copyNeeded = !StringUtils.equals(srcIsoMd5, destIsoMd5);
+            if (copyNeeded) {
+                s_logger.debug(String.format("MD5 checksum: %s for source ISO: %s is different from MD5 checksum: %s from destination ISO: %s", srcIsoMd5, srcIso.getAbsolutePath(), destIsoMd5, destIso.getAbsolutePath()));
+            }
+        } catch (IOException e) {
+            s_logger.debug(String.format("Unable to compare MD5 checksum for systemvm.iso at source: %s and destination: %s", srcIso.getAbsolutePath(), destIso.getAbsolutePath()), e);
+        }
+        return copyNeeded;
+    }
+
     @Override
     public String getConfigComponentName() {
         return VmwareManagerImpl.class.getSimpleName();
@@ -270,7 +295,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout};
+        return new ConfigKey<?>[] {s_vmwareNicHotplugWaitTimeout, s_vmwareCleanOldWorderVMs, templateCleanupInterval, s_vmwareSearchExcludeFolder, s_vmwareOVAPackageTimeout, s_vmwareCleanupPortGroups, VMWARE_STATS_TIME_WINDOW};
     }
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -306,12 +331,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _storage.configure("StorageLayer", params);
         }
 
-        value = _configDao.getValue(Config.VmwareCreateFullClone.key());
-        if (value == null) {
-            _fullCloneFlag = false;
-        } else {
-            _fullCloneFlag = Boolean.parseBoolean(value);
-        }
+        _fullCloneFlag = StorageManager.VmwareCreateCloneFull.value();
 
         value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         if (value == null) {
@@ -346,8 +366,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             s_logger.warn("Invalid port range size (" + _additionalPortRangeSize + " for range starts at " + _additionalPortRangeStart);
             _additionalPortRangeSize = Math.min(1000, 65535 - _additionalPortRangeStart);
         }
-
-        _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 
         _vCenterSessionTimeout = NumbersUtil.parseInt(_configDao.getValue(Config.VmwareVcenterSessionTimeout.key()), 1200) * 1000;
         s_logger.info("VmwareManagerImpl config - vmware.vcenter.session.timeout: " + _vCenterSessionTimeout);
@@ -446,6 +464,29 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
+    private HostMO getOldestExistentHostInCluster(Long clusterId, VmwareContext serviceContext) throws Exception {
+        HostVO host = hostDao.findOldestExistentHypervisorHostInCluster(clusterId);
+        if (host == null) {
+            return null;
+        }
+
+        ManagedObjectReference morSrcHost = HypervisorHostHelper.getHypervisorHostMorFromGuid(host.getGuid());
+        if (morSrcHost == null) {
+            Map<String, String> clusterDetails = clusterDetailsDao.findDetails(clusterId);
+            if (MapUtils.isEmpty(clusterDetails) || StringUtils.isBlank(clusterDetails.get("url"))) {
+                return null;
+            }
+
+            URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            if (morSrcHost == null) {
+                return null;
+            }
+        }
+
+        return new HostMO(serviceContext, morSrcHost);
+    }
+
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
             throws Exception {
@@ -498,6 +539,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, mor);
                 prepareHost(hostMo, privateTrafficLabel);
+                HostMO olderHostMo = getOldestExistentHostInCluster(clusterId, serviceContext);
+                if (olderHostMo != null) {
+                    hostMo.copyPortGroupsFromHost(olderHostMo);
+                }
+
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
@@ -636,7 +682,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // this time-out check was disabled
         // "until we have found out a VMware API that can check if there are pending tasks on the subject VM"
-        // but as we expire jobs and those stale worker VMs stay around untill an MS reboot we opt in to have them removed anyway
+        // but as we expire jobs and those stale worker VMs stay around until an MS reboot we opt in to have them removed anyway
         Instant start = Instant.ofEpochMilli(startTick);
         Instant end = start.plusSeconds(2 * (AsyncJobManagerImpl.JobExpireMinutes.value() + AsyncJobManagerImpl.JobCancelThresholdMinutes.value()) * SECONDS_PER_MINUTE);
         Instant now = Instant.now();
@@ -673,7 +719,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
                     File srcIso = getSystemVMPatchIsoFile();
                     File destIso = new File(mountPoint + "/systemvm/" + getSystemVMIsoFileNameOnDatastore());
-                    if (!destIso.exists()) {
+                    if (isSystemVmIsoCopyNeeded(srcIso, destIso)) {
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 
@@ -1015,11 +1061,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public int getRouterExtraPublicNics() {
-        return _routerExtraPublicNics;
-    }
-
-    @Override
     public Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId) {
         CiscoNexusVSMDeviceVO nexusVSM = null;
         ClusterVSMMapVO vsmMapVO = null;
@@ -1219,16 +1260,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         final String oldVCenterHost = vmwareDc.getVcenterHost();
 
-        if (!Strings.isNullOrEmpty(userName)) {
+        if (StringUtils.isNotEmpty(userName)) {
             vmwareDc.setUser(userName);
         }
-        if (!Strings.isNullOrEmpty(password)) {
+        if (StringUtils.isNotEmpty(password)) {
             vmwareDc.setPassword(password);
         }
-        if (!Strings.isNullOrEmpty(vCenterHost)) {
+        if (StringUtils.isNotEmpty(vCenterHost)) {
             vmwareDc.setVcenterHost(vCenterHost);
         }
-        if (!Strings.isNullOrEmpty(vmwareDcName)) {
+        if (StringUtils.isNotEmpty(vmwareDcName)) {
             vmwareDc.setVmwareDatacenterName(vmwareDcName);
         }
         vmwareDc.setGuid(String.format("%s@%s", vmwareDc.getVmwareDatacenterName(), vmwareDc.getVcenterHost()));
@@ -1243,7 +1284,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             clusterDetails.put("username", vmwareDc.getUser());
                             clusterDetails.put("password", vmwareDc.getPassword());
                             final String clusterUrl = clusterDetails.get("url");
-                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && !Strings.isNullOrEmpty(clusterUrl)) {
+                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && StringUtils.isNotEmpty(clusterUrl)) {
                                 clusterDetails.put("url", clusterUrl.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             clusterDetailsDao.persist(cluster.getId(), clusterDetails);
@@ -1253,7 +1294,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             hostDetails.put("username", vmwareDc.getUser());
                             hostDetails.put("password", vmwareDc.getPassword());
                             final String hostGuid = hostDetails.get("guid");
-                            if (!Strings.isNullOrEmpty(hostGuid)) {
+                            if (StringUtils.isNotEmpty(hostGuid)) {
                                 hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             hostDetailsDao.persist(host.getId(), hostDetails);

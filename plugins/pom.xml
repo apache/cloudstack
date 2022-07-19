@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.16.0.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -122,6 +122,9 @@
         <module>storage/volume/sample</module>
         <module>storage/volume/solidfire</module>
         <module>storage/volume/scaleio</module>
+        <module>storage/volume/linstor</module>
+        <module>storage/volume/storpool</module>
+
 
         <module>storage-allocators/random</module>
 
@@ -162,17 +165,6 @@
         </dependency>
     </dependencies>
     <profiles>
-        <profile>
-            <id>f5</id>
-            <activation>
-                <property>
-                    <name>noredist</name>
-                </property>
-            </activation>
-            <modules>
-                <module>network-elements/f5</module>
-            </modules>
-        </profile>
         <profile>
             <id>srx</id>
             <activation>

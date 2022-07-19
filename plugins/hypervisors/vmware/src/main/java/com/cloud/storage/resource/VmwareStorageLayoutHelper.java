@@ -247,10 +247,26 @@ public class VmwareStorageLayoutHelper implements Configurable {
         s_logger.info("Fixup folder-synchronization. move " + fileDsFullPath + " -> " + targetPath);
         ds.moveDatastoreFile(fileDsFullPath, dcMo.getMor(), ds.getMor(), targetPath, dcMo.getMor(), true);
 
-        if (folderName != null) {
-            String[] files = ds.listDirContent(folderName);
-            if (files == null || files.length == 0) {
-                ds.deleteFolder(folderName, dcMo.getMor());
+        try {
+            if (folderName != null) {
+                String[] files = ds.listDirContent(folderName);
+                if (files == null || files.length == 0) {
+                    ds.deleteFolder(folderName, dcMo.getMor());
+                }
+            }
+        } catch (Exception e) {
+            if (e.getMessage().toLowerCase().startsWith("server returned http response code: 500 for url: ") &&
+                    e.getMessage().contains(vmName)) {
+                String link = "https://github.com/apache/cloudstack/pull/6283";
+                String message = String.format("Failed to list folder content of VM [name: %s] due to: [%s]. For more information about this error, or "
+                        + "to know why ACS tries to check folder content, please check this link [%s]. This error apparently only occurs with datastores that use the NFS protocol and "
+                        + "in specific versions of VMWare. Users using VMFS or VMWare versions greater than 6.7 have not reported this error. If the operation performed is a volume detach, "
+                        + "it was successful. If you want to know why this error occurs in VMWare, please contact VMWare's technical support.",
+                        vmName, e.getMessage(), link);
+                s_logger.warn(message, e);
+            } else {
+                s_logger.error(String.format("Failed to sync volume [%s] of VM [%s] due to: [%s].", vmdkName, vmName, e.getMessage()), e);
+                throw e;
             }
         }
     }

@@ -46,6 +46,8 @@ public interface Site2SiteVpnService {
 
     Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId);
 
+    Site2SiteCustomerGateway getCustomerGateway(Long customerGatewayId);
+
     Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException;
 
     boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd deleteVpnCustomerGatewayCmd);

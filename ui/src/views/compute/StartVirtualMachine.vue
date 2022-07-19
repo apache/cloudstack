@@ -16,102 +16,90 @@
 // under the License.
 
 <template>
-  <div class="form-layout">
+  <div class="form-layout" v-ctrl-enter="handleSubmit">
     <a-spin :spinning="loading">
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.action.start.instance')" />
+        <template #message>{{ $t('message.action.start.instance') }}</template>
       </a-alert>
       <br />
       <a-form
-        :form="form"
-        @submit="handleSubmit"
+        :ref="formRef"
+        :model="form"
+        :rules="rules"
+        @finish="handleSubmit"
         layout="vertical">
-        <div v-if="this.$store.getters.userInfo.roletype === 'Admin'">
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.podid') }}
-              <a-tooltip :title="apiParams.podid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+        <div v-if="$store.getters.userInfo.roletype === 'Admin'">
+          <a-form-item name="podid" ref="podid">
+            <template #label>
+              <tooltip-label :title="$t('label.podid')" :tooltip="apiParams.podid.description"/>
+            </template>
             <a-select
-              v-decorator="['podid', {}]"
+              v-model:value="form.podid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="podsLoading"
               :placeholder="apiParams.podid.description"
               @change="handlePodChange"
-              :autoFocus="this.$store.getters.userInfo.roletype === 'Admin'">
-              <a-select-option v-for="pod in this.pods" :key="pod.id">
+              v-focus="$store.getters.userInfo.roletype === 'Admin'">
+              <a-select-option v-for="pod in pods" :key="pod.id">
                 {{ pod.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.clusterid') }}
-              <a-tooltip :title="apiParams.clusterid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="clusterid" ref="clusterid">
+            <template #label>
+              <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            </template>
             <a-select
               id="cluster-selection"
-              v-decorator="['clusterid', {}]"
+              v-model:value="form.clusterid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.text.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="clustersLoading"
               :placeholder="apiParams.clusterid.description"
               @change="handleClusterChange">
-              <a-select-option v-for="cluster in this.clusters" :key="cluster.id">
+              <a-select-option v-for="cluster in clusters" :key="cluster.id">
                 {{ cluster.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item>
-            <span slot="label">
-              {{ $t('label.hostid') }}
-              <a-tooltip :title="apiParams.hostid.description">
-                <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-              </a-tooltip>
-            </span>
+          <a-form-item name="hostid" ref="hostid">
+            <template #label>
+              <tooltip-label :title="$t('label.hostid')" :tooltip="apiParams.hostid.description"/>
+            </template>
             <a-select
               id="host-selection"
-              v-decorator="['hostid', {}]"
+              v-model:value="form.hostid"
               showSearch
-              optionFilterProp="children"
+              optionFilterProp="label"
               :filterOption="(input, option) => {
-                return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
               :loading="hostsLoading"
               :placeholder="apiParams.hostid.description">
-              <a-select-option v-for="host in this.hosts" :key="host.id">
+              <a-select-option v-for="host in hosts" :key="host.id">
                 {{ host.name }}
               </a-select-option>
             </a-select>
           </a-form-item>
         </div>
 
-        <a-form-item v-if="resource.hypervisor === 'VMware'">
-          <span slot="label">
-            {{ $t('label.bootintosetup') }}
-            <a-tooltip :title="apiParams.bootintosetup.description">
-              <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-            </a-tooltip>
-          </span>
-          <a-switch
-            v-decorator="['bootintosetup']">
-          </a-switch>
+        <a-form-item name="bootintosetup" ref="bootintosetup" v-if="resource.hypervisor === 'VMware'">
+          <template #label>
+            <tooltip-label :title="$t('label.bootintosetup')" :tooltip="apiParams.bootintosetup.description"/>
+          </template>
+          <a-switch v-model:checked="form.bootintosetup" />
         </a-form-item>
 
         <div :span="24" class="action-button">
-          <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-          <a-button :loading="loading" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+          <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+          <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
         </div>
       </a-form>
     </a-spin>
@@ -119,10 +107,15 @@
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'StartVirtualMachine',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -140,16 +133,11 @@ export default {
       loading: false
     }
   },
-  inject: ['parentFetchData'],
   beforeCreate () {
-    this.form = this.$form.createForm(this)
-    this.apiConfig = this.$store.getters.apis.startVirtualMachine || {}
-    this.apiParams = {}
-    this.apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('startVirtualMachine')
   },
   created () {
+    this.initForm()
     if (this.$store.getters.userInfo.roletype === 'Admin') {
       this.fetchPods()
       this.fetchClusters()
@@ -157,6 +145,11 @@ export default {
     }
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({})
+    },
     fetchPods () {
       this.pods = []
       this.podsLoading = true
@@ -215,21 +208,20 @@ export default {
       })
     },
     handlePodChange (podid) {
-      this.form.clearField('clusterid')
-      this.form.clearField('hostid')
+      this.form.clusterid = undefined
+      this.form.hostid = undefined
       this.fetchClusters(podid)
       this.fetchHosts(podid)
     },
     handleClusterChange (clusterid) {
-      this.form.clearField('hostid')
+      this.form.hostid = undefined
       this.fetchHosts('', clusterid)
     },
     handleSubmit (e) {
       e.preventDefault()
-      this.form.validateFields((err, values) => {
-        if (err) {
-          return
-        }
+      if (this.loading) return
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
 
         this.loading = true
         const params = {
@@ -242,20 +234,13 @@ export default {
         }
         api('startVirtualMachine', params).then(json => {
           const jobId = json.startvirtualmachineresponse.jobid
-          this.$store.dispatch('AddAsyncJob', {
-            title: this.$t('label.action.start.instance'),
-            jobid: jobId,
-            description: this.resource.name,
-            status: 'progress'
-          })
           this.$pollJob({
             jobId,
+            title: this.$t('label.action.start.instance'),
+            description: this.resource.name,
             loadingMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
             catchMessage: this.$t('error.fetching.async.job.result'),
             successMessage: `${this.$t('label.action.start.instance')} ${this.resource.name}`,
-            successMethod: () => {
-              this.parentFetchData()
-            },
             response: (result) => { return result.virtualmachine && result.virtualmachine.password ? `The password of VM <b>${result.virtualmachine.displayname}</b> is <b>${result.virtualmachine.password}</b>` : null }
           })
           this.closeAction()
@@ -264,6 +249,8 @@ export default {
         }).finally(() => {
           this.loading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     closeAction () {
@@ -279,14 +266,6 @@ export default {
 
     @media (min-width: 500px) {
       width: 450px;
-    }
-  }
-
-  .action-button {
-    text-align: right;
-
-    button {
-      margin-right: 5px;
     }
   }
 </style>

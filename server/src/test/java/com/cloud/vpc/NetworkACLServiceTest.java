@@ -89,7 +89,7 @@ public class NetworkACLServiceTest extends TestCase {
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
-        Account account = new AccountVO("testaccount", 1, "testdomain", (short)0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "testdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
@@ -32,7 +32,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VirtualMachine.class)
 @SuppressWarnings("unused")
-public class DomainRouterResponse extends BaseResponse implements ControlledViewEntityResponse {
+public class DomainRouterResponse extends BaseResponseWithAnnotations implements ControlledViewEntityResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the id of the router")
     private String id;
@@ -225,13 +225,17 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
     @Param(description = "true if the router template requires upgrader")
     private boolean requiresUpgrade;
 
-    @SerializedName("healthchecksfailed")
+    @SerializedName(ApiConstants.HEALTHCHECK_FAILED)
     @Param(description = "true if any health checks had failed")
     private boolean healthChecksFailed;
 
     @SerializedName("healthcheckresults")
     @Param(description = "Last executed health check result for the router", responseObject = RouterHealthCheckResultResponse.class, since = "4.14")
     List<RouterHealthCheckResultResponse> healthCheckResults;
+
+    @SerializedName("softwareversion")
+    @Param(description = "the version of the code / software in the router")
+    private String softwareVersion;
 
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
@@ -489,5 +493,13 @@ public class DomainRouterResponse extends BaseResponse implements ControlledView
 
     public void setHealthCheckResults(List<RouterHealthCheckResultResponse> healthCheckResults) {
         this.healthCheckResults = healthCheckResults;
+    }
+
+    public String getSoftwareVersion() {
+        return softwareVersion;
+    }
+
+    public void setSoftwareVersion(String softwareVersion) {
+        this.softwareVersion = softwareVersion;
     }
 }

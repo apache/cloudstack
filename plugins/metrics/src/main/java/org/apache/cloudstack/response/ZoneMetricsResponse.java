@@ -21,7 +21,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-public class ZoneMetricsResponse extends ZoneResponse {
+public class ZoneMetricsResponse extends ZoneResponse implements HostMetricsSummary {
     @SerializedName("state")
     @Param(description = "state of the cluster")
     private String state;

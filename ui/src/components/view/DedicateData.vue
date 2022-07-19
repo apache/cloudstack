@@ -24,13 +24,13 @@
       </div>
       <p>
         <strong>{{ $t('label.domainid') }}</strong><br/>
-        <router-link :to="{ path: '/domain/' + dedicatedDomainId }">{{ dedicatedDomainId }}</router-link>
+        <router-link :to="{ path: '/domain/' + dedicatedDomainId, query: { tab: 'details'} }">{{ dedicatedDomainId }}</router-link>
       </p>
       <p v-if="dedicatedAccountId">
         <strong>{{ $t('label.account') }}</strong><br/>
         <router-link :to="{ path: '/account/' + dedicatedAccountId }">{{ dedicatedAccountId }}</router-link>
       </p>
-      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="danger" @click="handleRelease">
+      <a-button style="margin-top: 10px; margin-bottom: 10px;" type="primary" danger @click="handleRelease">
         {{ releaseButtonLabel }}
       </a-button>
     </div>
@@ -67,6 +67,9 @@ export default {
     DedicateModal
   },
   inject: ['parentFetchData'],
+  created () {
+    this.fetchData()
+  },
   data () {
     return {
       modalActive: false,
@@ -79,9 +82,12 @@ export default {
     }
   },
   watch: {
-    resource (newItem, oldItem) {
-      if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
-        this.fetchData()
+    resource: {
+      deep: true,
+      handler (newItem, oldItem) {
+        if (this.resource && this.resource.id && newItem && newItem.id !== oldItem.id) {
+          this.fetchData()
+        }
       }
     }
   },
@@ -121,8 +127,7 @@ export default {
       api('listDedicatedZones', {
         zoneid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedzonesresponse.dedicatedzone &&
-            response.listdedicatedzonesresponse.dedicatedzone.length > 0) {
+        if (response?.listdedicatedzonesresponse?.dedicatedzone?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedzonesresponse.dedicatedzone[0].domainid
           this.dedicatedAccountId = response.listdedicatedzonesresponse.dedicatedzone[0].accountid
         }
@@ -134,8 +139,7 @@ export default {
       api('listDedicatedPods', {
         podid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedpodsresponse.dedicatedpod &&
-            response.listdedicatedpodsresponse.dedicatedpod.length > 0) {
+        if (response?.listdedicatedpodsresponse?.dedicatedpod?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedpodsresponse.dedicatedpod[0].domainid
           this.dedicatedAccountId = response.listdedicatedpodsresponse.dedicatedpod[0].accountid
         }
@@ -147,8 +151,7 @@ export default {
       api('listDedicatedClusters', {
         clusterid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedclustersresponse.dedicatedcluster &&
-            response.listdedicatedclustersresponse.dedicatedcluster.length > 0) {
+        if (response?.listdedicatedclustersresponse?.dedicatedcluster?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedclustersresponse.dedicatedcluster[0].domainid
           this.dedicatedAccountId = response.listdedicatedclustersresponse.dedicatedcluster[0].accountid
         }
@@ -160,8 +163,7 @@ export default {
       api('listDedicatedHosts', {
         hostid: this.resource.id
       }).then(response => {
-        if (response.listdedicatedhostsresponse.dedicatedhost &&
-            response.listdedicatedhostsresponse.dedicatedhost.length > 0) {
+        if (response?.listdedicatedhostsresponse?.dedicatedhost?.length > 0) {
           this.dedicatedDomainId = response.listdedicatedhostsresponse.dedicatedhost[0].domainid
           this.dedicatedAccountId = response.listdedicatedhostsresponse.dedicatedhost[0].accountid
         }
@@ -175,20 +177,13 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedzoneresponse.jobid,
+          title: this.$t('label.release.dedicated.zone'),
+          description: this.resource.id,
           successMessage: this.$t('message.dedicated.zone.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.dedicated.zone.released'),
-              jobid: response.releasededicatedzoneresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.zone'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.zone'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -205,20 +200,13 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedpodresponse.jobid,
+          title: this.$t('label.release.dedicated.pod'),
+          description: this.resource.id,
           successMessage: this.$t('message.pod.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.pod.dedication.released'),
-              jobid: response.releasededicatedpodresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.pod'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.pod'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -235,20 +223,13 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedclusterresponse.jobid,
+          title: this.$t('label.release.dedicated.cluster'),
+          description: this.resource.id,
           successMessage: this.$t('message.cluster.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.cluster.dedication.released'),
-              jobid: response.releasededicatedclusterresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.cluster'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.cluster'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {
@@ -265,20 +246,13 @@ export default {
       }).then(response => {
         this.$pollJob({
           jobId: response.releasededicatedhostresponse.jobid,
+          title: this.$t('label.release.dedicated.host'),
+          description: this.resource.id,
           successMessage: this.$t('message.host.dedication.released'),
           successMethod: () => {
-            this.parentFetchData()
             this.dedicatedDomainId = null
-            this.$store.dispatch('AddAsyncJob', {
-              title: this.$t('message.host.dedication.released'),
-              jobid: response.releasededicatedhostresponse.jobid,
-              status: 'progress'
-            })
           },
           errorMessage: this.$t('error.release.dedicate.host'),
-          errorMethod: () => {
-            this.parentFetchData()
-          },
           loadingMessage: this.$t('message.releasing.dedicated.host'),
           catchMessage: this.$t('error.fetching.async.job.result'),
           catchMethod: () => {

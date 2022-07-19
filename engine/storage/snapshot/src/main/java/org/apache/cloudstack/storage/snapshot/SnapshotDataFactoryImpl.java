@@ -83,16 +83,24 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
         return infos;
     }
 
-
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role) {
+        return getSnapshot(snapshotId, role, true);
+    }
+
+    @Override
+    public SnapshotInfo getSnapshot(long snapshotId, DataStoreRole role, boolean retrieveAnySnapshotFromVolume) {
         SnapshotVO snapshot = snapshotDao.findById(snapshotId);
         if (snapshot == null) {
             return null;
         }
         SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findBySnapshot(snapshotId, role);
         if (snapshotStore == null) {
-            snapshotStore = snapshotStoreDao.findByVolume(snapshot.getVolumeId(), role);
+            if (!retrieveAnySnapshotFromVolume) {
+                return null;
+            }
+
+            snapshotStore = snapshotStoreDao.findByVolume(snapshotId, snapshot.getVolumeId(), role);
             if (snapshotStore == null) {
                 return null;
             }

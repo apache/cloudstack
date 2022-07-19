@@ -291,7 +291,8 @@ class TestVolumes(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    # @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_02_list_volume_byid(self):
         """
         @summary: Test List Volumes with Id
@@ -699,7 +700,8 @@ class TestVolumes(cloudstackTestCase):
         )
         return
 
-    @attr(tags=["advanced", "basic"], required_hardware="true")
+    # @attr(tags=["advanced", "basic"], required_hardware="true")
+    @attr(tags=["TODO"], required_hardware="true")
     def test_05_volume_snapshot(self):
         """
         @summary: Test to verify creation of snapshot from volume

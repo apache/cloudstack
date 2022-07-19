@@ -113,7 +113,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
         List<AccountVO> accountVOList = new ArrayList<>();
         accountVOList.add(accountVO);
         Mockito.when(accountDao.listAll()).thenReturn(accountVOList);
@@ -140,7 +140,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
 
         UsageVO usageVO = new UsageVO();
         usageVO.setQuotaCalculated(0);
@@ -151,7 +151,7 @@ public class QuotaManagerImplTest extends TestCase {
 
         QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
         quotaUsageVO.setAccountId(2L);
-        Mockito.doReturn(quotaUsageVO).when(quotaManager).updateQuotaAllocatedVMUsage(Mockito.eq(usageVO), Mockito.any(BigDecimal.class));
+        Mockito.doReturn(quotaUsageVO).when(quotaManager).updateQuotaAllocatedVMUsage(Mockito.eq(usageVO));
 
         assertTrue(quotaManager.aggregatePendingQuotaRecordsForAccount(accountVO, new Pair<List<? extends UsageVO>, Integer>(null, 0)).size() == 0);
         assertTrue(quotaManager.aggregatePendingQuotaRecordsForAccount(accountVO, usageRecords).size() == 1);
@@ -172,11 +172,11 @@ public class QuotaManagerImplTest extends TestCase {
 
         QuotaUsageVO qu = quotaManager.updateQuotaNetwork(usageVO, UsageTypes.NETWORK_BYTES_SENT);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaAllocatedVMUsage(usageVO, new BigDecimal(0.5));
+        qu = quotaManager.updateQuotaAllocatedVMUsage(usageVO);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaDiskUsage(usageVO, new BigDecimal(0.5), UsageTypes.VOLUME);
+        qu = quotaManager.updateQuotaDiskUsage(usageVO, UsageTypes.VOLUME);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
-        qu = quotaManager.updateQuotaRaw(usageVO, new BigDecimal(0.5), UsageTypes.VPN_USERS);
+        qu = quotaManager.updateQuotaRaw(usageVO, UsageTypes.VPN_USERS);
         assertTrue(qu.getQuotaUsed().compareTo(BigDecimal.ZERO) > 0);
 
         Mockito.verify(quotaUsageDao, Mockito.times(4)).persistQuotaUsage(Mockito.any(QuotaUsageVO.class));
@@ -189,7 +189,7 @@ public class QuotaManagerImplTest extends TestCase {
         AccountVO accountVO = new AccountVO();
         accountVO.setId(2L);
         accountVO.setDomainId(1L);
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
 
         QuotaUsageVO quotaUsageVO = new QuotaUsageVO();
         quotaUsageVO.setAccountId(2L);
@@ -206,37 +206,37 @@ public class QuotaManagerImplTest extends TestCase {
 
     @Test
     public void testAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_ADMIN);
+        accountVO.setType(Account.Type.ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testNormalLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_NORMAL);
+        accountVO.setType(Account.Type.NORMAL);
         assertTrue(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void tesDomainAdmingLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        accountVO.setType(Account.Type.DOMAIN_ADMIN);
         assertTrue(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testReadOnlyAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_READ_ONLY_ADMIN);
+        accountVO.setType(Account.Type.READ_ONLY_ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testResourceDomainAdminLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+        accountVO.setType(Account.Type.RESOURCE_DOMAIN_ADMIN);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 
     @Test
     public void testProjectLockableAccount() {
-        accountVO.setType(Account.ACCOUNT_TYPE_PROJECT);
+        accountVO.setType(Account.Type.PROJECT);
         assertFalse(quotaManager.isLockable(accountVO));
     }
 

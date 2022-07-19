@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
@@ -34,7 +34,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Host.class)
-public class HostResponse extends BaseResponse {
+public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the host")
     private String id;
@@ -532,13 +532,6 @@ public class HostResponse extends BaseResponse {
         // the details to prevent leakage through API calls
         detailsCopy.remove("username");
         detailsCopy.remove("password");
-
-        if (detailsCopy.containsKey(Host.HOST_UEFI_ENABLE)) {
-            this.setUefiCapabilty(Boolean.parseBoolean((String) detailsCopy.get(Host.HOST_UEFI_ENABLE)));
-            detailsCopy.remove(Host.HOST_UEFI_ENABLE);
-        } else {
-            this.setUefiCapabilty(new Boolean(false)); // in case of existing host which is not scanned for UEFI capability
-        }
 
         this.details = detailsCopy;
     }

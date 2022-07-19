@@ -16,19 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -40,7 +39,7 @@ import com.cloud.network.Network;
 
 @APICommand(name = "restartNetwork",
             description = "Restarts the network; includes 1) restarting network elements - virtual routers, DHCP servers 2) reapplying all public IPs 3) reapplying loadBalancing/portForwarding rules",
-        responseObject = IPAddressResponse.class, entityType = {Network.class},
+        responseObject = SuccessResponse.class, entityType = {Network.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
@@ -59,6 +58,11 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn the network into a network with redundant routers.", since = "4.11.1")
     private Boolean makeRedundant = false;
+
+    @Parameter(name = ApiConstants.LIVE_PATCH, type = CommandType.BOOLEAN, required = false,
+            description = "Live patches the router software before restarting it. This parameter will only work when 'cleanup' is false.",
+            since = "4.17.0")
+    private Boolean livePatch = false;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,6 +84,8 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public Boolean getMakeRedundant() {
         return makeRedundant;
     }
+
+    public Boolean getLivePatch() { return livePatch; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -133,5 +139,15 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Network;
     }
 }

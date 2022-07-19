@@ -19,8 +19,11 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.File;
 import java.net.URISyntaxException;
 
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.utils.FileUtil;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
@@ -34,12 +37,13 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtKvmAgentHook;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
@@ -88,14 +92,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             libvirtComputingResource.applyDefaultNetworkRules(conn, vmSpec, false);
 
             // pass cmdline info to system vms
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
-                String controlIp = null;
-                for (final NicTO nic : vmSpec.getNics()) {
-                    if (nic.getType() == TrafficType.Control) {
-                        controlIp = nic.getIp();
-                        break;
-                    }
-                }
+            if (vmSpec.getType() != VirtualMachine.Type.User || (vmSpec.getBootArgs() != null && vmSpec.getBootArgs().contains(UserVmManager.CKS_NODE))) {
                 // try to patch and SSH into the systemvm for up to 5 minutes
                 for (int count = 0; count < 10; count++) {
                     // wait and try passCmdLine for 30 seconds at most for CLOUDSTACK-2823
@@ -104,12 +101,36 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
                 }
 
-                final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
-                // check if the router is up?
-                for (int count = 0; count < 60; count++) {
-                    final boolean result = virtRouterResource.connect(controlIp, 1, 5000);
-                    if (result) {
-                        break;
+                if (vmSpec.getType() != VirtualMachine.Type.User) {
+                    String controlIp = null;
+                    for (final NicTO nic : vmSpec.getNics()) {
+                        if (nic.getType() == TrafficType.Control) {
+                            controlIp = nic.getIp();
+                            break;
+                        }
+                    }
+
+                    final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
+                    // check if the router is up?
+                    for (int count = 0; count < 60; count++) {
+                        final boolean result = virtRouterResource.connect(controlIp, 1, 5000);
+                        if (result) {
+                            break;
+                        }
+                    }
+
+                    try {
+                        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+                        FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
+                            String errMsg = "Failed to patch systemVM";
+                            s_logger.error(errMsg);
+                            return new StartAnswer(command, errMsg);
+                        }
+                    } catch (Exception e) {
+                        String errMsg = "Failed to scp files to system VM. Patching of systemVM failed";
+                        s_logger.error(errMsg, e);
+                        return new StartAnswer(command, String.format("%s due to: %s", errMsg, e.getMessage()));
                     }
                 }
             }

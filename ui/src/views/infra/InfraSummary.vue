@@ -24,49 +24,49 @@
           <a-button
             style="margin-left: 12px; margin-top: 4px"
             :loading="loading"
-            icon="reload"
             size="small"
             shape="round"
             @click="fetchData()" >
+            <template #icon><ReloadOutlined /></template>
             {{ $t('label.refresh') }}
           </a-button>
           <a-button
             style="margin-left: 12px; margin-top: 4px"
-            icon="safety-certificate"
             size="small"
             shape="round"
             @click="sslFormVisible = true">
+            <template #icon><SafetyCertificateOutlined /></template>
             {{ $t('label.sslcertificates') }}
           </a-button>
           <a-modal
+            v-if="sslFormVisible"
             :title="$t('label.sslcertificates')"
             :visible="sslFormVisible"
             :footer="null"
             :maskClosable="false"
-            :cancelText="$t('label.cancel')"
             @cancel="sslModalClose">
             <p>
               {{ $t('message.update.ssl') }}
             </p>
-
-            <a-form @submit.prevent="handleSslFormSubmit" ref="sslForm" :form="form">
-              <a-form-item :required="true">
-                <span slot="label">
-                  {{ $t('label.root.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.name.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+            <a-form
+              layout="vertical"
+              :ref="formRef"
+              :model="form"
+              :rules="rules"
+              @finish="handleSslFormSubmit"
+              v-ctrl-enter="handleSslFormSubmit"
+             >
+              <a-form-item name="root" ref="root" :required="true">
+                <template #label>
+                  <tooltip-label :title="$t('label.root.certificate')" :tooltip="apiParams.name.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="rootCert"
                   rows="2"
-                  :placeholder="$t('label.root.certificate')"
-                  :autoFocus="true"
+                  :placeholder="apiParams.name.description"
+                  v-focus="true"
                   name="rootCert"
-                  v-decorator="[
-                    'root',
-                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
-                  ]"
+                  v-model:value="form.root"
                 ></a-textarea>
               </a-form-item>
 
@@ -74,138 +74,118 @@
                 <a-form-item
                   v-for="(item, index) in intermediateCertificates"
                   :key="`key-${index}`"
+                  :name="`intermediate${index + 1}`"
+                  :ref="`intermediate${index + 1}`"
                   class="intermediate-certificate">
-                  <span slot="label">
-                    {{ $t('label.intermediate.certificate') + ` ${index + 1} ` }}
-                    <a-tooltip placement="bottom" :title="apiParams.id.description">
-                      <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                    </a-tooltip>
-                  </span>
+                  <template #label>
+                    <tooltip-label :title="$t('label.intermediate.certificate') + ` ${index + 1} `" :tooltip="apiParams.id.description" tooltipPlacement="bottom"/>
+                  </template>
                   <a-textarea
                     :id="`intermediateCert${index}`"
                     rows="2"
                     :placeholder="$t('label.intermediate.certificate') + ` ${index + 1}`"
                     :name="`intermediateCert${index}`"
-                    v-decorator="[
-                      `intermediate${index + 1}`,
-                      {validateTrigger:'change'}
-                    ]"
+                    v-model:value="form[`intermediate${index + 1}`]"
                   ></a-textarea>
                 </a-form-item>
               </transition-group>
 
               <a-form-item>
                 <a-button @click="addIntermediateCert">
-                  <a-icon type="plus-circle" />
+                  <plus-circle-outlined />
                   {{ $t('label.add.intermediate.certificate') }}
                 </a-button>
               </a-form-item>
 
-              <a-form-item :required="true">
-                <span slot="label">
-                  {{ $t('label.server.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.certificate.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+              <a-form-item name="server" ref="server" :required="true">
+                <template #label>
+                  <tooltip-label :title="$t('label.server.certificate')" :tooltip="apiParams.certificate.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="serverCert"
                   rows="2"
-                  :placeholder="$t('label.server.certificate')"
+                  :placeholder="apiParams.certificate.description"
                   name="serverCert"
-                  v-decorator="[
-                    'server',
-                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
-                  ]"
+                  v-model:value="form.server"
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item :required="true">
-                <span slot="label">
-                  {{ $t('label.pkcs.private.certificate') }}
-                  <a-tooltip placement="bottom" :title="apiParams.privatekey.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+              <a-form-item name="pkcs" ref="pkcs" :required="true">
+                <template #label>
+                  <tooltip-label :title="$t('label.pkcs.private.certificate')" :tooltip="apiParams.privatekey.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-textarea
                   id="pkcsKey"
                   rows="2"
-                  :placeholder="$t('label.pkcs.private.certificate')"
+                  :placeholder="apiParams.privatekey.description"
                   name="pkcsKey"
-                  v-decorator="[
-                    'pkcs',
-                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
-                  ]"
+                  v-model:value="form.pkcs"
                 ></a-textarea>
               </a-form-item>
 
-              <a-form-item :required="true">
-                <span slot="label">
-                  {{ $t('label.domain.suffix') }}
-                  <a-tooltip placement="bottom" :title="apiParams.domainsuffix.description">
-                    <a-icon type="info-circle" style="color: rgba(0,0,0,.45)" />
-                  </a-tooltip>
-                </span>
+              <a-form-item name="dns" ref="dns" :required="true">
+                <template #label>
+                  <tooltip-label :title="$t('label.domain.suffix')" :tooltip="apiParams.domainsuffix.description" tooltipPlacement="bottom"/>
+                </template>
                 <a-input
                   id="dnsSuffix"
-                  :placeholder="$t('label.domain.suffix')"
+                  :placeholder="apiParams.domainsuffix.description"
                   name="dnsSuffix"
-                  v-decorator="[
-                    'dns',
-                    {rules: [{ required: true, message: `${$t('label.required')}` }], validateTrigger:'change'}
-                  ]"
+                  v-model:value="form.dns"
                 ></a-input>
               </a-form-item>
-
-              <a-form-item class="controls">
-                <a-button @click="this.sslModalClose" class="close-button">
+              <div :span="24" class="action-button">
+                <a-button @click="sslModalClose" class="close-button">
                   {{ $t('label.cancel' ) }}
                 </a-button>
-                <a-button type="primary" htmlType="submit" :loading="sslFormSubmitting">
+                <a-button type="primary" ref="submit" :loading="sslFormSubmitting" @click="handleSslFormSubmit">
                   {{ $t('label.submit' ) }}
                 </a-button>
-              </a-form-item>
+              </div>
             </a-form>
           </a-modal>
         </a-col>
       </a-card>
     </a-col>
-    <a-col
-      :md="6"
-      style="margin-bottom: 12px"
-      v-for="(section, index) in sections"
-      v-if="routes[section]"
-      :key="index">
-      <chart-card :loading="loading">
-        <div class="chart-card-inner">
-          <router-link :to="{ name: section.substring(0, section.length - 1) }">
-            <h2>{{ $t(routes[section].title) }}</h2>
-            <h2><a-icon :type="routes[section].icon" /> {{ stats[section] }}</h2>
-          </router-link>
-        </div>
-      </chart-card>
-    </a-col>
+    <template v-for="(section, index) in sections" :key="index">
+      <a-col
+        :md="6"
+        style="margin-bottom: 12px"
+        v-if="routes[section]">
+        <chart-card :loading="loading">
+          <div class="chart-card-inner">
+            <router-link :to="{ name: section.substring(0, section.length - 1) }">
+              <h2>{{ $t(routes[section].title) }}</h2>
+              <h2><render-icon :icon="routes[section].icon" /> {{ stats[section] }}</h2>
+            </router-link>
+          </div>
+        </chart-card>
+      </a-col>
+    </template>
   </a-row>
 </template>
 
 <script>
+import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import router from '@/router'
 
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import ChartCard from '@/components/widgets/ChartCard'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'InfraSummary',
   components: {
     Breadcrumb,
-    ChartCard
+    ChartCard,
+    TooltipLabel
   },
   data () {
     return {
       loading: true,
       routes: {},
-      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms'],
+      sections: ['zones', 'pods', 'clusters', 'hosts', 'storagepools', 'imagestores', 'systemvms', 'routers', 'cpusockets', 'managementservers', 'alerts', 'ilbvms', 'metrics'],
       sslFormVisible: false,
       stats: {},
       intermediateCertificates: [],
@@ -214,24 +194,33 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
-    this.apiParams = {}
-    var apiConfig = this.$store.getters.apis.uploadCustomCertificate || {}
-    apiConfig.params.forEach(param => {
-      this.apiParams[param.name] = param
-    })
+    this.apiParams = this.$getApiParams('uploadCustomCertificate')
   },
   created () {
+    this.initForm()
     this.fetchData()
   },
   methods: {
+    initForm () {
+      this.formRef = ref()
+      this.form = reactive({})
+      this.rules = reactive({
+        root: [{ required: true, message: this.$t('label.required') }],
+        server: [{ required: true, message: this.$t('label.required') }],
+        pkcs: [{ required: true, message: this.$t('label.required') }],
+        dns: [{ required: true, message: this.$t('label.required') }]
+      })
+    },
     fetchData () {
       this.routes = {}
       for (const section of this.sections) {
+        if (router.resolve('/' + section.substring(0, section.length - 1)).matched[0].redirect === '/exception/404') {
+          continue
+        }
         const node = router.resolve({ name: section.substring(0, section.length - 1) })
         this.routes[section] = {
-          title: node.route.meta.title,
-          icon: node.route.meta.icon
+          title: node.meta.title,
+          icon: node.meta.icon
         }
       }
       this.listInfra()
@@ -249,7 +238,7 @@ export default {
     },
 
     resetSslFormData () {
-      this.form.resetFields()
+      this.formRef.value.resetFields()
       this.intermediateCertificates = []
       this.sslFormSubmitting = false
       this.sslFormVisible = false
@@ -289,15 +278,11 @@ export default {
     },
 
     handleSslFormSubmit () {
+      if (this.sslFormSubmitting) return
       this.sslFormSubmitting = true
 
-      this.form.validateFields(errors => {
-        if (errors) {
-          this.sslFormSubmitting = false
-          return
-        }
-
-        const formValues = this.form.getFieldsValue()
+      this.formRef.value.validate().then(() => {
+        const formValues = toRaw(this.form)
 
         this.maxCerts = 2 + Object.keys(formValues).length
         let count = 1
@@ -342,7 +327,9 @@ export default {
         }).then(() => {
           this.sslModalClose()
         })
-      })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => { this.sslFormSubmitting = false })
     }
   }
 }

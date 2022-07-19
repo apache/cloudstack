@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { vueProps } from '@/vue-app'
 import Cookies from 'js-cookie'
-import Vue from 'vue'
 import { i18n } from './locales'
 import router from './router'
 import store from './store'
@@ -26,7 +26,7 @@ import 'nprogress/nprogress.css' // progress bar style
 import message from 'ant-design-vue/es/message'
 import notification from 'ant-design-vue/es/notification'
 import { setDocumentTitle } from '@/utils/domUtil'
-import { ACCESS_TOKEN, APIS } from '@/store/mutation-types'
+import { ACCESS_TOKEN, APIS, SERVER_MANAGER } from '@/store/mutation-types'
 
 NProgress.configure({ showSpinner: false }) // NProgress Configuration
 
@@ -35,39 +35,66 @@ const allowList = ['login'] // no redirect allowlist
 router.beforeEach((to, from, next) => {
   // start progress bar
   NProgress.start()
+
   if (to.meta && typeof to.meta.title !== 'undefined') {
-    const title = i18n.t(to.meta.title) + ' - ' + Vue.prototype.$config.appTitle
+    const title = i18n.global.t(to.meta.title) + ' - ' + vueProps.$config.appTitle
     setDocumentTitle(title)
   }
-  const validLogin = Vue.ls.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
+
+  if (vueProps.$config.multipleServer) {
+    const servers = vueProps.$config.servers
+    const serverStorage = vueProps.$localStorage.get(SERVER_MANAGER)
+    let apiFullPath = ''
+    if (serverStorage) {
+      apiFullPath = (serverStorage.apiHost || '') + serverStorage.apiBase
+    }
+    const serverFilter = servers.filter(ser => (ser.apiHost || '') + ser.apiBase === apiFullPath)
+    const server = serverFilter[0] || servers[0]
+    vueProps.axios.defaults.baseURL = (server.apiHost || '') + server.apiBase
+    store.dispatch('SetServer', server)
+  }
+
+  const validLogin = vueProps.$localStorage.get(ACCESS_TOKEN) || Cookies.get('userid') || Cookies.get('userid', { path: '/client' })
   if (validLogin) {
     if (to.path === '/user/login') {
       next({ path: '/dashboard' })
       NProgress.done()
     } else {
       if (Object.keys(store.getters.apis).length === 0) {
-        const cachedApis = Vue.ls.get(APIS, {})
+        const cachedApis = vueProps.$localStorage.get(APIS, {})
         if (Object.keys(cachedApis).length > 0) {
-          message.loading(`${i18n.t('label.loading')}...`, 1.5)
+          message.loading(`${i18n.global.t('label.loading')}...`, 1.5)
         }
         store
           .dispatch('GetInfo')
           .then(apis => {
             store.dispatch('GenerateRoutes', { apis }).then(() => {
-              router.addRoutes(store.getters.addRouters)
+              store.getters.addRouters.map(route => {
+                router.addRoute(route)
+              })
               const redirect = decodeURIComponent(from.query.redirect || to.path)
               if (to.path === redirect) {
                 next({ ...to, replace: true })
               } else {
                 next({ path: redirect })
               }
+              store.dispatch('ToggleTheme', 'light')
             })
           })
           .catch(() => {
+            let countNotify = store.getters.countNotify
+            countNotify++
+            store.commit('SET_COUNT_NOTIFY', countNotify)
             notification.error({
+              top: '65px',
               message: 'Error',
-              description: i18n.t('message.error.discovering.feature'),
-              duration: 0
+              description: i18n.global.t('message.error.discovering.feature'),
+              duration: 0,
+              onClose: () => {
+                let countNotify = store.getters.countNotify
+                countNotify > 0 ? countNotify-- : countNotify = 0
+                store.commit('SET_COUNT_NOTIFY', countNotify)
+              }
             })
             store.dispatch('Logout').then(() => {
               next({ path: '/user/login', query: { redirect: to.fullPath } })

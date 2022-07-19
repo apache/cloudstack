@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
 import org.apache.cloudstack.api.response.AcquireIPAddressResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
@@ -32,7 +31,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "releasePodIpAddress", description = "Releases a Pod IP back to the Pod", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReleasePodIpCmdByAdmin extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(ReleasePublicIpRangeCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(ReleasePodIpCmdByAdmin.class.getName());
 
     private static final String s_name = "releasepodipresponse";
 
@@ -70,7 +69,7 @@ public class ReleasePodIpCmdByAdmin extends BaseCmd {
         boolean result = _networkService.releasePodIp(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            response.setDisplayText("IP is released sucessfully");
+            response.setDisplayText("IP is released successfully");
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to release  Pod ip ");

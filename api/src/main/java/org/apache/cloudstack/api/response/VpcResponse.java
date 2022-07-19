@@ -18,10 +18,11 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithAnnotations;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.vpc.Vpc;
@@ -30,7 +31,7 @@ import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vpc.class)
 @SuppressWarnings("unused")
-public class VpcResponse extends BaseResponse implements ControlledEntityResponse {
+public class VpcResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse, SetResourceIconResponse {
     @SerializedName("id")
     @Param(description = "the id of the VPC")
     private String id;
@@ -127,8 +128,20 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @Param(description = "if this VPC has redundant router", since = "4.6")
     private boolean redundantRouter;
 
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
+    ResourceIconResponse icon;
+
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6RouteResponse> ipv6Routes;
+
     public void setId(final String id) {
         this.id = id;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public void setName(final String name) {
@@ -230,5 +243,18 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setRedundantRouter(final Boolean redundantRouter) {
         this.redundantRouter = redundantRouter;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse icon) {
+        this.icon = icon;
+    }
+
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
+    }
+
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
     }
 }

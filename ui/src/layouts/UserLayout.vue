@@ -17,6 +17,12 @@
 
 <template>
   <div id="userLayout" :class="['user-layout', device]">
+    <a-button
+      v-if="showClear"
+      type="default"
+      size="small"
+      class="button-clear-notification"
+      @click="onClearNotification">{{ $t('label.clear.notification') }}</a-button>
     <div class="user-layout-container">
       <div class="user-layout-header">
         <img
@@ -31,6 +37,9 @@
       </div>
       <route-view></route-view>
     </div>
+    <div class="user-layout-footer" v-if="$config.loginFooter">
+      <label v-html="$config.loginFooter"></label>
+    </div>
   </div>
 </template>
 
@@ -43,13 +52,47 @@ export default {
   components: { RouteView },
   mixins: [mixinDevice],
   data () {
-    return {}
+    return {
+      showClear: false
+    }
+  },
+  watch: {
+    '$store.getters.darkMode' (darkMode) {
+      if (darkMode) {
+        document.body.classList.add('dark-mode')
+      } else {
+        document.body.classList.remove('dark-mode')
+      }
+    },
+    '$store.getters.countNotify' (countNotify) {
+      this.showClear = false
+      if (countNotify && countNotify > 0) {
+        this.showClear = true
+      }
+    }
   },
   mounted () {
     document.body.classList.add('userLayout')
+    const layoutMode = this.$config.theme['@layout-mode'] || 'light'
+    this.$store.dispatch('SetDarkMode', (layoutMode === 'dark'))
+    if (layoutMode === 'dark') {
+      document.body.classList.add('dark-mode')
+    }
+    const countNotify = this.$store.getters.countNotify
+    this.showClear = false
+    if (countNotify && countNotify > 0) {
+      this.showClear = true
+    }
   },
-  beforeDestroy () {
+  beforeUnmount () {
     document.body.classList.remove('userLayout')
+    document.body.classList.remove('dark-mode')
+  },
+  methods: {
+    onClearNotification () {
+      this.$notification.destroy()
+      this.$store.commit('SET_COUNT_NOTIFY', 0)
+    }
   }
 }
 </script>
@@ -57,7 +100,6 @@ export default {
 <style lang="less" scoped>
 .user-layout {
   height: 100%;
-  background: #fff;
 
   &-container {
     padding: 3rem 0;
@@ -80,6 +122,26 @@ export default {
     .mobile & {
       max-width: 300px;
       margin-bottom: 1rem;
+    }
+  }
+
+  &-footer {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    bottom: 20px;
+    text-align: center;
+    width: 100%;
+
+    @media (max-height: 600px) {
+      position: relative;
+      margin-top: 50px;
+    }
+
+    label {
+      width: 368px;
+      font-weight: 500;
+      margin: 0 auto;
     }
   }
 }

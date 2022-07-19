@@ -15,11 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
 
 const mockStore = {
   state: {},
-  mock: (state, actions) => {
+  mock: (state, actions, mutations) => {
     mockStore.state = {
       app: {
         device: 'desktop'
@@ -36,12 +36,16 @@ const mockStore = {
       actions = {}
     }
 
-    return new Vuex.Store({
+    return createStore({
       state: mockStore.state,
       getters: {
         apis: () => mockStore.state.user.apis,
-        userInfo: () => mockStore.state.user.info
+        userInfo: () => mockStore.state.user.info,
+        defaultListViewPageSize: () => mockStore.state.user.defaultListViewPageSize,
+        headerNotices: () => mockStore.state.user.headerNotices,
+        customColumns: () => mockStore.state.user.customColumns
       },
+      mutations,
       actions
     })
   }
