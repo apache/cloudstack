@@ -27,6 +27,7 @@ import com.cloud.agent.api.ValidateVcenterDetailsCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -70,6 +71,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 
 public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger s_logger = Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class);
@@ -142,11 +144,11 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
         String scheme = dsInfos.get("scheme").toString();
         String storageHost = dsInfos.get("host").toString();
         String hostPath = dsInfos.get("hostPath").toString();
-        String uri = String.format("%s//%s%s", scheme, storageHost, hostPath);
-        
+        String uri = String.format("%s://%s%s", scheme, storageHost, hostPath);
+
         Object localStorage = dsInfos.get("localStorage");
-        if (localStorage != null) {
-            hostPath = hostPath.replaceFirst("/", "");
+           if (localStorage != null) {
+            hostPath = hostPath.contains("//") ? hostPath.replaceFirst("/", "") : hostPath;
             hostPath = hostPath.replace("+", " ");
         }
 
@@ -507,7 +509,16 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl implements PrimaryDataStore
 
     @Override
     public boolean attachHost(DataStore store, HostScope scope, StoragePoolInfo existingInfo) {
-        dataStoreHelper.attachHost(store, scope, existingInfo);
+        DataStore dataStore = dataStoreHelper.attachHost(store, scope, existingInfo);
+        if(existingInfo.getCapacityBytes() == 0){
+            try {
+                storageMgr.connectHostToSharedPool(scope.getScopeId(), dataStore.getId());
+            } catch (StorageUnavailableException ex) {
+                java.util.logging.Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (StorageConflictException ex) {
+                java.util.logging.Logger.getLogger(CloudStackPrimaryDataStoreLifeCycleImpl.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         return true;
     }
 
