@@ -18,16 +18,12 @@
  */
 package org.apache.cloudstack.storage.datastore.driver;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.configuration.Config;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.utils.SwiftUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.net.URL;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -47,10 +43,16 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.net.URL;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.configuration.Config;
+import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.utils.SwiftUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     private static final Logger s_logger = Logger.getLogger(SwiftImageStoreDriverImpl.class);
@@ -107,7 +109,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         if (data.getType() == DataObjectType.TEMPLATE) {
             Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
             downloadCommand = new DownloadCommand((TemplateObjectTO) (data.getTO()), maxTemplateSizeInBytes);
-        }else if (data.getType() == DataObjectType.VOLUME){
+        } else if (data.getType() == DataObjectType.VOLUME) {
             Long maxDownloadSizeInBytes = getMaxVolumeSizeInBytes();
             VolumeInfo volumeInfo = (VolumeInfo) data;
             RegisterVolumePayload payload = (RegisterVolumePayload) volumeInfo.getpayload();
@@ -115,7 +117,7 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
             downloadCommand = new DownloadCommand((VolumeObjectTO) (data.getTO()), maxDownloadSizeInBytes, payload.getChecksum(), payload.getUrl(), format);
         }
 
-        if (downloadCommand == null){
+        if (downloadCommand == null) {
             String errMsg = "Unable to build download command, unsupported DataObject is of type " + data.getType().toString();
             s_logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);

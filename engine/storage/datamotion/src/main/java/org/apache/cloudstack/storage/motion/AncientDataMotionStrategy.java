@@ -18,14 +18,14 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
@@ -60,18 +60,19 @@ import com.cloud.agent.api.storage.MigrateVolumeCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.StorageManager;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import static com.cloud.storage.snapshot.SnapshotManager.BackupSnapshotAfterTakingSnapshot;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -159,7 +160,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         long dataSize = 0;
         try{
             dataSize = srcData.getSize();
-        }catch(NullPointerException e){
+        } catch(NullPointerException e) {
             s_logger.error("Unable to determine size of src data object with uuid: " + srcData.getUuid(),e);
         }
         int imgSizeGigs = (int)Math.ceil(dataSize * 1.0d / (1024 * 1024 * 1024));

@@ -321,8 +321,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 }
             } else if (td instanceof SwiftVolumeDownloader) {
                 dj.setCheckSum(((SwiftVolumeDownloader) td).getMd5sum());
-                if ("vhd".equals(((SwiftVolumeDownloader) td).getFileExtension()) ||
-                        "VHD".equals(((SwiftVolumeDownloader) td).getFileExtension())) {
+                if ("vhd".equalsIgnoreCase(((SwiftVolumeDownloader) td).getFileExtension())) {
                     Processor vhdProcessor = _processors.get("VHD Processor");
                     long virtualSize = 0;
                     try {
