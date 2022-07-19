@@ -49,6 +49,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.agent.api.CheckGuestOsMappingAnswer;
 import com.cloud.agent.api.CheckGuestOsMappingCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.resource.ServerResourceBase;
@@ -610,6 +612,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
             } else if (clz == CheckGuestOsMappingCommand.class) {
                 answer = execute((CheckGuestOsMappingCommand) cmd);
+            } else if (clz == GetHypervisorGuestOsNamesCommand.class) {
+                answer = execute((GetHypervisorGuestOsNamesCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -7737,17 +7741,47 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             GuestOsDescriptor guestOsDescriptor = hyperHost.getGuestOsDescriptor(guestOsMappingName);
             if (guestOsDescriptor == null) {
-                return new CheckGuestOsMappingAnswer(cmd, "Guest os mapping name not found in the hypervisor");
+                return new CheckGuestOsMappingAnswer(cmd, "Guest os mapping name: " + guestOsMappingName + " not found in the hypervisor");
             }
             s_logger.debug("Matching hypervisor guest os - id: " + guestOsDescriptor.getId() + ", full name: " + guestOsDescriptor.getFullName() + ", family: " + guestOsDescriptor.getFamily());
             if (guestOsDescriptor.getFullName().equalsIgnoreCase(guestOsName)) {
-                // Extact matching may fail, try with regex?
-                s_logger.debug("Hypervisor guest os name matches with os name: " + guestOsName + " from user");
+                // Exact matching may fail, try with regex?
+                s_logger.debug("Hypervisor guest os name in the descriptor matches with os name: " + guestOsName);
             }
+            s_logger.info("Hypervisor guest os name in the descriptor matches with os mapping: " + guestOsMappingName + " from user");
             return new CheckGuestOsMappingAnswer(cmd);
         } catch (Exception e) {
             s_logger.error("Failed to check the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(cmd, e.getLocalizedMessage());
+        }
+    }
+
+    private GetHypervisorGuestOsNamesAnswer execute(GetHypervisorGuestOsNamesCommand cmd) {
+        String keyword = cmd.getKeyword();
+        s_logger.info("Getting guest os names in the hypervisor");
+        try {
+            VmwareContext context = getServiceContext();
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+            List<GuestOsDescriptor> guestOsDescriptors = hyperHost.getGuestOsDescriptors();
+            if (guestOsDescriptors == null) {
+                return new GetHypervisorGuestOsNamesAnswer(cmd, "Guest os names not found in the hypervisor");
+            }
+            List<Pair<String, String>> hypervisorGuestOsNames = new ArrayList<>();
+            for (GuestOsDescriptor guestOsDescriptor : guestOsDescriptors) {
+                if (StringUtils.isNotBlank(keyword)) {
+                    if (guestOsDescriptor.getFullName().toLowerCase().contains(keyword.toLowerCase()) || guestOsDescriptor.getId().toLowerCase().contains(keyword.toLowerCase())) {
+                        Pair<String, String> hypervisorGuestOs = new Pair<>(guestOsDescriptor.getFullName(), guestOsDescriptor.getId());
+                        hypervisorGuestOsNames.add(hypervisorGuestOs);
+                    }
+                } else {
+                    Pair<String, String> hypervisorGuestOs = new Pair<>(guestOsDescriptor.getFullName(), guestOsDescriptor.getId());
+                    hypervisorGuestOsNames.add(hypervisorGuestOs);
+                }
+            }
+            return new GetHypervisorGuestOsNamesAnswer(cmd, hypervisorGuestOsNames);
+        } catch (Exception e) {
+            s_logger.error("Failed to get the hypervisor guest names due to: " + e.getLocalizedMessage(), e);
+            return new GetHypervisorGuestOsNamesAnswer(cmd, e.getLocalizedMessage());
         }
     }
 

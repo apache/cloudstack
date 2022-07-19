@@ -91,6 +91,8 @@ import org.apache.cloudstack.api.response.GuestVlanResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
+import org.apache.cloudstack.api.response.HypervisorGuestOsResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
@@ -3688,6 +3690,28 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setObjectName("guestosmapping");
         return response;
+    }
+
+    @Override
+    public HypervisorGuestOsNamesResponse createHypervisorGuestOSNamesResponse(List<Pair<String, String>> hypervisorGuestOsNames) {
+        HypervisorGuestOsNamesResponse response = new HypervisorGuestOsNamesResponse();
+        List<HypervisorGuestOsResponse> hypervisorGuestOsResponses = new ArrayList<>();
+        for (Pair<String, String> hypervisorGuestOsName : hypervisorGuestOsNames) {
+            HypervisorGuestOsResponse hypervisorGuestOsResponse = createHypervisorGuestOsResponse(hypervisorGuestOsName);
+            hypervisorGuestOsResponses.add(hypervisorGuestOsResponse);
+        }
+        response.setGuestOSes(hypervisorGuestOsResponses);
+        response.setGuestOSesCount(hypervisorGuestOsResponses.size());
+        response.setObjectName("hypervisorguestosnames");
+        return response;
+    }
+
+    private HypervisorGuestOsResponse createHypervisorGuestOsResponse(Pair<String, String> hypervisorGuestOsName) {
+        HypervisorGuestOsResponse hypervisorGuestOsResponse = new HypervisorGuestOsResponse();
+        hypervisorGuestOsResponse.setOsStdName(hypervisorGuestOsName.first());
+        hypervisorGuestOsResponse.setOsNameForHypervisor(hypervisorGuestOsName.second());
+        hypervisorGuestOsResponse.setObjectName("guestoses");
+        return hypervisorGuestOsResponse;
     }
 
     @Override

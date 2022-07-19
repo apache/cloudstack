@@ -95,6 +95,7 @@ import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsMappingCmd;
+import org.apache.cloudstack.api.command.admin.guest.GetHypervisorGuestOsNamesCmd;
 import org.apache.cloudstack.api.command.admin.guest.ListGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.RemoveGuestOsMappingCmd;
@@ -624,6 +625,8 @@ import com.cloud.agent.api.CheckGuestOsMappingAnswer;
 import com.cloud.agent.api.CheckGuestOsMappingCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesAnswer;
+import com.cloud.agent.api.GetHypervisorGuestOsNamesCommand;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
 import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
@@ -2789,12 +2792,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     private void checkGuestOSHypervisorMapping(HypervisorType hypervisorType, String hypervisorVersion, String guestOsName, String guestOsNameForHypervisor) {
-        if (!isGuestOSMappingCheckSupported(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Guest OS mapping check is not supported for hypervisor: %s", hypervisorType.toString()));
+        if (!canCheckGuestOsNameInHypervisor(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Guest OS mapping check is not supported for hypervisor: %s, please specify a valid hypervisor : VMware, XenServer", hypervisorType.toString()));
         }
         final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, hypervisorVersion);
         if (host == null) {
-            throw new CloudRuntimeException(String.format("No host available with hypervisor: %s and version: %s, unable to check the guest os mapping", hypervisorType.toString(), hypervisorVersion));
+            throw new CloudRuntimeException(String.format("No host exists with hypervisor: %s and version: %s, please specify available hypervisor and version", hypervisorType.toString(), hypervisorVersion));
         }
         CheckGuestOsMappingAnswer answer = (CheckGuestOsMappingAnswer) _agentMgr.easySend(host.getId(), new CheckGuestOsMappingCommand(guestOsName, guestOsNameForHypervisor, hypervisorVersion));
         if (answer == null || !answer.getResult()) {
@@ -2802,7 +2805,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    private boolean isGuestOSMappingCheckSupported(HypervisorType hypervisorType) {
+    private boolean canCheckGuestOsNameInHypervisor(HypervisorType hypervisorType) {
         return (hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.XenServer);
     }
 
@@ -2810,6 +2813,25 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_MAPPING_ADD, eventDescription = "Adding a new guest OS to hypervisor name mapping", async = true)
     public GuestOSHypervisor getAddedGuestOsMapping(final Long guestOsMappingId) {
         return getGuestOsHypervisor(guestOsMappingId);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_HYPERVISOR_NAME_FETCH, eventDescription = "Getting guest OS names from hypervisor", async = true)
+    public List<Pair<String, String>> getHypervisorGuestOsNames(GetHypervisorGuestOsNamesCmd getHypervisorGuestOsNamesCmd) {
+        final HypervisorType hypervisorType = HypervisorType.getType(getHypervisorGuestOsNamesCmd.getHypervisor());
+        if (!canCheckGuestOsNameInHypervisor(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Guest OS names cannot be fetched for hypervisor: %s, please specify a valid hypervisor : VMware, XenServer", hypervisorType.toString()));
+        }
+
+        final HostVO host = _hostDao.findHostByHypervisorTypeAndVersion(hypervisorType, getHypervisorGuestOsNamesCmd.getHypervisorVersion());
+        if (host == null) {
+            throw new CloudRuntimeException(String.format("No host exists with hypervisor: %s and version: %s, please specify available hypervisor and version", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+        }
+        GetHypervisorGuestOsNamesAnswer answer = (GetHypervisorGuestOsNamesAnswer) _agentMgr.easySend(host.getId(), new GetHypervisorGuestOsNamesCommand(getHypervisorGuestOsNamesCmd.getKeyword()));
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException(String.format("Unable to get guest os names for %s, hypervisor: %s, version: %s", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+        }
+        return answer.getHypervisorGuestOsNames();
     }
 
     @Override
@@ -3517,6 +3539,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateGuestOsMappingCmd.class);
         cmdList.add(RemoveGuestOsCmd.class);
         cmdList.add(RemoveGuestOsMappingCmd.class);
+        cmdList.add(GetHypervisorGuestOsNamesCmd.class);
         cmdList.add(AttachIsoCmd.class);
         cmdList.add(CopyIsoCmd.class);
         cmdList.add(DeleteIsoCmd.class);
