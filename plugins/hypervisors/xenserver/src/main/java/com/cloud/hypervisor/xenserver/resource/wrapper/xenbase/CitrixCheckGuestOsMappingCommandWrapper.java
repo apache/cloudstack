@@ -46,15 +46,19 @@ public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrappe
             s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
             if (vms.size() == 0) {
-                return new CheckGuestOsMappingAnswer(command, "Guest os mapping name not found in the hypervisor");
+                return new CheckGuestOsMappingAnswer(command, "Unable to match guest os mapping name: " + guestOsMappingName + " in the hypervisor");
             }
             for (VM vm : vms) {
-                if (guestOsMappingName.equalsIgnoreCase(vm.getNameLabel(conn))) {
-                    // Extact matching may fail, try with regex?
-                    s_logger.debug("Hypervisor guest os name matches with os name: " + guestOsName + " from user");
+                if (vm != null && vm.getIsATemplate(conn) && guestOsMappingName.equalsIgnoreCase(vm.getNameLabel(conn))) {
+                    if (guestOsName.equalsIgnoreCase(vm.getNameLabel(conn))) {
+                        // Exact matching may fail, try with regex?
+                        s_logger.debug("Hypervisor guest os name label matches with os name: " + guestOsName);
+                    }
+                    s_logger.info("Hypervisor guest os name label matches with os mapping: " + guestOsMappingName + " from user");
+                    return new CheckGuestOsMappingAnswer(command);
                 }
             }
-            return new CheckGuestOsMappingAnswer(command);
+            return new CheckGuestOsMappingAnswer(command, "Guest os mapping name: " + guestOsMappingName + " not found in the hypervisor");
         } catch (final Exception e) {
             s_logger.error("Failed to find the hypervisor guest os mapping name: " + guestOsMappingName, e);
             return new CheckGuestOsMappingAnswer(command, e.getLocalizedMessage());

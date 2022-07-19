@@ -96,4 +96,6 @@ public interface VmwareHypervisorHost {
     String getRecommendedDiskController(String guestOsId) throws Exception;
 
     GuestOsDescriptor getGuestOsDescriptor(String guestOsId) throws Exception;
+
+    List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception;
 }

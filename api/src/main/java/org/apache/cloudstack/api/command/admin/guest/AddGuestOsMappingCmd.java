@@ -58,10 +58,10 @@ public class AddGuestOsMappingCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.OS_NAME_FOR_HYPERVISOR, type = CommandType.STRING, required = true, description = "OS name specific to the hypervisor")
     private String osNameForHypervisor;
 
-    @Parameter(name = ApiConstants.OS_MAPPING_CHECK_ENABLED, type = CommandType.BOOLEAN, required = false, description = "When set to true, checks the guest os mapping name in the hypervisor (supports VMware and XenServer only)", since = "4.18.0")
+    @Parameter(name = ApiConstants.OS_MAPPING_CHECK_ENABLED, type = CommandType.BOOLEAN, required = false, description = "When set to true, checks the guest os mapping name in the hypervisor (supports VMware and XenServer only, atleast one hypervisor host with the version specified must be available)", since = "4.18.0")
     private Boolean osMappingCheckEnabled;
 
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Forces add guest os mapping, overrides any existing user defined mapping", since = "4.18.0")
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Forces add user defined guest os mapping, overrides any existing user defined mapping", since = "4.18.0")
     private Boolean forced;
 
     /////////////////////////////////////////////////////

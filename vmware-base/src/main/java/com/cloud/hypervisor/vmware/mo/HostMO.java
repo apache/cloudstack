@@ -1174,6 +1174,16 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         return null;
     }
 
+    @Override
+    public List<GuestOsDescriptor> getGuestOsDescriptors() throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        if (morParent.getType().equals("ClusterComputeResource")) {
+            ClusterMO clusterMo = new ClusterMO(_context, morParent);
+            return clusterMo.getGuestOsDescriptors();
+        }
+        return null;
+    }
+
     public String getHostManagementIp(String managementPortGroup) throws Exception {
         HostNetworkInfo netInfo = getHostNetworkInfo();
 
