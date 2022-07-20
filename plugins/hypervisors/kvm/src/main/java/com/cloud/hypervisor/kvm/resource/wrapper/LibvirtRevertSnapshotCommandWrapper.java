@@ -178,11 +178,13 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
      * and the snapshot path from the primary storage.
      */
     protected Pair<String, SnapshotObjectTO> getSnapshot(SnapshotObjectTO snapshotOnPrimaryStorage, SnapshotObjectTO snapshotOnSecondaryStorage,
-            KVMStoragePool kvmStoragePoolPrimary, KVMStoragePool kvmStoragePoolSecondary){
-        String snapshotPath = snapshotOnPrimaryStorage.getPath();
-
-        if (Files.exists(Paths.get(snapshotPath))) {
-            return new Pair<>(snapshotPath, snapshotOnPrimaryStorage);
+            KVMStoragePool kvmStoragePoolPrimary, KVMStoragePool kvmStoragePoolSecondary) {
+        String snapshotPath = null;
+        if (snapshotOnPrimaryStorage != null) {
+            snapshotPath = snapshotOnPrimaryStorage.getPath();
+            if (Files.exists(Paths.get(snapshotPath))) {
+                return new Pair<>(snapshotPath, snapshotOnPrimaryStorage);
+            }
         }
 
         if (kvmStoragePoolSecondary == null) {
@@ -190,8 +192,10 @@ public class LibvirtRevertSnapshotCommandWrapper extends CommandWrapper<RevertSn
                     snapshotOnSecondaryStorage, snapshotOnSecondaryStorage.getVolume()));
         }
 
-        s_logger.trace(String.format("Snapshot [%s] does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].", snapshotOnPrimaryStorage,
-                kvmStoragePoolPrimary, snapshotOnSecondaryStorage, kvmStoragePoolSecondary));
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Snapshot does not exists on primary storage [%s], searching snapshot [%s] on secondary storage [%s].",
+                    kvmStoragePoolPrimary, snapshotOnSecondaryStorage, kvmStoragePoolSecondary));
+        }
 
         String snapshotPathOnSecondaryStorage = snapshotOnSecondaryStorage.getPath();
 
