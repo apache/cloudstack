@@ -207,6 +207,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.15.2.0", new Upgrade41520to41600())
                 .next("4.16.0.0", new Upgrade41600to41610())
                 .next("4.16.1.0", new Upgrade41610to41700())
+                .next("4.16.1.1", new Upgrade41610to41700())
                 .next("4.17.0.0", new Upgrade41700to41710())
                 .next("4.17.1.0", new Upgrade41710to41800())
                 .build();
