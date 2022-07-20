@@ -37,6 +37,11 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>ch.qos.reload4j</groupId>
+			<artifactId>reload4j</artifactId>
+			<version>${cs.reload4j.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.cloudstack</groupId>
 			<artifactId>cloud-engine-orchestration</artifactId>
 			<version>${project.version}</version>
