@@ -42,10 +42,15 @@ under the License.
    <appender name="USAGE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@USAGELOG@.%d{yyyy-MM-dd}{GMT}.gz"/>
+      <rollingPolicy class="org.apache.log4j.rolling.FixedWindowRollingPolicy">
+        <param name="FileNamePattern" value="@USAGELOG@.%i.gz"/>
         <param name="ActiveFileName" value="@USAGELOG@"/>
+        <param name="MinIndex" value="1"/>
+        <param name="MaxIndex" value="10"/>
       </rollingPolicy>
+      <triggeringPolicy class="org.apache.log4j.rolling.SizeBasedTriggeringPolicy">
+        <param name="MaxFileSize" value="104857600"/>
+      </triggeringPolicy>
 
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>

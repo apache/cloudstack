@@ -59,10 +59,15 @@ under the License.
     <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz"/>
+      <rollingPolicy class="org.apache.log4j.rolling.FixedWindowRollingPolicy">
+        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%i.gz"/>
         <param name="ActiveFileName" value="/var/log/cloud/api-server.log"/>
+        <param name="MinIndex" value="1"/>
+        <param name="MaxIndex" value="10"/>
       </rollingPolicy>
+      <triggeringPolicy class="org.apache.log4j.rolling.SizeBasedTriggeringPolicy">
+        <param name="MaxFileSize" value="104857600"/>
+      </triggeringPolicy>
 
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>

@@ -29,10 +29,15 @@ under the License.
    <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="INFO"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="@AGENTLOG@.%d{yyyy-MM-dd}.gz"/>
+      <rollingPolicy class="org.apache.log4j.rolling.FixedWindowRollingPolicy">
+        <param name="FileNamePattern" value="@AGENTLOG@.%i.gz"/>
         <param name="ActiveFileName" value="@AGENTLOG@"/>
+        <param name="MinIndex" value="1"/>
+        <param name="MaxIndex" value="10"/>
       </rollingPolicy>
+      <triggeringPolicy class="org.apache.log4j.rolling.SizeBasedTriggeringPolicy">
+        <param name="MaxFileSize" value="104857600"/>
+      </triggeringPolicy>
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
       </layout>
