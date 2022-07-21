@@ -84,6 +84,37 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     /**
+     * Get next free DeviceId for a KVM Guest
+     */
+
+    protected Long getNextAvailableDeviceId(List<VolumeVO> vmVolumes) {
+
+        int maxDataVolumesSupported;
+        int maxDeviceId;
+        List<String> devIds = new ArrayList<>();
+
+        try {
+            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
+            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
+            maxDeviceId = maxDevices - 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
+        }
+        for (int i = 1; i <= maxDeviceId; i++) {
+            devIds.add(String.valueOf(i));
+        }
+        devIds.remove("3");
+        for (VolumeVO vmVolume : vmVolumes) {
+            devIds.remove(vmVolume.getDeviceId().toString().trim());
+        }
+        if (devIds.isEmpty()) {
+            throw new RuntimeException("All device Ids are in use.");
+        }
+        return Long.parseLong(devIds.iterator().next());
+    }
+
+
+    /**
      * Retrieve host max CPU speed
      */
     protected double getHostCPUSpeed(HostVO host) {
@@ -154,7 +185,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             guestOsMapping = _guestOsHypervisorDao.findByOsIdAndHypervisor(guestOS.getId(), getHypervisorType().toString(), hostVo.getHypervisorVersion());
         }
 
-        if (guestOsMapping == null || hostVo == null) {
+        if (guestOsMapping == null) {
             virtualMachineTo.setPlatformEmulator(guestOsDisplayName == null ? "Other" : guestOsDisplayName);
         } else {
             virtualMachineTo.setPlatformEmulator(guestOsMapping.getGuestOsName());
@@ -182,9 +213,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         Long maxHostMemory = max.first();
         Integer maxHostCpuCore = max.second();
 
-        Long minMemory = virtualMachineTo.getMinRam();
+        long minMemory = virtualMachineTo.getMinRam();
         Long maxMemory = minMemory;
-        Integer minCpuCores = virtualMachineTo.getCpus();
+        int minCpuCores = virtualMachineTo.getCpus();
         Integer maxCpuCores = minCpuCores;
 
         ServiceOfferingVO serviceOfferingVO = serviceOfferingDao.findById(virtualMachineProfile.getId(), virtualMachineProfile.getServiceOfferingId());
@@ -219,7 +250,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         if (lastHost != null) {
             maxHostMemory = lastHost.getTotalMemory();
             maxHostCpuCore = lastHost.getCpus();
-            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost.toString()));
+            s_logger.debug(String.format("Retrieved memory and cpu max values {\"memory\": %s, \"cpu\": %s} from %s last %s.", maxHostMemory, maxHostCpuCore, vmDescription, lastHost));
         } else {
             s_logger.warn(String.format("%s host [%s] and last host [%s] are null. Using 'Long.MAX_VALUE' [%s] and 'Integer.MAX_VALUE' [%s] as max memory and cpu cores.", vmDescription, virtualMachine.getHostId(), lastHostId, maxHostMemory, maxHostCpuCore));
         }
@@ -318,18 +349,9 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
-        Integer maxDataVolumesSupported;
-        Integer maxDeviceId;
 
         if (vm == null) {
             throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
-        }
-        try {
-            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
-            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
-             maxDeviceId= maxDevices - 1;
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
         }
         try {
             if (vm.getRemoved() == null) {
@@ -342,19 +364,13 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                volume.setState(Volume.State.Ready);
                _volumeDao.update(volume.getId(), volume);
                if (VMVolToRestore.getType() == Volume.Type.ROOT) {
+                   _volumeDao.update(volume.getId(), volume);
                    _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
                }
                else if ( VMVolToRestore.getType() == Volume.Type.DATADISK) {
-                   List<String> devIds = new ArrayList<>();
                    List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
-                   for (int i = 1; i <= maxDeviceId; i++)
-                       devIds.add(String.valueOf(i));
-                   devIds.remove("3");
-                   for (VolumeVO vmVolume : vmVolumes) {
-                       devIds.remove(vmVolume.getDeviceId().toString().trim());
-                   }
-                   final Long deviceId = Long.parseLong(devIds.iterator().next());
-                   _volumeDao.attachVolume(volume.getId(), vm.getId(), deviceId);
+                   _volumeDao.update(volume.getId(), volume);
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                }
            }
         } catch (Exception e) {
@@ -370,33 +386,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
         List<VolumeVO> vmVolumes = _volumeDao.findByInstance(targetVM.getId());
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
-        Integer maxDataVolumesSupported;
-        Integer maxDeviceId;
-        List<String> devIds = new ArrayList<>();
-
-        try {
-            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
-            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
-            maxDeviceId = maxDevices - 1;
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
-        }
 
         if (restoredVolume != null) {
-            for (int i = 1; i <= maxDeviceId; i++) {
-                devIds.add(String.valueOf(i));
-            }
-            devIds.remove("3");
-            for (VolumeVO vmVolume : vmVolumes) {
-                devIds.remove(vmVolume.getDeviceId().toString().trim());
-            }
-            if (devIds.isEmpty()) {
-                throw new RuntimeException("All device Ids are used by vm " + vm.getId());
-            }
-            final Long deviceId = Long.parseLong(devIds.iterator().next());
-
             try {
-                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), deviceId);
+                _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
                 restoredVolume.setState(Volume.State.Ready);
                 _volumeDao.update(restoredVolume.getId(), restoredVolume);
                 return true;
