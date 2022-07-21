@@ -21,7 +21,11 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.Adapter;
 
-// APIChecker checks the ownership and access control to API requests
+import java.util.List;
+
+/**
+ * APICheckers is designed to verify the ownership of resources and to control the access to APIs.
+ */
 public interface APIChecker extends Adapter {
     // Interface for checking access for a role using apiname
     // If true, apiChecker has checked the operation
@@ -29,5 +33,14 @@ public interface APIChecker extends Adapter {
     // On exception, checkAccess failed don't allow
     boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException;
     boolean checkAccess(Account account, String apiCommandName) throws PermissionDeniedException;
+    /**
+     * Verifies if the account has permission for the given list of APIs and returns only the allowed ones.
+     *
+     * @param role of the user to be verified
+     * @param user to be verified
+     * @param apiNames the list of apis to be verified
+     * @return the list of allowed apis for the given user
+     */
+    List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException;
     boolean isEnabled();
 }
