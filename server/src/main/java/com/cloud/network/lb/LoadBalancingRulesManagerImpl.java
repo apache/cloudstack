@@ -29,7 +29,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -94,6 +93,7 @@ import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
@@ -255,7 +255,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Inject
     AutoScaleVmGroupVmMapDao _autoScaleVmGroupVmMapDao;
     @Inject
-    private AutoScaleManager _asManager;
+    AutoScaleManager _asManager;
     @Inject
     ConfigurationDao _configDao;
     @Inject
