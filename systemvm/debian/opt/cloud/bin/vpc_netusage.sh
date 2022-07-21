@@ -124,8 +124,8 @@ if [ "$cflag" == "1" ]
 then
   if [ "$ethDev" != "" ]
   then
-    create_usage_rules
-    create_vpn_usage_rules
+    #create_usage_rules
+    #create_vpn_usage_rules
     unlock_exit 0 $lock $locked
    fi
 fi
