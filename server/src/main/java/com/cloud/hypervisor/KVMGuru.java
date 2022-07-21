@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
@@ -50,7 +51,7 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.cloudstack.api.ApiConstants;
@@ -68,6 +69,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     VMInstanceDao _instanceDao;
     @Inject
     VolumeDao _volumeDao;
+    @Inject
+    HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -310,48 +313,101 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup) throws Exception {
+    public VirtualMachine importVirtualMachineFromBackup(long zoneId, long domainId, long accountId, long userId, String vmInternalName, Backup backup)  {
         s_logger.debug(String.format("Trying to import VM [vmInternalName: %s] from Backup [%s].", vmInternalName,
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "id", "uuid", "vmId", "externalId", "backupType")));
 
         VMInstanceVO vm = _instanceDao.findVMByInstanceNameIncludingRemoved(vmInternalName);
-        if (vm.getRemoved() != null) {
-            vm.setState(VirtualMachine.State.Stopped);
-            vm.setPowerState(VirtualMachine.PowerState.PowerOff);
-            _instanceDao.update(vm.getId(), vm);
-            _instanceDao.unremove(vm.getId());
-        }
-        for (final VolumeVO volume : _volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), null)) {
-            volume.setState(Volume.State.Ready);
-            volume.setAttached(new Date());
-            _volumeDao.update(volume.getId(), volume);
-            _volumeDao.unremove(volume.getId());
-        }
+        Integer maxDataVolumesSupported;
+        Integer maxDeviceId;
 
-        return vm;
+        if (vm == null) {
+            throw new CloudRuntimeException("Cannot find VM: " + vmInternalName);
+        }
+        try {
+            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
+            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
+             maxDeviceId= maxDevices - 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
+        }
+        try {
+            if (vm.getRemoved() == null) {
+                vm.setState(VirtualMachine.State.Stopped);
+                vm.setPowerState(VirtualMachine.PowerState.PowerOff);
+                _instanceDao.update(vm.getId(), vm);
+            }
+           for ( Backup.VolumeInfo VMVolToRestore : vm.getBackupVolumeList()) {
+               VolumeVO volume = _volumeDao.findByUuidIncludingRemoved(VMVolToRestore.getUuid());
+               volume.setState(Volume.State.Ready);
+               _volumeDao.update(volume.getId(), volume);
+               if (VMVolToRestore.getType() == Volume.Type.ROOT) {
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), 0L);
+               }
+               else if ( VMVolToRestore.getType() == Volume.Type.DATADISK) {
+                   List<String> devIds = new ArrayList<>();
+                   List<VolumeVO> vmVolumes = _volumeDao.findByInstance(vm.getId());
+                   for (int i = 1; i <= maxDeviceId; i++)
+                       devIds.add(String.valueOf(i));
+                   devIds.remove("3");
+                   for (VolumeVO vmVolume : vmVolumes) {
+                       devIds.remove(vmVolume.getDeviceId().toString().trim());
+                   }
+                   final Long deviceId = Long.parseLong(devIds.iterator().next());
+                   _volumeDao.attachVolume(volume.getId(), vm.getId(), deviceId);
+               }
+           }
+        } catch (Exception e) {
+            throw new RuntimeException("Could not restore VM " + vm.getName() + " due to : " + e.getMessage());
+        }
+    return vm;
     }
 
 
 
-    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup)
-            throws Exception {
+    @Override public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
 
         VMInstanceVO targetVM = _instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
-        List<VolumeVO> devices = _volumeDao.findIncludingRemovedByInstanceAndType(targetVM.getId(), null);
+        List<VolumeVO> vmVolumes = _volumeDao.findByInstance(targetVM.getId());
         VolumeVO restoredVolume = _volumeDao.findByUuid(location);
-        Integer deviceId = devices.size();
+        Integer maxDataVolumesSupported;
+        Integer maxDeviceId;
+        List<String> devIds = new ArrayList<>();
 
+        try {
+            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(HypervisorType.KVM,"default");
+            int maxDevices = maxDataVolumesSupported + 2; // add 2 to consider devices root volume and cdrom
+            maxDeviceId = maxDevices - 1;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot find maximum number of disk devices that can be attached to the KVM Hypervisor");
+        }
 
         if (restoredVolume != null) {
-            restoredVolume.setState(Volume.State.Ready);
-            _volumeDao.update(restoredVolume.getId(), restoredVolume);
+            for (int i = 1; i <= maxDeviceId; i++) {
+                devIds.add(String.valueOf(i));
+            }
+            devIds.remove("3");
+            for (VolumeVO vmVolume : vmVolumes) {
+                devIds.remove(vmVolume.getDeviceId().toString().trim());
+            }
+            if (devIds.isEmpty()) {
+                throw new RuntimeException("All device Ids are used by vm " + vm.getId());
+            }
+            final Long deviceId = Long.parseLong(devIds.iterator().next());
+
             try {
                 _volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), deviceId);
+                restoredVolume.setState(Volume.State.Ready);
+                _volumeDao.update(restoredVolume.getId(), restoredVolume);
                 return true;
             } catch (Exception e) {
-                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e);
+                restoredVolume.setDisplay(false);
+                restoredVolume.setDisplayVolume(false);
+                restoredVolume.setState(Volume.State.Destroy);
+                _volumeDao.update(restoredVolume.getId(), restoredVolume);
+                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e.getMessage());
             }
         }
-        return false;
+    return false;
     }
 }
