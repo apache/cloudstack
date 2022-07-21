@@ -346,9 +346,15 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
         return fileExtension;
     }
 
-    public String getMd5sum() { return md5sum; }
+    public String getMd5sum() {
+        return md5sum;
+    }
 
-    public File getVolumeFile() { return volumeFile; }
+    public File getVolumeFile() {
+        return volumeFile;
+    }
 
-    public long getMaxTemplateSizeInBytes() {return maxVolumeSizeInBytes;}
+    public long getMaxTemplateSizeInBytes() {
+        return maxVolumeSizeInBytes;
+    }
 }
