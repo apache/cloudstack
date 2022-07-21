@@ -1136,12 +1136,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             client = HttpClients.custom().setSSLContext(sslContext)
                     .setSSLHostnameVerifier(new NoopHostnameVerifier())
                     .build();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            String msg = String.format("Failed to initialize download url: %s, due to %s", url, e.getMessage());
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg, e);
         }
 
         try {

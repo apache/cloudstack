@@ -1,47 +1,23 @@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
-
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.cloud.storage.template;
 
-import com.cloud.agent.api.to.SwiftTO;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.http.Header;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpRequestRetryHandler;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -55,6 +31,27 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.http.Header;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.log4j.Logger;
 
 /**
  * Download a volume file using HTTP(S)
@@ -70,14 +67,11 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
     private final String downloadUrl;
     private final String fileName;
     private final String fileExtension;
-    private final long volumeId;
     private final CloseableHttpClient httpClient;
     private final HttpGet httpGet;
     private final DownloadCompleteCallback downloadCompleteCallback;
-    private final SwiftTO swiftTO;
     private String errorString = "";
     private Status status = Status.NOT_STARTED;
-    private final ResourceType resourceType = ResourceType.VOLUME;
     private long remoteSize;
     private String md5sum;
     private long downloadTime;
@@ -90,20 +84,17 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
 
     public SwiftVolumeDownloader(DownloadCommand cmd, DownloadCompleteCallback downloadCompleteCallback, long maxVolumeSizeInBytes, String installPathPrefix) {
         this.downloadUrl = cmd.getUrl();
-        this.swiftTO = (SwiftTO) cmd.getDataStore();
         this.maxVolumeSizeInBytes = maxVolumeSizeInBytes;
         this.httpClient = initializeHttpClient();
         this.downloadCompleteCallback = downloadCompleteCallback;
         this.fileName = cmd.getName();
         this.fileExtension = cmd.getFormat().getFileExtension();
-        this.volumeId = cmd.getId();
         this.installPathPrefix = installPathPrefix;
         this.installPath = cmd.getInstallPath();
         this.httpGet = new HttpGet(downloadUrl);
     }
 
-    private CloseableHttpClient initializeHttpClient(){
-
+    private CloseableHttpClient initializeHttpClient() {
         CloseableHttpClient client = null;
         try {
             //trust all certs
@@ -114,62 +105,30 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
                     .setSSLHostnameVerifier(new NoopHostnameVerifier())
                     .setRetryHandler(buildRetryHandler(5))
                     .build();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (KeyManagementException e) {
-            e.printStackTrace();
-        } catch (KeyStoreException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+            LOGGER.error(String.format("Unable to initialize HTTP client due to %s", e.getMessage()), e);
         }
-
         return client;
     }
 
-    private HttpRequestRetryHandler buildRetryHandler(int retryCount){
-
-        HttpRequestRetryHandler customRetryHandler = new HttpRequestRetryHandler() {
-            @Override
-            public boolean retryRequest(
-                    IOException exception,
-                    int executionCount,
-                    HttpContext context) {
-                if (executionCount >= retryCount) {
-                    // Do not retry if over max retry count
-                    return false;
-                }
-                if (exception instanceof InterruptedIOException) {
-                    // Timeout
-                    return false;
-                }
-                if (exception instanceof UnknownHostException) {
-                    // Unknown host
-                    return false;
-                }
-                if (exception instanceof ConnectTimeoutException) {
-                    // Connection refused
-                    return false;
-                }
-                if (exception instanceof SSLException) {
-                    // SSL handshake exception
-                    return false;
-                }
-                HttpClientContext clientContext = HttpClientContext.adapt(context);
-                HttpRequest request = clientContext.getRequest();
-                boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-                if (idempotent) {
-                    // Retry if the request is considered idempotent
-                    return true;
-                }
+    private HttpRequestRetryHandler buildRetryHandler(int retryCount) {
+        return (exception, executionCount, context) -> {
+            if (executionCount >= retryCount) {
+                // Do not retry if over max retry count
                 return false;
             }
-
+            if (exception instanceof InterruptedIOException || exception instanceof UnknownHostException || exception instanceof SSLException) {
+                return false;
+            }
+            HttpClientContext clientContext = HttpClientContext.adapt(context);
+            HttpRequest request = clientContext.getRequest();
+            return !(request instanceof HttpEntityEnclosingRequest);
         };
-        return customRetryHandler;
     }
 
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
-        if (!status.equals(Status.NOT_STARTED)) {
+        if (!Status.NOT_STARTED.equals(status)) {
             // Only start downloading if we haven't started yet.
             LOGGER.info("Volume download is already started, not starting again. Volume: " + downloadUrl);
             return 0;
@@ -180,9 +139,8 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
             response = httpClient.execute(httpGet);
         } catch (IOException e) {
             e.printStackTrace();
-            errorString = "Exception while executing HttpMethod " + httpGet.getMethod() + " on URL " + downloadUrl + " "
-                    + response.getStatusLine().getStatusCode() + " " + response.getStatusLine().getReasonPhrase();
-            LOGGER.error(errorString);
+            errorString = String.format("Exception while executing HttpMethod %s on URL %s", httpGet.getMethod(), downloadUrl);
+            LOGGER.error(errorString, e);
             status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
@@ -244,12 +202,12 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
             BufferedOutputStream outputStream = new BufferedOutputStream(fileOutputStream,DOWNLOAD_BUFFER_SIZE_BYTES);
             byte[] data = new byte[DOWNLOAD_BUFFER_SIZE_BYTES];
             int bufferLength = 0;
-            while((bufferLength = inputStream.read(data,0,DOWNLOAD_BUFFER_SIZE_BYTES)) >= 0){
+            while((bufferLength = inputStream.read(data,0,DOWNLOAD_BUFFER_SIZE_BYTES)) >= 0) {
                 totalBytes += bufferLength;
                 outputStream.write(data,0,bufferLength);
                 status = Status.IN_PROGRESS;
                 LOGGER.trace("Download in progress: " + getDownloadPercent() + "%");
-                if(totalBytes >= remoteSize){
+                if (totalBytes >= remoteSize) {
                     volumeFile = srcFile;
                     status = Status.DOWNLOAD_FINISHED;
                 }
@@ -321,8 +279,7 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
             case UNRECOVERABLE_ERROR:
             case ABORTED:
             case DOWNLOAD_FINISHED:
-                // Remove the object if it already has been uploaded.
-                // SwiftUtil.deleteObject(swiftTO, swiftPath);
+                LOGGER.debug(String.format("Stopping download while status is %s", status));
                 break;
             default:
                 break;
@@ -382,7 +339,7 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
     }
 
     public ResourceType getResourceType() {
-        return resourceType;
+        return ResourceType.VOLUME;
     }
 
     public String getFileExtension() {

@@ -258,6 +258,27 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     private String listVolScr;
     private int installTimeoutPerGig = 180 * 60 * 1000;
 
+    private void setSwiftVolumeDownloadStatus(DownloadJob dj, TemplateDownloader td) {
+        dj.setCheckSum(((SwiftVolumeDownloader) td).getMd5sum());
+        if ("vhd".equalsIgnoreCase(((SwiftVolumeDownloader) td).getFileExtension())) {
+            Processor vhdProcessor = _processors.get("VHD Processor");
+            long virtualSize = 0;
+            try {
+                virtualSize = vhdProcessor.getVirtualSize(((SwiftVolumeDownloader) td).getVolumeFile());
+                dj.setTemplatesize(virtualSize);
+            } catch (IOException e) {
+                LOGGER.error("Unable to read VHD file", e);
+                e.printStackTrace();
+            }
+        } else {
+            dj.setTemplatesize(td.getDownloadedBytes());
+        }
+        dj.setTemplatePhysicalSize(td.getDownloadedBytes());
+        dj.setTmpltPath(td.getDownloadLocalPath());
+        td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+        td.setDownloadError("Volume downloaded to swift cache successfully at " + new SimpleDateFormat().format(new Date()));
+    }
+
     public void setThreadPool(ExecutorService threadPool) {
         this.threadPool = threadPool;
     }
@@ -278,7 +299,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public void setDownloadStatus(String jobId, Status status) {
         DownloadJob dj = jobs.get(jobId);
         if (dj == null) {
-            LOGGER.info("setDownloadStatus for jobId: " + jobId + ", status=" + status + " no job found");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Updating DownloadStatus: %s for jobId: %s failed as no job found", status, jobId));
+            }
             return;
         }
         TemplateDownloader td = dj.getTemplateDownloader();
@@ -304,7 +327,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             threadPool.execute(td);
             break;
         case DOWNLOAD_FINISHED:
-            if(td instanceof S3TemplateDownloader) {
+            if (td instanceof S3TemplateDownloader) {
                 // For S3 and Swift, which are considered "remote",
                 // as in the file cannot be accessed locally,
                 // we run the postRemoteDownload() method.
@@ -320,24 +343,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
                 }
             } else if (td instanceof SwiftVolumeDownloader) {
-                dj.setCheckSum(((SwiftVolumeDownloader) td).getMd5sum());
-                if ("vhd".equalsIgnoreCase(((SwiftVolumeDownloader) td).getFileExtension())) {
-                    Processor vhdProcessor = _processors.get("VHD Processor");
-                    long virtualSize = 0;
-                    try {
-                        virtualSize = vhdProcessor.getVirtualSize(((SwiftVolumeDownloader) td).getVolumeFile());
-                        dj.setTemplatesize(virtualSize);
-                    } catch (IOException e) {
-                        LOGGER.error("Unable to read VHD file", e);
-                        e.printStackTrace();
-                    }
-                } else {
-                    dj.setTemplatesize(((SwiftVolumeDownloader) td).getDownloadedBytes());
-                }
-                dj.setTemplatePhysicalSize(((SwiftVolumeDownloader) td).getDownloadedBytes());
-                dj.setTmpltPath(((SwiftVolumeDownloader) td).getDownloadLocalPath());
-                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
-                td.setDownloadError("Volume downloaded to swift cache successfully at " + new SimpleDateFormat().format(new Date()));
+                setSwiftVolumeDownloadStatus(dj, td);
             } else {
                 // For other TemplateDownloaders where files are locally available,
                 // we run the postLocalDownload() method.
@@ -417,7 +423,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ResourceType resourceType = dnld.getResourceType();
 
         File originalTemplate = new File(td.getDownloadLocalPath());
-        if(StringUtils.isBlank(dnld.getChecksum())) {
+        if (StringUtils.isBlank(dnld.getChecksum())) {
             if (LOGGER.isInfoEnabled()) {
                 LOGGER.info(String.format("No checksum available for '%s'", originalTemplate.getName()));
             }
@@ -594,7 +600,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             throw new CloudRuntimeException("URI is incorrect: " + url);
         }
         TemplateDownloader td;
-        if ((uri != null) && (uri.getScheme() != null)) {
+        if (uri.getScheme() != null) {
             if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
                 td = new S3TemplateDownloader(s3, url, installPathPrefix, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
             } else {
@@ -615,8 +621,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public String downloadSwiftVolume(DownloadCommand cmd, String installPathPrefix, long maxDownloadSizeInBytes) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
-        //TODO get from global config
-        long maxVolumeSizeInBytes = maxDownloadSizeInBytes;
         URI uri = null;
         try {
             uri = new URI(cmd.getUrl());
@@ -626,7 +630,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         TemplateDownloader td;
         if ((uri != null) && (uri.getScheme() != null)) {
             if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                td = new SwiftVolumeDownloader(cmd, new Completion(jobId), maxVolumeSizeInBytes, installPathPrefix);
+                td = new SwiftVolumeDownloader(cmd, new Completion(jobId), maxDownloadSizeInBytes, installPathPrefix);
             } else {
                 throw new CloudRuntimeException("Scheme is not supported " + cmd.getUrl());
             }
@@ -659,7 +663,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : _storage.getFile(tmpDir + File.separator +
                             "volume.properties");
                     if (file.exists()) {
-                        if(! file.delete()) {
+                        if (! file.delete()) {
                             LOGGER.error("Deletion of file '" + file.getAbsolutePath() + "' failed.");
                         }
                     }

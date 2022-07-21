@@ -19,17 +19,6 @@
 
 package com.cloud.storage.template;
 
-import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageLayer;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.AdapterBase;
-import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
-
-import javax.naming.ConfigurationException;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,6 +27,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
+import javax.naming.ConfigurationException;
+
+import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.log4j.Logger;
+
+import com.cloud.exception.InternalErrorException;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.AdapterBase;
+
 /**
  * VhdProcessor processes the downloaded template for VHD.  It
  * currently does not handle any type of template conversion
@@ -45,6 +47,8 @@ import java.util.Map;
  *
  */
 public class VhdProcessor extends AdapterBase implements Processor {
+
+    public static final String NAME = "VHD Processor";
 
     private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
     StorageLayer _storage;
