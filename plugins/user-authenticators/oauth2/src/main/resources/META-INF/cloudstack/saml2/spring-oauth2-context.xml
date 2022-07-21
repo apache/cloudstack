@@ -25,7 +25,7 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <bean id="OAuth2UserAuthenticator" class="org.apache.cloudstack.oauth.OAuth2UserAuthenticator">
+    <bean id="OAuth2UserAuthenticator" class="org.apache.cloudstack.oauth2.OAuth2UserAuthenticator">
         <property name="name" value="OAuth2"/>
     </bean>
 

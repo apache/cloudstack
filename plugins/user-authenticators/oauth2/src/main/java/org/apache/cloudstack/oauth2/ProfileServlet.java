@@ -18,31 +18,27 @@
 //
 package org.apache.cloudstack.oauth2;
 
-import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
-import com.google.api.client.extensions.servlet.auth.oauth2.AbstractAuthorizationCodeServlet;
-import com.google.api.client.http.GenericUrl;
+import com.google.api.services.oauth2.model.Userinfo;
+import org.apache.log4j.Logger;
 
-import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebServlet("/login")
-public class LoginServlet extends AbstractAuthorizationCodeServlet {
-
-    @Override
-    protected AuthorizationCodeFlow initializeFlow() throws IOException {
-        return OAuth2Utils.newFlow();
-    }
-
-    @Override
-    protected String getRedirectUri(HttpServletRequest httpServletRequest) {
-        GenericUrl url = new GenericUrl(httpServletRequest.getRequestURL().toString());
-        url.setRawPath("/login-callback");
-        return url.build();
-    }
-
-    @Override
-    protected String getUserId(HttpServletRequest httpServletRequest) {
-        return httpServletRequest.getSession().getId();
+public class ProfileServlet extends HttpServlet {
+    public static final Logger s_logger = Logger.getLogger(ProfileServlet.class);
+    public void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
+        String sessionId = httpServletRequest.getSession().getId();
+        boolean isUserLoggedIn = OAuth2Utils.isUserLoggedIn(sessionId);
+        if (isUserLoggedIn) {
+            Userinfo info = OAuth2Utils.getUserInfo(sessionId);
+            s_logger.info("Name: " + info.getName());
+            s_logger.info("Email: " + info.getEmail());
+        }
+        else {
+            s_logger.error("Please login to continue");
+            httpServletResponse.sendRedirect("/login");
+        }
     }
 }
