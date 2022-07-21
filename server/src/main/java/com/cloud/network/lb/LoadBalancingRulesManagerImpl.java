@@ -1447,24 +1447,21 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 }
             }
 
-            if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
-                // For autoscaled loadbalancer, the rules need not be applied,
-                // meaning the call need not reach the resource layer.
-                // We can consider the job done and only need to remove the
-                // rules in DB
-                _lb2VmMapDao.remove(loadBalancer.getId(), instanceIds, null);
-                for (Long instanceId: instanceIds){
-                    _autoScaleVmGroupVmMapDao.removeByVm(instanceId);
-                }
-                return true;
-            }
-
             if (!applyLoadBalancerConfig(loadBalancerId)) {
                 s_logger.warn("Failed to remove load balancer rule id " + loadBalancerId + " for vms " + instanceIds);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove specified load balancer rule id for vms " + instanceIds);
                 ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
                 throw ex;
             }
+
+            if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
+                List<Long> vmIdsList = new ArrayList<>(vmIdIpMap.keySet());
+                _lb2VmMapDao.remove(loadBalancer.getId(), vmIdsList, null);
+                for (Long instanceId: vmIdsList){
+                    _autoScaleVmGroupVmMapDao.removeByVm(instanceId);
+                }
+            }
+
             success = true;
         } catch (ResourceUnavailableException e) {
             if (rollBack && isRollBackAllowedForProvider(loadBalancer)) {
