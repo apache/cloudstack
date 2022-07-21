@@ -16,9 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.user.Account;
-import com.cloud.utils.HttpUtils;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.InetAddress;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ApiServerService;
@@ -72,25 +89,9 @@ import org.opensaml.xml.security.x509.BasicX509Credential;
 import org.opensaml.xml.security.x509.X509KeyInfoGeneratorFactory;
 import org.w3c.dom.Document;
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.net.InetAddress;
+import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.user.Account;
+import com.cloud.utils.HttpUtils;
 
 @APICommand(name = "getSPMetadata", description = "Returns SAML2 CloudStack Service Provider MetaData", responseObject = SAMLMetaDataResponse.class, entityType = {})
 public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthenticator {
@@ -246,7 +247,7 @@ public class GetServiceProviderMetaDataCmd extends BaseCmd implements APIAuthent
             Marshaller out = Configuration.getMarshallerFactory().getMarshaller(spEntityDescriptor);
             out.marshall(spEntityDescriptor, document);
 
-            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            Transformer transformer = ParserUtils.getSaferTransformerFactory().newTransformer();
             StreamResult streamResult = new StreamResult(stringWriter);
             DOMSource source = new DOMSource(document);
             transformer.transform(source, streamResult);
