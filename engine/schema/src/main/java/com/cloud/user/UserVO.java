@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
@@ -283,7 +284,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return new StringBuilder("User[").append(id).append("-").append(username).append("]").toString();
+        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "username", "uuid"));
     }
 
     @Override
