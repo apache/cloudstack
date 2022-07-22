@@ -51,7 +51,7 @@ public class ListCountersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SOURCE, type = CommandType.STRING, description = "Source of the counter.")
     private String source;
 
-    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Provider of the counter.")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "Provider of the counter.", since = "4.18.0")
     private String provider;
 
     // ///////////////////////////////////////////////////

@@ -62,7 +62,8 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.NAME,
             type = CommandType.STRING,
-            description = "the name of the autoscale vmgroup")
+            description = "the name of the autoscale vmgroup",
+            since = "4.18.0")
     private String name;
 
     @Parameter(name = ApiConstants.MIN_MEMBERS,

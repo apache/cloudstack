@@ -54,7 +54,8 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.CLEANUP,
             type = CommandType.BOOLEAN,
-            description = "true if all VMs have to be cleaned up, false otherwise")
+            description = "true if all VMs have to be cleaned up, false otherwise",
+            since = "4.18.0")
     private Boolean cleanup;
 
     // ///////////////////////////////////////////////////

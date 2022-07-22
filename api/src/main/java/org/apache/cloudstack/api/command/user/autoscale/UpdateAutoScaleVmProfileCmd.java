@@ -63,7 +63,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
             type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class,
-            description = "the service offering of the auto deployed virtual machine")
+            description = "the service offering of the auto deployed virtual machine",
+            since = "4.18.0")
     private Long serviceOfferingId;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID,
@@ -76,7 +77,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
             type = CommandType.MAP,
             description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. "
                     + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 ."
-                    + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\".")
+                    + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\", \"overridediskofferingid\", \"keypairs\", \"affinitygroupids'\", \"networkids\".",
+            since = "4.18.0")
     private Map otherDeployParams;
 
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,
