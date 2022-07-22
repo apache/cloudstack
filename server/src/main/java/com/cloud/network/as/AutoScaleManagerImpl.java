@@ -429,7 +429,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     @DB
-    protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile) {
+    protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile, boolean isNew) {
         long templateId = vmProfile.getTemplateId();
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
@@ -460,20 +460,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
         }
 
-        String apiKey = user.getApiKey();
-        String secretKey = user.getSecretKey();
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
-
-        if (apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
-
-        if (secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
-
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
+        if (!isNew) {
+            List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listByProfile(vmProfile.getId());
+            for (AutoScaleVmGroupVO vmGroup : vmGroups) {
+                Network.Provider provider = getLoadBalancerServiceProvider(vmGroup.getLoadBalancerId());
+                if (Network.Provider.Netscaler.equals(provider)) {
+                    checkAutoScaleUser(autoscaleUserId);
+                }
+            }
         }
 
         Integer autoScaleStatsInterval = AutoScaleStatsInterval.value();
@@ -495,6 +489,28 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return vmProfile;
     }
 
+    private void checkAutoScaleUser(Long autoscaleUserId) {
+        User user = _userDao.findById(autoscaleUserId);
+        if (user == null) {
+            throw new InvalidParameterValueException("Unable to find autoscale user id: " + autoscaleUserId);
+        }
+
+        String apiKey = user.getApiKey();
+        String secretKey = user.getSecretKey();
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
+
+        if (apiKey == null) {
+            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+        }
+
+        if (secretKey == null) {
+            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+        }
+
+        if (csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
+        }
+    }
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile", create = true)
     public AutoScaleVmProfile createAutoScaleVmProfile(CreateAutoScaleVmProfileCmd cmd) {
@@ -535,7 +551,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             profileVO.setDisplay(cmd.getDisplay());
         }
 
-        profileVO = checkValidityAndPersist(profileVO);
+        profileVO = checkValidityAndPersist(profileVO, true);
         s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
         return profileVO;
@@ -601,7 +617,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
 
-        vmProfile = checkValidityAndPersist(vmProfile);
+        vmProfile = checkValidityAndPersist(vmProfile, false);
         s_logger.info("Updated Auto Scale Vm Profile id:" + vmProfile.getId());
 
         return vmProfile;
@@ -1182,6 +1198,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
         validateAutoScaleCounters(loadBalancer.getNetworkId(), counters, profileVO.getCounterParams());
+
+        Network.Provider provider = getLoadBalancerServiceProvider(vmGroup.getLoadBalancerId());
+        if (Network.Provider.Netscaler.equals(provider)) {
+            checkAutoScaleUser(profileVO.getAutoScaleUserId());
+        }
 
         ControlledEntity[] sameOwnerEntities = policies.toArray(new ControlledEntity[policies.size() + 2]);
         sameOwnerEntities[sameOwnerEntities.length - 2] = loadBalancer;

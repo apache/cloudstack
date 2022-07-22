@@ -26,8 +26,8 @@
       </a-alert>
 
       <a-divider/>
-      <div class="form" v-ctrl-enter="updateAutoScaleVmProfile">
-        <div class="form__item">
+      <div class="form">
+        <div class="form__item" v-if="resource.lbprovider === 'Netscaler'">
           <div class="form__label">{{ $t('label.user') }}</div>
           <a-select
             :disabled="true"
@@ -44,6 +44,8 @@
             </a-select-option>
           </a-select>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
           <a-input v-model:value="destroyvmgraceperiod" type="number" :disabled="true"></a-input>
@@ -67,6 +69,8 @@
             </a-select-option>
           </a-select>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
           <a-select
@@ -166,8 +170,8 @@
       :footer="null"
       @cancel="editProfileModalVisible = false">
 
-      <div class="edit-profile" v-ctrl-enter="updateAutoScaleVmProfile">
-        <div class="form__item">
+      <div class="form">
+        <div class="form__item" v-if="resource.lbprovider === 'Netscaler'">
           <div class="form__label">{{ $t('label.user') }}</div>
           <a-select
             style="width: 100%"
@@ -183,12 +187,16 @@
             </a-select-option>
           </a-select>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
           <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.templateid') }}</div>
+          <div class="form__label">{{ $t('label.templatename') }}</div>
           <a-select
             style="width: 100%"
             showSearch
@@ -203,6 +211,8 @@
             </a-select-option>
           </a-select>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
           <a-select
@@ -219,6 +229,8 @@
             </a-select-option>
           </a-select>
         </div>
+      </div>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.userdata') }}</div>
           <a-textarea v-model:value="userdata">
@@ -462,14 +474,24 @@ export default {
       })
     },
     updateAutoScaleVmProfile () {
-      api('updateAutoScaleVmProfile', {
+      const params = {
         id: this.profileid,
-        autoscaleuserid: this.autoscaleuserid,
         destroyvmgraceperiod: this.destroyvmgraceperiod,
         serviceofferingid: this.serviceofferingid,
-        templateid: this.templateid,
-        userdata: encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
-      }).then(response => {
+        templateid: this.templateid
+      }
+      if (this.autoscaleuserid) {
+        params.autoscaleuserid = this.autoscaleuserid
+      }
+      if (this.userdata && this.userdata.length > 0) {
+        params.userdata = encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
+      }
+
+      const httpMethod = params.userdata ? 'POST' : 'GET'
+      const args = httpMethod === 'POST' ? {} : params
+      const data = httpMethod === 'POST' ? params : {}
+
+      api('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {

@@ -667,7 +667,7 @@
                     <a-form-item :label="$t('label.name')" name="name" ref="name">
                       <a-input v-model:value="form.name"></a-input>
                     </a-form-item>
-                    <a-form-item :label="$t('label.user')" name="autoscaleuserid" ref="autoscaleuserid">
+                    <a-form-item :label="$t('label.user')" name="autoscaleuserid" ref="autoscaleuserid" v-if="this.selectedLbProdiver === 'Netscaler'">
                       <a-select
                         style="width: 100%"
                         showSearch
@@ -863,6 +863,7 @@ export default {
       networks: [],
       networksAdd: [],
       selectedLbId: null,
+      selectedLbProdiver: null,
       countersList: [],
       scaleUpConditions: [],
       newScaleUpCondition: {
@@ -1480,12 +1481,14 @@ export default {
         const services = response.listnetworksresponse?.network?.[0]?.service
         const index = services.map(svc => { return svc.name }).indexOf('Lb')
         if (index === -1) {
+          this.selectedLbProdiver = null
+          this.countersList = []
           return
         }
-        const provider = services[index].provider[0].name
+        this.selectedLbProdiver = services[index].provider[0].name
         api('listCounters', {
           listAll: true,
-          provider: provider
+          provider: this.selectedLbProdiver
         }).then(response => {
           this.countersList = response.counterresponse?.counter || []
         })
@@ -1710,12 +1713,14 @@ export default {
     createVmProfile (createVmGroupData) {
       return new Promise((resolve, reject) => {
         const params = {
-          autoscaleuserid: createVmGroupData.autoscaleuserid,
           destroyvmgraceperiod: createVmGroupData.destroyvmgraceperiod,
           serviceofferingid: createVmGroupData.serviceofferingid,
           templateid: createVmGroupData.templateid,
           userdata: createVmGroupData.userdata,
           zoneid: createVmGroupData.zoneid
+        }
+        if (createVmGroupData.autoscaleuserid) {
+          params.autoscaleuserid = createVmGroupData.autoscaleuserid
         }
         var i = 0
         if (createVmGroupData.snmpcommunity) {
@@ -1771,8 +1776,10 @@ export default {
         }
 
         const httpMethod = createVmGroupData.userdata ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : params
+        const data = httpMethod === 'POST' ? params : {}
 
-        api('createAutoScaleVmProfile', {}, httpMethod, params).then(async json => {
+        api('createAutoScaleVmProfile', args, httpMethod, data).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
