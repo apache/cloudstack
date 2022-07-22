@@ -99,7 +99,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
-    DownloadMonitor _downloadMonitor;
+    protected DownloadMonitor _downloadMonitor;
     @Inject
     VolumeDao volumeDao;
     @Inject
