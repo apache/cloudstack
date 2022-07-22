@@ -65,8 +65,6 @@ public class SwiftImageStoreDriverImpl extends BaseImageStoreDriverImpl {
     StorageCacheManager cacheManager;
     @Inject
     ConfigurationDao _configDao;
-    @Inject
-    private DownloadMonitor _downloadMonitor;
 
     @Override
     public DataStoreTO getStoreTO(DataStore store) {

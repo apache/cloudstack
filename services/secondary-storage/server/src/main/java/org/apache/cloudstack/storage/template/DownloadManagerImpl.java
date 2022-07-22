@@ -268,7 +268,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 dj.setTemplatesize(virtualSize);
             } catch (IOException e) {
                 LOGGER.error("Unable to read VHD file", e);
-                e.printStackTrace();
             }
         } else {
             dj.setTemplatesize(td.getDownloadedBytes());

@@ -138,7 +138,6 @@ public class SwiftVolumeDownloader extends ManagedContextRunnable implements Tem
         try {
             response = httpClient.execute(httpGet);
         } catch (IOException e) {
-            e.printStackTrace();
             errorString = String.format("Exception while executing HttpMethod %s on URL %s", httpGet.getMethod(), downloadUrl);
             LOGGER.error(errorString, e);
             status = Status.UNRECOVERABLE_ERROR;
