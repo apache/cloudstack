@@ -30,6 +30,7 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.user') }}</div>
           <a-select
+            :disabled="true"
             style="width: 100%"
             showSearch
             optionFilterProp="label"
@@ -45,13 +46,14 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
-          <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
+          <a-input v-model:value="destroyvmgraceperiod" type="number" :disabled="true"></a-input>
         </div>
       </div>
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.templateid') }}</div>
           <a-select
+            :disabled="true"
             style="width: 100%"
             showSearch
             optionFilterProp="label"
@@ -68,6 +70,7 @@
         <div class="form__item">
           <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
           <a-select
+            :disabled="true"
             style="width: 100%"
             showSearch
             optionFilterProp="label"
@@ -84,9 +87,9 @@
       </div>
       <div class="form">
         <div class="form__item">
-          <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="updateAutoScaleVmProfile()">
+          <a-button ref="submit" :disabled="!('updateAutoScaleVmProfile' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="editProfileModalVisible = true">
             <template #icon><edit-outlined /></template>
-            {{ $t('label.edit') }}
+            {{ $t('label.edit.autoscale.vmprofile') }}
           </a-button>
         </div>
       </div>
@@ -153,6 +156,80 @@
           @onClick="deleteParam(record.name)" />
       </template>
     </a-table>
+
+    <a-modal
+      :title="$t('label.edit.autoscale.vmprofile')"
+      :visible="editProfileModalVisible"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="editProfileModalVisible = false">
+
+      <div class="edit-profile" v-ctrl-enter="updateAutoScaleVmProfile">
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.user') }}</div>
+          <a-select
+            style="width: 100%"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }"
+            v-focus="true"
+            v-model:value="autoscaleuserid">
+            <a-select-option v-for="(user, index) in usersList" :value="user.id" :key="index">
+              {{ user.username }}
+            </a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
+          <a-input v-model:value="destroyvmgraceperiod" type="number"></a-input>
+        </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.templateid') }}</div>
+          <a-select
+            style="width: 100%"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+            v-focus="true"
+            v-model:value="templateid">
+            <a-select-option v-for="(template, index) in templatesList" :value="template.id" :key="index">
+              {{ template.name }}
+            </a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
+          <a-select
+            style="width: 100%"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+            v-focus="true"
+            v-model:value="serviceofferingid">
+            <a-select-option v-for="(offering, index) in serviceOfferingsList" :value="offering.id" :key="index">
+              {{ offering.name }}
+            </a-select-option>
+          </a-select>
+        </div>
+        <div class="form__item">
+          <div class="form__label">{{ $t('label.userdata') }}</div>
+          <a-textarea v-model:value="userdata">
+          </a-textarea>
+        </div>
+      </div>
+      <div :span="24" class="action-button">
+        <a-button :loading="loading" @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="updateAutoScaleVmProfile">{{ $t('label.ok') }}</a-button>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -177,11 +254,13 @@ export default {
     return {
       filterColumns: ['Action'],
       loading: true,
+      editProfileModalVisible: false,
       profileid: null,
       autoscaleuserid: null,
       destroyvmgraceperiod: null,
       templateid: null,
       serviceofferingid: null,
+      userdata: null,
       usersList: [],
       templatesList: [],
       serviceOfferingsList: [],
@@ -273,6 +352,7 @@ export default {
         this.destroyvmgraceperiod = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.destroyvmgraceperiod
         this.serviceofferingid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.serviceofferingid
         this.templateid = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.templateid
+        this.userdata = this.decodeUserData(decodeURIComponent(response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.userdata || ''))
         const counterparam = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.counterparam || {}
         const otherdeployparams = response.listautoscalevmprofilesresponse?.autoscalevmprofile?.[0]?.otherdeployparams || {}
         this.finalizeParams(counterparam, otherdeployparams)
@@ -387,7 +467,8 @@ export default {
         autoscaleuserid: this.autoscaleuserid,
         destroyvmgraceperiod: this.destroyvmgraceperiod,
         serviceofferingid: this.serviceofferingid,
-        templateid: this.templateid
+        templateid: this.templateid,
+        userdata: encodeURIComponent(btoa(this.sanitizeReverse(this.userdata)))
       }).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
@@ -401,8 +482,20 @@ export default {
         this.loading = false
       })
     },
+    sanitizeReverse (value) {
+      const reversedValue = value
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+
+      return reversedValue
+    },
+    decodeUserData (userdata) {
+      const decodedData = Buffer.from(userdata, 'base64')
+      return decodedData.toString('utf-8')
+    },
     closeModal () {
-      this.showConfirmationAction = false
+      this.editProfileModalVisible = false
     }
   }
 }

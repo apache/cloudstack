@@ -654,6 +654,7 @@
 "label.edit": "Edit",
 "label.edit.acl.list": "Edit ACL list",
 "label.edit.acl.rule": "Edit ACL rule",
+"label.edit.autoscale.vmprofile": "Edit AutoScale VM Profile",
 "label.edit.project.details": "Edit project details",
 "label.edit.project.role": "Edit project role",
 "label.edit.role": "Edit role",
