@@ -68,6 +68,10 @@ public class AutoScaleVmProfileResponse extends BaseResponseWithAnnotations impl
                description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map<String, String> counterParams;
 
+    @SerializedName(ApiConstants.USER_DATA)
+    @Param(description = "Base 64 encoded VM user data")
+    private String userData;
+
     @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
     @Param(description = "the ID of the user used to launch and destroy the VMs")
     private String autoscaleUserId;
@@ -142,6 +146,10 @@ public class AutoScaleVmProfileResponse extends BaseResponseWithAnnotations impl
             String value = paramKV.second();
             this.counterParams.put(key, value);
         }
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
     }
 
     @Override

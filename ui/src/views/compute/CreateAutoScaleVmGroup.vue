@@ -651,6 +651,11 @@
                         @select-affinity-group-item="($event) => updateAffinityGroups($event)"
                         @handle-search-filter="($event) => handleSearchFilter('affinityGroups', $event)"/>
                     </a-form-item>
+                    <a-form-item :label="$t('label.userdata')" name="userdata" ref="userdata">
+                      <a-textarea
+                        v-model:value="form.userdata">
+                      </a-textarea>
+                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -1709,6 +1714,7 @@ export default {
           destroyvmgraceperiod: createVmGroupData.destroyvmgraceperiod,
           serviceofferingid: createVmGroupData.serviceofferingid,
           templateid: createVmGroupData.templateid,
+          userdata: createVmGroupData.userdata,
           zoneid: createVmGroupData.zoneid
         }
         var i = 0
@@ -1764,7 +1770,9 @@ export default {
           j++
         }
 
-        api('createAutoScaleVmProfile', params).then(async json => {
+        const httpMethod = createVmGroupData.userdata ? 'POST' : 'GET'
+
+        api('createAutoScaleVmProfile', {}, httpMethod, params).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2000,6 +2008,9 @@ export default {
         // advanced settings
         createVmGroupData.keypairs = this.sshKeyPairs.join(',')
         createVmGroupData.affinitygroupids = (values.affinitygroupids || []).join(',')
+        if (values.userdata && values.userdata.length > 0) {
+          createVmGroupData.userdata = encodeURIComponent(btoa(this.sanitizeReverse(values.userdata)))
+        }
 
         // vm profile details
         createVmGroupData.autoscaleuserid = values.autoscaleuserid

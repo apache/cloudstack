@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -82,6 +84,10 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     @Column(name = "counter_params", updatable = true)
     private String counterParams;
 
+    @Column(name = "user_data", updatable = true, nullable = true, length = 1048576)
+    @Basic(fetch = FetchType.LAZY)
+    private String userData;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     protected Date removed;
 
@@ -95,7 +101,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, Map otherDeployParamsMap, Map counterParamList,
-            Integer destroyVmGraceperiod, long autoscaleUserId) {
+            String userData, Integer destroyVmGraceperiod, long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
@@ -206,6 +212,15 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
          * Hence calling the function which is intercepted.
          */
         setCounterParams(sb.toString());
+    }
+
+    public void setUserData(String userData) {
+        this.userData = userData;
+    }
+
+    @Override
+    public String getUserData() {
+        return userData;
     }
 
     @Override

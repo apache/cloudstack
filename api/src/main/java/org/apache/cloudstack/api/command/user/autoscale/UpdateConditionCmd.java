@@ -37,7 +37,7 @@ import com.cloud.network.as.Condition;
 import com.cloud.user.Account;
 
 @APICommand(name = "updateCondition", description = "Updates a condition for VM auto scaling", responseObject = SuccessResponse.class, entityType = {Condition.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.18.0")
 public class UpdateConditionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateConditionCmd.class.getName());
     private static final String s_name = "updateconditionresponse";

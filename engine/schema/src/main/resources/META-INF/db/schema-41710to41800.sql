@@ -32,6 +32,10 @@ ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `name` varchar(255) DEFAULT 
 
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
 
+-- Add column 'user_data' to 'autoscale_vmprofiles' table
+
+ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `user_data` TEXT(32768) AFTER `counter_params`;
+
 -- Add column 'provider' and update values
 
 ALTER TABLE `cloud`.`counter` ADD COLUMN `provider` varchar(255) NOT NULL COMMENT 'Network provider name' AFTER `uuid`;

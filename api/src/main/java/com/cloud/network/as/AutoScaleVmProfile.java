@@ -33,6 +33,8 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
     @Override
     public long getId();
 
+    String getUserData();
+
     public String getUuid();
 
     public Long getZoneId();

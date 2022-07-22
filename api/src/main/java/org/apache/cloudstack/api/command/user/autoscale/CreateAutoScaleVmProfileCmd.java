@@ -96,6 +96,17 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
                description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
     private Map counterParamList;
 
+    @Parameter(name = ApiConstants.USER_DATA,
+            type = CommandType.STRING,
+            description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
+                    "This binary data must be base64 encoded before adding it to the request. " +
+                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                    "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                    "You also need to change vm.userdata.max.length value",
+            length = 1048576,
+            since = "4.18.0")
+    private String userData;
+
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID,
                type = CommandType.UUID,
                entityType = UserResponse.class,
@@ -150,6 +161,10 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public Map getOtherDeployParams() {
         return otherDeployParams;
+    }
+
+    public String getUserData() {
+        return userData;
     }
 
     public long getAutoscaleUserId() {

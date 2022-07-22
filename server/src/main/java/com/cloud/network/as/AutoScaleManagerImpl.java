@@ -529,7 +529,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         AutoScaleVmProfileVO profileVO =
             new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
-                cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
+                cmd.getCounterParamList(), cmd.getUserData(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
 
         if (cmd.getDisplay() != null) {
             profileVO.setDisplay(cmd.getDisplay());
@@ -550,12 +550,13 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long autoscaleUserId = cmd.getAutoscaleUserId();
         Map otherDeployParams = cmd.getOtherDeployParams();
         Map counterParamList = cmd.getCounterParamList();
+        String userData = cmd.getUserData();
 
         Integer destroyVmGraceperiod = cmd.getDestroyVmGraceperiod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(CallContext.current().getCallingAccount(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
-        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null && destroyVmGraceperiod != null);
+        boolean physicalParameterUpdate = (templateId != null || autoscaleUserId != null || counterParamList != null || otherDeployParams != null || destroyVmGraceperiod != null || userData != null);
 
         if (serviceOfferingId != null) {
             vmProfile.setServiceOfferingId(serviceOfferingId);
@@ -575,6 +576,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         if (counterParamList != null) {
             vmProfile.setCounterParamsForUpdate(counterParamList);
+        }
+
+        if (userData != null) {
+            vmProfile.setUserData(userData);
         }
 
         if (destroyVmGraceperiod != null) {
@@ -1623,6 +1628,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
 
+            String userData = profileVo.getUserData();
+
             UserVm vm = null;
             IpAddresses addrs = new IpAddresses(null, null);
             HypervisorType hypervisorType = template.getHypervisorType();
@@ -1711,7 +1718,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                     getCurrentTimeStampString(),
                     "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
-                    hypervisorType, HTTPMethod.GET, null, sshKeyPairs, null,
+                    hypervisorType, HTTPMethod.GET, userData, sshKeyPairs, null,
                     null, true, null, affinityGroupIdList, customParameters, null, null, null,
                     null, true, overrideDiskOfferingId);
             } else {
@@ -1719,14 +1726,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
                         owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
                         "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
+                        hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null);
                 } else {
                     vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getId() + "-" +
                         getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
                             diskOfferingId, dataDiskSize, null,
-                        hypervisorType, HTTPMethod.GET, null, sshKeyPairs,null,
+                        hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, null, overrideDiskOfferingId);
                 }
