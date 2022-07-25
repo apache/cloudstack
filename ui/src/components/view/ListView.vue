@@ -732,6 +732,7 @@ export default {
         case 'VR' : return 'Virtual Router'
         case 'SYSTEM_VM' : return 'System VM'
         case 'KUBERNETES_CLUSTER': return 'Kubernetes Cluster'
+        case 'AUTOSCALE_VM_GROUP': return 'AutoScale VM group'
         default: return record.entitytype.toLowerCase().replace('_', '')
       }
     },
@@ -762,6 +763,7 @@ export default {
         case 'VR' : return 'router'
         case 'SYSTEM_VM' : return 'systemvm'
         case 'KUBERNETES_CLUSTER': return 'kubernetes'
+        case 'AUTOSCALE_VM_GROUP': return 'autoscalevmgroup'
         default: return entitytype.toLowerCase().replace('_', '')
       }
     },
