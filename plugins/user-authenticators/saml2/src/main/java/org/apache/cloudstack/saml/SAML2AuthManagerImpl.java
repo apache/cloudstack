@@ -78,7 +78,6 @@ import org.opensaml.saml2.metadata.provider.HTTPMetadataProvider;
 import org.opensaml.saml2.metadata.provider.MetadataProviderException;
 import org.opensaml.xml.ConfigurationException;
 import org.opensaml.xml.XMLObject;
-import org.opensaml.xml.parse.BasicParserPool;
 import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.keyinfo.KeyInfoHelper;
 import org.springframework.stereotype.Component;
@@ -389,7 +388,7 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                 }
             }
             _idpMetaDataProvider.setRequireValidMetadata(true);
-            _idpMetaDataProvider.setParserPool(new BasicParserPool());
+            _idpMetaDataProvider.setParserPool(SAMLUtils.getSaferParserPool());
             _idpMetaDataProvider.initialize();
             _timer.scheduleAtFixedRate(new MetadataRefreshTask(), 0, _refreshInterval * 1000);
 

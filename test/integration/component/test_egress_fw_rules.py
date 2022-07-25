@@ -599,7 +599,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM.using network offering with egress policy true.
         # 2. create egress rule without specific CIDR.
         # 3. login to VM.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(cidr=None)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
@@ -615,7 +615,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM.using network offering with egress policy false.
         # 2. create egress rule without specific CIDR.
         # 3. login to VM.
-        # 4. access to public network should be successfull.
+        # 4. access to public network should be successful.
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=None)
         self.exec_script_on_user_vm('ping -c 1 www.google.com',
@@ -631,7 +631,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy true.
         # 2. create egress rule without specific end port.
         # 3. login to VM.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(protocol='tcp', start_port=80, cidr=TestEgressFWRules.zone.guestcidraddress)
         self.exec_script_on_user_vm(' wget -t1 http://apache.claz.org/favicon.ico 2>&1',
@@ -779,7 +779,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy true.
         # 2. create egress rule valid cidr and port range.
         # 3. reboot router.
-        # 4. access to public network should not be successfull.
+        # 4. access to public network should not be successful.
         self.create_vm()
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()
@@ -796,7 +796,7 @@ class TestEgressFWRules(cloudstackTestCase):
         # 1. deploy VM using network offering with egress policy false.
         # 2. create egress rule valid  cidr port range.
         # 3. reboot router.
-        # 4. access to public network should be successfull.
+        # 4. access to public network should be successful.
         self.create_vm(egress_policy=False)
         self.createEgressRule(cidr=TestEgressFWRules.zone.guestcidraddress)
         self.reboot_Router()

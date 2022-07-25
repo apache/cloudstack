@@ -270,6 +270,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
         this.ipv6Routes = ipv6Routes;
     }
 
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
+    }
+
     public void setDns1(String dns1) {
         this.dns1 = dns1;
     }

@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,6 +60,8 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import com.cloud.utils.net.NetUtils;
+
 
 public class VpcManagerImplTest {
 
@@ -214,6 +217,13 @@ public class VpcManagerImplTest {
         capabilitiesService1.put(service, capabilities);
 
         return providers;
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDisabledConfigCreateIpv6VpcOffering() {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        manager.createVpcOffering(cmd);
     }
 
     private void mockVpcDnsResources(boolean supportDnsService, boolean isIpv6) {

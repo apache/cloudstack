@@ -22,7 +22,6 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -140,11 +139,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
         when(ScaleIOGatewayClientConnectionPool.getInstance().getClient(1L, storagePoolDetailsDao)).thenReturn(client);
 
-        List<String> connectedSdcIps = new ArrayList<>();
-        connectedSdcIps.add("192.168.1.1");
-        connectedSdcIps.add("192.168.1.2");
-        when(client.listConnectedSdcIps()).thenReturn(connectedSdcIps);
-        when(client.isSdcConnected(anyString())).thenReturn(true);
+        when(client.haveConnectedSdcs()).thenReturn(true);
 
         final ZoneScope scope = new ZoneScope(1L);
 
