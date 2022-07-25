@@ -512,7 +512,7 @@ export default {
   },
   methods: {
     quickViewEnabled () {
-      return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup',
+      return new RegExp(['/vm', '/kubernetes', '/ssh', '/vmgroup', '/affinitygroup', '/autoscalevmgroup',
         '/volume', '/snapshot', '/vmsnapshot', '/backup',
         '/guestnetwork', '/vpc', '/vpncustomergateway',
         '/template', '/iso',
