@@ -1830,8 +1830,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
         lstVmId.add(new Long(vmId));
-        return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>());
-
+        try {
+            return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>(), true);
+        } catch (CloudRuntimeException ex) {
+            s_logger.warn("Caught exception: ", ex);
+            return false;
+        }
     }
 
     private long removeLBrule(AutoScaleVmGroupVO asGroup) {

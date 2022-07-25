@@ -146,7 +146,7 @@ public class AssignLoadBalancerTest {
         when(lbdao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, emptyMap);
+        _lbMgr.assignToLoadBalancer(1L, null, emptyMap, false);
 
     }
 
@@ -190,7 +190,7 @@ public class AssignLoadBalancerTest {
         Mockito.doNothing().when(accountMgr).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class), any(Boolean.class), any(Network.class));
         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
 
@@ -237,7 +237,7 @@ public class AssignLoadBalancerTest {
         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
 
@@ -287,7 +287,7 @@ public class AssignLoadBalancerTest {
         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
 
-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap);
+        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, false);
     }
 
     @After

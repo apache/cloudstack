@@ -393,7 +393,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             ips.add(controlVmNic.getIPv4Address());
             vmIdIpMap.put(clusterVMIds.get(i), ips);
         }
-        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap);
+        lbService.assignToLoadBalancer(lb.getId(), null, vmIdIpMap, false);
     }
 
     /**

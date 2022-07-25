@@ -1013,7 +1013,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
-    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap) {
+    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, Boolean isAutoScaleVM) {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
@@ -1022,7 +1022,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
 
-        if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
+        if (!isAutoScaleVM && _autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
             throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + " because it is being used by an Autoscale VM group.");
         }
 
