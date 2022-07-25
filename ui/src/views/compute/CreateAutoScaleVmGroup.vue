@@ -2115,8 +2115,6 @@ export default {
         createVmGroupData.autoscaleuserid = values.autoscaleuserid
         createVmGroupData.destroyvmgraceperiod = values.destroyvmgraceperiod
 
-        const title = this.$t('message.creating.autoscale.vmgroup')
-
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
@@ -2170,29 +2168,23 @@ export default {
           minmembers: values.minmembers,
           interval: values.interval
         }
-        api('createAutoScaleVmGroup', params).then(response => {
+        api('createAutoScaleVmGroup', params).then(async response => {
           const jobId = response.autoscalevmgroupresponse.jobid
-          if (jobId) {
-            this.$pollJob({
-              jobId,
-              title,
-              successMethod: result => {
-                this.setStepStatus(STATUS_FINISH)
-                const vmgroup = result.jobresult.autoscalevmgroup
-                this.$notification.success({
-                  message: this.$t('label.new.autoscale.vmgroup'),
-                  description: vmgroup.name,
-                  duration: 0
-                })
-                eventBus.emit('vm-refresh-data')
-              },
-              errorMethod: () => {
-                this.setStepStatus(STATUS_FAILED)
-              },
-              action: {
-                isFetchData: false
-              }
+          const result = await this.pollJob(jobId)
+          if (result.jobstatus === 2) {
+            this.messageError = result.jobresult.errortext
+            this.processStatus = STATUS_FAILED
+            this.setStepStatus(STATUS_FAILED)
+            return
+          } else {
+            this.setStepStatus(STATUS_FINISH)
+            const vmgroup = result.jobresult.autoscalevmgroup
+            this.$notification.success({
+              message: this.$t('label.new.autoscale.vmgroup'),
+              description: vmgroup.name,
+              duration: 0
             })
+            eventBus.emit('vm-refresh-data')
           }
           // Back to previous page
           this.processStatusModalVisible = false
