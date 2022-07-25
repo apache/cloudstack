@@ -745,6 +745,60 @@
       </a-col>
     </a-row>
   </div>
+  <div>
+    <a-modal
+      :title="$t('message.creating.autoscale.vmgroup')"
+      :visible="processStatusModalVisible"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      :closable="false"
+      :footer="null"
+      @cancel="processStatusModalVisible = false">
+
+      <div class="form">
+        <a-card class="ant-form-text card-launch-description">
+          {{ $t('message.please.wait.while.autoscale.vmgroup.is.being.created') }}
+        </a-card>
+      </div>
+      <div class="form">
+        <a-card
+          id="launch-content"
+          class="ant-form-text card-launch-content">
+          <a-steps
+            size="small"
+            direction="vertical"
+            :current="currentStep"
+          >
+            <a-step
+              v-for="(step, index) in steps"
+              :key="index"
+              :title="$t(step.title)"
+              :status="step.status">
+              <template #icon>
+                <LoadingOutlined v-if="step.status===status.PROCESS" />
+                <CloseCircleOutlined v-else-if="step.status===status.FAILED" />
+              </template>
+              <template #description>
+                <a-card
+                  class="step-error"
+                  v-if="step.status===status.FAILED"
+                >
+                  <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
+                  <div>{{ messageError }}</div>
+                </a-card>
+              </template>
+            </a-step>
+          </a-steps>
+        </a-card>
+        <div class="form-action">
+          <a-button
+            type="primary"
+            @click="closeModal"
+          >{{ $t('label.close') }}</a-button>
+        </div>
+      </div>
+    </a-modal>
+  </div>
 </template>
 
 <script>
@@ -771,6 +825,10 @@ import SshKeyPairSelection from '@views/compute/wizard/SshKeyPairSelection'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNetworkSelectListView.vue'
+
+const STATUS_PROCESS = 'process'
+const STATUS_FINISH = 'finish'
+const STATUS_FAILED = 'error'
 
 export default {
   name: 'Wizard',
@@ -804,6 +862,16 @@ export default {
   mixins: [mixin, mixinDevice],
   data () {
     return {
+      steps: [],
+      currentStep: 0,
+      processStatus: null,
+      messageError: '',
+      processStatusModalVisible: false,
+      status: {
+        PROCESS: STATUS_PROCESS,
+        FAILED: STATUS_FAILED,
+        FINISH: STATUS_FINISH
+      },
       naturalNumberRule: {
         type: 'number',
         validator: this.validateNumber
@@ -1226,6 +1294,19 @@ export default {
     }
   },
   methods: {
+    addStep (title, step) {
+      this.steps.push({
+        index: this.currentStep,
+        title,
+        step,
+        status: STATUS_PROCESS
+      })
+      this.setStepStatus(STATUS_PROCESS)
+    },
+    setStepStatus (status) {
+      const index = this.steps.findIndex(step => step.index === this.currentStep)
+      this.steps[index].status = status
+    },
     updateTemplateKey () {
       this.templateKey += 1
     },
@@ -1711,6 +1792,8 @@ export default {
       })
     },
     createVmProfile (createVmGroupData) {
+      this.addStep('message.creating.autoscale.vmprofile', 'createVmProfile')
+
       return new Promise((resolve, reject) => {
         const params = {
           destroyvmgraceperiod: createVmGroupData.destroyvmgraceperiod,
@@ -1784,14 +1867,17 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              reject(result.jobresult.errortext)
+              this.messageError = result.jobresult.errortext
+              this.processStatus = STATUS_FAILED
+              this.setStepStatus(STATUS_FAILED)
               return
             }
             resolve(result.jobresult.autoscalevmprofile)
           }
         }).catch(error => {
-          const message = error.response.headers['x-description']
-          reject(message)
+          this.messageError = error.response.headers['x-description']
+          this.processStatus = STATUS_FAILED
+          this.setStepStatus(STATUS_FAILED)
         })
       })
     },
@@ -2028,24 +2114,44 @@ export default {
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
+        this.processStatusModalVisible = true
+
         // create autoscale vm profile
         const vmprofile = await this.createVmProfile(createVmGroupData)
 
         // create scaleup conditions and policy
+        this.setStepStatus(STATUS_FINISH)
+        this.currentStep++
+        this.addStep('message.creating.autoscale.scaleup.conditions', 'createScaleUpConditions')
         var scaleUpConditionIds = []
         for (const condition of this.scaleUpConditions) {
           const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
           scaleUpConditionIds.push(newCondition.id)
         }
+
+        this.setStepStatus(STATUS_FINISH)
+        this.currentStep++
+        this.addStep('message.creating.autoscale.scaleup.policy', 'createScaleUpPolicy')
         const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), values.scaleupduration, values.scaleupquiettime)
 
         // create scaledown conditions and policy
+        this.setStepStatus(STATUS_FINISH)
+        this.currentStep++
+        this.addStep('message.creating.autoscale.scaledown.conditions', 'createScaleDownConditions')
         var scaleDownConditionIds = []
         for (const condition of this.scaleDownConditions) {
           const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
           scaleDownConditionIds.push(newCondition.id)
         }
+
+        this.setStepStatus(STATUS_FINISH)
+        this.currentStep++
+        this.addStep('message.creating.autoscale.scaledown.policy', 'createScaleDownPolicy')
         const scaleDownPolicy = await this.createScalePolicy('ScaleDown', scaleDownConditionIds.join(','), values.scaledownduration, values.scaledownquiettime)
+
+        this.setStepStatus(STATUS_FINISH)
+        this.currentStep++
+        this.addStep('message.creating.autoscale.vmgroup', 'createVmGroup')
 
         // create autoscale vmgroup
         const params = {
@@ -2065,6 +2171,7 @@ export default {
               jobId,
               title,
               successMethod: result => {
+                this.setStepStatus(STATUS_FINISH)
                 const vmgroup = result.jobresult.autoscalevmgroup
                 this.$notification.success({
                   message: this.$t('label.new.autoscale.vmgroup'),
@@ -2072,6 +2179,9 @@ export default {
                   duration: 0
                 })
                 eventBus.emit('vm-refresh-data')
+              },
+              errorMethod: () => {
+                this.setStepStatus(STATUS_FAILED)
               },
               loadingMessage: `${title} ${this.$t('label.in.progress')}`,
               catchMessage: this.$t('error.fetching.async.job.result'),
@@ -2081,16 +2191,21 @@ export default {
             })
           }
           // Back to previous page
+          this.processStatusModalVisible = false
           this.$router.back()
         }).catch(error => {
-          this.$notifyError(error)
+          this.messageError = error.response.headers['x-description']
+          this.processStatus = STATUS_FAILED
+          this.setStepStatus(STATUS_FAILED)
           this.loading.deploy = false
         }).finally(() => {
           this.loading.deploy = false
         })
       }).catch(err => {
-        this.formRef.value.scrollToField(err.errorFields[0].name)
         if (err) {
+          if (err.errorFields) {
+            this.formRef.value.scrollToField(err.errorFields[0].name)
+          }
           if (err.licensesaccepted) {
             this.$notification.error({
               message: this.$t('message.license.agreements.not.accepted'),
@@ -2451,6 +2566,14 @@ export default {
     },
     handlerError (error) {
       this.error = error
+    },
+    closeModal () {
+      this.loading.deploy = false
+      this.processStatusModalVisible = false
+      this.currentStep = 0
+      this.steps = []
+      this.processStatus = null
+      this.messageError = ''
     },
     onSelectDiskSize (rowSelected) {
       this.diskSelected = rowSelected
