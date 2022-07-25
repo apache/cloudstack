@@ -1893,14 +1893,17 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              reject(result.jobresult.errortext)
+              this.messageError = result.jobresult.errortext
+              this.processStatus = STATUS_FAILED
+              this.setStepStatus(STATUS_FAILED)
               return
             }
             resolve(result.jobresult.condition)
           }
         }).catch(error => {
-          const message = error.response.headers['x-description']
-          reject(message)
+          this.messageError = error.response.headers['x-description']
+          this.processStatus = STATUS_FAILED
+          this.setStepStatus(STATUS_FAILED)
         })
       })
     },
@@ -1917,14 +1920,17 @@ export default {
           if (jobId) {
             const result = await this.pollJob(jobId)
             if (result.jobstatus === 2) {
-              reject(result.jobresult.errortext)
+              this.messageError = result.jobresult.errortext
+              this.processStatus = STATUS_FAILED
+              this.setStepStatus(STATUS_FAILED)
               return
             }
             resolve(result.jobresult.autoscalepolicy)
           }
         }).catch(error => {
-          const message = error.response.headers['x-description']
-          reject(message)
+          this.messageError = error.response.headers['x-description']
+          this.processStatus = STATUS_FAILED
+          this.setStepStatus(STATUS_FAILED)
         })
       })
     },
@@ -2109,7 +2115,7 @@ export default {
         createVmGroupData.autoscaleuserid = values.autoscaleuserid
         createVmGroupData.destroyvmgraceperiod = values.destroyvmgraceperiod
 
-        const title = this.$t('label.launch.vm')
+        const title = this.$t('message.creating.autoscale.vmgroup')
 
         createVmGroupData = Object.fromEntries(
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
@@ -2183,8 +2189,6 @@ export default {
               errorMethod: () => {
                 this.setStepStatus(STATUS_FAILED)
               },
-              loadingMessage: `${title} ${this.$t('label.in.progress')}`,
-              catchMessage: this.$t('error.fetching.async.job.result'),
               action: {
                 isFetchData: false
               }

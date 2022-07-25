@@ -1736,23 +1736,23 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
 
             if (zone.getNetworkType() == NetworkType.Basic) {
-                vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getId() + "-" +
+                vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getName() + "-" +
                     getCurrentTimeStampString(),
-                    "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
+                    "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                     hypervisorType, HTTPMethod.GET, userData, sshKeyPairs, null,
                     null, true, null, affinityGroupIdList, customParameters, null, null, null,
                     null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                        owner, "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
-                        "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
+                        owner, "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(),
+                        "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null);
                 } else {
-                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getId() + "-" +
-                        getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getId() + "-" + getCurrentTimeStampString(),
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getName() + "-" +
+                        getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(),
                             diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
@@ -2040,6 +2040,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     private void monitorAutoScaleVmGroup(Long groupId) {
         AutoScaleVmGroupVO asGroup = _autoScaleVmGroupDao.findById(groupId);
+        if (asGroup == null) {
+            s_logger.error("Can not find the groupid " + groupId + " for monitoring");
+            return;
+        }
         s_logger.debug("Start monitoring on AutoScale VmGroup " + asGroup);
         // check group state
         if (asGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
