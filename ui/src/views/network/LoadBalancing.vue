@@ -80,13 +80,13 @@
             <a-select-option value="no">{{ $t('label.no') }}</a-select-option>
           </a-select>
         </div>
-        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no'">
+        <div class="form__item" v-if="!newRule.autoscale || newRule.autoscale === 'no' || ('vpcid' in this.resource && !('associatednetworkid' in this.resource))">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add.vms') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleOpenAddVMModal">
             {{ $t('label.add') }}
           </a-button>
         </div>
-        <div class="form__item" v-if="newRule.autoscale === 'yes'">
+        <div class="form__item" v-else-if="newRule.autoscale === 'yes'">
           <div class="form__label" style="white-space: nowrap;">{{ $t('label.add') }}</div>
           <a-button :disabled="!('createLoadBalancerRule' in $store.getters.apis)" type="primary" @click="handleAddNewRule">
             {{ $t('label.add') }}
@@ -479,7 +479,7 @@
           </template>
 
           <template #action="{text, record, index}" style="text-align: center" :text="text">
-            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" />
+            <a-checkbox v-model:value="record.id" @change="e => fetchNics(e, index)" :disabled="newRule.autoscale" />
           </template>
         </a-table>
         <a-pagination
