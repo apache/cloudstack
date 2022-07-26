@@ -1508,9 +1508,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long conditionId = cmd.getId();
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, _conditionDao);
-        if (condition == null) {
-            throw new InvalidParameterValueException("Unable to find Condition");
-        }
 
         String operator = cmd.getRelationalOperator();
         Long threshold = cmd.getThreshold();
@@ -1959,10 +1956,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                             _userVmManager.destroyVm(vmId, false);
 
-                        } catch (ResourceUnavailableException e) {
-                            e.printStackTrace();
-                        } catch (ConcurrentOperationException e) {
-                            e.printStackTrace();
+                        } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
+                            s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
                         }
                     }
                 }, destroyVmGracePeriod, TimeUnit.SECONDS);
@@ -1996,16 +1991,17 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         for (AutoScaleVmGroupVO asGroup : asGroups) {
             _completionService.submit(new CheckAutoScaleVmGroupAsync(asGroup));
         }
-        try {
-            for (AutoScaleVmGroupVO asGroup : asGroups) {
+        for (AutoScaleVmGroupVO asGroup : asGroups) {
+            try {
                 Future<Pair<Long, Boolean>> future = _completionService.take();
                 Pair<Long, Boolean> result = future.get();
                 s_logger.debug("Checked AutoScale vm group " + result.first() + " with result: " + result.second());
+            } catch (ExecutionException ex) {
+                s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
+            } catch (InterruptedException ex) {
+                s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
+                Thread.currentThread().interrupt();
             }
-        } catch (ExecutionException ex) {
-            s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
-        } catch (InterruptedException ex) {
-            s_logger.warn("Failed to get result of checking AutoScale vm group due to Exception: " , ex);
         }
     }
 
@@ -2278,24 +2274,24 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             updateCountersMapWithInstantData(countersMap, countersNumberMap, groupTO, counterId, conditionId, policyId, coVal);
 
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            s_logger.error("Cannot process PerformanceMonitorAnswer due to Exception: ", e);
                         }
                     }
+                }
 
-                    AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
-                    if (scaleAction != null) {
-                        s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
-                        if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
-                            doScaleUp(asGroup.getId(), 1);
-                        } else {
-                            doScaleDown(asGroup.getId());
-                        }
+                AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
+                if (scaleAction != null) {
+                    s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
+                    if (AutoScalePolicy.Action.ScaleUp.equals(scaleAction)) {
+                        doScaleUp(asGroup.getId(), 1);
+                    } else {
+                        doScaleDown(asGroup.getId());
                     }
                 }
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            s_logger.error("Cannot sent PerformanceMonitorCommand to host " + receiveHost + " or process the answer due to Exception: ", e);
         }
     }
 

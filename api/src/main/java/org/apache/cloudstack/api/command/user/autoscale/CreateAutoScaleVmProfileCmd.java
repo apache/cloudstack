@@ -196,7 +196,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     }
 
     public HashMap<String, String> getDeployParamMap() {
-        HashMap<String, String> deployParams = new HashMap<String, String>(getOtherDeployParamsMap());
+        HashMap<String, String> deployParams = new HashMap<>(getOtherDeployParamsMap());
         deployParams.put("command", "deployVirtualMachine");
         deployParams.put("zoneId", zoneId.toString());
         deployParams.put("serviceOfferingId", serviceOfferingId.toString());

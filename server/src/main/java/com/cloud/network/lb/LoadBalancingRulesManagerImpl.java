@@ -305,7 +305,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     private String getDefaultAutoScaleCounters() {
         AutoScaleCounter counter;
-        final List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
+        final List<AutoScaleCounter> counterList = new ArrayList<>();
         counter = new AutoScaleCounter(AutoScaleCounterType.Cpu);
         counterList.add(counter);
         counter = new AutoScaleCounter(AutoScaleCounterType.Memory);
@@ -313,8 +313,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         counter = new AutoScaleCounter(AutoScaleCounterType.VirtualRouter);
         counterList.add(counter);
         final Gson gson = new Gson();
-        final String autoScaleCounterList = gson.toJson(counterList);
-        return autoScaleCounterList;
+        return gson.toJson(counterList);
     }
 
     private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState, LoadBalancerVO lb) {
@@ -378,10 +377,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     public LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(LbAutoScaleVmGroup lbAutoScaleVmGroup) {
         List<LbAutoScalePolicy> lbAutoScalePolicies = lbAutoScaleVmGroup.getPolicies();
-        List<LoadBalancerTO.AutoScalePolicyTO> autoScalePolicyTOs = new ArrayList<LoadBalancerTO.AutoScalePolicyTO>(lbAutoScalePolicies.size());
+        List<LoadBalancerTO.AutoScalePolicyTO> autoScalePolicyTOs = new ArrayList<>(lbAutoScalePolicies.size());
         for (LbAutoScalePolicy lbAutoScalePolicy : lbAutoScalePolicies) {
             List<LbCondition> lbConditions = lbAutoScalePolicy.getConditions();
-            List<LoadBalancerTO.ConditionTO> conditionTOs = new ArrayList<LoadBalancerTO.ConditionTO>(lbConditions.size());
+            List<LoadBalancerTO.ConditionTO> conditionTOs = new ArrayList<>(lbConditions.size());
             for (LbCondition lbCondition : lbConditions) {
                 Counter counter = lbCondition.getCounter();
                 LoadBalancerTO.CounterTO counterTO = new LoadBalancerTO.CounterTO(counter.getId(), counter.getName(), counter.getSource(), "" + counter.getValue(), counter.getProvider());
@@ -412,7 +411,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(AutoScaleVmGroupVO vmGroup) {
         final LoadBalancerVO loadBalancer = _lbDao.findById(vmGroup.getLoadBalancerId());
         if (loadBalancer == null) {
-            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", vmGroup.getLoadBalancerId()));
+            throw new CloudRuntimeException("Unable to find load balancer with id: " + vmGroup.getLoadBalancerId());
         }
         LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, vmGroup.getState(), loadBalancer);
         return toAutoScaleVmGroupTO(lbAutoScaleVmGroup);
@@ -437,7 +436,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
-        if (!applyLbRules(new ArrayList(rules), false)) {
+        if (!applyLbRules(new ArrayList<LoadBalancingRule>(rules), false)) {
             s_logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
@@ -466,10 +465,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         FirewallRule.State backupState = loadBalancer.getState();
 
-        if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)) {
-            loadBalancer.setState(FirewallRule.State.Add);
-            _lbDao.persist(loadBalancer);
-        } else if (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State.Revoke)) {
+        if (vmGroup.getState().equals(AutoScaleVmGroup.State.New)
+                || (loadBalancer.getState() == FirewallRule.State.Active && vmGroup.getState().equals(AutoScaleVmGroup.State.Revoke))) {
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
         }
