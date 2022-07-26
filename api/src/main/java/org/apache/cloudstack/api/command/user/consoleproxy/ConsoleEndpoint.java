@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,22 +14,45 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.api.command.user.consoleproxy;
 
-package com.cloud.info;
+public class ConsoleEndpoint {
 
-public class ConsoleProxyStatus {
-    private ConsoleProxyConnectionInfo[] connections;
-    private String[] removedSessions;
+    private boolean result;
+    private String details;
+    private String url;
 
-    public ConsoleProxyStatus() {
+    public ConsoleEndpoint(boolean result, String url) {
+        this.result = result;
+        this.url = url;
     }
 
-    public ConsoleProxyConnectionInfo[] getConnections() {
-        return connections;
+    public ConsoleEndpoint(boolean result, String url, String details) {
+        this(result, url);
+        this.details = details;
     }
 
-    public String[] getRemovedSessions() {
-        return removedSessions;
+    public boolean isResult() {
+        return result;
+    }
+
+    public void setResult(boolean result) {
+        this.result = result;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 }

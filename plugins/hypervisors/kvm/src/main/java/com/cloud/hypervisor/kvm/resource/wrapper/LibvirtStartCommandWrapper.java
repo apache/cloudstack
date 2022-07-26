@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.utils.FileUtil;
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.DomainInfo.DomainState;
@@ -50,6 +51,9 @@ import com.cloud.vm.VirtualMachine;
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
+    private static final int sshPort = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
+    private static final File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+    private static final String vncConfFileLocation = "/root/vncport";
 
     @Override
     public Answer execute(final StartCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -107,6 +111,17 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         if (nic.getType() == TrafficType.Control) {
                             controlIp = nic.getIp();
                             break;
+                        }
+                    }
+
+                    if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy && vmSpec.getVncPort() != null) {
+                        String novncPort = vmSpec.getVncPort();
+                        try {
+                            String addCmd = "echo " + novncPort + " > " + vncConfFileLocation;
+                            SshHelper.sshExecute(controlIp, sshPort, "root",
+                                    pemFile, null, addCmd, 20000, 20000, 600000);
+                        } catch (Exception e) {
+                            s_logger.error("Could not set the noVNC port " + novncPort + " to the CPVM", e);
                         }
                     }
 

@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -263,11 +264,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeystoreDao _ksDao;
     @Inject
     private KeystoreManager _ksMgr;
+    @Inject
+    private ConsoleAccessManager consoleAccessManager;
 
     public class VmBasedAgentHook extends AgentHookBase {
 
-        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
+        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
+                                AgentManager agentMgr, KeysManager keysMgr, ConsoleAccessManager consoleAccessManager) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr, consoleAccessManager);
         }
 
         @Override
@@ -1156,7 +1160,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = agentMgrConfigs.get("port");
         managementPort = NumbersUtil.parseInt(value, 8250);
 
-        consoleProxyListener = new ConsoleProxyListener(new VmBasedAgentHook(vmInstanceDao, hostDao, configurationDao, _ksMgr, agentManager, keysManager));
+        consoleProxyListener = new ConsoleProxyListener(new VmBasedAgentHook(vmInstanceDao, hostDao, configurationDao,
+                _ksMgr, agentManager, keysManager, consoleAccessManager));
         agentManager.registerForHostEvents(consoleProxyListener, true, true, false);
 
         virtualMachineManager.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1597,7 +1602,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
+        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, NoVncConsolePort };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {
@@ -1621,7 +1626,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (status.getConnections() != null) {
                 count = status.getConnections().length;
             }
-
+            if (status.getRemovedSessions() != null) {
+                consoleAccessManager.removeSessions(status.getRemovedSessions());
+            }
             details = statusInfo.getBytes(Charset.forName("US-ASCII"));
         } else {
             s_logger.debug(String.format("Unable to retrieve load info from proxy {\"vmId\": %s}. Invalid load info [%s].", proxyVmId, statusInfo));

@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCustomIdCmd;
+import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -158,6 +159,12 @@ public class ApiDispatcher {
             ((BaseAsyncCustomIdCmd)cmd).checkUuid();
         } else if (cmd instanceof BaseCustomIdCmd) {
             ((BaseCustomIdCmd)cmd).checkUuid();
+        } else if (cmd instanceof CreateConsoleEndpointCmd) {
+            Map<String, String> fullUrlParams = ((CreateConsoleEndpointCmd) cmd).getFullUrlParams();
+            s_logger.info("Console URL full params:");
+            for (String key : fullUrlParams.keySet()) {
+                s_logger.info(key + " : " + fullUrlParams.get(key));
+            }
         }
 
         cmd.execute();

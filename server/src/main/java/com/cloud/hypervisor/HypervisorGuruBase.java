@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -282,6 +283,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setConfigDriveIsoFile(vmProfile.getConfigDriveIsoFile());
         to.setConfigDriveLocation(vmProfile.getConfigDriveLocation());
         to.setState(vm.getState());
+
+        if (vmInstance.getType() == VirtualMachine.Type.ConsoleProxy) {
+            try {
+                String vncPort = String.valueOf(ConsoleProxyManager.NoVncConsolePort.value());
+                to.setVncPort(vncPort);
+            } catch (Exception e) {
+                s_logger.error("Could not parse the noVNC port set on " + ConsoleProxyManager.NoVncConsolePort.key(), e);
+            }
+        }
 
         return to;
     }

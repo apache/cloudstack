@@ -17,6 +17,8 @@
 package com.cloud.consoleproxy;
 
 import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 
 import com.cloud.consoleproxy.util.Logger;
@@ -32,17 +34,30 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 public class ConsoleProxyNoVNCServer {
 
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCServer.class);
-    private static final int wsPort = 8080;
+    private static int wsPort = 8080;
+    private static final String vncConfFileLocation = "/root/vncport";
 
     private Server server;
 
+    private void init() {
+        try {
+            String portStr = Files.readString(Path.of(vncConfFileLocation)).trim();
+            wsPort = Integer.parseInt(portStr);
+            s_logger.info("Setting port to: " + wsPort);
+        } catch (Exception e) {
+            s_logger.error("Error loading properties from " + vncConfFileLocation, e);
+        }
+    }
+
     public ConsoleProxyNoVNCServer() {
+        init();
         this.server = new Server(wsPort);
         ConsoleProxyNoVNCHandler handler = new ConsoleProxyNoVNCHandler();
         this.server.setHandler(handler);
     }
 
     public ConsoleProxyNoVNCServer(byte[] ksBits, String ksPassword) {
+        init();
         this.server = new Server();
         ConsoleProxyNoVNCHandler handler = new ConsoleProxyNoVNCHandler();
         this.server.setHandler(handler);
