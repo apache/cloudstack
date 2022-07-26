@@ -3393,24 +3393,28 @@ public class ApiResponseHelper implements ResponseGenerator {
         LoadBalancerVO fw = ApiDBUtils.findLoadBalancerById(vmGroup.getLoadBalancerId());
         if (fw != null) {
             response.setLoadBalancerId(fw.getUuid());
-        }
-        NetworkVO network = ApiDBUtils.findNetworkById(fw.getNetworkId());
-        response.setNetworkName(network.getName());
-        response.setNetworkId(network.getUuid());
 
-        String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
-        if (provider != null) {
-            response.setLbProvider(provider);
-        } else {
-            response.setLbProvider(Network.Provider.None.toString());
-        }
+            NetworkVO network = ApiDBUtils.findNetworkById(fw.getNetworkId());
 
-        IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
-        if (publicIp != null) {
-            response.setPublicIpId(publicIp.getUuid());
-            response.setPublicIp(publicIp.getAddress().addr());
-            response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
-            response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
+            if (network != null) {
+                response.setNetworkName(network.getName());
+                response.setNetworkId(network.getUuid());
+
+                String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+                if (provider != null) {
+                    response.setLbProvider(provider);
+                } else {
+                    response.setLbProvider(Network.Provider.None.toString());
+                }
+            }
+
+            IPAddressVO publicIp = ApiDBUtils.findIpAddressById(fw.getSourceIpAddressId());
+            if (publicIp != null) {
+                response.setPublicIpId(publicIp.getUuid());
+                response.setPublicIp(publicIp.getAddress().addr());
+                response.setPublicPort(Integer.toString(fw.getSourcePortStart()));
+                response.setPrivatePort(Integer.toString(fw.getDefaultPortStart()));
+            }
         }
 
         List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
