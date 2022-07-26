@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,19 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.utils.consoleproxy;
 
-package com.cloud.info;
+import org.apache.log4j.Logger;
 
-public class ConsoleProxyConnectionInfo {
-    public int id;
-    public String host;
-    public int port;
-    public String tag;
-    public long createTime;
-    public long lastUsedTime;
-    public String sessionUuid;
+public class ConsoleAccessUtils {
 
-    public ConsoleProxyConnectionInfo() {
-    }
+    public static final Logger s_logger = Logger.getLogger(ConsoleAccessUtils.class.getName());
+
+    public static String CLIENT_SECURITY_HEADER_PARAM_KEY = "client-security-token";
+    public static String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
 }

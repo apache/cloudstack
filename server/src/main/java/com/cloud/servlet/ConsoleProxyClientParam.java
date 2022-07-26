@@ -36,6 +36,10 @@ public class ConsoleProxyClientParam {
     private String sourceIP;
     private String websocketUrl;
 
+    private String sessionUuid;
+    private String clientSecurityHeader;
+    private String clientSecurityToken;
+
     public ConsoleProxyClientParam() {
         clientHostPort = 0;
     }
@@ -158,5 +162,29 @@ public class ConsoleProxyClientParam {
 
     public void setWebsocketUrl(String websocketUrl) {
         this.websocketUrl = websocketUrl;
+    }
+
+    public String getSessionUuid() {
+        return sessionUuid;
+    }
+
+    public String getClientSecurityHeader() {
+        return clientSecurityHeader;
+    }
+
+    public void setClientSecurityHeader(String clientSecurityHeader) {
+        this.clientSecurityHeader = clientSecurityHeader;
+    }
+
+    public void setSessionUuid(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
+    }
+
+    public String getClientSecurityToken() {
+        return clientSecurityToken;
+    }
+
+    public void setClientSecurityToken(String clientSecurityToken) {
+        this.clientSecurityToken = clientSecurityToken;
     }
 }

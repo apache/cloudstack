@@ -96,6 +96,15 @@ public class ConsoleProxyHttpHandlerHelper {
                 if (param.getWebsocketUrl() != null) {
                     map.put("websocketUrl", param.getWebsocketUrl());
                 }
+                if (param.getSessionUuid() != null) {
+                    map.put("sessionUuid", param.getSessionUuid());
+                }
+                if (param.getClientSecurityHeader() != null) {
+                    map.put("clientSecurityHeader", param.getClientSecurityHeader());
+                }
+                if (param.getClientSecurityToken() != null) {
+                    map.put("clientSecurityToken", param.getClientSecurityToken());
+                }
             } else {
                 s_logger.error("Unable to decode token");
             }

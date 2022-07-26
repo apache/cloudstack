@@ -44,6 +44,11 @@ setup_console_proxy() {
     setup_sshd $ETH0_IP "eth0"
   fi
 
+  vncport=`cat /root/vncport`
+  log_it "vncport read: ${vncport}"
+  sed -i 's/8080/${vncport}/' /etc/iptables/rules.v4
+  log_it "vnc port ${vncport} rule applied"
+
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0

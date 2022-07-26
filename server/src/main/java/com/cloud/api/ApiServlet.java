@@ -41,8 +41,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
+import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
+import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -187,8 +190,8 @@ public class ApiServlet extends HttpServlet {
             }
 
             final Object[] commandObj = params.get(ApiConstants.COMMAND);
+            final String command = commandObj == null ? null : (String) commandObj[0];
             if (commandObj != null) {
-                final String command = (String) commandObj[0];
 
                 APIAuthenticator apiAuthenticator = authManager.getAPIAuthenticator(command);
                 if (apiAuthenticator != null) {
@@ -283,7 +286,6 @@ public class ApiServlet extends HttpServlet {
 
                 // Do a sanity check here to make sure the user hasn't already been deleted
                 if ((userId != null) && (account != null) && (accountObj != null) && apiServer.verifyUser(userId)) {
-                    final String[] command = (String[])params.get(ApiConstants.COMMAND);
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
@@ -318,6 +320,16 @@ public class ApiServlet extends HttpServlet {
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
                 setProjectContext(params);
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
+                        command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
+                    InetAddress addr = getClientAddress(req);
+                    String clientAddress = addr != null ? addr.getHostAddress() : null;
+                    params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[]{clientAddress});
+                    if (ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderEnabled.value()) {
+                        String clientSecurityToken = req.getHeader(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
+                        params.put(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY, new String[]{clientSecurityToken});
+                    }
+                }
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {

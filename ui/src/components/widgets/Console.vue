@@ -17,9 +17,8 @@
 
 <template>
   <a
-    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'updateVirtualMachine' in $store.getters.apis"
-    :href="server + '/console?cmd=access&vm=' + resource.id"
-    target="_blank">
+    v-if="['vm', 'systemvm', 'router', 'ilbvm'].includes($route.meta.name) && 'updateVirtualMachine' in $store.getters.apis && 'createConsoleEndpoint' in $store.getters.apis"
+    @click="consoleUrl">
     <a-button style="margin-left: 5px" shape="circle" type="dashed" :size="size" :disabled="['Stopped', 'Error', 'Destroyed'].includes(resource.state)" >
       <a-icon type="code" />
     </a-button>
@@ -29,6 +28,7 @@
 <script>
 import Vue from 'vue'
 import { SERVER_MANAGER } from '@/store/mutation-types'
+import { api } from '@/api'
 
 export default {
   name: 'Console',
@@ -40,6 +40,19 @@ export default {
     size: {
       type: String,
       default: 'small'
+    }
+  },
+  data () {
+    return {
+      url: ''
+    }
+  },
+  methods: {
+    consoleUrl () {
+      api('createConsoleEndpoint', { virtualmachineid: this.resource.id }).then(json => {
+        this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
+        window.open(this.url, '_blank')
+      })
     }
   },
   computed: {
