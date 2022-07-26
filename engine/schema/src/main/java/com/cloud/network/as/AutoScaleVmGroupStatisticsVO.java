@@ -36,6 +36,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Entity
 @Table(name = "autoscale_vmgroup_statistics")
 public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
+
+    enum State {
+        Active, Inactive
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -68,6 +73,10 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date created = null;
 
+    @Column(name = "state")
+    @Enumerated(EnumType.STRING)
+    State state;
+
     public AutoScaleVmGroupStatisticsVO() {
     }
 
@@ -81,6 +90,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.rawValue = rawValue;
         this.valueType = valueType;
         this.created = created;
+        this.state = State.Active;
     }
 
     @Override
@@ -118,5 +128,9 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
     public Date getCreated() {
         return created;
+    }
+
+    public State getState() {
+        return state;
     }
 }

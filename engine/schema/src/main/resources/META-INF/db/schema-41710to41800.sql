@@ -78,6 +78,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
   `raw_value` double NOT NULL,
   `value_type` varchar(255) NOT NULL,
   `created` datetime NOT NULL COMMENT 'Date this data is created',
+  `state` varchar(255) NOT NULL COMMENT 'State of the data',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_vmgroup_statistics__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroup_statistics__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
