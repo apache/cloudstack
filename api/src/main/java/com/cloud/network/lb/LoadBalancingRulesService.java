@@ -98,7 +98,7 @@ public interface LoadBalancingRulesService {
 
     boolean assignSSLCertToLoadBalancerRule(Long lbRuleId, String certName, String publicCert, String privateKey);
 
-    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap);
+    boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds,   Map<Long, List<String>> vmIdIpMap, Boolean isAutoScaleVM);
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 

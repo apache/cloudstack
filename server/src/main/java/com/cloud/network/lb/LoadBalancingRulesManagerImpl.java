@@ -1236,8 +1236,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription = "removing from load balancer", async = true)
-    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpsMap) {
-        return removeFromLoadBalancerInternal(loadBalancerId, instanceIds, true, vmIdIpsMap);
+    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpsMap, Boolean isAutoScaleVM) {
+        return removeFromLoadBalancerInternal(loadBalancerId, instanceIds, true, vmIdIpsMap, isAutoScaleVM);
     }
 
     @Override
@@ -1371,7 +1371,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
-    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack, Map<Long, List<String>> vmIdIpMap) {
+    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack, Map<Long, List<String>> vmIdIpMap, Boolean isAutoScaleVM) {
         CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
@@ -1408,8 +1408,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         FirewallRule.State backupState = loadBalancer.getState();
         Set<Long> vmIds = vmIdIpMap.keySet();
 
-        for (long instanceId : vmIds) {
-            _asManager.checkIfVmActionAllowed(instanceId);
+        if (!isAutoScaleVM) {
+            for (long instanceId : vmIds) {
+                _asManager.checkIfVmActionAllowed(instanceId);
+            }
         }
 
         try {
@@ -1527,7 +1529,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         // Reapply all lbs that had the vm assigned
         if (lbsToReconfigure != null) {
             for (Map.Entry<Long, List<Long>> lb : lbsToReconfigure.entrySet()) {
-                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false, new HashMap<Long, List<String>>())) {
+                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue(), false, new HashMap<Long, List<String>>(), false)) {
                     success = false;
                 }
             }
