@@ -570,7 +570,7 @@
 "label.destinationphysicalnetworkid": "Destination physical network ID",
 "label.destroy": "Destroy",
 "label.destroy.router": "Destroy router",
-"label.destroyvmgraceperiod": "Destroy VM grace period",
+"label.destroyvmgraceperiod": "Destroy VM grace period (in sec)",
 "label.details": "Details",
 "label.deviceid": "Device ID",
 "label.devices": "Devices",
