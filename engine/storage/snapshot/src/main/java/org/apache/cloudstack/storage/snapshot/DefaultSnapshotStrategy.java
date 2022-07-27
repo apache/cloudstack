@@ -23,6 +23,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeDetailVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -303,7 +306,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         Map<String, SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId());
 
         for (var infoEntry : snapshotInfos.entrySet()) {
-            if (!deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo)) {
+            if (!deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo) && PRIMARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(infoEntry.getKey())) {
                 return false;
             }
         }
@@ -322,25 +325,49 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         DataStore dataStore = snapshotInfo.getDataStore();
-        storage = String.format("%s {uuid: \"%s\", name: \"%s\"}", storage, dataStore.getUuid(), dataStore.getName());
+        String storageToString = String.format("%s {uuid: \"%s\", name: \"%s\"}", storage, dataStore.getUuid(), dataStore.getName());
 
         try {
             SnapshotObject snapshotObject = castSnapshotInfoToSnapshotObject(snapshotInfo);
             snapshotObject.processEvent(Snapshot.Event.DestroyRequested);
 
-            if (deleteSnapshotChain(snapshotInfo, storage)) {
+            if (SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(storage)) {
+
+                verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
+
+                if (deleteSnapshotChain(snapshotInfo, storageToString)) {
+                    s_logger.debug(String.format("%s was deleted on %s.", snapshotVo, storageToString));
+                } else {
+                    s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
+                        storageToString));
+                }
+
                 snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
-                s_logger.debug(String.format("%s was deleted on %s.", snapshotVo, storage));
                 return true;
+            } else if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
+              snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+              return true;
             }
 
+            s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
             snapshotObject.processEvent(Snapshot.Event.OperationFailed);
-            s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storage));
         } catch (NoTransitionException ex) {
-            s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storage, ex.getMessage()), ex);
+            s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
 
         return false;
+    }
+
+    protected void verifyIfTheSnapshotIsBeingUsedByAnyVolume(SnapshotObject snapshotObject) throws NoTransitionException {
+        List<VolumeDetailVO> volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotObject.getSnapshotId()), null);
+        if (CollectionUtils.isEmpty(volumesFromSnapshot)) {
+            return;
+        }
+
+        snapshotObject.processEvent(Snapshot.Event.OperationFailed);
+        throw new InvalidParameterValueException(String.format("Unable to delete snapshot [%s] because it is being used by the following volumes: %s.",
+            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(snapshotObject.getSnapshotVO(), "id", "uuid", "volumeId", "name"),
+            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumesFromSnapshot, "resourceId")));
     }
 
     /**
