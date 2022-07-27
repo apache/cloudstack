@@ -17,21 +17,18 @@
 """ BVT tests for Hosts Maintenance
 """
 
-# Import Local Modules
-from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
 from nose.plugins.attrib import attr
 
-from time import sleep
-
 _multiprocess_shared_ = False
 
 
 class TestHostHA(cloudstackTestCase):
+
+    hostCountMsg = "Host HA can be tested with at least two hosts, only %s found"
 
     def setUp(self):
         self.logger = logging.getLogger('TestHM')
@@ -86,17 +83,8 @@ class TestHostHA(cloudstackTestCase):
                          "timeout": 10,
                          }
 
-
     def tearDown(self):
-        try:
-            # Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
-
+        super(TestHostHA, self).tearDown()
 
     def createVMs(self, hostId, number, local):
 
@@ -319,18 +307,15 @@ class TestHostHA(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
-
-        if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
-
+        if len(listHost) < 2:
+            self.logger.debug(self.hostCountMsg % len(listHost))
+            raise unittest.SkipTest(self.hostCountMsg % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
         no_of_vms = no_of_vms + self.noOfVMsOnHost(listHost[1].id)
 
         self.logger.debug("Number of VMS on hosts = %s" % no_of_vms)
-
 
         if no_of_vms < 5:
             self.logger.debug("test_01: Create VMs as there are not enough vms to check host ha")
@@ -396,10 +381,9 @@ class TestHostHA(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
-
-        if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
+        if len(listHost) < 2:
+            self.logger.debug(self.hostCountMsg % len(listHost))
+            raise unittest.SkipTest(self.hostCountMsg % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -473,10 +457,9 @@ class TestHostHA(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
-
-        if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
+        if len(listHost) < 2:
+            self.logger.debug(self.hostCountMsg % len(listHost))
+            raise unittest.SkipTest(self.hostCountMsg % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
@@ -548,17 +531,15 @@ class TestHostHA(cloudstackTestCase):
         for host in listHost:
             self.logger.debug('Hypervisor = {}'.format(host.id))
 
-
-        if len(listHost) != 2:
-            self.logger.debug("Host HA can be tested with two host only %s, found" % len(listHost))
-            raise unittest.SkipTest("Host HA can be tested with two host only %s, found" % len(listHost))
+        if len(listHost) < 2:
+            self.logger.debug(self.hostCountMsg % len(listHost))
+            raise unittest.SkipTest(self.hostCountMsg % len(listHost))
 
         no_of_vms = self.noOfVMsOnHost(listHost[0].id)
 
         no_of_vms = no_of_vms + self.noOfVMsOnHost(listHost[1].id)
 
         self.logger.debug("Number of VMS on hosts = %s" % no_of_vms)
-
 
         if no_of_vms < 5:
             self.logger.debug("test_01: Create VMs as there are not enough vms to check host ha")

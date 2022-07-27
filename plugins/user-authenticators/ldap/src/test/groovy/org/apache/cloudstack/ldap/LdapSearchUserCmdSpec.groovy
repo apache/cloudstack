@@ -55,7 +55,7 @@ class LdapSearchUserCmdSpec extends spock.lang.Specification {
         def ldapUserSearchCmd = new LdapUserSearchCmd(ldapManager)
 	when: "The command is executed"
 		ldapUserSearchCmd.execute()
-	then: "A array with length of atleast 1 is returned"
+	then: "A array with length of at least 1 is returned"
 		ldapUserSearchCmd.responseObject.getResponses().size() > 0
     }
 

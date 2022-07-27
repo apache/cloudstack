@@ -1430,7 +1430,7 @@ class TestMultipleLbRules(cloudstackTestCase):
             self.assertIn(
                 res,
                 [virtual_machine_1.name, virtual_machine_2.name],
-                "The hostname should match with atleast one of instance name"
+                "The hostname should match with at least one of instance name"
             )
         except Exception as e:
             self.fail("Exception occurred during SSH: %s - %s" % (
@@ -1451,7 +1451,7 @@ class TestMultipleLbRules(cloudstackTestCase):
             self.assertIn(
                 res,
                 [virtual_machine_1.name, virtual_machine_2.name],
-                "The hostname should match with atleast one of instance name"
+                "The hostname should match with at least one of instance name"
             )
         except Exception as e:
             self.fail("Exception occurred during SSH: %s - %s" % (
@@ -1747,7 +1747,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             self.assertIn(
                 res,
                 [virtual_machine_1.name, virtual_machine_2.name],
-                "The hostname should match with atleast one of instance name"
+                "The hostname should match with at least one of instance name"
             )
         except Exception as e:
             self.fail("Exception occurred during SSH: %s - %s" % (
@@ -1769,7 +1769,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             self.assertIn(
                 res,
                 [virtual_machine_1.name, virtual_machine_2.name],
-                "The hostname should match with atleast one of instance name"
+                "The hostname should match with at least one of instance name"
             )
         except Exception as e:
             self.fail("Exception occurred during SSH: %s - %s" % (

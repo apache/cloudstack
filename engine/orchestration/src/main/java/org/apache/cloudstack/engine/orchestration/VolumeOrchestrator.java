@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.StorageUtil;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
@@ -84,7 +85,6 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.allocator.PodAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
@@ -161,6 +161,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 import org.apache.cloudstack.snapshot.SnapshotHelper;
+import org.jetbrains.annotations.Nullable;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -335,15 +336,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public StoragePool findStoragePool(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
-        Long podId = null;
-        if (pod != null) {
-            podId = pod.getId();
-        } else if (clusterId != null) {
-            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
-            if (cluster != null) {
-                podId = cluster.getPodId();
-            }
-        }
+        Long podId = retrievePod(pod, clusterId);
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -356,8 +349,12 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             final List<StoragePool> poolList = allocator.allocateToPool(dskCh, profile, plan, avoidList, StoragePoolAllocator.RETURN_UPTO_ALL);
             if (poolList != null && !poolList.isEmpty()) {
+                StorageUtil.traceLogStoragePools(poolList, s_logger, "pools to choose from: ");
                 // Check if the preferred storage pool can be used. If yes, use it.
                 Optional<StoragePool> storagePool = getPreferredStoragePool(poolList, vm);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("we have a preferred pool: %b", storagePool.isPresent()));
+                }
 
                 return (storagePool.isPresent()) ? (StoragePool) this.dataStoreMgr.getDataStore(storagePool.get().getId(), DataStoreRole.Primary) :
                     (StoragePool)dataStoreMgr.getDataStore(poolList.get(0).getId(), DataStoreRole.Primary);
@@ -366,7 +363,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         return null;
     }
 
-    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+    @Nullable
+    private Long retrievePod(Pod pod, Long clusterId) {
         Long podId = null;
         if (pod != null) {
             podId = pod.getId();
@@ -376,6 +374,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 podId = cluster.getPodId();
             }
         }
+        return podId;
+    }
+
+    public List<StoragePool> findStoragePoolsForVolumeWithNewDiskOffering(DiskProfile dskCh, DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, final Set<StoragePool> avoid) {
+        Long podId = retrievePod(pod, clusterId);
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         List<StoragePool> suitablePools = new ArrayList<>();
@@ -398,15 +401,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public StoragePool findChildDataStoreInDataStoreCluster(DataCenter dc, Pod pod, Long clusterId, Long hostId, VirtualMachine vm, Long datastoreClusterId) {
-        Long podId = null;
-        if (pod != null) {
-            podId = pod.getId();
-        } else if (clusterId != null) {
-            Cluster cluster = _entityMgr.findById(Cluster.class, clusterId);
-            if (cluster != null) {
-                podId = cluster.getPodId();
-            }
-        }
+        Long podId = retrievePod(pod, clusterId);
         List<StoragePoolVO> childDatastores = _storagePoolDao.listChildStoragePoolsInDatastoreCluster(datastoreClusterId);
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
@@ -1011,12 +1006,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException {
         VirtualMachineTemplate rootDiskTmplt = _entityMgr.findById(VirtualMachineTemplate.class, vm.getTemplateId());
         DataCenter dcVO = _entityMgr.findById(DataCenter.class, vm.getDataCenterId());
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("storage-pool %s/%s is associated with pod %d",storagePool.getName(), storagePool.getUuid(), storagePool.getPodId()));
+        }
         Long podId = storagePool.getPodId() != null ? storagePool.getPodId() : vm.getPodIdToDeployIn();
         Pod pod = _entityMgr.findById(Pod.class, podId);
 
         ServiceOffering svo = _entityMgr.findById(ServiceOffering.class, vm.getServiceOfferingId());
         DiskOffering diskVO = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
         Long clusterId = storagePool.getClusterId();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("storage-pool %s/%s is associated with cluster %d",storagePool.getName(), storagePool.getUuid(), clusterId));
+        }
 
         VolumeInfo vol = null;
         if (volume.getState() == Volume.State.Allocated) {
@@ -1702,7 +1703,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
                 // retrieve clone flag.
                 UserVmCloneType cloneType = UserVmCloneType.linked;
-                Boolean value = CapacityManager.VmwareCreateCloneFull.valueIn(vol.getPoolId());
+                Boolean value = StorageManager.VmwareCreateCloneFull.valueIn(vol.getPoolId());
                 if (value != null && value) {
                     cloneType = UserVmCloneType.full;
                 }
