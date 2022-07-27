@@ -55,13 +55,6 @@ public class AgentProperties{
     public static final Property<Boolean> ENABLE_MANUALLY_SETTING_CPU_TOPOLOGY_ON_KVM_VM = new Property<Boolean>("enable.manually.setting.cpu.topology.on.kvm.vm", true);
 
     /**
-     * Enable manually IO driver on KVM's VM. <br>
-     * Data type: boolean.<br>
-     * Default value: true.
-     */
-    public static final Property<Boolean> ENABLE_IO_URING = new Property<Boolean>("enable.io.uring", true);
-
-    /**
      * Disables memory ballooning on VM guests for overcommit.<br>
      * By default overcommit feature enables balloon and sets currentMemory to a minimum value.<br>
      * Data type: Boolean.<br>
