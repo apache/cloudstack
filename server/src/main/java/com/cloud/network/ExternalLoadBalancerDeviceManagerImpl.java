@@ -984,7 +984,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                 loadBalancer.setSrcIpNetmask(srcIpNetmask);
                 loadBalancer.setSrcIpGateway(srcIpGateway);
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroup(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
+                    loadBalancer.setAutoScaleVmGroupTO(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

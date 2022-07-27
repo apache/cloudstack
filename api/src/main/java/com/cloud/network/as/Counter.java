@@ -25,7 +25,7 @@ import java.util.List;
 
 public interface Counter extends InternalIdentity, Identity {
 
-    static enum Source {
+    enum Source {
         netscaler,
         snmp,
         cpu,
@@ -33,7 +33,7 @@ public interface Counter extends InternalIdentity, Identity {
         virtualrouter
     }
 
-    static final List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory);
+    List<Source> NativeSources = Arrays.asList(Source.cpu, Source.memory);
 
     String getName();
 

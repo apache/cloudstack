@@ -436,7 +436,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         List<LoadBalancingRule> rules = Arrays.asList(rule);
 
-        if (!applyLbRules(new ArrayList<LoadBalancingRule>(rules), false)) {
+        if (!applyLbRules(new ArrayList<>(rules), false)) {
             s_logger.debug("LB rules' autoscale config are not completely applied");
             return false;
         }
@@ -1010,7 +1010,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription = "assigning to load balancer", async = true)
-    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, Boolean isAutoScaleVM) {
+    public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM) {
         CallContext ctx = CallContext.current();
         Account caller = ctx.getCallingAccount();
 
@@ -1233,7 +1233,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription = "removing from load balancer", async = true)
-    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpsMap, Boolean isAutoScaleVM) {
+    public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds, Map<Long, List<String>> vmIdIpsMap, boolean isAutoScaleVM) {
         return removeFromLoadBalancerInternal(loadBalancerId, instanceIds, true, vmIdIpsMap, isAutoScaleVM);
     }
 
@@ -1368,7 +1368,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         return success;
     }
 
-    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack, Map<Long, List<String>> vmIdIpMap, Boolean isAutoScaleVM) {
+    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds, boolean rollBack, Map<Long, List<String>> vmIdIpMap, boolean isAutoScaleVM) {
         CallContext caller = CallContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));

@@ -633,8 +633,4 @@ public class LoadBalancerTO {
             return loadBalancerId;
         }
     }
-
-    public void setAutoScaleVmGroup(AutoScaleVmGroupTO autoScaleVmGroupTO) {
-        this.autoScaleVmGroupTO = autoScaleVmGroupTO;
-    }
 }

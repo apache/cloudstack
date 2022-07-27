@@ -36,7 +36,7 @@ import java.util.List;
 @ResourceWrapper(handles = GetAutoScaleMetricsCommand.class)
 public final class XenServer56GetAutoScaleMetricsCommandWrapper extends CommandWrapper<GetAutoScaleMetricsCommand, Answer, XenServer56Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer56NetworkUsageCommandWrapper.class);
+    private static final Logger s_logger = Logger.getLogger(XenServer56GetAutoScaleMetricsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetAutoScaleMetricsCommand command, final XenServer56Resource xenServer56) {
@@ -45,7 +45,7 @@ public final class XenServer56GetAutoScaleMetricsCommandWrapper extends CommandW
             Long bytesSent;
             Long bytesReceived;
             if (command.isForVpc()) {
-                final long[] stats = xenServer56.getVPCNetworkStats(conn, command.getPrivateIP(), command.getPublicIP());
+                final long[] stats = xenServer56.getVPCNetworkStats(command.getPrivateIP(), command.getPublicIP());
                 bytesSent = stats[0];
                 bytesReceived = stats[1];
             } else {
@@ -54,7 +54,7 @@ public final class XenServer56GetAutoScaleMetricsCommandWrapper extends CommandW
                 bytesReceived = stats[1];
             }
 
-            final long [] lbStats = xenServer56.getNetworkLbStats(conn, command.getPrivateIP(), command.getPublicIP(), command.getPort());
+            final long [] lbStats = xenServer56.getNetworkLbStats(command.getPrivateIP(), command.getPublicIP(), command.getPort());
             final long lbConnections = lbStats[0];
 
             List<VirtualRouterAutoScale.AutoScaleMetricsValue> values = new ArrayList<>();

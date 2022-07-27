@@ -186,7 +186,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
+public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManager, AutoScaleService, Configurable {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
 
@@ -273,8 +273,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     @Inject
     private AffinityGroupDao _affinityGroupDao;
 
-    private static final Long ONE_MINUTE_IN_MILLISCONDS = 60000L;
-
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
     private static final String PARAM_DATA_DISK_SIZE = "size";
@@ -287,6 +285,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DATA_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
             PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS, PARAM_NETWORK_IDS);
 
+    private static final String VM_HOSTNAME_PREFIX = "autoScaleVm";
     ExecutorService _groupExecutor;
 
     CompletionService<Pair<Long, Boolean>> _completionService;
@@ -1353,7 +1352,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         // Validate Provider
-        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());;
+        Network.Provider provider = Network.Provider.getProvider(cmd.getProvider());
         if (provider == null) {
             throw new InvalidParameterValueException("The Provider " + cmd.getProvider() + " does not exist; Unable to create Counter");
         }
@@ -1416,9 +1415,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
         Filter searchFilter = new Filter(CounterVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        List<CounterVO> counters = _counterDao.listCounters(id, name, source, providerStr, cmd.getKeyword(), searchFilter);
-
-        return counters;
+        return _counterDao.listCounters(id, name, source, providerStr, cmd.getKeyword(), searchFilter);
     }
 
     @Override
@@ -1654,7 +1651,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             final Network network = getNetwork(asGroup.getLoadBalancerId());
             final List<Long> networkIds = new ArrayList<>();
             networkIds.add(network.getId());
-            Map<String, String> customParameters = new HashMap<String, String>();
+            Map<String, String> customParameters = new HashMap<>();
             List<String> sshKeyPairs = new ArrayList<>();
 
             Map<String, String> deployParams = getDeployParams(profileVo.getOtherDeployParams());
@@ -1732,24 +1729,22 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             }
 
+            String vmHostName = VM_HOSTNAME_PREFIX + "-" + asGroup.getName() + "-" + getCurrentTimeStampString();
             if (zone.getNetworkType() == NetworkType.Basic) {
-                vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, "autoScaleVm-" + asGroup.getName() + "-" +
-                    getCurrentTimeStampString(),
-                    "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
+                vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, null, owner, vmHostName,
+                        vmHostName, diskOfferingId, dataDiskSize, null,
                     hypervisorType, HTTPMethod.GET, userData, sshKeyPairs, null,
                     null, true, null, affinityGroupIdList, customParameters, null, null, null,
                     null, true, overrideDiskOfferingId);
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, null,
-                        owner, "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(),
-                        "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(), diskOfferingId, dataDiskSize, null,
+                        owner, vmHostName,vmHostName, diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         null, true, null, affinityGroupIdList, customParameters, null, null, null,
                         null, true, overrideDiskOfferingId, null);
                 } else {
-                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, "autoScaleVm-" + asGroup.getName() + "-" +
-                        getCurrentTimeStampString(), "autoScaleVm-" + asGroup.getName() + "-" + getCurrentTimeStampString(),
+                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, vmHostName, vmHostName,
                             diskOfferingId, dataDiskSize, null,
                         hypervisorType, HTTPMethod.GET, userData, sshKeyPairs,null,
                         addrs, true, null, affinityGroupIdList, customParameters, null, null, null,
@@ -1828,7 +1823,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
         lstVmId.add(new Long(vmId));
         try {
-            return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>(), true);
+            return _loadBalancingRulesService.assignToLoadBalancer(lbId, lstVmId, new HashMap<>(), true);
         } catch (CloudRuntimeException ex) {
             s_logger.warn("Caught exception: ", ex);
             return false;
@@ -1848,7 +1843,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         List<Long> lstVmId = new ArrayList<Long>();
         if (instanceId != -1)
             lstVmId.add(instanceId);
-        if (_loadBalancingRulesService.removeFromLoadBalancer(lbId, lstVmId, new HashMap<Long, List<String>>(), true))
+        if (_loadBalancingRulesService.removeFromLoadBalancer(lbId, lstVmId, new HashMap<>(), true))
             return instanceId;
         else
             return -1;
@@ -1991,7 +1986,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         for (AutoScaleVmGroupVO asGroup : asGroups) {
             _completionService.submit(new CheckAutoScaleVmGroupAsync(asGroup));
         }
-        for (AutoScaleVmGroupVO asGroup : asGroups) {
+        for (int i = 0; i < asGroups.size(); i++) {
             try {
                 Future<Pair<Long, Boolean>> future = _completionService.take();
                 Pair<Long, Boolean> result = future.get();
@@ -2079,7 +2074,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         return false;
     }
 
-    private Map<Long, List<CounterTO>> getCounters(AutoScaleVmGroupTO groupTO) {
+    private Map<Long, List<CounterTO>> getPolicyCounters(AutoScaleVmGroupTO groupTO) {
         Map<Long, List<CounterTO>> counters = new HashMap<>();
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             List<CounterTO> counterTOs = new ArrayList<>();
@@ -2107,7 +2102,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             long current_time = (new Date()).getTime();
 
             // check quiet time for this policy
-            if ((current_time - last_quiettime) >= (long)quiettime) {
+            if ((current_time - last_quiettime) >= quiettime) {
                 // check whole conditions of this policy
                 boolean bValid = true;
                 for (ConditionTO conditionTO : policyTO.getConditions()) {
@@ -2170,11 +2165,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private Network getNetwork(Long loadBalancerId) {
         final LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
-            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", loadBalancerId));
+            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
         }
         Network network = _networkDao.findById(loadBalancer.getNetworkId());
         if (network == null) {
-            throw new CloudRuntimeException(String.format("Unable to find network with id: % ", loadBalancer.getNetworkId()));
+            throw new CloudRuntimeException(String.format("Unable to find network with id: %s ", loadBalancer.getNetworkId()));
         }
         return network;
     }
@@ -2182,11 +2177,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private Pair<String, Integer> getPublicIpAndPort(Long loadBalancerId) {
         final LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
-            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: % ", loadBalancerId));
+            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
         }
         IPAddressVO ipAddress = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId());
         if (ipAddress == null) {
-            throw new CloudRuntimeException(String.format("Unable to find IP Address with id: % ", loadBalancer.getSourceIpAddressId()));
+            throw new CloudRuntimeException(String.format("Unable to find IP Address with id: %s ", loadBalancer.getSourceIpAddressId()));
         }
         return new Pair<>(ipAddress.getAddress().addr(), loadBalancer.getSourcePortStart());
     }
@@ -2194,8 +2189,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private Network.Provider getLoadBalancerServiceProvider(Long loadBalancerId) {
         Network network = getNetwork(loadBalancerId);
         List<Network.Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Network.Service.Lb);
-        if (providers == null || providers.size() == 0) {
-            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: % ", network.getId()));
+        if (CollectionUtils.isEmpty(providers)) {
+            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: %s ", network.getId()));
         }
         return providers.get(0);
     }
@@ -2226,7 +2221,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("[Netscaler AutoScale] Collecting RRDs data...");
         }
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(asGroup.getId());
         params.put("total_vm", String.valueOf(asGroupVmVOs.size()));
         for (int i = 0; i < asGroupVmVOs.size(); i++) {
@@ -2318,14 +2313,10 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     private void updateCountersMapWithInstantData(Map<String, Double> countersMap, Map<String, Integer> countersNumberMap, AutoScaleVmGroupTO groupTO, Long counterId, Long conditionId, Long policyId, Double coVal) {
         // Summary of all counter by counterId key
         String key = generateKeyFromPolicyAndConditionAndCounter(policyId, conditionId, counterId);
-        if (countersMap.get(key) == null) {
-            /* initialize if data is not set */
-            countersMap.put(key, Double.valueOf(0));
-        }
-        if (countersNumberMap.get(key) == null) {
-            /* initialize if data is not set */
-            countersNumberMap.put(key, 0);
-        }
+
+        /* initialize if data is not set */
+        countersMap.computeIfAbsent(key, k -> Double.valueOf(0));
+        countersNumberMap.computeIfAbsent(key, k -> 0);
 
         CounterVO counter = _counterDao.findById(counterId);
         if (counter == null) {
@@ -2438,18 +2429,20 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
         }
 
-        Map<Long, List<CounterTO>> countersMap = getCounters(groupTO);
+        Map<Long, List<CounterTO>> policyCountersMap = getPolicyCounters(groupTO);
 
         // get vm stats from each host and update database
-        for (Long hostId : hostAndVmIdsMap.keySet()) {
+        for (Map.Entry<Long, List<Long>> hostAndVmIds : hostAndVmIdsMap.entrySet()) {
+            Long hostId = hostAndVmIds.getKey();
+            List<Long> vmIds = hostAndVmIds.getValue();
+
             Date timestamp = new Date();
             HostVO host = _hostDao.findById(hostId);
-            List<Long> vmIds = hostAndVmIdsMap.get(hostId);
 
             try {
                 Map<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
 
-                if (vmStatsById == null) {
+                if (MapUtils.isEmpty(vmStatsById)) {
                     s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
                     continue;
                 }
@@ -2457,8 +2450,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
                 for (Long vmId : vmIdSet) {
                     VmStatsEntry vmStats = vmStatsById.get(vmId);
-                    for (Long policyId : countersMap.keySet()) {
-                        List<CounterTO> counters = countersMap.get(policyId);
+                    for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
+                        Long policyId = policyCounters.getKey();
+                        List<CounterTO> counters = policyCounters.getValue();
                         for (CounterTO counter : counters) {
                             if (Counter.Source.cpu.equals(counter.getSource())) {
                                 Double counterValue = vmStats.getCPUUtilization() / 100;
@@ -2474,7 +2468,6 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
             } catch (Exception e) {
                 s_logger.debug("Failed to get VM stats from host : " + host.getName());
-                continue;
             }
         }
     }
@@ -2578,11 +2571,11 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 }
                 if (MapUtils.isNotEmpty(aggregatedRecords)) {
                     s_logger.debug("Processing aggregated data");
-                    for (String recordKey : aggregatedRecords.keySet()) {
+                    for (Map.Entry<String, List<AutoScaleVmGroupStatisticsVO>> aggregatedRecord : aggregatedRecords.entrySet()) {
+                        String recordKey = aggregatedRecord.getKey();
                         s_logger.debug("Processing aggregated data with recordKey = " + recordKey);
                         Long counterId = Long.valueOf(recordKey.split("-")[0]);
-                        Long resourceId = Long.valueOf(recordKey.split("-")[1]);
-                        List<AutoScaleVmGroupStatisticsVO> records = aggregatedRecords.get(recordKey);
+                        List<AutoScaleVmGroupStatisticsVO> records = aggregatedRecord.getValue();
                         if (records.size() <= 1) {
                             s_logger.info(String.format("Ignoring aggregated records, conditionId = %s, counterId = %s", conditionId, counterId));
                             continue;
@@ -2683,9 +2676,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         try {
             removeVmFromVmGroup(vmId);
             _userVmManager.destroyVm(vmId, false);
-        } catch (ResourceUnavailableException ex) {
-            s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
-        } catch (ConcurrentOperationException ex) {
+        } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
         }
     }

@@ -2991,7 +2991,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return stats;
     }
 
-    public long[] getVPCNetworkStats(final Connection conn, final String privateIP, final String publicIp) {
+    public long[] getVPCNetworkStats(final String privateIP, final String publicIp) {
         String args = " -l " + publicIp + " -g";
         final ExecutionResult result = executeInVR(privateIP, "vpc_netusage.sh", args);
         final String detail = result.getDetails();
@@ -3007,16 +3007,16 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return stats;
     }
 
-    public long[] getNetworkLbStats(final Connection conn, final String privateIp, final String publicIp, final Integer port) {
+    public long[] getNetworkLbStats(final String privateIp, final String publicIp, final Integer port) {
         String args = publicIp + " " + port;
         ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
 
         if (!callResult.isSuccess()) {
-            s_logger.error("Unable to execute GetAutoScaleMetricsCommand on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
+            s_logger.error("Unable to get network loadbalancer stats on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
         }
         String result = callResult.getDetails();
         if (result == null || result.isEmpty()) {
-            s_logger.error("Get autoscale metrics returns empty ");
+            s_logger.error("Get network loadbalancer stats returns empty ");
         }
         final long[] stats = new long[1];
         if (result != null) {

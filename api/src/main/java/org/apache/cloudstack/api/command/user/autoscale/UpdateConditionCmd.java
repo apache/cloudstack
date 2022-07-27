@@ -107,12 +107,11 @@ public class UpdateConditionCmd extends BaseAsyncCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-        // tracked
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CONDITION_DELETE;
+        return EventTypes.EVENT_CONDITION_UPDATE;
     }
 
     @Override

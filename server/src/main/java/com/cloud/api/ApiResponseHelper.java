@@ -447,7 +447,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Inject
     UserVmJoinDao userVmJoinDao;
     @Inject
-    NetworkServiceMapDao _ntwkSrvcDao;
+    NetworkServiceMapDao ntwkSrvcDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -3400,7 +3400,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setNetworkName(network.getName());
                 response.setNetworkId(network.getUuid());
 
-                String provider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
+                String provider = ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.Lb);
                 if (provider != null) {
                     response.setLbProvider(provider);
                 } else {

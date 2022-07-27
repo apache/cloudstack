@@ -1129,7 +1129,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
                         false, false, destinations, rule.getStickinessPolicies(), rule.getHealthCheckPolicies(),
                         rule.getLbSslCert(), rule.getLbProtocol());
                 if (rule.isAutoScaleConfig()) {
-                    loadBalancer.setAutoScaleVmGroup(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
+                    loadBalancer.setAutoScaleVmGroupTO(_lbRulesManager.toAutoScaleVmGroupTO(rule.getAutoScaleVmGroup()));
                 }
                 loadBalancersToApply.add(loadBalancer);
             }

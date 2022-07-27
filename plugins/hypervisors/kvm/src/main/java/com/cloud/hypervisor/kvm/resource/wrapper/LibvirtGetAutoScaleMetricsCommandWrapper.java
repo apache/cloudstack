@@ -35,7 +35,7 @@ import java.util.List;
 @ResourceWrapper(handles =  GetAutoScaleMetricsCommand.class)
 public final class LibvirtGetAutoScaleMetricsCommandWrapper extends CommandWrapper<GetAutoScaleMetricsCommand, Answer, LibvirtComputingResource> {
 
-    final static String NETWORK_USAGE_GET_OPTION = "get";
+    static final String NETWORK_USAGE_GET_OPTION = "get";
 
     @Override
     public Answer execute(final GetAutoScaleMetricsCommand command, final LibvirtComputingResource libvirtComputingResource) {

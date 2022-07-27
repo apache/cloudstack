@@ -1162,11 +1162,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
 
         if (!callResult.isSuccess()) {
-            s_logger.error("Unable to execute GetAutoScaleMetricsCommand on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
+            s_logger.error("Unable to get network loadbalancer stats on DomR (" + privateIp + "), domR may not be ready yet. failure due to " + callResult.getDetails());
         }
         String result = callResult.getDetails();
         if (result == null || result.isEmpty()) {
-            s_logger.error("Get autoscale metrics returns empty ");
+            s_logger.error("Get network loadbalancer stats returns empty result");
         }
         final long[] stats = new long[1];
         if (result != null) {
