@@ -576,7 +576,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type) {
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details) {
         s_logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
 
         StoragePool sp = null;

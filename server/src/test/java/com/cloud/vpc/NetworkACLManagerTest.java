@@ -250,7 +250,7 @@ public class NetworkACLManagerTest extends TestCase {
 
         Mockito.verify(aclItem, Mockito.times(4)).getState();
 
-        assertTrue("Operation should be successfull!", result);
+        assertTrue("Operation should be successful!", result);
     }
 
     @Configuration
