@@ -16,31 +16,6 @@
 // under the License.
 package com.cloud.test;
 
-import com.cloud.host.Status;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDaoImpl;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage.ProvisioningType;
-import com.cloud.storage.dao.DiskOfferingDaoImpl;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.net.NfsUtils;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -61,6 +36,33 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import com.cloud.host.Status;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDaoImpl;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.net.NfsUtils;
 
 public class DatabaseConfig {
     private static final Logger s_logger = Logger.getLogger(DatabaseConfig.class.getName());
@@ -394,7 +396,7 @@ public class DatabaseConfig {
     private void doVersionCheck() {
         try {
             String warningMsg = "\nYou are using an outdated format for server-setup.xml. Please switch to the new format.\n";
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory dbf = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder dbuilder = dbf.newDocumentBuilder();
             File configFile = new File(_configFileName);
             Document d = dbuilder.parse(configFile);

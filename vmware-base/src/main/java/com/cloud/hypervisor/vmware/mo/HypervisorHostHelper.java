@@ -40,6 +40,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -1832,7 +1833,7 @@ public class HypervisorHostHelper {
             return ovfString;
         }
         try {
-            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilderFactory factory = ParserUtils.getSaferDocumentBuilderFactory();
             final Document doc = factory.newDocumentBuilder().parse(new ByteArrayInputStream(ovfString.getBytes()));
             final DocumentTraversal traversal = (DocumentTraversal) doc;
             final NodeIterator iterator = traversal.createNodeIterator(doc.getDocumentElement(), NodeFilter.SHOW_ELEMENT, null, true);
@@ -1851,7 +1852,7 @@ public class HypervisorHostHelper {
             final DOMSource domSource = new DOMSource(doc);
             final StringWriter writer = new StringWriter();
             final StreamResult result = new StreamResult(writer);
-            final TransformerFactory tf = TransformerFactory.newInstance();
+            final TransformerFactory tf = ParserUtils.getSaferTransformerFactory();
             final Transformer transformer = tf.newTransformer();
             transformer.transform(domSource, result);
             return writer.toString();
