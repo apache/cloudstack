@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import com.cloud.storage.VolumeDetailVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -305,23 +306,24 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     protected boolean deleteSnapshotInfos(SnapshotVO snapshotVo) {
         Map<String, SnapshotInfo> snapshotInfos = retrieveSnapshotEntries(snapshotVo.getId());
 
+        boolean result = false;
         for (var infoEntry : snapshotInfos.entrySet()) {
-            if (!deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo) && PRIMARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(infoEntry.getKey())) {
-                return false;
+            if (BooleanUtils.toBooleanDefaultIfNull(deleteSnapshotInfo(infoEntry.getValue(), infoEntry.getKey(), snapshotVo), false)) {
+                result = true;
             }
         }
 
-        return true;
+        return result;
     }
 
     /**
      * Destroys the snapshot entry and file.
      * @return true if destroy successfully, else false.
      */
-    protected boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, String storage, SnapshotVO snapshotVo) {
+    protected Boolean deleteSnapshotInfo(SnapshotInfo snapshotInfo, String storage, SnapshotVO snapshotVo) {
         if (snapshotInfo == null) {
-            s_logger.debug(String.format("Could not find %s entry on a %s. Skipping deletion on %s.", snapshotVo, storage, storage));
-            return true;
+            s_logger.debug(String.format("Could not find %s entry on %s. Skipping deletion on %s.", snapshotVo, storage, storage));
+            return SECONDARY_STORAGE_SNAPSHOT_ENTRY_IDENTIFIER.equals(storage) ? null : true;
         }
 
         DataStore dataStore = snapshotInfo.getDataStore();
