@@ -18,3 +18,8 @@
 --;
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
+
+-- Enable CPU cap for default system offerings;
+UPDATE `cloud`.`service_offering` so
+SET so.limit_cpu_use = 1
+WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');

@@ -128,7 +128,7 @@ class _NetScalerAddBase(_NetScalerBase):
                                                  cls.api_client,
                                                  zoneid=cls.zone.id
                                                  )
-        assert isinstance(physical_networks, list), "There should be atleast one physical network for advanced zone"
+        assert isinstance(physical_networks, list), "There should be at least one physical network for advanced zone"
         cls.physical_network = physical_networks[0]
 
         # Check if a NetScaler network service provider exists - if not add one

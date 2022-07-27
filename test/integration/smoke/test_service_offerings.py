@@ -19,7 +19,7 @@
 # Import Local Modules
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.cloudstackAPI import (changeServiceForVirtualMachine,
+from marvin.cloudstackAPI import (scaleVirtualMachine,
                                   updateServiceOffering)
 from marvin.lib.utils import (isAlmostEqual,
                               cleanup_resources,
@@ -546,10 +546,10 @@ class TestServiceOfferings(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
         cmd.serviceofferingid = self.small_offering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % self.medium_virtual_machine.id)
         self.medium_virtual_machine.start(self.apiclient)
@@ -695,12 +695,12 @@ class TestServiceOfferings(cloudstackTestCase):
             offering_data,
         )
         self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessTrue2)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_true.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessTrue2.id
 
         with self.assertRaises(Exception) as e:
-            self.apiclient.changeServiceForVirtualMachine(cmd)
+            self.apiclient.scaleVirtualMachine(cmd)
             self.debug("Upgrade VM with new service offering having different disk offering operation failed as expected with exception: %s" %
                        e.exception)
         return
@@ -800,10 +800,10 @@ class TestServiceOfferings(cloudstackTestCase):
             offering_data,
         )
         self._cleanup.append(self.serviceOfferingWithDiskOfferingStrictnessFalse2)
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.virtual_machine_with_diskoffering_strictness_false.id
         cmd.serviceofferingid = self.serviceOfferingWithDiskOfferingStrictnessFalse2.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         list_vm_response = VirtualMachine.list(
             self.apiclient,

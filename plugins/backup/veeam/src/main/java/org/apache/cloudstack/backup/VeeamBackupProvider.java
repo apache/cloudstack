@@ -77,6 +77,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
             "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
+    private static ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
+            "The Veeam B&R API restore backup timeout in seconds.", true, ConfigKey.Scope.Zone);
+
     @Inject
     private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
     @Inject
@@ -87,7 +90,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private VeeamClient getClient(final Long zoneId) {
         try {
             return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
-                VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
+                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId), VeeamRestoreTimeout.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -318,7 +321,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 VeeamUsername,
                 VeeamPassword,
                 VeeamValidateSSLSecurity,
-                VeeamApiRequestTimeout
+                VeeamApiRequestTimeout,
+                VeeamRestoreTimeout
         };
     }
 
