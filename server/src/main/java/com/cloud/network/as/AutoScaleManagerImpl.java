@@ -2150,7 +2150,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Integer duration = policyTO.getDuration();
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 CounterTO counter = conditionTO.getCounter();
-                StringBuffer buff = new StringBuffer();
+                StringBuilder buff = new StringBuilder();
                 buff.append(counter.getName());
                 buff.append(",");
                 buff.append(conditionTO.getId());

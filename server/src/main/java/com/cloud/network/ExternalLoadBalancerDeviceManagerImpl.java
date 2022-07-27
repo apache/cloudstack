@@ -215,7 +215,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
     @Inject
-    LoadBalancingRulesManager _lbRulesManager;
+    private LoadBalancingRulesManager _lbRulesManager;
 
     private long _defaultLbCapacity;
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);

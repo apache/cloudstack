@@ -83,7 +83,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
                type = CommandType.MAP,
                description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine. "
                        + "Example: otherdeployparams[0].name=serviceofferingid&otherdeployparams[0].value=a7fb50f6-01d9-11ed-8bc1-77f8f0228926&otherdeployparams[1].name=rootdisksize&otherdeployparams[1].value=10 ."
-                    + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\".")
+                       + "possible parameters are \"rootdisksize\", \"diskofferingid\",\"size\", \"securitygroupids\", \"overridediskofferingid\", \"keypairs\", \"affinitygroupids'\", \"networkids\".")
     private Map otherDeployParams;
 
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,
