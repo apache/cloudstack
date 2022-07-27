@@ -20,6 +20,8 @@
 package com.cloud.utils.xmlobject;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -115,7 +117,7 @@ public class XmlObjectParser {
     }
 
     private XmlObject parse() {
-        SAXParserFactory spfactory = SAXParserFactory.newInstance();
+        SAXParserFactory spfactory = ParserUtils.getSaferSAXParserFactory();
         try {
             SAXParser saxParser = spfactory.newSAXParser();
             XmlHandler handler = new XmlHandler();
