@@ -338,7 +338,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObject);
 
                 if (deleteSnapshotChain(snapshotInfo, storageToString)) {
-                    s_logger.debug(String.format("%s was deleted on %s.", snapshotVo, storageToString));
+                    s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
                 } else {
                     s_logger.debug(String.format("%s was not deleted on %s; however, we will mark the snapshot as destroyed for future garbage collecting.", snapshotVo,
                         storageToString));
@@ -346,9 +346,17 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
                 snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 return true;
-            } else if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
-              snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
-              return true;
+            } else {
+                try {
+                    if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
+                        snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+                        s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                        return true;
+                    }
+                } catch (CloudRuntimeException ex) {
+                    s_logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
+                        snapshotVo, storageToString, ex.getMessage()), ex);
+                }
             }
 
             s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
