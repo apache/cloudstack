@@ -279,13 +279,11 @@ public class LibvirtVMDef {
                 response.append(String.format("<cpu> <numa> <cell id='0' cpus='0-%s' memory='%s' unit='KiB'/> </numa> </cpu>\n", this.maxVcpu - 1, this.currentMemory));
             }
 
-            String memBalloonModel = "none";
-            int statsPeriod = 0;
             if (this.memoryBalloning) {
-                memBalloonModel = "virtio";
-                statsPeriod = memoryBalloonStatsPeriod;
+                response.append(String.format("<devices>\n<memballoon model='virtio'>\n<stats period='%s'/>\n</memballoon>\n</devices>\n", memoryBalloonStatsPeriod));
+            } else {
+                response.append(String.format("<devices>\n<memballoon model='none'>\n</memballoon>\n</devices>\n"));
             }
-            response.append(String.format("<devices>\n<memballoon model='%s'>\n<stats period='%s'/>\n</memballoon>\n</devices>\n", memBalloonModel, statsPeriod));
 
             response.append(String.format("<vcpu current=\"%s\">%s</vcpu>\n", this.vcpu, this.maxVcpu));
             return response.toString();
