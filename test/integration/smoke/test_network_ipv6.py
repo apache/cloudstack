@@ -209,6 +209,10 @@ class TestIpv6Network(cloudstackTestCase):
     def setUp(self):
         self.services = self.testClient.getParsedTestDataConfig()
         self.apiclient = self.testClient.getApiClient()
+        self.userapiclient = self.testClient.getUserApiClient(
+            UserName=self.account.name,
+            DomainName=self.account.domain
+        )
         self.dbclient = self.testClient.getDbConnection()
         self.thread = None
         self.cleanup = []
@@ -567,7 +571,7 @@ class TestIpv6Network(cloudstackTestCase):
             cmd.icmptype = icmp_type
         if icmp_code is not None:
             cmd.icmpcode = icmp_code
-        fw_rule = self.apiclient.createIpv6FirewallRule(cmd)
+        fw_rule = self.userapiclient.createIpv6FirewallRule(cmd)
         return fw_rule
 
     def deployRoutingTestResources(self):
@@ -655,7 +659,7 @@ class TestIpv6Network(cloudstackTestCase):
 
         cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
         cmd.id = fw2.id
-        self.apiclient.deleteIpv6FirewallRule(cmd)
+        self.userapiclient.deleteIpv6FirewallRule(cmd)
 
     def createAndVerifyIpv6FirewallRule(self, traffic_type, source_cidr, dest_cidr, protocol,
         start_port, end_port, icmp_type, icmp_code, parsed_rule, delete=False):
@@ -664,7 +668,7 @@ class TestIpv6Network(cloudstackTestCase):
         start_port, end_port, icmp_type, icmp_code)
         cmd = listIpv6FirewallRules.listIpv6FirewallRulesCmd()
         cmd.id = fw_rule.id
-        rules = self.apiclient.listIpv6FirewallRules(cmd)
+        rules = self.userapiclient.listIpv6FirewallRules(cmd)
         self.assertTrue(
             isinstance(rules, list),
             "Check listIpv6FirewallRules response returns a valid list"
@@ -702,7 +706,7 @@ class TestIpv6Network(cloudstackTestCase):
         if delete == True:
             cmd = deleteIpv6FirewallRule.deleteIpv6FirewallRuleCmd()
             cmd.id = fw_rule.id
-            self.apiclient.deleteIpv6FirewallRule(cmd)
+            self.userapiclient.deleteIpv6FirewallRule(cmd)
             res = self.getRouterProcessStatus(self.getNetworkRouter(self.network), routerCmd)
             self.assertFalse(parsed_rule in res,
                 "Firewall rule present in nft list chain failure despite delete for rule: %s" % parsed_rule)
