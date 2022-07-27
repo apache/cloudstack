@@ -365,7 +365,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         snapshotObject.processEvent(Snapshot.Event.OperationFailed);
-        throw new InvalidParameterValueException(String.format("Unable to delete snapshot [%s] because it is being used by the following volumes: %s.",
+        throw new CloudRuntimeException(String.format("Unable to delete snapshot [%s] because it is being used by the following volumes: %s.",
             ReflectionToStringBuilderUtils.reflectOnlySelectedFields(snapshotObject.getSnapshotVO(), "id", "uuid", "volumeId", "name"),
             ReflectionToStringBuilderUtils.reflectOnlySelectedFields(volumesFromSnapshot, "resourceId")));
     }
