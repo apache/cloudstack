@@ -133,7 +133,7 @@ public class DefaultSnapshotStrategyTest {
 
     @Test
     public void validateDeleteSnapshotInfoSnapshotInfoIsNullOnSecondaryStorageReturnsTrue() {
-        Assert.assertTrue(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "secondary storage", snapshotVoMock));
+        Assert.assertNull(defaultSnapshotStrategySpy.deleteSnapshotInfo(null, "secondary storage", snapshotVoMock));
     }
 
     @Test
