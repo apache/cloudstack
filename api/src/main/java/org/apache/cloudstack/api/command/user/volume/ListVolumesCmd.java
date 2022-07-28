@@ -20,11 +20,10 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -157,8 +156,8 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd implements UserCm
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Volume;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Volume;
     }
 
     @Override

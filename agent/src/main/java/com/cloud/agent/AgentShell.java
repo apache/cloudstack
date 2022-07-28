@@ -362,7 +362,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
             s_logger.info("Agent started");
         } else {
-            s_logger.error("Could not start the Agent because the absolut path of the \"log4j-cloud.xml\" file cannot be determined.");
+            s_logger.error("Could not start the Agent because the absolute path of the \"log4j-cloud.xml\" file cannot be determined.");
         }
 
         final Class<?> c = this.getClass();
@@ -513,7 +513,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 while (!_exit)
                     Thread.sleep(1000);
             } catch (InterruptedException e) {
-                s_logger.debug("[ignored] AgentShell was interupted.");
+                s_logger.debug("[ignored] AgentShell was interrupted.");
             }
 
         } catch (final ConfigurationException e) {

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -131,6 +132,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
 
+    @SerializedName(ApiConstants.IPV6_ROUTES)
+    @Param(description = "The routes for the network to ease adding route in upstream router", since = "4.17.0")
+    private Set<Ipv6RouteResponse> ipv6Routes;
+
     public void setId(final String id) {
         this.id = id;
     }
@@ -243,5 +248,13 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
+    }
+
+    public void setIpv6Routes(Set<Ipv6RouteResponse> ipv6Routes) {
+        this.ipv6Routes = ipv6Routes;
+    }
+
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
     }
 }

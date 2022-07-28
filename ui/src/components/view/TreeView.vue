@@ -17,62 +17,75 @@
 
 <template>
   <resource-layout>
-    <a-spin :spinning="loading" slot="left">
-      <a-card :bordered="false">
-        <a-input-search
-          size="default"
-          :placeholder="$t('label.search')"
-          v-model="searchQuery"
-          @search="onSearch"
-        >
-          <a-icon slot="prefix" type="search" />
-        </a-input-search>
-        <a-spin :spinning="loadingSearch">
-          <a-tree
-            showLine
-            v-if="treeViewData.length > 0"
-            class="list-tree-view"
-            :treeData="treeViewData"
-            :loadData="onLoadData"
-            :expandAction="false"
-            :showIcon="true"
-            :selectedKeys="defaultSelected"
-            :checkStrictly="true"
-            @select="onSelect"
-            @expand="onExpand"
-            :expandedKeys="arrExpand">
-            <a-icon slot="parent" type="folder" />
-            <a-icon slot="leaf" type="block" />
-          </a-tree>
-        </a-spin>
-      </a-card>
-    </a-spin>
-    <a-spin :spinning="detailLoading" slot="right">
-      <a-card
-        class="spin-content"
-        :bordered="true"
-        style="width:100%">
-        <a-tabs
-          style="width: 100%"
-          :animated="false"
-          :defaultActiveKey="tabs[0].name"
-          @change="onTabChange" >
-          <a-tab-pane
-            v-for="tab in tabs"
-            :tab="$t('label.' + tab.name)"
-            :key="tab.name"
-            v-if="checkShowTabDetail(tab)">
-            <component
-              :is="tab.component"
-              :resource="resource"
-              :items="items"
-              :tab="tabActive"
-              :loading="loading"
-              :bordered="false" />
-          </a-tab-pane>
-        </a-tabs>
-      </a-card>
-    </a-spin>
+    <template #left>
+      <a-spin :spinning="loading">
+        <a-card :bordered="false">
+          <a-input-search
+            size="default"
+            :placeholder="$t('label.search')"
+            v-model:value="searchQuery"
+            @search="onSearch"
+          >
+            <template #prefix><search-outlined /></template>
+          </a-input-search>
+          <a-spin :spinning="loadingSearch">
+            <a-tree
+              showLine
+              v-if="treeViewData.length > 0"
+              class="list-tree-view"
+              :treeData="treeViewData"
+              :loadData="onLoadData"
+              :expandAction="false"
+              :showIcon="true"
+              :selectedKeys="defaultSelected"
+              :checkStrictly="true"
+              @select="onSelect"
+              @expand="onExpand"
+              :expandedKeys="arrExpand">
+              <template #parent><folder-outlined /></template>
+              <template #leaf><block-outlined /></template>
+            </a-tree>
+          </a-spin>
+        </a-card>
+      </a-spin>
+    </template>
+    <template #right>
+      <a-spin :spinning="detailLoading">
+        <a-card
+          class="spin-content"
+          :bordered="true"
+          style="width:100%">
+          <a-tabs
+            style="width: 100%"
+            :animated="false"
+            :defaultActiveKey="tabs[0].name"
+            @change="onTabChange" >
+            <template v-for="tab in tabs" :tab="$t('label.' + tab.name)" :key="tab.name">
+              <a-tab-pane :tab="$t('label.' + tab.name)" :key="tab.name" v-if="checkShowTabDetail(tab)">
+                <keep-alive>
+                  <component
+                    v-if="tab.resourceType"
+                    :is="tab.component"
+                    :resource="resource"
+                    :resourceType="tab.resourceType"
+                    :loading="loading"
+                    :tab="tabActive"
+                    :bordered="false" />
+                  <component
+                    v-else
+                    :is="tab.component"
+                    :resource="resource"
+                    :items="items"
+                    :tab="tabActive"
+                    :loading="loading"
+                    :bordered="false" />
+                </keep-alive>
+              </a-tab-pane>
+            </template>
+          </a-tabs>
+        </a-card>
+      </a-spin>
+    </template>
   </resource-layout>
 </template>
 
@@ -125,6 +138,12 @@ export default {
       }
     }
   },
+  provide: function () {
+    return {
+      parentFetchData: null,
+      parentToggleLoading: null
+    }
+  },
   data () {
     return {
       detailLoading: false,
@@ -154,7 +173,7 @@ export default {
     this.metaName = this.$route.meta.name
     this.apiList = this.$route.meta.permission[0] ? this.$route.meta.permission[0] : ''
     this.apiChildren = this.$route.meta.permission[1] ? this.$route.meta.permission[1] : ''
-    eventBus.$on('refresh-domain-icon', () => {
+    eventBus.on('refresh-domain-icon', () => {
       this.getDetailResource(this.selectedTreeKey)
     })
   },
@@ -173,14 +192,31 @@ export default {
         }
       }
     },
-    treeSelected () {
-      if (Object.keys(this.treeSelected).length === 0) {
-        return
-      }
+    treeSelected: {
+      deep: true,
+      handler () {
+        if (Object.keys(this.treeSelected).length === 0) {
+          return
+        }
 
-      if (Object.keys(this.resource).length > 0) {
-        this.selectedTreeKey = this.resource.key
-        this.$emit('change-resource', this.resource)
+        if (Object.keys(this.resource).length > 0) {
+          this.selectedTreeKey = this.resource.key
+          this.$emit('change-resource', this.resource)
+
+          // set default expand
+          if (this.defaultSelected.length > 1) {
+            const arrSelected = this.defaultSelected
+            this.defaultSelected = []
+            this.defaultSelected.push(arrSelected[0])
+          }
+
+          return
+        }
+
+        this.resource = this.treeSelected
+        this.resource = this.createResourceData(this.resource)
+        this.selectedTreeKey = this.treeSelected.key
+        this.defaultSelected.push(this.selectedTreeKey)
 
         // set default expand
         if (this.defaultSelected.length > 1) {
@@ -188,33 +224,22 @@ export default {
           this.defaultSelected = []
           this.defaultSelected.push(arrSelected[0])
         }
-
-        return
-      }
-
-      this.resource = this.treeSelected
-      this.resource = this.createResourceData(this.resource)
-      this.selectedTreeKey = this.treeSelected.key
-      this.defaultSelected.push(this.selectedTreeKey)
-
-      // set default expand
-      if (this.defaultSelected.length > 1) {
-        const arrSelected = this.defaultSelected
-        this.defaultSelected = []
-        this.defaultSelected.push(arrSelected[0])
       }
     },
-    treeVerticalData () {
-      if (!this.treeStore.isExpand) {
-        return
-      }
-      if (this.treeStore.expands && this.treeStore.expands.length > 0) {
-        for (const expandKey of this.treeStore.expands) {
-          if (this.arrExpand.includes(expandKey)) {
-            continue
+    treeVerticalData: {
+      deep: true,
+      handler () {
+        if (!this.treeStore.isExpand) {
+          return
+        }
+        if (this.treeStore.expands && this.treeStore.expands.length > 0) {
+          for (const expandKey of this.treeStore.expands) {
+            if (this.arrExpand.includes(expandKey)) {
+              continue
+            }
+            const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
+            if (keyVisible > -1) this.arrExpand.push(expandKey)
           }
-          const keyVisible = this.treeVerticalData.findIndex(item => item.key === expandKey)
-          if (keyVisible > -1) this.arrExpand.push(expandKey)
         }
       }
     }
@@ -256,7 +281,7 @@ export default {
                 if (item.id === dataGenerate[i].id) {
                   // replace all value of tree data
                   Object.keys(dataGenerate[i]).forEach((value, idx) => {
-                    this.$set(this.treeVerticalData[index], value, dataGenerate[i][value])
+                    this.treeVerticalData[index][value] = dataGenerate[i][value]
                   })
                 }
               })
@@ -307,18 +332,20 @@ export default {
       this.defaultSelected = []
       this.defaultSelected.push(this.selectedTreeKey)
 
-      this.treeStore.expands = this.arrExpand
-      this.treeStore.selected = this.selectedTreeKey
+      const treeStore = this.treeStore
+      treeStore.expands = this.arrExpand
+      treeStore.selected = this.selectedTreeKey
       this.$emit('change-tree-store', this.treeStore)
 
       this.getDetailResource(this.selectedTreeKey)
     },
     onExpand (treeExpand) {
+      const treeStore = this.treeStore
       this.arrExpand = treeExpand
-      this.treeStore.isExpand = true
-      this.treeStore.expands = this.arrExpand
-      this.treeStore.selected = this.selectedTreeKey
-      this.$emit('change-tree-store', this.treeStore)
+      treeStore.isExpand = true
+      treeStore.expands = this.arrExpand
+      treeStore.selected = this.selectedTreeKey
+      this.$emit('change-tree-store', treeStore)
     },
     onSearch (value) {
       if (this.searchQuery === '' && this.oldSearchQuery === '') {
@@ -492,17 +519,17 @@ export default {
 
       Object.keys(resource).forEach((value, idx) => {
         if (resource[value] === 'Unlimited') {
-          this.$set(resource, value, '-1')
+          resource.value = '-1'
         }
       })
-      this.$set(resource, 'title', resource.name)
-      this.$set(resource, 'key', resource.id)
+      resource.title = resource.name
+      resource.key = resource.id
       resource.slots = {
         icon: 'parent'
       }
 
       if (!resource.haschild) {
-        this.$set(resource, 'isLeaf', true)
+        resource.isLeaf = true
         resource.slots = {
           icon: 'leaf'
         }
@@ -562,7 +589,7 @@ export default {
 .list-tree-view {
   overflow-y: hidden;
 }
-/deep/.ant-tree.ant-tree-directory {
+:deep(.ant-tree).ant-tree-directory {
   li.ant-tree-treenode-selected {
     span.ant-tree-switcher {
       color: rgba(0, 0, 0, 0.65);
@@ -588,20 +615,20 @@ export default {
   }
 }
 
-/deep/.ant-tree li span.ant-tree-switcher.ant-tree-switcher-noop {
+:deep(.ant-tree) li span.ant-tree-switcher.ant-tree-switcher-noop {
+  display: none
+}
+
+:deep(.ant-tree-node-content-wrapper-open) > span:first-child,
+:deep(.ant-tree-node-content-wrapper-close) > span:first-child {
   display: none;
 }
 
-/deep/.ant-tree-node-content-wrapper-open > span:first-child,
-/deep/.ant-tree-node-content-wrapper-close > span:first-child {
-  display: none;
-}
-
-/deep/.ant-tree-icon__customize {
+:deep(.ant-tree-icon__customize) {
   padding-right: 5px;
 }
 
-/deep/.ant-tree li .ant-tree-node-content-wrapper {
+:deep(.ant-tree) li .ant-tree-node-content-wrapper {
   padding-left: 0;
   margin-left: 3px;
 }

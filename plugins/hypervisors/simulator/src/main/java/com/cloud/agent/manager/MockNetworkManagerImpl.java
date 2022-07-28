@@ -43,6 +43,8 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesAnswer;
+import com.cloud.agent.api.routing.SetIpv6FirewallRulesCommand;
 import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
@@ -94,6 +96,16 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
             }
         }
         return new SetFirewallRulesAnswer(cmd, true, results);
+    }
+
+    @Override
+    public SetIpv6FirewallRulesAnswer SetIpv6FirewallRules(SetIpv6FirewallRulesCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (routerIp == null) {
+            return new SetIpv6FirewallRulesAnswer(cmd, false, results);
+        }
+        return new SetIpv6FirewallRulesAnswer(cmd, true, results);
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
+import com.cloud.network.Ipv6Service;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
@@ -70,6 +71,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    Ipv6Service ipv6Service;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
@@ -139,6 +142,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
         nic.setIPv4Dns1(dc.getDns1());
         nic.setIPv4Dns2(dc.getDns2());
+
+        ipv6Service.updateNicIpv6(nic, dc, network);
     }
 
     @Override

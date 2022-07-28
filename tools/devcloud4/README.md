@@ -18,7 +18,7 @@ The included VagrantFile will give you:
 
 1. Due to the large amount of data to be pulled from the Internet, it's probably not a good idea to do this over WiFi or Mobile data.
 
-1. Given the amount of virtual machines this brings up it is recommended you have atleast 8gb of ram before attempting this.
+1. Given the amount of virtual machines this brings up it is recommended you have at least 8gb of ram before attempting this.
 
 1. Ensure your system has `git` installed.
 

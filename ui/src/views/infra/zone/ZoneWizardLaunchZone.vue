@@ -18,9 +18,7 @@
 <template>
   <div v-if="!isLaunchZone">
     <a-card class="ant-form-text card-waiting-launch">
-      <a-icon
-        type="check-circle"
-        theme="twoTone"
+      <check-circle-two-tone
         twoToneColor="#52c41a"
         style="font-size: 20px;"/>
       {{ $t(description.waiting) }}
@@ -30,7 +28,7 @@
         {{ $t('label.previous') }}
       </a-button>
       <a-button class="button-next" type="primary" @click="handleSubmit">
-        <a-icon type="rocket" /> {{ $t('label.launch.zone') }}
+        <rocket-outlined /> {{ $t('label.launch.zone') }}
       </a-button>
     </div>
   </div>
@@ -51,16 +49,19 @@
           :key="index"
           :title="$t(step.title)"
           :status="step.status">
-          <a-icon v-if="step.status===status.PROCESS" type="loading" slot="icon" />
-          <a-icon v-else-if="step.status===status.FAILED" type="close-circle" slot="icon" />
-          <a-card
-            slot="description"
-            class="step-error"
-            v-if="step.status===status.FAILED"
-          >
-            <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
-            <div>{{ messageError }}</div>
-          </a-card>
+          <template #icon>
+            <LoadingOutlined v-if="step.status===status.PROCESS" />
+            <CloseCircleOutlined v-else-if="step.status===status.FAILED" />
+          </template>
+          <template #description>
+            <a-card
+              class="step-error"
+              v-if="step.status===status.FAILED"
+            >
+              <div><strong>{{ $t('label.error.something.went.wrong.please.correct.the.following') }}:</strong></div>
+              <div>{{ messageError }}</div>
+            </a-card>
+          </template>
         </a-step>
       </a-steps>
     </a-card>
@@ -69,10 +70,12 @@
         v-if="processStatus==='finish'"
         class="button-next"
         type="primary"
-        icon="play-circle"
         :loading="loading"
         @click="enableZoneAction"
-      >{{ $t('label.action.enable.zone') }}</a-button>
+      >
+        <template #icon><play-circle-outlined /></template>
+        {{ $t('label.action.enable.zone') }}
+      </a-button>
       <a-button
         v-if="processStatus==='error'"
         class="button-next"
@@ -144,7 +147,7 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType?.value || null
+      return this.prefillContent?.zoneType || null
     },
     isBasicZone () {
       return this.zoneType === BASIC_ZONE
@@ -153,25 +156,25 @@ export default {
       return this.zoneType === ADVANCED_ZONE
     },
     isDedicated () {
-      return this.prefillContent.isDedicated?.value || false
+      return this.prefillContent?.isDedicated || false
     },
     sgEnabled () {
-      return this.prefillContent.securityGroupsEnabled?.value || false
+      return this.prefillContent?.securityGroupsEnabled || false
     },
     havingNetscaler () {
-      return this.prefillContent.networkOfferingSelected?.havingNetscaler || false
+      return this.prefillContent?.networkOfferingSelected?.havingNetscaler || false
     },
     havingSG () {
-      return this.prefillContent.networkOfferingSelected?.havingSG || false
+      return this.prefillContent?.networkOfferingSelected?.havingSG || false
     },
     havingEIP () {
-      return this.prefillContent.networkOfferingSelected?.havingEIP || false
+      return this.prefillContent?.networkOfferingSelected?.havingEIP || false
     },
     havingELB () {
-      return this.prefillContent.networkOfferingSelected?.havingELB || false
+      return this.prefillContent?.networkOfferingSelected?.havingELB || false
     },
     selectedBaremetalProviders () {
-      return this.prefillContent.networkOfferingSelected?.selectedBaremetalProviders || []
+      return this.prefillContent?.networkOfferingSelected?.selectedBaremetalProviders || []
     }
   },
   mounted () {
@@ -223,7 +226,7 @@ export default {
       }
     },
     trafficLabelParam (trafficTypeID, physicalNetworkIndex) {
-      const hypervisor = this.prefillContent.hypervisor.value
+      const hypervisor = this.prefillContent.hypervisor
       physicalNetworkIndex = this.isAdvancedZone ? physicalNetworkIndex : 0
       let physicalNetwork = []
       let trafficConfig = null
@@ -301,7 +304,7 @@ export default {
     async stepAddZone () {
       this.addStep('message.creating.zone', 'stepAddZone')
 
-      const guestcidraddress = this.prefillContent.guestcidraddress?.value || null
+      const guestcidraddress = this.prefillContent?.guestcidraddress || null
       const params = {}
       params.networktype = this.zoneType
 
@@ -321,15 +324,15 @@ export default {
           params.securitygroupenabled = true
         }
       }
-      params.name = this.prefillContent.name.value
-      params.localstorageenabled = this.prefillContent.localstorageenabled?.value || false
-      params.dns1 = this.prefillContent.ipv4Dns1.value
-      params.dns2 = this.prefillContent.ipv4Dns2?.value || null
-      params.ip6dns1 = this.prefillContent.ipv6Dns1?.value || null
-      params.ip6dns2 = this.prefillContent.ipv6Dns2?.value || null
-      params.internaldns1 = this.prefillContent.internalDns1?.value || null
-      params.internaldns2 = this.prefillContent.internalDns2?.value || null
-      params.domain = this.prefillContent.networkDomain?.value || null
+      params.name = this.prefillContent?.name
+      params.localstorageenabled = this.prefillContent?.localstorageenabled || false
+      params.dns1 = this.prefillContent.ipv4Dns1
+      params.dns2 = this.prefillContent?.ipv4Dns2 || null
+      params.ip6dns1 = this.prefillContent?.ipv6Dns1 || null
+      params.ip6dns2 = this.prefillContent?.ipv6Dns2 || null
+      params.internaldns1 = this.prefillContent?.internalDns1 || null
+      params.internaldns2 = this.prefillContent?.internalDns2 || null
+      params.domain = this.prefillContent?.networkDomain || null
 
       try {
         if (!this.stepData.stepMove.includes('createZone')) {
@@ -355,8 +358,8 @@ export default {
 
       const params = {}
       params.zoneid = this.stepData.zoneReturned.id
-      params.domainid = this.prefillContent.domainId?.value || null
-      params.account = this.prefillContent.account?.value || null
+      params.domainid = this.prefillContent?.domainId || null
+      params.account = this.prefillContent?.account || null
 
       try {
         await this.dedicateZone(params)
@@ -732,18 +735,18 @@ export default {
 
       const params = {}
       params.physicalnetworkid = this.stepData.physicalNetworkReturned.id
-      params.username = this.prefillContent.netscalerUsername?.value || null
-      params.password = this.prefillContent.netscalerPassword?.value || null
-      params.networkdevicetype = this.prefillContent.netscalerType?.value || null
-      params.gslbprovider = this.prefillContent.gslbprovider?.value || false
-      params.gslbproviderpublicip = this.prefillContent.gslbproviderpublicip?.value || null
-      params.gslbproviderprivateip = this.prefillContent.gslbproviderprivateip?.value || null
+      params.username = this.prefillContent?.netscalerUsername || null
+      params.password = this.prefillContent?.netscalerPassword || null
+      params.networkdevicetype = this.prefillContent?.netscalerType || null
+      params.gslbprovider = this.prefillContent?.gslbprovider || false
+      params.gslbproviderpublicip = this.prefillContent?.gslbproviderpublicip || null
+      params.gslbproviderprivateip = this.prefillContent?.gslbproviderprivateip || null
 
       const url = []
-      const ip = this.prefillContent.netscalerIp.value
+      const ip = this.prefillContent.netscalerIp
       url.push('https://' + ip)
       let isQuestionMarkAdded = false
-      const publicInterface = this.prefillContent.publicinterface?.value || null
+      const publicInterface = this.prefillContent?.publicinterface || null
       if (publicInterface != null && publicInterface.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -754,7 +757,7 @@ export default {
         url.push('publicinterface=' + publicInterface)
       }
 
-      const privateInterface = this.prefillContent.privateinterface?.value || null
+      const privateInterface = this.prefillContent?.privateinterface || null
       if (privateInterface != null && privateInterface.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -765,7 +768,7 @@ export default {
         url.push('privateinterface=' + publicInterface)
       }
 
-      const numretries = this.prefillContent.value || null
+      const numretries = this.prefillContent?.numretries || null
       if (numretries != null && numretries.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -776,7 +779,7 @@ export default {
         url.push('numretries=' + numretries)
       }
 
-      const capacity = this.prefillContent.capacity?.value || null
+      const capacity = this.prefillContent?.capacity || null
       if (capacity != null && capacity.length > 0) {
         if (!isQuestionMarkAdded) {
           url.push('?')
@@ -813,11 +816,11 @@ export default {
 
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
-      params.name = this.prefillContent.podName?.value || null
-      params.gateway = this.prefillContent.podReservedGateway?.value || null
-      params.netmask = this.prefillContent.podReservedNetmask?.value || null
-      params.startIp = this.prefillContent.podReservedStartIp?.value || null
-      params.endIp = this.prefillContent.podReservedStopIp?.value || null
+      params.name = this.prefillContent?.podName || null
+      params.gateway = this.prefillContent?.podReservedGateway || null
+      params.netmask = this.prefillContent?.podReservedNetmask || null
+      params.startIp = this.prefillContent?.podReservedStartIp || null
+      params.endIp = this.prefillContent?.podReservedStopIp || null
 
       try {
         if (!this.stepData.stepMove.includes('createPod')) {
@@ -840,14 +843,14 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
       params.name = 'defaultGuestNetwork'
       params.displaytext = 'defaultGuestNetwork'
-      params.networkofferingid = this.prefillContent.networkOfferingSelected?.id || null
+      params.networkofferingid = this.prefillContent?.networkOfferingSelected?.id || null
 
       if (this.isAdvancedZone && this.sgEnabled) {
-        params.gateway = this.prefillContent.guestGateway?.value || null
-        params.netmask = this.prefillContent.guestNetmask?.value || null
-        params.startip = this.prefillContent.guestStartIp?.value || null
-        params.endip = this.prefillContent.guestStopIp?.value || null
-        params.vlan = this.prefillContent.guestVlan?.value || null
+        params.gateway = this.prefillContent?.guestGateway || null
+        params.netmask = this.prefillContent?.guestNetmask || null
+        params.startip = this.prefillContent?.guestStartIp || null
+        params.endip = this.prefillContent?.guestStopIp || null
+        params.vlan = this.prefillContent?.guestVlan || null
       }
 
       try {
@@ -1052,10 +1055,10 @@ export default {
         const params = {}
         params.podid = this.stepData.podReturned.id
         params.networkid = this.stepData.networkReturned.id
-        params.gateway = this.prefillContent.guestGateway?.value || null
-        params.netmask = this.prefillContent.guestNetmask?.value || null
-        params.startip = this.prefillContent.guestStartIp?.value || null
-        params.endip = this.prefillContent.guestStopIp?.value || null
+        params.gateway = this.prefillContent?.guestGateway || null
+        params.netmask = this.prefillContent?.guestNetmask || null
+        params.startip = this.prefillContent?.guestStartIp || null
+        params.endip = this.prefillContent?.guestStopIp || null
         params.forVirtualNetwork = false
 
         try {
@@ -1064,7 +1067,7 @@ export default {
             this.stepData.stepMove.push('createGuestVlanIpRange')
           }
 
-          const hypervisor = this.prefillContent.hypervisor.value
+          const hypervisor = this.prefillContent.hypervisor
           if (hypervisor === 'BareMetal') {
             await this.stepComplete()
           } else {
@@ -1091,10 +1094,10 @@ export default {
           for (let index = 0; index < physicalNetworksHavingGuestIncludingVlan.length; index++) {
             let vlan = null
 
-            if (!this.prefillContent.vlanRangeEnd || !this.prefillContent.vlanRangeEnd.value) {
-              vlan = this.prefillContent.vlanRangeStart.value
+            if (!this.prefillContent.vlanRangeEnd || !this.prefillContent.vlanRangeEnd) {
+              vlan = this.prefillContent.vlanRangeStart
             } else {
-              vlan = [this.prefillContent.vlanRangeStart.value, this.prefillContent.vlanRangeEnd.value].join('-')
+              vlan = [this.prefillContent.vlanRangeStart, this.prefillContent.vlanRangeEnd].join('-')
             }
 
             const updateParams = {}
@@ -1125,7 +1128,7 @@ export default {
       this.currentStep++
       this.addStep('message.creating.cluster', 'clusterResource')
 
-      const hypervisor = this.prefillContent.hypervisor.value
+      const hypervisor = this.prefillContent.hypervisor
       const params = {}
       params.zoneId = this.stepData.zoneReturned.id
       params.hypervisor = hypervisor
@@ -1138,17 +1141,17 @@ export default {
       }
       params.clustertype = clusterType
       params.podId = this.stepData.podReturned.id
-      let clusterName = this.prefillContent.clusterName.value
+      let clusterName = this.prefillContent.clusterName
 
       if (hypervisor === 'VMware') {
-        params.username = this.prefillContent.vCenterUsername?.value || null
-        params.password = this.prefillContent.vCenterPassword?.value || null
-        params.vsmipaddress = this.prefillContent.vsmipaddress?.value || null
-        params.vsmusername = this.prefillContent.vsmusername?.value || null
-        params.vsmpassword = this.prefillContent.vsmpassword?.value || null
+        params.username = this.prefillContent?.vCenterUsername || null
+        params.password = this.prefillContent?.vCenterPassword || null
+        params.vsmipaddress = this.prefillContent?.vsmipaddress || null
+        params.vsmusername = this.prefillContent?.vsmusername || null
+        params.vsmpassword = this.prefillContent?.vsmpassword || null
 
-        const hostname = this.prefillContent.vCenterHost?.value || null
-        const dcName = this.prefillContent.vCenterDatacenter?.value || null
+        const hostname = this.prefillContent?.vCenterHost || null
+        const dcName = this.prefillContent?.vCenterDatacenter || null
         let url = null
         if (hostname.indexOf('http://') === -1) {
           url = ['http://', hostname].join('')
@@ -1165,10 +1168,10 @@ export default {
       if (hypervisor === 'VMware') {
         const vmwareData = {}
         vmwareData.zoneId = this.stepData.zoneReturned.id
-        vmwareData.username = this.prefillContent.vCenterUsername?.value || null
-        vmwareData.password = this.prefillContent.vCenterPassword?.value || null
-        vmwareData.name = this.prefillContent.vCenterDatacenter?.value || null
-        vmwareData.vcenter = this.prefillContent.vCenterHost?.value || null
+        vmwareData.username = this.prefillContent?.vCenterUsername || null
+        vmwareData.password = this.prefillContent?.vCenterPassword || null
+        vmwareData.name = this.prefillContent?.vCenterDatacenter || null
+        vmwareData.vcenter = this.prefillContent?.vCenterHost || null
 
         try {
           if (!this.stepData.stepMove.includes('addVmwareDc')) {
@@ -1208,15 +1211,16 @@ export default {
       this.addStep('message.adding.host', 'hostResource')
 
       const hostData = {}
+      const hostPassword = this.prefillContent?.authmethod !== 'password' ? '' : (this.prefillContent?.hostPassword || null)
       hostData.zoneid = this.stepData.zoneReturned.id
       hostData.podid = this.stepData.podReturned.id
       hostData.clusterid = this.stepData.clusterReturned.id
       hostData.hypervisor = this.stepData.clusterReturned.hypervisortype
       hostData.clustertype = this.stepData.clusterReturned.clustertype
-      hostData.hosttags = this.prefillContent.hostTags?.value || null
-      hostData.username = this.prefillContent.hostUserName?.value || null
-      hostData.password = this.prefillContent.hostPassword?.value || null
-      const hostname = this.prefillContent.hostName?.value || null
+      hostData.hosttags = this.prefillContent?.hostTags || null
+      hostData.username = this.prefillContent?.hostUserName || null
+      hostData.password = hostPassword
+      const hostname = this.prefillContent?.hostName || null
       let url = null
       if (hostname.indexOf('http://') === -1) {
         url = ['http://', hostname].join('')
@@ -1224,14 +1228,14 @@ export default {
         url = hostname
       }
       hostData.url = url
-      const hypervisor = this.prefillContent.hypervisor.value
+      const hypervisor = this.prefillContent.hypervisor
 
       if (hypervisor === 'Ovm') {
-        hostData.agentusername = this.prefillContent.agentUserName?.value || null
-        hostData.agentpassword = this.prefillContent.agentPassword?.value || null
+        hostData.agentusername = this.prefillContent?.agentUserName || null
+        hostData.agentpassword = this.prefillContent?.agentPassword || null
       }
 
-      if (this.prefillContent.localstorageenabledforsystemvm.value) {
+      if (this.prefillContent.localstorageenabledforsystemvm) {
         const configParams = {}
         configParams.name = 'system.vm.use.local.storage'
         configParams.value = true
@@ -1258,8 +1262,8 @@ export default {
       }
     },
     async stepAddPrimaryStorage () {
-      if (this.prefillContent.localstorageenabled.value &&
-        this.prefillContent.localstorageenabledforsystemvm.value) {
+      if (this.prefillContent.localstorageenabled &&
+        this.prefillContent.localstorageenabledforsystemvm) {
         await this.stepAddSecondaryStorage()
         return
       }
@@ -1271,11 +1275,12 @@ export default {
       params.zoneid = this.stepData.zoneReturned.id
       params.podId = this.stepData.podReturned.id
       params.clusterid = this.stepData.clusterReturned.id
-      params.name = this.prefillContent.primaryStorageName?.value || null
-      params.scope = this.prefillContent.primaryStorageScope?.value || null
+      params.name = this.prefillContent?.primaryStorageName || null
+      params.scope = this.prefillContent?.primaryStorageScope || null
+      params.provider = this.prefillContent.provider
 
       if (params.scope === 'zone') {
-        const hypervisor = this.prefillContent.hypervisor.value
+        const hypervisor = this.prefillContent.hypervisor
         if (hypervisor !== undefined) {
           params.hypervisor = hypervisor
         } else if (this.stepData.clusterReturned.hypervisortype !== undefined) {
@@ -1283,88 +1288,110 @@ export default {
         }
       }
 
-      var server = this.prefillContent.primaryStorageServer?.value || null
+      var server = this.prefillContent?.primaryStorageServer || null
       let url = ''
-      const protocol = this.prefillContent.primaryStorageProtocol.value
+      const protocol = this.prefillContent.primaryStorageProtocol
 
       if (protocol === 'nfs') {
-        let path = this.prefillContent.primaryStoragePath?.value || ''
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.nfsURL(server, path)
       } else if (protocol === 'SMB') {
-        let path = this.prefillContent.primaryStoragePath?.value || ''
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.smbURL(server, path)
-        params['details[0].user'] = this.prefillContent.primaryStorageSMBUsername?.value || null
-        params['details[0].password'] = this.prefillContent.primaryStorageSMBPassword?.value || null
-        params['details[0].domain'] = this.prefillContent.primaryStorageSMBDomain?.value || null
+        params['details[0].user'] = this.prefillContent?.primaryStorageSMBUsername || null
+        params['details[0].password'] = this.prefillContent?.primaryStorageSMBPassword || null
+        params['details[0].domain'] = this.prefillContent?.primaryStorageSMBDomain || null
       } else if (protocol === 'PreSetup') {
         let path = ''
         if (this.stepData.clusterReturned.hypervisortype === 'XenServer') {
-          path = this.prefillContent.primaryStorageSRLabel?.value || ''
+          path = this.prefillContent?.primaryStorageSRLabel || ''
           server = 'localhost'
         } else {
-          path = this.prefillContent.primaryStoragePath?.value || ''
+          path = this.prefillContent?.primaryStoragePath || ''
         }
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.presetupURL(server, path)
       } else if (protocol === 'ocfs2') {
-        let path = this.prefillContent.primaryStoragePath?.value || ''
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.ocfs2URL(server, path)
       } else if (protocol === 'SharedMountPoint') {
-        let path = this.prefillContent.primaryStoragePath?.value || ''
+        server = 'localhost'
+        let path = this.prefillContent?.primaryStoragePath || ''
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
         url = this.sharedMountPointURL(server, path)
       } else if (protocol === 'clvm') {
-        let vg = this.prefillContent.primaryStorageVolumeGroup?.value || ''
+        let vg = this.prefillContent?.primaryStorageVolumeGroup || ''
         if (vg.substring(0, 1) !== '/') {
           vg = '/' + vg
         }
         url = this.clvmURL(vg)
       } else if (protocol === 'rbd') {
-        const rbdmonitor = this.prefillContent.primaryStorageRADOSMonitor?.value || ''
-        const rbdpool = this.prefillContent.primaryStorageRADOSPool?.value || ''
-        const rbdid = this.prefillContent.primaryStorageRADOSUser?.value || ''
-        const rbdsecret = this.prefillContent.primaryStorageRADOSSecret?.value || ''
+        const rbdmonitor = this.prefillContent?.primaryStorageRADOSMonitor || ''
+        const rbdpool = this.prefillContent?.primaryStorageRADOSPool || ''
+        const rbdid = this.prefillContent?.primaryStorageRADOSUser || ''
+        const rbdsecret = this.prefillContent?.primaryStorageRADOSSecret || ''
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)
         params.provider = 'Linstor'
-        params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup.value
+        params['details[0].resourceGroup'] = this.prefillContent.primaryStorageLinstorResourceGroup
       } else if (protocol === 'vmfs' || protocol === 'datastorecluster') {
-        let path = this.prefillContent.primaryStorageVmfsDatacenter.value
+        let path = this.prefillContent.primaryStorageVmfsDatacenter
         if (path.substring(0, 1) !== '/') {
           path = '/' + path
         }
-        path += '/' + this.prefillContent.primaryStorageVmfsDatastore.value
+        path += '/' + this.prefillContent.primaryStorageVmfsDatastore
         if (protocol === 'vmfs') {
           url = this.vmfsURL('dummy', path)
         }
         if (protocol === 'datastorecluster') {
           url = this.datastoreclusterURL('dummy', path)
         }
-      } else {
-        let iqn = this.prefillContent.primaryStorageTargetIQN?.value || ''
+      } else if (protocol === 'iscsi') {
+        let iqn = this.prefillContent?.primaryStorageTargetIQN || ''
         if (iqn.substring(0, 1) !== '/') {
           iqn = '/' + iqn
         }
-        const lun = this.prefillContent.primaryStorageLUN?.value || ''
+        const lun = this.prefillContent?.primaryStorageLUN || ''
         url = this.iscsiURL(server, iqn, lun)
       }
 
       params.url = url
-      params.tags = this.prefillContent.primaryStorageTags?.value || ''
+      if (this.prefillContent.provider !== 'DefaultPrimary' && this.prefillContent.provider !== 'PowerFlex') {
+        if (this.prefillContent.managed) {
+          params.managed = true
+        } else {
+          params.managed = false
+        }
+        if (this.prefillContent.capacityBytes && this.prefillContent.capacityBytes.length > 0) {
+          params.capacityBytes = this.prefillContent.capacityBytes.split(',').join('')
+        }
+        if (this.prefillContent.capacityIops && this.prefillContent.capacityIops.length > 0) {
+          params.capacityIops = this.prefillContent.capacityIops.split(',').join('')
+        }
+        if (this.prefillContent.url && this.prefillContent.url.length > 0) {
+          params.url = this.prefillContent.url
+        }
+      }
+      if (this.prefillContent.provider === 'PowerFlex') {
+        params.url = this.powerflexURL(this.prefillContent.powerflexGateway, this.prefillContent.powerflexGatewayUsername,
+          this.prefillContent.powerflexGatewayPassword, this.prefillContent.powerflexStoragePool)
+      }
+
+      params.tags = this.prefillContent?.primaryStorageTags || ''
 
       try {
         if (!this.stepData.stepMove.includes('createStoragePool')) {
@@ -1379,8 +1406,8 @@ export default {
       }
     },
     async stepAddSecondaryStorage () {
-      if (!this.prefillContent.secondaryStorageProvider.value ||
-      this.prefillContent.secondaryStorageProvider.value.length === 0) {
+      if (!this.prefillContent.secondaryStorageProvider ||
+      this.prefillContent.secondaryStorageProvider.length === 0) {
         await this.stepComplete()
         return
       }
@@ -1389,86 +1416,86 @@ export default {
       this.addStep('message.creating.secondary.storage', 'secondaryResource')
 
       const params = {}
-      params.name = this.prefillContent.secondaryStorageName?.value || null
-      if (this.prefillContent.secondaryStorageProvider.value === 'NFS') {
-        const nfsServer = this.prefillContent.secondaryStorageServer.value
-        const path = this.prefillContent.secondaryStoragePath.value
+      params.name = this.prefillContent?.secondaryStorageName || null
+      if (this.prefillContent.secondaryStorageProvider === 'NFS') {
+        const nfsServer = this.prefillContent.secondaryStorageServer
+        const path = this.prefillContent.secondaryStoragePath
         const url = this.nfsURL(nfsServer, path)
 
-        params.provider = this.prefillContent.secondaryStorageProvider.value
+        params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
-      } else if (this.prefillContent.secondaryStorageProvider.value === 'SMB') {
-        const nfsServer = this.prefillContent.secondaryStorageServer.value
-        const path = this.prefillContent.secondaryStoragePath.value
+      } else if (this.prefillContent.secondaryStorageProvider === 'SMB') {
+        const nfsServer = this.prefillContent.secondaryStorageServer
+        const path = this.prefillContent.secondaryStoragePath
         const url = this.smbURL(nfsServer, path)
 
-        params.provider = this.prefillContent.secondaryStorageProvider.value
+        params.provider = this.prefillContent.secondaryStorageProvider
         params.zoneid = this.stepData.zoneReturned.id
         params.url = url
         params['details[0].key'] = 'user'
-        params['details[0].value'] = this.prefillContent.secondaryStorageSMBUsername.value
+        params['details[0].value'] = this.prefillContent.secondaryStorageSMBUsername
         params['details[1].key'] = 'password'
-        params['details[1].value'] = this.prefillContent.secondaryStorageSMBPassword.value
+        params['details[1].value'] = this.prefillContent.secondaryStorageSMBPassword
         params['details[2].key'] = 'domain'
-        params['details[2].value'] = this.prefillContent.secondaryStorageSMBDomain.value
-      } else if (this.prefillContent.secondaryStorageProvider.value === 'S3') {
-        params.provider = this.prefillContent.secondaryStorageProvider.value
+        params['details[2].value'] = this.prefillContent.secondaryStorageSMBDomain
+      } else if (this.prefillContent.secondaryStorageProvider === 'S3') {
+        params.provider = this.prefillContent.secondaryStorageProvider
         params['details[0].key'] = 'accesskey'
-        params['details[0].value'] = this.prefillContent.secondaryStorageAccessKey.value
+        params['details[0].value'] = this.prefillContent.secondaryStorageAccessKey
         params['details[1].key'] = 'secretkey'
-        params['details[1].value'] = this.prefillContent.secondaryStorageSecretKey.value
+        params['details[1].value'] = this.prefillContent.secondaryStorageSecretKey
         params['details[2].key'] = 'bucket'
-        params['details[2].value'] = this.prefillContent.secondaryStorageBucket.value
+        params['details[2].value'] = this.prefillContent.secondaryStorageBucket
         params['details[3].key'] = 'usehttps'
-        params['details[3].value'] = this.prefillContent.secondaryStorageHttps?.value || false
+        params['details[3].value'] = this.prefillContent?.secondaryStorageHttps || false
 
         let index = 4
         if (this.prefillContent.secondaryStorageEndpoint &&
-          this.prefillContent.secondaryStorageEndpoint.value.length > 0) {
+          this.prefillContent.secondaryStorageEndpoint.length > 0) {
           params['details[' + index.toString() + '].key'] = 'endpoint'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageEndpoint.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageEndpoint
           index++
         }
         if (this.prefillContent.secondaryStorageConnectionTimeout &&
-          this.prefillContent.secondaryStorageConnectionTimeout.value.length > 0) {
+          this.prefillContent.secondaryStorageConnectionTimeout.length > 0) {
           params['details[' + index.toString() + '].key'] = 'connectiontimeout'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageConnectionTimeout.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageConnectionTimeout
           index++
         }
         if (this.prefillContent.secondaryStorageMaxError &&
-          this.prefillContent.secondaryStorageMaxError.value.length > 0) {
+          this.prefillContent.secondaryStorageMaxError.length > 0) {
           params['details[' + index.toString() + '].key'] = 'maxerrorretry'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageMaxError.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageMaxError
           index++
         }
         if (this.prefillContent.secondaryStorageSocketTimeout &&
-          this.prefillContent.secondaryStorageSocketTimeout.value.length > 0) {
+          this.prefillContent.secondaryStorageSocketTimeout.length > 0) {
           params['details[' + index.toString() + '].key'] = 'sockettimeout'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageSocketTimeout.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageSocketTimeout
           index++
         }
-      } else if (this.prefillContent.secondaryStorageProvider.value === 'Swift') {
-        params.provider = this.prefillContent.secondaryStorageProvider.value
-        params.url = this.prefillContent.secondaryStorageURL.value
+      } else if (this.prefillContent.secondaryStorageProvider === 'Swift') {
+        params.provider = this.prefillContent.secondaryStorageProvider
+        params.url = this.prefillContent.secondaryStorageURL
 
         let index = 0
         if (this.prefillContent.secondaryStorageAccount &&
-          this.prefillContent.secondaryStorageAccount.value.length > 0) {
+          this.prefillContent.secondaryStorageAccount.length > 0) {
           params['details[' + index.toString() + '].key'] = 'account'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageAccount.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageAccount
           index++
         }
         if (this.prefillContent.secondaryStorageUsername &&
-          this.prefillContent.secondaryStorageUsername.value.length > 0) {
+          this.prefillContent.secondaryStorageUsername.length > 0) {
           params['details[' + index.toString() + '].key'] = 'username'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageUsername.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageUsername
           index++
         }
         if (this.prefillContent.secondaryStorageKey &&
-          this.prefillContent.secondaryStorageKey.value.length > 0) {
+          this.prefillContent.secondaryStorageKey.length > 0) {
           params['details[' + index.toString() + '].key'] = 'key'
-          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey.value
+          params['details[' + index.toString() + '].value'] = this.prefillContent.secondaryStorageKey
           index++
         }
         if (this.prefillContent.secondaryStoragePolicy &&
@@ -1485,9 +1512,9 @@ export default {
           this.stepData.stepMove.push('addImageStore')
         }
 
-        if (this.prefillContent.secondaryStorageNFSStaging && this.prefillContent.secondaryStorageNFSStaging.value) {
-          const nfsServer = this.prefillContent.secondaryStorageNFSServer.value
-          const path = this.prefillContent.secondaryStorageNFSPath.value
+        if (this.prefillContent.secondaryStorageNFSStaging && this.prefillContent.secondaryStorageNFSStaging) {
+          const nfsServer = this.prefillContent.secondaryStorageNFSServer
+          const path = this.prefillContent.secondaryStorageNFSPath
           const url = this.nfsURL(nfsServer, path)
 
           const nfsParams = {}
@@ -2166,6 +2193,11 @@ export default {
         url = server + iqn + '/' + lun
       }
       return url
+    },
+    powerflexURL (gateway, username, password, pool) {
+      var url = 'powerflex://' + encodeURIComponent(username) + ':' + encodeURIComponent(password) + '@' +
+       gateway + '/' + encodeURIComponent(pool)
+      return url
     }
   }
 }
@@ -2196,11 +2228,11 @@ export default {
     overflow-y: auto;
   }
 
-  /deep/.step-error {
+  :deep(.step-error) {
     color: #f5222d;
     margin-top: 20px;
 
-    /deep/.ant-card-body {
+    :deep(.ant-card-body) {
       padding: 15px;
       text-align: justify;
     }

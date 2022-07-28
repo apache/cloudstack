@@ -18,6 +18,7 @@
 <template>
   <div>
     <a-modal
+      v-if="visible"
       :title="$t('label.upload.resource.icon')"
       :visible="visible"
       :maskClosable="true"
@@ -56,41 +57,56 @@
       <a-row>
         <a-col :xs="2" :md="2">
           <a-upload name="file" :beforeUpload="beforeUpload" :showUploadList="false">
-            <a-button><a-icon type="upload" />{{ $t('label.choose.resource.icon') }} </a-button>
+            <a-button><upload-outlined />{{ $t('label.choose.resource.icon') }} </a-button>
           </a-upload>
         </a-col>
         <a-col :xs="{span: 2, offset: 4}" :md="1">
-          <a-button icon="plus" @click="changeScale(5)"/>
+          <a-button @click="changeScale(5)">
+            <template #icon><plus-outlined /></template>
+          </a-button>
         </a-col>
         <a-col :xs="{span: 1, offset: 0}" :md="2">
-          <a-button icon="minus" @click="changeScale(-5)"/>
+          <a-button @click="changeScale(-5)">
+            <template #icon><minus-outlined /></template>
+          </a-button>
         </a-col>
         <a-col :lg="{span: 1, offset: 0}" :md="2">
-          <a-button icon="undo" @click="rotateLeft"/>
+          <a-button @click="rotateLeft">
+            <template #icon><undo-outlined /></template>
+          </a-button>
         </a-col>
         <a-col :lg="{span: 1, offset: 0}" :md="2">
-          <a-button icon="redo" @click="rotateRight"/>
+          <a-button @click="rotateRight">
+            <template #icon><redo-outlined /></template>
+          </a-button>
         </a-col>
         <a-col :xs="{span: 1, offset: 3}" :md="1">
-          <a-button type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
+          <a-button :disabled="options.img === ''" type="primary" @click="uploadIcon('blob')"> {{ $t('label.upload') }} </a-button>
         </a-col>
         <a-col :xs="{span: 2, offset: 5}" :md="2">
-          <a-button v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === $getResourceType().toLowerCase()" type="danger" @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
+          <a-button
+            v-if="resource.icon && resource.icon.resourcetype.toLowerCase() === $getResourceType().toLowerCase()"
+            type="primary"
+            danger
+            @click="deleteIcon('blob')"> {{ $t('label.delete') }} </a-button>
         </a-col>
       </a-row>
     </a-modal>
     <a-modal
+      v-if="showAlert"
       :visible="showAlert"
       :footer="null"
       style="top: 20px;"
       centered
       width="auto"
       :maskClosable="false">
-      <span slot="title">
+      <template #title>
         {{ $t('label.warning') }}
-      </span>
+      </template>
       <a-alert type="warning">
-        <span slot="message" v-html="$t('message.warn.filetype')" />
+        <template #message>
+          <span v-html="$t('message.warn.filetype')" />
+        </template>
       </a-alert>
       <a-divider style="margin-top: 0;"></a-divider>
       <div :span="24" class="action-button">
@@ -119,13 +135,17 @@ export default {
     }
   },
   watch: {
-    resource: function (oldVal, newVal) {
-      if (oldVal === newVal) return
-      this.defaultImage = this.resource?.icon?.base64image || ''
+    resource: {
+      deep: true,
+      handler () {
+        this.defaultImage = this.resource?.icon?.base64image || ''
+      }
     },
-    preview: function (data) {
-      this.realTime(data)
-      return this.previews
+    preview: {
+      deep: true,
+      handler () {
+        this.realTime(this.preview)
+      }
     }
   },
   data () {
@@ -151,7 +171,7 @@ export default {
     handleClose () {
       this.options.img = ''
       this.previews = {}
-      eventBus.$emit('handle-close')
+      eventBus.emit('handle-close')
     },
     realTime (data) {
       if (data && data.url) {
@@ -247,12 +267,12 @@ export default {
         })
       }).finally(() => {
         this.handleClose()
-        eventBus.$emit('refresh-icon')
+        eventBus.emit('refresh-icon')
         if (['user', 'account'].includes(resourceType.toLowerCase())) {
-          eventBus.$emit('refresh-header')
+          eventBus.emit('refresh-header')
         }
         if (['domain'].includes(this.$route.path.split('/')[1])) {
-          eventBus.$emit('refresh-domain-icon')
+          eventBus.emit('refresh-domain-icon')
         }
       })
     },
@@ -277,12 +297,12 @@ export default {
         })
       }).finally(() => {
         this.handleClose()
-        eventBus.$emit('refresh-icon')
+        eventBus.emit('refresh-icon')
         if (['user', 'account'].includes(resourceType.toLowerCase())) {
-          eventBus.$emit('refresh-header')
+          eventBus.emit('refresh-header')
         }
         if (['domain'].includes(this.$route.path.split('/')[1])) {
-          eventBus.$emit('refresh-domain-icon')
+          eventBus.emit('refresh-domain-icon')
         }
       })
     }

@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -167,8 +167,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     }
 
     @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.Iso;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Iso;
     }
 
     @Override

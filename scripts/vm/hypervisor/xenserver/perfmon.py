@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -87,7 +87,7 @@ class RRDUpdates:
             return result
 
     def get_vm_data(self, uuid, param, row):
-	#pp = pprint.PrettyPrinter(indent=4) 
+	#pp = pprint.PrettyPrinter(indent=4)
 	#pp.pprint(self.vm_reports)
         report = self.vm_reports[uuid]
         col = report[param]

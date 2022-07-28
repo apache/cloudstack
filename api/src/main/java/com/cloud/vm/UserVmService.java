@@ -280,9 +280,6 @@ public interface UserVmService {
      *            base64 encoded before adding it to the request. Currently only
      *            HTTP GET is supported. Using HTTP GET (via querystring), you
      *            can send up to 2KB of data after base64 encoding
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
      * @param requestedIps
      *            TODO
      * @param defaultIps
@@ -290,8 +287,6 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param memory
-     * @param cpuNumber
      * @param customId
      * @param dhcpOptionMap
      *             - Maps the dhcp option code and the dhcp value to the network uuid
@@ -300,6 +295,7 @@ public interface UserVmService {
      *             an optional parameter that creates additional data disks for the virtual machine
      *             For each of the templates in the map, a data disk will be created from the corresponding
      *             disk offering obtained from the map
+     * @param type
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -315,9 +311,7 @@ public interface UserVmService {
         List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
         HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
         List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
-        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId) throws InsufficientCapacityException,
-        ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap, Map<String, String> userVmOVFProperties, boolean dynamicScalingEnabled, Long overrideDiskOfferingId, String vmType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
@@ -395,7 +389,7 @@ public interface UserVmService {
         String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
         List<String> sshKeyPairs, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
         Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap,
-        Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled, String type, Long overrideDiskOfferingId)
+        Map<String, String> templateOvfPropertiesMap, boolean dynamicScalingEnabled, String vmType, Long overrideDiskOfferingId)
 
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
@@ -527,7 +521,7 @@ public interface UserVmService {
     String getVmUserData(long vmId);
 
     /**
-     * determin whether the uservm should be visible to the end user
+     * determine whether the uservm should be visible to the end user
      * @return  value of the display flag
      */
     public boolean isDisplayResourceEnabled(Long vmId);

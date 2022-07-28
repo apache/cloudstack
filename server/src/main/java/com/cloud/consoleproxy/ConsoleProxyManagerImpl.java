@@ -29,9 +29,12 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -221,6 +224,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private IndirectAgentLB indirectAgentLB;
+    @Inject
+    private CAManager caManager;
+    @Inject
+    private NetworkOrchestrationService networkMgr;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -688,6 +695,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), accountManager.getSystemUser().getId(), 0, serviceOffering.isOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
+        proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         proxy = consoleProxyDao.persist(proxy);
         try {
             virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
@@ -1204,7 +1212,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
-
+        final Map<String, String> sshAccessDetails = networkMgr.getSystemVMAccessDetails(profile.getVirtualMachine());
+        final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+        ipAddressDetails.remove("router.name");
+        final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(profile.getHostName(), profile.getInstanceName()),
+                new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
         ConsoleProxyVO vm = consoleProxyDao.findById(profile.getId());
         Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
@@ -1276,7 +1288,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
-
+        buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);

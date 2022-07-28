@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -86,4 +87,13 @@ public class DeleteVPCOfferingCmd extends BaseAsyncCmd {
         return "Deleting VPC offering id=" + getId();
     }
 
+    @Override
+    public Long getApiResourceId() {
+        return getId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.VpcOffering;
+    }
 }

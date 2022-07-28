@@ -30,6 +30,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 
@@ -87,7 +88,8 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -270,6 +272,9 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "chain_info", length = 65535)
     String chainInfo;
 
+    @Column(name = "external_uuid")
+    private String externalUuid = null;
+
     public VolumeJoinVO() {
     }
 
@@ -342,7 +347,7 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 
@@ -595,6 +600,14 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getChainInfo() {
         return chainInfo;
+    }
+
+    public String getExternalUuid() {
+        return externalUuid;
+    }
+
+    public void setExternalUuid(String externalUuid) {
+        this.externalUuid = externalUuid;
     }
 
     @Override

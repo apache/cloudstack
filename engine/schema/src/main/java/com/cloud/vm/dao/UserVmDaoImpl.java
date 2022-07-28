@@ -195,6 +195,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
         nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         nicSearch.and("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
+        nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
 
         AccountDataCenterVirtualSearch = createSearchBuilder();
         AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -641,7 +642,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             nicResponse.setMacAddress(rs.getString("nics.mac_address"));
 
             int account_type = rs.getInt("account.type");
-            if (account_type == Account.ACCOUNT_TYPE_ADMIN) {
+            if (account_type == Account.Type.ADMIN.ordinal()) {
                 nicResponse.setBroadcastUri(rs.getString("nics.broadcast_uri"));
                 nicResponse.setIsolationUri(rs.getString("nics.isolation_uri"));
             }

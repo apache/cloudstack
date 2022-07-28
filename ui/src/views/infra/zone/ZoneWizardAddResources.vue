@@ -103,6 +103,7 @@
   </div>
 </template>
 <script>
+import { nextTick } from 'vue'
 import { api } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import StaticInputsForm from '@views/infra/zone/StaticInputsForm'
@@ -130,20 +131,20 @@ export default {
   },
   computed: {
     zoneType () {
-      return this.prefillContent.zoneType?.value || null
+      return this.prefillContent?.zoneType || null
     },
     hypervisor () {
-      return this.prefillContent.hypervisor?.value || null
+      return this.prefillContent?.hypervisor || null
     },
     localstorageenabled () {
-      return this.prefillContent?.localstorageenabled?.value || false
+      return this.prefillContent?.localstorageenabled || false
     },
     localstorageenabledforsystemvm () {
-      return this.prefillContent?.localstorageenabledforsystemvm?.value || false
+      return this.prefillContent?.localstorageenabledforsystemvm || false
     },
     steps () {
       const steps = []
-      const hypervisor = this.prefillContent.hypervisor?.value || null
+      const hypervisor = this.prefillContent.hypervisor ? this.prefillContent.hypervisor : null
       steps.push({
         title: 'label.cluster',
         fromKey: 'clusterResource',
@@ -284,13 +285,41 @@ export default {
           }
         },
         {
+          title: 'label.authentication.method',
+          key: 'authmethod',
+          placeHolder: 'message.error.authmethod',
+          required: false,
+          radioGroup: true,
+          defaultValue: 'password',
+          radioOption: [{
+            label: 'label.password',
+            value: 'password'
+          }, {
+            label: 'label.authentication.sshkey',
+            value: 'sshkey',
+            condition: {
+              hypervisor: ['KVM']
+            }
+          }],
+          display: {
+            hypervisor: ['BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+          },
+          alert: {
+            message: 'message.add.host.sshkey',
+            display: {
+              authmethod: 'sshkey'
+            }
+          }
+        },
+        {
           title: 'label.password',
           key: 'hostPassword',
           placeHolder: 'message.error.host.password',
           required: true,
           password: true,
           display: {
-            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator']
+            hypervisor: ['VMware', 'BareMetal', 'Ovm', 'Hyperv', 'KVM', 'XenServer', 'LXC', 'Simulator'],
+            authmethod: 'password'
           }
         },
         {
@@ -381,7 +410,7 @@ export default {
           }
         },
         {
-          title: 'label.LUN.number',
+          title: 'label.lun.number',
           key: 'primaryStorageLUN',
           placeHolder: 'message.error.lun',
           required: true,
@@ -496,6 +525,81 @@ export default {
           required: true,
           display: {
             primaryStorageProtocol: 'Linstor'
+          }
+        },
+        {
+          title: 'label.provider',
+          key: 'provider',
+          placeHolder: 'message.error.select',
+          value: 'DefaultPrimary',
+          select: true,
+          required: true,
+          options: this.primaryStorageProviders
+        },
+        {
+          title: 'label.ismanaged',
+          key: 'managed',
+          checkbox: true,
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.capacitybytes',
+          key: 'capacityBytes',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.capacityiops',
+          key: 'capacityIops',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.url',
+          key: 'url',
+          hidden: {
+            provider: ['DefaultPrimary', 'PowerFlex', 'Linstor']
+          }
+        },
+        {
+          title: 'label.powerflex.gateway',
+          key: 'powerflexGateway',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.gateway.username',
+          key: 'powerflexGatewayUsername',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.gateway.password',
+          key: 'powerflexGatewayPassword',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          password: true,
+          display: {
+            provider: 'PowerFlex'
+          }
+        },
+        {
+          title: 'label.powerflex.storage.pool',
+          key: 'powerflexStoragePool',
+          required: true,
+          placeHolder: 'message.error.input.value',
+          display: {
+            provider: 'PowerFlex'
           }
         },
         {
@@ -720,18 +824,19 @@ export default {
       currentHypervisor: null,
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
+      primaryStorageProviders: [],
       storageProviders: [],
       currentStep: null,
-      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider']
+      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']
     }
   },
   created () {
-    this.currentStep = this.prefillContent.resourceStep?.resourceStep || 0
+    this.currentStep = this.prefillContent?.resourceStep || 0
     if (this.stepChild && this.stepChild !== '') {
       this.currentStep = this.steps.findIndex(item => item.fromKey === this.stepChild)
     }
     this.scrollToStepActive()
-    if (this.prefillContent.hypervisor.value === 'BareMetal') {
+    if (this.prefillContent.hypervisor === 'BareMetal') {
       this.$emit('nextPressed')
     } else {
       this.fetchConfigurationSwitch()
@@ -740,13 +845,24 @@ export default {
         this.$emit('fieldsChanged', {
           lastHypervisor: this.prefillContent.hypervisor
         })
-      } else if (this.prefillContent.lastHypervisor.value !== this.prefillContent.hypervisor.value) {
+      } else if (this.prefillContent.lastHypervisor !== this.prefillContent.hypervisor) {
         this.$emit('fieldsChanged', {
           lastHypervisor: this.prefillContent.hypervisor,
           primaryStorageProtocol: null,
           primaryStorageScope: null
         })
       }
+    }
+  },
+  watch: {
+    'prefillContent.provider' (newVal, oldVal) {
+      if (['SolidFire', 'PowerFlex'].includes(newVal) && !['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      } else if (!['SolidFire', 'PowerFlex'].includes(newVal) && ['SolidFire', 'PowerFlex'].includes(oldVal)) {
+        this.$emit('fieldsChanged', { primaryStorageProtocol: undefined })
+      }
+
+      this.fetchProtocol()
     }
   },
   methods: {
@@ -760,7 +876,7 @@ export default {
 
       this.scrollToStepActive()
     },
-    handleBack (e) {
+    handleBack () {
       if (this.currentStep === 0) {
         this.$emit('backPressed')
       } else {
@@ -774,7 +890,7 @@ export default {
       if (!this.isMobile()) {
         return
       }
-      this.$nextTick(() => {
+      nextTick().then(() => {
         if (!this.$refs.resourceStep) {
           return
         }
@@ -799,12 +915,15 @@ export default {
         case 'provider':
           this.fetchProvider()
           break
+        case 'primaryStorageProvider':
+          this.fetchPrimaryStorageProvider()
+          break
         default:
           break
       }
     },
     fetchScope () {
-      const hypervisor = this.prefillContent.hypervisor?.value || null
+      const hypervisor = this.prefillContent?.hypervisor || null
       const scope = []
       if (['KVM', 'VMware', 'Hyperv'].includes(hypervisor)) {
         scope.push({
@@ -822,10 +941,9 @@ export default {
         })
       }
       this.primaryStorageScopes = scope
-      this.$forceUpdate()
     },
     fetchProtocol () {
-      const hypervisor = this.prefillContent.hypervisor?.value || null
+      const hypervisor = this.prefillContent?.hypervisor || null
       const protocols = []
       if (hypervisor === 'KVM') {
         protocols.push({
@@ -912,13 +1030,13 @@ export default {
         })
       }
 
+      protocols.push({ id: 'custom', description: 'custom' })
       this.primaryStorageProtocols = protocols
-      this.$forceUpdate()
     },
     async fetchConfigurationSwitch () {
-      const hypervisor = this.prefillContent.hypervisor?.value || null
-      this.$emit('fieldsChanged', { dvSwitchEnabled: { value: false } })
-      this.$emit('fieldsChanged', { vSwitchEnabled: { value: false } })
+      const hypervisor = this.prefillContent?.hypervisor || null
+      this.$emit('fieldsChanged', { dvSwitchEnabled: false })
+      this.$emit('fieldsChanged', { vSwitchEnabled: false })
       if (hypervisor && hypervisor === 'VMware') {
         await this.fetchNexusSwitchConfig()
         await this.fetchDvSwitchConfig()
@@ -930,7 +1048,7 @@ export default {
         if (json.listconfigurationsresponse.configuration[0].value) {
           vSwitchEnabled = true
         }
-        this.$emit('fieldsChanged', { vSwitchEnabled: { value: vSwitchEnabled } })
+        this.$emit('fieldsChanged', { vSwitchEnabled: vSwitchEnabled })
       })
     },
     fetchDvSwitchConfig () {
@@ -939,7 +1057,7 @@ export default {
         if (json.listconfigurationsresponse.configuration[0].value) {
           dvSwitchEnabled = true
         }
-        this.$emit('fieldsChanged', { dvSwitchEnabled: { value: dvSwitchEnabled } })
+        this.$emit('fieldsChanged', { dvSwitchEnabled: dvSwitchEnabled })
       })
     },
     fetchProvider () {
@@ -955,7 +1073,13 @@ export default {
           storageProviders.push({ id: 'Swift', description: 'Swift' })
         }
         this.storageProviders = storageProviders
-        this.$forceUpdate()
+      })
+    },
+    fetchPrimaryStorageProvider () {
+      this.primaryStorageProviders = []
+      api('listStorageProviders', { type: 'primary' }).then(json => {
+        this.primaryStorageProviders = json.liststorageprovidersresponse.dataStoreProvider || []
+        this.primaryStorageProviders.map((item, idx) => { this.primaryStorageProviders[idx].id = item.name })
       })
     },
     submitLaunchZone () {

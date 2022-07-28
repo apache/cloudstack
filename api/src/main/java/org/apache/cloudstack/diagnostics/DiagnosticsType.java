@@ -19,7 +19,7 @@
 package org.apache.cloudstack.diagnostics;
 
 public enum DiagnosticsType {
-    PING("ping"), TRACEROUTE("traceroute"), ARPING("arping");
+    PING("ping"), PING6("ping6"), TRACEROUTE("traceroute"), TRACEROUTE6("traceroute6"), ARPING("arping");
 
     private String value;
 

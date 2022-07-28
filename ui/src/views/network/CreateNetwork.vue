@@ -17,7 +17,7 @@
 
 <template>
   <a-spin :spinning="loading" class="form-layout">
-    <a-tabs :default-active-key="defaultNetworkTypeTabKey" :animated="false" v-if="!loading">
+    <a-tabs v-model:activeKey="defaultNetworkTypeTabKey" :animated="false" v-if="!loading">
       <a-tab-pane :tab="$t('label.isolated')" key="1" v-if="isAdvancedZoneWithoutSGAvailable">
         <CreateIsolatedNetworkForm
           :loading="loading"
@@ -34,7 +34,7 @@
           @refresh-data="refreshParent"
           @refresh="handleRefresh"/>
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.shared')" key="3" v-if="isAdmin()">
+      <a-tab-pane :tab="$t('label.shared')" key="3">
         <CreateSharedNetworkForm
           :loading="loading"
           :resource="resource"
@@ -48,7 +48,6 @@
 
 <script>
 import { api } from '@/api'
-import { isAdmin } from '@/role'
 import CreateIsolatedNetworkForm from '@/views/network/CreateIsolatedNetworkForm'
 import CreateL2NetworkForm from '@/views/network/CreateL2NetworkForm'
 import CreateSharedNetworkForm from '@/views/network/CreateSharedNetworkForm'
@@ -107,9 +106,6 @@ export default {
         this.actionZoneLoading = false
         this.loading = false
       })
-    },
-    isAdmin () {
-      return isAdmin()
     },
     handleRefresh () {
     },

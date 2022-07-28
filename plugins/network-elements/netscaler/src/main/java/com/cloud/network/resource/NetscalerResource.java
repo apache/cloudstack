@@ -961,7 +961,7 @@ public class NetscalerResource implements ServerResource {
                 try {
                     Thread.sleep(10000);
                 } catch (final InterruptedException e) {
-                    s_logger.debug("[ignored] interupted while waiting for netscaler to be 'up'.");
+                    s_logger.debug("[ignored] interrupted while waiting for netscaler to be 'up'.");
                 }
                 final ns refreshNsObj = new ns();
                 refreshNsObj.set_id(newVpx.get_id());
@@ -3560,7 +3560,7 @@ public class NetscalerResource implements ServerResource {
                 }
             }
         } catch (final Exception e) {
-            s_logger.error("Failed to get bytes sent and recived statistics due to " + e);
+            s_logger.error("Failed to get bytes sent and received statistics due to " + e);
             throw new ExecutionException(e.getMessage());
         }
 

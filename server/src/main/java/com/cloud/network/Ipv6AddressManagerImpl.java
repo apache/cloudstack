@@ -22,29 +22,33 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.NicProfile;
-import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
+import com.googlecode.ipv6.IPv6Address;
 
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
     public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
@@ -68,6 +72,8 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     NicSecondaryIpDao nicSecondaryIpDao;
     @Inject
     IPAddressDao ipAddressDao;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -212,6 +218,12 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                     nic.setFormat(Networks.AddressFormat.DualStack);
                 } else {
                     nic.setFormat(Networks.AddressFormat.Ip6);
+                }
+                if (Network.GuestType.Isolated.equals(network.getGuestType())) {
+                    final boolean usageHidden = networkDetailsDao.isNetworkUsageHidden(network.getId());
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP6_ASSIGN, network.getAccountId(), network.getDataCenterId(), 0L,
+                            ipv6addr.toString(), false, Vlan.VlanType.VirtualNetwork.toString(), false, usageHidden,
+                            IPv6Address.class.getName(), null);
                 }
             }
             nic.setIPv6Dns1(dc.getIp6Dns1());

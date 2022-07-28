@@ -24,22 +24,14 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-plugins</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <dependencies>
         <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis-jaxrpc</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.cloud.com.f5</groupId>
             <artifactId>icontrol</artifactId>
             <version>12.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.axis</groupId>
-            <artifactId>axis</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-discovery</groupId>

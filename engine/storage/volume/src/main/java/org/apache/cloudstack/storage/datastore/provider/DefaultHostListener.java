@@ -20,10 +20,21 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.SetupPersistentNetworkCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.exception.StorageConflictException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
@@ -62,11 +73,49 @@ public class DefaultHostListener implements HypervisorHostListener {
     StorageManager storageManager;
     @Inject
     StorageService storageService;
+    @Inject
+    NetworkOfferingDao networkOfferingDao;
+    @Inject
+    HostDao hostDao;
+    @Inject
+    NetworkModel networkModel;
+    @Inject
+    ConfigurationManager configManager;
+    @Inject
+    NetworkDao networkDao;
+
 
     @Override
     public boolean hostAdded(long hostId) {
         return true;
     }
+
+    private boolean createPersistentNetworkResourcesOnHost(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn(String.format("Host with id %ld can't be found", hostId));
+            return false;
+        }
+        setupPersistentNetwork(host);
+        return true;
+    }
+
+    /**
+     * Creates a dummy NicTO object which is used by the respective hypervisors to setup network elements / resources
+     * - bridges(KVM), VLANs(Xen) and portgroups(VMWare) for L2 network
+     */
+    private NicTO createNicTOFromNetworkAndOffering(NetworkVO networkVO, NetworkOfferingVO networkOfferingVO, HostVO hostVO) {
+        NicTO to = new NicTO();
+        to.setName(networkModel.getNetworkTag(hostVO.getHypervisorType(), networkVO));
+        to.setBroadcastType(networkVO.getBroadcastDomainType());
+        to.setType(networkVO.getTrafficType());
+        to.setBroadcastUri(networkVO.getBroadcastUri());
+        to.setIsolationuri(networkVO.getBroadcastUri());
+        to.setNetworkRateMbps(configManager.getNetworkOfferingNetworkRate(networkOfferingVO.getId(), networkVO.getDataCenterId()));
+        to.setSecurityGroupEnabled(networkModel.isSecurityGroupSupportedInNetwork(networkVO));
+        return to;
+    }
+
 
     @Override
     public boolean hostConnect(long hostId, long poolId) throws StorageConflictException {
@@ -109,7 +158,8 @@ public class DefaultHostListener implements HypervisorHostListener {
         storageService.updateStorageCapabilities(poolId, false);
 
         s_logger.info("Connection established between storage pool " + pool + " and host " + hostId);
-        return true;
+
+        return createPersistentNetworkResourcesOnHost(hostId);
     }
 
     private void updateStoragePoolHostVOAndDetails(StoragePool pool, long hostId, ModifyStoragePoolAnswer mspAnswer) {
@@ -124,7 +174,7 @@ public class DefaultHostListener implements HypervisorHostListener {
         StoragePoolVO poolVO = this.primaryStoreDao.findById(pool.getId());
         poolVO.setUsedBytes(mspAnswer.getPoolInfo().getCapacityBytes() - mspAnswer.getPoolInfo().getAvailableBytes());
         poolVO.setCapacityBytes(mspAnswer.getPoolInfo().getCapacityBytes());
-        if(StringUtils.isNotEmpty(mspAnswer.getPoolType())) {
+        if (StringUtils.isNotEmpty(mspAnswer.getPoolType())) {
             StoragePoolDetailVO poolType = storagePoolDetailsDao.findDetail(pool.getId(), "pool_type");
             if (poolType == null) {
                 StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(pool.getId(), "pool_type", mspAnswer.getPoolType(), false);
@@ -142,11 +192,62 @@ public class DefaultHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostAboutToBeRemoved(long hostId) {
+        // send host the cleanup persistent network resources
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn("Host with id " + hostId + " can't be found");
+            return false;
+        }
+
+        List<NetworkVO> allPersistentNetworks = networkDao.getAllPersistentNetworksFromZone(host.getDataCenterId()); // find zoneId of host
+        for (NetworkVO persistentNetworkVO : allPersistentNetworks) {
+            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(persistentNetworkVO.getNetworkOfferingId());
+            CleanupPersistentNetworkResourceCommand cleanupCmd =
+                    new CleanupPersistentNetworkResourceCommand(createNicTOFromNetworkAndOffering(persistentNetworkVO, networkOfferingVO, host));
+            Answer answer = agentMgr.easySend(hostId, cleanupCmd);
+            if (answer == null) {
+                s_logger.error("Unable to get answer to the cleanup persistent network command " + persistentNetworkVO.getId());
+                continue;
+            }
+            if (!answer.getResult()) {
+                String msg = String.format("Unable to cleanup persistent network resources from network %d on the host %d", persistentNetworkVO.getId(), hostId);
+                s_logger.error(msg);
+            }
+        }
         return true;
     }
 
     @Override
     public boolean hostRemoved(long hostId, long clusterId) {
         return true;
+    }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        if (host == null) {
+            s_logger.warn(String.format("Host with id %d can't be found", hostId));
+            return false;
+        }
+        setupPersistentNetwork(host);
+        return true;
+    }
+
+    private void setupPersistentNetwork(HostVO host) {
+        List<NetworkVO> allPersistentNetworks = networkDao.getAllPersistentNetworksFromZone(host.getDataCenterId());
+        for (NetworkVO networkVO : allPersistentNetworks) {
+            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkVO.getNetworkOfferingId());
+
+            SetupPersistentNetworkCommand persistentNetworkCommand =
+                    new SetupPersistentNetworkCommand(createNicTOFromNetworkAndOffering(networkVO, networkOfferingVO, host));
+            Answer answer = agentMgr.easySend(host.getId(), persistentNetworkCommand);
+            if (answer == null) {
+                throw new CloudRuntimeException("Unable to get answer to the setup persistent network command " + networkVO.getId());
+            }
+            if (!answer.getResult()) {
+                String msg = String.format("Unable to create persistent network resources for network %d on the host %d in zone %d", networkVO.getId(), host.getId(), networkVO.getDataCenterId());
+                s_logger.error(msg);
+            }
+        }
     }
 }

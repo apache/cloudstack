@@ -117,8 +117,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type) {
-        ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, this);
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+        ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
     }
@@ -271,7 +271,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
             LOGGER.debug("Starting copy from source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
             qemu.convert(srcFile, destFile, true);
-            LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
+            LOGGER.debug("Successfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
             try {
                 Map<String, String> srcInfo = qemu.info(srcFile);
@@ -289,11 +289,6 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        return null;
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }
@@ -305,8 +300,14 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         return true;
     }
+
 
     @Override
     public KVMPhysicalDisk createDiskFromTemplateBacking(KVMPhysicalDisk template, String name, QemuImg.PhysicalDiskFormat format, long size, KVMStoragePool destPool, int timeout) {
@@ -373,7 +374,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             LOGGER.debug("Starting copy from source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
             QemuImg qemu = new QemuImg(timeout);
             qemu.convert(srcFile, destFile);
-            LOGGER.debug("Succesfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
+            LOGGER.debug("Successfully converted source downloaded template " + srcFile.getFileName() + " to PowerFlex template volume: " + destDisk.getPath());
         }  catch (QemuImgException | LibvirtException e) {
             LOGGER.error("Failed to convert from " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " + e.getMessage(), e);
             destDisk = null;

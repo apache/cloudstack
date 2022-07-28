@@ -36,12 +36,7 @@ export default {
     }
   },
   created () {
-    const userThemeSetting = this.$store.getters.themeSetting || {}
-    if (Object.keys(userThemeSetting).length === 0) {
-      window.less.modifyVars(this.$config.theme)
-    } else {
-      window.less.modifyVars(userThemeSetting)
-    }
+    window.less.modifyVars(this.$config.theme)
     console.log('config and theme applied')
   }
 }

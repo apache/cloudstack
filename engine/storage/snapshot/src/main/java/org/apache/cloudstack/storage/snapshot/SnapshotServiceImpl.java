@@ -36,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -79,6 +80,8 @@ public class SnapshotServiceImpl implements SnapshotService {
     StorageCacheManager _cacheMgr;
     @Inject
     private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject
+    VolumeDataFactory volFactory;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -431,11 +434,15 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     @Override
     public boolean revertSnapshot(SnapshotInfo snapshot) {
+        PrimaryDataStore store = null;
         SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Primary);
         if (snapshotOnPrimaryStore == null) {
-            throw new CloudRuntimeException("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools");
+            s_logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
+            VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
+            store = (PrimaryDataStore)volumeInfo.getDataStore();
+        } else {
+            store = (PrimaryDataStore)snapshotOnPrimaryStore.getDataStore();
         }
-        PrimaryDataStore store = (PrimaryDataStore)snapshotOnPrimaryStore.getDataStore();
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
         RevertSnapshotContext<CommandResult> context = new RevertSnapshotContext<CommandResult>(null, snapshot, future);

@@ -85,6 +85,7 @@
     <dao name="Console Proxy" class="com.cloud.vm.dao.ConsoleProxyDaoImpl" />
     <dao name="Upgrade" class="com.cloud.maint.dao.AgentUpgradeDaoImpl" />
     <dao name="Management Server Host" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
+    <dao name="Management Server Status" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
     <dao name="Snapshot" class="com.cloud.storage.dao.SnapshotDaoImpl" />
     <dao name="ScheduledVMBackup" class="com.cloud.user.dao.ScheduledVMBackupDaoImpl" />
     <dao name="AsyncJobDao" class="com.cloud.async.dao.AsyncJobDaoImpl" />

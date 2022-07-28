@@ -17,11 +17,11 @@
 package com.cloud.network.resource;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.BufferedWriter;
 import java.io.StringReader;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -3749,7 +3749,7 @@ public class JuniperSrxResource implements ServerResource {
         Document doc = null;
 
         try {
-            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(srcNatRuleSource);
+            doc = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(srcNatRuleSource);
         } catch (Exception e) {
             s_logger.error(e);
             throw new ExecutionException(e.getMessage());

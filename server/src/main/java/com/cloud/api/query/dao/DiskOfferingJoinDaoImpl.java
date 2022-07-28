@@ -131,6 +131,7 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setCacheMode(offering.getCacheMode());
         diskOfferingResponse.setObjectName("diskoffering");
         Map<String, String> offeringDetails = ApiDBUtils.getResourceDetails(offering.getId(), ResourceTag.ResourceObjectType.DiskOffering);
+        diskOfferingResponse.setDetails(offeringDetails);
         if (offeringDetails != null && !offeringDetails.isEmpty()) {
             String vsphereStoragePolicyId = offeringDetails.get(ApiConstants.STORAGE_POLICY);
             if (vsphereStoragePolicyId != null) {

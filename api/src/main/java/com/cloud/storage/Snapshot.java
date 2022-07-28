@@ -26,7 +26,7 @@ import java.util.Date;
 
 public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<Snapshot.State> {
     public enum Type {
-        MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY, INTERNAL;
+        MANUAL, RECURRING, TEMPLATE, HOURLY, DAILY, WEEKLY, MONTHLY, GROUP, INTERNAL;
         // New types should be defined after INTERNAL, and change the max value
         private int max = 8;
 
@@ -72,7 +72,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
     }
 
     public static final long MANUAL_POLICY_ID = 0L;
-    public static final long INTERNAL_POLICY_ID = 7L;
+    public static final long INTERNAL_POLICY_ID = 8L;
 
     @Override
     long getAccountId();

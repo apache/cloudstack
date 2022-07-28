@@ -12,6 +12,7 @@
       "state.error": "Error",
       "message.publicip.state.allocated": "Allocated",
       "message.publicip.state.created": "Created",
+      "message.publicip.state.reserved": "Reserved",
       "message.vmsnapshot.state.active": "Active",
       "message.vm.state.active": "Active",
       "message.volume.state.active": "Active",
@@ -32,7 +33,113 @@
       "Migrating": "Migrating",
       "Stopping": "Stopping",
       "Alert": "Alert",
-      "Stopped": "Stopped"
+      "Stopped": "Stopped",
+      "message.publicip.state.running": "message.publicip.state.running",
+      "message.publicip.state.stopped": "message.publicip.state.stopped",
+      "message.publicip.state.starting": "message.publicip.state.starting",
+      "message.publicip.state.stopping": "message.publicip.state.stopping",
+      "message.publicip.state.suspended": "message.publicip.state.suspended",
+      "message.publicip.state.pending": "message.publicip.state.pending",
+      "message.publicip.state.expunging": "message.publicip.state.expunging",
+      "message.publicip.state.error": "message.publicip.state.error",
+      "message.publicip.state.another": "message.publicip.state.another",
+      "message.publicip.state.disabled": "message.publicip.state.disabled",
+      "message.publicip.state.migrating": "message.publicip.state.migrating",
+      "message.publicip.state.alert": "message.publicip.state.alert",
+      "message.vmsnapshot.state.running": "message.vmsnapshot.state.running",
+      "message.vmsnapshot.state.stopped": "message.vmsnapshot.state.stopped",
+      "message.vmsnapshot.state.starting": "message.vmsnapshot.state.starting",
+      "message.vmsnapshot.state.stopping": "message.vmsnapshot.state.stopping",
+      "message.vmsnapshot.state.suspended": "message.vmsnapshot.state.suspended",
+      "message.vmsnapshot.state.pending": "message.vmsnapshot.state.pending",
+      "message.vmsnapshot.state.expunging": "message.vmsnapshot.state.expunging",
+      "message.vmsnapshot.state.error": "message.vmsnapshot.state.error",
+      "message.vmsnapshot.state.another": "message.vmsnapshot.state.another",
+      "message.vmsnapshot.state.disabled": "message.vmsnapshot.state.disabled",
+      "message.vmsnapshot.state.migrating": "message.vmsnapshot.state.migrating",
+      "message.vmsnapshot.state.alert": "message.vmsnapshot.state.alert",
+      "message.vmsnapshot.state.allocated": "message.vmsnapshot.state.allocated",
+      "message.vm.state.running": "message.vm.state.running",
+      "message.vm.state.stopped": "message.vm.state.stopped",
+      "message.vm.state.starting": "message.vm.state.starting",
+      "message.vm.state.stopping": "message.vm.state.stopping",
+      "message.vm.state.suspended": "message.vm.state.suspended",
+      "message.vm.state.pending": "message.vm.state.pending",
+      "message.vm.state.expunging": "message.vm.state.expunging",
+      "message.vm.state.error": "message.vm.state.error",
+      "message.vm.state.another": "message.vm.state.another",
+      "message.vm.state.disabled": "message.vm.state.disabled",
+      "message.vm.state.migrating": "message.vm.state.migrating",
+      "message.vm.state.alert": "message.vm.state.alert",
+      "message.vm.state.allocated": "message.vm.state.allocated",
+      "message.volume.state.running": "message.volume.state.running",
+      "message.volume.state.stopped": "message.volume.state.stopped",
+      "message.volume.state.starting": "message.volume.state.starting",
+      "message.volume.state.stopping": "message.volume.state.stopping",
+      "message.volume.state.suspended": "message.volume.state.suspended",
+      "message.volume.state.pending": "message.volume.state.pending",
+      "message.volume.state.expunging": "message.volume.state.expunging",
+      "message.volume.state.error": "message.volume.state.error",
+      "message.volume.state.another": "message.volume.state.another",
+      "message.volume.state.disabled": "message.volume.state.disabled",
+      "message.volume.state.migrating": "message.volume.state.migrating",
+      "message.volume.state.alert": "message.volume.state.alert",
+      "message.volume.state.allocated": "message.volume.state.allocated",
+      "message.guestnetwork.state.running": "message.guestnetwork.state.running",
+      "message.guestnetwork.state.stopped": "message.guestnetwork.state.stopped",
+      "message.guestnetwork.state.starting": "message.guestnetwork.state.starting",
+      "message.guestnetwork.state.stopping": "message.guestnetwork.state.stopping",
+      "message.guestnetwork.state.suspended": "message.guestnetwork.state.suspended",
+      "message.guestnetwork.state.pending": "message.guestnetwork.state.pending",
+      "message.guestnetwork.state.expunging": "message.guestnetwork.state.expunging",
+      "message.guestnetwork.state.error": "message.guestnetwork.state.error",
+      "message.guestnetwork.state.another": "message.guestnetwork.state.another",
+      "message.guestnetwork.state.disabled": "message.guestnetwork.state.disabled",
+      "message.guestnetwork.state.migrating": "message.guestnetwork.state.migrating",
+      "message.guestnetwork.state.alert": "message.guestnetwork.state.alert",
+      "message.guestnetwork.state.allocated": "message.guestnetwork.state.allocated"
     }
-  }
+  },
+  "routes": [
+    {
+      "name": "testRouter1",
+      "path": "/publicip",
+      "meta": {
+        "icon": "test-router-1"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter2",
+      "path": "/vmsnapshot",
+      "meta": {
+        "icon": "test-router-2"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter3",
+      "path": "/vm",
+      "meta": {
+        "icon": "test-router-3"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter4",
+      "path": "/volume",
+      "meta": {
+        "icon": "test-router-4"
+      },
+      "component": {}
+    },
+    {
+      "name": "testRouter5",
+      "path": "/guestnetwork",
+      "meta": {
+        "icon": "test-router-5"
+      },
+      "component": {}
+    }
+  ]
 }

@@ -21,19 +21,18 @@
       <div class="capacity-dashboard-wrapper">
         <div class="capacity-dashboard-select">
           <a-select
-            :defaultValue="zoneSelected.name"
             :placeholder="$t('label.select.a.zone')"
-            :value="zoneSelected.name"
+            v-model:value="zoneSelectedKey"
             @change="changeZone"
             showSearch
-            optionFilterProp="children"
+            optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.componentOptions.propsData.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }" >
             <a-select-option v-for="(zone, index) in zones" :key="index" :label="zone.name">
               <span>
                 <resource-icon v-if="zone.icon && zone.icon.base64image" :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
-                <a-icon v-else style="margin-right: 5px" type="global" />
+                <global-outlined v-else style="margin-right: 5px" />
                 {{ zone.name }}
               </span>
             </a-select-option>
@@ -68,47 +67,49 @@
                   :width="100" />
               </div>
             </router-link>
-            <template slot="footer"><center>{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</center></template>
+            <template #footer>
+              <div class="center">{{ displayData(stat.name, stat.capacityused) }} / {{ displayData(stat.name, stat.capacitytotal) }}</div>
+            </template>
           </chart-card>
         </a-col>
       </a-row>
     </a-col>
 
-    <a-col :xl="6">
+    <a-col :xl="6" class="dashboard-event">
       <chart-card :loading="loading">
         <div style="text-align: center">
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template slot="title">
+            <template #title>
               {{ $t('label.view') + ' ' + $t('label.host.alerts') }}
             </template>
-            <a-button type="danger" shape="circle">
+            <a-button type="primary" danger shape="circle">
               <router-link :to="{ name: 'host', query: {'state': 'Alert'} }">
-                <a-icon class="capacity-dashboard-button-icon" type="desktop" />
+                <desktop-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template slot="title">
+            <template #title>
               {{ $t('label.view') + ' ' + $t('label.alerts') }}
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'alert' }">
-                <a-icon class="capacity-dashboard-button-icon" type="flag" />
+                <flag-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>
           <a-tooltip placement="bottom" class="capacity-dashboard-button-wrapper">
-            <template slot="title">
+            <template #title>
               {{ $t('label.view') + ' ' + $t('label.events') }}
             </template>
             <a-button shape="circle">
               <router-link :to="{ name: 'event' }">
-                <a-icon class="capacity-dashboard-button-icon" type="schedule" />
+                <schedule-outlined class="capacity-dashboard-button-icon" />
               </router-link>
             </a-button>
           </a-tooltip>
         </div>
-        <template slot="footer">
+        <template #footer>
           <div class="capacity-dashboard-footer">
             <a-timeline>
               <a-timeline-item
@@ -116,7 +117,8 @@
                 :key="event.id"
                 :color="getEventColour(event)">
                 <span :style="{ color: '#999' }"><small>{{ $toLocaleDate(event.created) }}</small></span><br/>
-                <span :style="{ color: '#666' }"><small><router-link :to="{ path: 'event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <span :style="{ color: '#666' }"><small><router-link :to="{ path: '/event/' + event.id }">{{ event.type }}</router-link></small></span><br/>
+                <resource-label :resourceType="event.resourcetype" :resourceId="event.resourceid" :resourceName="event.resourcename" />
                 <span :style="{ color: '#aaa' }">({{ event.username }}) {{ event.description }}</span>
               </a-timeline-item>
             </a-timeline>
@@ -132,12 +134,14 @@ import { api } from '@/api'
 
 import ChartCard from '@/components/widgets/ChartCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import ResourceLabel from '@/components/widgets/ResourceLabel'
 
 export default {
   name: 'CapacityDashboard',
   components: {
     ChartCard,
-    ResourceIcon
+    ResourceIcon,
+    ResourceLabel
   },
   data () {
     return {
@@ -158,8 +162,18 @@ export default {
         STORAGE: 'label.storage',
         STORAGE_ALLOCATED: 'label.primary.storage',
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
-        VLAN: 'label.vlan'
+        VLAN: 'label.vlan',
+        VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
       }
+    }
+  },
+  computed: {
+    zoneSelectedKey () {
+      if (this.zones.length === 0) {
+        return this.zoneSelected.name
+      }
+      const zoneIndex = this.zones.findIndex(zone => zone.id === this.zoneSelected.id)
+      return zoneIndex
     }
   },
   created () {
@@ -266,7 +280,7 @@ export default {
       this.listCapacity(this.zoneSelected)
     },
     filterZone (input, option) {
-      return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
     }
   }
 }
@@ -311,6 +325,17 @@ export default {
     padding-top: 12px;
     padding-left: 3px;
     white-space: normal;
+  }
+}
+
+.center {
+  display: block;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-event {
+    width: 100%;
   }
 }
 </style>

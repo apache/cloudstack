@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.17.0.0-SNAPSHOT</version>
+    <version>4.18.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -49,18 +49,21 @@
         <!-- keep in alphabetic order -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <project.systemvm.template.version>4.16.1.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.17.0.0</project.systemvm.template.version>
+        <sonar.organization>apache</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
         <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.1.0</cs.checkstyle-plugin.version>
-        <cs.jacoco-plugin.version>0.8.3</cs.jacoco-plugin.version>
+        <cs.jacoco-plugin.version>0.8.8</cs.jacoco-plugin.version>
         <cs.compiler-plugin.version>3.8.1</cs.compiler-plugin.version>
         <cs.dependency-plugin.version>3.1.1</cs.dependency-plugin.version>
         <cs.failsafe-plugin.version>2.22.2</cs.failsafe-plugin.version>
@@ -77,7 +80,7 @@
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
 
         <!-- Logging versions -->
-        <cs.reload4j.version>1.2.18.4</cs.reload4j.version>
+        <cs.reload4j.version>1.2.21</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
         <cs.logging.version>1.1.1</cs.logging.version>
 
@@ -94,8 +97,8 @@
         <cs.commons-net.version>3.7.2</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
-        <cs.daemon.version>1.2.3</cs.daemon.version>
-        <cs.dbcp.version>2.8.0</cs.dbcp.version>
+        <cs.daemon.version>1.3.1</cs.daemon.version>
+        <cs.dbcp.version>2.9.0</cs.dbcp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.9.0</cs.pool.version>
@@ -115,14 +118,15 @@
         <cs.testng.version>7.1.0</cs.testng.version>
         <cs.wiremock.version>2.27.2</cs.wiremock.version>
         <cs.xercesImpl.version>2.12.2</cs.xercesImpl.version>
+        <cs.assertj.version>3.23.1</cs.assertj.version>
 
         <!-- Dependencies versions -->
         <cs.amqp-client.version>5.10.0</cs.amqp-client.version>
         <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
         <cs.aspectjrt.version>1.9.6</cs.aspectjrt.version>
-        <cs.aws.sdk.version>1.11.940</cs.aws.sdk.version>
+        <cs.aws.sdk.version>1.12.255</cs.aws.sdk.version>
         <cs.axiom.version>1.2.8</cs.axiom.version>
-        <cs.axis.version>1.4</cs.axis.version>
+        <cs.axis2.version>1.6.4</cs.axis2.version>
         <cs.batik.version>1.14</cs.batik.version>
         <cs.bcprov.version>1.70</cs.bcprov.version>
         <cs.cglib.version>3.3.0</cs.cglib.version>
@@ -130,14 +134,14 @@
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
-        <cs.google-http-client>1.38.1</cs.google-http-client>
+        <cs.google-http-client>1.42.1</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
-        <cs.guava.version>30.1-jre</cs.guava.version>
+        <cs.guava.version>31.1-jre</cs.guava.version>
         <cs.httpclient.version>4.5.13</cs.httpclient.version>
-        <cs.httpcore.version>4.4.14</cs.httpcore.version>
-        <cs.influxdb-java.version>2.21</cs.influxdb-java.version>
-        <cs.jackson.version>2.12.1</cs.jackson.version>
+        <cs.httpcore.version>4.4.15</cs.httpcore.version>
+        <cs.influxdb-java.version>2.22</cs.influxdb-java.version>
+        <cs.jackson.version>2.13.3</cs.jackson.version>
         <cs.jasypt.version>1.9.3</cs.jasypt.version>
         <cs.java-ipv6.version>0.17</cs.java-ipv6.version>
         <cs.javassist.version>3.27.0-GA</cs.javassist.version>
@@ -146,34 +150,34 @@
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
         <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
-        <cs.jetty.version>9.4.44.v20210927</cs.jetty.version>
+        <cs.jetty.version>9.4.48.v20220622</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
         <cs.jna.version>5.5.0</cs.jna.version>
-        <cs.joda-time.version>2.10.9</cs.joda-time.version>
+        <cs.joda-time.version>2.10.14</cs.joda-time.version>
         <cs.jpa.version>2.2.1</cs.jpa.version>
         <cs.jsch.version>0.1.55</cs.jsch.version>
         <cs.json.version>20090211</cs.json.version>
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
-        <cs.libvirt-java.version>0.5.2</cs.libvirt-java.version>
+        <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
         <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
-        <cs.opensaml.version>2.6.4</cs.opensaml.version>
+        <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
         <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
         <cs.reflections.version>0.9.12</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
-        <cs.tomcat-embed-core.version>10.0.2</cs.tomcat-embed-core.version>
+        <cs.tomcat-embed-core.version>10.0.22</cs.tomcat-embed-core.version>
         <cs.trilead.version>build-217-jenkins-27</cs.trilead.version>
         <cs.vmware.api.version>7.0</cs.vmware.api.version>
         <cs.winrm4j.version>0.5.0</cs.winrm4j.version>
         <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
         <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
         <cs.xstream.version>1.4.19</cs.xstream.version>
-        <org.springframework.version>5.3.3</org.springframework.version>
+        <org.springframework.version>5.3.21</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.gmaven.version>1.12.0</cs.gmaven.version>
     </properties>
@@ -456,14 +460,14 @@
                 <version>${cs.ehcache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.axis</groupId>
-                <artifactId>axis-jaxrpc</artifactId>
-                <version>${cs.axis.version}</version>
+                <groupId>org.apache.axis2</groupId>
+                <artifactId>axis2-jaxws</artifactId>
+                <version>${cs.axis2.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -760,6 +764,10 @@
         <repository>
             <id>repo.jenkins-ci.org.public</id>
             <url>https://repo.jenkins-ci.org/public/</url>
+        </repository>
+        <repository>
+            <id>libvirt.org.maven2</id>
+            <url>https://libvirt.org/maven2/</url>
         </repository>
     </repositories>
 
@@ -1152,7 +1160,6 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

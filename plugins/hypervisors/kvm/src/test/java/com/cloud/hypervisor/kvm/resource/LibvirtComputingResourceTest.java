@@ -54,12 +54,14 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -74,6 +76,7 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.MemoryStatistic;
 import org.libvirt.NodeInfo;
+import org.libvirt.SchedUlongParameter;
 import org.libvirt.StorageVol;
 import org.libvirt.jna.virDomainMemoryStats;
 import org.mockito.BDDMockito;
@@ -210,7 +213,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.libvirt.VcpuInfo;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(value = {MemStat.class})
+@PrepareForTest(value = {MemStat.class, SshHelper.class})
 @PowerMockIgnore({"javax.xml.*", "org.w3c.dom.*", "org.apache.xerces.*"})
 public class LibvirtComputingResourceTest {
 
@@ -773,7 +776,7 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, prefix + "/graphics/@type", "vnc");
         assertXpath(domainDoc, prefix + "/graphics/@listen", to.getVncAddr());
         assertXpath(domainDoc, prefix + "/graphics/@autoport", "yes");
-        assertXpath(domainDoc, prefix + "/graphics/@passwd", to.getVncPassword());
+        assertXpath(domainDoc, prefix + "/graphics/@passwd", StringUtils.truncate(to.getVncPassword(), 8));
     }
 
     private void verifySerialDevices(Document domainDoc, String prefix) {
@@ -904,7 +907,8 @@ public class LibvirtComputingResourceTest {
         final MemoryStatistic[] domainMem = new MemoryStatistic[2];
         domainMem[0] = Mockito.mock(MemoryStatistic.class);
         Mockito.when(domain.getInfo()).thenReturn(domainInfo);
-        Mockito.when(domain.memoryStats(2)).thenReturn(domainMem);
+        Mockito.when(domain.memoryStats(20)).thenReturn(domainMem);
+        Mockito.when(domainMem[0].getTag()).thenReturn(4);
         Mockito.when(connect.domainLookupByName(VMNAME)).thenReturn(domain);
         final NodeInfo nodeInfo = new NodeInfo();
         nodeInfo.cpus = 8;
@@ -2761,10 +2765,9 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool kvmStoragePool = Mockito.mock(KVMStoragePool.class);
 
-
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType())).thenReturn(kvmStoragePool);
+                .getUserInfo(), command.getPool().getType(), command.getDetails())).thenReturn(kvmStoragePool);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2775,7 +2778,7 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType());
+                .getUserInfo(), command.getPool().getType(), command.getDetails());
     }
 
     @Test
@@ -2787,7 +2790,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType())).thenReturn(null);
+                .getUserInfo(), command.getPool().getType(), command.getDetails())).thenReturn(null);
 
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -2798,7 +2801,7 @@ public class LibvirtComputingResourceTest {
 
         verify(libvirtComputingResource, times(1)).getStoragePoolMgr();
         verify(storagePoolMgr, times(1)).createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
-                .getUserInfo(), command.getPool().getType());
+                .getUserInfo(), command.getPool().getType(), command.getDetails());
     }
 
     @Test
@@ -5278,7 +5281,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommand() {
+    public void testStartCommand() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5330,6 +5335,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
@@ -5352,7 +5358,9 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
-    public void testStartCommandIsolationEc2() {
+    public void testStartCommandIsolationEc2() throws Exception {
+        PowerMockito.mockStatic(SshHelper.class);
+        PowerMockito.doNothing().when(SshHelper.class, "scpTo", Mockito.anyString(), Mockito.anyInt(), Mockito.anyString(), Mockito.any(File.class), nullable(String.class), Mockito.anyString(), Mockito.any(String[].class), Mockito.anyString());
         final VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
         final com.cloud.host.Host host = Mockito.mock(com.cloud.host.Host.class);
         final boolean executeInSequence = false;
@@ -5408,6 +5416,7 @@ public class LibvirtComputingResourceTest {
             when(nic.getType()).thenReturn(TrafficType.Control);
             when(libvirtComputingResource.getVirtRouterResource()).thenReturn(virtRouterResource);
             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+            when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
         } catch (final InternalErrorException e) {
             fail(e.getMessage());
         } catch (final LibvirtException e) {
@@ -5557,6 +5566,9 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testMemoryFreeInKBsDomainReturningOfSomeMemoryStatistics() throws LibvirtException {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
         LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
 
         MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
@@ -5573,21 +5585,37 @@ public class LibvirtComputingResourceTest {
         Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(null);
         long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
 
-        Assert.assertEquals(0, memoryFreeInKBs);
+        Assert.assertEquals(-1, memoryFreeInKBs);
+    }
+
+    @Test
+    public void getMemoryFreeInKBsTestDomainReturningIncompleteArray() throws LibvirtException {
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
+        LibvirtComputingResource libvirtComputingResource = new LibvirtComputingResource();
+
+        MemoryStatistic[] mem = createMemoryStatisticFreeMemory100();
+        mem[0].setTag(0);
+        Domain domainMock = getDomainConfiguredToReturnMemoryStatistic(mem);
+        long memoryFreeInKBs = libvirtComputingResource.getMemoryFreeInKBs(domainMock);
+
+        Assert.assertEquals(-1, memoryFreeInKBs);
     }
 
     private MemoryStatistic[] createMemoryStatisticFreeMemory100() {
         virDomainMemoryStats stat = new virDomainMemoryStats();
         stat.val = 100;
+        stat.tag = 4;
 
-        MemoryStatistic[] mem = new MemoryStatistic[2];
+        MemoryStatistic[] mem = new MemoryStatistic[1];
         mem[0] = new MemoryStatistic(stat);
         return mem;
     }
 
     private Domain getDomainConfiguredToReturnMemoryStatistic(MemoryStatistic[] mem) throws LibvirtException {
         Domain domainMock = Mockito.mock(Domain.class);
-        when(domainMock.memoryStats(2)).thenReturn(mem);
+        when(domainMock.memoryStats(20)).thenReturn(mem);
         return domainMock;
     }
 
@@ -5784,4 +5812,93 @@ public class LibvirtComputingResourceTest {
         libvirtComputingResourceSpy.setDiskIoDriver(diskDef);
         return diskDef;
     }
+
+    private SchedUlongParameter[] createSchedParametersWithCpuSharesOf2000 () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "cpu_shares";
+        params[0].value = 2000;
+
+        return params;
+    }
+
+    private SchedUlongParameter[] createSchedParametersWithoutCpuShares () {
+        SchedUlongParameter[] params = new SchedUlongParameter[1];
+        params[0] = new SchedUlongParameter();
+        params[0].field = "weight";
+        params[0].value = 200;
+
+        return params;
+    }
+
+    @Test
+    public void getCpuSharesTestReturnCpuSharesIfFound() throws LibvirtException {
+        SchedUlongParameter[] cpuSharesOf2000 = createSchedParametersWithCpuSharesOf2000();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(cpuSharesOf2000);
+        int cpuShares = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(2000, cpuShares);
+    }
+
+    @Test
+    public void getCpuSharesTestReturnZeroIfCpuSharesNotFound() throws LibvirtException {
+        SchedUlongParameter[] withoutCpuShares = createSchedParametersWithoutCpuShares();
+
+        Mockito.when(domainMock.getSchedulerParameters()).thenReturn(withoutCpuShares);
+        int actualValue = LibvirtComputingResource.getCpuShares(domainMock);
+
+        Assert.assertEquals(0, actualValue);
+    }
+
+    @Test
+    public void setCpuSharesTestSuccessfullySetCpuShares() throws LibvirtException {
+        LibvirtComputingResource.setCpuShares(domainMock, 2000);
+        Mockito.verify(domainMock, times(1)).setSchedulerParameters(Mockito.argThat(schedParameters -> {
+            if (schedParameters == null || schedParameters.length > 1 || !(schedParameters[0] instanceof SchedUlongParameter)) {
+                return false;
+            }
+            SchedUlongParameter param = (SchedUlongParameter) schedParameters[0];
+            if (param.field != "cpu_shares" || param.value != 2000) {
+                return false;
+            }
+            return true;
+        }));
+    }
+
+    private void configLocalStorageTests(Map<String, Object> params) throws ConfigurationException {
+        LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
+        libvirtComputingResourceSpy.configureLocalStorage(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithEmptyParams() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        configLocalStorageTests(params);
+    }
+
+    @Test
+    public void testConfigureLocalStorageWithMultiplePaths() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString() + "," + UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithDifferentLength() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/,/var/lib/libvirt/images2/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, UUID.randomUUID().toString());
+        configLocalStorageTests(params);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testConfigureLocalStorageWithInvalidUUID() throws ConfigurationException {
+        Map<String, Object> params = new HashMap<>();
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_PATH, "/var/lib/libvirt/images/");
+        params.put(LibvirtComputingResource.LOCAL_STORAGE_UUID, "111111");
+        configLocalStorageTests(params);
+    }
+
 }

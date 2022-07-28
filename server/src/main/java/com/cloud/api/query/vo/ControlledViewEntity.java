@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -29,7 +30,7 @@ public interface ControlledViewEntity extends ControlledEntity, InternalIdentity
 
     public String getDomainPath();
 
-    public short getAccountType();
+    public Account.Type getAccountType();
 
     public String getAccountUuid();
 

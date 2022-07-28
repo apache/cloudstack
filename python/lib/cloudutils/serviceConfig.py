@@ -374,6 +374,9 @@ class networkConfigSUSE(serviceCfgBase, networkConfigBase):
         if self.syscfg.env.bridgeType == "openvswitch":
             if cfo.getEntry("IPADDR"):
                 cfo.rmEntry("IPADDR", cfo.getEntry("IPADDR"))
+        elif self.syscfg.env.bridgeType == "native":
+            # Bridge is linked to the dev in SUSE not the other way round
+            pass
         else:
             raise CloudInternalException("Unknown network.bridge.type %s" % self.syscfg.env.bridgeType)
         cfo.save()

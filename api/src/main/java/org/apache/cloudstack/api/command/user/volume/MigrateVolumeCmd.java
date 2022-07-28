@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
@@ -141,5 +142,15 @@ public class MigrateVolumeCmd extends BaseAsyncCmd implements UserCmd {
             return getStoragePoolId();
         }
         return null;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return volumeId;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Volume;
     }
 }

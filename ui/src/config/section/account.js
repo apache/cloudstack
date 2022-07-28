@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'account',
   title: 'label.accounts',
-  icon: 'team',
+  icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
@@ -33,39 +34,45 @@ export default {
   tabs: [
     {
       name: 'details',
-      component: () => import('@/components/view/DetailsTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
     },
     {
       name: 'resources',
-      component: () => import('@/components/view/ResourceCountUsage.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceCountUsage.vue')))
     },
     {
       name: 'limits',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
-      component: () => import('@/components/view/ResourceLimitTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
     },
     {
       name: 'certificate',
-      component: () => import('@/views/iam/SSLCertificateTab.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/SSLCertificateTab.vue')))
     },
     {
       name: 'settings',
-      component: () => import('@/components/view/SettingsTab.vue'),
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/SettingsTab.vue'))),
       show: () => { return 'listConfigurations' in store.getters.apis }
+    },
+    {
+      name: 'events',
+      resourceType: 'Account',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [
     {
       api: 'createAccount',
-      icon: 'plus',
+      icon: 'plus-outlined',
       label: 'label.add.account',
       listView: true,
       popup: true,
-      component: () => import('@/views/iam/AddAccount.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddAccount.vue')))
     },
     {
       api: 'ldapCreateAccount',
-      icon: 'user-add',
+      icon: 'user-add-outlined',
       label: 'label.add.ldap.account',
       docHelp: 'adminguide/accounts.html#using-an-ldap-server-for-user-authentication',
       listView: true,
@@ -73,11 +80,11 @@ export default {
       show: (record, store) => {
         return store.isLdapEnabled
       },
-      component: () => import('@/views/iam/AddLdapAccount.vue')
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/AddLdapAccount.vue')))
     },
     {
       api: 'updateAccount',
-      icon: 'edit',
+      icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
       args: ['newname', 'account', 'domainid', 'networkdomain'],
@@ -92,7 +99,7 @@ export default {
     },
     {
       api: 'updateResourceCount',
-      icon: 'sync',
+      icon: 'sync-outlined',
       label: 'label.action.update.resource.count',
       message: 'message.update.resource.count',
       dataView: true,
@@ -109,7 +116,7 @@ export default {
     },
     {
       api: 'enableAccount',
-      icon: 'play-circle',
+      icon: 'play-circle-outlined',
       label: 'label.action.enable.account',
       message: 'message.enable.account',
       dataView: true,
@@ -125,7 +132,7 @@ export default {
     },
     {
       api: 'disableAccount',
-      icon: 'pause-circle',
+      icon: 'pause-circle-outlined',
       label: 'label.action.disable.account',
       message: 'message.disable.account',
       dataView: true,
@@ -146,7 +153,7 @@ export default {
     },
     {
       api: 'disableAccount',
-      icon: 'lock',
+      icon: 'LockOutlined',
       label: 'label.action.lock.account',
       message: 'message.lock.account',
       dataView: true,
@@ -167,7 +174,7 @@ export default {
     },
     {
       api: 'uploadSslCert',
-      icon: 'safety-certificate',
+      icon: 'SafetyCertificateOutlined',
       label: 'label.add.certificate',
       dataView: true,
       args: ['name', 'certificate', 'privatekey', 'certchain', 'password', 'account', 'domainid'],
@@ -184,7 +191,7 @@ export default {
     },
     {
       api: 'deleteAccount',
-      icon: 'delete',
+      icon: 'delete-outlined',
       label: 'label.action.delete.account',
       message: 'message.delete.account',
       dataView: true,

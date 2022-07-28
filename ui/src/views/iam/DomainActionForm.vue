@@ -26,110 +26,96 @@
       :footer="null"
       @cancel="parentCloseAction"
       style="top: 20px;"
-      v-ctrl-enter="handleSubmit"
     >
-      <span slot="title">
+      <template #title>
         {{ $t(action.label) }}
-      </span>
-      <a-spin :spinning="action.loading">
+      </template>
+      <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
         <a-form
-          :form="form"
-          @submit="handleSubmit"
-          layout="vertical" >
+          :ref="formRef"
+          :model="form"
+          :rules="rules"
+          @finish="handleSubmit"
+          layout="vertical">
           <a-alert type="warning" v-if="action.message">
-            <span slot="message" v-html="$t(action.message)" />
+            <template #message>{{ $t(action.message) }}</template>
           </a-alert>
-          <a-form-item
-            v-for="(field, fieldIndex) in action.paramFields"
-            :key="fieldIndex"
-            :v-bind="field.name"
-            v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
-          >
-            <tooltip-label slot="label" :title="$t('label.' + field.name)" :tooltip="field.description"/>
+          <template v-for="(field, fieldIndex) in action.paramFields" :key="fieldIndex">
+            <a-form-item
+              :ref="field.name"
+              :name="field.name"
+              :v-bind="field.name"
+              v-if="!(action.mapping && field.name in action.mapping && action.mapping[field.name].value)"
+            >
+              <template #label>
+                <tooltip-label :title="$t('label.' + field.name)" :tooltip="field.description"/>
+              </template>
 
-            <span v-if="field.type==='boolean'">
               <a-switch
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: `${$t('message.error.required.input')}` }]
-                }]"
+                v-if="field.type==='boolean'"
+                v-model:checked="form[field.name]"
                 :placeholder="field.description"
               />
-            </span>
-            <span v-else-if="action.mapping && field.name in action.mapping && action.mapping[field.name].options">
               <a-select
+                v-else-if="action.mapping && field.name in action.mapping && action.mapping[field.name].options"
                 :loading="field.loading"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="(opt, optIndex) in action.mapping[field.name].options" :key="optIndex">
                   {{ opt }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span
-              v-else-if="field.type==='uuid' || field.name==='account'">
               <a-select
+                v-else-if="field.type==='uuid' || field.name==='account'"
                 showSearch
-                optionFilterProp="children"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                optionFilterProp="label"
+                v-model:value="form[field.name]"
                 :loading="field.loading"
                 :placeholder="field.description"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span v-else-if="field.type==='list'">
               <a-select
+                v-else-if="field.type==='list'"
                 :loading="field.loading"
                 mode="multiple"
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.select') }]
-                }]"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
                 showSearch
-                optionFilterProp="children"
+                optionFilterProp="label"
                 :filterOption="(input, option) => {
-                  return option.componentOptions.children[0].text.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                  return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                 }" >
                 <a-select-option v-for="(opt, optIndex) in field.opts" :key="optIndex">
                   {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
                 </a-select-option>
               </a-select>
-            </span>
-            <span v-else-if="field.type==='long'">
               <a-input-number
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: `${$t('message.validate.number')}` }]
-                }]"
+                v-else-if="field.type==='long'"
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex"
+                v-focus="fieldIndex === firstIndex"
               />
-            </span>
-            <span v-else>
               <a-input
-                v-decorator="[field.name, {
-                  rules: [{ required: field.required, message: $t('message.error.required.input') }]
-                }]"
+                v-else
+                v-model:value="form[field.name]"
                 :placeholder="field.description"
-                :autoFocus="fieldIndex === firstIndex" />
-            </span>
-          </a-form-item>
+                v-focus="fieldIndex === firstIndex" />
+            </a-form-item>
+          </template>
 
           <div :span="24" class="action-button">
             <a-button @click="parentCloseAction">{{ $t('label.cancel') }}</a-button>
@@ -143,6 +129,7 @@
 
 <script>
 import { api } from '@/api'
+import { ref, reactive, toRaw } from 'vue'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -164,19 +151,28 @@ export default {
       default: () => {}
     }
   },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
+  data () {
+    return {
+      actionLoading: false
+    }
   },
   created () {
+    this.actionLoading = this.action.loading
+    this.formRef = ref()
+    this.form = reactive({})
+    this.rules = reactive({})
+    let isFirstIndexSet = false
     this.firstIndex = 0
-    for (let fieldIndex = 0; fieldIndex < this.action.paramFields.length; fieldIndex++) {
-      const field = this.action.paramFields[fieldIndex]
-      if (!(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
+    this.action.paramFields.forEach((field, fieldIndex) => {
+      this.form[field.name] = undefined
+      this.rules[field.name] = []
+      this.setRules(field)
+      if (!isFirstIndexSet && !(this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].value)) {
         this.firstIndex = fieldIndex
-        break
+        isFirstIndexSet = true
       }
-    }
-    if (this.action.dataView && this.action.icon === 'edit') {
+    })
+    if (this.action.dataView && ['edit-outlined', 'EditOutlined'].includes(this.action.icon)) {
       this.fillEditFormFieldValues()
     }
   },
@@ -185,11 +181,9 @@ export default {
     handleSubmit (e) {
       e.preventDefault()
       if (this.action.loading) return
-      this.form.validateFieldsAndScroll((err, values) => {
-        if (err) {
-          return
-        }
-        this.action.loading = true
+      this.formRef.value.validate().then(() => {
+        const values = toRaw(this.form)
+        this.actionLoading = true
         const params = {}
         if ('id' in this.resource && this.action.params.map(i => { return i.name }).includes('id')) {
           params.id = this.resource.id
@@ -261,6 +255,7 @@ export default {
                           })
                         }
                       }
+                      this.parentFetchData()
                     },
                     loadingMessage: `${this.$t(this.action.label)} ${this.$t('label.in.progress')} ${this.$t('label.for')} ${this.resource.name}`,
                     catchMessage: this.$t('error.fetching.async.job.result'),
@@ -295,12 +290,13 @@ export default {
             description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message
           })
         }).finally(f => {
-          this.action.loading = false
+          this.actionLoading = false
         })
+      }).catch(error => {
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     },
     fillEditFormFieldValues () {
-      const form = this.form
       this.action.paramFields.map(field => {
         let fieldName = null
         if (field.type === 'uuid' ||
@@ -313,9 +309,49 @@ export default {
         }
         const fieldValue = this.resource[fieldName] ? this.resource[fieldName] : null
         if (fieldValue) {
-          form.getFieldDecorator(field.name, { initialValue: fieldValue })
+          this.form[field.name] = fieldValue
         }
       })
+    },
+    setRules (field) {
+      let rule = {}
+
+      switch (true) {
+        case (field.type === 'boolean'):
+          break
+        case (this.action.mapping && field.name in this.action.mapping && this.action.mapping[field.name].options):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'uuid' || field.name === 'account'):
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'list'):
+          rule.type = 'array'
+          rule.required = field.required
+          rule.message = this.$t('message.error.select')
+          rule.trigger = 'change'
+          this.rules[field.name].push(rule)
+          break
+        case (field.type === 'long'):
+          rule.type = 'number'
+          rule.required = field.required
+          rule.message = this.$t('message.validate.number')
+          this.rules[field.name].push(rule)
+          break
+        default:
+          rule.required = field.required
+          rule.message = this.$t('message.error.required.input')
+          this.rules[field.name].push(rule)
+          break
+      }
+
+      rule = {}
     }
   }
 }

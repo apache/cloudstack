@@ -669,7 +669,7 @@ StaticNatServiceProvider, IpDeployer {
             boolean matchedEndChar = false;
             if (str.length() < 2)
             {
-                return false; // atleast one numeric and one char. example:
+                return false; // at least one numeric and one char. example:
             }
             // 3h
             final char strEnd = str.toCharArray()[str.length() - 1];

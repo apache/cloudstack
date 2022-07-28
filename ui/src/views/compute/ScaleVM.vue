@@ -20,11 +20,11 @@
     <p v-html="getMessage()"></p>
 
     <div v-if="loading" class="loading">
-      <a-icon type="loading" style="color: #1890ff;"></a-icon>
+      <loading-outlined style="color: #1890ff;" />
     </div>
 
-    <a-alert v-if="fixedOfferingKvm" style="margin-bottom: 5px" type="error" show-icon>
-      <span slot="message" v-html="$t('message.error.fixed.offering.kvm')" />
+    <a-alert v-if="fixedOfferingKvm" type="error" show-icon>
+      <template #message><span style="margin-bottom: 5px" v-html="$t('message.error.fixed.offering.kvm')" /></template>
     </a-alert>
 
     <compute-offering-selection
@@ -64,16 +64,17 @@
       @update-root-disk-iops-value="updateIOPSValue"/>
 
     <a-form-item :label="$t('label.automigrate.volume')">
-      <tooltip-label slot="label" :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      <template #label>
+        <tooltip-label :title="$t('label.automigrate.volume')" :tooltip="apiParams.automigrate.description"/>
+      </template>
       <a-switch
-        v-decorator="['autoMigrate']"
-        :checked="autoMigrate"
+        v-model:checked="autoMigrate"
         @change="val => { autoMigrate = val }"/>
     </a-form-item>
 
     <div :span="24" class="action-button">
-      <a-button @click="closeAction">{{ this.$t('label.cancel') }}</a-button>
-      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ this.$t('label.ok') }}</a-button>
+      <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+      <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
     </div>
   </a-form>
 </template>
@@ -83,13 +84,15 @@ import { api } from '@/api'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'ScaleVM',
   components: {
     ComputeOfferingSelection,
     ComputeSelection,
-    DiskSizeSelection
+    DiskSizeSelection,
+    TooltipLabel
   },
   props: {
     resource: {
@@ -119,7 +122,6 @@ export default {
     }
   },
   beforeCreate () {
-    this.form = this.$form.createForm(this)
     this.apiParams = this.$getApiParams('scaleVirtualMachine')
   },
   created () {
@@ -147,7 +149,7 @@ export default {
         if (this.total === 0) {
           return
         }
-        this.offerings = response.listserviceofferingsresponse.serviceoffering
+        this.offerings = response.listserviceofferingsresponse.serviceoffering || []
         if (this.resource.state === 'Running' && this.resource.hypervisor === 'KVM') {
           this.offerings = this.offerings.filter(offering => offering.id === this.resource.serviceofferingid)
           this.currentOffer = this.offerings[0]
@@ -261,7 +263,7 @@ export default {
             catchMessage: this.$t('error.fetching.async.job.result')
           })
         }
-        this.$parent.$parent.close()
+        this.$emit('close-action')
         this.parentFetchData()
       }).catch(error => {
         this.$notifyError(error)

@@ -14,19 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
   name: 'offering',
   title: 'label.menu.service.offerings',
-  icon: 'shopping',
+  icon: 'shopping-outlined',
   permission: ['listServiceOfferings', 'listDiskOfferings', 'listDomains'],
   children: [
     {
       name: 'computeoffering',
       title: 'label.compute.offerings',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
-      icon: 'cloud',
+      icon: 'cloud-outlined',
       permission: ['listServiceOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
       columns: ['name', 'displaytext', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
@@ -46,11 +47,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       related: [{
@@ -60,30 +61,30 @@ export default {
       }],
       actions: [{
         api: 'createServiceOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         label: 'label.add.compute.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-compute-offering',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/AddComputeOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddComputeOffering.vue')))
       }, {
         api: 'updateServiceOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         args: ['name', 'displaytext', 'storagetags', 'hosttags']
       }, {
         api: 'updateServiceOffering',
-        icon: 'lock',
+        icon: 'lock-outlined',
         label: 'label.action.update.offering.access',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
-        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
         api: 'deleteServiceOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.action.delete.service.offering',
         message: 'message.action.delete.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
@@ -96,7 +97,7 @@ export default {
     {
       name: 'systemoffering',
       title: 'label.system.offerings',
-      icon: 'setting',
+      icon: 'setting-outlined',
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       params: { issystem: 'true', isrecursive: 'true' },
@@ -104,16 +105,16 @@ export default {
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       actions: [{
         api: 'createServiceOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         label: 'label.add.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-system-service-offering',
         listView: true,
         params: { issystem: 'true' },
         popup: true,
-        component: () => import('@/views/offering/AddComputeOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddComputeOffering.vue')))
       }, {
         api: 'updateServiceOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
         params: { issystem: 'true' },
@@ -121,7 +122,7 @@ export default {
         args: ['name', 'displaytext']
       }, {
         api: 'deleteServiceOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.action.delete.system.service.offering',
         message: 'message.action.delete.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
@@ -135,7 +136,7 @@ export default {
     {
       name: 'diskoffering',
       title: 'label.disk.offerings',
-      icon: 'hdd',
+      icon: 'hdd-outlined',
       docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
       permission: ['listDiskOfferings', 'listDomains'],
       params: { isrecursive: 'true' },
@@ -152,11 +153,11 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       related: [{
@@ -166,30 +167,30 @@ export default {
       }],
       actions: [{
         api: 'createDiskOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         label: 'label.add.disk.offering',
         docHelp: 'adminguide/service_offerings.html#creating-a-new-disk-offering',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/AddDiskOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddDiskOffering.vue')))
       }, {
         api: 'updateDiskOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         args: ['name', 'displaytext', 'tags']
       }, {
         api: 'updateDiskOffering',
-        icon: 'lock',
+        icon: 'lock-outlined',
         label: 'label.action.update.offering.access',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
-        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
         api: 'deleteDiskOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.action.delete.disk.offering',
         message: 'message.action.delete.disk.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
@@ -202,7 +203,7 @@ export default {
     {
       name: 'backupoffering',
       title: 'label.backup.offerings',
-      icon: 'cloud-upload',
+      icon: 'cloud-upload-outlined',
       docHelp: 'adminguide/virtual_machines.html#backup-offerings',
       permission: ['listBackupOfferings', 'listInfrastructure'],
       columns: ['name', 'description', 'zonename'],
@@ -214,12 +215,12 @@ export default {
       }],
       actions: [{
         api: 'importBackupOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         label: 'label.import.backup.offering',
         docHelp: 'adminguide/virtual_machines.html#importing-backup-offerings',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/ImportBackupOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
       }, {
         api: 'updateBackupOffering',
         icon: 'edit',
@@ -227,10 +228,10 @@ export default {
         dataView: true,
         popup: true,
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
-        args: ['name', 'description']
+        args: ['name', 'description', 'allowuserdrivenbackups']
       }, {
         api: 'deleteBackupOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.action.delete.backup.offering',
         message: 'message.action.delete.backup.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
@@ -243,34 +244,34 @@ export default {
     {
       name: 'networkoffering',
       title: 'label.network.offerings',
-      icon: 'wifi',
+      icon: 'wifi-outlined',
       docHelp: 'adminguide/networking.html#network-offerings',
       permission: ['listNetworkOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [{
         api: 'createNetworkOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         label: 'label.add.network.offering',
         docHelp: 'adminguide/networking.html#creating-a-new-network-offering',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/AddNetworkOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddNetworkOffering.vue')))
       }, {
         api: 'updateNetworkOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
@@ -282,7 +283,7 @@ export default {
         }
       }, {
         api: 'updateNetworkOffering',
-        icon: 'play-circle',
+        icon: 'play-circle-outlined',
         label: 'label.enable.network.offering',
         message: 'message.confirm.enable.network.offering',
         dataView: true,
@@ -298,7 +299,7 @@ export default {
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Enabled' } }) }
       }, {
         api: 'updateNetworkOffering',
-        icon: 'pause-circle',
+        icon: 'pause-circle-outlined',
         label: 'label.disable.network.offering',
         message: 'message.confirm.disable.network.offering',
         dataView: true,
@@ -314,15 +315,15 @@ export default {
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Disabled' } }) }
       }, {
         api: 'updateNetworkOffering',
-        icon: 'lock',
+        icon: 'lock-outlined',
         label: 'label.action.update.offering.access',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         popup: true,
-        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
         api: 'deleteNetworkOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.remove.network.offering',
         message: 'message.confirm.remove.network.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
@@ -335,13 +336,13 @@ export default {
     {
       name: 'vpcoffering',
       title: 'label.vpc.offerings',
-      icon: 'deployment-unit',
+      icon: 'deployment-unit-outlined',
       docHelp: 'plugins/nuage-plugin.html?#vpc-offerings',
       permission: ['listVPCOfferings', 'listInfrastructure'],
       params: { isrecursive: 'true' },
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',
@@ -349,21 +350,21 @@ export default {
       }],
       actions: [{
         api: 'createVPCOffering',
-        icon: 'plus',
+        icon: 'plus-outlined',
         docHelp: 'plugins/nuage-plugin.html?#optional-create-and-enable-vpc-offering',
         label: 'label.add.vpc.offering',
         listView: true,
         popup: true,
-        component: () => import('@/views/offering/AddVpcOffering.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/AddVpcOffering.vue')))
       }, {
         api: 'updateVPCOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
         args: ['name', 'displaytext']
       }, {
         api: 'updateVPCOffering',
-        icon: 'play-circle',
+        icon: 'play-circle-outlined',
         label: 'label.enable.vpc.offering',
         message: 'message.confirm.enable.vpc.offering',
         dataView: true,
@@ -379,7 +380,7 @@ export default {
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Enabled' } }) }
       }, {
         api: 'updateVPCOffering',
-        icon: 'pause-circle',
+        icon: 'pause-circle-outlined',
         label: 'label.disable.vpc.offering',
         message: 'message.confirm.disable.vpc.offering',
         dataView: true,
@@ -395,14 +396,14 @@ export default {
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Disabled' } }) }
       }, {
         api: 'updateVPCOffering',
-        icon: 'lock',
+        icon: 'lock-outlined',
         label: 'label.action.update.offering.access',
         dataView: true,
         popup: true,
-        component: () => import('@/views/offering/UpdateOfferingAccess.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/offering/UpdateOfferingAccess.vue')))
       }, {
         api: 'deleteVPCOffering',
-        icon: 'delete',
+        icon: 'delete-outlined',
         label: 'label.remove.vpc.offering',
         message: 'message.confirm.remove.vpc.offering',
         dataView: true,

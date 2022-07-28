@@ -316,7 +316,7 @@ class TestAttachDataDiskOnCWPS(cloudstackTestCase):
 
     @attr(tags=["basic", "advanced"], required_hardware="true")
     def test_01_attach_datadisk_to_vm_on_zwps(self):
-        """ Attach Data Disk on CWPS To VM 
+        """ Attach Data Disk on CWPS To VM
             1.  Check if zwps storage pool exists.
             2.  Adding tag to zone wide primary storage
             3.  Launch a VM

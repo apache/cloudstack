@@ -15,19 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isAdmin } from '@/role'
 
 export default {
   name: 'network',
   title: 'label.network',
-  icon: 'wifi',
+  icon: 'wifi-outlined',
   docHelp: 'adminguide/networking_and_traffic.html#advanced-zone-physical-network-configuration',
   children: [
     {
       name: 'guestnetwork',
       title: 'label.guest.networks',
-      icon: 'apartment',
+      icon: 'apartment-outlined',
       permission: ['listNetworks'],
       resourceType: 'Network',
       columns: () => {
@@ -38,14 +39,14 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domain', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
         return fields
       },
-      filters: ['all', 'isolated', 'shared', 'l2'],
-      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'tags'],
+      filters: ['all', 'account', 'domain', 'shared'],
+      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -53,53 +54,74 @@ export default {
       }],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'egress.rules',
-        component: () => import('@/views/network/EgressRulesTab.vue'),
-        show: (record) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
+        show: (record, route, user) => { return record.type === 'Isolated' && !('vpcid' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
+      }, {
+        name: 'ip.v6.firewall',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
+        show: (record, route, user) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
         name: 'public.ip.addresses',
-        component: () => import('@/views/network/IpAddressesTab.vue'),
-        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && !('vpcid' in record) && 'listPublicIpAddresses' in store.getters.apis }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
+        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
       }, {
         name: 'virtual.routers',
-        component: () => import('@/views/network/RoutersTab.vue'),
-        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis }
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
+        show: (record) => { return (record.type === 'Isolated' || record.type === 'Shared') && 'listRouters' in store.getters.apis && isAdmin() }
       }, {
         name: 'guest.ip.range',
-        component: () => import('@/views/network/GuestIpRanges.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
         show: (record) => { return 'listVlanIpRanges' in store.getters.apis && (record.type === 'Shared' || (record.service && record.service.filter(x => x.name === 'SourceNat').count === 0)) }
+      }, {
+        name: 'network.permissions',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/NetworkPermissions.vue'))),
+        show: (record, route, user) => { return 'listNetworkPermissions' in store.getters.apis && record.acltype === 'Account' && !('vpcid' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account) && !record.projectid }
+      },
+      {
+        name: 'events',
+        resourceType: 'Network',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',
-        component: () => import('@/components/view/AnnotationsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
           api: 'createNetwork',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.network',
           docHelp: 'adminguide/networking_and_traffic.html#configure-guest-traffic-in-an-advanced-zone',
           listView: true,
           popup: true,
-          component: () => import('@/views/network/CreateNetwork.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateNetwork.vue')))
         },
         {
           api: 'updateNetwork',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
           popup: true,
-          component: () => import('@/views/network/UpdateNetwork.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
         {
           api: 'restartNetwork',
-          icon: 'sync',
+          icon: 'sync-outlined',
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
-          args: (record) => record.vpcid == null ? ['cleanup'] : [], // if it is a tier in a VPC and so it has a vpc do not allow "cleanup
+          args: (record, store, isGroupAction) => {
+            var fields = []
+            if (isGroupAction || record.vpcid == null) {
+              fields.push('cleanup')
+            }
+            fields.push('livepatch')
+            return fields
+          },
           show: (record) => record.type !== 'L2',
           groupAction: true,
           popup: true,
@@ -107,7 +129,7 @@ export default {
         },
         {
           api: 'replaceNetworkACLList',
-          icon: 'swap',
+          icon: 'swap-outlined',
           label: 'label.replace.acl.list',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
@@ -126,7 +148,7 @@ export default {
         },
         {
           api: 'deleteNetwork',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
@@ -139,12 +161,12 @@ export default {
     {
       name: 'vpc',
       title: 'label.vpc',
-      icon: 'deployment-unit',
+      icon: 'deployment-unit-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#configuring-a-virtual-private-cloud',
       permission: ['listVPCs'],
       resourceType: 'Vpc',
       columns: ['name', 'state', 'displaytext', 'cidr', 'account', 'zonename'],
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',
@@ -161,28 +183,28 @@ export default {
       }],
       tabs: [{
         name: 'vpc',
-        component: () => import('@/views/network/VpcTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/VpcTab.vue')))
       }],
       actions: [
         {
           api: 'createVPC',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
           listView: true,
           popup: true,
-          component: () => import('@/views/network/CreateVpc.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpc.vue')))
         },
         {
           api: 'updateVPC',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           args: ['name', 'displaytext']
         },
         {
           api: 'restartVPC',
-          icon: 'sync',
+          icon: 'sync-outlined',
           label: 'label.restart.vpc',
           message: (record) => { return record.redundantvpcrouter ? 'message.restart.vpc' : 'message.restart.vpc.remark' },
           dataView: true,
@@ -191,6 +213,7 @@ export default {
             if (!record.redundantvpcrouter) {
               fields.push('makeredundant')
             }
+            fields.push('livepatch')
             return fields
           },
           groupAction: true,
@@ -199,7 +222,7 @@ export default {
         },
         {
           api: 'deleteVPC',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.remove.vpc',
           message: 'message.remove.vpc',
           dataView: true,
@@ -212,7 +235,7 @@ export default {
     {
       name: 'securitygroups',
       title: 'label.security.groups',
-      icon: 'fire',
+      icon: 'fire-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#security-groups',
       permission: ['listSecurityGroups'],
       resourceType: 'SecurityGroup',
@@ -220,13 +243,13 @@ export default {
       details: ['name', 'id', 'description', 'account', 'domain'],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'ingress.rule',
-        component: () => import('@/views/network/IngressEgressRuleConfigure.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/IngressEgressRuleConfigure.vue')))
       }, {
         name: 'egress.rule',
-        component: () => import('@/views/network/IngressEgressRuleConfigure.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/IngressEgressRuleConfigure.vue')))
       }],
       show: () => {
         if (!store.getters.zones || store.getters.zones.length === 0) {
@@ -241,7 +264,7 @@ export default {
       actions: [
         {
           api: 'createSecurityGroup',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.security.group',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-security-group',
           listView: true,
@@ -249,7 +272,7 @@ export default {
         },
         {
           api: 'updateSecurityGroup',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           args: ['name'],
@@ -257,7 +280,7 @@ export default {
         },
         {
           api: 'deleteSecurityGroup',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.delete.security.group',
           message: 'message.action.delete.security.group',
           dataView: true,
@@ -268,19 +291,20 @@ export default {
     {
       name: 'publicip',
       title: 'label.public.ip.addresses',
-      icon: 'environment',
+      icon: 'environment-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#reserving-public-ip-addresses-and-vlans-for-accounts',
       permission: ['listPublicIpAddresses'],
       resourceType: 'PublicIpAddress',
       columns: ['ipaddress', 'state', 'associatednetworkname', 'virtualmachinename', 'allocated', 'account', 'zonename'],
       details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'zonename'],
-      component: () => import('@/views/network/PublicIpResource.vue'),
+      filters: ['allocated', 'reserved', 'free'],
+      component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'firewall',
-        component: () => import('@/views/network/FirewallRules.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/FirewallRules.vue'))),
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'Firewall').length > 0,
         groupAction: true,
         popup: true,
@@ -288,35 +312,41 @@ export default {
       },
       {
         name: 'portforwarding',
-        component: () => import('@/views/network/PortForwarding.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/PortForwarding.vue'))),
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'PortForwarding').length > 0
       }, {
         name: 'loadbalancing',
-        component: () => import('@/views/network/LoadBalancing.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/LoadBalancing.vue'))),
         networkServiceFilter: networkService => networkService.filter(x => x.name === 'Lb').length > 0
       }, {
         name: 'vpn',
-        component: () => import('@/views/network/VpnDetails.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/VpnDetails.vue'))),
         show: (record) => { return record.issourcenat }
       },
       {
+        name: 'events',
+        resourceType: 'IpAddress',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
+      },
+      {
         name: 'comments',
-        component: () => import('@/components/view/AnnotationsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
           api: 'enableStaticNat',
-          icon: 'plus-circle',
+          icon: 'plus-circle-outlined',
           label: 'label.action.enable.static.nat',
           docHelp: 'adminguide/networking_and_traffic.html#enabling-or-disabling-static-nat',
           dataView: true,
-          show: (record) => { return !record.virtualmachineid && !record.issourcenat },
+          show: (record) => { return record.state === 'Allocated' && !record.virtualmachineid && !record.issourcenat },
           popup: true,
-          component: () => import('@/views/network/EnableStaticNat.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/EnableStaticNat.vue')))
         },
         {
           api: 'disableStaticNat',
-          icon: 'minus-circle',
+          icon: 'minus-circle-outlined',
           label: 'label.action.disable.static.nat',
           message: 'message.action.disable.static.nat',
           docHelp: 'adminguide/networking_and_traffic.html#enabling-or-disabling-static-nat',
@@ -331,12 +361,32 @@ export default {
         },
         {
           api: 'disassociateIpAddress',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.action.release.ip',
           message: 'message.action.release.ip',
           docHelp: 'adminguide/networking_and_traffic.html#releasing-an-ip-address-alloted-to-a-vpc',
           dataView: true,
-          show: (record) => { return !record.issourcenat },
+          show: (record) => { return record.state === 'Allocated' && !record.issourcenat },
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        },
+        {
+          api: 'reserveIpAddress',
+          icon: 'lock-outlined',
+          label: 'label.action.reserve.ip',
+          dataView: true,
+          show: (record) => { return record.state === 'Free' },
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/ReservePublicIP.vue')))
+        },
+        {
+          api: 'releaseIpAddress',
+          icon: 'usergroup-delete-outlined',
+          label: 'label.action.release.reserved.ip',
+          message: 'message.action.release.reserved.ip',
+          dataView: true,
+          show: (record) => { return record.state === 'Reserved' },
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
@@ -346,23 +396,23 @@ export default {
     {
       name: 'privategw',
       title: 'label.private.gateway',
-      icon: 'gateway',
+      icon: 'gateway-outlined',
       hidden: true,
       permission: ['listPrivateGateways'],
       columns: ['ipaddress', 'state', 'gateway', 'netmask', 'account'],
-      details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclname', 'account', 'domain', 'zone'],
+      details: ['ipaddress', 'gateway', 'netmask', 'vlan', 'sourcenatsupported', 'aclname', 'account', 'domain', 'zone', 'associatednetwork', 'associatednetworkid'],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'static.routes',
-        component: () => import('@/views/network/StaticRoutesTab.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/StaticRoutesTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createPrivateGateway',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.private.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-private-gateway-to-a-vpc',
           listView: true,
@@ -381,7 +431,7 @@ export default {
         },
         {
           api: 'replaceNetworkACLList',
-          icon: 'swap',
+          icon: 'swap-outlined',
           label: 'label.replace.acl.list',
           message: 'message.confirm.replace.acl.new.one',
           docHelp: 'adminguide/networking_and_traffic.html#acl-on-private-gateway',
@@ -399,7 +449,7 @@ export default {
         },
         {
           api: 'deletePrivateGateway',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.gateway',
           message: 'message.delete.gateway',
           dataView: true
@@ -409,7 +459,7 @@ export default {
     {
       name: 's2svpn',
       title: 'label.site.to.site.vpn',
-      icon: 'lock',
+      icon: 'lock-outlined',
       hidden: true,
       permission: ['listVpnGateways'],
       columns: ['publicip', 'account', 'domain'],
@@ -417,7 +467,7 @@ export default {
       actions: [
         {
           api: 'createVpnGateway',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.vpn.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-gateway-for-the-vpc',
           listView: true,
@@ -425,7 +475,7 @@ export default {
         },
         {
           api: 'deleteVpnGateway',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.vpn.gateway',
           message: 'message.delete.vpn.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#restarting-and-removing-a-vpn-connection',
@@ -437,7 +487,7 @@ export default {
       name: 's2svpnconn',
       title: 'label.site.to.site.vpn.connections',
       docHelp: 'adminguide/networking_and_traffic.html#setting-up-a-site-to-site-vpn-connection',
-      icon: 'sync',
+      icon: 'sync-outlined',
       hidden: true,
       permission: ['listVpnConnections'],
       columns: ['publicip', 'state', 'gateway', 'ipsecpsk', 'ikepolicy', 'esppolicy'],
@@ -445,7 +495,7 @@ export default {
       actions: [
         {
           api: 'createVpnConnection',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.create.vpn.connection',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-connection',
           listView: true,
@@ -461,7 +511,7 @@ export default {
         },
         {
           api: 'resetVpnConnection',
-          icon: 'reload',
+          icon: 'reload-outlined',
           label: 'label.reset.vpn.connection',
           message: 'message.reset.vpn.connection',
           docHelp: 'adminguide/networking_and_traffic.html#restarting-and-removing-a-vpn-connection',
@@ -469,7 +519,7 @@ export default {
         },
         {
           api: 'deleteVpnConnection',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.vpn.connection',
           message: 'message.delete.vpn.connection',
           docHelp: 'adminguide/networking_and_traffic.html#restarting-and-removing-a-vpn-connection',
@@ -480,7 +530,7 @@ export default {
     {
       name: 'acllist',
       title: 'label.network.acl.lists',
-      icon: 'bars',
+      icon: 'bars-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
       hidden: true,
       permission: ['listNetworkACLLists'],
@@ -488,16 +538,16 @@ export default {
       details: ['name', 'description', 'id'],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'acl.list.rules',
-        component: () => import('@/views/network/AclListRulesTab.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclListRulesTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createNetworkACLList',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.acl.list',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
@@ -505,14 +555,14 @@ export default {
         },
         {
           api: 'updateNetworkACLList',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit.acl.list',
           dataView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteNetworkACLList',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.acl.list',
           message: 'message.confirm.delete.acl.list',
           dataView: true
@@ -523,23 +573,23 @@ export default {
       name: 'ilb',
       title: 'label.internal.lb',
       docHelp: 'adminguide/networking_and_traffic.html#load-balancing-across-tiers',
-      icon: 'share-alt',
+      icon: 'share-alt-outlined',
       hidden: true,
       permission: ['listLoadBalancers'],
       columns: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
       details: ['name', 'sourceipaddress', 'loadbalancerrule', 'algorithm', 'account', 'domain'],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'loadbalancerinstance',
-        component: () => import('@/views/network/InternalLBAssignedVmTab.vue'),
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/InternalLBAssignedVmTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createLoadBalancer',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.internal.lb',
           docHelp: 'adminguide/networking_and_traffic.html#creating-an-internal-lb-rule',
           listView: true,
@@ -563,15 +613,15 @@ export default {
         },
         {
           api: 'assignToLoadBalancerRule',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.assign.vms',
           dataView: true,
           popup: true,
-          component: () => import('@/views/network/InternalLBAssignVmForm.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/InternalLBAssignVmForm.vue')))
         },
         {
           api: 'deleteLoadBalancer',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.internal.lb',
           message: 'message.confirm.delete.internal.lb',
           dataView: true
@@ -581,7 +631,7 @@ export default {
     {
       name: 'vpnuser',
       title: 'label.vpn.users',
-      icon: 'user',
+      icon: 'user-alt-outlined',
       permission: ['listVpnUsers'],
       hidden: true,
       columns: ['username', 'state', 'account', 'domain'],
@@ -589,7 +639,7 @@ export default {
       actions: [
         {
           api: 'addVpnUser',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.vpn.user',
           listView: true,
           args: (record, store) => {
@@ -602,7 +652,7 @@ export default {
         },
         {
           api: 'removeVpnUser',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.vpn.user',
           message: 'message.action.delete.vpn.user',
           dataView: true,
@@ -634,7 +684,7 @@ export default {
     {
       name: 'vpncustomergateway',
       title: 'label.vpncustomergatewayid',
-      icon: 'lock',
+      icon: 'lock-outlined',
       permission: ['listVpnCustomerGateways'],
       columns: ['name', 'gateway', 'cidrlist', 'ipsecpsk', 'account'],
       details: ['name', 'id', 'gateway', 'cidrlist', 'ipsecpsk', 'ikepolicy', 'ikelifetime', 'ikeversion', 'esppolicy', 'esplifetime', 'dpd', 'splitconnections', 'forceencap', 'account', 'domain'],
@@ -643,26 +693,26 @@ export default {
       tabs: [
         {
           name: 'details',
-          component: () => import('@/components/view/DetailsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
         },
         {
           name: 'comments',
-          component: () => import('@/components/view/AnnotationsTab.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
         }
       ],
       actions: [
         {
           api: 'createVpnCustomerGateway',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.add.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-and-updating-a-vpn-customer-gateway',
           listView: true,
           popup: true,
-          component: () => import('@/views/network/CreateVpnCustomerGateway.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpnCustomerGateway.vue')))
         },
         {
           api: 'updateVpnCustomerGateway',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
           dataView: true,
@@ -675,7 +725,7 @@ export default {
         },
         {
           api: 'deleteVpnCustomerGateway',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.delete.vpn.customer.gateway',
           message: 'message.delete.vpn.customer.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#updating-and-removing-a-vpn-customer-gateway',
@@ -685,6 +735,31 @@ export default {
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
         }
       ]
+    },
+    {
+      name: 'guestvlans',
+      title: 'label.guest.vlan',
+      icon: 'folder-outlined',
+      permission: ['listGuestVlans'],
+      resourceType: 'GuestVlan',
+      filters: ['allocatedonly', 'all'],
+      columns: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project'],
+      details: ['vlan', 'zonename', 'physicalnetworkname', 'allocationstate', 'taken', 'domain', 'account', 'project', 'isdedicated'],
+      searchFilters: ['zoneid'],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      }, {
+        name: 'guest.networks',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestVlanNetworksTab.vue'))),
+        show: (record) => { return (record.allocationstate === 'Allocated') }
+      }],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        return true
+      }
     }
   ]
 }

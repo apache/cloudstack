@@ -54,6 +54,10 @@
   .layout.ant-layout .top-nav-header-index .user-menu .action,
   .ant-tabs {
     color: @dark-text-color-3;
+
+    .ant-badge {
+      color: @dark-text-color-3;
+    }
   }
 
   .ant-layout-footer {
@@ -97,6 +101,23 @@
   }
 
   .ant-menu {
+    &-inline-collapsed {
+      .ant-menu-item,
+      .ant-menu-submenu-title {
+        left: 0;
+        padding: 0 32px!important;
+        text-overflow: clip;
+      }
+    }
+
+    .ant-menu-item:not(.ant-menu-item-selected) a:not(:hover) {
+      color: @dark-text-color-3;
+    }
+
+    .ant-menu-item:not(.ant-menu-item-selected) a:not(:hover) .anticon .custom-icon {
+      fill: @dark-text-color-3;
+    }
+
     &-vertical:not(.ant-menu-dark) {
       .ant-menu-item,
       .ant-menu-submenu-title:not(:hover),
@@ -145,7 +166,7 @@
       border-color: @dark-border-color;
     }
 
-    .ant-progress-circle {
+    .ant-progress-circle, .ant-progress-outer {
       .ant-progress-text {
         color: @dark-text-color-3;
       }
@@ -207,10 +228,13 @@
     }
   }
 
-  .has-error .ant-input-affix-wrapper .ant-input,
-  .has-error .ant-input-affix-wrapper .ant-input:hover,
-  .has-error .ant-input,
-  .has-error .ant-input:hover {
+  .ant-form-item-has-error .ant-input-affix-wrapper .ant-input,
+  .ant-form-item-has-error .ant-input-affix-wrapper .ant-input:hover,
+  .ant-form-item-has-error .ant-input-affix-wrapper,
+  .ant-form-item-has-error .ant-input-affix-wrapper:hover,
+  .ant-form-item-has-error .ant-input,
+  .ant-form-item-has-error .ant-input:hover,
+  .ant-form-item-has-error .ant-select:not(.ant-select-customize-input) .ant-select-selector {
     background-color: transparent;
     background-image: none;
   }
@@ -220,6 +244,7 @@
   }
 
   .ant-table {
+    background-color: transparent;
     color: @dark-text-color-3;
 
     &-thead {
@@ -258,7 +283,7 @@
       & > tr:hover.ant-table-row-selected > td,
       & > tr.ant-table-row-hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td,
       & > tr:hover:not(.ant-table-expanded-row):not(.ant-table-row-selected) > td {
-        background-color: @table-body-hover-bgColor;
+        background-color: @table-body-hover-bgColor !important;
       }
 
       & > tr > th.ant-table-column-sort {
@@ -396,13 +421,16 @@
     background-color: transparent;
     background-image: none;
     border-color: @dark-border-color;
-    color: @dark-text-color-3;
 
-    .anticon-close {
+    &> a {
       color: @dark-text-color-3;
 
-      &:hover {
-        color: @dark-text-color-4;
+      .anticon-close {
+        color: @dark-text-color-3;
+
+        &:hover {
+          color: @dark-text-color-4;
+        }
       }
     }
   }
@@ -455,7 +483,8 @@
   .ant-radio-inner,
   .ant-radio-button-wrapper,
   .ant-input-number,
-  .ant-time-picker-input {
+  .ant-time-picker-input,
+  .ant-input-affix-wrapper {
     background-color: transparent;
     color: @dark-text-color-3;
 
@@ -466,6 +495,16 @@
     &:disabled, &-disabled {
       background-color: @disabled-bgColor;
     }
+  }
+
+  .ant-input-group-addon:hover {
+    border-color: @dark-border-color;
+  }
+
+  .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: transparent;
+    color: @dark-text-color-3;
+    border-color: @dark-border-color;
   }
 
   .ant-select-disabled {
@@ -502,17 +541,18 @@
       0 6px 16px 0 @box-shadow-2,
       0 9px 28px 8px @box-shadow-3;
 
-    &-menu-item {
+    .ant-select-item {
       color: @dark-text-color-3;
 
-      &-selected {
+      &-option-selected {
         background-color: @dropdown-hover-bgColor;
       }
-    }
 
-    &-menu-item:hover:not(.ant-select-dropdown-menu-item-disabled),
-    &-menu-item-active:not(.ant-select-dropdown-menu-item-disabled) {
-      background-color: @dropdown-hover-bgColor;
+      &-option-active:not(.ant-select-item-option-disabled),
+      &:hover:not(.ant-select-item-disabled),
+      &-active:hover:not(.ant-select-item-disabled) {
+        background-color: @dropdown-hover-bgColor !important;
+      }
     }
   }
 
@@ -674,9 +714,10 @@
 
     &-item:not(.ant-dropdown-menu-item-selected):hover,
     &-submenu-title:not(.ant-dropdown-menu-item-selected):hover {
-      background-color: @dropdown-hover-bgColor;
+      background-color: @dropdown-hover-bgColor !important;
     }
 
+    &-title-content > a,
     &-item:not(.ant-dropdown-menu-item-selected),
     &-submenu-title:not(.ant-dropdown-menu-item-selected),
     &-item:not(.ant-dropdown-menu-item-selected) > a,
@@ -899,6 +940,19 @@
   }
 
   .ant-empty-normal {
+    color: @dark-text-color-3;
+  }
+
+  .custom-suffix-icon {
+    color: @dark-text-color-3;
+  }
+
+  .ant-comment-content-author-name,
+  .ant-comment-actions > li,
+  .ant-comment-actions > li > span,
+  .ant-tag,
+  .ant-tag a,
+  .ant-tag a:hover {
     color: @dark-text-color-3;
   }
 

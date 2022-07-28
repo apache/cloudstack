@@ -20,9 +20,12 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.InstanceGroup;
 
@@ -56,7 +59,8 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     private String accountName = null;
 
     @Column(name = "account_type")
-    private short accountType;
+    @Enumerated(value = EnumType.ORDINAL)
+    private Account.Type accountType;
 
     @Column(name = "domain_id")
     private long domainId;
@@ -108,7 +112,7 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
     @Override
-    public short getAccountType() {
+    public Account.Type getAccountType() {
         return accountType;
     }
 

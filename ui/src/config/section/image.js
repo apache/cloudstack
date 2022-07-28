@@ -15,19 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
 import kubernetes from '@/assets/icons/kubernetes.svg?inline'
 import store from '@/store'
 
 export default {
   name: 'image',
   title: 'label.images',
-  icon: 'picture',
+  icon: 'picture-outlined',
   docHelp: 'adminguide/templates.html',
   children: [
     {
       name: 'template',
       title: 'label.templates',
-      icon: 'save',
+      icon: 'save-outlined',
       docHelp: 'adminguide/templates.html',
       permission: ['listTemplates'],
       params: { templatefilter: 'self', showunique: 'true' },
@@ -60,40 +61,46 @@ export default {
       }],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'zones',
-        component: () => import('@/views/image/TemplateZones.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/image/TemplateZones.vue')))
       }, {
         name: 'settings',
-        component: () => import('@/components/view/DetailSettings')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailSettings')))
+      },
+      {
+        name: 'events',
+        resourceType: 'Template',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',
-        component: () => import('@/components/view/AnnotationsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
           api: 'registerTemplate',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.action.register.template',
           docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
           api: 'registerTemplate',
-          icon: 'cloud-upload',
+          icon: 'cloud-upload-outlined',
           label: 'label.upload.template.from.local',
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterOrUploadTemplate.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
           api: 'updateTemplate',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.edit',
           dataView: true,
           show: (record, store) => {
@@ -103,11 +110,11 @@ export default {
               record.isready
           },
           popup: true,
-          component: () => import('@/views/image/UpdateTemplate.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateTemplate.vue')))
         },
         {
           api: 'updateTemplatePermissions',
-          icon: 'share-alt',
+          icon: 'share-alt-outlined',
           label: 'label.action.template.share',
           dataView: true,
           args: (record, store) => {
@@ -127,7 +134,7 @@ export default {
         },
         {
           api: 'extractTemplate',
-          icon: 'cloud-download',
+          icon: 'cloud-download-outlined',
           label: 'label.action.download.template',
           message: 'message.action.download.template',
           docHelp: 'adminguide/templates.html#exporting-templates',
@@ -153,7 +160,7 @@ export default {
         },
         {
           api: 'updateTemplatePermissions',
-          icon: 'reconciliation',
+          icon: 'reconciliation-outlined',
           label: 'label.action.template.permission',
           docHelp: 'adminguide/templates.html#sharing-templates-with-other-accounts-projects',
           dataView: true,
@@ -165,14 +172,14 @@ export default {
               record.templatetype !== 'SYSTEM' &&
               record.isready
           },
-          component: () => import('@/views/image/UpdateTemplateIsoPermissions')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateTemplateIsoPermissions')))
         }
       ]
     },
     {
       name: 'iso',
       title: 'label.isos',
-      icon: 'usb',
+      icon: 'usb-outlined',
       docHelp: 'adminguide/templates.html#working-with-isos',
       permission: ['listIsos'],
       params: { isofilter: 'self', showunique: 'true' },
@@ -197,37 +204,43 @@ export default {
       }],
       tabs: [{
         name: 'details',
-        component: () => import('@/components/view/DetailsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'zones',
-        component: () => import('@/views/image/IsoZones.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/views/image/IsoZones.vue')))
+      },
+      {
+        name: 'events',
+        resourceType: 'Iso',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+        show: () => { return 'listEvents' in store.getters.apis }
       },
       {
         name: 'comments',
-        component: () => import('@/components/view/AnnotationsTab.vue')
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
           api: 'registerIso',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.action.register.iso',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterOrUploadIso.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadIso.vue')))
         },
         {
           api: 'registerIso',
-          icon: 'cloud-upload',
+          icon: 'cloud-upload-outlined',
           label: 'label.upload.iso.from.local',
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/RegisterOrUploadIso.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadIso.vue')))
         },
         {
           api: 'updateIso',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.action.edit.iso',
           dataView: true,
           show: (record, store) => {
@@ -241,7 +254,7 @@ export default {
         },
         {
           api: 'updateIsoPermissions',
-          icon: 'share-alt',
+          icon: 'share-alt-outlined',
           label: 'label.action.iso.share',
           dataView: true,
           args: (record, store) => {
@@ -261,7 +274,7 @@ export default {
         },
         {
           api: 'extractIso',
-          icon: 'cloud-download',
+          icon: 'cloud-download-outlined',
           label: 'label.action.download.iso',
           message: 'message.action.download.iso',
           docHelp: 'adminguide/templates.html#exporting-templates',
@@ -286,7 +299,7 @@ export default {
         },
         {
           api: 'updateIsoPermissions',
-          icon: 'reconciliation',
+          icon: 'reconciliation-outlined',
           label: 'label.action.iso.permission',
           docHelp: 'adminguide/templates.html#sharing-templates-with-other-accounts-projects',
           dataView: true,
@@ -299,38 +312,38 @@ export default {
               !(record.account === 'system' && record.domainid === 1) &&
               record.isready
           },
-          component: () => import('@/views/image/UpdateTemplateIsoPermissions')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateTemplateIsoPermissions')))
         }
       ]
     },
     {
       name: 'kubernetesiso',
       title: 'label.kubernetes.isos',
-      icon: kubernetes,
+      icon: shallowRef(kubernetes),
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',
-          icon: 'plus',
+          icon: 'plus-outlined',
           label: 'label.kubernetes.version.add',
           listView: true,
           popup: true,
-          component: () => import('@/views/image/AddKubernetesSupportedVersion.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
         },
         {
           api: 'updateKubernetesSupportedVersion',
-          icon: 'edit',
+          icon: 'edit-outlined',
           label: 'label.kubernetes.version.update',
           dataView: true,
           popup: true,
-          component: () => import('@/views/image/UpdateKubernetesSupportedVersion.vue')
+          component: shallowRef(defineAsyncComponent(() => import('@/views/image/UpdateKubernetesSupportedVersion.vue')))
         },
         {
           api: 'deleteKubernetesSupportedVersion',
-          icon: 'delete',
+          icon: 'delete-outlined',
           label: 'label.kubernetes.version.delete',
           message: 'message.kubernetes.version.delete',
           dataView: true

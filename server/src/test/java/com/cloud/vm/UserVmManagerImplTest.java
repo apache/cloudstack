@@ -178,7 +178,7 @@ public class UserVmManagerImplTest {
 
         Mockito.when(userVmDao.findById(Mockito.eq(vmId))).thenReturn(userVmVoMock);
 
-        Mockito.when(callerAccount.getType()).thenReturn(Account.ACCOUNT_TYPE_ADMIN);
+        Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
         CallContext.register(callerUser, callerAccount);
 
         customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, "123");

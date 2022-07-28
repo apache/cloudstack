@@ -32,6 +32,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
@@ -39,11 +40,12 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.utils.ssh.SshHelper;
-import org.apache.commons.lang3.StringUtils;
 
 public class KubernetesClusterUtil {
 
     protected static final Logger LOGGER = Logger.getLogger(KubernetesClusterUtil.class);
+
+    public static final String CLUSTER_NODE_VERSION_COMMAND = "sudo /opt/bin/kubectl version --short";
 
     public static boolean isKubernetesClusterNodeReady(final KubernetesCluster kubernetesCluster, String ipAddress, int port,
                                                        String user, File sshKeyFile, String nodeName) throws Exception {
@@ -323,5 +325,39 @@ public class KubernetesClusterUtil {
             token.append(token);
         }
         return token.toString().substring(0, 64);
+    }
+
+    public static boolean clusterNodeVersionMatches(final String version, boolean isControlNode,
+                                                    final String ipAddress, final int port,
+                                                    final String user, final File sshKeyFile,
+                                                    final String hostName) {
+        Pair<Boolean, String> result = null;
+        try {
+            result = SshHelper.sshExecute(
+                    ipAddress, port,
+                    user, sshKeyFile, null,
+                    CLUSTER_NODE_VERSION_COMMAND,
+                    10000, 10000, 20000);
+        } catch (Exception e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(String.format("Failed to retrieve Kubernetes version from cluster node : %s due to exception", hostName), e);
+            }
+            return false;
+        }
+        if (Boolean.FALSE.equals(result.first()) || StringUtils.isBlank(result.second())) {
+            return false;
+        }
+        String response = result.second();
+        boolean clientVersionPresent = false;
+        boolean serverVersionPresent = false;
+        for (String line : response.split("\n")) {
+            if (line.contains("Client Version") && line.contains(String.format("v%s", version))) {
+                clientVersionPresent = true;
+            }
+            if (isControlNode && line.contains("Server Version") && line.contains(String.format("v%s", version))) {
+                serverVersionPresent = true;
+            }
+        }
+        return clientVersionPresent && (!isControlNode || serverVersionPresent);
     }
 }

@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack-service-console-proxy</artifactId>
-        <version>4.17.0.0-SNAPSHOT</version>
+        <version>4.18.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
@@ -36,7 +36,7 @@
             <version>${project.version}</version>
         </dependency>
         <!--
-            Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
+            Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL support.
             NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work.
         -->
         <dependency>

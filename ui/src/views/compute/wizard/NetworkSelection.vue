@@ -20,7 +20,7 @@
     <a-input-search
       style="width: 25vw; float: right; margin-bottom: 10px; z-index: 8"
       :placeholder="$t('label.search')"
-      v-model="filter"
+      v-model:value="filter"
       @search="handleSearch" />
     <a-button type="primary" @click="onCreateNetworkClick" style="float: right; margin-right: 5px; z-index: 8">
       {{ $t('label.create.network') }}
@@ -34,30 +34,32 @@
       :rowSelection="rowSelection"
       :scroll="{ y: 225 }"
     >
-      <template slot="name" slot-scope="text, item">
+      <template #name="{record}">
         <resource-icon
-          v-if="item.icon"
-          :image="item.icon.base64image"
+          v-if="record.icon"
+          :image="record.icon.base64image"
           size="1x"
           style="margin-right: 5px"/>
-        <a-icon slot="name" v-else type="apartment" style="margin-right: 5px" />
-        {{ item.name }}
+        <apartment-outlined v-else style="margin-right: 5px" />
+        {{ record.name }}
       </template>
-      <a-list
-        slot="expandedRowRender"
-        slot-scope="record"
-        :key="record.id"
-        :dataSource="getDetails(record)"
-        size="small"
-      >
-        <a-list-item slot="renderItem" slot-scope="item" :key="item.id">
-          <a-list-item-meta
-            :description="item.description"
-          >
-            <template v-slot:title>{{ item.title }}</template>
-          </a-list-item-meta>
-        </a-list-item>
-      </a-list>
+      <template #expandedRowRender="{ record }">
+        <a-list
+          :key="record.id"
+          :dataSource="getDetails(record)"
+          size="small"
+        >
+          <template #renderItem="{ item }">
+            <a-list-item :key="item.id">
+              <a-list-item-meta
+                :description="item.description"
+              >
+                <template #title>{{ item.title }}</template>
+              </a-list-item-meta>
+            </a-list-item>
+          </template>
+        </a-list>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -71,7 +73,7 @@
         @change="onChangePage"
         @showSizeChange="onChangePageSize"
         showSizeChanger>
-        <template slot="buildOptionText" slot-scope="props">
+        <template #buildOptionText="props">
           <span>{{ props.value }} / {{ $t('label.page') }}</span>
         </template>
       </a-pagination>
@@ -169,7 +171,7 @@ export default {
         {
           dataIndex: 'name',
           title: this.$t('label.networks'),
-          scopedSlots: { customRender: 'name' },
+          slots: { customRender: 'name' },
           width: '40%'
         },
         {
@@ -236,48 +238,62 @@ export default {
         }
       }
     },
-    items () {
-      if (this.items && this.items.length > 0 &&
-        this.networksBeforeCreate) {
-        var user = this.$store.getters.userInfo
-        for (var network of this.items) {
-          if (user.account !== network.account ||
-            user.domainid !== network.domainid ||
-            (new Date()).getTime() - Date.parse(network.created) > 30000) {
-            continue
-          }
-          var networkFoundInNewList = false
-          for (var oldNetwork of this.networksBeforeCreate) {
-            if (oldNetwork.id === network.id) {
-              networkFoundInNewList = true
+    items: {
+      deep: true,
+      handler () {
+        if (this.items && this.items.length > 0 &&
+          this.networksBeforeCreate) {
+          var user = this.$store.getters.userInfo
+          for (var network of this.items) {
+            if (user.account !== network.account ||
+              user.domainid !== network.domainid ||
+              (new Date()).getTime() - Date.parse(network.created) > 30000) {
+              continue
+            }
+            var networkFoundInNewList = false
+            for (var oldNetwork of this.networksBeforeCreate) {
+              if (oldNetwork.id === network.id) {
+                networkFoundInNewList = true
+                break
+              }
+            }
+            if (!networkFoundInNewList) {
+              this.selectedRowKeys.push(network.id)
+              this.$emit('select-network-item', this.selectedRowKeys)
               break
             }
           }
-          if (!networkFoundInNewList) {
-            this.selectedRowKeys.push(network.id)
-            this.$emit('select-network-item', this.selectedRowKeys)
-            break
-          }
+          this.networksBeforeCreate = null
         }
-        this.networksBeforeCreate = null
       }
     }
-  },
-  beforeCreate () {
-    this.form = this.$form.createForm(this)
   },
   created () {
     this.vpcs = []
     const projectId = store?.getters?.project?.id || null
-    if (!projectId) return
+    var params = {}
+    if (projectId) {
+      params.projectid = projectId
+    }
     api('listVPCs', {
-      projectid: projectId
+      params
     }).then((response) => {
       this.vpcs = _.get(response, 'listvpcsresponse.vpc')
     })
   },
   inject: ['vmFetchNetworks'],
   methods: {
+    fetchVPCs () {
+      const projectId = store?.getters?.project?.id || null
+      if (!projectId) {
+        return false
+      }
+      api('listVPCs', {
+        projectid: store.getters.project.id
+      }).then((response) => {
+        this.vpcs = _.get(response, 'listvpcsresponse.vpc')
+      })
+    },
     getDetails (network) {
       const detail = [
         {
