@@ -45,7 +45,7 @@ public final class CitrixCheckGuestOsMappingCommandWrapper extends CommandWrappe
         try {
             s_logger.info("Checking guest os mapping name: " + guestOsMappingName + " for the guest os: " + guestOsName + " in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
-            if (vms.size() == 0) {
+            if (vms == null || vms.isEmpty()) {
                 return new CheckGuestOsMappingAnswer(command, "Unable to match guest os mapping name: " + guestOsMappingName + " in the hypervisor");
             }
             for (VM vm : vms) {
