@@ -2419,6 +2419,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             } else {
                 doScaleDown(asGroup.getId());
             }
+            markStatisticsAsInactive(asGroup.getId(), null);
         }
 
         // Remove old statistics from database
