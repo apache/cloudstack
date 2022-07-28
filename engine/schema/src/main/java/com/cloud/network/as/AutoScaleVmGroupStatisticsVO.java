@@ -37,7 +37,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 @Table(name = "autoscale_vmgroup_statistics")
 public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
-    enum State {
+    public enum State {
         Active, Inactive
     }
 
@@ -147,5 +147,9 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
 
     public State getState() {
         return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

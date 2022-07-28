@@ -950,6 +950,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         policy = checkValidityAndPersist(policy, conditionIds);
         s_logger.info("Successfully updated Auto Scale Policy id:" + policyId);
+
+        markStatisticsAsInactive(null, policyId);
+
         return policy;
     }
 
@@ -1241,7 +1244,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
 
-        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || interval != null);
+        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || interval != null || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
@@ -1274,6 +1277,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         vmGroupVO = checkValidityAndPersist(vmGroupVO, scaleUpPolicyIds, scaleDownPolicyIds);
         if (vmGroupVO != null) {
             s_logger.debug("Updated Auto Scale VmGroup id:" + vmGroupId);
+
+            if (interval != null || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds)) {
+                markStatisticsAsInactive(vmGroupId, null);
+            }
+
             return vmGroupVO;
         } else
             return null;
@@ -1537,7 +1545,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             sc2.setJoinParameters("policySearch", "policyId", policyIds.toArray((new Object[policyIds.size()])));
             List<AutoScaleVmGroupVO> groups = _autoScaleVmGroupDao.search(sc2, null);
             if (CollectionUtils.isNotEmpty(groups)) {
-                String msg = String.format("Cannot update condition %d as it is being used in %d vm groups.", conditionId, groups.size());
+                String msg = String.format("Cannot update condition %d as it is being used in %d vm groups NOT in Disabled state.", conditionId, groups.size());
                 s_logger.info(msg);
                 throw new ResourceInUseException(msg);
             }
@@ -1548,6 +1556,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         boolean success = _conditionDao.update(conditionId, condition);
         if (success) {
             s_logger.info("Successfully updated condition " + condition.getId());
+
+            for (Long policyId : policyIds) {
+                markStatisticsAsInactive(null, policyId);
+            }
         }
         return condition;
     }
@@ -2711,5 +2723,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
         }
+    }
+
+    private void markStatisticsAsInactive(Long groupId, Long policyId) {
+        _asGroupStatisticsDao.updateStateByGroup(groupId, policyId, AutoScaleVmGroupStatisticsVO.State.Inactive);
     }
 }

@@ -83,4 +83,16 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         }
         return listBy(sc);
     }
+
+    @Override
+    public void updateStateByGroup(Long groupId, Long policyId, AutoScaleVmGroupStatisticsVO.State state) {
+        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = createSearchCriteria();
+        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
+        sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
+
+        AutoScaleVmGroupStatisticsVO vo = createForUpdate();
+        vo.setState(state);
+
+        update(vo, sc);
+    }
 }
