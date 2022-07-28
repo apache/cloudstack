@@ -66,7 +66,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
             type = CommandType.BOOLEAN,
             required = false,
             description = "force the deletion of backup",
-            since = "4.16.0.5")
+            since = "4.18.0.0")
     private Boolean forced;
 
     /////////////////////////////////////////////////////
