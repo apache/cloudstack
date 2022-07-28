@@ -43,6 +43,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         groupAndCounterSearch.and("counterId", groupAndCounterSearch.entity().getCounterId(), Op.EQ);
         groupAndCounterSearch.and("createdLT", groupAndCounterSearch.entity().getCreated(), Op.LT);
         groupAndCounterSearch.and("createdGT", groupAndCounterSearch.entity().getCreated(), Op.GT);
+        groupAndCounterSearch.and("state", groupAndCounterSearch.entity().getState(), Op.EQ);
         groupAndCounterSearch.done();
     }
 
@@ -66,9 +67,14 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     }
 
     @Override
-    public List<AutoScaleVmGroupStatisticsVO> listByVmGroupId(long vmGroupId) {
+    public List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroupAndPolicy(long vmGroupId, long policyId, Date afterDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);
+        sc.setParameters("policyId", policyId);
+        if (afterDate != null) {
+            sc.setParameters("createdGT", afterDate);
+        }
+        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
         return listBy(sc);
     }
 
@@ -81,6 +87,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         if (afterDate != null) {
             sc.setParameters("createdGT", afterDate);
         }
+        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Active);
         return listBy(sc);
     }
 
@@ -89,6 +96,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = createSearchCriteria();
         sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
         sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
+        sc.addAnd("state", SearchCriteria.Op.NEQ, state);
 
         AutoScaleVmGroupStatisticsVO vo = createForUpdate();
         vo.setState(state);

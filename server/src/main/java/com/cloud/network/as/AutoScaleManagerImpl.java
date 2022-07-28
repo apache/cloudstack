@@ -2405,7 +2405,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
 
         // update counter maps in memory
-        updateCountersMap(groupTO, countersMap, countersNumberMap);
+        if (!updateCountersMap(groupTO, countersMap, countersNumberMap)) {
+            s_logger.error("Failed to update counters map, existing");
+            return;
+        }
 
         // get scale action
         AutoScalePolicy.Action scaleAction = getAutoscaleAction(countersMap, countersNumberMap, groupTO);
@@ -2568,14 +2571,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void  updateCountersMap(AutoScaleVmGroupTO groupTO, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
+    private boolean updateCountersMap(AutoScaleVmGroupTO groupTO, Map<String, Double> countersMap, Map<String, Integer> countersNumberMap) {
         s_logger.debug("Updating countersMap for as group: " + groupTO.getId());
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             s_logger.debug(String.format("Updating countersMap for policy %d in as group %d: ", policyTO.getId(), groupTO.getId()));
+            Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
+            List<AutoScaleVmGroupStatisticsVO> inactiveStats = _asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(groupTO.getId(), policyTO.getId(), afterDate);
+            if (CollectionUtils.isNotEmpty(inactiveStats)) {
+                s_logger.error(String.format("There are %d Inactive statistics in policy %d in as group %d, skipping this check", inactiveStats.size(), policyTO.getId(), groupTO.getId()));
+                return false;
+            }
             for (ConditionTO conditionTO : policyTO.getConditions()) {
                 Long conditionId = conditionTO.getId();
                 CounterTO counter = conditionTO.getCounter();
-                Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
                 s_logger.debug(String.format("Updating countersMap for condition %d in policy %d in as group %d: ", conditionId, policyTO.getId(), groupTO.getId()));
                 s_logger.debug(String.format("Updating countersMap with stats in %d seconds : between %s and %s", policyTO.getDuration(), afterDate, new Date()));
                 List<AutoScaleVmGroupStatisticsVO> stats = _asGroupStatisticsDao.listByVmGroupAndPolicyAndCounter(groupTO.getId(), policyTO.getId(), counter.getId(), afterDate);
@@ -2634,6 +2642,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             s_logger.debug(String.format("DONE Updating countersMap for policy %d in as group %d: ", policyTO.getId(), groupTO.getId()));
         }
         s_logger.debug("DONE Updating countersMap for as group: " + groupTO.getId());
+        return true;
     }
 
     private String generateKeyFromPolicyAndConditionAndCounter(Long policyId, Long conditionId, Long counterId) {
