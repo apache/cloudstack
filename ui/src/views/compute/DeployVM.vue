@@ -1853,7 +1853,11 @@ export default {
         deployVmData = Object.fromEntries(
           Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
 
-        api('deployVirtualMachine', {}, 'POST', deployVmData).then(response => {
+        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
+        const args = httpMethod === 'POST' ? {} : deployVmData
+        const data = httpMethod === 'POST' ? deployVmData : {}
+
+        api('deployVirtualMachine', args, httpMethod, data).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
