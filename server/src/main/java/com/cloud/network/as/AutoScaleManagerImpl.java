@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionService;
@@ -2414,19 +2413,19 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private void getVmStatsFromHosts(AutoScaleVmGroupTO groupTO) {
         // group vms by host id
         Map<Long, List<Long>> hostAndVmIdsMap = new HashMap<>();
+        final Long defaultHostId = -1L;
 
         List<AutoScaleVmGroupVmMapVO> asGroupVmVOs = _autoScaleVmGroupVmMapDao.listByGroup(groupTO.getId());
         for (AutoScaleVmGroupVmMapVO asGroupVmVO : asGroupVmVOs) {
             Long vmId = asGroupVmVO.getInstanceId();
             UserVmVO vm = _userVmDao.findById(vmId);
-            if (vm.getHostId() != null) {
-                List<Long> vmIds = hostAndVmIdsMap.get(vm.getHostId());
-                if (vmIds == null) {
-                    vmIds = new ArrayList<>();
-                }
-                vmIds.add(vmId);
-                hostAndVmIdsMap.put(vm.getHostId(), vmIds);
+            Long vmHostId = vm.getHostId() != null ? vm.getHostId() : defaultHostId;
+            List<Long> vmIds = hostAndVmIdsMap.get(vmHostId);
+            if (vmIds == null) {
+                vmIds = new ArrayList<>();
             }
+            vmIds.add(vmId);
+            hostAndVmIdsMap.put(vmHostId, vmIds);
         }
 
         Map<Long, List<CounterTO>> policyCountersMap = getPolicyCounters(groupTO);
@@ -2437,37 +2436,47 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             List<Long> vmIds = hostAndVmIds.getValue();
 
             Date timestamp = new Date();
-            HostVO host = _hostDao.findById(hostId);
 
-            try {
-                Map<Long, VmStatsEntry> vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
-
-                if (MapUtils.isEmpty(vmStatsById)) {
-                    s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
-                    continue;
+            Map<Long, VmStatsEntry> vmStatsById = new HashMap<>();
+            if (hostId != defaultHostId) {
+                HostVO host = _hostDao.findById(hostId);
+                try {
+                    vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
+                    if (MapUtils.isEmpty(vmStatsById)) {
+                        s_logger.warn("Got empty result for virtual machine statistics from host: " + host);
+                    }
+                } catch (Exception e) {
+                    s_logger.debug("Failed to get VM stats from host : " + host.getName());
                 }
-                Set<Long> vmIdSet = vmStatsById.keySet();
+            }
 
-                for (Long vmId : vmIdSet) {
-                    VmStatsEntry vmStats = vmStatsById.get(vmId);
-                    for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
-                        Long policyId = policyCounters.getKey();
-                        List<CounterTO> counters = policyCounters.getValue();
-                        for (CounterTO counter : counters) {
+
+            for (Long vmId : vmIds) {
+                VmStatsEntry vmStats = vmStatsById.get(vmId);
+                for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
+                    Long policyId = policyCounters.getKey();
+                    List<CounterTO> counters = policyCounters.getValue();
+                    for (CounterTO counter : counters) {
+                        if (!Counter.NativeSources.contains(counter.getSource())) {
+                            continue;
+                        }
+                        Double counterValue = null;
+                        if (vmStats != null) {
                             if (Counter.Source.cpu.equals(counter.getSource())) {
-                                Double counterValue = vmStats.getCPUUtilization() / 100;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                        counterValue, AutoScaleValueType.INSTANT, timestamp));
+                                counterValue = vmStats.getCPUUtilization() / 100;
                             } else if (Counter.Source.memory.equals(counter.getSource())) {
-                                Double counterValue = vmStats.getMemoryKBs() / 1024;
-                                _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
-                                        counterValue, AutoScaleValueType.INSTANT, timestamp));
+                                counterValue = vmStats.getMemoryKBs() / 1024;
                             }
+                        }
+                        if (counterValue == null) {
+                            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                    AutoScaleValueType.INSTANT, timestamp));
+                        } else {
+                            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), vmId, ResourceTag.ResourceObjectType.UserVm,
+                                    counterValue, AutoScaleValueType.INSTANT, timestamp));
                         }
                     }
                 }
-            } catch (Exception e) {
-                s_logger.debug("Failed to get VM stats from host : " + host.getName());
             }
         }
     }
@@ -2477,6 +2486,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Pair<String, Integer> publicIpAddr = getPublicIpAndPort(groupTO.getLoadBalancerId());
         List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), VirtualRouter.Role.VIRTUAL_ROUTER);
         if (CollectionUtils.isEmpty(routers)) {
+            processGetAutoScaleMetricsAnswer(groupTO, new ArrayList<>(), null);
             return;
         }
         List<AutoScaleMetrics> metrics = setGetAutoScaleMetricsCommandMetrics(groupTO);
@@ -2489,9 +2499,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 GetAutoScaleMetricsAnswer answer = (GetAutoScaleMetricsAnswer) _agentMgr.easySend(router.getHostId(), command);
                 if (answer == null || !answer.getResult()) {
                     s_logger.error("Failed to get autoscale metrics from virtual router " + router.getName());
-                    continue;
+                    processGetAutoScaleMetricsAnswer(groupTO, new ArrayList<>(), router.getId());
+                } else {
+                    processGetAutoScaleMetricsAnswer(groupTO, answer.getValues(), router.getId());
                 }
-                processGetAutoScaleMetricsAnswer(groupTO, answer.getValues(), router.getId());
+            } else {
+                processGetAutoScaleMetricsAnswer(groupTO, new ArrayList<>(), router.getId());
             }
         }
     }
@@ -2517,10 +2530,29 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private void processGetAutoScaleMetricsAnswer(AutoScaleVmGroupTO groupTO, List<AutoScaleMetricsValue> values, Long routerId) {
         Date timestamp = new Date();
-        for (AutoScaleMetricsValue value : values) {
-            AutoScaleMetrics metrics = value.getMetrics();
-            _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), metrics.getPolicyId(), metrics.getCounterId(), routerId,
-                    ResourceTag.ResourceObjectType.DomainRouter, value.getValue(), value.getType(), timestamp));
+        Map<Long, List<CounterTO>> policyCountersMap = getPolicyCounters(groupTO);
+        for (Map.Entry<Long, List<CounterTO>> policyCounters : policyCountersMap.entrySet()) {
+            Long policyId = policyCounters.getKey();
+            List<CounterTO> counters = policyCounters.getValue();
+            for (CounterTO counter : counters) {
+                if (!Counter.Source.virtualrouter.equals(counter.getSource())) {
+                    continue;
+                }
+                boolean found = false;
+                for (AutoScaleMetricsValue value : values) {
+                    AutoScaleMetrics metrics = value.getMetrics();
+                    if (policyId.equals(metrics.getPolicyId()) && counter.getId().equals(metrics.getCounterId())) {
+                        _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), routerId,
+                                ResourceTag.ResourceObjectType.DomainRouter, value.getValue(), value.getType(), timestamp));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    _asGroupStatisticsDao.persist(new AutoScaleVmGroupStatisticsVO(groupTO.getId(), policyId, counter.getId(), routerId,
+                            ResourceTag.ResourceObjectType.DomainRouter, AutoScaleValueType.INSTANT, timestamp));
+                }
+            }
         }
     }
 

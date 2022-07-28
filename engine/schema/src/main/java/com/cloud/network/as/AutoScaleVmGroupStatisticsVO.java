@@ -41,6 +41,8 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         Active, Inactive
     }
 
+    static final double INVALID_VALUE = -1;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -56,7 +58,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     private long counterId;
 
     @Column(name = "resource_id")
-    private long resourceId;
+    private Long resourceId;
 
     @Column(name = "resource_type")
     @Enumerated(value = EnumType.STRING)
@@ -80,7 +82,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     public AutoScaleVmGroupStatisticsVO() {
     }
 
-    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long policyId, long counterId, long resourceId, ResourceTag.ResourceObjectType resourceType,
+    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long policyId, long counterId, Long resourceId, ResourceTag.ResourceObjectType resourceType,
                                         Double rawValue, VirtualRouterAutoScale.AutoScaleValueType valueType, Date created) {
         this.vmGroupId = vmGroupId;
         this.policyId = policyId;
@@ -91,6 +93,19 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.valueType = valueType;
         this.created = created;
         this.state = State.Active;
+    }
+
+    public AutoScaleVmGroupStatisticsVO(long vmGroupId, long policyId, long counterId, Long resourceId, ResourceTag.ResourceObjectType resourceType,
+                                        VirtualRouterAutoScale.AutoScaleValueType valueType, Date created) {
+        this.vmGroupId = vmGroupId;
+        this.policyId = policyId;
+        this.counterId = counterId;
+        this.resourceId = resourceId;
+        this.resourceType = resourceType;
+        this.rawValue = INVALID_VALUE;
+        this.valueType = valueType;
+        this.created = created;
+        this.state = State.Inactive;
     }
 
     @Override
@@ -110,7 +125,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         return counterId;
     }
 
-    public long getResourceId() {
+    public Long getResourceId() {
         return resourceId;
     }
 

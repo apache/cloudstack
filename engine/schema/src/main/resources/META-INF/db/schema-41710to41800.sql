@@ -73,7 +73,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
   `vmgroup_id` bigint unsigned NOT NULL,
   `policy_id` bigint unsigned NOT NULL,
   `counter_id` bigint unsigned NOT NULL,
-  `resource_id` bigint unsigned NOT NULL,
+  `resource_id` bigint unsigned DEFAULT NULL,
   `resource_type` varchar(255) NOT NULL,
   `raw_value` double NOT NULL,
   `value_type` varchar(255) NOT NULL,
