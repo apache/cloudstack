@@ -48,7 +48,7 @@ public final class CitrixGetHypervisorGuestOsNamesCommandWrapper extends Command
         try {
             s_logger.info("Getting guest os names in the hypervisor");
             final Set<VM> vms = VM.getAll(conn);
-            if (vms.size() == 0) {
+            if (vms == null || vms.isEmpty()) {
                 return new GetHypervisorGuestOsNamesAnswer(command, "Guest os names not found in the hypervisor");
             }
             List<Pair<String, String>> hypervisorGuestOsNames = new ArrayList<>();

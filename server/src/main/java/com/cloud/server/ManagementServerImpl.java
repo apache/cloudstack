@@ -2829,7 +2829,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         GetHypervisorGuestOsNamesAnswer answer = (GetHypervisorGuestOsNamesAnswer) _agentMgr.easySend(host.getId(), new GetHypervisorGuestOsNamesCommand(getHypervisorGuestOsNamesCmd.getKeyword()));
         if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException(String.format("Unable to get guest os names for %s, hypervisor: %s, version: %s", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
+            throw new CloudRuntimeException(String.format("Unable to get guest os names for hypervisor: %s, version: %s", hypervisorType.toString(), getHypervisorGuestOsNamesCmd.getHypervisorVersion()));
         }
         return answer.getHypervisorGuestOsNames();
     }
