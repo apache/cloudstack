@@ -1833,7 +1833,7 @@ export default {
           j++
         }
         if (createVmGroupData.size) {
-          params['otherdeployparams[' + j + '].name'] = 'size'
+          params['otherdeployparams[' + j + '].name'] = 'disksize'
           params['otherdeployparams[' + j + '].value'] = createVmGroupData.size
           j++
         }

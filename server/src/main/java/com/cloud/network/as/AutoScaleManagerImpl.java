@@ -274,14 +274,14 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private static final String PARAM_ROOT_DISK_SIZE = "rootdisksize";
     private static final String PARAM_DISK_OFFERING_ID = "diskofferingid";
-    private static final String PARAM_DATA_DISK_SIZE = "size";
+    private static final String PARAM_DISK_SIZE = "disksize";
     private static final String PARAM_OVERRIDE_DISK_OFFERING_ID = "overridediskofferingid";
     private static final String PARAM_SECURITY_GROUP_IDS = "securitygroupids";
     private static final String PARAM_SSH_KEYPAIRS = "keypairs";
     private static final String PARAM_AFFINITY_GROUP_IDS = "affinitygroupids";
     private static final String PARAM_NETWORK_IDS = "networkids";
 
-    private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DATA_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
+    private static final List<String> supportedDeployParams = Arrays.asList(PARAM_ROOT_DISK_SIZE, PARAM_DISK_OFFERING_ID, PARAM_DISK_SIZE, PARAM_SECURITY_GROUP_IDS,
             PARAM_OVERRIDE_DISK_OFFERING_ID, PARAM_SSH_KEYPAIRS, PARAM_AFFINITY_GROUP_IDS, PARAM_NETWORK_IDS);
 
     private static final String VM_HOSTNAME_PREFIX = "autoScaleVm";
@@ -1706,8 +1706,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 }
             }
             Long dataDiskSize = null;       // DATA disk size
-            if (deployParams.get(PARAM_DATA_DISK_SIZE) != null) {
-                String dataDiskSizeInParam = deployParams.get(PARAM_DATA_DISK_SIZE);
+            if (deployParams.get(PARAM_DISK_SIZE) != null) {
+                String dataDiskSizeInParam = deployParams.get(PARAM_DISK_SIZE);
                 try {
                     dataDiskSize = Long.parseLong(dataDiskSizeInParam);
                 } catch (NumberFormatException ex) {
