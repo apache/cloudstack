@@ -50,7 +50,6 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.configuration.Config;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.utils.SwiftUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
