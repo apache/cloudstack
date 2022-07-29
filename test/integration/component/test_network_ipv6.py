@@ -270,10 +270,8 @@ class TestIpv6Network(cloudstackTestCase):
     def deployNetwork(self):
         self.services["network"]["networkoffering"] = self.network_offering.id
         self.network = Network.create(
-            self.apiclient,
+            self.userapiclient,
             self.services["network"],
-            self.account.name,
-            self.account.domainid,
             zoneid=self.zone.id
         )
         self.cleanup.append(self.network)
@@ -283,11 +281,9 @@ class TestIpv6Network(cloudstackTestCase):
             assert False, "get_test_template() failed to return template"
         self.services["virtual_machine"]["zoneid"] = self.zone.id
         self.virtual_machine = VirtualMachine.create(
-            self.apiclient,
+            self.userapiclient,
             self.services["virtual_machine"],
             templateid=self.template.id,
-            accountid=self.account.name,
-            domainid=self.account.domainid,
             networkids=self.network.id,
             serviceofferingid=self.service_offering.id
         )
@@ -545,11 +541,11 @@ class TestIpv6Network(cloudstackTestCase):
                     "IPv6 gateway for VM %s NIC is empty" % nic.traffictype)
 
     def restartNetworkWithCleanup(self):
-        self.network.restart(self.apiclient, cleanup=True)
+        self.network.restart(self.userapiclient, cleanup=True)
         time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
     def updateNetworkWithOffering(self):
-        self.network.update(self.apiclient, networkofferingid=self.network_offering_update.id)
+        self.network.update(self.userapiclient, networkofferingid=self.network_offering_update.id)
         time.sleep(SLEEP_BEFORE_VR_CHANGES)
 
     def createIpv6FirewallRuleInNetwork(self, network_id, traffic_type, source_cidr, dest_cidr, protocol,
