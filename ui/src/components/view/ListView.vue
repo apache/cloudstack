@@ -164,12 +164,6 @@
       </span>
       <span v-else>{{ text }}</span>
     </template>
-    <!-- <template #guestosmapping="{ text, record }">
-      <span v-if="$route.name === 'guestoshypervisormapping'">
-        <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
-      </span>
-      <span v-else>{{ text }}</span>
-    </template> -->
     <template v-if="column.key === 'state'">
       <status v-if="$route.path.startsWith('/host')" :text="getHostState(record)" displayText />
       <status v-else :text="text ? text : ''" displayText :styles="{ 'min-width': '80px' }" />
