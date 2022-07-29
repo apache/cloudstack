@@ -26,6 +26,10 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 
 from marvin.lib.base import (Account,
                              Autoscale,
+                             AutoScaleCondition,
+                             AutoScalePolicy,
+                             AutoScaleVmProfile,
+                             AutoScaleVmGroup,
                              Configurations,
                              DiskOffering,
                              Domain,
@@ -164,14 +168,14 @@ class TestVmAutoScaling(cloudstackTestCase):
                 cls.counter_memory_id = counter.id
 
         # 10. Create AS conditions
-        cls.scale_up_condition = Autoscale.createCondition(
+        cls.scale_up_condition = AutoScaleCondition.create(
             cls.regular_user_apiclient,
             counterid = cls.counter_cpu_id,
             relationaloperator = "GE",
             threshold = 1
         )
 
-        cls.scale_down_condition = Autoscale.createCondition(
+        cls.scale_down_condition = AutoScaleCondition.create(
             cls.regular_user_apiclient,
             counterid = cls.counter_memory_id,
             relationaloperator = "LE",
@@ -182,14 +186,14 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls._cleanup.append(cls.scale_down_condition)
 
         # 11. Create AS policies
-        cls.scale_up_policy = Autoscale.createAutoscalePolicy(
+        cls.scale_up_policy = AutoScalePolicy.create(
             cls.regular_user_apiclient,
             action='ScaleUp',
             conditionids=cls.scale_up_condition.id,
             duration=DEFAULT_DURATION
         )
 
-        cls.scale_down_policy = Autoscale.createAutoscalePolicy(
+        cls.scale_down_policy = AutoScalePolicy.create(
             cls.regular_user_apiclient,
             action='ScaleDown',
             conditionids=cls.scale_down_condition.id,
@@ -208,7 +212,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls.addOtherDeployParam("keypairs", cls.keypair_1.name + "," + cls.keypair_2.name)
         cls.addOtherDeployParam("networkids", cls.user_network_1.id + "," + cls.user_network_2.id)
 
-        cls.autoscaling_vmprofile = Autoscale.createAutoscaleVmProfile(
+        cls.autoscaling_vmprofile = AutoScaleVmProfile.create(
             cls.regular_user_apiclient,
             serviceofferingid=cls.service_offering.id,
             zoneid=cls.zone.id,
@@ -237,7 +241,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls._cleanup.append(cls.public_ip_address)
 
         # 14. Create AS VM Group
-        cls.autoscaling_vmgroup = Autoscale.createAutoscaleVmGroup(
+        cls.autoscaling_vmgroup = AutoScaleVmGroup.create(
             cls.regular_user_apiclient,
             name="AS-VmGroup-1",
             lbruleid=cls.load_balancer_rule.id,
