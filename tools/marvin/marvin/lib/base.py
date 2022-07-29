@@ -2155,6 +2155,15 @@ class Autoscale:
         return (apiclient.createCondition(cmd))
 
     @classmethod
+    def updateCondition(cls, apiclient, id, **kwargs):
+        """Updates condition."""
+
+        cmd = updateCondition.updateConditionCmd()
+        cmd.id = id
+        [setattr(cmd, k, v) for k, v in list(kwargs.items())]
+        return (apiclient.updateCondition(cmd))
+
+    @classmethod
     def listConditions(cls, apiclient, **kwargs):
         """Lists all available Conditions."""
 
@@ -2202,7 +2211,8 @@ class Autoscale:
 
     @classmethod
     def createAutoscaleVmProfile(cls, apiclient, serviceofferingid, zoneid, templateid,
-                                 autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None):
+                                 autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None,
+                                 otherdeployparams=None, userdata=None):
         """creates Autoscale VM Profile."""
 
         cmd = createAutoScaleVmProfile.createAutoScaleVmProfileCmd()
@@ -2222,11 +2232,17 @@ class Autoscale:
                     'value': value
                 })
 
+        if otherdeployparams:
+            cmd.otherdeployparams = otherdeployparams
+
+        if userdata:
+            cmd.userdata = userdata
+
         return (apiclient.createAutoScaleVmProfile(cmd))
 
     @classmethod
     def updateAutoscaleVMProfile(cls, apiclient, id, **kwargs):
-        """Updates Autoscale Policy."""
+        """Updates Autoscale VM Profile."""
 
         cmd = updateAutoScaleVmProfile.updateAutoScaleVmProfileCmd()
         cmd.id = id
@@ -2235,7 +2251,7 @@ class Autoscale:
 
     @classmethod
     def createAutoscaleVmGroup(cls, apiclient, lbruleid, minmembers, maxmembers,
-                               scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None):
+                               scaledownpolicyids, scaleuppolicyids, vmprofileid, interval=None, name=None):
         """creates Autoscale VM Group."""
 
         cmd = createAutoScaleVmGroup.createAutoScaleVmGroupCmd()
@@ -2247,6 +2263,8 @@ class Autoscale:
         cmd.vmprofileid = vmprofileid
         if interval:
             cmd.interval = interval
+        if name:
+            cmd.name = name
 
         return (apiclient.createAutoScaleVmGroup(cmd))
 
@@ -2285,6 +2303,39 @@ class Autoscale:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateAutoScaleVmGroup(cmd))
 
+    @classmethod
+    def deleteAutoscaleVMGroup(cls, apiclient, id, cleanup=None):
+        """Deletes Autoscale VM Group."""
+
+        cmd = deleteAutoScaleVmGroup.deleteAutoScaleVmGroupCmd()
+        cmd.id = id
+        if cleanup:
+            cmd.cleanup = cleanup
+        return (apiclient.deleteAutoScaleVmGroup(cmd))
+
+    @classmethod
+    def deleteCondition(cls, apiclient, id):
+        """Deletes condition."""
+
+        cmd = deleteCondition.deleteConditionCmd()
+        cmd.id = id
+        return (apiclient.deleteCondition(cmd))
+
+    @classmethod
+    def deleteAutoscaleVMProfile(cls, apiclient, id):
+        """Deletes Autoscale VM Profile."""
+
+        cmd = deleteAutoScaleVmProfile.deleteAutoScaleVmProfileCmd()
+        cmd.id = id
+        return (apiclient.deleteAutoScaleVmProfile(cmd))
+
+    @classmethod
+    def deleteAutoscalePolicy(cls, apiclient, id):
+        """Deletes Autoscale Policy."""
+
+        cmd = deleteAutoScalePolicy.deleteAutoScalePolicyCmd()
+        cmd.id = id
+        return (apiclient.deleteAutoScalePolicy(cmd))
 
 class ServiceOffering:
     """Manage service offerings cycle"""
