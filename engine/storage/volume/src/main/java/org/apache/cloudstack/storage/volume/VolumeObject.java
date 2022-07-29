@@ -20,6 +20,7 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -28,6 +29,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.vm.VmDetailConstants;
 
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
@@ -87,6 +89,8 @@ public class VolumeObject implements VolumeInfo {
     VolumeDataStoreDao volumeStoreDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
+    @Inject
+    ResourceLimitService resourceLimitMgr;
     @Inject
     VMInstanceDao vmInstanceDao;
     @Inject
@@ -678,6 +682,32 @@ public class VolumeObject implements VolumeInfo {
         s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
+    protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO volumeVo) {
+        if (newVolume == null || newVolume.getSize() == null || volumeVo == null || volumeVo.getSize() == null) {
+            return;
+        }
+
+        Long newVolumeSize = newVolume.getSize();
+        if (newVolumeSize == volumeVo.getSize()) {
+            // Volume size already updated, check with earlier vo in the object
+            if (volumeVO.getSize() != null && volumeVO.getSize() != newVolumeSize) {
+                Long oldVolumeSize = volumeVO.getSize();
+                if (oldVolumeSize < newVolumeSize) {
+                    resourceLimitMgr.incrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), newVolumeSize - oldVolumeSize);
+                } else {
+                    resourceLimitMgr.decrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), oldVolumeSize - newVolumeSize);
+                }
+            }
+        } else {
+            Long oldVolumeSize = volumeVo.getSize();
+            if (oldVolumeSize < newVolumeSize) {
+                resourceLimitMgr.incrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), newVolumeSize - oldVolumeSize);
+            } else {
+                resourceLimitMgr.decrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), oldVolumeSize - newVolumeSize);
+            }
+        }
+    }
+
    protected void handleProcessEventCopyCmdAnswerNotPrimaryStore(VolumeObjectTO newVolume) {
         VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
 
@@ -709,6 +739,7 @@ public class VolumeObject implements VolumeInfo {
         VolumeObjectTO newVolume = (VolumeObjectTO)createObjectAnswer.getData();
         VolumeVO volumeVo = volumeDao.findById(getId());
         updateVolumeInfo(newVolume, volumeVo, true, setFormat);
+        updateResourceCount(newVolume, volumeVo);
     }
 
     protected void handleProcessEventAnswer(DownloadAnswer downloadAnswer) {
