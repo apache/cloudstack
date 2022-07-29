@@ -317,9 +317,13 @@ export default {
   methods: {
     fetchInitData () {
       this.counterParams = ['snmpcommunity', 'snmpport']
-      this.deployParams = ['securitygroupids', 'rootdisksize', 'diskofferingid', 'disksize',
-        'overridediskofferingid', 'keypairs', 'affinitygroupids', 'networkids']
-      this.paramNameList = this.counterParams.concat(this.deployParams)
+      this.deployParams = ['overridediskofferingid', 'rootdisksize', 'diskofferingid', 'disksize',
+        'keypairs', 'affinitygroupids', 'networkids', 'securitygroupids']
+      if (this.resource.lbprovider === 'Netscaler') {
+        this.paramNameList = this.counterParams.concat(this.deployParams)
+      } else if (this.resource.lbprovider === 'VirtualRouter') {
+        this.paramNameList = this.deployParams
+      }
       this.fetchUserData()
       this.fetchTemplateData()
       this.fetchServiceOfferingData()
