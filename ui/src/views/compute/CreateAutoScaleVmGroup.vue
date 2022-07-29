@@ -2049,6 +2049,9 @@ export default {
         }
         if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
           createVmGroupData.overridediskofferingid = values.overridediskofferingid
+          if (values.rootdisksize && values.rootdisksize > 0) {
+            createVmGroupData.rootdisksize = values.rootdisksize
+          }
         }
         if (this.isCustomizedIOPS) {
           createVmGroupData['details[0].minIops'] = this.minIops
