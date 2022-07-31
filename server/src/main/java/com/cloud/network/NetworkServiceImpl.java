@@ -2022,7 +2022,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
                     List<NetworkVO> sharedNetworks = listSharedNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts);
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, permittedAccounts);
                     addNetworksToReturnIfNotExist(networksToReturn, sharedNetworks);
 
                 }
@@ -2035,23 +2035,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 if (Arrays.asList(Network.NetworkFilter.Domain, Network.NetworkFilter.AccountDomain, Network.NetworkFilter.All).contains(networkFilter)) {
                     //add domain specific networks of domain + parent domains
                     networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive));
                     //add networks of subdomains
                     if (domainId == null) {
                         networksToReturn.addAll(listDomainLevelNetworks(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                                aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, caller.getDomainId(), true));
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, caller.getDomainId(), true));
                     }
                 }
                 if (Arrays.asList(Network.NetworkFilter.Shared, Network.NetworkFilter.All).contains(networkFilter)) {
                     // get shared networks
                     List<NetworkVO> sharedNetworks = listSharedNetworksByDomainPath(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                            aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive);
+                            aclType, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter, path, isRecursive);
                     addNetworksToReturnIfNotExist(networksToReturn, sharedNetworks);
                 }
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, networkOfferingId,
-                    null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter);
+                    null, true, restartRequired, specifyIpRanges, vpcId, tags, display, vlanId, associatedNetworkId), searchFilter);
         }
 
         if (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !networksToReturn.isEmpty()) {
