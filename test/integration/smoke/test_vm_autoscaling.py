@@ -20,6 +20,7 @@ Tests of VM Autoscaling
 """
 
 import logging
+import time
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -100,13 +101,22 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         cls._cleanup.append(cls.disk_offering_custom)
 
-        # 3. Create sub-domain and regular user
+        # 3. Create network offering for isolated networks
+        cls.network_offering_isolated = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["isolated_network_offering"]
+        )
+        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
+        cls._cleanup.append(cls.network_offering_isolated)
+
+        # 4. Create sub-domain
         cls.sub_domain = Domain.create(
             cls.apiclient,
             cls.services["acl"]["domain1"]
         )
         cls._cleanup.append(cls.sub_domain)
 
+        # 5. Create regular user
         cls.regular_user = Account.create(
             cls.apiclient,
             cls.services["acl"]["accountD11A"],
@@ -114,19 +124,11 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         cls._cleanup.append(cls.regular_user)
 
-        # 4. Create api clients for regular user
+        # 5. Create api clients for regular user
         cls.regular_user_user = cls.regular_user.user[0]
         cls.regular_user_apiclient = cls.testClient.getUserApiClient(
             cls.regular_user_user.username, cls.sub_domain.name
         )
-
-        # 6. Create network offering for isolated networks
-        cls.network_offering_isolated = NetworkOffering.create(
-            cls.apiclient,
-            cls.services["isolated_network_offering"]
-        )
-        cls.network_offering_isolated.update(cls.apiclient, state='Enabled')
-        cls._cleanup.append(cls.network_offering_isolated)
 
         # 7. Create networks for regular user
         cls.services["network"]["name"] = "Test Network Isolated - Regular user - 1"
@@ -273,10 +275,30 @@ class TestVmAutoScaling(cloudstackTestCase):
     def tearDown(self):
         super(TestVmAutoScaling, self).tearDown()
 
+    def delete_vmgroup(self, vmgroup, apiclient, cleanup=None, expected=True):
+        result = True
+        try:
+            AutoScaleVmGroup.delete(
+                vmgroup,
+                apiclient,
+                cleanup=cleanup
+            )
+        except Exception as ex:
+            result = False
+            if expected:
+                self.fail(f"Failed to remove Autoscaling VM Group, but expected to succeed : {ex}")
+        if result and not expected:
+            self.fail("Autoscaling VM Group is removed successfully, but expected to fail")
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
         """ Verify scale up of AutoScaling VM group """
         self.logger.debug("test_01_scale_up_verify")
+
+        check_interval_config = Configurations.list(self.apiclient, name="autoscale.stats.interval")
+        check_interval = check_interval_config[0].value
+
+        time.sleep(int(int(check_interval)/1000 + DEFAULT_INTERVAL))
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_scale_down_verify(self):
@@ -292,6 +314,9 @@ class TestVmAutoScaling(cloudstackTestCase):
     def test_04_remove_vm_and_vmgroup(self):
         """ Verify removal of AutoScaling VM group and VM"""
         self.logger.debug("test_04_remove_vm_and_vmgroup")
+
+        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
+        self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_05_autoscaling_vmgroup_on_project_network(self):
