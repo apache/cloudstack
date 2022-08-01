@@ -771,6 +771,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            // delete autoscaling VM groups
+            if (!_autoscaleMgr.deleteAutoScaleVmGroupsByAccount(accountId)) {
+                accountCleanupNeeded = true;
+            }
+
+
             // delete global load balancer rules for the account.
             List<org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleVO> gslbRules = _gslbRuleDao.listByAccount(accountId);
             if (gslbRules != null && !gslbRules.isEmpty()) {

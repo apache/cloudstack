@@ -34,4 +34,6 @@ public interface AutoScaleVmGroupDao extends GenericDao<AutoScaleVmGroupVO, Long
     List<AutoScaleVmGroupVO> listByLoadBalancer(Long loadBalancerId);
 
     List<AutoScaleVmGroupVO> listByProfile(Long profileId);
+
+    List<AutoScaleVmGroupVO> listByAccount(Long accountId);
 }

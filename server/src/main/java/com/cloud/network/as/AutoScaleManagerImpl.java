@@ -1565,6 +1565,23 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     @Override
+    public boolean deleteAutoScaleVmGroupsByAccount(Long accountId) {
+        boolean success = true;
+        List<AutoScaleVmGroupVO> groups = _autoScaleVmGroupDao.listByAccount(accountId);
+        for (AutoScaleVmGroupVO group : groups) {
+            s_logger.debug("Deleting AutoScale Vm Group " + group + " for account Id: " + accountId);
+            try {
+                deleteAutoScaleVmGroup(group.getId(), true);
+                s_logger.debug("AutoScale Vm Group " + group + " has been successfully deleted for account Id: " + accountId);
+            } catch (Exception e) {
+                s_logger.warn("Failed to delete AutoScale Vm Group " + group + " for account Id: " + accountId + " due to: ", e);
+                success = false;
+            }
+        }
+        return success;
+    }
+
+    @Override
     public void cleanUpAutoScaleResources(Long accountId) {
         // cleans Autoscale VmProfiles, AutoScale Policies and Conditions belonging to an account
         int count = 0;

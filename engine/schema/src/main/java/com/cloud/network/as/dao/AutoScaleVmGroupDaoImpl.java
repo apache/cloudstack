@@ -88,4 +88,11 @@ public class AutoScaleVmGroupDaoImpl extends GenericDaoBase<AutoScaleVmGroupVO, 
         sc.addAnd("profileId", SearchCriteria.Op.EQ, profileId);
         return listBy(sc);
     }
+
+    @Override
+    public List<AutoScaleVmGroupVO> listByAccount(Long accountId) {
+        SearchCriteria<AutoScaleVmGroupVO> sc = createSearchCriteria();
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        return listBy(sc);
+    }
 }

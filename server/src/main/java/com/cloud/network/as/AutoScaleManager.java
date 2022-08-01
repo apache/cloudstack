@@ -39,6 +39,8 @@ public interface AutoScaleManager extends AutoScaleService {
             "The Number of worker threads to scan the autoscale vm groups.",
             false);
 
+    boolean deleteAutoScaleVmGroupsByAccount(Long accountId);
+
     void cleanUpAutoScaleResources(Long accountId);
 
     void doScaleUp(long groupId, Integer numVm);
