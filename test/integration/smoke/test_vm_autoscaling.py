@@ -85,10 +85,11 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         cls._cleanup.append(cls.service_offering)
 
-        # 2. Create disk service offerings (small and custom)
+        # 2. Create disk offerings (fixed and custom)
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
-            cls.services["disk_offering"]
+            cls.services["disk_offering"],
+            disksize=cls.templatesize + 1
         )
         cls._cleanup.append(cls.disk_offering)
 
@@ -206,7 +207,6 @@ class TestVmAutoScaling(cloudstackTestCase):
         # 12. Create AS VM Profile
         cls.otherdeployparams = []
         cls.addOtherDeployParam("overridediskofferingid", cls.disk_offering.id)
-        cls.addOtherDeployParam("rootdisksize", cls.templatesize + 2)
         cls.addOtherDeployParam("diskofferingid", cls.disk_offering_custom.id)
         cls.addOtherDeployParam("disksize", 3)
         cls.addOtherDeployParam("keypairs", cls.keypair_1.name + "," + cls.keypair_2.name)

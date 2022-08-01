@@ -4505,7 +4505,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     {
         // rootdisksize must be larger than template.
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            String error = "Unsupported: rootdisksize override is smaller than template size " + toHumanReadableSize(templateVO.getSize());
+            String error = String.format("Unsupported: rootdisksize override (%s GB) is smaller than template size %s", rootDiskSize, toHumanReadableSize(templateVO.getSize()));
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
         } else if ((rootDiskSize << 30) > templateVO.getSize()) {
