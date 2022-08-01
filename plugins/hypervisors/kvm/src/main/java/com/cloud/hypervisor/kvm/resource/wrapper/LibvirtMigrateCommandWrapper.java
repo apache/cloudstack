@@ -43,8 +43,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.DpdkTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -52,8 +51,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
-import org.libvirt.DomainJobInfo;
 import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.DomainJobInfo;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
 import org.w3c.dom.Document;
@@ -67,6 +66,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
@@ -367,7 +368,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DpdkTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 
@@ -519,7 +520,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 
@@ -676,7 +677,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     private String getXml(Document doc) throws TransformerException {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
         Transformer transformer = transformerFactory.newTransformer();
 
         DOMSource source = new DOMSource(doc);
@@ -692,7 +693,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private String replaceDiskSourceFile(String xmlDesc, String isoPath, String vmName) throws IOException, SAXException, ParserConfigurationException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 

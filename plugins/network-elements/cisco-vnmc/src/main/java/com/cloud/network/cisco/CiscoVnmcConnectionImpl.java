@@ -25,8 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.contrib.ssl.EasySSLProtocolSocketFactory;
@@ -1289,7 +1288,7 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         Document doc = null;
 
         try {
-            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlSource);
+            doc = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(xmlSource);
 
         } catch (Exception e) {
             s_logger.error(e);

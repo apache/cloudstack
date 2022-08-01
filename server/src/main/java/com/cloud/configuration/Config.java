@@ -1087,14 +1087,6 @@ public enum Config {
             "false",
             "Enable/Disable Nexus/Vmware dvSwitch in VMware environment",
             null),
-    VmwareCreateFullClone(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "vmware.create.full.clone",
-            "true",
-            "If set to true, creates guest VMs as full clones on ESX",
-            null),
     VmwareServiceConsole(
             "Advanced",
             ManagementServer.class,

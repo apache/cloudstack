@@ -66,5 +66,6 @@ version="1.0">
                                 <span>Commands available through the developer API URL and the integration API URL.</span>
                                 <div class="api_legends">
            				<p><span class="api_legends_async">(A)</span> implies that the command is asynchronous.</p>
+                                        <p><span class="api_legends_async">(D)</span> implies that the command is deprecated.</p>
 					<p>(*) implies element has a child.</p>
  				</div>
