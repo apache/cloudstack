@@ -34,8 +34,12 @@ import org.apache.log4j.Logger;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.utils.Pair;
 
-@APICommand(name = ListIpv6FirewallRulesCmd.APINAME, description = "Lists all IPv6 firewall rules", responseObject = FirewallRuleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = ListIpv6FirewallRulesCmd.APINAME,
+        description = "Lists all IPv6 firewall rules",
+        responseObject = FirewallRuleResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListIpv6FirewallRulesCmd extends BaseListTaggedResourcesCmd implements IListFirewallRulesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIpv6FirewallRulesCmd.class.getName());
 
