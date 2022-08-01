@@ -1936,6 +1936,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
             s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
         }
+        markStatisticsAsInactive(asGroup.getId(), null);
     }
 
     @Override
@@ -1994,6 +1995,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
             s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
         }
+        markStatisticsAsInactive(asGroup.getId(), null);
     }
 
     @Override
@@ -2439,7 +2441,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             } else {
                 doScaleDown(asGroup.getId());
             }
-            markStatisticsAsInactive(asGroup.getId(), null);
         }
 
         // Remove old statistics from database
