@@ -302,6 +302,7 @@
 "label.authentication.sshkey": "System SSH Key",
 "label.automigrate.volume": "Auto migrate volume to another storage pool if required",
 "label.autoscale": "AutoScale",
+"label.autoscalevmgroupname": "AutoScale VM Group",
 "label.author.email": "Author e-mail",
 "label.author.name": "Author name",
 "label.auto.assign": "Automatically assign",

@@ -332,6 +332,14 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_ID)
+    @Param(description = "ID of AutoScale VM group", since = "4.16.0.0")
+    String autoScaleVmGroupId;
+
+    @SerializedName(ApiConstants.AUTOSCALE_VMGROUP_NAME)
+    @Param(description = "Name of AutoScale VM group", since = "4.16.0.0")
+    String autoScaleVmGroupName;
+
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
         nics = new TreeSet<>(Comparator.comparingInt(x -> Integer.parseInt(x.getDeviceId())));
@@ -951,5 +959,21 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setBytesSent(Long bytesSent) {
         this.bytesSent = bytesSent;
+    }
+
+    public void setAutoScaleVmGroupId(String autoScaleVmGroupId) {
+        this.autoScaleVmGroupId = autoScaleVmGroupId;
+    }
+
+    public void setAutoScaleVmGroupName(String autoScaleVmGroupName) {
+        this.autoScaleVmGroupName = autoScaleVmGroupName;
+    }
+
+    public String getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
     }
 }

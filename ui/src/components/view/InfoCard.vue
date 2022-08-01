@@ -358,6 +358,13 @@
             <router-link :to="{ path: '/vmgroup/' + resource.groupid }">{{ resource.group || resource.groupid }}</router-link>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.autoscalevmgroupid">
+          <div class="resource-detail-item__label">{{ $t('label.autoscalevmgroupname') }}</div>
+          <div class="resource-detail-item__details">
+            <gold-outlined />
+            <router-link :to="{ path: '/autoscalevmgroup/' + resource.autoscalevmgroupid }">{{ resource.autoscalevmgroupname || resource.autoscalevmgroupid }}</router-link>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.keypairs && resource.keypairs.length > 0">
           <div class="resource-detail-item__label">{{ $t('label.keypairs') }}</div>
           <div class="resource-detail-item__details">

@@ -393,6 +393,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
+        if (userVm.getAutoScaleVmGroupName() != null) {
+            userVmResponse.setAutoScaleVmGroupName(userVm.getAutoScaleVmGroupName());
+        }
+        if (userVm.getAutoScaleVmGroupUuid() != null) {
+            userVmResponse.setAutoScaleVmGroupId(userVm.getAutoScaleVmGroupUuid());
+        }
+
         addVmRxTxDataToResponse(userVm, userVmResponse);
 
         return userVmResponse;

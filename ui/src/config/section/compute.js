@@ -520,6 +520,11 @@ export default {
       permission: ['listAutoScaleVmGroups'],
       columns: ['name', 'account', 'associatednetworkname', 'publicip', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'state'],
       details: ['name', 'id', 'account', 'domain', 'associatednetworkname', 'associatednetworkid', 'lbruleid', 'lbprovider', 'publicip', 'publicipid', 'publicport', 'privateport', 'minmembers', 'maxmembers', 'interval', 'state', 'created'],
+      related: [{
+        name: 'vm',
+        title: 'label.instances',
+        param: 'autoscalevmgroupid'
+      }],
       tabs: [
         {
           name: 'details',

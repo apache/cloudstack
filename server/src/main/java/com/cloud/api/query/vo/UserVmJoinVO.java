@@ -379,6 +379,15 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "affinity_group_description")
     private String affinityGroupDescription;
 
+    @Column(name = "autoscale_vmgroup_id")
+    private long autoScaleVmGroupId;
+
+    @Column(name = "autoscale_vmgroup_uuid")
+    private String autoScaleVmGroupUuid;
+
+    @Column(name = "autoscale_vmgroup_name")
+    private String autoScaleVmGroupName;
+
     transient String password;
 
     @Transient
@@ -865,6 +874,18 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getAffinityGroupDescription() {
         return affinityGroupDescription;
+    }
+
+    public long getAutoScaleVmGroupId() {
+        return autoScaleVmGroupId;
+    }
+
+    public String getAutoScaleVmGroupUuid() {
+        return autoScaleVmGroupUuid;
+    }
+
+    public String getAutoScaleVmGroupName() {
+        return autoScaleVmGroupName;
     }
 
     public Boolean isDynamicallyScalable() {
