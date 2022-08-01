@@ -992,6 +992,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
         s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
 
+        createInactiveDummyRecord(vmGroupVO.getId());
         scheduleMonitorTask(vmGroupVO.getId());
 
         return vmGroupVO;
@@ -1311,6 +1312,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return null;
             }
             s_logger.info("Successfully enabled AutoScale Vm Group with Id:" + id);
+            createInactiveDummyRecord(vmGroup.getId());
         }
         return vmGroup;
     }
@@ -1340,6 +1342,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return null;
             }
             s_logger.info("Successfully disabled AutoScale Vm Group with Id:" + id);
+            createInactiveDummyRecord(vmGroup.getId());
         }
         return vmGroup;
     }
@@ -2754,5 +2757,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private void markStatisticsAsInactive(Long groupId, Long policyId) {
         _asGroupStatisticsDao.updateStateByGroup(groupId, policyId, AutoScaleVmGroupStatisticsVO.State.Inactive);
+    }
+
+    private void createInactiveDummyRecord(Long groupId) {
+        _asGroupStatisticsDao.createInactiveDummyRecord(groupId);
     }
 }

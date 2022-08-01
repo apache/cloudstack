@@ -103,4 +103,10 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
 
         update(vo, sc);
     }
+
+    @Override
+    public void createInactiveDummyRecord(Long groupId) {
+        AutoScaleVmGroupStatisticsVO vo = new AutoScaleVmGroupStatisticsVO(groupId);
+        persist(vo);
+    }
 }
