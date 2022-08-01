@@ -1900,13 +1900,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     + asGroup.getId() + ". Waiting for next round");
                 break;
             }
+            // persist to DB
+            AutoScaleVmGroupVmMapVO GroupVmVO = new AutoScaleVmGroupVmMapVO(asGroup.getId(), vmId);
+            _autoScaleVmGroupVmMapDao.persist(GroupVmVO);
+
             try {
                 startNewVM(vmId);
                 if (assignLBruleToNewVm(vmId, asGroup)) {
-                    // persist to DB
-                    AutoScaleVmGroupVmMapVO GroupVmVO = new AutoScaleVmGroupVmMapVO(
-                        asGroup.getId(), vmId);
-                    _autoScaleVmGroupVmMapDao.persist(GroupVmVO);
                     // update last_quiettime
                     List<AutoScaleVmGroupPolicyMapVO> GroupPolicyVOs = _autoScaleVmGroupPolicyMapDao
                         .listByVmGroupId(groupId);
