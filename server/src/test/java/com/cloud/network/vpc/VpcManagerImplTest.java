@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+
 import com.cloud.alert.AlertManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -45,12 +47,14 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.After;
 import org.junit.Assert;
+import org.apache.cloudstack.api.command.admin.vpc.CreateVPCOfferingCmd;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.reflect.Whitebox;
+
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.UpdateNetworkCommand;
@@ -92,6 +96,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.utils.net.NetUtils;
 
 public class VpcManagerImplTest {
 
@@ -362,5 +367,12 @@ public class VpcManagerImplTest {
         lenient().doNothing().when(alertManager).sendAlert(any(AlertService.AlertType.class), anyLong(), anyLong(), anyString(), anyString());
         Integer mtu = manager.validateMtu(vpcVO, publicMtu);
         Assert.assertEquals(expectedMtu, mtu);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDisabledConfigCreateIpv6VpcOffering() {
+        CreateVPCOfferingCmd cmd = Mockito.mock(CreateVPCOfferingCmd.class);
+        Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+        manager.createVpcOffering(cmd);
     }
 }

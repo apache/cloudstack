@@ -48,10 +48,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.resource.ServerResourceBase;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
 import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
@@ -59,6 +57,7 @@ import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
@@ -122,6 +121,7 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
+import com.cloud.resource.ServerResourceBase;
 import com.cloud.resource.hypervisor.HypervisorResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -3199,7 +3199,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             final URLConnection uc = url.openConnection();
             in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
             final InputSource statsSource = new InputSource(in);
-            return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(statsSource);
+            return ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder().parse(statsSource);
         } catch (final MalformedURLException e) {
             s_logger.warn("Malformed URL?  come on...." + urlStr);
             return null;

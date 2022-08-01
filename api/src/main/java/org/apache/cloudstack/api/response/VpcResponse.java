@@ -258,6 +258,10 @@ public class VpcResponse extends BaseResponseWithAnnotations implements Controll
         this.ipv6Routes = ipv6Routes;
     }
 
+    public Set<Ipv6RouteResponse> getIpv6Routes() {
+        return ipv6Routes;
+    }
+
     public void setPublicMtu(Integer publicMtu) {
         this.publicMtu = publicMtu;
     }

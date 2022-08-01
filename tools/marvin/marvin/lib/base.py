@@ -3296,6 +3296,14 @@ class Network:
         cmd.resume = resume
         return (apiclient.migrateNetwork(cmd))
 
+    def replaceACLList(self, apiclient, aclid, gatewayid=None):
+        cmd = replaceNetworkACLList.replaceNetworkACLListCmd()
+        cmd.networkid = self.id
+        cmd.aclid = aclid
+        if gatewayid:
+            cmd.gatewayid = gatewayid
+        return (apiclient.replaceNetworkACLList(cmd))
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """List all Networks matching criteria"""
@@ -3332,6 +3340,11 @@ class NetworkACL:
                 cmd.icmpcode = -1
         elif protocol:
             cmd.protocol = protocol
+
+        if "icmptype" in services:
+            cmd.icmptype = services["icmptype"]
+        if "icmpcode" in services:
+            cmd.icmpcode = services["icmpcode"]
 
         if "startport" in services:
             cmd.startport = services["startport"]

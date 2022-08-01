@@ -26,6 +26,8 @@ import javax.naming.ConfigurationException;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -140,46 +142,78 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
     }
 
     @Override
+    public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+
+        for (int i = 0; i < apiNames.size(); i++) {
+            if (hasApiRateLimitBeenExceeded(user.getAccountId())) {
+                throwExceptionDueToApiRateLimitReached(user.getAccountId());
+            }
+        }
+        return apiNames;
+    }
+
+    public void throwExceptionDueToApiRateLimitReached(Long accountId) throws RequestLimitException {
+        long expireAfter = _store.get(accountId).getExpireDuration();
+        String msg = String.format("The given user has reached his/her account api limit, please retry after [%s] ms.", expireAfter);
+        s_logger.warn(msg);
+        throw new RequestLimitException(msg);
+    }
+
+    @Override
     public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
-        // check if api rate limiting is enabled or not
-        if (!enabled) {
+        if (!isEnabled()) {
             return true;
         }
-        Long accountId = user.getAccountId();
-        Account account = _accountService.getAccount(accountId);
+
+        Account account = _accountService.getAccount(user.getAccountId());
         return checkAccess(account, apiCommandName);
     }
 
+    @Override
     public boolean checkAccess(Account account, String commandName) {
-        if (_accountService.isRootAdmin(account.getId())) {
-            // no API throttling on root admin
+        Long accountId = account.getAccountId();
+        if (_accountService.isRootAdmin(accountId)) {
+            s_logger.info(String.format("Account [%s] is Root Admin, in this case, API limit does not apply.",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
             return true;
         }
-        StoreEntry entry = _store.get(account.getId());
+        if (hasApiRateLimitBeenExceeded(accountId)) {
+            throwExceptionDueToApiRateLimitReached(accountId);
+        }
+        return true;
+    }
+
+    /**
+     * Verifies if the API limit was exceeded by the account.
+     *
+     * @param accountId the id of the account to be verified
+     * @return if the API limit was exceeded by the account
+     */
+    public boolean hasApiRateLimitBeenExceeded(Long accountId) {
+        Account account = _accountService.getAccount(accountId);
+        StoreEntry entry = _store.get(accountId);
 
         if (entry == null) {
-
-            /* Populate the entry, thus unlocking any underlying mutex */
             entry = _store.create(account.getId(), timeToLive);
         }
 
-        /* Increment the client count and see whether we have hit the maximum allowed clients yet. */
         int current = entry.incrementAndGet();
 
         if (current <= maxAllowed) {
-            s_logger.trace("account (" + account.getAccountId() + "," + account.getAccountName() + ") has current count = " + current);
-            return true;
-        } else {
-            long expireAfter = entry.getExpireDuration();
-            // for this exception, we can just show the same message to user and admin users.
-            String msg = "The given user has reached his/her account api limit, please retry after " + expireAfter + " ms.";
-            s_logger.warn(msg);
-            throw new RequestLimitException(msg);
+            s_logger.trace(String.format("Account %s has current count [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "uuid", "accountName"), current));
+            return false;
         }
+        return true;
     }
 
     @Override
     public boolean isEnabled() {
+        if (!enabled) {
+            s_logger.debug("API rate limiting is disabled. We will not use ApiRateLimitService.");
+        }
         return enabled;
     }
 
@@ -207,5 +241,4 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         this.enabled = enabled;
 
     }
-
 }
