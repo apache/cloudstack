@@ -857,7 +857,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         tag = tagSplit[tagSplit.length - 1];
 
         s_logger.debug(String.format("Trying to find network with vlan: [%s].", vlan));
-        NetworkVO networkVO = _networkDao.findByVlan(vlan);
+        NetworkVO networkVO = networkDao.findByVlan(vlan);
         if (networkVO == null) {
             networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
             s_logger.debug(String.format("Created new network record [id: %s] with details [zoneId: %s, tag: %s, vlan: %s, accountId: %s and domainId: %s].",
@@ -908,14 +908,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             String macAddress = pair.first();
             String networkName = pair.second();
             NetworkVO networkVO = networksMapping.get(networkName);
-            NicVO nicVO = _nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
+            NicVO nicVO = nicDao.findByNetworkIdAndMacAddressIncludingRemoved(networkVO.getId(), macAddress);
             if (nicVO != null) {
                 s_logger.warn(String.format("Find NIC in DB with networkId [%s] and MAC Address [%s], so this NIC will be removed from list of unmapped NICs of VM [id: %s, name: %s].",
                         networkVO.getId(), macAddress, vm.getUuid(), vm.getInstanceName()));
                 allNics.remove(nicVO);
 
                 if (nicVO.getRemoved() != null) {
-                    _nicDao.unremove(nicVO.getId());
+                    nicDao.unremove(nicVO.getId());
                 }
             }
         }
