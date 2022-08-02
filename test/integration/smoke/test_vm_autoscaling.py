@@ -138,7 +138,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             networkofferingid=cls.network_offering_isolated.id,
             zoneid=cls.zone.id
         )
-        cls._cleanup.append(cls.user_network_1)
 
         cls.services["network"]["name"] = "Test Network Isolated - Regular user - 2"
         cls.user_network_2 = Network.create(
@@ -147,7 +146,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             networkofferingid=cls.network_offering_isolated.id,
             zoneid=cls.zone.id
         )
-        cls._cleanup.append(cls.user_network_2)
 
         # 8. Create SSH Keypairs
         cls.keypair_1 = SSHKeyPair.create(
@@ -240,8 +238,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             networkid=cls.user_network_1.id
         )
 
-        cls._cleanup.append(cls.public_ip_address)
-
         # 14. Create AS VM Group
         cls.autoscaling_vmgroup = AutoScaleVmGroup.create(
             cls.regular_user_apiclient,
@@ -254,8 +250,6 @@ class TestVmAutoScaling(cloudstackTestCase):
             vmprofileid=cls.autoscaling_vmprofile.id,
             interval=DEFAULT_INTERVAL
         )
-
-        cls._cleanup.append(cls.autoscaling_vmgroup)
 
     @classmethod
     def addOtherDeployParam(cls, name, value):
