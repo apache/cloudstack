@@ -1093,6 +1093,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     return false;
                 }
 
+                success = _asGroupStatisticsDao.removeByGroupId(id);
+                if (!success) {
+                    s_logger.warn("Failed to remove AutoScale Group statistics");
+                    return false;
+                }
+
                 s_logger.info("Successfully deleted autoscale vm group id : " + id);
                 return success; // Successfull
             }
@@ -1331,7 +1337,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             vmGroup.setState(AutoScaleVmGroup.State.Disabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
-            _asGroupStatisticsDao.removeByGroupId(id);
+            createInactiveDummyRecord(vmGroup.getId());
             cancelCheckTask(vmGroup.getId());
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
@@ -1342,7 +1348,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return null;
             }
             s_logger.info("Successfully disabled AutoScale Vm Group with Id:" + id);
-            createInactiveDummyRecord(vmGroup.getId());
         }
         return vmGroup;
     }
