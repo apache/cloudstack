@@ -3319,17 +3319,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
             List<String> hostTags = com.cloud.utils.StringUtils.csvTagsToList(currentVmOffering.getHostTag());
             if (!hostTags.isEmpty()) {
-                SearchBuilder<ServiceOfferingJoinVO> sb = _srvOfferingJoinDao.createSearchBuilder();
+                SearchBuilder<ServiceOfferingJoinVO> hostTagsSearchBuilder = _srvOfferingJoinDao.createSearchBuilder();
                 for(String tag : hostTags) {
-                    sb.and(tag, sb.entity().getHostTag(), Op.FIND_IN_SET);
+                    hostTagsSearchBuilder.and(tag, hostTagsSearchBuilder.entity().getHostTag(), Op.FIND_IN_SET);
                 }
-                sb.done();
+                hostTagsSearchBuilder.done();
 
-                SearchCriteria<ServiceOfferingJoinVO> scc = sb.create();
+                SearchCriteria<ServiceOfferingJoinVO> hostTagsSearchCriteria = hostTagsSearchBuilder.create();
                 for(String tag : hostTags) {
-                    scc.setParameters(tag, tag);
+                    hostTagsSearchCriteria.setParameters(tag, tag);
                 }
-                sc.addAnd("hostTags", SearchCriteria.Op.SC, scc);
+
+                SearchCriteria<ServiceOfferingJoinVO> finalHostTagsSearchCriteria = _srvOfferingJoinDao.createSearchCriteria();
+                finalHostTagsSearchCriteria.addOr("hostTag", Op.NULL);
+                finalHostTagsSearchCriteria.addOr("hostTag", Op.SC, hostTagsSearchCriteria);
+
+                sc.addAnd("hostTagsConstraint", SearchCriteria.Op.SC, finalHostTagsSearchCriteria);
             }
         }
 
