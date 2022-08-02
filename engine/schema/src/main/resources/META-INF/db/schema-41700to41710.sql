@@ -94,7 +94,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         domain_router.is_redundant_router is_redundant_router,
         domain_router.redundant_state redundant_state,
         domain_router.stop_pending stop_pending,
-        domain_router.role role
+        domain_router.role role,
+        domain_router.software_version software_version
     from
         `cloud`.`domain_router`
             inner join
