@@ -340,6 +340,13 @@ export default {
       this.selectedRowKeys = []
       this.fetchData()
       if (this.dataSource.length === 0) {
+        this.moveToPreviousView()
+      }
+    },
+    async moveToPreviousView () {
+      const lastPath = this.$router.currentRoute.value.fullPath
+      const navigationResult = await this.$router.go(-1)
+      if (navigationResult !== undefined || this.$router.currentRoute.value.fullPath === lastPath) {
         this.$router.go(-1)
       }
     },
@@ -379,7 +386,7 @@ export default {
           successMethod: result => {
             if (singleZone) {
               if (this.selectedItems.length === 0) {
-                this.$router.push({ path: '/iso' })
+                this.moveToPreviousView()
               }
             } else {
               if (this.selectedItems.length === 0) {
@@ -389,7 +396,7 @@ export default {
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
               if (this.selectedItems.length === this.zones.length) {
-                this.$router.push({ path: '/iso' })
+                this.moveToPreviousView()
               }
             }
           },
