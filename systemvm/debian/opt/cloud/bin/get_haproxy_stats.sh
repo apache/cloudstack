@@ -31,7 +31,7 @@ count=0
 for session in $current_sessions;do
   stat=$(echo $session |cut -d "," -f1)
   state=$(echo $session |cut -d "," -f2)
-  if [ "$state" = "DOWN" ];then
+  if [ "$state" = "UP" ];then
     sum=$((sum+stat))
     count=$((count+1))
   fi
