@@ -586,8 +586,15 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.autoscale.vmgroup',
           dataView: true,
-          args: ['name', 'maxmembers', 'minmembers', 'interval'],
-          show: (record) => { return record.state === 'Disabled' }
+          args: (record, store) => {
+            var args = ['name']
+            if (record.state === 'Disabled') {
+              args.push('maxmembers')
+              args.push('minmembers')
+              args.push('interval')
+            }
+            return args
+          }
         },
         {
           api: 'deleteAutoScaleVmGroup',
