@@ -520,6 +520,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
         long autoscaleUserId = cmd.getAutoscaleUserId();
+        String userData = cmd.getUserData();
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
 
@@ -547,6 +548,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         if (cmd.getDisplay() != null) {
             profileVO.setDisplay(cmd.getDisplay());
+        }
+
+        if (userData != null) {
+            profileVO.setUserData(userData);
         }
 
         profileVO = checkValidityAndPersist(profileVO, true);
