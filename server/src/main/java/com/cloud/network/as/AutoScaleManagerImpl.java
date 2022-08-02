@@ -2487,7 +2487,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             Date timestamp = new Date();
 
             Map<Long, VmStatsEntry> vmStatsById = new HashMap<>();
-            if (hostId != defaultHostId) {
+            if (!defaultHostId.equals(hostId)) {
                 HostVO host = _hostDao.findById(hostId);
                 try {
                     vmStatsById = _userVmMgr.getVirtualMachineStatistics(host.getId(), host.getName(), vmIds);
