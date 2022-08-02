@@ -46,6 +46,14 @@ public interface VolumeApiService {
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
 
+    ConfigKey<Boolean> UseHttpsToUpload = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "use.https.to.upload",
+            "true",
+            "Determines the protocol (HTTPS or HTTP) ACS will use to generate links to upload ISOs, volumes, and templates. When set as 'true', ACS will use protocol HTTPS, otherwise, it will use protocol HTTP. Default value is 'true'.",
+            true,
+            ConfigKey.Scope.StoragePool);
+
     /**
      * Creates the database object for a volume based on the given criteria
      *
