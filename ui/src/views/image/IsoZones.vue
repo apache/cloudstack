@@ -379,7 +379,7 @@ export default {
           successMethod: result => {
             if (singleZone) {
               if (this.selectedItems.length === 0) {
-                this.$router.go(-1)
+                this.$router.push({ path: '/iso' })
               }
             } else {
               if (this.selectedItems.length === 0) {
@@ -388,6 +388,9 @@ export default {
             }
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
+              if (this.selectedItems.length === this.zones.length) {
+                this.$router.push({ path: '/iso' })
+              }
             }
           },
           errorMethod: () => {
