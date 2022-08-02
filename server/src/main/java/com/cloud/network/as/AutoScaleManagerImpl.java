@@ -951,7 +951,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         policy = checkValidityAndPersist(policy, conditionIds);
         s_logger.info("Successfully updated Auto Scale Policy id:" + policyId);
 
-        markStatisticsAsInactive(null, policyId);
+        if (CollectionUtils.isNotEmpty(conditionIds)) {
+            markStatisticsAsInactive(null, policyId);
+        }
 
         return policy;
     }
@@ -1250,8 +1252,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         List<Long> scaleDownPolicyIds = cmd.getScaleDownPolicyIds();
 
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
+        int currentInterval = vmGroupVO.getInterval();
 
-        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || interval != null || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
+        boolean physicalParametersUpdate = (minMembers != null || maxMembers != null || (interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds));
 
         if (physicalParametersUpdate && !vmGroupVO.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated with minMembers/maxMembers/Interval only when it is in disabled state");
@@ -1285,7 +1288,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (vmGroupVO != null) {
             s_logger.debug("Updated Auto Scale VmGroup id:" + vmGroupId);
 
-            if (interval != null || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds)) {
+            if ((interval != null && interval != currentInterval) || CollectionUtils.isNotEmpty(scaleUpPolicyIds) || CollectionUtils.isNotEmpty(scaleDownPolicyIds)) {
                 markStatisticsAsInactive(vmGroupId, null);
             }
 
