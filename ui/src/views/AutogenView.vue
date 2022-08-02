@@ -1495,9 +1495,14 @@ export default {
       }
 
       this.columns = this.allColumns.filter(x => this.selectedColumns.includes(x.dataIndex))
-      if (this.columns.length > 0) {
-        this.columns[this.columns.length - 1].customFilterDropdown = true
+      const filterColumn = {
+        key: 'filtercolumn',
+        dataIndex: 'filtercolumn',
+        title: '',
+        customFilterDropdown: true,
+        width: 5
       }
+      this.columns.push(filterColumn)
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {
         this.$store.getters.customColumns[this.$store.getters.userInfo.id] = {}
       }

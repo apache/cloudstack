@@ -572,6 +572,7 @@ export default {
     },
     onClear () {
       this.formRef.value.resetFields()
+      this.form = reactive({})
       this.isFiltered = false
       this.inputKey = null
       this.inputValue = null
@@ -584,7 +585,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
         this.isFiltered = true
-        console.log(values)
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {
