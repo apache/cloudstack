@@ -67,6 +67,17 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     }
 
     @Override
+    public List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroup(long vmGroupId, Date afterDate) {
+        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
+        sc.setParameters("vmGroupId", vmGroupId);
+        if (afterDate != null) {
+            sc.setParameters("createdGT", afterDate);
+        }
+        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
+        return listBy(sc);
+    }
+
+    @Override
     public List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroupAndPolicy(long vmGroupId, long policyId, Date afterDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);

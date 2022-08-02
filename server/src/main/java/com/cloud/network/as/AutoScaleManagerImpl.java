@@ -2430,7 +2430,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         Map<String, Double> countersMap = new HashMap<>();
         Map<String, Integer> countersNumberMap = new HashMap<>();
 
-
         // update counter maps in memory
         if (!updateCountersMap(groupTO, countersMap, countersNumberMap)) {
             s_logger.error("Failed to update counters map, existing");
@@ -2603,9 +2602,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         for (AutoScalePolicyTO policyTO : groupTO.getPolicies()) {
             s_logger.debug(String.format("Updating countersMap for policy %d in as group %d: ", policyTO.getId(), groupTO.getId()));
             Date afterDate = new Date(System.currentTimeMillis() - ((long)policyTO.getDuration() << 10));
-            List<AutoScaleVmGroupStatisticsVO> inactiveStats = _asGroupStatisticsDao.listInactiveByVmGroupAndPolicy(groupTO.getId(), policyTO.getId(), afterDate);
+            List<AutoScaleVmGroupStatisticsVO> inactiveStats = _asGroupStatisticsDao.listInactiveByVmGroup(groupTO.getId(), afterDate);
             if (CollectionUtils.isNotEmpty(inactiveStats)) {
-                s_logger.error(String.format("There are %d Inactive statistics in policy %d in as group %d, skipping this check", inactiveStats.size(), policyTO.getId(), groupTO.getId()));
+                s_logger.error(String.format("There are %d Inactive statistics in as group %d, skipping this round of check", inactiveStats.size(), groupTO.getId()));
                 return false;
             }
             for (ConditionTO conditionTO : policyTO.getConditions()) {

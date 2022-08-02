@@ -81,9 +81,8 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
   `state` varchar(255) NOT NULL COMMENT 'State of the data',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_vmgroup_statistics__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_autoscale_vmgroup_statistics__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_autoscale_vmgroup_statistics__counter_id` FOREIGN KEY `fk_autoscale_vmgroup_statistics__counter_id` (`counter_id`) REFERENCES `counter` (`id`),
   INDEX `i_autoscale_vmgroup_statistics__vmgroup_id`(`vmgroup_id`),
+  INDEX `i_autoscale_vmgroup_statistics__policy_id`(`policy_id`),
   INDEX `i_autoscale_vmgroup_statistics__counter_id`(`counter_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

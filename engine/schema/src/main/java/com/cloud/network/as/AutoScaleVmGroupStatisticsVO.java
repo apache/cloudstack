@@ -42,7 +42,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
     }
 
     static final double INVALID_VALUE = -1;
-    static final Long DUMMY_ID = -1L;
+    static final Long DUMMY_ID = 0L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -113,7 +113,7 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         this.vmGroupId = vmGroupId;
         this.policyId = DUMMY_ID;
         this.counterId = DUMMY_ID;
-        this.resourceId = DUMMY_ID;
+        this.resourceId = vmGroupId;
         this.resourceType = ResourceTag.ResourceObjectType.AutoScaleVmGroup;
         this.rawValue = INVALID_VALUE;
         this.valueType = VirtualRouterAutoScale.AutoScaleValueType.INSTANT;

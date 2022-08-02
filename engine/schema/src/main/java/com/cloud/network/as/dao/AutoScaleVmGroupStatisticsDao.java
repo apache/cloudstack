@@ -27,6 +27,8 @@ public interface AutoScaleVmGroupStatisticsDao extends GenericDao<AutoScaleVmGro
 
     boolean removeByGroupAndPolicy(long vmGroupId, long policyId, Date beforeDate);
 
+    List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroup(long vmGroupId, Date afterDate);
+
     List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroupAndPolicy(long vmGroupId, long policyId, Date afterDate);
 
     List<AutoScaleVmGroupStatisticsVO> listByVmGroupAndPolicyAndCounter(long vmGroupId, long policyId, long counterId, Date afterDate);
