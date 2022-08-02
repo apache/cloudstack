@@ -27,8 +27,10 @@
           v-for="item in hardcodedNsps"
           :key="item.title">
           <template #tab>
-            {{ $t(item.title) }}
-            <status :text="item.title in nsps ? nsps[item.title].state : $t('label.disabled')" style="margin-bottom: 6px; margin-left: 6px" />
+            <span>
+              {{ $t(item.title) }}
+              <status :text="item.title in nsps ? nsps[item.title].state : $t('label.disabled')" style="margin-bottom: 6px; margin-left: 6px" />
+            </span>
           </template>
           <provider-item
             v-if="tabKey===item.title"
@@ -1406,6 +1408,16 @@ export default {
       .ant-badge {
         margin-left: 10px;
       }
+    }
+  }
+
+  &-tab {
+    justify-content: end;
+  }
+
+  &-tab-btn {
+    span {
+      display: flex;
     }
   }
 }
