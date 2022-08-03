@@ -169,4 +169,3 @@ class TestPrimaryResourceLimitsVolume(cloudstackTestCase):
         self.assertEqual(response[0], PASS, response[1])
 
         return
-

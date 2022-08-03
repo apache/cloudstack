@@ -72,4 +72,3 @@ if __name__ == "__main__":
 
     (kernel, initrd, copy_to) = sys.argv[1:]
     sys.exit(prepare())
-
