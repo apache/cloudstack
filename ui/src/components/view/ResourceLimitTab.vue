@@ -82,17 +82,6 @@ export default {
     this.dataResource = this.resource
     this.fetchData()
   },
-  watch: {
-    resource: {
-      deep: true,
-      handler (newData) {
-        if (!newData || !newData.id) {
-          return
-        }
-        this.fetchData()
-      }
-    }
-  },
   methods: {
     getParams () {
       const params = {}
