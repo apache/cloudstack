@@ -682,28 +682,18 @@ public class VolumeObject implements VolumeInfo {
         s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
-    protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO volumeVo) {
-        if (newVolume == null || newVolume.getSize() == null || volumeVo == null || volumeVo.getSize() == null) {
+    protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO oldVolume) {
+        if (newVolume == null || newVolume.getSize() == null || oldVolume == null || oldVolume.getSize() == null) {
             return;
         }
 
-        Long newVolumeSize = newVolume.getSize();
-        if (newVolumeSize == volumeVo.getSize()) {
-            // Volume size already updated, check with earlier vo in the object
-            if (volumeVO.getSize() != null && volumeVO.getSize() != newVolumeSize) {
-                Long oldVolumeSize = volumeVO.getSize();
-                if (oldVolumeSize < newVolumeSize) {
-                    resourceLimitMgr.incrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), newVolumeSize - oldVolumeSize);
-                } else {
-                    resourceLimitMgr.decrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), oldVolumeSize - newVolumeSize);
-                }
-            }
-        } else {
-            Long oldVolumeSize = volumeVo.getSize();
+        long newVolumeSize = newVolume.getSize();
+        long oldVolumeSize = oldVolume.getSize();
+        if (newVolumeSize != oldVolumeSize) {
             if (oldVolumeSize < newVolumeSize) {
-                resourceLimitMgr.incrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), newVolumeSize - oldVolumeSize);
+                resourceLimitMgr.incrementResourceCount(oldVolume.getAccountId(), ResourceType.primary_storage, oldVolume.isDisplayVolume(), newVolumeSize - oldVolumeSize);
             } else {
-                resourceLimitMgr.decrementResourceCount(volumeVo.getAccountId(), ResourceType.primary_storage, volumeVo.isDisplayVolume(), oldVolumeSize - newVolumeSize);
+                resourceLimitMgr.decrementResourceCount(oldVolume.getAccountId(), ResourceType.primary_storage, oldVolume.isDisplayVolume(), oldVolumeSize - newVolumeSize);
             }
         }
     }

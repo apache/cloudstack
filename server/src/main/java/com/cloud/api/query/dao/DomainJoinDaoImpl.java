@@ -123,7 +123,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         long ipLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getIpLimit(), ResourceType.public_ip, domain.getId());
         String ipLimitDisplay = (fullView || ipLimit == -1) ? Resource.UNLIMITED : String.valueOf(ipLimit);
         long ipTotal = (domain.getIpTotal() == null) ? 0 : domain.getIpTotal();
-        String ipAvail = ((fullView || ipLimit == -1)) ? Resource.UNLIMITED : String.valueOf(ipLimit - ipTotal);
+        String ipAvail = (fullView || ipLimit == -1) ? Resource.UNLIMITED : String.valueOf(ipLimit - ipTotal);
         response.setIpLimit(ipLimitDisplay);
         response.setIpTotal(ipTotal);
         response.setIpAvailable(ipAvail);
@@ -201,7 +201,7 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getSecondaryStorageLimit(), ResourceType.secondary_storage, domain.getId());
         String secondaryStorageLimitDisplay = (fullView || secondaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
         float secondaryStorageTotal = (domain.getSecondaryStorageTotal() == null) ? 0 : (domain.getSecondaryStorageTotal() / (ResourceType.bytesToGiB * 1f));
-        String secondaryStorageAvail = (fullView || secondaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
+        String secondaryStorageAvail = (fullView || secondaryStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(( (double)secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);

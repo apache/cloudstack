@@ -498,7 +498,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Long resourceLimit = null;
         resourceLimit = domainResourceLimitMap.get(resourceType);
         if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
-            if (resourceLimit != Long.valueOf(Resource.RESOURCE_UNLIMITED)) {
+            if (! Long.valueOf(Resource.RESOURCE_UNLIMITED).equals(resourceLimit)) {
                 resourceLimit = resourceLimit * ResourceType.bytesToGiB;
             }
         } else {
@@ -849,6 +849,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    /**
+     * This will take care of re-calculation of resource counts for root and sub-domains
+     * and accounts of the sub-domains also. so just loop through immediate children of root domain
+     *
+     * @param domainId the domain level to start at
+     * @param type the resource type to do the recalculation for
+     * @return the resulting new resource count
+     */
     @DB
     protected long recalculateDomainResourceCount(final long domainId, final ResourceType type) {
         return Transaction.execute(new TransactionCallback<Long>() {
@@ -1118,8 +1126,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             for (ResourceType type : ResourceCount.ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
-                    // recalculateDomainResourceCount will take care of re-calculation of resource counts for root and sub-domains
-                    // and accounts of the sub-domains also. so just loop through immediate children of root domain
                     recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
