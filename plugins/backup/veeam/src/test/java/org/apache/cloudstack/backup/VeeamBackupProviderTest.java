@@ -95,11 +95,11 @@ public class VeeamBackupProviderTest {
         backup.setZoneId(3l);
 
         Mockito.when(vmInstanceDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(vmInstanceVO);
-        Mockito.doReturn(client).when(backupProvider).getClient(Mockito.eq(2l));
-        Mockito.doReturn(true).when(client).deleteBackup(Mockito.eq("abc"));
+        Mockito.doReturn(client).when(backupProvider).getClient(2l);
+        Mockito.doReturn(true).when(client).deleteBackup("abc");
         List<Backup> backups = new ArrayList<>();
         backups.add(backup);
-        Mockito.when(backupDao.listByVmId(Mockito.eq(3l), Mockito.eq(1l))).thenReturn(backups);
+        Mockito.when(backupDao.listByVmId(3l, 1l)).thenReturn(backups);
         Mockito.verify(backupDao, Mockito.never()).remove(Mockito.anyLong());
         boolean result = backupProvider.deleteBackup(backup, true);
         assertEquals(true, result);
@@ -120,14 +120,14 @@ public class VeeamBackupProviderTest {
         Mockito.when(backup2.getId()).thenReturn(2l);
 
         Mockito.when(vmInstanceDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(vmInstanceVO);
-        Mockito.doReturn(client).when(backupProvider).getClient(Mockito.eq(2l));
-        Mockito.doReturn(true).when(client).deleteBackup(Mockito.eq("abc"));
+        Mockito.doReturn(client).when(backupProvider).getClient(2l);
+        Mockito.doReturn(true).when(client).deleteBackup("abc");
         List<Backup> backups = new ArrayList<>();
         backups.add(backup);
         backups.add(backup2);
-        Mockito.when(backupDao.listByVmId(Mockito.eq(3l), Mockito.eq(1l))).thenReturn(backups);
+        Mockito.when(backupDao.listByVmId(3l, 1l)).thenReturn(backups);
         boolean result = backupProvider.deleteBackup(backup, true);
-        Mockito.verify(backupDao, Mockito.times(1)).remove(Mockito.eq(2l));
+        Mockito.verify(backupDao, Mockito.times(1)).remove(2l);
         assertEquals(true, result);
     }
 }

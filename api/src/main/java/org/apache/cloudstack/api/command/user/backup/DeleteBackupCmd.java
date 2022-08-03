@@ -65,7 +65,7 @@ public class DeleteBackupCmd  extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.FORCED,
             type = CommandType.BOOLEAN,
             required = false,
-            description = "force the deletion of backup",
+            description = "force the deletion of backup which removes the entire backup chain but keep VM in Backup Offering",
             since = "4.18.0.0")
     private Boolean forced;
 

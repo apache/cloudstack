@@ -218,12 +218,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
         VeeamClient client = getClient(vm.getDataCenterId());
         boolean result = client.deleteBackup(backup.getExternalId());
-        if (result) {
-            List<Backup> allBackups = backupDao.listByVmId(backup.getZoneId(), backup.getVmId());
-            for (Backup b : allBackups) {
-                if (b.getId() != backup.getId()) {
-                    backupDao.remove(b.getId());
-                }
+        if (BooleanUtils.isFalse(result)) {
+            return false;
+        }
+
+        List<Backup> allBackups = backupDao.listByVmId(backup.getZoneId(), backup.getVmId());
+        for (Backup b : allBackups) {
+            if (b.getId() != backup.getId()) {
+                backupDao.remove(b.getId());
             }
         }
         return result;
