@@ -108,7 +108,7 @@ export default {
     },
     async fetchData () {
       const params = this.getParams()
-      const form = {}
+      const form = reactive({})
       try {
         this.formLoading = true
         this.dataResource = await this.listResourceLimits(params)

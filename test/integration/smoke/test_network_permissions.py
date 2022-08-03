@@ -758,3 +758,32 @@ class TestNetworkPermissions(cloudstackTestCase):
         command = """self.reset_network_permission({apiclient}, self.user_network, expected=True)"""
         self.exec_command("self.otheruser_apiclient", command, expected=False)
         self.exec_command("self.user_apiclient", command, expected=True)
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_05_list_networks_under_project(self):
+        """ Testing list networks under a project """
+        self.create_network_permission(self.apiclient, self.user_network, self.domain_admin, self.project, expected=True)
+        self.list_network(self.apiclient, self.domain_admin, self.user_network, self.project, None, expected=True)
+
+        self.remove_network_permission(self.apiclient, self.user_network, self.domain_admin, self.project, expected=True)
+        self.list_network(self.apiclient, self.domain_admin, self.user_network, self.project, None, expected=False)
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_06_list_networks_under_account(self):
+        """ Testing list networks under a domain admin account and user account """
+        self.create_network_permission(self.apiclient, self.user_network, self.domain_admin, None, expected=True)
+        self.list_network(self.apiclient, self.domain_admin, self.user_network, None, None, expected=True)
+        self.list_network(self.domainadmin_apiclient, self.domain_admin, self.user_network, None, None, expected=True)
+        self.list_network(self.user_apiclient, self.domain_admin, self.user_network, None, None, expected=False)
+
+        self.remove_network_permission(self.apiclient, self.user_network, self.domain_admin, None, expected=True)
+        self.list_network(self.apiclient, self.domain_admin, self.user_network, None, None, expected=False)
+        self.list_network(self.domainadmin_apiclient, self.domain_admin, self.user_network, None, None, expected=False)
+
+        self.create_network_permission(self.apiclient, self.user_network, self.other_user, None, expected=True)
+        self.list_network(self.apiclient, self.other_user, self.user_network, None, None, expected=True)
+        self.list_network(self.otheruser_apiclient, self.other_user, self.user_network, None, None, expected=True)
+
+        self.remove_network_permission(self.apiclient, self.user_network, self.other_user, None, expected=True)
+        self.list_network(self.apiclient, self.other_user, self.user_network, None, None, expected=False)
+        self.list_network(self.otheruser_apiclient, self.other_user, self.user_network, None, None, expected=False)

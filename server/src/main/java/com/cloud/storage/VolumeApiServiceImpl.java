@@ -430,8 +430,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 GetUploadParamsResponse response = new GetUploadParamsResponse();
 
                 String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+                String protocol = UseHttpsToUpload.value() ? "https" : "http";
 
-                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid());
+                String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, ep.getPublicAddr(), vol.getUuid(),  protocol);
                 response.setPostURL(new URL(url));
 
                 // set the post url, this is used in the monitoring thread to determine the SSVM
@@ -3559,7 +3560,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
-            // Datadisk dont have any template dependence.
+            // Datadisk don't have any template dependence.
 
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             if (template != null) { // For ISO based volumes template = null and
@@ -4478,6 +4479,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, MatchStoragePoolTagsWithDiskOffering};
+        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore, AllowUserExpungeRecoverVolume, MatchStoragePoolTagsWithDiskOffering, UseHttpsToUpload};
     }
 }
