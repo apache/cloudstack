@@ -1564,7 +1564,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         return primary_router, backup_router
 
 
-    def chek_for_new_backupRouter(self,old_backup_router):
+    def check_for_new_backupRouter(self,old_backup_router):
         primary_router, backup_router = self.get_primary_and_backupRouter()
         retry = 4
         self.info("Checking if new router is getting created.")
@@ -1613,7 +1613,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         self.wait_until_router_stabilises()
         old_primary_router, old_backup_router = self.get_primary_and_backupRouter()
         self.info("old_primary_router:"+old_primary_router.name+" old_backup_router"+old_backup_router.name)
-        #chek if the network is in correct state
+        #check if the network is in correct state
         self.assertEqual(old_primary_router.state, "Running", "The primary router is not running, network is not in a correct state to start the test")
         self.assertEqual(old_backup_router.state, "Running", "The backup router is not running, network is not in a correct state to start the test")
 
@@ -1627,7 +1627,7 @@ class TestRvRRedundancy(cloudstackTestCase):
 
         self.info("Network update Started, the old backup router will get destroyed and a new router will be created")
 
-        self.chek_for_new_backupRouter(old_backup_router)
+        self.check_for_new_backupRouter(old_backup_router)
         primary_router, new_backup_router=self.get_primary_and_backupRouter()
         #the state of the primary router should be running. while backup is being updated
         self.assertEqual(primary_router.state, "Running", "State of the primary router is not running")

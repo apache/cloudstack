@@ -127,7 +127,7 @@ class TestMaxHyperviosrLimit(cloudstackTestCase):
     def test_check_hypervisor_max_limit_effect(self):
         """ Test hypervisor max limits effect
 
-        # 1. Read exsiting count of VM's on the host including SSVM and VR
+        # 1. Read existing count of VM's on the host including SSVM and VR
                 and modify maxguestcount accordingly
         # 2. Deploy a VM
         # 2. Try to deploy another vm

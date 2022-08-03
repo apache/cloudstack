@@ -2909,7 +2909,7 @@
   "message.enabling.vpc.offering": "VPCオファリングを有効にしています",
   "message.enabling.zone": "ゾーンを有効にしています",
   "message.enabling.zone.dots": "ゾーンを有効にしています...",
-  "message.enter.seperated.list.multiple.cidrs": "CIDRが複数ある場合は、コンマ区切りの一覧を入力してください",
+  "message.enter.separated.list.multiple.cidrs": "CIDRが複数ある場合は、コンマ区切りの一覧を入力してください",
   "message.enter.token": "メールの招待状に記載されているトークンを入力してください。",
   "message.enter.valid.nic.ip": "NICの有効なIPアドレスを入力してください",
   "message.error.access.key": "アクセスキーを入力してください",
