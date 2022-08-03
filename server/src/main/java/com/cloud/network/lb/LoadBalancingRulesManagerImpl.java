@@ -357,16 +357,19 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
         }
 
-        if (apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
+        Network.Provider provider = getLoadBalancerServiceProvider(lb);
+        if (Network.Provider.Netscaler.equals(provider)) {
+            if (apiKey == null) {
+                throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+            }
 
-        if (secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-        }
+            if (secretKey == null) {
+                throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+            }
 
-        if (csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
+            if (csUrl == null || csUrl.contains("localhost")) {
+                throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
+            }
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile =
@@ -415,6 +418,16 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
         LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, vmGroup.getState(), loadBalancer);
         return toAutoScaleVmGroupTO(lbAutoScaleVmGroup);
+    }
+
+    @Override
+    public Network.Provider getLoadBalancerServiceProvider(LoadBalancerVO loadBalancer) {
+        Network network = _networkDao.findById(loadBalancer.getNetworkId());
+        List<Network.Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Network.Service.Lb);
+        if (CollectionUtils.isEmpty(providers)) {
+            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: %s ", network.getId()));
+        }
+        return providers.get(0);
     }
 
     private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException {

@@ -2233,12 +2233,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     private Network.Provider getLoadBalancerServiceProvider(Long loadBalancerId) {
-        Network network = getNetwork(loadBalancerId);
-        List<Network.Provider> providers = _networkMgr.getProvidersForServiceInNetwork(network, Network.Service.Lb);
-        if (CollectionUtils.isEmpty(providers)) {
-            throw new CloudRuntimeException(String.format("Unable to find LB provider for network with id: %s ", network.getId()));
+        final LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
+        if (loadBalancer == null) {
+            throw new CloudRuntimeException(String.format("Unable to find load balancer with id: %s ", loadBalancerId));
         }
-        return providers.get(0);
+        return _lbRulesMgr.getLoadBalancerServiceProvider(loadBalancer);
     }
 
     private void checkNetScalerAsGroup(AutoScaleVmGroupVO asGroup) {

@@ -18,13 +18,15 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.network.as.AutoScaleVmGroupVO;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmGroupVO;
+import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
@@ -67,6 +69,8 @@ public interface LoadBalancingRulesManager {
     LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(LoadBalancingRule.LbAutoScaleVmGroup lbAutoScaleVmGroup);
 
     LoadBalancerTO.AutoScaleVmGroupTO toAutoScaleVmGroupTO(AutoScaleVmGroupVO asGroup);
+
+    Network.Provider getLoadBalancerServiceProvider(LoadBalancerVO loadBalancer);
 
     boolean configureLbAutoScaleVmGroup(long vmGroupid, AutoScaleVmGroup.State currentState) throws ResourceUnavailableException;
 
