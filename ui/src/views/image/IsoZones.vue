@@ -206,6 +206,7 @@ export default {
       selectedColumns: [],
       filterColumns: ['Status', 'Ready'],
       showConfirmationAction: false,
+      redirectOnFinish: true,
       message: {
         title: this.$t('label.action.bulk.delete.isos'),
         confirmMessage: this.$t('label.confirm.delete.isos')
@@ -341,6 +342,7 @@ export default {
       this.fetchData()
       if (this.dataSource.length === 0) {
         this.moveToPreviousView()
+        this.redirectOnFinish = false
       }
     },
     async moveToPreviousView () {
@@ -379,13 +381,14 @@ export default {
         const jobId = json.deleteisoresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
+        this.redirectOnFinish = true
         this.$pollJob({
           jobId,
           title: this.$t('label.action.delete.iso'),
           description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
-              if (this.selectedItems.length === 0) {
+              if (this.selectedItems.length === 0 && this.redirectOnFinish) {
                 this.moveToPreviousView()
               }
             } else {
@@ -395,7 +398,7 @@ export default {
             }
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
-              if (this.selectedItems.length === this.zones.length) {
+              if (this.selectedItems.length === this.zones.length && this.redirectOnFinish) {
                 this.moveToPreviousView()
               }
             }
