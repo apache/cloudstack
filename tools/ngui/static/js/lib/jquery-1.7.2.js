@@ -8521,7 +8521,7 @@ jQuery.fn.extend({
 					replace = hooks.expand( prop[ name ] );
 					delete prop[ name ];
 
-					// not quite $.extend, this wont overwrite keys already present.
+					// not quite $.extend, this won't overwrite keys already present.
 					// also - reusing 'p' from above because we have the correct "name"
 					for ( p in replace ) {
 						if ( ! ( p in prop ) ) {
