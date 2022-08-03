@@ -84,7 +84,6 @@ export default {
   },
   watch: {
     resource: {
-      deep: true,
       handler (newData) {
         if (!newData || !newData.id) {
           return
