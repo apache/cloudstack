@@ -829,7 +829,7 @@ export default {
           key: key,
           title: this.$t('label.' + String(title).toLowerCase()),
           dataIndex: key,
-          sorter: function (a, b) { return genericCompare(a[this.dataIndex] || '', b[this.dataIndex] || '') }
+          sorter: function (a, b) { return genericCompare(a[key] || '', b[key] || '') }
         })
         this.selectedColumns.push(key)
       }
