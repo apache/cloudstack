@@ -1134,7 +1134,6 @@ public class VolumeApiServiceImplTest {
     public void validateIfVMHaveBackupsTestSucessWhenVMDontHaveBackupOffering() {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         when(vm.getBackupOfferingId()).thenReturn(null);
-        when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
         volumeApiServiceImpl.validateIfVmHasBackups(vm, true);
     }
 

@@ -2399,15 +2399,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     protected void validateIfVmHasBackups(UserVmVO vm, boolean attach) {
-        if ((vm.getBackupOfferingId() != null || CollectionUtils.isNotEmpty(vm.getBackupVolumeList())) &&
-                BooleanUtils.isFalse(BackupManager.BackupEnableAttachDetachVolumes.value())) {
-            String errorMsg = "Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
-                    + "set the global configuration 'backup.enable.attach.detach.of.volumes' to true.";
-            if (attach)
-                errorMsg = "Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
-                        + "'backup.enable.attach.detach.of.volumes' to true.";
-            throw new InvalidParameterValueException(errorMsg);
+        if ((vm.getBackupOfferingId() == null || CollectionUtils.isEmpty(vm.getBackupVolumeList())) || BooleanUtils.isTrue(BackupManager.BackupEnableAttachDetachVolumes.value())) {
+            return;
         }
+        String errorMsg = "Unable to detach volume, cannot detach volume from a VM that has backups. First remove the VM from the backup offering or "
+                + "set the global configuration 'backup.enable.attach.detach.of.volumes' to true.";
+        if (attach)
+            errorMsg = "Unable to attach volume, please specify a VM that does not have any backups or set the global configuration "
+                    + "'backup.enable.attach.detach.of.volumes' to true.";
+        throw new InvalidParameterValueException(errorMsg);
     }
 
     protected String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
@@ -2416,7 +2416,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             for (VolumeVO vol : vmVolumes) {
                 list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
             }
-            return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
+            return GsonHelper.getGson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
             if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
                 s_logger.error(String.format("Failed to create VolumeInfo of VM [id: null] volumes due to: [%s].", e.getMessage()), e);

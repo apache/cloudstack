@@ -106,6 +106,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
@@ -154,7 +155,7 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
-    private static final Gson GSON = new Gson();
+    private static final Gson GSON = GsonHelper.getGson();
 
 
     @Inject VmwareVmImplementer vmwareVmImplementer;
@@ -163,7 +164,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject VmwareManager _vmwareMgr;
-    @Inject VMInstanceDao _vmDao;
+    @Inject VMInstanceDao vmDao;
     @Inject SecondaryStorageVmManager _secStorageMgr;
     @Inject PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject VirtualMachineManager vmManager;
@@ -1103,7 +1104,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
         VMInstanceVO vmVO = (VMInstanceVO)vm;
         vmVO.setBackupVolumes(createVolumeInfoFromVolumes(_volumeDao.findByInstance(vm.getId())));
-        _vmDao.update(vmVO.getId(), vmVO);
+        vmDao.update(vmVO.getId(), vmVO);
         return true;
     }
 
