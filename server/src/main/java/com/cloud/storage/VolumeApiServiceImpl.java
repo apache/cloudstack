@@ -3527,7 +3527,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getVolumeType() != Volume.Type.DATADISK) {
-            // Datadisk dont have any template dependence.
+            // Datadisk don't have any template dependence.
 
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
             if (template != null) { // For ISO based volumes template = null and

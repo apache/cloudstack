@@ -127,7 +127,7 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
         //UserConcentratedPod strategy
         List<Long> podIds = listPodsByUserConcentration(plan.getDataCenterId(), accountId);
         if (!podIds.isEmpty()) {
-            //remove pods that dont have capacity for this vm
+            //remove pods that don't have capacity for this vm
             podIds.retainAll(podIdsByCapacity);
             podIdsByCapacity.removeAll(podIds);
             podIds.addAll(podIdsByCapacity);
