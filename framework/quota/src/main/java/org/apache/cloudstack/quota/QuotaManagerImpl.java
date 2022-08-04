@@ -59,7 +59,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -92,7 +91,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private int _aggregationDuration = 0;
 
     final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    final static BigDecimal s_minutesInMonth = new BigDecimal(30 * 24 * 60);
     final static BigDecimal GiB_DECIMAL = new BigDecimal(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
@@ -445,18 +443,20 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
      * Injects the preset variables into the JS interpreter.
      */
     protected void injectPresetVariablesIntoJsInterpreter(JsInterpreter jsInterpreter, PresetVariables presetVariables) {
-        jsInterpreter.injectVariable("account", presetVariables.getAccount().toString(), true);
-        jsInterpreter.injectVariable("domain", presetVariables.getDomain().toString(), true);
+        jsInterpreter.discardCurrentVariables();
+
+        jsInterpreter.injectVariable("account", presetVariables.getAccount().toString());
+        jsInterpreter.injectVariable("domain", presetVariables.getDomain().toString());
 
         GenericPresetVariable project = presetVariables.getProject();
         if (project != null) {
-            jsInterpreter.injectVariable("project", project.toString(), true);
+            jsInterpreter.injectVariable("project", project.toString());
 
         }
 
         jsInterpreter.injectVariable("resourceType", presetVariables.getResourceType());
-        jsInterpreter.injectVariable("value", presetVariables.getValue().toString(), true);
-        jsInterpreter.injectVariable("zone", presetVariables.getZone().toString(), true);
+        jsInterpreter.injectVariable("value", presetVariables.getValue().toString());
+        jsInterpreter.injectVariable("zone", presetVariables.getZone().toString());
     }
 
     /**

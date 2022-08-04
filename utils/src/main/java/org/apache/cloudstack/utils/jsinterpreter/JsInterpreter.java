@@ -19,6 +19,8 @@ package org.apache.cloudstack.utils.jsinterpreter;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -27,158 +29,71 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.eclipsesource.v8.V8;
+import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
+
+import javax.script.ScriptEngine;
 
 /**
- * A facade to some methods of J2V8 with addition of automatic JSON conversion inside the JS, if needed.
+ * A class to execute JavaScript scripts, with the possibility to inject context to the scripts.
  */
 public class JsInterpreter implements Closeable {
     protected Logger logger = Logger.getLogger(JsInterpreter.class);
 
-    protected V8 interpreter;
-    protected String valuesToConvertToJsonBeforeExecutingTheCode = "";
-    protected final String interpreterName = "V8";
-    private final String injectingLogMessage = "Injecting variable [%s] of type [%s] and with value [%s] into the JS interpreter.";
-    private ExecutorService executor;
+    protected ScriptEngine interpreter;
+    protected String interpreterName;
+    private final String injectingLogMessage = "Injecting variable [%s] with value [%s] into the JS interpreter.";
+    protected ExecutorService executor;
     private TimeUnit defaultTimeUnit = TimeUnit.MILLISECONDS;
     private long timeout;
     private String timeoutDefaultMessage;
+    protected Map<String, String> variables = new LinkedHashMap<>();
 
-    /**
-     * J2V8 was designed to mobile application and has validations to keep execution in single threads. Therefore, we cannot instantiate the interpreter in the main thread and
-     * execute a script in another thread, which will be necessary to execute the script with a timeout. As a workaround, we will instantiate the interpreter in a thread and will
-     * use this thread to execute any other interpreter's method.
-     */
     public JsInterpreter(long timeout) {
         this.timeout = timeout;
         this.timeoutDefaultMessage = String.format("Timeout (in milliseconds) defined in the global setting [quota.activationrule.timeout]: [%s].", this.timeout);
 
+        executor = Executors.newSingleThreadExecutor();
+        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+
+        this.interpreterName = factory.getEngineName();
         logger.trace(String.format("Initiating JS interpreter: %s.", interpreterName));
 
-        executor = Executors.newSingleThreadExecutor();
-        Callable<V8> task = new Callable<V8>() {
-            public V8 call() {
-                return V8.createV8Runtime();
-            }
-        };
+        setScriptEngineDisablingJavaLanguage(factory);
+    }
 
-        Future<V8> future = executor.submit(task);
-
-        try {
-            interpreter = future.get(this.timeout, defaultTimeUnit);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            String message = String.format("Unable to instantiate JS interpreter [%s] due to [%s]", interpreterName, e.getMessage());
-
-            if (e instanceof TimeoutException) {
-                message = String.format("Instantiation of JS interpreter [%s] took too long and timed out. %s", interpreterName, timeoutDefaultMessage);
-            }
-
-            logger.error(message, e);
-            throw new CloudRuntimeException(message, e);
-        } finally {
-            future.cancel(true);
-        }
+    protected void setScriptEngineDisablingJavaLanguage(NashornScriptEngineFactory factory) {
+        interpreter = factory.getScriptEngine("--no-java");
     }
 
     /**
-     * Injects a null variable with the given name in case the value is null.<br/>
-     * Calls {@link V8#addNull(String)}.
-     * @param name The name of the variable.
-     * @param value The value of the variable.
-     * @return True if the value is null and the variable was injected as null, otherwise false.
+     * Discards the current variables map and create a new one.
      */
-    protected boolean injectNullVariable (String name, Object value) {
-        if (value != null) {
-            return false;
-        }
-
-        logger.trace(String.format("The variable [%s] has a null value. Therefore, we will inject it as null into the JS interpreter.", name));
-        injectVariableInThread(name, null);
-        return true;
+    public void discardCurrentVariables() {
+        logger.trace("Discarding current variables map and creating a new one.");
+        variables = new LinkedHashMap<>();
     }
 
     /**
-     * Injects a String variable with the given name.<br/>
-     * In case the value is null, the method {@link JsInterpreter#injectNullVariable(String, Object)} will be called.<br/>
-     * Calls {@link V8#add(String, String)}.
-     * @param name The name of the variable.
+     * Adds the parameters to a Map that will be converted to JS variables right before executing the scripts..
+     * @param key The name of the variable.
      * @param value The value of the variable.
      */
-    public void injectVariable(String name, String value) {
-        injectVariable(name, value, false);
+    public void injectVariable(String key, String value) {
+        logger.trace(String.format(injectingLogMessage, key, value));
+        variables.put(key, value);
     }
 
     /**
-     * Injects a String variable with the given name.<br/>
-     * In case the value is null, the method {@link JsInterpreter#injectNullVariable(String, Object)} will be called.<br/>
-     * In case the value is in JSON format, it will create a parse command to be executed before user's script.<br/>
-     * Calls {@link V8#add(String, String)}.
-     * @param name The name of the variable.
-     * @param value The value of the variable.
-     * @param isJsonValue Whether the value is in JSON format or not.
-     */
-    public void injectVariable(String name, String value, boolean isJsonValue) {
-        if (injectNullVariable(name, value)) {
-            return;
-        }
-
-        logger.trace(String.format(injectingLogMessage, name, value.getClass().getSimpleName(), value));
-        injectVariableInThread(name, value);
-
-        if (isJsonValue) {
-            String jsonParse = String.format("%s = JSON.parse(%s);", name, name);
-
-            logger.trace(String.format("The variable [%s], of type [%s], has a JSON value [%s]. Therefore, we will add a command to convert it to JSON in the interpreter: [%s].",
-                    name, value.getClass(), value, jsonParse));
-
-            valuesToConvertToJsonBeforeExecutingTheCode = String.format("%s %s", valuesToConvertToJsonBeforeExecutingTheCode, jsonParse);
-        }
-    }
-
-    protected void injectVariableInThread(final String name, final String value) {
-        Callable<V8> task = new Callable<V8>() {
-            public V8 call() {
-                if (value == null) {
-                    interpreter.addNull(name);
-                } else {
-                    interpreter.add(name, value);
-                }
-
-                return interpreter;
-            }
-        };
-
-        Future<V8> future = executor.submit(task);
-
-        try {
-            future.get(this.timeout, defaultTimeUnit);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            String message = String.format("Unable to inject variable [%s] with value [%s] into the JS interpreter due to [%s]", name, value, e.getMessage());
-
-            if (e instanceof TimeoutException) {
-                message = String.format("Injection of variable [%s] with value [%s] into the JS interpreter took too long and timed out. %s", name, value, timeoutDefaultMessage);
-            }
-
-            logger.error(message, e);
-            throw new CloudRuntimeException(message, e);
-        } finally {
-            future.cancel(true);
-        }
-    }
-
-    /**
-     * Converts variables to JSON, in case they exist, and executes the user's script.
+     * Injects the variables to the script and execute it.
      * @param script Code to be executed.
-     * @return The result of the executed code.
+     * @return The result of the executed script.
      */
     public Object executeScript(String script) {
-        logger.trace(String.format("Adding JSON convertions [%s] before executing user's script [%s].", valuesToConvertToJsonBeforeExecutingTheCode, script));
-
-        script = String.format("%s %s", valuesToConvertToJsonBeforeExecutingTheCode, script);
-        valuesToConvertToJsonBeforeExecutingTheCode = "";
+        script = addVariablesToScript(script);
 
         logger.debug(String.format("Executing script [%s].", script));
 
@@ -188,20 +103,14 @@ public class JsInterpreter implements Closeable {
         return result;
     }
 
-    protected Object executeScriptInThread(final String script) {
-        Callable<Object> task = new Callable<Object>() {
-            public Object call() {
-                return interpreter.executeScript(script);
-            }
-        };
+    protected Object executeScriptInThread(String script) {
+        Callable<Object> task = () -> interpreter.eval(script);
 
         Future<Object> future = executor.submit(task);
 
         try {
             return future.get(this.timeout, defaultTimeUnit);
         } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            interpreter.terminateExecution();
-
             String message = String.format("Unable to execute script [%s] due to [%s]", script, e.getMessage());
 
             if (e instanceof TimeoutException) {
@@ -215,36 +124,23 @@ public class JsInterpreter implements Closeable {
         }
     }
 
-    /**
-     * Releases the JS interpreter.
-     */
-    @Override
-    public void close() throws IOException {
-        logger.trace(String.format("Releasing JS interpreter: %s.", interpreterName));
-
-        Callable<V8> task = new Callable<V8>() {
-            public V8 call() {
-                interpreter.release();
-                return interpreter;
-            }
-        };
-
-        Future<V8> future = executor.submit(task);
-
-        try {
-            future.get(this.timeout, defaultTimeUnit);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            String message = String.format("Unable to release JS interpreter [%s] due to [%s]", interpreterName, e.getMessage());
-
-            if (e instanceof TimeoutException) {
-                message = String.format("Release of JS interpreter [%s] took too long and timed out. %s", interpreterName, timeoutDefaultMessage);
-            }
-
-            logger.error(message, e);
-            throw new CloudRuntimeException(message, e);
-        } finally {
-            future.cancel(true);
+    protected String addVariablesToScript(String script) {
+        if (MapUtils.isEmpty(variables)) {
+            logger.trace(String.format("There is no variables to add to script [%s]. Returning.", script));
+            return script;
         }
+
+        String variablesToString = "";
+        for (Map.Entry<String, String> variable : variables.entrySet()) {
+            variablesToString = String.format("%s %s = %s;", variablesToString, variable.getKey(), variable.getValue());
+        }
+
+        return String.format("%s %s", variablesToString, script);
     }
 
+
+    @Override
+    public void close() throws IOException {
+        executor.shutdown();
+    }
 }

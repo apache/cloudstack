@@ -237,7 +237,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
 
-    protected boolean backupSnapshotAfterTakingSnapshot = SnapshotManager.BackupSnapshotAfterTakingSnapshot.value();
+    protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
         return _storagePoolAllocators;

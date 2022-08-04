@@ -170,7 +170,7 @@ public class QuotaManagerImplTest {
                    break;
            }
 
-           Assert.assertEquals(expected.doubleValue(), result.doubleValue(), 0);
+           Assert.assertEquals(expected, result.doubleValue(), 0);
         });
     }
 
@@ -248,7 +248,6 @@ public class QuotaManagerImplTest {
     @Test
     public void injectPresetVariablesIntoJsInterpreterTestProjectIsNullDoNotInjectProject() {
         Mockito.doNothing().when(jsInterpreterMock).injectVariable(Mockito.anyString(), Mockito.anyString());
-        Mockito.doNothing().when(jsInterpreterMock).injectVariable(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
 
         Mockito.doReturn(new org.apache.cloudstack.quota.activationrule.presetvariables.Account()).when(presetVariablesMock).getAccount();
         Mockito.doReturn(new Domain()).when(presetVariablesMock).getDomain();
@@ -259,18 +258,17 @@ public class QuotaManagerImplTest {
 
         quotaManagerImplSpy.injectPresetVariablesIntoJsInterpreter(jsInterpreterMock, presetVariablesMock);
 
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("project"), Mockito.anyString(), Mockito.eq(true));
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock, Mockito.never()).injectVariable(Mockito.eq("project"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString(), Mockito.eq(true));
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
 
     @Test
     public void injectPresetVariablesIntoJsInterpreterTestProjectIsNotNullInjectProject() {
         Mockito.doNothing().when(jsInterpreterMock).injectVariable(Mockito.anyString(), Mockito.anyString());
-        Mockito.doNothing().when(jsInterpreterMock).injectVariable(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean());
 
         Mockito.doReturn(new org.apache.cloudstack.quota.activationrule.presetvariables.Account()).when(presetVariablesMock).getAccount();
         Mockito.doReturn(new Domain()).when(presetVariablesMock).getDomain();
@@ -281,12 +279,12 @@ public class QuotaManagerImplTest {
 
         quotaManagerImplSpy.injectPresetVariablesIntoJsInterpreter(jsInterpreterMock, presetVariablesMock);
 
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("project"), Mockito.anyString(), Mockito.eq(true));
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("account"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("domain"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("project"), Mockito.anyString());
         Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("resourceType"), Mockito.anyString());
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString(), Mockito.eq(true));
-        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString(), Mockito.eq(true));
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("value"), Mockito.anyString());
+        Mockito.verify(jsInterpreterMock).injectVariable(Mockito.eq("zone"), Mockito.anyString());
     }
 
     @Test
