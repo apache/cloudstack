@@ -1088,6 +1088,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     return false;
                 }
 
+                cancelMonitorTask(id);
+
                 success = _autoScaleVmGroupPolicyMapDao.removeByGroupId(id);
                 if (!success) {
                     s_logger.warn("Failed to remove AutoScale Group Policy mappings");
@@ -1346,7 +1348,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
             success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State.Enabled);
             createInactiveDummyRecord(vmGroup.getId());
-            cancelCheckTask(vmGroup.getId());
+            cancelMonitorTask(vmGroup.getId());
         } catch (ResourceUnavailableException e) {
             vmGroup.setState(AutoScaleVmGroup.State.Enabled);
             _autoScaleVmGroupDao.persist(vmGroup);
@@ -2713,7 +2715,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
     }
 
-    private void cancelCheckTask(Long groupId) {
+    private void cancelMonitorTask(Long groupId) {
         ScheduledExecutorService executor = vmGroupMonitorMaps.get(groupId);
         if (executor != null) {
             s_logger.debug("Cancelling monitor task for autoscale vm group " + groupId);
