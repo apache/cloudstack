@@ -790,12 +790,12 @@
             </a-step>
           </a-steps>
         </a-card>
-        <div class="form-action">
-          <a-button
-            type="primary"
-            @click="closeModal"
-          >{{ $t('label.close') }}</a-button>
-        </div>
+      </div>
+      <div class="form-action" v-if="processStatus">
+        <a-button
+          type="primary"
+          @click="closeModal"
+        >{{ $t('label.close') }}</a-button>
       </div>
     </a-modal>
   </div>
@@ -2122,6 +2122,7 @@ export default {
           Object.entries(createVmGroupData).filter(([key, value]) => value !== undefined))
 
         this.processStatusModalVisible = true
+        this.processStatus = null
 
         // create autoscale vm profile
         const vmprofile = await this.createVmProfile(createVmGroupData)
