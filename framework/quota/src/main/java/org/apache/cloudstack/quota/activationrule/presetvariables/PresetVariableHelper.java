@@ -209,8 +209,8 @@ public class PresetVariableHelper {
         return account;
     }
 
-    protected void setPresetVariableRoleInAccountIfAccountIsNotAProject(short accountType, Long roleId, Account account) {
-        if (accountType != com.cloud.user.Account.ACCOUNT_TYPE_PROJECT) {
+    protected void setPresetVariableRoleInAccountIfAccountIsNotAProject(com.cloud.user.Account.Type accountType, Long roleId, Account account) {
+        if (accountType != com.cloud.user.Account.Type.PROJECT) {
             account.setRole(getPresetVariableRole(roleId));
         }
     }
