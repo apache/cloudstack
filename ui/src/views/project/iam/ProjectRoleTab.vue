@@ -27,7 +27,7 @@
           :loading="loading"
           :columns="columns"
           :dataSource="dataSource"
-          :rowKey="record => record.projectid + '-' + new Date().getTime() + '-' + Math.random()"
+          :rowKey="(record, index) => record.projectid + '-' + index"
           :pagination="false">
           <template #expandedRowRender="{ record }">
             <ProjectRolePermissionTab class="table" :resource="resource" :role="record"/>

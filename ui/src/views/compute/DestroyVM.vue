@@ -89,7 +89,7 @@
               size="middle"
               :columns="chosenColumns"
               :dataSource="selectedItems"
-              :rowKey="record => record.id || record.name || record.usageType || new Date().getTime() + '-' + Math.random()"
+              :rowKey="(record, index) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
               :pagination="true"
               style="overflow-y: auto"
             >

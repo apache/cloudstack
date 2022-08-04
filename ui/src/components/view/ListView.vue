@@ -21,7 +21,7 @@
     :loading="loading"
     :columns="isOrderUpdatable() ? columns : columns.filter(x => x.dataIndex !== 'order')"
     :dataSource="items"
-    :rowKey="record => record.id || record.name || record.usageType || new Date().getTime() + '-' + Math.random()"
+    :rowKey="(record, index) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
     :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
     :rowClassName="getRowClassName"
