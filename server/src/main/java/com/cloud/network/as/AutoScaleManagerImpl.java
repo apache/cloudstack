@@ -1922,6 +1922,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             AutoScaleVmGroupVmMapVO GroupVmVO = new AutoScaleVmGroupVmMapVO(asGroup.getId(), vmId);
             _autoScaleVmGroupVmMapDao.persist(GroupVmVO);
 
+            // Add an Inactive-dummy record to statistics table
+            createInactiveDummyRecord(asGroup.getId());
+
             try {
                 startNewVM(vmId);
                 if (assignLBruleToNewVm(vmId, asGroup)) {
@@ -1951,7 +1954,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
             s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
         }
-        markStatisticsAsInactive(asGroup.getId(), null);
     }
 
     @Override
@@ -1987,6 +1989,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 }
             }
 
+            // Add an Inactive-dummy record to statistics table
+            createInactiveDummyRecord(asGroup.getId());
+
             // get destroyvmgrace param
             AutoScaleVmProfileVO asProfile = _autoScaleVmProfileDao.findById(profileId);
             Integer destroyVmGracePeriod = asProfile.getDestroyVmGraceperiod();
@@ -2010,7 +2015,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         if (!_autoScaleVmGroupDao.updateState(groupId, newState, oldState)) {
             s_logger.error(String.format("Can not update vmgroup state from %s back to %s, groupId: %s", newState, oldState, groupId));
         }
-        markStatisticsAsInactive(asGroup.getId(), null);
     }
 
     @Override
