@@ -1118,6 +1118,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Override
     public List<? extends AutoScaleVmGroup> listAutoScaleVmGroups(ListAutoScaleVmGroupsCmd cmd) {
         Long id = cmd.getId();
+        String name = cmd.getName();
         Long policyId = cmd.getPolicyId();
         Long loadBalancerId = cmd.getLoadBalancerId();
         Long profileId = cmd.getProfileId();
@@ -1128,6 +1129,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("loadBalancerId", sb.entity().getLoadBalancerId(), SearchCriteria.Op.EQ);
         sb.and("profileId", sb.entity().getProfileId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
@@ -1142,6 +1144,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         SearchCriteria<AutoScaleVmGroupVO> sc = searchWrapper.buildSearchCriteria();
         if (id != null) {
             sc.setParameters("id", id);
+        }
+        if (name != null) {
+            sc.setParameters("name", name);
         }
         if (loadBalancerId != null) {
             sc.setParameters("loadBalancerId", loadBalancerId);
