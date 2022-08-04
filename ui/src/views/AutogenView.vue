@@ -1066,10 +1066,10 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        this.setRules(param)
         if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
           param.type = 'string'
         }
+        this.setRules(param)
         if (param.type === 'uuid' || param.type === 'list' || param.name === 'account' || (this.currentAction.mapping && param.name in this.currentAction.mapping)) {
           this.listUuidOpts(param)
         }
@@ -1358,6 +1358,20 @@ export default {
         if ('id' in this.resource && action.params.map(i => { return i.name }).includes('id')) {
           params.id = this.resource.id
         }
+
+        if (['updateDiskOffering'].includes(action.api) && values.tags === this.resource.tags) {
+          delete values.tags
+        }
+
+        if (['updateServiceOffering'].includes(action.api)) {
+          if (values.hosttags === this.resource.hosttags) {
+            delete values.hosttags
+          }
+          if (values.storagetags === this.resource.storagetags) {
+            delete values.tags
+          }
+        }
+
         for (const key in values) {
           const input = values[key]
           for (const param of action.params) {

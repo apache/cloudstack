@@ -62,7 +62,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
@@ -226,7 +225,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
             DataStoreTO dataStoreTO = dataTO.getDataStore();
             if (dataStoreTO != null && dataStoreTO instanceof PrimaryDataStoreTO){
                 PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataStoreTO;
-                primaryDataStoreTO.setFullCloneFlag(CapacityManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
+                primaryDataStoreTO.setFullCloneFlag(StorageManager.VmwareCreateCloneFull.valueIn(primaryDataStoreTO.getId()));
                 StoragePool pool = storageManager.getStoragePool(primaryDataStoreTO.getId());
                 primaryDataStoreTO.setDiskProvisioningStrictnessFlag(storageManager.DiskProvisioningStrictness.valueIn(pool.getDataCenterId()));
             }

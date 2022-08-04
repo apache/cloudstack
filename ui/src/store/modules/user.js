@@ -58,7 +58,8 @@ const user = {
     darkMode: false,
     defaultListViewPageSize: 20,
     countNotify: 0,
-    logoutFlag: false
+    logoutFlag: false,
+    customColumns: {}
   },
 
   mutations: {

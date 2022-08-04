@@ -794,7 +794,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
                 continue;
             }
             LOGGER.debug(String.format("Volume %s needs to be migrated", volumeVO.getUuid()));
-            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(profile.getVolumeId(), null, null, null, null, false);
+            Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = managementService.listStoragePoolsForMigrationOfVolumeInternal(profile.getVolumeId(), null, null, null, null, false, true);
             if (CollectionUtils.isEmpty(poolsPair.first()) && CollectionUtils.isEmpty(poolsPair.second())) {
                 cleanupFailedImportVM(vm);
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("VM import failed for unmanaged vm: %s during volume ID: %s migration as no suitable pool(s) found", userVm.getInstanceName(), volumeVO.getUuid()));

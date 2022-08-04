@@ -61,15 +61,15 @@ public class SAML2AuthManagerImplTest {
     public void testStart() {
         when(saml2AuthManager.getSAMLIdentityProviderMetadataURL()).thenReturn("file://does/not/exist");
         boolean started = saml2AuthManager.start();
-        assertFalse("saml2authmanager should not start as the file doesnt exist", started);
+        assertFalse("saml2authmanager should not start as the file doesn't exist", started);
 
         when(saml2AuthManager.getSAMLIdentityProviderMetadataURL()).thenReturn(" ");
         started = saml2AuthManager.start();
-        assertFalse("saml2authmanager should not start as the file doesnt exist", started);
+        assertFalse("saml2authmanager should not start as the file doesn't exist", started);
 
         when(saml2AuthManager.getSAMLIdentityProviderMetadataURL()).thenReturn("");
         started = saml2AuthManager.start();
-        assertFalse("saml2authmanager should not start as the file doesnt exist", started);
+        assertFalse("saml2authmanager should not start as the file doesn't exist", started);
 
     }
 }

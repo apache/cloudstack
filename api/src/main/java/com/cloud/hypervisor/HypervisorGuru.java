@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
@@ -35,8 +34,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
-    ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
-            "If set to true, creates guest VMs as full clones on ESX", false);
+
     HypervisorType getHypervisorType();
 
     /**

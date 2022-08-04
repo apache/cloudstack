@@ -57,7 +57,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
         SP_LOG("StorpooolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);

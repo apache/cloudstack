@@ -210,6 +210,14 @@ public class NicResponse extends BaseResponse {
         this.extraDhcpOptions = extraDhcpOptions;
     }
 
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "Id of the vpc to which the nic belongs")
+    private String vpcId;
+
+    @SerializedName(ApiConstants.VPC_NAME)
+    @Param(description = "name of the vpc to which the nic belongs")
+    private String vpcName;
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -363,5 +371,21 @@ public class NicResponse extends BaseResponse {
 
     public void setIpAddresses(List<String> ipAddresses) {
         this.ipAddresses = ipAddresses;
+    }
+
+    public String getVpcId() {
+        return vpcId;
+    }
+
+    public void setVpcId(String vpcId) {
+        this.vpcId = vpcId;
+    }
+
+    public String getVpcName() {
+        return vpcName;
+    }
+
+    public void setVpcName(String vpcName) {
+        this.vpcName = vpcName;
     }
 }
