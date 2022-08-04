@@ -4294,7 +4294,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String value = cmd.getValue();
         Long resourceId = null;
 
-        //Validation - 1.1 - resourceId and value cant be null.
+        //Validation - 1.1 - resourceId and value can't be null.
         if (resourceIdStr == null && value == null) {
             throw new InvalidParameterValueException("Insufficient parameters passed for listing by resourceId OR key,value pair. Please check your params and try again.");
         }

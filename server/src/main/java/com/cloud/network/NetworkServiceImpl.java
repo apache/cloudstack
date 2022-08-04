@@ -4588,7 +4588,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         // For Storage, Control, Management, Public check if the zone has any other physical network with this
         // traffictype already present
-        // If yes, we cant add these traffics to one more physical network in the zone.
+        // If yes, we can't add these traffics to one more physical network in the zone.
 
         if (TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType) || TrafficType.Storage.equals(trafficType)) {
             if (!_physicalNetworkDao.listByZoneAndTrafficType(network.getDataCenterId(), trafficType).isEmpty()) {
