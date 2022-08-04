@@ -465,7 +465,6 @@ export default {
     },
     openTagsModal (rule) {
       this.selectedRule = rule
-      this.initForm()
       this.fetchTags(this.selectedRule)
       this.tagsModalVisible = true
     },

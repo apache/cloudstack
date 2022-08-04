@@ -400,7 +400,6 @@ export default {
         ostypeid: [{ required: true, message: this.$t('message.error.select') }],
         groupenabled: [{ type: 'array' }]
       })
-      console.log(this.form)
     },
     fetchData () {
       this.fetchZone()

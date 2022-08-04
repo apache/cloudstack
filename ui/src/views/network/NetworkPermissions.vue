@@ -87,15 +87,12 @@
       :footer="null"
       @cancel="showResetPermissionModal = false"
       centered
-      width="auto"
-      v-ctrl-enter="resetNetworkPermission">
+      width="auto">
       {{ $t('message.confirm.reset.network.permissions') }}
-      <a-form @submit="resetNetworkPermission">
-        <div :span="24" class="action-button">
-          <a-button @click="showResetPermissionModal = false">{{ $t('label.cancel') }}</a-button>
-          <a-button type="primary" ref="submit" @click="resetNetworkPermission">{{ $t('label.ok') }}</a-button>
-        </div>
-      </a-form>
+      <div :span="24" class="action-button">
+        <a-button @click="showResetPermissionModal = false">{{ $t('label.cancel') }}</a-button>
+        <a-button type="primary" ref="submit" @click="resetNetworkPermission">{{ $t('label.ok') }}</a-button>
+      </div>
     </a-modal>
   </div>
 </template>

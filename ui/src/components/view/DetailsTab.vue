@@ -95,6 +95,10 @@ export default {
       type: Object,
       required: true
     },
+    items: {
+      type: Object,
+      default: () => {}
+    },
     loading: {
       type: Boolean,
       default: false
@@ -102,6 +106,10 @@ export default {
     tab: {
       type: String,
       default: null
+    },
+    bordered: {
+      type: Boolean,
+      default: false
     }
   },
   data () {

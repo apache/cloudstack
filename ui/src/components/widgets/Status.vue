@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div style="display: inline-flex;">
     <a-tooltip placement="bottom" :title="getTooltip(text)">
       <a-badge
         :style="getStyle()"

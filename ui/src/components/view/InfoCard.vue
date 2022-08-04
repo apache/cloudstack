@@ -124,7 +124,7 @@
               icon="barcode-outlined"
               type="dashed"
               size="small"
-              :copyResource="resource.id"
+              :copyResource="String(resource.id)"
               @onClick="$message.success($t('label.copied.clipboard'))" />
             <span style="margin-left: 10px;">{{ resource.id }}</span>
           </div>

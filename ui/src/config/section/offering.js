@@ -223,7 +223,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/offering/ImportBackupOffering.vue')))
       }, {
         api: 'updateBackupOffering',
-        icon: 'edit',
+        icon: 'edit-outlined',
         label: 'label.edit',
         dataView: true,
         popup: true,

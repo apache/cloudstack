@@ -67,7 +67,7 @@
       </template>
       <template #expandedRowRender="{ record }">
         <a-table
-          style="marginLeft: -50px; marginTop: 10px; marginBottom: 10px"
+          style="margin: 10px 0;"
           :columns="innerColumns"
           :data-source="record.downloaddetails"
           :pagination="false"

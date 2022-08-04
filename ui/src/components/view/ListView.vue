@@ -23,7 +23,7 @@
     :dataSource="items"
     :rowKey="(record, index) => record.id || record.name || record.usageType || idx + '-' + Math.random()"
     :pagination="false"
-    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange} : null"
+    :rowSelection=" enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
     style="overflow-y: auto"
   >

@@ -112,7 +112,7 @@
                 </template>
               </a-pagination>
             </a-collapse-panel>
-            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :disabled="!showIlb(network)" >
+            <a-collapse-panel :header="$t('label.internal.lb')" key="ilb" :style="customStyle" :collapsible="!showIlb(network) ? 'disabled' : null" >
               <a-button
                 type="dashed"
                 style="margin-bottom: 15px; width: 100%"

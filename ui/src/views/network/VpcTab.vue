@@ -77,7 +77,7 @@
           :footer="null"
           :maskClosable="false"
           :closable="true"
-          @cancel="modals.networkAcl = fetchAclList">
+          @cancel="modals.networkAcl = false">
           <a-form
             layout="vertical"
             :ref="formRef"
@@ -384,6 +384,7 @@ import RoutersTab from './RoutersTab'
 import VpcTiersTab from './VpcTiersTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
+import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'VpcTab',
@@ -394,7 +395,8 @@ export default {
     RoutersTab,
     VpcTiersTab,
     EventsTab,
-    AnnotationsTab
+    AnnotationsTab,
+    ResourceIcon
   },
   mixins: [mixinDevice],
   props: {

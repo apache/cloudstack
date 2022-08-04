@@ -131,6 +131,7 @@ export default {
   created () {
     this.formRef = ref()
     this.form = reactive({})
+    this.rules = reactive({})
     this.apiParams = this.$getApiParams('createNetworkPermissions')
     this.fetchData()
   },

@@ -851,6 +851,7 @@ export default {
           this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
           this.$t('label.created'), this.$t('label.order')].includes(column.title)
       })
+      this.chosenColumns.splice(this.chosenColumns.length - 1, 1)
 
       if (['listTemplates', 'listIsos'].includes(this.apiName) && this.dataView) {
         delete params.showunique
@@ -1501,6 +1502,9 @@ export default {
         title: '',
         customFilterDropdown: true,
         width: 5
+      }
+      if (this.columns.length === 0) {
+        filterColumn.width = 'auto'
       }
       this.columns.push(filterColumn)
       if (!this.$store.getters.customColumns[this.$store.getters.userInfo.id]) {

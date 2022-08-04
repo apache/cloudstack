@@ -76,7 +76,8 @@
                 <a-time-picker
                   use12Hours
                   format="h:mm A"
-                  v-model:value="form.timeSelect" />
+                  v-model:value="form.timeSelect"
+                  style="width: 100%;" />
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="12" v-if="form.intervaltype==='weekly'">
