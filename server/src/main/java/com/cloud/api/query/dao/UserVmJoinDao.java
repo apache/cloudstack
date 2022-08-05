@@ -30,7 +30,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UserVmJoinDao extends GenericDao<UserVmJoinVO, Long> {
 
-    UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Account caller);
+    UserVmResponse newUserVmResponse(ResponseView view, String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+            Account caller);
 
     UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo);
 

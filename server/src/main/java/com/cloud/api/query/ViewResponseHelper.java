@@ -135,14 +135,19 @@ public class ViewResponseHelper {
     }
 
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVmJoinVO... userVms) {
-        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), null, userVms);
+        return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), null, null, userVms);
     }
 
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
-        return createUserVmResponse(view, objectName, details, null, userVms);
+        return createUserVmResponse(view, objectName, details, null, null, userVms);
     }
 
     public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, UserVmJoinVO... userVms) {
+        return createUserVmResponse(view, objectName, details, accumulateStats, null, userVms);
+    }
+
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+            UserVmJoinVO... userVms) {
         Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
         // Initialise the vmdatalist with the input data
@@ -151,7 +156,7 @@ public class ViewResponseHelper {
             UserVmResponse userVmData = vmDataList.get(userVm.getId());
             if (userVmData == null) {
                 // first time encountering this vm
-                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, accumulateStats, caller);
+                userVmData = ApiDBUtils.newUserVmResponse(view, objectName, userVm, details, accumulateStats, showUserData, caller);
             } else{
                 // update nics, securitygroups, tags, affinitygroups for 1 to many mapping fields
                 userVmData = ApiDBUtils.fillVmDetails(view, userVmData, userVm);
