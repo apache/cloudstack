@@ -226,7 +226,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 aggregatedUsage = aggregatedUsage.add(lastRealBalance.getCreditBalance());
                 aggregatedUsage = aggregatedUsage.add(aggregateCreditBetweenDates(accountId, domainId, lastRealBalance.getUpdatedOn(), endDate, accountToString));
             } else {
-                s_logger.warn(String.format("Account [%s] has quota usage entries, however it does not have a quota balance."));
+                s_logger.warn(String.format("Account [%s] has quota usage entries, however it does not have a quota balance.", accountToString));
             }
         }
 

@@ -459,7 +459,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     protected void validateValueOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Double value) {
         if (value != null) {
-            newQuotaTariff.setCurrencyValue(new BigDecimal(value));
+            newQuotaTariff.setCurrencyValue(BigDecimal.valueOf(value));
         }
     }
 
