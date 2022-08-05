@@ -237,6 +237,10 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
     @Param(description = "the version of the code / software in the router")
     private String softwareVersion;
 
+    @SerializedName("rootvolumeid")
+    @Param(description = "the router's ROOT volume ID")
+    private String rootVolumeID;
+
     public DomainRouterResponse() {
         nics = new LinkedHashSet<NicResponse>();
     }
@@ -501,5 +505,13 @@ public class DomainRouterResponse extends BaseResponseWithAnnotations implements
 
     public void setSoftwareVersion(String softwareVersion) {
         this.softwareVersion = softwareVersion;
+    }
+
+    public String getRootVolumeID() {
+        return rootVolumeID;
+    }
+
+    public void setRootVolumeID(String rootVolumeID) {
+        this.rootVolumeID = rootVolumeID;
     }
 }

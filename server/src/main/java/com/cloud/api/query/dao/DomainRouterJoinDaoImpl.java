@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
@@ -58,6 +60,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
     public AccountManager _accountMgr;
     @Inject
     private AnnotationDao annotationDao;
+
+    @Inject
+    private VolumeDao volumeDao;
 
     private final SearchBuilder<DomainRouterJoinVO> vrSearch;
 
@@ -221,6 +226,11 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         } else {
             routerResponse.setObjectName("router");
         }
+
+        VolumeVO rootVolumeVo = volumeDao.getInstanceRootVolume(router.getId(), router.getUuid());
+
+        routerResponse.setRootVolumeID(rootVolumeVo.getUuid());
+
 
         return routerResponse;
     }

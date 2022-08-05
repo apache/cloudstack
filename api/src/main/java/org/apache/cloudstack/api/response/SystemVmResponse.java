@@ -174,6 +174,10 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName("rootvolumeid")
+    @Param(description = "the system VM's ROOT volume ID")
+    private String rootVolumeID;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -453,5 +457,13 @@ public class SystemVmResponse extends BaseResponseWithAnnotations {
 
     public void setDynamicallyScalable(Boolean dynamicallyScalable) {
         isDynamicallyScalable = dynamicallyScalable;
+    }
+
+    public String getRootVolumeID() {
+        return rootVolumeID;
+    }
+
+    public void setRootVolumeID(String rootVolumeID) {
+        this.rootVolumeID = rootVolumeID;
     }
 }
