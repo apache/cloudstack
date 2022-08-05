@@ -19,7 +19,7 @@
 -- Schema upgrade from 4.17.1.0 to 4.18.0.0
 --;
 
--- Fix migrateVolume permissions #6224.
+-- Fix migrateVolume permissions #6224. 
 DELETE role_perm
 FROM role_permissions role_perm
 INNER JOIN roles ON role_perm.role_id = roles.id
