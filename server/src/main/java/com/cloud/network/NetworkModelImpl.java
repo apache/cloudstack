@@ -1685,12 +1685,12 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), caller.getDomainId())) {
-                DomainVO ownerDomain = _domainDao.findById(caller.getDomainId());
-                if (ownerDomain == null) {
+                DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
+                if (callerDomain == null) {
                     throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
                 }
                 throw new PermissionDeniedException("Shared network id=" + ((NetworkVO)network).getUuid() + " is not available in domain id=" +
-                        ownerDomain.getUuid());
+                        callerDomain.getUuid());
             }
         }
     }
