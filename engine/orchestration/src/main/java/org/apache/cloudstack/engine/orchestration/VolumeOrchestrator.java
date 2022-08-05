@@ -644,8 +644,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 dskCh.setSize(size);
             }
 
-            VolumeVO vol = _volsDao.findById(volume.getId());
             if (diskOffering.getEncrypt()) {
+                VolumeVO vol = _volsDao.findById(volume.getId());
                 setPassphraseForVolumeEncryption(vol);
                 volume = volFactory.getVolume(volume.getId());
             }
