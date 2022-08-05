@@ -24,7 +24,7 @@ UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
 
--- Fix migrateVolume permissions #6224. 
+-- Fix migrateVolume permissions #6224.
 DELETE role_perm
 FROM role_permissions role_perm
 INNER JOIN roles ON role_perm.role_id = roles.id
