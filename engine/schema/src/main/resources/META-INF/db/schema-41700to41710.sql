@@ -62,8 +62,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         vm_template.id template_id,
         vm_template.uuid template_uuid,
         service_offering.id service_offering_id,
-        disk_offering.uuid service_offering_uuid,
-        disk_offering.name service_offering_name,
+        service_offering.uuid service_offering_uuid,
+        service_offering.name service_offering_name,
         nics.id nic_id,
         nics.uuid nic_uuid,
         nics.network_id network_id,
@@ -116,8 +116,6 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`vm_template` ON vm_instance.vm_template_id = vm_template.id
             left join
         `cloud`.`service_offering` ON vm_instance.service_offering_id = service_offering.id
-            left join
-        `cloud`.`disk_offering` ON vm_instance.service_offering_id = disk_offering.id
             left join
         `cloud`.`nics` ON vm_instance.id = nics.instance_id and nics.removed is null
             left join
