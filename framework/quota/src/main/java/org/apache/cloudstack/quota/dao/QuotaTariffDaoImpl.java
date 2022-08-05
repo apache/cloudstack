@@ -165,12 +165,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         sorter.addOrderBy(QuotaTariffVO.class, "effectiveOn", false);
         sorter.addOrderBy(QuotaTariffVO.class, "updatedOn", false);
 
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>() {
-            @Override
-            public Pair<List<QuotaTariffVO>, Integer> doInTransaction(final TransactionStatus status) {
-                return searchAndCount(searchCriteria, sorter, listAll);
-            }
-        });
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Pair<List<QuotaTariffVO>, Integer>>) status -> searchAndCount(searchCriteria, sorter, listAll));
     }
 
     protected SearchCriteria<QuotaTariffVO> createListQuotaTariffsSearchCriteria(Date startDate, Date endDate, Integer usageType, String name, String uuid) {

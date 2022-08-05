@@ -27,10 +27,6 @@ public class GenericPresetVariable {
     private String name;
     protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
 
-    public GenericPresetVariable() {
-
-    }
-
     public String getId() {
         return id;
     }
@@ -51,6 +47,6 @@ public class GenericPresetVariable {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[fieldNamesToIncludeInToString.size()]));
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));
     }
 }

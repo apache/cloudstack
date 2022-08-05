@@ -45,6 +45,7 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.usage.UsageUnitTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
@@ -90,12 +91,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
 
-    final static BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    final static BigDecimal GiB_DECIMAL = new BigDecimal(ByteScaleUtils.GiB);
+    static final BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
+    static final BigDecimal GiB_DECIMAL = new BigDecimal(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
-    List<Integer> quotaTypesToAvoidCalculation = Arrays.asList(QuotaTypes.VM_DISK_IO_READ, QuotaTypes.VM_DISK_IO_WRITE, QuotaTypes.VM_DISK_BYTES_READ,
-            QuotaTypes.VM_DISK_BYTES_WRITE);
+    List<Integer> usageTypesToAvoidCalculation = Arrays.asList(UsageTypes.VM_DISK_IO_READ, UsageTypes.VM_DISK_IO_WRITE, UsageTypes.VM_DISK_BYTES_READ,
+            UsageTypes.VM_DISK_BYTES_WRITE);
 
     public QuotaManagerImpl() {
         super();
@@ -152,7 +153,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected void processQuotaBalanceForAccount(AccountVO accountVo, List<QuotaUsageVO> accountQuotaUsages) {
-        String accountToString = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(accountVo, "id", "uuid", "accountName", "domainId");
+        String accountToString = accountVo.reflectionToString();
 
         if (CollectionUtils.isEmpty(accountQuotaUsages)) {
             s_logger.info(String.format("Account [%s] does not have quota usages to process. Skipping it.", accountToString));
@@ -247,7 +248,6 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         quotaAccount.setQuotaBalance(aggregatedUsage);
         quotaAccount.setQuotaBalanceDate(endDate);
         _quotaAcc.persistQuotaAccount(quotaAccount);
-        return;
     }
 
     protected BigDecimal aggregateCreditBetweenDates(Long accountId, Long domainId, Date startDate, Date endDate, String accountToString) {
@@ -280,8 +280,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             List<UsageVO> usageRecords = getPendingUsageRecordsForQuotaAggregation(account);
 
             if (usageRecords == null) {
-                s_logger.debug(String.format("Account [%s] does not have pending usage records. Skipping to next account.",
-                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "id", "uuid", "accountName", "domainId")));
+                s_logger.debug(String.format("Account [%s] does not have pending usage records. Skipping to next account.", account.reflectionToString()));
                 continue;
             }
 
@@ -305,8 +304,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             return null;
         }
 
-        s_logger.debug(String.format("Retrieved [%s] pending usage records for account [%s].", usageRecords.second(),
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "id", "uuid", "accountName", "domainId")));
+        s_logger.debug(String.format("Retrieved [%s] pending usage records for account [%s].", usageRecords.second(), account.reflectionToString()));
 
         return records;
     }
@@ -322,9 +320,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             for (UsageVO usageRecord : usageRecords) {
                 int usageType = usageRecord.getUsageType();
 
-                if (quotaTypesToAvoidCalculation.contains(usageType)) {
+                if (usageTypesToAvoidCalculation.contains(usageType)) {
                     s_logger.debug(String.format("Considering usage record [%s] as calculated and skipping it because the calculation of the types [%s] has not been implemented yet.",
-                            usageRecord.toString(), quotaTypesToAvoidCalculation));
+                            usageRecord.toString(), usageTypesToAvoidCalculation));
                     pairsUsageAndQuotaUsage.add(new Pair<>(usageRecord, null));
                     continue;
                 }
@@ -376,7 +374,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
         for (QuotaTariffVO quotaTariff : quotaTariffs) {
             if (isQuotaTariffInPeriodToBeApplied(usageRecord, quotaTariff, accountToString)) {
-                aggregatedQuotaTariffsValue = aggregatedQuotaTariffsValue.add(getQuotaTariffValueToBeApplied(quotaTariff, usageRecord, jsInterpreter, presetVariables));
+                aggregatedQuotaTariffsValue = aggregatedQuotaTariffsValue.add(getQuotaTariffValueToBeApplied(quotaTariff, jsInterpreter, presetVariables));
             }
         }
 
@@ -404,7 +402,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
      *   <li>If the activation rule result in something else, returns {@link BigDecimal#ZERO}.</li>
      * </ul>
      */
-    protected BigDecimal getQuotaTariffValueToBeApplied(QuotaTariffVO quotaTariff, UsageVO usageRecord, JsInterpreter jsInterpreter, PresetVariables presetVariables) {
+    protected BigDecimal getQuotaTariffValueToBeApplied(QuotaTariffVO quotaTariff, JsInterpreter jsInterpreter, PresetVariables presetVariables) {
         String activationRule = quotaTariff.getActivationRule();
         BigDecimal quotaTariffValue = quotaTariff.getCurrencyValue();
         String quotaTariffToString = quotaTariff.toString();

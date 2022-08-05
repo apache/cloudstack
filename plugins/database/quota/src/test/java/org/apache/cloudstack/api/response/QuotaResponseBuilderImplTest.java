@@ -247,7 +247,7 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     public void validateValueOnCreatingNewQuotaTariffTestAnyValueIsSet() {
         Double value = 0.0;
         quotaResponseBuilderSpy.validateValueOnCreatingNewQuotaTariff(quotaTariffVoMock, value);
-        Mockito.verify(quotaTariffVoMock).setCurrencyValue(new BigDecimal(value));
+        Mockito.verify(quotaTariffVoMock).setCurrencyValue(BigDecimal.valueOf(value));
     }
 
     @Test

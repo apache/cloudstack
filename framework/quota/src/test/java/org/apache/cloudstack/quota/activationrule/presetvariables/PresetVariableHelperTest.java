@@ -38,6 +38,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
@@ -167,16 +168,13 @@ public class PresetVariableHelperTest {
     UsageVO usageVoMock;
 
     @Mock
-    PresetVariables presetVariablesMock;
-
-    @Mock
     VMInstanceVO vmInstanceVoMock;
 
     @Mock
     ServiceOfferingVO serviceOfferingVoMock;
 
-    List<Integer> runningAndAllocatedVmQuotaTypes = Arrays.asList(QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM);
-    List<Integer> templateAndIsoQuotaTypes = Arrays.asList(QuotaTypes.TEMPLATE, QuotaTypes.ISO);
+    List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
+    List<Integer> templateAndIsoUsageTypes = Arrays.asList(UsageTypes.TEMPLATE, UsageTypes.ISO);
 
     private Account getAccountForTests() {
         Account account = new Account();
@@ -204,7 +202,7 @@ public class PresetVariableHelperTest {
         value.setDiskOffering(getGenericPresetVariableForTests());
         value.setProvisioningType(ProvisioningType.THIN);
         value.setStorage(getStorageForTests());
-        value.setSize(ByteScaleUtils.GiB * 1l);
+        value.setSize(ByteScaleUtils.GiB);
         value.setSnapshotType(Snapshot.Type.HOURLY);
         value.setTag("tag_test");
         value.setVmSnapshotType(VMSnapshot.Type.Disk);
@@ -463,7 +461,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void loadPresetVariableValueForRunningAndAllocatedVmTestRecordIsNotARunningNorAnAllocatedVmDoNothing() {
-        getQuotaTypesForTests(runningAndAllocatedVmQuotaTypes.toArray(new Integer[runningAndAllocatedVmQuotaTypes.size()])).forEach(type -> {
+        getQuotaTypesForTests(runningAndAllocatedVmUsageTypes.toArray(new Integer[0])).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForRunningAndAllocatedVm(usageVoMock, null);
         });
@@ -489,7 +487,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getTemplate()).when(presetVariableHelperSpy).getPresetVariableValueTemplate(Mockito.anyLong());
 
-        runningAndAllocatedVmQuotaTypes.forEach(type -> {
+        runningAndAllocatedVmUsageTypes.forEach(type -> {
             Mockito.doReturn(type).when(usageVoMock).getUsageType();
 
             Value result = new Value();
@@ -503,13 +501,13 @@ public class PresetVariableHelperTest {
             validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "osName", "tags", "template"), result);
         });
 
-        Mockito.verify(presetVariableHelperSpy, Mockito.times(runningAndAllocatedVmQuotaTypes.size())).getPresetVariableValueResourceTags(Mockito.anyLong(),
+        Mockito.verify(presetVariableHelperSpy, Mockito.times(runningAndAllocatedVmUsageTypes.size())).getPresetVariableValueResourceTags(Mockito.anyLong(),
                 Mockito.eq(ResourceObjectType.UserVm));
     }
 
     @Test
     public void setPresetVariableHostInValueIfUsageTypeIsRunningVmTestQuotaTypeDifferentFromRunningVmDoNothing() {
-        getQuotaTypesForTests(QuotaTypes.RUNNING_VM).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.RUNNING_VM).forEach(type -> {
             Value result = new Value();
 
             presetVariableHelperSpy.setPresetVariableHostInValueIfUsageTypeIsRunningVm(result, type.getKey(), vmInstanceVoMock);
@@ -524,7 +522,7 @@ public class PresetVariableHelperTest {
         Host expected = getHostForTests();
 
         Mockito.doReturn(expected).when(presetVariableHelperSpy).getPresetVariableValueHost(Mockito.anyLong());
-        presetVariableHelperSpy.setPresetVariableHostInValueIfUsageTypeIsRunningVm(result, QuotaTypes.RUNNING_VM, vmInstanceVoMock);
+        presetVariableHelperSpy.setPresetVariableHostInValueIfUsageTypeIsRunningVm(result, UsageTypes.RUNNING_VM, vmInstanceVoMock);
 
         Assert.assertNotNull(result.getHost());
 
@@ -614,7 +612,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void loadPresetVariableValueForVolumeTestRecordIsNotAVolumeDoNothing() {
-        getQuotaTypesForTests(QuotaTypes.VOLUME).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.VOLUME).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, null);
         });
@@ -640,7 +638,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
 
-        Mockito.doReturn(QuotaTypes.VOLUME).when(usageVoMock).getUsageType();
+        Mockito.doReturn(UsageTypes.VOLUME).when(usageVoMock).getUsageType();
 
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, result);
@@ -676,7 +674,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
 
-        Mockito.doReturn(QuotaTypes.VOLUME).when(usageVoMock).getUsageType();
+        Mockito.doReturn(UsageTypes.VOLUME).when(usageVoMock).getUsageType();
 
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForVolume(usageVoMock, result);
@@ -756,7 +754,7 @@ public class PresetVariableHelperTest {
     @Test
     public void getSecondaryStorageForSnapshotTestAllTypesExceptSnapshotAndBackupSnapshotReturnNull() {
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
-        getQuotaTypesForTests(QuotaTypes.SNAPSHOT).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.SNAPSHOT).forEach(type -> {
             Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, type.getKey());
             Assert.assertNull(result);
         });
@@ -774,7 +772,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(imageStoreVoMock).getName();
         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
 
-        Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, QuotaTypes.SNAPSHOT);
+        Storage result = presetVariableHelperSpy.getSecondaryStorageForSnapshot(1l, UsageTypes.SNAPSHOT);
 
         assertPresetVariableIdAndName(expected, result);
         validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
@@ -782,7 +780,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void loadPresetVariableValueForTemplateAndIsoTestRecordIsNotAtemplateNorAnIsoDoNothing() {
-        getQuotaTypesForTests(templateAndIsoQuotaTypes.toArray(new Integer[templateAndIsoQuotaTypes.size()])).forEach(type -> {
+        getQuotaTypesForTests(templateAndIsoUsageTypes.toArray(new Integer[templateAndIsoUsageTypes.size()])).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForTemplateAndIso(usageVoMock, null);
         });
@@ -806,7 +804,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getSize()).when(vmTemplateVoMock).getSize();
 
-        templateAndIsoQuotaTypes.forEach(type -> {
+        templateAndIsoUsageTypes.forEach(type -> {
             Mockito.doReturn(type).when(usageVoMock).getUsageType();
 
             Value result = new Value();
@@ -829,7 +827,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void loadPresetVariableValueForSnapshotTestRecordIsNotASnapshotDoNothing() {
-        getQuotaTypesForTests(QuotaTypes.SNAPSHOT).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.SNAPSHOT).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForSnapshot(usageVoMock, null);
         });
@@ -855,7 +853,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getStorage()).when(presetVariableHelperSpy).getPresetVariableValueStorage(Mockito.anyLong(), Mockito.anyInt());
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
 
-        Mockito.doReturn(QuotaTypes.SNAPSHOT).when(usageVoMock).getUsageType();
+        Mockito.doReturn(UsageTypes.SNAPSHOT).when(usageVoMock).getUsageType();
 
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForSnapshot(usageVoMock, result);
@@ -918,8 +916,9 @@ public class PresetVariableHelperTest {
         });
     }
 
+    @Test
     public void loadPresetVariableValueForNetworkOfferingTestRecordIsNotASnapshotDoNothing() {
-        getQuotaTypesForTests(QuotaTypes.NETWORK_OFFERING).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.NETWORK_OFFERING).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForNetworkOffering(usageVoMock, null);
         });
@@ -940,7 +939,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getName()).when(networkOfferingVoMock).getName();
         Mockito.doReturn(expected.getTag()).when(networkOfferingVoMock).getTags();
 
-        Mockito.doReturn(QuotaTypes.NETWORK_OFFERING).when(usageVoMock).getUsageType();
+        Mockito.doReturn(UsageTypes.NETWORK_OFFERING).when(usageVoMock).getUsageType();
 
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForNetworkOffering(usageVoMock, result);
@@ -953,7 +952,7 @@ public class PresetVariableHelperTest {
 
     @Test
     public void loadPresetVariableValueForVmSnapshotTestRecordIsNotAVmSnapshotDoNothing() {
-        getQuotaTypesForTests(QuotaTypes.VM_SNAPSHOT).forEach(type -> {
+        getQuotaTypesForTests(UsageTypes.VM_SNAPSHOT).forEach(type -> {
             Mockito.doReturn(type.getKey()).when(usageVoMock).getUsageType();
             presetVariableHelperSpy.loadPresetVariableValueForVmSnapshot(usageVoMock, null);
         });
@@ -975,7 +974,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
         Mockito.doReturn(expected.getVmSnapshotType()).when(vmSnapshotVoMock).getType();
 
-        Mockito.doReturn(QuotaTypes.VM_SNAPSHOT).when(usageVoMock).getUsageType();
+        Mockito.doReturn(UsageTypes.VM_SNAPSHOT).when(usageVoMock).getUsageType();
 
         Value result = new Value();
         presetVariableHelperSpy.loadPresetVariableValueForVmSnapshot(usageVoMock, result);
@@ -1009,15 +1008,14 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(expected.getComputeOffering()).when(presetVariableHelperSpy).getPresetVariableValueComputeOffering(Mockito.any());
         Mockito.doReturn(expected.getComputingResources()).when(presetVariableHelperSpy).getPresetVariableValueComputingResource(Mockito.any(), Mockito.any());
 
-        QuotaTypes.listQuotaTypes().entrySet().forEach(type -> {
-            Integer typeInt = type.getKey();
+        QuotaTypes.listQuotaTypes().forEach((typeInt, value) -> {
 
             Value result = new Value();
             presetVariableHelperSpy.setPresetVariableValueServiceOfferingAndComputingResources(result, typeInt, vmInstanceVoMock);
 
             Assert.assertEquals(expected.getComputeOffering(), result.getComputeOffering());
 
-            if (typeInt == QuotaTypes.RUNNING_VM) {
+            if (typeInt == UsageTypes.RUNNING_VM) {
                 Assert.assertEquals(expected.getComputingResources(), result.getComputingResources());
                 validateFieldNamesToIncludeInToString(Arrays.asList("computeOffering", "computingResources"), result);
             } else {

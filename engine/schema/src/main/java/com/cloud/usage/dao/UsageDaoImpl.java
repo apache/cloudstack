@@ -499,25 +499,22 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
     public Pair<List<UsageVO>, Integer> listUsageRecordsPendingForQuotaAggregation(long accountId, long domainId) {
         s_logger.debug(String.format("Retrieving pending usage records for accountId [%s] and domainId [%s].", accountId, domainId));
 
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Pair<List<UsageVO>, Integer>>() {
-            @Override
-            public Pair<List<UsageVO>, Integer> doInTransaction(final TransactionStatus status) {
-                Filter usageFilter = new Filter(UsageVO.class, "startDate", true, null, null);
-                QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<Pair<List<UsageVO>, Integer>>) status -> {
+            Filter usageFilter = new Filter(UsageVO.class, "startDate", true, null, null);
+            QueryBuilder<UsageVO> qb = QueryBuilder.create(UsageVO.class);
 
-                if (accountId != -1) {
-                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
-                }
-
-                if (domainId != -1) {
-                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
-                }
-
-                qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
-                qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
-
-                return searchAndCountAllRecords(qb.create(), usageFilter);
+            if (accountId != -1) {
+                qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
             }
+
+            if (domainId != -1) {
+                qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
+            }
+
+            qb.and(qb.entity().getQuotaCalculated(), SearchCriteria.Op.NEQ, 1);
+            qb.and(qb.entity().getRawUsage(), SearchCriteria.Op.GT, 0);
+
+            return searchAndCountAllRecords(qb.create(), usageFilter);
         });
     }
 

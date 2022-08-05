@@ -163,8 +163,8 @@ public class PresetVariableHelper {
 
     protected boolean backupSnapshotAfterTakingSnapshot = SnapshotInfo.BackupSnapshotAfterTakingSnapshot.value();
 
-    private List<Integer> runningAndAllocatedVmQuotaTypes = Arrays.asList(QuotaTypes.RUNNING_VM, QuotaTypes.ALLOCATED_VM);
-    private List<Integer> templateAndIsoQuotaTypes = Arrays.asList(QuotaTypes.TEMPLATE, QuotaTypes.ISO);
+    private List<Integer> runningAndAllocatedVmUsageTypes = Arrays.asList(UsageTypes.RUNNING_VM, UsageTypes.ALLOCATED_VM);
+    private List<Integer> templateAndIsoUsageTypes = Arrays.asList(UsageTypes.TEMPLATE, UsageTypes.ISO);
     private String usageRecordToString = null;
 
     public PresetVariables getPresetVariables(UsageVO usageRecord) {
@@ -292,7 +292,7 @@ public class PresetVariableHelper {
     protected void loadPresetVariableValueForRunningAndAllocatedVm(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
 
-        if (!runningAndAllocatedVmQuotaTypes.contains(usageType)) {
+        if (!runningAndAllocatedVmUsageTypes.contains(usageType)) {
             logNotLoadingMessageInTrace("running/allocated VM", usageType);
             return;
         }
@@ -320,7 +320,7 @@ public class PresetVariableHelper {
     }
 
     protected void setPresetVariableHostInValueIfUsageTypeIsRunningVm(Value value, int quotaType, VMInstanceVO vmVo) {
-        if (quotaType != QuotaTypes.RUNNING_VM) {
+        if (quotaType != UsageTypes.RUNNING_VM) {
             return;
         }
 
@@ -367,7 +367,7 @@ public class PresetVariableHelper {
         validateIfObjectIsNull(serviceOfferingVo, computeOfferingId, "compute offering");
         value.setComputeOffering(getPresetVariableValueComputeOffering(serviceOfferingVo));
 
-        if (usageType == QuotaTypes.RUNNING_VM) {
+        if (usageType == UsageTypes.RUNNING_VM) {
             value.setComputingResources(getPresetVariableValueComputingResource(vmVo, serviceOfferingVo));
         }
     }
@@ -439,7 +439,7 @@ public class PresetVariableHelper {
     protected void loadPresetVariableValueForVolume(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
 
-        if (usageType != QuotaTypes.VOLUME) {
+        if (usageType != UsageTypes.VOLUME) {
             logNotLoadingMessageInTrace("volume", usageType);
             return;
         }
@@ -501,7 +501,7 @@ public class PresetVariableHelper {
      *  Otherwise, returns null.
      */
     protected Storage getSecondaryStorageForSnapshot(Long storageId, int usageType) {
-        if (usageType != QuotaTypes.SNAPSHOT || !backupSnapshotAfterTakingSnapshot) {
+        if (usageType != UsageTypes.SNAPSHOT || !backupSnapshotAfterTakingSnapshot) {
             return null;
         }
 
@@ -516,7 +516,7 @@ public class PresetVariableHelper {
 
     protected void loadPresetVariableValueForTemplateAndIso(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
-        if (!templateAndIsoQuotaTypes.contains(usageType)) {
+        if (!templateAndIsoUsageTypes.contains(usageType)) {
             logNotLoadingMessageInTrace("template/ISO", usageType);
             return;
         }
@@ -529,14 +529,14 @@ public class PresetVariableHelper {
         value.setId(vmTemplateVo.getUuid());
         value.setName(vmTemplateVo.getName());
         value.setOsName(getPresetVariableValueOsName(vmTemplateVo.getGuestOSId()));
-        value.setTags(getPresetVariableValueResourceTags(templateOrIsoId, usageType == QuotaTypes.ISO ? ResourceObjectType.ISO : ResourceObjectType.Template));
+        value.setTags(getPresetVariableValueResourceTags(templateOrIsoId, usageType == UsageTypes.ISO ? ResourceObjectType.ISO : ResourceObjectType.Template));
         value.setSize(ByteScaleUtils.bytesToMib(vmTemplateVo.getSize()));
     }
 
     protected void loadPresetVariableValueForSnapshot(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
 
-        if (usageType != QuotaTypes.SNAPSHOT) {
+        if (usageType != UsageTypes.SNAPSHOT) {
             logNotLoadingMessageInTrace("snapshot", usageType);
             return;
         }
@@ -573,7 +573,7 @@ public class PresetVariableHelper {
     protected void loadPresetVariableValueForNetworkOffering(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
 
-        if (usageType != QuotaTypes.NETWORK_OFFERING) {
+        if (usageType != UsageTypes.NETWORK_OFFERING) {
             logNotLoadingMessageInTrace("network offering", usageType);
             return;
         }
@@ -590,7 +590,7 @@ public class PresetVariableHelper {
 
     protected void loadPresetVariableValueForVmSnapshot(UsageVO usageRecord, Value value) {
         int usageType = usageRecord.getUsageType();
-        if (usageType != QuotaTypes.VM_SNAPSHOT) {
+        if (usageType != UsageTypes.VM_SNAPSHOT) {
             logNotLoadingMessageInTrace("VM snapshot", usageType);
             return;
         }
