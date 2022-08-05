@@ -151,13 +151,19 @@
         {{ record.threshold }}
       </template>
       <template #actions="{ record }">
-        <tooltip-button
-          :tooltip="$t('label.delete')"
-          :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
-          type="primary"
-          :danger="true"
-          icon="delete-outlined"
-          @onClick="deleteParam(record.name)" />
+        <a-popconfirm
+          :title="$t('label.delete') + '?'"
+          @confirm="deleteParam(record.name)"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
+        >
+          <tooltip-button
+            :tooltip="$t('label.delete')"
+            :disabled="!('deleteCondition' in $store.getters.apis) || resource.state !== 'Disabled'"
+            type="primary"
+            :danger="true"
+            icon="delete-outlined" />
+        </a-popconfirm>
       </template>
     </a-table>
 
@@ -321,9 +327,10 @@ export default {
         'keypairs', 'affinitygroupids', 'networkids', 'securitygroupids']
       if (this.resource.lbprovider === 'Netscaler') {
         this.paramNameList = this.counterParams.concat(this.deployParams)
-      } else if (this.resource.lbprovider === 'VirtualRouter') {
+      } else if (('VirtualRouter', 'VpcVirtualRouter').includes(this.resource.lbprovider)) {
         this.paramNameList = this.deployParams
       }
+      this.paramNameList = this.paramNameList.sort()
       this.fetchUserData()
       this.fetchTemplateData()
       this.fetchServiceOfferingData()
