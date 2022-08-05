@@ -28,11 +28,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
@@ -111,37 +114,41 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return reorderPools(pools, vmProfile, plan, dskCh);
     }
 
-    protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan,
-        List<StoragePool> pools) {
+    protected List<StoragePool> reorderPoolsByCapacity(DeploymentPlan plan, List<StoragePool> pools) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
         short capacityType;
-        if(pools != null && pools.size() != 0){
-            capacityType = pools.get(0).getPoolType().isShared() ? Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED : Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
-        } else{
+
+        if (CollectionUtils.isEmpty(pools)) {
             return null;
         }
 
-        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in descending order of free capacity: "+ poolIdsByCapacity);
+        if (pools.get(0).getPoolType().isShared()) {
+            capacityType = Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED;
+        } else {
+            capacityType = Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
         }
 
+        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+
+        s_logger.debug(String.format("List of pools in descending order of available capacity [%s].", poolIdsByCapacity));
+
+
       //now filter the given list of Pools by this ordered list
-      Map<Long, StoragePool> poolMap = new HashMap<>();
-      for (StoragePool pool : pools) {
-          poolMap.put(pool.getId(), pool);
-      }
-      List<Long> matchingPoolIds = new ArrayList<>(poolMap.keySet());
+        Map<Long, StoragePool> poolMap = new HashMap<>();
+        for (StoragePool pool : pools) {
+            poolMap.put(pool.getId(), pool);
+        }
+        List<Long> matchingPoolIds = new ArrayList<>(poolMap.keySet());
 
-      poolIdsByCapacity.retainAll(matchingPoolIds);
+        poolIdsByCapacity.retainAll(matchingPoolIds);
 
-      List<StoragePool> reorderedPools = new ArrayList<>();
-      for(Long id: poolIdsByCapacity){
-          reorderedPools.add(poolMap.get(id));
-      }
+        List<StoragePool> reorderedPools = new ArrayList<>();
+        for (Long id: poolIdsByCapacity) {
+            reorderedPools.add(poolMap.get(id));
+        }
 
-      return reorderedPools;
+        return reorderedPools;
     }
 
     protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools, Account account) {
@@ -153,9 +160,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         Long clusterId = plan.getClusterId();
 
         List<Long> poolIdsByVolCount = volumeDao.listPoolIdsByVolumeCount(dcId, podId, clusterId, account.getAccountId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
-        }
+        s_logger.debug(String.format("List of pools in ascending order of number of volumes for account [%s] is [%s].", account, poolIdsByVolCount));
 
         // now filter the given list of Pools by this ordered list
         Map<Long, StoragePool> poolMap = new HashMap<>();
@@ -180,6 +185,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             s_logger.trace("reordering pools");
         }
         if (pools == null) {
+            s_logger.trace("There are no pools to reorder; returning null.");
             return null;
         }
         if (s_logger.isTraceEnabled()) {
@@ -363,4 +369,18 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         }
         return true;
     }
+
+    protected void logDisabledStoragePools(long dcId, Long podId, Long clusterId, ScopeType scope) {
+        List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(dcId, podId, clusterId, scope);
+        if (disabledPools != null && !disabledPools.isEmpty()) {
+            s_logger.trace(String.format("Ignoring pools [%s] as they are in disabled state.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(disabledPools)));
+        }
+    }
+
+    protected void logStartOfSearch(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, int returnUpTo,
+            boolean bypassStorageTypeCheck){
+        s_logger.trace(String.format("%s is looking for storage pools that match the VM's disk profile [%s], virtual machine profile [%s] and "
+                + "deployment plan [%s]. Returning up to [%d] and bypassStorageTypeCheck [%s].", this.getClass().getSimpleName(), dskCh, vmProfile, plan, returnUpTo, bypassStorageTypeCheck));
+    }
+
 }
