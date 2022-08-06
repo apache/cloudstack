@@ -398,7 +398,8 @@ export default {
       const diskIopsLine = { label: 'IOPS', backgroundColor: blueInRgba, borderColor: blue, data: [], pointRadius: chartPointRadius }
 
       for (const element of vm[0].stats) {
-        const currentLabel = element.timestamp.split('T')[0] + ' ' + element.timestamp.split('T')[1].split('-')[0]
+        var ts = this.$toLocalDate(element.timestamp)
+        const currentLabel = ts.split('T')[0] + ' ' + ts.split('T')[1].split('-')[0]
         this.chartLabels.push(currentLabel)
 
         cpuLine.data.push({ timestamp: currentLabel, stat: element.cpuused.split('%')[0] })
