@@ -3163,7 +3163,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         // stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <=
             // static max
-            s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " cant be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
+            s_logger.warn("dynamic max " + toHumanReadableSize(dynamicMaxRam) + " can't be greater than static max " + toHumanReadableSize(staticMax) + ", this can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
