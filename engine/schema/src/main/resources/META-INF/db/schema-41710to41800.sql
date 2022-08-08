@@ -23,3 +23,7 @@
 UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
+
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+ADD cidr_list VARCHAR(4096);
