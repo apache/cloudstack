@@ -66,7 +66,7 @@ class TestNetworkPermissions(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.template = get_suitable_test_template(
             cls.apiclient,
             cls.zone.id,
