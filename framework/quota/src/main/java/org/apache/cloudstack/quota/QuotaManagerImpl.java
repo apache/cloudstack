@@ -91,8 +91,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private TimeZone _usageTimezone;
     private int _aggregationDuration = 0;
 
-    static final BigDecimal s_hoursInMonth = new BigDecimal(30 * 24);
-    static final BigDecimal GiB_DECIMAL = new BigDecimal(ByteScaleUtils.GiB);
+    static final BigDecimal s_hoursInMonth = BigDecimal.valueOf(30 * 24);
+    static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
     List<Account.Type> lockablesAccountTypes = Arrays.asList(Account.Type.NORMAL, Account.Type.DOMAIN_ADMIN);
 
     List<Integer> usageTypesToAvoidCalculation = Arrays.asList(UsageTypes.VM_DISK_IO_READ, UsageTypes.VM_DISK_IO_WRITE, UsageTypes.VM_DISK_BYTES_READ,
@@ -529,7 +529,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected BigDecimal getUsageValueAccordingToUsageUnitType(UsageVO usageRecord, BigDecimal aggregatedQuotaTariffsValue, String quotaUnit) {
-        BigDecimal rawUsage = new BigDecimal(usageRecord.getRawUsage());
+        BigDecimal rawUsage = BigDecimal.valueOf(usageRecord.getRawUsage());
         BigDecimal costPerHour = aggregatedQuotaTariffsValue.divide(s_hoursInMonth, 8, RoundingMode.HALF_EVEN);
 
         switch (UsageUnitTypes.getByDescription(quotaUnit)) {
@@ -543,7 +543,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 return rawUsageInGb.multiply(aggregatedQuotaTariffsValue);
 
             case GB_MONTH:
-                BigDecimal gbInUse = new BigDecimal(usageRecord.getSize()).divide(GiB_DECIMAL, 8, RoundingMode.HALF_EVEN);
+                BigDecimal gbInUse = BigDecimal.valueOf(usageRecord.getSize()).divide(GiB_DECIMAL, 8, RoundingMode.HALF_EVEN);
                 return rawUsage.multiply(costPerHour).multiply(gbInUse);
 
             default:
