@@ -24,6 +24,7 @@ UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
 
+
 -- Idempotent ADD COLUMN
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
@@ -219,3 +220,8 @@ WHERE
         `service_offering`.`state`='Active'
 GROUP BY
     `service_offering`.`id`;
+
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+ADD cidr_list VARCHAR(4096);
+

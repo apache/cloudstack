@@ -314,7 +314,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             command.add("unlink /var/www/html/userdata/" + extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
             result = command.execute();
             if (result != null) {
-                // FIXME - Ideally should bail out if you cant delete symlink. Not doing it right now.
+                // FIXME - Ideally should bail out if you can't delete symlink. Not doing it right now.
                 // This is because the ssvm might already be destroyed and the symlinks do not exist.
                 s_logger.warn("Error in deleting symlink :" + result);
             }

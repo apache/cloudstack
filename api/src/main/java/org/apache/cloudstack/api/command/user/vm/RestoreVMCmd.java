@@ -107,7 +107,7 @@ public class RestoreVMCmd extends BaseAsyncCmd implements UserCmd {
         return templateId;
     }
 
-    // TODO - Remove vmid param and make it "id" in 5.0 so that we dont have two getters
+    // TODO - Remove vmid param and make it "id" in 5.0 so that we don't have two getters
     public Long getId() {
         return getVmId();
     }
