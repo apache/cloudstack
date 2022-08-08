@@ -487,9 +487,9 @@ export default {
     },
     handleEntityRule () {
       if (this.form.samlEnable) {
-        this.rules.push({
-          samlEntity: [{ required: true, message: `${this.$t('message.error.select')}` }]
-        })
+        this.rules.samlEntity = [{ required: true, message: `${this.$t('message.error.select')}` }]
+      } else {
+        delete this.rules.samlEntity
       }
     }
   }
