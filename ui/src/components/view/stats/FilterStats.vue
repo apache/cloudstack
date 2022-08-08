@@ -106,6 +106,8 @@ export default {
       if (this.showAllDataAlert) {
         this.showStartDate = false
         this.showEndDate = false
+        this.form.startDate = null
+        this.form.endDate = null
       } else {
         this.showStartDate = true
         this.showEndDate = true
