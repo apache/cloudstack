@@ -164,7 +164,7 @@
         <cs.mysql.version>8.0.19</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
-        <cs.opensaml.version>2.6.4</cs.opensaml.version>
+        <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
         <cs.java-linstor.version>0.3.0</cs.java-linstor.version>
         <cs.reflections.version>0.9.12</cs.reflections.version>
