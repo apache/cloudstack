@@ -4048,15 +4048,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 profile.setDefaultNic(true);
                 if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
                     if ((userData != null) && (!userData.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as UserData is provided while deploying the VM");
                     }
 
                     if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as SSH keypair is provided while deploying the VM");
                     }
 
                     if (template.isEnablePassword()) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                        throwInvalidParemeterExceptionForNet(network, String.format("Unable to deploy VM as template %d is password enabled", template.getId()));
                     }
                 }
             }
@@ -4165,6 +4165,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
         return vm;
+    }
+
+    private static void throwInvalidParemeterExceptionForNet(NetworkVO network, String reason) {
+        String message = String.format("%s, but there is no support for %s service in the default network %d."
+                , reason
+                , Service.UserData.getName()
+                , network.getId());
+        throw new InvalidParameterValueException(message);
     }
 
     private long verifyAndGetDiskSize(DiskOfferingVO diskOffering, Long diskSize) {
