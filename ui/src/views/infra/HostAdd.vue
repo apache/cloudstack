@@ -244,12 +244,14 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import DedicateDomain from '../../components/view/DedicateDomain'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'HostAdd',
+  mixins: [mixinForm],
   components: {
     DedicateDomain,
     ResourceIcon,
@@ -416,7 +418,8 @@ export default {
     handleSubmitForm () {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         if (values.hostname.indexOf('http://') === -1) {
           this.url = `http://${values.hostname}`

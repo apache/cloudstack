@@ -32,7 +32,7 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.network.GuestVlan;
+import com.cloud.network.GuestVlanRange;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -124,10 +124,10 @@ public class ListDedicatedGuestVlanRangesCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends GuestVlan>, Integer> vlans = _networkService.listDedicatedGuestVlanRanges(this);
+        Pair<List<? extends GuestVlanRange>, Integer> vlans = _networkService.listDedicatedGuestVlanRanges(this);
         ListResponse<GuestVlanRangeResponse> response = new ListResponse<GuestVlanRangeResponse>();
         List<GuestVlanRangeResponse> guestVlanResponses = new ArrayList<GuestVlanRangeResponse>();
-        for (GuestVlan vlan : vlans.first()) {
+        for (GuestVlanRange vlan : vlans.first()) {
             GuestVlanRangeResponse guestVlanResponse = _responseGenerator.createDedicatedGuestVlanRangeResponse(vlan);
             guestVlanResponse.setObjectName("dedicatedguestvlanrange");
             guestVlanResponses.add(guestVlanResponse);

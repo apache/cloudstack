@@ -21,12 +21,40 @@ package com.cloud.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
 
 public class FileUtil {
+    private static final Logger s_logger = Logger.getLogger(FileUtil.class);
 
     public static void copyfile(File source, File destination) throws IOException {
         FileUtils.copyFile(source, destination);
+    }
+
+    public static void scpPatchFiles(String controlIp, String destPath, int sshPort, File pemFile, String[] files, String basePath) {
+        String finalErrMsg = "";
+        List<String> srcFiles = Arrays.asList(files);
+        srcFiles = srcFiles.stream()
+                .map(file -> basePath + file) // Using Lambda notation to update the entries
+                .collect(Collectors.toList());
+        String[] newSrcFiles = srcFiles.toArray(new String[0]);
+        for (int retries = 3; retries > 0; retries--) {
+            try {
+                SshHelper.scpTo(controlIp, sshPort, "root", pemFile, null,
+                        destPath, newSrcFiles, "0755");
+                return;
+            } catch (Exception e) {
+                finalErrMsg = String.format("Failed to scp files to system VM due to, %s",
+                        e.getCause() != null ? e.getCause().getLocalizedMessage() : e.getLocalizedMessage());
+                s_logger.error(finalErrMsg);
+            }
+        }
+        throw new CloudRuntimeException(finalErrMsg);
     }
 }

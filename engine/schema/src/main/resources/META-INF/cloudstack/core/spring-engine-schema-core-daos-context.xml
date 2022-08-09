@@ -108,6 +108,7 @@
   <bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
   <bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
   <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
+  <bean id="ip6GuestPrefixSubnetNetworkMapDaoImpl" class="com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDaoImpl" />
   <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
   <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl" />
   <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />
@@ -118,6 +119,7 @@
   <bean id="inlineLoadBalancerNicMapDaoImpl" class="com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl" />
   <bean id="instanceGroupDaoImpl" class="com.cloud.vm.dao.InstanceGroupDaoImpl" />
   <bean id="instanceGroupJoinDaoImpl" class="com.cloud.api.query.dao.InstanceGroupJoinDaoImpl" />
+  <bean id="managementServerJoinDaoImpl" class="com.cloud.api.query.dao.ManagementServerJoinDaoImpl" />
   <bean id="instanceGroupVMMapDaoImpl" class="com.cloud.vm.dao.InstanceGroupVMMapDaoImpl" />
   <bean id="itWorkDaoImpl" class="com.cloud.vm.ItWorkDaoImpl" />
   <bean id="lBHealthCheckPolicyDaoImpl" class="com.cloud.network.dao.LBHealthCheckPolicyDaoImpl" />
@@ -128,6 +130,7 @@
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
+  <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />
   <bean id="networkACLItemDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLItemDaoImpl" />
@@ -197,6 +200,7 @@
   <bean id="snapshotScheduleDaoImpl" class="com.cloud.storage.dao.SnapshotScheduleDaoImpl" />
   <bean id="sslCertDao" class="com.cloud.network.dao.SslCertDaoImpl" />
   <bean id="staticRouteDaoImpl" class="com.cloud.network.vpc.dao.StaticRouteDaoImpl" />
+  <bean id="dataCenterGuestIpv6PrefixDaoImpl" class="com.cloud.dc.dao.DataCenterGuestIpv6PrefixDaoImpl" />
   <bean id="storageNetworkIpAddressDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpAddressDaoImpl" />
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
   <bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
@@ -239,6 +243,7 @@
   <bean id="vMRootDiskTagDaoImpl" class="org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMRootDiskTagDaoImpl" />
   <bean id="vMSnapshotDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl" />
   <bean id="vMSnapshotDetailsDaoImpl" class="com.cloud.vm.snapshot.dao.VMSnapshotDetailsDaoImpl" />
+  <bean id="vmStatsDaoImpl" class="com.cloud.vm.dao.VmStatsDaoImpl" />
   <bean id="vMTemplateDetailsDaoImpl" class="com.cloud.storage.dao.VMTemplateDetailsDaoImpl" />
   <bean id="vMTemplatePoolDaoImpl" class="com.cloud.storage.dao.VMTemplatePoolDaoImpl" />
   <bean id="vMTemplateZoneDaoImpl" class="com.cloud.storage.dao.VMTemplateZoneDaoImpl" />
@@ -295,4 +300,5 @@
   <bean id="VsphereStoragePolicyDaoImpl" class="com.cloud.dc.dao.VsphereStoragePolicyDaoImpl" />
   <bean id="TemplateDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDaoImpl" />
   <bean id="UserVmDeployAsIsDetailsDaoImpl" class="com.cloud.deployasis.dao.UserVmDeployAsIsDetailsDaoImpl" />
+  <bean id="NetworkPermissionDaoImpl" class="org.apache.cloudstack.network.dao.NetworkPermissionDaoImpl" />
 </beans>

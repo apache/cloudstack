@@ -167,6 +167,22 @@
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
           </a-form-item>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startipv4" ref="startipv4">
+            <template #label>
+              <tooltip-label :title="$t('label.startipv4')" :tooltip="apiParams.startip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.startipv4"
+              :placeholder="apiParams.startip.description"/>
+          </a-form-item>
+          <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="endipv4" ref="endipv4">
+            <template #label>
+              <tooltip-label :title="$t('label.endipv4')" :tooltip="apiParams.endip.description"/>
+            </template>
+            <a-input
+              v-model:value="form.endipv4"
+              :placeholder="apiParams.endip.description"/>
+          </a-form-item>
           <a-form-item
             ref="networkdomain"
             name="networkdomain"
@@ -214,11 +230,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -358,15 +376,19 @@ export default {
       } else { // from guest network section
         var params = {}
         this.networkOfferingLoading = true
-        api('listVPCs', params).then(json => {
-          const listVPCs = json.listvpcsresponse.vpc
-          var vpcAvailable = this.arrayHasItems(listVPCs)
-          if (vpcAvailable === false) {
-            this.fetchNetworkOfferingData(false)
-          } else {
-            this.fetchNetworkOfferingData()
-          }
-        })
+        if ('listVPCs' in this.$store.getters.apis) {
+          api('listVPCs', params).then(json => {
+            const listVPCs = json.listvpcsresponse.vpc
+            var vpcAvailable = this.arrayHasItems(listVPCs)
+            if (vpcAvailable === false) {
+              this.fetchNetworkOfferingData(false)
+            } else {
+              this.fetchNetworkOfferingData()
+            }
+          })
+        } else {
+          this.fetchNetworkOfferingData(false)
+        }
       }
     },
     fetchNetworkOfferingData (forVpc) {
@@ -427,7 +449,8 @@ export default {
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -440,6 +463,12 @@ export default {
         }
         if (this.isValidTextValueForKey(values, 'netmask')) {
           params.netmask = values.netmask
+        }
+        if (this.isValidTextValueForKey(values, 'startipv4')) {
+          params.startip = values.startipv4
+        }
+        if (this.isValidTextValueForKey(values, 'endipv4')) {
+          params.endip = values.endipv4
         }
         if (this.isValidTextValueForKey(values, 'externalid')) {
           params.externalid = values.externalid

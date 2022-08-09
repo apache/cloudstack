@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -75,6 +76,16 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     public long getEntityOwnerId() {
         Account caller = CallContext.current().getCallingAccount();
         return caller.getAccountId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return id;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.NetworkAclItem;
     }
 
     @Override

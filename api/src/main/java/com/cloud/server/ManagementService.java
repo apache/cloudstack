@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.DestroySystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ListSystemVMsCmd;
+import org.apache.cloudstack.api.command.admin.systemvm.PatchSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.RebootSystemVmCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.ScaleSystemVMCmd;
 import org.apache.cloudstack.api.command.admin.systemvm.StopSystemVmCmd;
@@ -91,7 +92,7 @@ public interface ManagementService {
     static final String Name = "management-server";
 
     /**
-     * returns the a map of the names/values in the configuraton table
+     * returns the a map of the names/values in the configuration table
      *
      * @return map of configuration name/values
      */
@@ -404,7 +405,7 @@ public interface ManagementService {
      */
     Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolume(Long volumeId);
 
-    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool);
+    Pair<List<? extends StoragePool>, List<? extends StoragePool>> listStoragePoolsForMigrationOfVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean keepSourceStoragePool, boolean bypassStorageTypeCheck);
 
     String[] listEventTypes();
 
@@ -428,5 +429,6 @@ public interface ManagementService {
 
     void cleanupVMReservations();
 
+    Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
 
 }

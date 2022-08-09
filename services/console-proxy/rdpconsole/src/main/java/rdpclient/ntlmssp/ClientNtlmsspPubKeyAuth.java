@@ -529,7 +529,7 @@ public class ClientNtlmsspPubKeyAuth extends OneTimeSwitch implements NtlmConsta
 
                 (byte)0x03, (byte)0x82, (byte)0x01, (byte)0x0f, // Bit string, length: 271 bytes
 
-                (byte)0x00, // Pading
+                (byte)0x00, // Padding
                 (byte)0x30, (byte)0x82, (byte)0x01, (byte)0x0a, // Sequence
                 (byte)0x02, (byte)0x82, (byte)0x01, (byte)0x01, // Integer, length: 257 bytes
 

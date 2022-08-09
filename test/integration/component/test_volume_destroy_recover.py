@@ -353,13 +353,13 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
 
             Steps:
             # 1. create vm without data disk, resource count increases.
-            # 2. restore vm. resource count no changes. 
+            # 2. restore vm. resource count no changes.
             # 3. check old root disk , should be Destroy state
             # 4. recover old root disk. resource count increases.
             # 5. delete old root disk . resource count decreases.
             # 6. destroy vm (expunge=True). resource count decreased with size of root disk
         """
-        
+
         # Create vm
         try:
             virtual_machine_3 = VirtualMachine.create(
@@ -379,7 +379,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
         self.volumeTotal = self.volumeTotal + 1
         self.verify_resource_count_primary_storage(self.expectedCount, self.volumeTotal);
 
-        # Get id of root disk 
+        # Get id of root disk
         root_volumes_list = Volume.list(
             self.apiclient,
             virtualmachineid=virtual_machine_3.id,
@@ -440,7 +440,7 @@ class TestVolumeDestroyRecover(cloudstackTestCase):
             # 5. destroy volume (expunge = false), Exception happened. resource count no changes
             # 6. destroy volume (expunge = true). volume is not found. resource count no changes.
         """
-        
+
         # Create vm
         try:
             virtual_machine_4 = VirtualMachine.create(

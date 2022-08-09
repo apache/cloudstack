@@ -141,9 +141,9 @@
           </template>
           <a-input v-model:value="form.name" :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item name="protocol" ref="protocol" v-if="form.scope === 'cluster' || form.scope === 'host'">
+        <a-form-item name="protocol" ref="protocol" v-if="form.scope === 'zone' || form.scope === 'cluster' || form.scope === 'host'">
           <template #label>
-            <tooltip-label :title="$t('label.clusterid')" :tooltip="apiParams.clusterid.description"/>
+            <tooltip-label :title="$t('label.protocol')" :tooltip="$t('message.protocol.description')"/>
           </template>
           <a-select
             v-model:value="form.protocol"
@@ -209,24 +209,26 @@
             <a-input v-model:value="form.vCenterDataStore" :placeholder="$t('message.datastore.description')"/>
           </a-form-item>
         </div>
-        <a-form-item name="provider" ref="provider">
-          <template #label>
-            <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
-          </template>
-          <a-select
-            v-model:value="form.provider"
-            @change="updateProviderAndProtocol"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="apiParams.provider.description">
-            <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
-              {{ provider }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
+        <div v-if="form.protocol !== 'Linstor'">
+          <a-form-item name="provider" ref="provider">
+            <template #label>
+              <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+            </template>
+            <a-select
+              v-model:value="form.provider"
+              @change="updateProviderAndProtocol"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :placeholder="apiParams.provider.description">
+              <a-select-option :value="provider" v-for="(provider,idx) in providers" :key="idx">
+                {{ provider }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+        </div>
         <div v-if="form.provider !== 'DefaultPrimary' && form.provider !== 'PowerFlex' && form.provider !== 'Linstor'">
           <a-form-item name="managed" ref="managed">
             <template #label>
@@ -320,11 +322,6 @@
           <a-select
             mode="tags"
             v-model:value="selectedTags"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
             :placeholder="apiParams.tags.description">
             <a-select-option v-for="tag in storageTags" :key="tag.name">{{ tag.name }}</a-select-option>
           </a-select>
@@ -343,11 +340,13 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import _ from 'lodash'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddPrimaryStorage',
+  mixins: [mixinForm],
   components: {
     TooltipLabel,
     ResourceIcon
@@ -512,7 +511,9 @@ export default {
       } else {
         this.protocols = ['nfs']
       }
-      this.form.protocol = this.protocols[0]
+      if (!value) {
+        this.form.protocol = this.protocols[0]
+      }
     },
     nfsURL (server, path) {
       var url
@@ -640,7 +641,7 @@ export default {
         this.protocols = ['custom']
         this.form.protocol = 'custom'
       } else {
-        this.fetchHypervisor(null)
+        this.fetchHypervisor(value)
       }
     },
     closeModal () {
@@ -660,7 +661,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           scope: values.scope,
           zoneid: values.zone,

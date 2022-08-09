@@ -151,10 +151,12 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import store from '@/store'
 import { axios } from '../../utils/request'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 
 export default {
   name: 'RegisterIso',
+  mixins: [mixinForm],
   props: {
     resource: {
       type: Object,
@@ -230,7 +232,9 @@ export default {
       }
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
         this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
@@ -308,7 +312,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         const params = {}
         for (const key in values) {
           const input = values[key]

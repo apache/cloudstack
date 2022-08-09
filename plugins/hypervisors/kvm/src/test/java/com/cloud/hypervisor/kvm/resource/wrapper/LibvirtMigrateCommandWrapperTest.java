@@ -571,16 +571,16 @@ public class LibvirtMigrateCommandWrapperTest {
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(fullfile, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(fullfile, targetIp, null);
         assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
     }
 
     @Test
-    public void testReplaceIpForVNCInDesc() {
+    public void testReplaceIpAndPasswordForVNCInDesc() {
         final String xmlDesc =
                 "<domain type='kvm' id='3'>" +
                 "  <devices>" +
-                "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>" +
+                "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1' passwd='123456789012345'>" +
                 "      <listen type='address' address='10.10.10.1'/>" +
                 "    </graphics>" +
                 "  </devices>" +
@@ -588,22 +588,23 @@ public class LibvirtMigrateCommandWrapperTest {
         final String expectedXmlDesc =
                 "<domain type='kvm' id='3'>" +
                 "  <devices>" +
-                "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.10'>" +
+                "    <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.10' passwd='12345678'>" +
                 "      <listen type='address' address='10.10.10.10'/>" +
                 "    </graphics>" +
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "10.10.10.10";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String password = "12345678";
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password);
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
     @Test
-    public void testReplaceFqdnForVNCInDesc() {
+    public void testReplaceFqdnAndPasswordForVNCInDesc() {
         final String xmlDesc =
                 "<domain type='kvm' id='3'>" +
                 "  <devices>" +
-                "    <graphics type='vnc' port='5900' autoport='yes' listen='localhost.local'>" +
+                "    <graphics type='vnc' port='5900' autoport='yes' listen='localhost.local' passwd='123456789012345'>" +
                 "      <listen type='address' address='localhost.local'/>" +
                 "    </graphics>" +
                 "  </devices>" +
@@ -611,13 +612,14 @@ public class LibvirtMigrateCommandWrapperTest {
         final String expectedXmlDesc =
                 "<domain type='kvm' id='3'>" +
                 "  <devices>" +
-                "    <graphics type='vnc' port='5900' autoport='yes' listen='localhost.localdomain'>" +
+                "    <graphics type='vnc' port='5900' autoport='yes' listen='localhost.localdomain' passwd='12345678'>" +
                 "      <listen type='address' address='localhost.localdomain'/>" +
                 "    </graphics>" +
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "localhost.localdomain";
-        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String password = "12345678";
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, targetIp, password);
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
@@ -789,5 +791,4 @@ public class LibvirtMigrateCommandWrapperTest {
         Assert.assertTrue(replaced.contains("csdpdk-7"));
         Assert.assertFalse(replaced.contains("csdpdk-1"));
     }
-
 }

@@ -27,4 +27,5 @@ import com.cloud.utils.db.GenericDao;
 public interface VpcOfferingDetailsDao extends GenericDao<VpcOfferingDetailsVO, Long>, ResourceDetailsDao<VpcOfferingDetailsVO> {
     List<Long> findDomainIds(final long resourceId);
     List<Long> findZoneIds(final long resourceId);
+    String getDetail(long offeringId, String detailName);
 }

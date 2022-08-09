@@ -31,6 +31,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.LoadBalancerTO;
@@ -1011,9 +1013,9 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
 
-            if (vm.getAccountId() != loadBalancer.getAccountId()) {
-                throw new PermissionDeniedException("Cannot add virtual machines that do not belong to the same owner.");
-            }
+            Account vmOwner = _accountDao.findById(vm.getAccountId());
+            Network network = _networkDao.findById(loadBalancer.getNetworkId());
+            _accountMgr.checkAccess(vmOwner, SecurityChecker.AccessType.UseEntry, false, network);
 
             // Let's check to make sure the vm has a nic in the same network as
             // the load balancing rule.
@@ -2104,6 +2106,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO lbBackup = _lbDao.findById(lbRuleId);
         String customId = cmd.getCustomId();
         Boolean forDisplay = cmd.getDisplay();
+        String lbProtocol = cmd.getLbProtocol();
 
         if (lb == null) {
             throw new InvalidParameterValueException("Unable to find lb rule by id=" + lbRuleId);
@@ -2130,6 +2133,10 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         if (forDisplay != null) {
             lb.setDisplay(forDisplay);
+        }
+
+        if (StringUtils.isNotBlank(lbProtocol)) {
+            lb.setLbProtocol(lbProtocol);
         }
 
         // Validate rule in LB provider

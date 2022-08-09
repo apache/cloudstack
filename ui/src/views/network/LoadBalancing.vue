@@ -105,8 +105,9 @@
         </a-button>
       </template>
       <template #add="{record}">
-        <a-button type="primary" icon="plus-outlined" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
-          {{ $t('label.add') }}
+        <a-button type="primary" @click="() => { selectedRule = record; handleOpenAddVMModal() }">
+          <template #icon><plus-outlined /></template>
+            {{ $t('label.add') }}
         </a-button>
       </template>
       <template #expandedRowRender="{ record }">
@@ -203,7 +204,7 @@
             <a-input v-model:value="form.value" />
           </a-form-item>
         </div>
-        <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+        <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider />
@@ -494,6 +495,7 @@
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
 import { api } from '@/api'
+import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -501,6 +503,7 @@ import eventBus from '@/config/eventBus'
 
 export default {
   name: 'LoadBalancing',
+  mixins: [mixinForm],
   components: {
     Status,
     TooltipButton,
@@ -772,8 +775,8 @@ export default {
     openTagsModal (id) {
       this.initForm()
       this.rules = {
-        key: [{ required: true, message: this.$t('message.specifiy.tag.key') }],
-        value: [{ required: true, message: this.$t('message.specifiy.tag.value') }]
+        key: [{ required: true, message: this.$t('message.specify.tag.key') }],
+        value: [{ required: true, message: this.$t('message.specify.tag.value') }]
       }
       this.tagsModalLoading = true
       this.tagsModalVisible = true
@@ -797,7 +800,8 @@ export default {
 
       e.preventDefault()
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
 
         api('createTags', {
           'tags[0].key': values.key,
@@ -830,6 +834,8 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.tagsModalLoading = false
       })
     },
     handleDeleteTag (tag) {
@@ -961,7 +967,8 @@ export default {
       this.stickinessModalLoading = true
       e.preventDefault()
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         if (values.methodname === 'none') {
           this.handleDeleteStickinessPolicy()
           return

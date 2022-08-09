@@ -34,7 +34,7 @@ class TestLoadBalance(cloudstackTestCase):
     def setUpClass(cls):
 
         testClient = super(TestLoadBalance, cls).getClsTestClient()
-        cls.apiclient = testClient.getApiClient() 
+        cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
 
         # Get Zone, Domain and templates

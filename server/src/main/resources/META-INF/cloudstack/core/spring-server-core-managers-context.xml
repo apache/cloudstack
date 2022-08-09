@@ -139,6 +139,8 @@
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
 
+    <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
+
     <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
 
     <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >
@@ -196,6 +198,8 @@
         <property name="templateAdapters" value="#{templateAdapterRegistry.registered}" />
     </bean>
 
+    <bean id="snapshotHelper" class="org.apache.cloudstack.snapshot.SnapshotHelper" />
+
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
     
@@ -238,7 +242,7 @@
         class="com.cloud.network.router.NicProfileHelperImpl" />
         
     <bean id="routerDeploymentDefinitionBuilder"
-        class="org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder" />
+        class="org.apache.cloudstack.network.router.deployment.RouterDeploymentDefinitionBuilder" />
 
     <bean id="ApiAsyncJobDispatcher" class="com.cloud.api.ApiAsyncJobDispatcher">
         <property name="name" value="ApiAsyncJobDispatcher" />

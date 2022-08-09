@@ -16,6 +16,18 @@
 // under the License.
 package com.cloud.tags;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.lang3.StringUtils;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.InvalidParameterValueException;
@@ -23,11 +35,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.LBHealthCheckPolicyVO;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.network.as.AutoScaleVmProfileVO;
-
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.security.SecurityGroupRuleVO;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LBStickinessPolicyVO;
 import com.cloud.network.dao.LoadBalancerVO;
@@ -36,6 +43,10 @@ import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRuleVO;
+import com.cloud.network.security.SecurityGroupRuleVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.StaticRouteVO;
@@ -46,12 +57,11 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceTag;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.SnapshotPolicyVO;
-
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -62,16 +72,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 
 public class ResourceManagerUtilImpl implements ResourceManagerUtil {
     public static final Map<ResourceTag.ResourceObjectType, Class<?>> s_typeMap = new HashMap<>();

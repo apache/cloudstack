@@ -120,7 +120,7 @@ write_files:
               fi
               retval=0
               set +e
-              ctr image import "${BINARIES_DIR}/docker/$line"
+              ctr -n k8s.io image import "${BINARIES_DIR}/docker/$line"
               retval=$?
               set -e
               if [ $retval -eq 0 ]; then
@@ -139,6 +139,15 @@ write_files:
           mkdir -p /opt/provider
           cp "${BINARIES_DIR}/provider.yaml" /opt/provider/provider.yaml
         fi
+
+        PAUSE_IMAGE=`ctr -n k8s.io images ls -q | grep "pause" | sort | tail -n 1`
+        echo $PAUSE_IMAGE
+        if [ -n "$PAUSE_IMAGE" ]; then
+          sed -i "s|sandbox_image = .*|sandbox_image = \"$PAUSE_IMAGE\"|g" /etc/containerd/config.toml
+        fi
+        systemctl daemon-reload
+        systemctl restart containerd
+
         umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
         if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
           eject "${iso_drive_path}"
@@ -220,37 +229,26 @@ write_files:
     owner: root:root
     content: |
       #!/bin/bash -e
-      
+
       export registryConfig="\\        [plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors.\"{{registry.url.endpoint}}\"]\n \\         endpoint = [\"{{registry.url}}\"]"
       export registryCredentials="\\      [plugins.\"io.containerd.grpc.v1.cri\".registry.configs.\"{{registry.url.endpoint}}\".auth]\n\tusername = \"{{registry.username}}\" \n\tpassword = \"{{registry.password}}\" \n\tidentitytoken = \"{{registry.token}}\""
-      
+
       echo "creating config file for containerd"
       containerd config default > /etc/containerd/config.toml
       sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry\]/a '"${registryCredentials}"'' /etc/containerd/config.toml
       sed  -i '/\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]/a '"${registryConfig}"'' /etc/containerd/config.toml
-      
+
       echo "Restarting containerd service"
+      systemctl daemon-reload
       systemctl restart containerd
-
-  - path: /etc/systemd/system/setup-kube-system.service
-    permissions: '0755'
-    owner: root:root
-    content: |
-      [Unit]
-      Requires=containerd.service
-      After=containerd.service
-
-      [Service]
-      Type=simple
-      StartLimitInterval=0
-      ExecStart=/opt/bin/setup-kube-system
 
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'
     owner: root:root
     content: |
       [Unit]
-      After=setup-kube-system.service
+      Requires=containerd.service
+      After=containerd.service
 
       [Service]
       Type=simple
@@ -262,7 +260,8 @@ write_files:
 runcmd:
   - chown -R cloud:cloud /home/cloud/.ssh
   - containerd config default > /etc/containerd/config.toml
-  - sed -i '/\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]/a '"\\            SystemdCgroup=true"'' /etc/containerd/config.toml
-  - systemctl restart containerd
-  - [ systemctl, start, setup-kube-system ]
-  - [ systemctl, start, deploy-kube-system ]
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  - until [ -f /opt/bin/setup-kube-system ]; do sleep 5; done
+  - /opt/bin/setup-kube-system
+  - until [ -f /etc/systemd/system/deploy-kube-system.service ]; do sleep 5; done
+  - systemctl start deploy-kube-system

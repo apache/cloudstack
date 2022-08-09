@@ -62,6 +62,7 @@
         <a-form-item name="offeringtype" ref="offeringtype" :label="$t('label.offeringtype')" v-show="!isSystem">
           <a-radio-group
             v-model:value="form.offeringtype"
+            @change="selected => { handleComputeOfferingTypeChange(selected.target.value) }"
             buttonStyle="solid">
             <a-radio-button value="fixed">
               {{ $t('label.fixed') }}
@@ -208,38 +209,6 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="!isSystem && isAdmin()" name="storagetags" ref="storagetags">
-          <template #label>
-            <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
-          </template>
-          <a-select
-            mode="tags"
-            v-model:value="form.storagetags"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :loading="storageTagLoading"
-            :placeholder="apiParams.tags.description"
-            v-if="isAdmin()">
-            <a-select-option v-for="opt in storageTags" :key="opt">
-              {{ opt }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item name="limitcpuuse" ref="limitcpuuse">
-          <template #label>
-            <tooltip-label :title="$t('label.limitcpuuse')" :tooltip="apiParams.limitcpuuse.description"/>
-          </template>
-          <a-switch v-model:checked="form.limitcpuuse" />
-        </a-form-item>
-        <a-form-item name="isvolatile" ref="isvolatile" v-if="!isSystem">
-          <template #label>
-            <tooltip-label :title="$t('label.isvolatile')" :tooltip="apiParams.isvolatile.description"/>
-          </template>
-          <a-switch v-model:checked="form.isvolatile" />
-        </a-form-item>
         <a-form-item name="deploymentplanner" ref="deploymentplanner" v-if="!isSystem && isAdmin()">
           <template #label>
             <tooltip-label :title="$t('label.deploymentplanner')" :tooltip="apiParams.deploymentplanner.description"/>
@@ -371,7 +340,7 @@
         </a-form-item>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
-            {{ $t('label.computeonly.offering') }}
+            <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
           </template>
           <a-switch v-model:checked="form.computeonly" :checked="computeonly" @change="val => { computeonly = val }"/>
         </a-form-item>
@@ -549,7 +518,7 @@
                     showSearch
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
-                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                      return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }"
                     :loading="storageTagLoading"
                     :placeholder="apiParams.tags.description"
@@ -593,7 +562,7 @@
           </span>
           <a-form-item>
             <template #label>
-              <tooltip-label :title="$t('label.diskofferingstrictness')"/>
+              <tooltip-label :title="$t('label.diskofferingstrictness')" :tooltip="apiParams.diskofferingstrictness.description"/>
             </template>
             <a-switch v-model:checked="form.diskofferingstrictness" :checked="diskofferingstrictness" @change="val => { diskofferingstrictness = val }"/>
           </a-form-item>
@@ -612,11 +581,13 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import AddDiskOffering from '@/views/offering/AddDiskOffering'
 import { isAdmin } from '@/role'
+import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddServiceOffering',
+  mixins: [mixinForm],
   components: {
     AddDiskOffering,
     ResourceIcon,
@@ -836,7 +807,9 @@ export default {
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
       })
@@ -927,7 +900,8 @@ export default {
       e.preventDefault()
       if (this.loading) return
       this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
+        const formRaw = toRaw(this.form)
+        const values = this.handleRemoveFields(formRaw)
         var params = {
           issystem: this.isSystem,
           name: values.name,

@@ -1579,7 +1579,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         if retry == 0:
             self.fail("New router creation taking too long, timed out")
 
-    def wait_untill_router_stabilises(self):
+    def wait_until_router_stabilises(self):
         retry=4
         while retry > 0:
             routers = Router.list(
@@ -1588,7 +1588,7 @@ class TestRvRRedundancy(cloudstackTestCase):
                 listall=True
             )
             retry = retry-1
-            self.info("waiting untill state of the routers is stable")
+            self.info("waiting until state of the routers is stable")
             if routers[0].redundantstate != 'UNKNOWN' and routers[1].redundantstate != 'UNKNOWN':
                 return
             elif retry==0:
@@ -1610,7 +1610,7 @@ class TestRvRRedundancy(cloudstackTestCase):
         #clean up the network to make sure it is in proper state.
         self.network.restart(self.apiclient,cleanup=True)
         time.sleep(self.testdata["sleep"])
-        self.wait_untill_router_stabilises()
+        self.wait_until_router_stabilises()
         old_primary_router, old_backup_router = self.get_primary_and_backupRouter()
         self.info("old_primary_router:"+old_primary_router.name+" old_backup_router"+old_backup_router.name)
         #chek if the network is in correct state

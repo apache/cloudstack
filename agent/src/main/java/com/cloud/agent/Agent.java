@@ -457,7 +457,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send reques: " + request.toString());
+                s_logger.warn("Unable to send request: " + request.toString());
             }
         }
     }
@@ -467,7 +467,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         try {
             addr = InetAddress.getLocalHost();
         } catch (final UnknownHostException e) {
-            s_logger.warn("unknow host? ", e);
+            s_logger.warn("unknown host? ", e);
             throw new CloudRuntimeException("Cannot get local IP address");
         }
 
@@ -568,7 +568,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             return;
         }
 
-        s_logger.info("Proccess agent startup answer, agent id = " + startup.getHostId());
+        s_logger.info("Process agent startup answer, agent id = " + startup.getHostId());
 
         setId(startup.getHostId());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
@@ -763,8 +763,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new CloudRuntimeException("Unable to save received agent client and ca certificates", e);
         }
 
+        String ksPassphrase = _shell.getPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
         Script script = new Script(_keystoreCertImportPath, 300000, s_logger);
         script.add(agentFile.getAbsolutePath());
+        script.add(ksPassphrase);
         script.add(keyStoreFile);
         script.add(KeyStoreUtils.AGENT_MODE);
         script.add(certFile);
@@ -952,7 +954,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             try {
                 _link.send(request.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to post agent control reques: " + request.toString());
+                s_logger.warn("Unable to post agent control request: " + request.toString());
                 throw new AgentControlChannelException("Unable to post agent control request due to " + e.getMessage());
             }
         } else {

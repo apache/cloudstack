@@ -20,6 +20,7 @@
 package com.cloud.agent.api;
 
 import java.io.File;
+import java.util.Map;
 import java.util.UUID;
 
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -32,11 +33,17 @@ public class ModifyStoragePoolCommand extends Command {
     private StorageFilerTO pool;
     private String localPath;
     private String storagePath;
+    private Map<String, String> details;
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
         this.add = add;
         this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
+    }
+
+    public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath, Map<String, String> details) {
+        this(add, pool, localPath);
+        this.details = details;
     }
 
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
@@ -65,6 +72,14 @@ public class ModifyStoragePoolCommand extends Command {
 
     public String getStoragePath() {
         return storagePath;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
     }
 
     @Override

@@ -57,7 +57,9 @@ const user = {
     domainStore: {},
     darkMode: false,
     defaultListViewPageSize: 20,
-    countNotify: 0
+    countNotify: 0,
+    logoutFlag: false,
+    customColumns: {}
   },
 
   mutations: {
@@ -126,6 +128,9 @@ const user = {
     SET_CUSTOM_COLUMNS: (state, customColumns) => {
       vueProps.$localStorage.set(CUSTOM_COLUMNS, customColumns)
       state.customColumns = customColumns
+    },
+    SET_LOGOUT_FLAG: (state, flag) => {
+      state.logoutFlag = flag
     }
   },
 
@@ -166,6 +171,7 @@ const user = {
           commit('SET_LDAP', {})
           commit('SET_CLOUDIAN', {})
           commit('SET_DOMAIN_STORE', {})
+          commit('SET_LOGOUT_FLAG', false)
 
           notification.destroy()
 
@@ -293,6 +299,7 @@ const user = {
         commit('SET_CLOUDIAN', {})
         commit('RESET_THEME')
         commit('SET_DOMAIN_STORE', {})
+        commit('SET_LOGOUT_FLAG', true)
         vueProps.$localStorage.remove(CURRENT_PROJECT)
         vueProps.$localStorage.remove(ACCESS_TOKEN)
         vueProps.$localStorage.remove(HEADER_NOTICES)

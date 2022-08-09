@@ -44,7 +44,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
         IscsiAdmStoragePool storagePool = new IscsiAdmStoragePool(uuid, host, port, storagePoolType, this);
 
         MapStorageUuidToStoragePool.put(uuid, storagePool);
@@ -428,17 +428,17 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk createDiskFromSnapshot(KVMPhysicalDisk snapshot, String snapshotName, String name, KVMStoragePool destPool, int timeout) {
-        throw new UnsupportedOperationException("Creating a disk from a snapshot is not supported in this configuration.");
-    }
-
-    @Override
     public boolean refresh(KVMStoragePool pool) {
         return true;
     }
 
     @Override
     public boolean createFolder(String uuid, String path) {
+        return createFolder(uuid, path, null);
+    }
+
+    @Override
+    public boolean createFolder(String uuid, String path, String localPath) {
         throw new UnsupportedOperationException("A folder cannot be created in this configuration.");
     }
 

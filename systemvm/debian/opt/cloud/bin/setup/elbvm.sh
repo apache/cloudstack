@@ -25,19 +25,10 @@ elbvm_svcs() {
 
 setup_elbvm() {
   log_it "Setting up Elastic Load Balancer system vm"
-  setup_common eth0 eth1
   sed -i  /$NAME/d /etc/hosts
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
-
-  cp /etc/iptables/iptables-elbvm /etc/iptables/rules.v4
-  if [ "$SSHONGUEST" == "true" ]
-  then
-    setup_sshd $ETH0_IP "eth0"
-  else
-    setup_sshd $ETH1_IP "eth1"
-  fi
 
   enable_fwding 0
   enable_irqbalance 0

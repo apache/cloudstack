@@ -37,7 +37,7 @@ import time
 
 _multiprocess_shared_ = True
 class TestListIdsParams(cloudstackTestCase):
-    
+
     @classmethod
     def setUpClass(cls):
         testClient = super(TestListIdsParams, cls).getClsTestClient()
@@ -125,7 +125,7 @@ class TestListIdsParams(cloudstackTestCase):
         cls.virtual_machine_2.stop(cls.apiclient)
         cls.virtual_machine_3.stop(cls.apiclient)
 
-        #Get ROOT volumes of 3 VMs        
+        #Get ROOT volumes of 3 VMs
         vm1RootVolumeResponse = Volume.list(
                                             cls.apiclient,
                                             virtualmachineid=cls.virtual_machine_1.id,
@@ -190,11 +190,11 @@ class TestListIdsParams(cloudstackTestCase):
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
-        
+
         cls._cleanup = [
-                        cls.snapshot_1,
-                        cls.snapshot_2,
                         cls.snapshot_3,
+                        cls.snapshot_2,
+                        cls.snapshot_1,
                         cls.account,
                         cls.disk_offering,
                         cls.service_offering

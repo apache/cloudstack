@@ -140,4 +140,9 @@ public class ElastistorHostListener implements HypervisorHostListener {
     public boolean hostRemoved(long hostId, long clusterId) {
         return true;
     }
+
+    @Override
+    public boolean hostEnabled(long hostId) {
+        return true;
+    }
 }

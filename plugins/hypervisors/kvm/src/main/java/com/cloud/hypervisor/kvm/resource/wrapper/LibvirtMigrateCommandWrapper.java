@@ -43,16 +43,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.DpdkTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
-import org.libvirt.DomainJobInfo;
 import org.libvirt.DomainInfo.DomainState;
+import org.libvirt.DomainJobInfo;
 import org.libvirt.LibvirtException;
 import org.libvirt.StorageVol;
 import org.w3c.dom.Document;
@@ -66,6 +65,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
@@ -148,12 +149,16 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
             final String target = command.getDestinationIp();
             xmlDesc = dm.getXMLDesc(xmlFlag);
-            xmlDesc = replaceIpForVNCInDescFile(xmlDesc, target);
+
+            // Limit the VNC password in case the length is greater than 8 characters
+            // Since libvirt version 8 VNC passwords are limited to 8 characters
+            String vncPassword = org.apache.commons.lang3.StringUtils.truncate(to.getVncPassword(), 8);
+            xmlDesc = replaceIpForVNCInDescFileAndNormalizePassword(xmlDesc, target, vncPassword);
 
             String oldIsoVolumePath = getOldVolumePath(disks, vmName);
             String newIsoVolumePath = getNewVolumePathIfDatastoreHasChanged(libvirtComputingResource, conn, to);
             if (newIsoVolumePath != null && !newIsoVolumePath.equals(oldIsoVolumePath)) {
-                s_logger.debug("Editing mount path");
+                s_logger.debug(String.format("Editing mount path of iso from %s to %s", oldIsoVolumePath, newIsoVolumePath));
                 xmlDesc = replaceDiskSourceFile(xmlDesc, newIsoVolumePath, vmName);
             }
             // delete the metadata of vm snapshots before migration
@@ -336,7 +341,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     protected String replaceDpdkInterfaces(String xmlDesc, Map<String, DpdkTO> dpdkPortsMapping) throws TransformerException, ParserConfigurationException, IOException, SAXException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 
@@ -449,9 +454,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      *     </graphics>
      * @param xmlDesc the qemu xml description
      * @param target the ip address to migrate to
+     * @param vncPassword if set, the VNC password truncated to 8 characters
      * @return the new xmlDesc
      */
-    String replaceIpForVNCInDescFile(String xmlDesc, final String target) {
+    String replaceIpForVNCInDescFileAndNormalizePassword(String xmlDesc, final String target, String vncPassword) {
         final int begin = xmlDesc.indexOf(GRAPHICS_ELEM_START);
         if (begin >= 0) {
             final int end = xmlDesc.lastIndexOf(GRAPHICS_ELEM_END) + GRAPHICS_ELEM_END.length();
@@ -459,6 +465,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 String graphElem = xmlDesc.substring(begin, end);
                 graphElem = graphElem.replaceAll("listen='[a-zA-Z0-9\\.]*'", "listen='" + target + "'");
                 graphElem = graphElem.replaceAll("address='[a-zA-Z0-9\\.]*'", "address='" + target + "'");
+                if (org.apache.commons.lang3.StringUtils.isNotBlank(vncPassword)) {
+                    graphElem = graphElem.replaceAll("passwd='([^\\s]+)'", "passwd='" + vncPassword + "'");
+                }
                 xmlDesc = xmlDesc.replaceAll(GRAPHICS_ELEM_START + CONTENTS_WILDCARD + GRAPHICS_ELEM_END, graphElem);
             }
         }
@@ -480,7 +489,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 
@@ -568,7 +577,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
         String newIsoVolumePath = null;
         if (newDisk != null) {
-            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk);
+            newIsoVolumePath = libvirtComputingResource.getVolumePath(conn, newDisk, to.isConfigDriveOnHostCache());
         }
         return newIsoVolumePath;
     }
@@ -626,7 +635,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     private String getXml(Document doc) throws TransformerException {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
         Transformer transformer = transformerFactory.newTransformer();
 
         DOMSource source = new DOMSource(doc);
@@ -642,7 +651,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private String replaceDiskSourceFile(String xmlDesc, String isoPath, String vmName) throws IOException, SAXException, ParserConfigurationException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
         Document doc = docBuilder.parse(in);
 

@@ -54,6 +54,12 @@ export default {
       name: 'limits',
       show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) },
       component: shallowRef(defineAsyncComponent(() => import('@/components/view/ResourceLimitTab.vue')))
+    },
+    {
+      name: 'events',
+      resourceType: 'Project',
+      component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
+      show: () => { return 'listEvents' in store.getters.apis }
     }
   ],
   actions: [
@@ -148,7 +154,7 @@ export default {
       docHelp: 'adminguide/projects.html#suspending-or-deleting-a-project',
       dataView: true,
       show: (record, store) => {
-        return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype)) || record.isCurrentUserProjectAdmin
+        return (['Admin', 'DomainAdmin'].includes(store.userInfo.roletype) || record.isCurrentUserProjectAdmin) && record.id !== store.project.id
       },
       groupAction: true,
       popup: true,

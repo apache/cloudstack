@@ -97,7 +97,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
                 cls.testdata["disk_offering"],
             )
             cls._cleanup.append(cls.disk_offering)
-            #Create VM_1 and  VM_2   
+            #Create VM_1 and  VM_2
             cls.vm_1 = VirtualMachine.create(
                 cls.userapiclient,
                 cls.testdata["small"],
@@ -156,7 +156,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
                     self.apiclient,
                     root_volume[0].id)
 
-               
+
                 self.assertEqual(
                     root_vol_snap.state,
                     "BackedUp",
@@ -182,7 +182,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
                            self.config,
                            self.zone.id,
                            snap.id))
-            
+
             self.account.delete(self.apiclient)
 
             for snap in snaps:
@@ -212,34 +212,34 @@ class TestVolumeSnapshot(cloudstackTestCase):
         """ Test Volume (root) Snapshot
         # 1. Deploy a VM on primary storage and .
         # 2. Take snapshot on root disk
-        # 3. Verify the snapshot's entry in the "snapshots" table 
-                and presence of the corresponding 
+        # 3. Verify the snapshot's entry in the "snapshots" table
+                and presence of the corresponding
                 snapshot on the Secondary Storage
-        # 4. Create Template from the Snapshot and Deploy a 
+        # 4. Create Template from the Snapshot and Deploy a
                 VM using the Template
-        # 5. Log in to the VM from template and make verify 
+        # 5. Log in to the VM from template and make verify
                 the contents of the ROOT disk matches with the snapshot.
-        # 6. Delete Snapshot and Deploy a Linux VM from the 
+        # 6. Delete Snapshot and Deploy a Linux VM from the
              Template and verify the successful deployment of the VM.
-        # 7. Create multiple snapshots on the same volume and 
-                Check the integrity of all the snapshots by creating 
-                a template from the snapshot and deploying a Vm from it 
+        # 7. Create multiple snapshots on the same volume and
+                Check the integrity of all the snapshots by creating
+                a template from the snapshot and deploying a Vm from it
                 and delete one of the snapshots
-        # 8. Verify that the original checksum matches with the checksum 
+        # 8. Verify that the original checksum matches with the checksum
                 of VM's created from remaning snapshots
-        # 9. Make verify the contents of the ROOT disk 
+        # 9. Make verify the contents of the ROOT disk
                 matches with the snapshot
-        # 10.Verify that Snapshot of both DATA and ROOT volume should 
-                succeed when snapshot of Data disk of a VM is taken 
+        # 10.Verify that Snapshot of both DATA and ROOT volume should
+                succeed when snapshot of Data disk of a VM is taken
                 when snapshot of ROOT volume of VM is in progress
-        # 11.Create snapshot of data disk and verify the original checksum 
+        # 11.Create snapshot of data disk and verify the original checksum
                 matches with the volume created from snapshot
-        # 12.Verify that volume's state should not change when snapshot of 
+        # 12.Verify that volume's state should not change when snapshot of
                 a DATA volume is taken that is attached to a VM
-        # 13.Verify that volume's state should not change when snapshot of 
+        # 13.Verify that volume's state should not change when snapshot of
                 a DATA volume is taken that is not attached to a VM
         # 14.Verify that create Snapshot with quiescevm=True should succeed
-        # 15.revertSnapshot() to revert VM to a specified 
+        # 15.revertSnapshot() to revert VM to a specified
                 Volume snapshot for root volume
         """
 
@@ -711,7 +711,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
         vm_from_temp_2.delete(self.apiclient)
 
         # Step 10
-        # Take snapshot of Data disk of a VM , when snapshot of ROOT volume of 
+        # Take snapshot of Data disk of a VM , when snapshot of ROOT volume of
         # VM is in progress
         try:
             self.vm_1.stop(self.apiclient)
@@ -865,7 +865,7 @@ class TestVolumeSnapshot(cloudstackTestCase):
             data_volume_2
         )
 
-        self.vm_1.reboot(self.apiclient)       
+        self.vm_1.reboot(self.apiclient)
         self.vm_1.stop(self.apiclient)
 
         data_vol_snap_1 = Snapshot.create(

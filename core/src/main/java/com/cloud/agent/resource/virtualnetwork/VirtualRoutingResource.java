@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
@@ -174,11 +175,12 @@ public class VirtualRoutingResource {
     }
 
     private Answer execute(final SetupCertificateCommand cmd) {
-        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties %s " +
                         "/usr/local/cloud/systemvm/conf/%s %s " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\"",
+                PasswordGenerator.generateRandomPassword(16),
                 KeyStoreUtils.KS_FILENAME,
                 KeyStoreUtils.SSH_MODE,
                 KeyStoreUtils.CERT_FILENAME,
@@ -581,5 +583,24 @@ public class VirtualRoutingResource {
             }
         }
         return new Answer(cmd, false, "Fail to recognize aggregation action " + action.toString());
+    }
+
+    public boolean isSystemVMSetup(String vmName, String controlIp) throws InterruptedException {
+        if (vmName.startsWith("s-") || vmName.startsWith("v-")) {
+            ScriptConfigItem scriptConfigItem = new ScriptConfigItem(VRScripts.SYSTEM_VM_PATCHED, "/opt/cloud/bin/keystore*");
+            ExecutionResult result = new ExecutionResult(false, "");
+            int retries = 0;
+            while (!result.isSuccess() && retries < 600) {
+                result = applyConfigToVR(controlIp, scriptConfigItem, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
+                if (result.isSuccess()) {
+                    return true;
+                }
+
+                retries++;
+                Thread.sleep(1000);
+            }
+            return false;
+        }
+        return true;
     }
 }

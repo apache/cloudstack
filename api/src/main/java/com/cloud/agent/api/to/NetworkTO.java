@@ -39,6 +39,7 @@ public class NetworkTO {
     protected boolean isSecurityGroupEnabled;
     protected String name;
     protected String ip6address;
+    protected String ip6gateway;
     protected String ip6cidr;
 
     public NetworkTO() {
@@ -66,6 +67,10 @@ public class NetworkTO {
 
     public void setIp6Address(String addr) {
         this.ip6address = addr;
+    }
+
+    public void setIp6Gateway(String gateway) {
+        this.ip6gateway = gateway;
     }
 
     public void setIp6Cidr(String cidr) {
@@ -159,6 +164,10 @@ public class NetworkTO {
 
     public String getIp6Address() {
         return ip6address;
+    }
+
+    public String getIp6Gateway() {
+        return ip6gateway;
     }
 
     public String getIp6Cidr() {

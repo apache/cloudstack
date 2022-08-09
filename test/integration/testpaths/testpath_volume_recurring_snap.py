@@ -151,18 +151,18 @@ class TestVolumeRecurringSnapshot(cloudstackTestCase):
     @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_01_volume_snapshot(self):
         """ Test Volume (root) Snapshot
-        # 1. Create Hourly, Daily,Weekly recurring snapshot policy for ROOT disk and 
+        # 1. Create Hourly, Daily,Weekly recurring snapshot policy for ROOT disk and
                     Verify the presence of the corresponding snapshots on the Secondary Storage
         # 2. Delete the snapshot policy and verify the entry as Destroyed in snapshot_schedule
         # 3. Verify that maxsnaps should not consider manual snapshots for deletion
         # 4. Snapshot policy should reflect the correct timezone
         # 5. Verify that listSnapshotPolicies() should return all snapshot policies
                 that belong to the account (both manual and recurring snapshots)
-        # 6. Verify that listSnapshotPolicies() should not return snapshot 
+        # 6. Verify that listSnapshotPolicies() should not return snapshot
                 policies that have been deleted
         # 7. Verify that snapshot should not be created for VM in Destroyed state
         # 8. Verify that snapshot should get created after resuming the VM
-        # 9. Verify that All the recurring policies associated with the VM should be 
+        # 9. Verify that All the recurring policies associated with the VM should be
                 deleted after VM get destroyed.
         """
         # Step 1
@@ -280,7 +280,7 @@ class TestVolumeRecurringSnapshot(cloudstackTestCase):
                 recurring_snapshot_daily.id),
             []
         )
-    
+
         self.testdata["recurring_snapshot"]["intervaltype"] = 'WEEKLY'
         self.testdata["recurring_snapshot"]["schedule"] = '00:00:1'
         recurring_snapshot_weekly = SnapshotPolicy.create(
@@ -743,7 +743,7 @@ class TestVolumeRecurringSnapshot(cloudstackTestCase):
     @attr(tags=["advanced", "basic"], required_hardware="true")
     def test_02_volume_max_snapshot(self):
         """ Test Volume Snapshot
-        # 1. Create Hourly reccuring snapshot policy with maxsnaps=2 
+        # 1. Create Hourly reccuring snapshot policy with maxsnaps=2
                 verify that when 3rd snapshot is taken first snapshot gets deleted
         """
 
@@ -794,7 +794,7 @@ class TestVolumeRecurringSnapshot(cloudstackTestCase):
         time.sleep(
             (self.testdata["recurring_snapshot"]["maxsnaps"]) * 3600
         )
-        
+
         snapshots_1 = list_snapshots(
             self.apiclient,
             volumeid=self.volume[0].id,
@@ -896,9 +896,9 @@ class TestVolumeRecurringSnapshot(cloudstackTestCase):
     @attr(tags=["advanced", "basic"],required_hardware="true")
     def test_03_volume_rec_snapshot(self):
         """ Test Volume (root) Snapshot
-        # 1. For snapshot.delta.max > maxsnaps verify that when number of snapshot exceeds 
-                maxsnaps value previous snapshot should get deleted from database but remain 
-                on secondary storage and when the value exceeds snapshot.delta.max the 
+        # 1. For snapshot.delta.max > maxsnaps verify that when number of snapshot exceeds
+                maxsnaps value previous snapshot should get deleted from database but remain
+                on secondary storage and when the value exceeds snapshot.delta.max the
                 snapshot should get deleted from secondary storage
         """
 

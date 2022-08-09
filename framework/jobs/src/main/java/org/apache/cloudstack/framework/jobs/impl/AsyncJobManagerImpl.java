@@ -34,7 +34,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.storage.dao.VolumeDetailsDao;
-import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -1084,7 +1084,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (ApiCommandJobType.Volume.toString().equals(job.getInstanceType())) {
+                        if (ApiCommandResourceType.Volume.toString().equals(job.getInstanceType())) {
 
                             try {
                                 _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");

@@ -22,6 +22,7 @@ import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 /**
@@ -66,5 +67,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
     Pair<String, Integer> getVncPort(VirtualMachine vm);
 
     public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
+
+    Pair<Boolean, String> updateSystemVM(VMInstanceVO systemVM, boolean forced);
 
 }
