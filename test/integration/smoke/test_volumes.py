@@ -726,67 +726,6 @@ class TestVolumes(cloudstackTestCase):
             time.sleep(30)
         return
 
-    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def test_12_resize_volume_with_only_size_parameter(self):
-        """Test resize a volume by providing only size parameter, disk offering id is not mandatory"""
-        # Verify the size is the new size is what we wanted it to be.
-        self.debug(
-            "Attaching volume (ID: %s) to VM (ID: %s)" % (
-                self.volume.id,
-                self.virtual_machine.id
-            ))
-
-        self.virtual_machine.attach_volume(self.apiClient, self.volume)
-        self.attached = True
-        hosts = Host.list(self.apiClient, id=self.virtual_machine.hostid)
-        self.assertTrue(isinstance(hosts, list))
-        self.assertTrue(len(hosts) > 0)
-        self.debug("Found %s host" % hosts[0].hypervisor)
-
-        if hosts[0].hypervisor == "XenServer":
-            self.virtual_machine.stop(self.apiClient)
-        elif hosts[0].hypervisor.lower() == "hyperv":
-            self.skipTest("Resize Volume is unsupported on Hyper-V")
-
-        # resize the data disk
-        self.debug("Resize Volume ID: %s" % self.volume.id)
-
-        cmd = resizeVolume.resizeVolumeCmd()
-        cmd.id = self.volume.id
-        cmd.size = 20
-
-        self.apiClient.resizeVolume(cmd)
-
-        count = 0
-        success = False
-        while count < 3:
-            list_volume_response = Volume.list(
-                self.apiClient,
-                id=self.volume.id,
-                type='DATADISK'
-            )
-            for vol in list_volume_response:
-                if vol.id == self.volume.id and int(vol.size) == (20 * (1024 ** 3)) and vol.state == 'Ready':
-                    success = True
-            if success:
-                break
-            else:
-                time.sleep(10)
-                count += 1
-
-        self.assertEqual(
-            success,
-            True,
-            "Check if the data volume resized appropriately"
-        )
-
-        # start the vm if it is on xenserver
-
-        if hosts[0].hypervisor == "XenServer":
-            self.virtual_machine.start(self.apiClient)
-            time.sleep(30)
-        return
-
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_09_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
@@ -943,6 +882,67 @@ class TestVolumes(cloudstackTestCase):
 
         return
 
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_12_resize_volume_with_only_size_parameter(self):
+        """Test resize a volume by providing only size parameter, disk offering id is not mandatory"""
+        # Verify the size is the new size is what we wanted it to be.
+        self.debug(
+            "Attaching volume (ID: %s) to VM (ID: %s)" % (
+                self.volume.id,
+                self.virtual_machine.id
+            ))
+
+        self.virtual_machine.attach_volume(self.apiClient, self.volume)
+        self.attached = True
+        hosts = Host.list(self.apiClient, id=self.virtual_machine.hostid)
+        self.assertTrue(isinstance(hosts, list))
+        self.assertTrue(len(hosts) > 0)
+        self.debug("Found %s host" % hosts[0].hypervisor)
+
+        if hosts[0].hypervisor == "XenServer":
+            self.virtual_machine.stop(self.apiClient)
+        elif hosts[0].hypervisor.lower() == "hyperv":
+            self.skipTest("Resize Volume is unsupported on Hyper-V")
+
+        # resize the data disk
+        self.debug("Resize Volume ID: %s" % self.volume.id)
+
+        cmd = resizeVolume.resizeVolumeCmd()
+        cmd.id = self.volume.id
+        cmd.size = 20
+
+        self.apiClient.resizeVolume(cmd)
+
+        count = 0
+        success = False
+        while count < 3:
+            list_volume_response = Volume.list(
+                self.apiClient,
+                id=self.volume.id,
+                type='DATADISK'
+            )
+            for vol in list_volume_response:
+                if vol.id == self.volume.id and int(vol.size) == (20 * (1024 ** 3)) and vol.state == 'Ready':
+                    success = True
+            if success:
+                break
+            else:
+                time.sleep(10)
+                count += 1
+
+        self.assertEqual(
+            success,
+            True,
+            "Check if the data volume resized appropriately"
+        )
+
+        # start the vm if it is on xenserver
+
+        if hosts[0].hypervisor == "XenServer":
+            self.virtual_machine.start(self.apiClient)
+            time.sleep(30)
+        return
+
     def wait_for_attributes_and_return_root_vol(self):
         def checkVolumeResponse():
             list_volume_response = Volume.list(
@@ -963,7 +963,7 @@ class TestVolumes(cloudstackTestCase):
         return response
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
-    def test_11_migrate_volume_and_change_offering(self):
+    def test_13_migrate_volume_and_change_offering(self):
         """
         Validates the following
         1. Creates a new Volume with a small disk offering
