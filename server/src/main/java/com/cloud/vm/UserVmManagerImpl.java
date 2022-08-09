@@ -3906,13 +3906,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         verifyAffinityGroups(owner, caller, affinityGroupIdList);
 
-        if (hypervisorType != HypervisorType.BareMetal) {
-            // check if we have available pools for vm deployment
-            long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
-            if (availablePools < 1) {
-                throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
-            }
-        }
+        checkAvailablePools(hypervisorType);
 
         if (template.getTemplateType().equals(TemplateType.SYSTEM) && !CKS_NODE.equals(vmType)) {
             throw new InvalidParameterValueException("Unable to use system template " + template.getId() + " to deploy a user vm");
@@ -3985,28 +3979,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             profile.setOrderIndex(networkIndex);
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
-                // if user requested specific ip for default network, add it
-                if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
-                    profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
-                } else if (defaultIps.getMacAddress() != null) {
-                    profile = new NicProfile(null, null, defaultIps.getMacAddress());
-                }
+                profile = addRequestedIpToProfile(defaultIps, network, profile);
 
                 profile.setDefaultNic(true);
-                if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
-                    if ((userData != null) && (!userData.isEmpty())) {
-                        throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as UserData is provided while deploying the VM");
-                    }
-
-                    if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
-                        throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as SSH keypair is provided while deploying the VM");
-                    }
-
-                    if (template.isEnablePassword()) {
-                        throwInvalidParemeterExceptionForNet(network, String.format("Unable to deploy VM as template %d is password enabled", template.getId()));
-                    }
-                }
+                validateNetworkServicesSupported(userData, template, sshPublicKeys, network);
             }
 
             if (_networkModel.isSecurityGroupSupportedInNetwork(network)) {
@@ -4116,8 +4092,54 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
+    /**
+     * if user requested specific ip for default network, add it
+     */
+    private NicProfile addRequestedIpToProfile(IpAddresses defaultIps, NetworkVO network, NicProfile profile) {
+        if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
+            _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
+            profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+        } else if (defaultIps.getMacAddress() != null) {
+            profile = new NicProfile(null, null, defaultIps.getMacAddress());
+        }
+        return profile;
+    }
+
+    private void validateNetworkServicesSupported(String userData, VMTemplateVO template, String sshPublicKeys, NetworkVO network) {
+        if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
+            if ((userData != null) && (!userData.isEmpty())) {
+                throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as UserData is provided while deploying the VM");
+            }
+
+            if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
+                throwInvalidParemeterExceptionForNet(network, "Unable to deploy VM as SSH keypair is provided while deploying the VM");
+            }
+
+            if (template.isEnablePassword()) {
+                throwInvalidParemeterExceptionForNet(network, String.format("Unable to deploy VM as template %d is password enabled", template.getId()));
+            }
+        }
+    }
+
+    /**
+     * check if we have available pools for vm deployment
+     * @param hypervisorType to check if it is baremetal, if so do nothing
+     * @throws StorageUnavailableException if no pools available
+     */
+    private void checkAvailablePools(HypervisorType hypervisorType) throws StorageUnavailableException {
+        if (hypervisorType != HypervisorType.BareMetal) {
+            long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
+            if (availablePools < 1) {
+                throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+            }
+        }
+    }
+
+    /**
+     * check that the affinity groups exist
+     *
+     */
     private void verifyAffinityGroups(Account owner, Account caller, List<Long> affinityGroupIdList) {
-        // check that the affinity groups exist
         if (affinityGroupIdList != null) {
             for (Long affinityGroupId : affinityGroupIdList) {
                 AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
@@ -4189,7 +4211,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void verifySecurityGroupIds(Account owner, List<Long> securityGroupIdList, Account caller) {
-        // verify security group ids
         if (securityGroupIdList != null) {
             for (Long securityGroupId : securityGroupIdList) {
                 SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
