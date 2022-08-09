@@ -28,9 +28,9 @@ from marvin.lib.base import (ServiceOffering,
                              DiskOffering,
                              )
 from marvin.lib.common import (get_domain,
-                                get_zone,
-                                get_template,
-                                find_storage_pool_type)
+                               get_zone,
+                               get_suitable_test_template,
+                               find_storage_pool_type)
 from marvin.codes import (
     PASS,
     FAILED,
@@ -69,13 +69,13 @@ class TestMultipleVolumeAttach(cloudstackTestCase):
                                     )
         cls._cleanup.append(cls.disk_offering)
 
-        template = get_template(
-                            cls.apiclient,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
+        template = get_suitable_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.services["ostype"],
+            cls.hypervisor)
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_suitable_test_template() failed to return template with description %s" % cls.services["ostype"]
 
         cls.services["domainid"] = cls.domain.id
         cls.services["zoneid"] = cls.zone.id
