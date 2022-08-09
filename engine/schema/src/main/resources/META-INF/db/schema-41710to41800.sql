@@ -23,6 +23,10 @@ UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
 
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+ADD cidr_list VARCHAR(4096);
+
 -- Alter networks table to add ip6dns1 and ip6dns2
 ALTER TABLE `cloud`.`networks`
     ADD COLUMN `ip6dns1` varchar(255) DEFAULT NULL COMMENT 'first IPv6 DNS for the network' AFTER `dns2`,

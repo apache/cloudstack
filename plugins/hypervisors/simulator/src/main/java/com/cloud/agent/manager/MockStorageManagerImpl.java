@@ -1086,7 +1086,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.start();
             MockVolumeVO volume = _mockVolumeDao.findByName(cmd.getTemplatePath());
             if (volume == null) {
-                return new Answer(cmd, false, "cant' find volume:" + cmd.getTemplatePath());
+                return new Answer(cmd, false, "can't find volume:" + cmd.getTemplatePath());
             }
             String md5 = null;
             try {
@@ -1113,7 +1113,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.start();
             volume = _mockVolumeDao.findByStoragePathAndType(cmd.getVolumePath());
             if (volume == null) {
-                return new CreatePrivateTemplateAnswer(cmd, false, "cant' find volume" + cmd.getVolumePath());
+                return new CreatePrivateTemplateAnswer(cmd, false, "can't find volume" + cmd.getVolumePath());
             }
 
             sec = _mockSecStorageDao.findByUrl(cmd.getSecondaryStorageUrl());
@@ -1200,7 +1200,7 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn.start();
             volume = _mockVolumeDao.findByStoragePathAndType(cmd.getVolumePath());
             if (volume == null) {
-                return new CopyVolumeAnswer(cmd, false, "cant' find volume" + cmd.getVolumePath(), null, null);
+                return new CopyVolumeAnswer(cmd, false, "can't find volume" + cmd.getVolumePath(), null, null);
             }
             txn.commit();
         } catch (Exception ex) {
