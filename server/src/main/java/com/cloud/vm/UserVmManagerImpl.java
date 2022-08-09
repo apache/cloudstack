@@ -3766,13 +3766,37 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     @DB
-    private UserVm createVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate tmplt, String hostName, String displayName, Account owner,
-                                        Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData,
-                                        List<String> sshKeyPairs, HypervisorType hypervisor, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard,
-                                        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
-                                        Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap,
-                                        Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, Long overrideDiskOfferingId) throws InsufficientCapacityException, ResourceUnavailableException,
-    ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
+    private UserVm createVirtualMachine(DataCenter zone
+            , ServiceOffering serviceOffering
+            , VirtualMachineTemplate tmplt
+            , String hostName
+            , String displayName
+            , Account owner
+            , Long diskOfferingId
+            , Long diskSize
+            , List<NetworkVO> networkList
+            , List<Long> securityGroupIdList
+            , String group
+            , HTTPMethod httpmethod
+            , String userData
+            , List<String> sshKeyPairs
+            , HypervisorType hypervisor
+            , Account caller
+            , Map<Long, IpAddresses> requestedIps
+            , IpAddresses defaultIps
+            , Boolean isDisplayVm
+            , String keyboard
+            , List<Long> affinityGroupIdList
+            , Map<String, String> customParameters
+            , String customId
+            , Map<String
+            , Map<Integer, String>> dhcpOptionMap
+            , Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap
+            , Map<String, String> userVmOVFPropertiesMap
+            , boolean dynamicScalingEnabled
+            , String vmType
+            , Long overrideDiskOfferingId)
+            throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
 
         _accountMgr.checkAccess(caller, null, true, owner);
 
@@ -3858,98 +3882,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
         }
-        return getPermittedVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+
+        UserVmVO vm = getPermittedVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+
+        _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
+
+        if (affinityGroupIdList != null && !affinityGroupIdList.isEmpty()) {
+            _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
+        }
+
+        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
+
+        return vm;
     }
 
     @NotNull
     private synchronized UserVmVO getPermittedVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
-        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
-        }
+        doResourceLimitChecks(owner, diskOfferingId, isDisplayVm, offering, isIso, volumesSize);
 
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
+        verifySecurityGroupIds(owner, securityGroupIdList, caller);
 
-        // verify security group ids
-        if (securityGroupIdList != null) {
-            for (Long securityGroupId : securityGroupIdList) {
-                SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
-                if (sg == null) {
-                    throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
-                } else {
-                    // verify permissions
-                    _accountMgr.checkAccess(caller, null, true, owner, sg);
-                }
-            }
-        }
+        verifyDatadiskTemplateOfferings(owner, datadiskTemplateToDiskOfferringMap, template);
 
-        if (datadiskTemplateToDiskOfferringMap != null && !datadiskTemplateToDiskOfferringMap.isEmpty()) {
-            for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : datadiskTemplateToDiskOfferringMap.entrySet()) {
-                VMTemplateVO dataDiskTemplate = _templateDao.findById(datadiskTemplateToDiskOffering.getKey());
-                DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
-
-                if (dataDiskTemplate == null
-                        || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) && (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
-                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
-                }
-                long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
-                if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
-                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template" + dataDiskTemplateId
-                            + " doesn't belong to template " + template.getId());
-                }
-                if (dataDiskOffering == null) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + datadiskTemplateToDiskOffering.getValue().getId() +
-                            " specified for datadisk template " + dataDiskTemplateId);
-                }
-                if (dataDiskOffering.isCustomized()) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
-                            dataDiskTemplateId + ". Custom Disk offerings are not supported for Datadisk templates");
-                }
-                if (dataDiskOffering.getDiskSize() < dataDiskTemplate.getSize()) {
-                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
-                            dataDiskTemplateId + ". Disk offering size should be greater than or equal to the template size");
-                }
-                _templateDao.loadDetails(dataDiskTemplate);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
-            }
-        }
-
-        // check that the affinity groups exist
-        if (affinityGroupIdList != null) {
-            for (Long affinityGroupId : affinityGroupIdList) {
-                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
-                if (ag == null) {
-                    throw new InvalidParameterValueException("Unable to find affinity group " + ag);
-                } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
-                    throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag + " ,type: " + ag.getType()
-                    + " , Please try again after removing the affinity group");
-                } else {
-                    // verify permissions
-                    if (ag.getAclType() == ACLType.Domain) {
-                        _accountMgr.checkAccess(caller, null, false, owner, ag);
-                        // Root admin has access to both VM and AG by default,
-                        // but
-                        // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
-                            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
-                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
-                            }
-                        }
-                    } else {
-                        _accountMgr.checkAccess(caller, null, true, owner, ag);
-                        // Root admin has access to both VM and AG by default,
-                        // but
-                        // make sure the owner of these entities is same
-                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
-                            if (ag.getAccountId() != owner.getAccountId()) {
-                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        verifyAffinityGroups(owner, caller, affinityGroupIdList);
 
         if (hypervisorType != HypervisorType.BareMetal) {
             // check if we have available pools for vm deployment
@@ -4158,18 +4113,110 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
 
-        _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
-
-        if (affinityGroupIdList != null && !affinityGroupIdList.isEmpty()) {
-            _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
-        }
-
-        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
     }
 
+    private void verifyAffinityGroups(Account owner, Account caller, List<Long> affinityGroupIdList) {
+        // check that the affinity groups exist
+        if (affinityGroupIdList != null) {
+            for (Long affinityGroupId : affinityGroupIdList) {
+                AffinityGroupVO ag = _affinityGroupDao.findById(affinityGroupId);
+                if (ag == null) {
+                    throw new InvalidParameterValueException("Unable to find affinity group " + ag);
+                } else if (!_affinityGroupService.isAffinityGroupProcessorAvailable(ag.getType())) {
+                    throw new InvalidParameterValueException("Affinity group type is not supported for group: " + ag + " ,type: " + ag.getType()
+                    + " , Please try again after removing the affinity group");
+                } else {
+                    // verify permissions
+                    if (ag.getAclType() == ACLType.Domain) {
+                        _accountMgr.checkAccess(caller, null, false, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                            if (!_affinityGroupService.isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
+                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
+                            }
+                        }
+                    } else {
+                        _accountMgr.checkAccess(caller, null, true, owner, ag);
+                        // Root admin has access to both VM and AG by default,
+                        // but
+                        // make sure the owner of these entities is same
+                        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                            if (ag.getAccountId() != owner.getAccountId()) {
+                                throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void verifyDatadiskTemplateOfferings(Account owner, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, VMTemplateVO template) throws ResourceAllocationException {
+        if (datadiskTemplateToDiskOfferringMap != null && !datadiskTemplateToDiskOfferringMap.isEmpty()) {
+            for (Entry<Long, DiskOffering> datadiskTemplateToDiskOffering : datadiskTemplateToDiskOfferringMap.entrySet()) {
+                VMTemplateVO dataDiskTemplate = _templateDao.findById(datadiskTemplateToDiskOffering.getKey());
+                DiskOffering dataDiskOffering = datadiskTemplateToDiskOffering.getValue();
+
+                if (dataDiskTemplate == null
+                        || (!dataDiskTemplate.getTemplateType().equals(TemplateType.DATADISK)) && (dataDiskTemplate.getState().equals(VirtualMachineTemplate.State.Active))) {
+                    throw new InvalidParameterValueException("Invalid template id specified for Datadisk template" + datadiskTemplateToDiskOffering.getKey());
+                }
+                long dataDiskTemplateId = datadiskTemplateToDiskOffering.getKey();
+                if (!dataDiskTemplate.getParentTemplateId().equals(template.getId())) {
+                    throw new InvalidParameterValueException("Invalid Datadisk template. Specified Datadisk template" + dataDiskTemplateId
+                            + " doesn't belong to template " + template.getId());
+                }
+                if (dataDiskOffering == null) {
+                    throw new InvalidParameterValueException("Invalid disk offering id " + datadiskTemplateToDiskOffering.getValue().getId() +
+                            " specified for datadisk template " + dataDiskTemplateId);
+                }
+                if (dataDiskOffering.isCustomized()) {
+                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                            dataDiskTemplateId + ". Custom Disk offerings are not supported for Datadisk templates");
+                }
+                if (dataDiskOffering.getDiskSize() < dataDiskTemplate.getSize()) {
+                    throw new InvalidParameterValueException("Invalid disk offering id " + dataDiskOffering.getId() + " specified for datadisk template " +
+                            dataDiskTemplateId + ". Disk offering size should be greater than or equal to the template size");
+                }
+                _templateDao.loadDetails(dataDiskTemplate);
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, 1);
+                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, dataDiskOffering.getDiskSize());
+            }
+        }
+    }
+
+    private void verifySecurityGroupIds(Account owner, List<Long> securityGroupIdList, Account caller) {
+        // verify security group ids
+        if (securityGroupIdList != null) {
+            for (Long securityGroupId : securityGroupIdList) {
+                SecurityGroup sg = _securityGroupDao.findById(securityGroupId);
+                if (sg == null) {
+                    throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+                } else {
+                    // verify permissions
+                    _accountMgr.checkAccess(caller, null, true, owner, sg);
+                }
+            }
+        }
+    }
+
+    private void doResourceLimitChecks(Account owner, Long diskOfferingId, Boolean isDisplayVm
+            , ServiceOfferingVO offering, boolean isIso, long volumesSize)
+            throws ResourceAllocationException {
+
+        if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
+
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
+    }
+
     private static void throwInvalidParemeterExceptionForNet(NetworkVO network, String reason) {
-        String message = String.format("%s, but there is no support for %s service in the default network #d."
+        String message = String.format("%s, but there is no support for %s service in the default network %d."
                 , reason
                 , Service.UserData.getName()
                 , network.getId());
