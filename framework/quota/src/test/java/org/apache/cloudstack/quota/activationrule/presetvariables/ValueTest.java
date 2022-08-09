@@ -122,4 +122,18 @@ public class ValueTest {
         variable.setComputingResources(null);
         Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("computingResources"));
     }
+
+    @Test
+    public void setVirtualSizeTestAddFieldVirtualSizeToCollection() {
+        Value variable = new Value();
+        variable.setVirtualSize(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("virtualSize"));
+    }
+
+    @Test
+    public void setBackupOfferingTestAddFieldBackupOfferingToCollection() {
+        Value variable = new Value();
+        variable.setBackupOffering(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("backupOffering"));
+    }
 }

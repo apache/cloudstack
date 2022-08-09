@@ -31,6 +31,7 @@ public class Value extends GenericPresetVariable {
     private Map<String, String> tags;
     private String tag;
     private Long size;
+    private Long virtualSize;
     private ProvisioningType provisioningType;
     private Snapshot.Type snapshotType;
     private VMSnapshot.Type vmSnapshotType;
@@ -39,6 +40,7 @@ public class Value extends GenericPresetVariable {
     private GenericPresetVariable diskOffering;
     private Storage storage;
     private ComputingResources computingResources;
+    private BackupOffering backupOffering;
 
     public Host getHost() {
         return host;
@@ -164,5 +166,23 @@ public class Value extends GenericPresetVariable {
     public void setComputingResources(ComputingResources computingResources) {
         this.computingResources = computingResources;
         fieldNamesToIncludeInToString.add("computingResources");
+    }
+
+    public Long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
+        fieldNamesToIncludeInToString.add("virtualSize");
+    }
+
+    public BackupOffering getBackupOffering() {
+        return backupOffering;
+    }
+
+    public void setBackupOffering(BackupOffering backupOffering) {
+        this.backupOffering = backupOffering;
+        fieldNamesToIncludeInToString.add("backupOffering");
     }
 }
