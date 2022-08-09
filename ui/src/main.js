@@ -34,6 +34,7 @@ import {
   showIconPlugin,
   resourceTypePlugin,
   fileSizeUtilPlugin,
+  genericUtilPlugin,
   localesPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
@@ -49,6 +50,7 @@ vueApp.use(showIconPlugin)
 vueApp.use(resourceTypePlugin)
 vueApp.use(fileSizeUtilPlugin)
 vueApp.use(localesPlugin)
+vueApp.use(genericUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
