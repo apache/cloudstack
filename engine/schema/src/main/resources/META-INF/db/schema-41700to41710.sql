@@ -126,3 +126,6 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
+
+-- PR #6080 Change column `value` size from 255 to 4096 characters, matching the API "updateConfiguration" "value" size
+ALTER TABLE `cloud`.`account_details` MODIFY `value` VARCHAR(4096) NOT NULL;
