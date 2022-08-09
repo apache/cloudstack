@@ -305,7 +305,7 @@ public class PresetVariableHelper {
         setPresetVariableHostInValueIfUsageTypeIsRunningVm(value, usageType, vmVo);
 
         value.setId(vmVo.getUuid());
-        value.setName(vmVo.getName());
+        value.setName(vmVo.getHostName());
         value.setOsName(getPresetVariableValueOsName(vmVo.getGuestOSId()));
 
         setPresetVariableValueServiceOfferingAndComputingResources(value, usageType, vmVo);
