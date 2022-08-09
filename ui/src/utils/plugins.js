@@ -464,3 +464,12 @@ export const fileSizeUtilPlugin = {
     }
   }
 }
+
+export const genericUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$isValidUuid = function (uuid) {
+      const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi
+      return regexExp.test(uuid)
+    }
+  }
+}
