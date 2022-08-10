@@ -233,7 +233,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                     VolumeVO volume = volumeDao.findById(vinfo.getId());
                     volume.setPoolId(dataStore.getId());
-                    volume.setPoolType(StoragePoolType.SharedMountPoint);
                     volume.setPath(path);
                     volumeDao.update(volume.getId(), volume);
 
@@ -716,7 +715,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     final String name = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
                     StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc DST tmpSnapName=%s ,srcUUID=%s", name, srcTO.getUuid());
 
-                    if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.SharedMountPoint)) {
+                    if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
                         String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
                         //uuid tag will be the same as srcData.uuid
