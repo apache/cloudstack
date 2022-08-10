@@ -52,6 +52,7 @@
         <project.systemvm.template.version>4.17.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <jacoco.outputDir>${project.basedir}/target/jacoco.exec</jacoco.outputDir>
 
         <!-- Build properties -->
         <cs.jdk.version>11</cs.jdk.version>
@@ -741,6 +742,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <version>${cs.jacoco-plugin.version}</version>
+            <classifier>runtime</classifier>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>${org.springframework.version}</version>
@@ -1160,7 +1167,6 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
-                        <argLine>@{argLine}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
