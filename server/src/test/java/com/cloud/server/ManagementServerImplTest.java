@@ -33,6 +33,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.address.ListPublicIpAddressesCmd;
@@ -107,6 +109,9 @@ public class ManagementServerImplTest {
     @Mock
     AnnotationDao annotationDao;
 
+    @Mock
+    UserVmDao _userVmDao;
+
     @Spy
     ManagementServerImpl spy = new ManagementServerImpl();
 
@@ -121,6 +126,7 @@ public class ManagementServerImplTest {
         spy._accountMgr = _accountMgr;
         spy.userDataDao = _userDataDao;
         spy.templateDao = _templateDao;
+        spy._userVmDao = _userVmDao;
         spy.annotationDao = annotationDao;
     }
 
@@ -358,6 +364,7 @@ public class ManagementServerImplTest {
         when(_userDataDao.findById(1L)).thenReturn(userData);
         when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
         when(_templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
+        when(_userVmDao.findByUserDataId(1L)).thenReturn(new ArrayList<UserVmVO>());
         when(_userDataDao.remove(1L)).thenReturn(true);
 
         boolean result = spy.deleteUserData(cmd);
@@ -389,6 +396,37 @@ public class ManagementServerImplTest {
         List<VMTemplateVO> linkedTemplates = new ArrayList<>();
         linkedTemplates.add(vmTemplateVO);
         when(_templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(linkedTemplates);
+
+        spy.deleteUserData(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testDeleteUserdataUsedByVM() {
+        PowerMockito.mockStatic(CallContext.class);
+        CallContext callContextMock = PowerMockito.mock(CallContext.class);
+        when(CallContext.current()).thenReturn(callContextMock);
+        when(account.getAccountId()).thenReturn(1L);
+        when(account.getDomainId()).thenReturn(2L);
+        when(callContextMock.getCallingAccount()).thenReturn(account);
+        when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+
+        DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
+        when(cmd.getAccountName()).thenReturn("testAccountName");
+        when(cmd.getDomainId()).thenReturn(1L);
+        when(cmd.getProjectId()).thenReturn(2L);
+        when(cmd.getId()).thenReturn(1L);
+
+        UserDataVO userData = Mockito.mock(UserDataVO.class);
+        Mockito.when(userData.getId()).thenReturn(1L);
+        when(_userDataDao.findById(1L)).thenReturn(userData);
+        when(_userDataDao.findByName(account.getAccountId(), account.getDomainId(), "testName")).thenReturn(null);
+
+        when(_templateDao.findTemplatesLinkedToUserdata(1L)).thenReturn(new ArrayList<VMTemplateVO>());
+
+        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+        List<UserVmVO> vms = new ArrayList<>();
+        vms.add(userVmVO);
+        when(_userVmDao.findByUserDataId(1L)).thenReturn(vms);
 
         spy.deleteUserData(cmd);
     }

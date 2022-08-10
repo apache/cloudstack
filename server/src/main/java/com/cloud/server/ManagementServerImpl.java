@@ -849,7 +849,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private UserDao _userDao;
     @Inject
-    private UserVmDao _userVmDao;
+    protected UserVmDao _userVmDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
