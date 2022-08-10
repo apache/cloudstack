@@ -1160,6 +1160,7 @@
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
                         <useSystemClassLoader>false</useSystemClassLoader>
+                        <argLine>@{argLine}</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1319,14 +1320,19 @@
                             <version>${cs.jacoco-plugin.version}</version>
                             <executions>
                                 <execution>
-                                    <id>prepare-coverage-agent</id>
+                                    <id>default-instrument</id>
                                     <goals>
-                                        <goal>prepare-agent</goal>
+                                        <goal>instrument</goal>
                                     </goals>
                                 </execution>
                                 <execution>
-                                    <id>produce-coverage-reports</id>
-                                    <phase>test</phase>
+                                    <id>default-restore-instrumented-classes</id>
+                                    <goals>
+                                        <goal>restore-instrumented-classes</goal>
+                                    </goals>
+                                </execution>
+                                <execution>
+                                    <id>default-report</id>
                                     <goals>
                                         <goal>report</goal>
                                     </goals>
