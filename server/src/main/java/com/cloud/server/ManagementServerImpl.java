@@ -4450,6 +4450,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is linked to active template/templates", userData.getName()));
         }
 
+        List<UserVmVO> userVMsHavingUserdata = _userVmDao.findByUserDataId(userData.getId());
+        if (CollectionUtils.isNotEmpty(userVMsHavingUserdata)) {
+            throw new CloudRuntimeException(String.format("Userdata %s cannot be removed as it is being used by some VMs", userData.getName()));
+        }
+
         annotationDao.removeByEntityType(AnnotationService.EntityType.USER_DATA.name(), userData.getUuid());
 
         return userDataDao.remove(userData.getId());

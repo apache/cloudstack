@@ -165,6 +165,8 @@
 "label.action.unmanage.virtualmachine": "Unmanage VM",
 "label.action.update.offering.access": "Update offering access",
 "label.action.update.resource.count": "Update resource count",
+"label.action.update.resource.count.processing": "Updating resource count...",
+"label.action.userdata.reset": "Reset userdata",
 "label.action.vmsnapshot.create": "Take VM snapshot",
 "label.action.vmsnapshot.delete": "Delete VM snapshot",
 "label.action.vmsnapshot.revert": "Revert to VM snapshot",

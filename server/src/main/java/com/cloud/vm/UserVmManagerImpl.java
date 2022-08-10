@@ -2485,6 +2485,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     return false;
                 }
 
+                if (vm.getUserDataId() != null) {
+                    vm.setUserDataId(null);
+                    _vmDao.update(vm.getId(), vm);
+                }
+
                 _vmDao.remove(vm.getId());
             }
 

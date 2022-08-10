@@ -366,7 +366,7 @@ export default {
       }
       api('resetUserDataForVirtualMachine', params).then(json => {
         this.$message.success({
-          content: `${this.$t('label.action.edit.instance')} - ${values.name}`,
+          content: `${this.$t('label.action.userdata.reset')} - ${this.$t('label.success')}`,
           duration: 2
         })
         this.$emit('refresh-data')

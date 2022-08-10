@@ -100,4 +100,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<Ternary<Integer, Integer, Integer>> countVmsBySize(long dcId, int limit);
 
     int getActiveAccounts(final long dcId);
+
+    List<UserVmVO> findByUserDataId(long userdataId);
+
 }
