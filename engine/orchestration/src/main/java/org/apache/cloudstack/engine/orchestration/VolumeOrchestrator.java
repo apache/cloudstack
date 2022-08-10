@@ -85,7 +85,6 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.allocator.PodAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenter;
@@ -1704,7 +1703,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
                 // retrieve clone flag.
                 UserVmCloneType cloneType = UserVmCloneType.linked;
-                Boolean value = CapacityManager.VmwareCreateCloneFull.valueIn(vol.getPoolId());
+                Boolean value = StorageManager.VmwareCreateCloneFull.valueIn(vol.getPoolId());
                 if (value != null && value) {
                     cloneType = UserVmCloneType.full;
                 }

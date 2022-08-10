@@ -1563,7 +1563,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         Map<Volume, List<StoragePool>> suitableVolumeStoragePools = new HashMap<Volume, List<StoragePool>>();
         List<Volume> readyAndReusedVolumes = new ArrayList<Volume>();
 
-        // There should be atleast the ROOT volume of the VM in usable state
+        // There should be at least the ROOT volume of the VM in usable state
         if (volumesTobeCreated.isEmpty()) {
             // OfflineVmwareMigration: find out what is wrong with the id of the vm we try to start
             throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM: " + vmProfile.getId());
@@ -1647,7 +1647,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     // this volume since allocation_state is disabled.
                     // - remove any suitable pools found for other volumes.
                     // All volumes should get suitable pools under this cluster;
-                    // else we cant use this cluster.
+                    // else we can't use this cluster.
                     suitableVolumeStoragePools.clear();
                     break;
                 }
@@ -1698,7 +1698,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 // No suitable storage pools found under this cluster for this
                 // volume. - remove any suitable pools found for other volumes.
                 // All volumes should get suitable pools under this cluster;
-                // else we cant use this cluster.
+                // else we can't use this cluster.
                 suitableVolumeStoragePools.clear();
                 break;
             }

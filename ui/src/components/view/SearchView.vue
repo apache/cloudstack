@@ -51,9 +51,10 @@
                 v-ctrl-enter="handleSubmit">
                 <a-form-item
                   v-for="(field, index) in fields"
+                  :ref="field.name"
+                  :name="field.name"
                   :key="index"
-                  :label="field.name==='keyword' ?
-                    ('listAnnotations' in $store.getters.apis ? $t('label.annotation') : $t('label.name')) : $t('label.' + field.name)">
+                  :label="retrieveFieldLabel(field.name)">
                   <a-select
                     allowClear
                     v-if="field.type==='list'"
@@ -240,6 +241,19 @@ export default {
       if (!this.visibleFilter) return
       this.initFormFieldData()
     },
+    retrieveFieldLabel (fieldName) {
+      if (fieldName === 'groupid') {
+        fieldName = 'group'
+      }
+      if (fieldName === 'keyword') {
+        if ('listAnnotations' in this.$store.getters.apis) {
+          return this.$t('label.annotation')
+        } else {
+          return this.$t('label.name')
+        }
+      }
+      return this.$t('label.' + fieldName)
+    },
     async initFormFieldData () {
       const arrayField = []
       this.fields = []
@@ -258,7 +272,10 @@ export default {
         if (item === 'clusterid' && !('listClusters' in this.$store.getters.apis)) {
           return true
         }
-        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'entitytype', 'type'].includes(item)) {
+        if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
+          return true
+        }
+        if (['zoneid', 'domainid', 'state', 'level', 'clusterid', 'podid', 'groupid', 'entitytype', 'type'].includes(item)) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
@@ -280,6 +297,7 @@ export default {
       let domainIndex = -1
       let podIndex = -1
       let clusterIndex = -1
+      let groupIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
@@ -326,6 +344,12 @@ export default {
         clusterIndex = this.fields.findIndex(item => item.name === 'clusterid')
         this.fields[clusterIndex].loading = true
         promises.push(await this.fetchClusters())
+      }
+
+      if (arrayField.includes('groupid')) {
+        groupIndex = this.fields.findIndex(item => item.name === 'groupid')
+        this.fields[groupIndex].loading = true
+        promises.push(await this.fetchInstanceGroups())
       }
 
       if (arrayField.includes('entitytype')) {
@@ -376,6 +400,12 @@ export default {
             this.fields[clusterIndex].opts = this.sortArray(cluster[0].data)
           }
         }
+        if (groupIndex > -1) {
+          const groups = response.filter(item => item.type === 'groupid')
+          if (groups && groups.length > 0) {
+            this.fields[groupIndex].opts = this.sortArray(groups[0].data)
+          }
+        }
       }).finally(() => {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
@@ -388,6 +418,9 @@ export default {
         }
         if (clusterIndex > -1) {
           this.fields[clusterIndex].loading = false
+        }
+        if (groupIndex > -1) {
+          this.fields[groupIndex].loading = false
         }
         this.fillFormFieldValues()
       })
@@ -460,6 +493,19 @@ export default {
           resolve({
             type: 'clusterid',
             data: clusters
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchInstanceGroups () {
+      return new Promise((resolve, reject) => {
+        api('listInstanceGroups', { listAll: true }).then(json => {
+          const instancegroups = json.listinstancegroupsresponse.instancegroup
+          resolve({
+            type: 'groupid',
+            data: instancegroups
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])

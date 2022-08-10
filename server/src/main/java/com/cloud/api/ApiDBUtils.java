@@ -329,7 +329,6 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -1795,17 +1794,7 @@ public class ApiDBUtils {
     ///////////////////////////////////////////////////////////////////////
 
     public static DomainRouterResponse newDomainRouterResponse(DomainRouterJoinVO vr, Account caller) {
-        DomainRouterResponse response = s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
-        if (StringUtils.isBlank(response.getHypervisor())) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vr.getId());
-            if (vm.getLastHostId() != null) {
-                HostVO lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
-                if (lastHost != null) {
-                    response.setHypervisor(lastHost.getHypervisorType().toString());
-                }
-            }
-        }
-        return  response;
+        return s_domainRouterJoinDao.newDomainRouterResponse(vr, caller);
     }
 
     public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {

@@ -1284,7 +1284,7 @@ class TestPathDisableStorage_Cross_Cluster(cloudstackTestCase):
     """
         # Tests in this path requires to be run independently (not to be run in parallel  with any other tests \
         since it involves disabling/enabling storage pools and may cause unexpected failures in other tests
-        # This test atleast 2 Clusters in the set up wiht suitable hosts for migration.
+        # This test at least 2 Clusters in the set up wiht suitable hosts for migration.
         # For running the tests on local storage, ensure there are 2 local storage pools set up on each host
 
         """

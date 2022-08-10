@@ -136,7 +136,7 @@ class TestRestConfigurationSettings(cloudstackTestCase):
         )
 
         self.assertIsNotNone(accounts[0],
-                             "There should be atleast 1 account in the zone")
+                             "There should be at least 1 account in the zone")
 
         config_name = "enable.additional.vm.configuration"
         #1. Get the default value
@@ -199,7 +199,7 @@ class TestRestConfigurationSettings(cloudstackTestCase):
         )
 
         self.assertIsNotNone(cluster[0],
-                             "There should be atleast 1 cluster in the zone")
+                             "There should be at least 1 cluster in the zone")
 
         config_name = "cluster.storage.operations.exclude"
         configs = Configurations.list(
@@ -262,7 +262,7 @@ class TestRestConfigurationSettings(cloudstackTestCase):
         )
 
         self.assertIsNotNone(storage[0],
-                             "There should be atleast 1 primary storage pool in the zone")
+                             "There should be at least 1 primary storage pool in the zone")
 
         config_name = "vmware.create.full.clone"
         configs = Configurations.list(
