@@ -16,17 +16,29 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import com.cloud.upgrade.SystemVmTemplateRegistration;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
 import java.io.InputStream;
 import java.sql.Connection;
+import java.util.List;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
+
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDaoImpl;
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate {
 
     final static Logger LOG = Logger.getLogger(Upgrade41610to41700.class);
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
+
+    private PrimaryDataStoreDao storageDao;
+    private VolumeDao volumeDao;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -56,6 +68,7 @@ public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate
 
     @Override
     public void performDataMigration(Connection conn) {
+        updateStorPoolStorageType();
     }
 
     @Override
@@ -81,6 +94,27 @@ public class Upgrade41700to41710 implements DbUpgrade, DbUpgradeSystemVmTemplate
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
+    }
+
+    private void updateStorPoolStorageType() {
+        storageDao = new PrimaryDataStoreDaoImpl();
+        List<StoragePoolVO> storPoolPools = storageDao.findPoolsByProvider("StorPool");
+        for (StoragePoolVO storagePoolVO : storPoolPools) {
+            if (StoragePoolType.SharedMountPoint == storagePoolVO.getPoolType()) {
+                storagePoolVO.setPoolType(StoragePoolType.StorPool);
+                storageDao.update(storagePoolVO.getId(), storagePoolVO);
+            }
+            updateStorageTypeForStorPoolVolumes(storagePoolVO.getId());
+        }
+    }
+
+    private void updateStorageTypeForStorPoolVolumes(long storagePoolId) {
+        volumeDao = new VolumeDaoImpl();
+        List<VolumeVO> volumes = volumeDao.findByPoolId(storagePoolId, null);
+        for (VolumeVO volumeVO : volumes) {
+            volumeVO.setPoolType(StoragePoolType.StorPool);
+            volumeDao.update(volumeVO.getId(), volumeVO);
         }
     }
 }
