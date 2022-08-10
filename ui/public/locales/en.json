@@ -2560,6 +2560,7 @@
 "message.success.register.iso": "Successfully registered ISO",
 "message.success.register.keypair": "Successfully registered SSH key pair",
 "message.success.register.template": "Successfully registered template",
+"message.success.register.user.data": "Successfully registered Userdata",
 "message.success.release.ip": "Successfully released IP",
 "message.success.remove.egress.rule": "Successfully removed egress rule",
 "message.success.remove.firewall.rule": "Successfully removed firewall rule",
