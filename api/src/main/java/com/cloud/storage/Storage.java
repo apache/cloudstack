@@ -148,7 +148,8 @@ public class Storage {
         PowerFlex(true, true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
         ManagedNFS(true, false, false),
         Linstor(true, true, false),
-        DatastoreCluster(true, true, false); // for VMware, to abstract pool of clusters
+        DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
+        StorPool(true, true, false);
 
         private final boolean shared;
         private final boolean overprovisioning;

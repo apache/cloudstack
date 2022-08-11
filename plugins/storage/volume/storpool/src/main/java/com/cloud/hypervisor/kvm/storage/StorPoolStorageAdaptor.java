@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.SharedMountPoint)
+@StorageAdaptorInfo(storagePoolType=StoragePoolType.StorPool)
 public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
