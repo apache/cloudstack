@@ -1226,14 +1226,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Increment or decrement CPU and Memory count accordingly.
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             if (newCpu > currentCpu) {
-                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf(newCpu - currentCpu));
+                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf((long)newCpu - currentCpu));
             } else if (currentCpu > newCpu) {
-                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf(currentCpu - newCpu));
+                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.cpu, Long.valueOf((long)currentCpu - newCpu));
             }
             if (newMemory > currentMemory) {
-                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf(newMemory - currentMemory));
+                _resourceLimitMgr.incrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf((long)newMemory - currentMemory));
             } else if (currentMemory > newMemory) {
-                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf(currentMemory - newMemory));
+                _resourceLimitMgr.decrementResourceCount(owner.getAccountId(), ResourceType.memory, Long.valueOf((long)currentMemory - newMemory));
             }
         }
 
@@ -1888,7 +1888,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     // Increment CPU and Memory count accordingly.
                     if (newCpu > currentCpu) {
-                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, Long.valueOf(newCpu - currentCpu));
+                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, Long.valueOf((long)newCpu - currentCpu));
                     }
 
                     if (memoryDiff > 0) {
@@ -1924,7 +1924,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (!success) {
                         // Decrement CPU and Memory count accordingly.
                         if (newCpu > currentCpu) {
-                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, Long.valueOf(newCpu - currentCpu));
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, Long.valueOf((long)newCpu - currentCpu));
                         }
 
                         if (memoryDiff > 0) {
@@ -1938,9 +1938,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void validateDiskOfferingChecks(ServiceOfferingVO currentServiceOffering, ServiceOfferingVO newServiceOffering) {
-        conditionalThrow(currentServiceOffering.getDiskOfferingStrictness() != newServiceOffering.getDiskOfferingStrictness(), "Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
+        conditionalThrow(! currentServiceOffering.getDiskOfferingStrictness().equals(newServiceOffering.getDiskOfferingStrictness())
+                , "Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
 
-        conditionalThrow(currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId(), "Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
+        conditionalThrow(currentServiceOffering.getDiskOfferingStrictness()
+                && ! currentServiceOffering.getDiskOfferingId().equals(newServiceOffering.getDiskOfferingId())
+                , "Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
     }
 
     private void changeDiskOfferingForRootVolume(Long vmId, DiskOfferingVO newDiskOffering, Map<String, String> customParameters) throws ResourceAllocationException {
@@ -6666,12 +6669,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                             Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
                     _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.volume);
-                    _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, Long.valueOf(volume.getSize()));
+                    _resourceLimitMgr.decrementResourceCount(oldAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
                     volume.setAccountId(newAccount.getAccountId());
                     volume.setDomainId(newAccount.getDomainId());
                     _volsDao.persist(volume);
                     _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
-                    _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, Long.valueOf(volume.getSize()));
+                    _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.primary_storage, volume.getSize());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                             volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
                             volume.getUuid(), volume.isDisplayVolume());
@@ -7203,7 +7206,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // 1. Save usage event and update resource count for user vm volumes
                 _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.volume, newVol.isDisplay());
-                _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.primary_storage, newVol.isDisplay(), Long.valueOf(newVol.getSize()));
+                _resourceLimitMgr.incrementResourceCount(newVol.getAccountId(), ResourceType.primary_storage, newVol.isDisplay(), newVol.getSize());
                 // 2. Create Usage event for the newly created volume
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, newVol.getAccountId(), newVol.getDataCenterId(), newVol.getId(), newVol.getName(), newVol.getDiskOfferingId(), template.getId(), newVol.getSize());
                 _usageEventDao.persist(usageEvent);
