@@ -19,9 +19,10 @@ package com.cloud.agent;
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.LogUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.ProcessUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
@@ -265,75 +266,80 @@ public class AgentShell implements IAgentShell, Daemon {
             }
         }
 
-        if (port == null) {
-            port = getProperty(null, "port");
-        }
+        setHost(host);
 
-        _port = NumberUtils.toInt(port, 8250);
+        _guid = getGuid(guid);
+        _port = getPortOrWorkers(port, AgentProperties.PORT);
+        _workers = getWorkers(workers);
+        _zone = getZoneOrPod(zone, AgentProperties.ZONE);
+        _pod = getZoneOrPod(pod, AgentProperties.POD);
 
-        _proxyPort = NumberUtils.toInt(getProperty(null, "consoleproxy.httpListenPort"), 443);
+        _proxyPort = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CONSOLEPROXY_HTTPLISTENPORT);
+        _pingRetries = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.PING_RETRIES);
+        preferredHostCheckInterval = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST_LB_CHECK_INTERVAL);
 
-        if (workers == null) {
-            workers = getProperty(null, "workers");
-        }
+        return true;
+    }
 
-        _workers = NumberUtils.toInt(workers, 5);
-        if (_workers <= 0) {
-            _workers = 5;
-        }
-
+    protected void setHost(String host) throws ConfigurationException {
         if (host == null) {
-            host = getProperty(null, "host");
+            host = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.HOST);
         }
 
-        if (host == null) {
-            host = "localhost";
+        if (isValueStartingAndEndingWithAtSign(host)) {
+            throw new ConfigurationException(String.format("Host [%s] is not configured correctly.", host));
         }
 
         setHosts(host);
+    }
 
-        if (zone != null)
-            _zone = zone;
-        else
-            _zone = getProperty(null, "zone");
-        if (_zone == null || (_zone.startsWith("@") && _zone.endsWith("@"))) {
-            _zone = "default";
+    protected boolean isValueStartingAndEndingWithAtSign(String value) {
+        return value.startsWith("@") && value.endsWith("@");
+    }
+
+    protected String getGuid(String guid) throws ConfigurationException {
+        guid = StringUtils.defaultString(guid, AgentPropertiesFileHandler.getPropertyValue(AgentProperties.GUID));
+        if (guid != null) {
+            return guid;
         }
 
-        if (pod != null)
-            _pod = pod;
-        else
-            _pod = getProperty(null, "pod");
-        if (_pod == null || (_pod.startsWith("@") && _pod.endsWith("@"))) {
-            _pod = "default";
+        if (!AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER)) {
+            throw new ConfigurationException("Unable to find the guid");
         }
 
-        if (_host == null || (_host.startsWith("@") && _host.endsWith("@"))) {
-            throw new ConfigurationException("Host is not configured correctly: " + _host);
+        return UUID.randomUUID().toString();
+    }
+
+    protected String getZoneOrPod(String zoneOrPod, AgentProperties.Property<String> property) {
+        String value = zoneOrPod;
+
+        if (value == null) {
+            value = AgentPropertiesFileHandler.getPropertyValue(property);
         }
 
-        final String retries = getProperty(null, "ping.retries");
-        _pingRetries = NumbersUtil.parseInt(retries, 5);
-
-        String value = getProperty(null, "developer");
-        boolean developer = Boolean.parseBoolean(value);
-
-        if (guid != null)
-            _guid = guid;
-        else
-            _guid = getProperty(null, "guid");
-        if (_guid == null) {
-            if (!developer) {
-                throw new ConfigurationException("Unable to find the guid");
-            }
-            _guid = UUID.randomUUID().toString();
-            _properties.setProperty("guid", _guid);
+        if (isValueStartingAndEndingWithAtSign(value)) {
+            value = property.getDefaultValue();
         }
 
-        String val = getProperty(null, preferredHostIntervalKey);
-        preferredHostCheckInterval = StringUtils.isEmpty(val) ? null : Long.valueOf(val);
+        return value;
+    }
 
-        return true;
+    protected int getWorkers(String workersString) {
+        int workers = getPortOrWorkers(workersString, AgentProperties.WORKERS);
+
+        if (workers <= 0) {
+            workers = AgentProperties.WORKERS.getDefaultValue();
+        }
+
+        return workers;
+    }
+
+    protected int getPortOrWorkers(String portOrWorkers, AgentProperties.Property<Integer> property) {
+        if (portOrWorkers == null) {
+            return AgentPropertiesFileHandler.getPropertyValue(property);
+        }
+
+        return NumberUtils.toInt(portOrWorkers, property.getDefaultValue());
     }
 
     @Override
@@ -398,7 +404,7 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     private void launchAgent() throws ConfigurationException {
-        String resourceClassNames = getProperty(null, "resource");
+        String resourceClassNames = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.RESOURCE);
         s_logger.trace("resource=" + resourceClassNames);
         if (resourceClassNames != null) {
             launchAgentFromClassInfo(resourceClassNames);
@@ -482,7 +488,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
             String instance = getProperty(null, "instance");
             if (instance == null) {
-                if (Boolean.parseBoolean(getProperty(null, "developer"))) {
+                if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER)) {
                     instance = UUID.randomUUID().toString();
                 } else {
                     instance = "";

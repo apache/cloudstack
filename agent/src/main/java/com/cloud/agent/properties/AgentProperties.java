@@ -46,7 +46,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>5</code>
      */
-    public static final Property<Integer> WORKERS = new Property<>("workers", 5);
+    public static Property<Integer> WORKERS = new Property<>("workers", 5);
 
     /**
      * The IP address of the management server.<br>
@@ -62,7 +62,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Integer> HOST_LB_CHECK_INTERVAL = new Property<>("host.lb.check.interval", null, Integer.class);
+    public static final Property<Long> HOST_LB_CHECK_INTERVAL = new Property<>("host.lb.check.interval", null, Long.class);
 
     /**
      * The port that the management server is listening on.<br>
@@ -693,6 +693,19 @@ public class AgentProperties{
      * Default value: <code>/mnt</code>
      */
     public static final Property<String> MOUNT_PATH = new Property<>("mount.path", "/mnt");
+
+    /**
+     * Port listened by the console proxy.
+     * Data type: Integer.<br>
+     * Default value: <code>443</code>
+     */
+    public static final Property<Integer> CONSOLEPROXY_HTTPLISTENPORT = new Property<>("consoleproxy.httpListenPort", 443);
+
+    /**
+     * Data type: Integer.<br>
+     * Default value: <code>5</code>
+     */
+    public static final Property<Integer> PING_RETRIES = new Property<>("ping.retries", 5);
 
     public static class Property <T>{
         private String name;
