@@ -346,17 +346,8 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
 
                 snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
                 return true;
-            } else {
-                try {
-                    if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
-                        snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
-                        s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
-                        return true;
-                    }
-                } catch (CloudRuntimeException ex) {
-                    s_logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
-                        snapshotVo, storageToString, ex.getMessage()), ex);
-                }
+            } else if (deleteSnapshotInPrimaryStorage(snapshotInfo, snapshotVo, storageToString, snapshotObject)) {
+                return true;
             }
 
             s_logger.debug(String.format("Failed to delete %s on %s.", snapshotVo, storageToString));
@@ -365,6 +356,20 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             s_logger.warn(String.format("Failed to delete %s on %s due to %s.", snapshotVo, storageToString, ex.getMessage()), ex);
         }
 
+        return false;
+    }
+
+    protected boolean deleteSnapshotInPrimaryStorage(SnapshotInfo snapshotInfo, SnapshotVO snapshotVo, String storageToString, SnapshotObject snapshotObject) throws NoTransitionException {
+        try {
+            if (snapshotSvr.deleteSnapshot(snapshotInfo)) {
+                snapshotObject.processEvent(Snapshot.Event.OperationSucceeded);
+                s_logger.debug(String.format("%s was deleted on %s. We will mark the snapshot as destroyed.", snapshotVo, storageToString));
+                return true;
+            }
+        } catch (CloudRuntimeException ex) {
+            s_logger.warn(String.format("Unable do delete snapshot %s on %s due to [%s]. The reference will be marked as 'Destroying' for future garbage collecting.",
+                    snapshotVo, storageToString, ex.getMessage()), ex);
+        }
         return false;
     }
 
