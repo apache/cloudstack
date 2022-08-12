@@ -19,6 +19,7 @@
 
 package com.cloud.agent.properties;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -32,9 +33,8 @@ public class AgentPropertiesTest {
             if (field.getType().equals(AgentProperties.Property.class)) {
                 AgentProperties.Property property = (AgentProperties.Property) field.get(null);
 
-                if (property.getDefaultValue() == null && property.getTypeClass() == null) {
-                    throw new AssertionError(String.format("Either inform the default value or the class of property [%s], field [%s].", property.getName(), field.getName()));
-                }
+                Assert.assertTrue(String.format("Either inform the default value or the class of property [%s], field [%s].", property.getName(), field.getName()),
+                                    property.getDefaultValue() != null || property.getTypeClass() != null);
             }
         }
     }

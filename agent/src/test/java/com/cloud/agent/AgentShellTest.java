@@ -96,9 +96,7 @@ public class AgentShellTest {
 
         valuesAndExpects.forEach((value, expected) -> {
             boolean result = agentShellSpy.isValueStartingAndEndingWithAtSign(value);
-            if (expected != result) {
-                throw new AssertionError(String.format("Test with value [%s] does not returned as expected. Expected: [%s], Result: [%s].", value, expected, result));
-            }
+            Assert.assertEquals(String.format("Test with value [%s] does not return as expected.", value), expected, result);
         });
     }
 
