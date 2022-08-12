@@ -228,6 +228,20 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return _resourceTagDao.search(sc, null);
     }
 
+    private void checkTagDeletePermission(ResourceTag resourceTag, Account caller) {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
+            s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
+        }
+        if (caller.getAccountId() != resourceTag.getAccountId()) {
+            Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Resource Owner: " + owner);
+            }
+            _accountMgr.checkAccess(caller, null, false, owner);
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
@@ -241,17 +255,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
         // Finalize which tags should be removed
         for (ResourceTag resourceTag : resourceTags) {
-            //1) validate the permissions
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
-                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
-            }
-            Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Owner: " + owner);
-            }
-            _accountMgr.checkAccess(caller, null, false, owner);
-            //2) Only remove tag if it matches key value pairs
             if (MapUtils.isEmpty(tags)) {
                 tagsToDelete.add(resourceTag);
             } else {
@@ -277,6 +280,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
         if (tagsToDelete.isEmpty()) {
             return false;
+        }
+        for (ResourceTag resourceTag : tagsToDelete) {
+            checkTagDeletePermission(resourceTag, caller);
         }
 
         //Remove the tags
