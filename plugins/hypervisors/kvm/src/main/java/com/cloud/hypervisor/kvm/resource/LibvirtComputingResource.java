@@ -546,6 +546,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public MemStat getMemStat() {
+        _memStat.refresh();
         return _memStat;
     }
 
