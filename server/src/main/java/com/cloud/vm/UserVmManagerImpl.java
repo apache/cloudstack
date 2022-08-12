@@ -2151,7 +2151,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         Long offeringId = null;
                         if (diskOfferingId != null) {
                             DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
-                            offeringId = conditionallyChangeValue(offering != null && !offering.isComputeOnly(), offeringId, offering.getId());
+                            if (offering != null && !offering.isComputeOnly()) {
+                                offeringId = offering.getId();
+                            }
                         }
                         UsageEventUtils
                         .publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId,
@@ -7747,7 +7749,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (networkId == null && lastMappedNetwork == null) {
                         lastMappedNetwork = getNetworkForOvfNetworkMapping(zone, owner);
                     }
-                    networkId = conditionallyChangeValue(networkId == null, networkId, lastMappedNetwork.getId());
+                    if (networkId == null) {
+                        networkId = lastMappedNetwork.getId();
+                    }
                     mapping.put(OVFNetworkTO.getInstanceID(), networkId);
                 }
             }
