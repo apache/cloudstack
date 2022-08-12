@@ -76,6 +76,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private String hostToConnect;
     private String connectedHost;
     private Long preferredHostCheckInterval;
+    protected AgentProperties agentProperties = new AgentProperties();
 
     public AgentShell() {
     }
@@ -326,10 +327,11 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     protected int getWorkers(String workersString) {
-        int workers = getPortOrWorkers(workersString, AgentProperties.WORKERS);
+        AgentProperties.Property<Integer> propertyWorkers = agentProperties.getWorkers();
+        int workers = getPortOrWorkers(workersString, propertyWorkers);
 
         if (workers <= 0) {
-            workers = AgentProperties.WORKERS.getDefaultValue();
+            workers = propertyWorkers.getDefaultValue();
         }
 
         return workers;

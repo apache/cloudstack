@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import com.cloud.utils.StringUtils;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -41,8 +42,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 public class AgentShellTest {
 
+    @InjectMocks
     @Spy
     AgentShell agentShellSpy = new AgentShell();
+
+    @Mock
+    AgentProperties agentPropertiesMock;
 
     @Mock
     AgentProperties.Property<Integer> propertyIntegerMock;
@@ -142,13 +147,10 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentProperties.class)
     public void getWorkersTestWorkersLessThan0ReturnDefault() {
         int expected = 42;
 
-        PowerMockito.mockStatic(AgentProperties.class);
-        AgentProperties.WORKERS = propertyIntegerMock;
-
+        Mockito.doReturn(propertyIntegerMock).when(agentPropertiesMock).getWorkers();
         Mockito.doReturn(-1).when(agentShellSpy).getPortOrWorkers(Mockito.any(), Mockito.any());
         Mockito.doReturn(expected).when(propertyIntegerMock).getDefaultValue();
 
@@ -158,13 +160,10 @@ public class AgentShellTest {
     }
 
     @Test
-    @PrepareForTest(AgentProperties.class)
     public void getWorkersTestWorkersEqualTo0ReturnDefault() {
         int expected = 42;
 
-        PowerMockito.mockStatic(AgentProperties.class);
-        AgentProperties.WORKERS = propertyIntegerMock;
-
+        Mockito.doReturn(propertyIntegerMock).when(agentPropertiesMock).getWorkers();
         Mockito.doReturn(0).when(agentShellSpy).getPortOrWorkers(Mockito.any(), Mockito.any());
         Mockito.doReturn(expected).when(propertyIntegerMock).getDefaultValue();
 

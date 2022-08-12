@@ -46,7 +46,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>5</code>
      */
-    public static Property<Integer> WORKERS = new Property<>("workers", 5);
+    private final Property<Integer> workers = new Property<>("workers", 5);
 
     /**
      * The IP address of the management server.<br>
@@ -706,6 +706,13 @@ public class AgentProperties{
      * Default value: <code>5</code>
      */
     public static final Property<Integer> PING_RETRIES = new Property<>("ping.retries", 5);
+
+    /**
+     * Returns {@link AgentProperties#workers}.
+     */
+    public Property<Integer> getWorkers() {
+        return workers;
+    }
 
     public static class Property <T>{
         private String name;
