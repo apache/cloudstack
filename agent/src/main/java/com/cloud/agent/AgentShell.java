@@ -32,6 +32,7 @@ import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
@@ -303,7 +304,7 @@ public class AgentShell implements IAgentShell, Daemon {
             return guid;
         }
 
-        if (!AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER)) {
+        if (BooleanUtils.isFalse(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER))) {
             throw new ConfigurationException("Unable to find the guid");
         }
 
@@ -488,7 +489,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
             String instance = getProperty(null, "instance");
             if (instance == null) {
-                if (AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER)) {
+                if (BooleanUtils.isTrue(AgentPropertiesFileHandler.getPropertyValue(AgentProperties.DEVELOPER))) {
                     instance = UUID.randomUUID().toString();
                 } else {
                     instance = "";
