@@ -118,6 +118,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             routerResponse.setRequiresUpgrade(true);
         }
 
+        routerResponse.setHypervisor(router.getHypervisorType().toString());
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
@@ -126,7 +127,6 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             if (router.getHostId() != null) {
                 routerResponse.setHostId(router.getHostUuid());
                 routerResponse.setHostName(router.getHostName());
-                routerResponse.setHypervisor(router.getHypervisorType().toString());
             }
             routerResponse.setPodId(router.getPodUuid());
             HostPodVO pod = ApiDBUtils.findPodById(router.getPodId());
