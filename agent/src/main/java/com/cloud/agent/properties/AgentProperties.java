@@ -46,7 +46,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>5</code>
      */
-    private final Property<Integer> workers = new Property<>("workers", 5);
+    protected final Property<Integer> workers = new Property<>("workers", 5);
 
     /**
      * The IP address of the management server.<br>

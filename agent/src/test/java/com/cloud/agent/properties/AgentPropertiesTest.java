@@ -28,10 +28,12 @@ public class AgentPropertiesTest {
 
     @Test
     public void initTestBlockInstanceWithNullValueAndWithoutType() throws IllegalAccessException {
-        Field[] fields = AgentProperties.class.getDeclaredFields();
+        AgentProperties agentProperties = new AgentProperties();
+        Field[] fields = agentProperties.getClass().getDeclaredFields();
+
         for (Field field : fields) {
             if (field.getType().equals(AgentProperties.Property.class)) {
-                AgentProperties.Property property = (AgentProperties.Property) field.get(null);
+                AgentProperties.Property property = (AgentProperties.Property) field.get(agentProperties);
 
                 Assert.assertTrue(String.format("Either inform the default value or the class of property [%s], field [%s].", property.getName(), field.getName()),
                                     property.getDefaultValue() != null || property.getTypeClass() != null);
