@@ -3713,8 +3713,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return vm;
     }
 
-    private static Long conditionallyChangeValue(boolean offering, Long initialValue, Long overridingValue) {
-        if (offering) {
+    private static Long conditionallyChangeValue(boolean condition, Long initialValue, Long overridingValue) {
+        if (condition) {
             initialValue = overridingValue;
         }
         return initialValue;
@@ -5512,7 +5512,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!zone.isLocalStorageEnabled()) {
             DiskOffering diskOfferingMappedInServiceOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
             conditionalThrow(diskOfferingMappedInServiceOffering.isUseLocalStorage(), "Zone is not configured to use local storage but disk offering " + diskOfferingMappedInServiceOffering.getName() + " mapped in service offering uses it");
-            conditionalThrow(diskOffering != null && diskOffering.isUseLocalStorage(), "Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+            if (diskOffering != null) {
+                conditionalThrow(diskOffering.isUseLocalStorage(), "Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
+            }
         }
 
         List<Long> networkIds = cmd.getNetworkIds();
