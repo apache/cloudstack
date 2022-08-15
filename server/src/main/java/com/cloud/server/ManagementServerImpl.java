@@ -2849,6 +2849,16 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public String getConsoleAccessAddress(long vmId) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm != null) {
+            final ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
+            return proxy != null ? proxy.getProxyAddress() : null;
+        }
+        return null;
+    }
+
+    @Override
     public Pair<String, Integer> getVncPort(final VirtualMachine vm) {
         if (vm.getHostId() == null) {
             s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");

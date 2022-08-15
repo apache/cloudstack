@@ -317,7 +317,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
         s_logger.debug("Adding allowed session: " + sessionUuid);
         allowedSessions.add(sessionUuid);
-        String url = !sb.toString().startsWith("http") ? ConsoleAccessManager.ConsoleProxySchema.value() + ":" + sb : sb.toString();
+
+        String url = !sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
+        ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
+        consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
+        consoleEndpoint.setWebsocketPort(String.valueOf(ConsoleProxyManager.NoVncConsolePort.value()));
+        consoleEndpoint.setWebsocketPath("websockify");
+        consoleEndpoint.setWebsocketToken(token);
         return new ConsoleEndpoint(true, url);
     }
 
@@ -443,7 +449,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] { ConsoleProxySchema, ConsoleProxyExtraSecurityHeaderName,
+        return new ConfigKey[] { ConsoleProxyExtraSecurityHeaderName,
                 ConsoleProxyExtraSecurityHeaderEnabled };
     }
 }

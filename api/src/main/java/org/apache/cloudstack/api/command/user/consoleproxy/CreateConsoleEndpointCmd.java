@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.CreateConsoleUrlResponse;
+import org.apache.cloudstack.api.response.ConsoleEndpointWebsocketResponse;
+import org.apache.cloudstack.api.response.CreateConsoleEndpointResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
@@ -39,7 +40,7 @@ import javax.inject.Inject;
 import java.util.Map;
 
 @APICommand(name = CreateConsoleEndpointCmd.APINAME, description = "Create a console endpoint to connect to a VM console",
-        responseObject = CreateConsoleUrlResponse.class, since = "4.18.0",
+        responseObject = CreateConsoleEndpointResponse.class, since = "4.18.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateConsoleEndpointCmd extends BaseCmd {
 
@@ -62,16 +63,32 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
         String clientAddress = getClientAddress();
         ConsoleEndpoint endpoint = consoleManager.generateConsoleEndpoint(vmId, clientSecurityToken, clientAddress);
         if (endpoint != null) {
-            CreateConsoleUrlResponse response = new CreateConsoleUrlResponse();
-            response.setResult(endpoint.isResult());
-            response.setDetails(endpoint.getDetails());
-            response.setUrl(endpoint.getUrl());
-            response.setResponseName(getCommandName());
-            response.setObjectName("consoleendpoint");
+            CreateConsoleEndpointResponse response = createResponse(endpoint);
             setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to generate console endpoint for vm " + vmId);
         }
+    }
+
+    private CreateConsoleEndpointResponse createResponse(ConsoleEndpoint endpoint) {
+        CreateConsoleEndpointResponse response = new CreateConsoleEndpointResponse();
+        response.setResult(endpoint.isResult());
+        response.setDetails(endpoint.getDetails());
+        response.setUrl(endpoint.getUrl());
+        response.setWebsocketResponse(createWebsocketResponse(endpoint));
+        response.setResponseName(getCommandName());
+        response.setObjectName("consoleendpoint");
+        return response;
+    }
+
+    private ConsoleEndpointWebsocketResponse createWebsocketResponse(ConsoleEndpoint endpoint) {
+        ConsoleEndpointWebsocketResponse wsResponse = new ConsoleEndpointWebsocketResponse();
+        wsResponse.setHost(endpoint.getWebsocketHost());
+        wsResponse.setPort(endpoint.getWebsocketPort());
+        wsResponse.setPath(endpoint.getWebsocketPath());
+        wsResponse.setToken(endpoint.getWebsocketToken());
+        wsResponse.setObjectName("websocket");
+        return wsResponse;
     }
 
     private String getParameterBase(String paramKey) {

@@ -21,6 +21,10 @@ public class ConsoleEndpoint {
     private boolean result;
     private String details;
     private String url;
+    private String websocketToken;
+    private String websocketPath;
+    private String websocketHost;
+    private String websocketPort;
 
     public ConsoleEndpoint(boolean result, String url) {
         this.result = result;
@@ -54,5 +58,37 @@ public class ConsoleEndpoint {
 
     public void setDetails(String details) {
         this.details = details;
+    }
+
+    public String getWebsocketToken() {
+        return websocketToken;
+    }
+
+    public void setWebsocketToken(String websocketToken) {
+        this.websocketToken = websocketToken;
+    }
+
+    public String getWebsocketPath() {
+        return websocketPath;
+    }
+
+    public void setWebsocketPath(String websocketPath) {
+        this.websocketPath = websocketPath;
+    }
+
+    public String getWebsocketHost() {
+        return websocketHost;
+    }
+
+    public void setWebsocketHost(String websocketHost) {
+        this.websocketHost = websocketHost;
+    }
+
+    public String getWebsocketPort() {
+        return websocketPort;
+    }
+
+    public void setWebsocketPort(String websocketPort) {
+        this.websocketPort = websocketPort;
     }
 }
