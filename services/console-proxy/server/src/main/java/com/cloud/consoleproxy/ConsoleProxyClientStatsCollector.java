@@ -74,7 +74,7 @@ public class ConsoleProxyClientStatsCollector {
                 conn.tag = client.getClientTag();
                 conn.createTime = client.getClientCreateTime();
                 conn.lastUsedTime = client.getClientLastFrontEndActivityTime();
-                conn.sessionUuid = client.getSessionUuid();
+                conn.setSessionUuid(client.getSessionUuid());
                 conns.add(conn);
             }
         }
@@ -89,7 +89,15 @@ public class ConsoleProxyClientStatsCollector {
         public String tag;
         public long createTime;
         public long lastUsedTime;
-        public String sessionUuid;
+        protected String sessionUuid;
+
+        public String getSessionUuid() {
+            return sessionUuid;
+        }
+
+        public void setSessionUuid(String sessionUuid) {
+            this.sessionUuid = sessionUuid;
+        }
 
         public ConsoleProxyConnection() {
         }

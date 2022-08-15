@@ -46,6 +46,7 @@ import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -325,7 +326,7 @@ public class ApiServlet extends HttpServlet {
                     InetAddress addr = getClientAddress(req);
                     String clientAddress = addr != null ? addr.getHostAddress() : null;
                     params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[]{clientAddress});
-                    if (ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderEnabled.value()) {
+                    if (BooleanUtils.isTrue(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderEnabled.value())) {
                         String clientSecurityToken = req.getHeader(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
                         params.put(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY, new String[]{clientSecurityToken});
                     }

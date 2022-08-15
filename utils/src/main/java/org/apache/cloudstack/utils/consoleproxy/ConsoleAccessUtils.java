@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.utils.consoleproxy;
 
-import org.apache.log4j.Logger;
-
 public class ConsoleAccessUtils {
 
-    public static final Logger s_logger = Logger.getLogger(ConsoleAccessUtils.class.getName());
+    private ConsoleAccessUtils() {
+    }
 
-    public static String CLIENT_SECURITY_HEADER_PARAM_KEY = "client-security-token";
-    public static String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
+    public static final String CLIENT_SECURITY_HEADER_PARAM_KEY = "client-security-token";
+    public static final String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
 }

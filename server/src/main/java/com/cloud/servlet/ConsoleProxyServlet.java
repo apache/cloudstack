@@ -179,7 +179,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             } else {
                 handleAuthRequest(req, resp, vmId);
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
             sendResponse(resp, "Server Internal Error");
         }

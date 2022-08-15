@@ -26,8 +26,16 @@ public class ConsoleProxyConnectionInfo {
     public String tag;
     public long createTime;
     public long lastUsedTime;
-    public String sessionUuid;
+    protected String sessionUuid;
 
     public ConsoleProxyConnectionInfo() {
+    }
+
+    public String getSessionUuid() {
+        return sessionUuid;
+    }
+
+    public void setSessionUuid(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
     }
 }

@@ -67,22 +67,22 @@ import java.util.UUID;
 public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAccessManager {
 
     @Inject
-    private AccountManager _accountMgr;
+    private AccountManager accountManager;
     @Inject
-    private VirtualMachineManager _vmMgr;
+    private VirtualMachineManager virtualMachineManager;
     @Inject
-    private ManagementServer _ms;
+    private ManagementServer managementServer;
     @Inject
-    private EntityManager _entityMgr;
+    private EntityManager entityManager;
     @Inject
-    private UserVmDetailsDao _userVmDetailsDao;
+    private UserVmDetailsDao userVmDetailsDao;
     @Inject
-    private KeysManager _keysMgr;
+    private KeysManager keysManager;
     @Inject
     private AgentManager agentManager;
 
-    private static KeysManager s_keysMgr;
-    private final Gson _gson = new GsonBuilder().create();
+    private static KeysManager secretKeysManager;
+    private final Gson gson = new GsonBuilder().create();
 
     public static final Logger s_logger = Logger.getLogger(ConsoleAccessManagerImpl.class.getName());
 
@@ -90,19 +90,19 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        s_keysMgr = _keysMgr;
-        allowedSessions = new HashSet<>();
+        ConsoleAccessManagerImpl.secretKeysManager = keysManager;
+        ConsoleAccessManagerImpl.allowedSessions = new HashSet<>();
         return super.configure(name, params);
     }
 
     @Override
     public ConsoleEndpoint generateConsoleEndpoint(Long vmId, String clientSecurityToken, String clientAddress) {
         try {
-            if (_accountMgr == null || _vmMgr == null || _ms == null) {
+            if (accountManager == null || virtualMachineManager == null || managementServer == null) {
                 return new ConsoleEndpoint(false, null,"Console service is not ready");
             }
 
-            if (_keysMgr.getHashKey() == null) {
+            if (keysManager.getHashKey() == null) {
                 String msg = "Console access denied. Ticket service is not ready yet";
                 s_logger.debug(msg);
                 return new ConsoleEndpoint(false, null, msg);
@@ -116,7 +116,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return new ConsoleEndpoint(false, null,"Access denied. Invalid or inconsistent account is found");
             }
 
-            VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, vmId);
+            VirtualMachine vm = entityManager.findById(VirtualMachine.class, vmId);
             if (vm == null) {
                 s_logger.info("Invalid console servlet command parameter: " + vmId);
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
@@ -128,8 +128,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             String sessionToken = UUID.randomUUID().toString();
             return generateAccessEndpoint(vmId, sessionToken, clientSecurityToken, clientAddress);
-        } catch (Throwable e) {
-            s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
+        } catch (Exception e) {
+            s_logger.error("Unexepected exception in ConsoleAccessManager", e);
             return new ConsoleEndpoint(false, null, "Server Internal Error: " + e.getMessage());
         }
     }
@@ -147,26 +147,24 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private boolean checkSessionPermision(VirtualMachine vm, Account account) {
-        if (_accountMgr.isRootAdmin(account.getId())) {
+        if (accountManager.isRootAdmin(account.getId())) {
             return true;
         }
 
         switch (vm.getType()) {
             case User:
                 try {
-                    _accountMgr.checkAccess(account, null, true, vm);
+                    accountManager.checkAccess(account, null, true, vm);
                 } catch (PermissionDeniedException ex) {
-                    if (_accountMgr.isNormalUser(account.getId())) {
+                    if (accountManager.isNormalUser(account.getId())) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
                                     account.getId() + " and caller is a normal user");
                         }
-                    } else if (_accountMgr.isDomainAdmin(account.getId())
-                            || account.getType() == Account.Type.READ_ONLY_ADMIN) {
-                        if(s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
-                                    + " does not match the account id in session " + account.getId() + " and the domain-admin caller does not manage the target domain");
-                        }
+                    } else if ((accountManager.isDomainAdmin(account.getId())
+                            || account.getType() == Account.Type.READ_ONLY_ADMIN) && s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
+                                + " does not match the account id in session " + account.getId() + " and the domain-admin caller does not manage the target domain");
                     }
                     return false;
                 }
@@ -186,7 +184,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private ConsoleEndpoint generateAccessEndpoint(Long vmId, String sessionToken, String clientSecurityToken, String clientAddress) {
-        VirtualMachine vm = _vmMgr.findById(vmId);
+        VirtualMachine vm = virtualMachineManager.findById(vmId);
         String msg;
         if (vm == null) {
             msg = "VM " + vmId + " does not exist, sending blank response for console access request";
@@ -200,7 +198,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException(msg);
         }
 
-        HostVO host = _ms.getHostBy(vm.getHostId());
+        HostVO host = managementServer.getHostBy(vm.getHostId());
         if (host == null) {
             msg = "VM " + vmId + "'s host does not exist, sending blank response for console access request";
             s_logger.warn(msg);
@@ -211,7 +209,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException("Console access is not supported for LXC");
         }
 
-        String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
+        String rootUrl = managementServer.getConsoleAccessUrlRoot(vmId);
         if (rootUrl == null) {
             throw new CloudRuntimeException("Console access will be ready in a few minutes. Please try it again later.");
         }
@@ -223,15 +221,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     private ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
                                                          String sessionUuid, String clientSecurityToken) {
-        StringBuffer sb = new StringBuffer(rootUrl);
+        StringBuilder sb = new StringBuilder(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
         Pair<String, Integer> portInfo = null;
         if (hostVo.getHypervisorType() == Hypervisor.HypervisorType.KVM &&
                 (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance) ||
                         hostVo.getResourceState().equals(ResourceState.ErrorInPrepareForMaintenance))) {
-            UserVmDetailVO detailAddress = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
-            UserVmDetailVO detailPort = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
+            UserVmDetailVO detailAddress = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_ADDRESS);
+            UserVmDetailVO detailPort = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KVM_VNC_PORT);
             if (detailAddress != null && detailPort != null) {
                 portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
             } else {
@@ -241,7 +239,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         if (portInfo == null) {
-            portInfo = _ms.getVncPort(vm);
+            portInfo = managementServer.getVncPort(vm);
         }
 
         if (s_logger.isDebugEnabled())
@@ -252,13 +250,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         int port = -1;
         if (portInfo.second() == -9) {
             //for hyperv
-            port = Integer.parseInt(_ms.findDetail(hostVo.getId(), "rdp.server.port").getValue());
+            port = Integer.parseInt(managementServer.findDetail(hostVo.getId(), "rdp.server.port").getValue());
         } else {
             port = portInfo.second();
         }
 
         String sid = vm.getVncPassword();
-        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
+        UserVmDetailVO details = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.KEYBOARD);
 
         String tag = vm.getUuid();
 
@@ -290,8 +288,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         if (portInfo.second() == -9) {
             //For Hyperv Clinet Host Address will send Instance id
             param.setHypervHost(host);
-            param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
-            param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
+            param.setUsername(managementServer.findDetail(hostVo.getId(), "username").getValue());
+            param.setPassword(managementServer.findDetail(hostVo.getId(), "password").getValue());
         }
         if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
@@ -310,7 +308,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
         // for console access, we need guest OS type to help implement keyboard
         long guestOs = vm.getGuestOSId();
-        GuestOSVO guestOsVo = _ms.getGuestOs(guestOs);
+        GuestOSVO guestOsVo = managementServer.getGuestOs(guestOs);
         if (guestOsVo.getCategoryId() == 6)
             sb.append("&guest=windows");
 
@@ -323,7 +321,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return new ConsoleEndpoint(true, url);
     }
 
-    static public Ternary<String, String, String> parseHostInfo(String hostInfo) {
+    public static Ternary<String, String, String> parseHostInfo(String hostInfo) {
         String host = null;
         String tunnelUrl = null;
         String tunnelSession = null;
@@ -332,7 +330,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
         if (hostInfo != null) {
             if (hostInfo.startsWith("consoleurl")) {
-                String tokens[] = hostInfo.split("&");
+                String[] tokens = hostInfo.split("&");
 
                 if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
                     host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
@@ -350,7 +348,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             host = hostInfo;
         }
 
-        return new Ternary<String, String, String>(host, tunnelUrl, tunnelSession);
+        return new Ternary<>(host, tunnelUrl, tunnelSession);
     }
 
     /**
@@ -373,7 +371,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
             long ts = normalizedHashTime.getTime();
             ts = ts / 60000;        // round up to 1 minute
-            String secretKey = s_keysMgr.getHashKey();
+            String secretKey = secretKeysManager.getHashKey();
 
             SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), mac.getAlgorithm());
             mac.init(keySpec);
@@ -390,11 +388,11 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     private String getEncryptorPassword() {
-        String key = _keysMgr.getEncryptionKey();
-        String iv = _keysMgr.getEncryptionIV();
+        String key = keysManager.getEncryptionKey();
+        String iv = keysManager.getEncryptionIV();
 
         ConsoleProxyPasswordBasedEncryptor.KeyIVPair keyIvPair = new ConsoleProxyPasswordBasedEncryptor.KeyIVPair(key, iv);
-        return _gson.toJson(keyIvPair);
+        return gson.toJson(keyIvPair);
     }
 
     /**
