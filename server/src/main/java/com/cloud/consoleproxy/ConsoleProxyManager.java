@@ -36,13 +36,13 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     String ALERT_SUBJECT = "proxy-alert";
     String CERTIFICATE_NAME = "CPVMCertificate";
 
-    ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.default", "true",
+    ConfigKey<Boolean> NoVncConsoleDefault = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.default", "true",
         "If true, noVNC console will be default console for virtual machines", true);
 
-    ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "novnc.console.sourceip.check.enabled", "false",
+    ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
-    ConfigKey<Integer> NoVncConsolePort = new ConfigKey<>("Advanced", Integer.class, "novnc.console.port",
+    ConfigKey<Integer> NoVncConsolePort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class, "novnc.console.port",
             "8080", "The listen port for noVNC console", true);
 
     void setManagementState(ConsoleProxyManagementState state);

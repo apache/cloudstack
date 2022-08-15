@@ -986,7 +986,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     }
                 });
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             s_logger.error(String.format("Unable to set console proxy management state to [%s] due to [%s].", state, e.getMessage()), e);
         }
     }
@@ -1021,7 +1021,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (lastState != state) {
                 configurationDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             s_logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
         }
     }

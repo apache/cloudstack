@@ -51,9 +51,9 @@ import com.cloud.vm.VirtualMachine;
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
-    private static final int sshPort = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
-    private static final File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-    private static final String vncConfFileLocation = "/root/vncport";
+    private static final int SSH_PORT = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
+    private static final File PEM_FILE = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+    private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";
 
     @Override
     public Answer execute(final StartCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -115,14 +115,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
 
                     if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy && vmSpec.getVncPort() != null) {
-                        String novncPort = vmSpec.getVncPort();
-                        try {
-                            String addCmd = "echo " + novncPort + " > " + vncConfFileLocation;
-                            SshHelper.sshExecute(controlIp, sshPort, "root",
-                                    pemFile, null, addCmd, 20000, 20000, 600000);
-                        } catch (Exception e) {
-                            s_logger.error("Could not set the noVNC port " + novncPort + " to the CPVM", e);
-                        }
+                        configureVncPortOnCpvm(vmSpec.getVncPort(), controlIp);
                     }
 
                     final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
@@ -135,8 +128,8 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                     }
 
                     try {
-                        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
-                        FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
+                        FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION,Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT),
+                                LibvirtStartCommandWrapper.PEM_FILE, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
                         if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
                             String errMsg = "Failed to patch systemVM";
                             s_logger.error(errMsg);
@@ -174,6 +167,16 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
             if (state != DomainState.VIR_DOMAIN_RUNNING) {
                 storagePoolMgr.disconnectPhysicalDisksViaVmSpec(vmSpec);
             }
+        }
+    }
+
+    private void configureVncPortOnCpvm(String novncPort, String controlIp) {
+        try {
+            String addCmd = "echo " + novncPort + " > " + VNC_CONF_FILE_LOCATION;
+            SshHelper.sshExecute(controlIp, SSH_PORT, "root",
+                    LibvirtStartCommandWrapper.PEM_FILE, null, addCmd, 20000, 20000, 600000);
+        } catch (Exception e) {
+            s_logger.error("Could not set the noVNC port " + novncPort + " to the CPVM", e);
         }
     }
 

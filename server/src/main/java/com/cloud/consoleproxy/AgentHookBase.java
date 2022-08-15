@@ -71,7 +71,7 @@ public abstract class AgentHookBase implements AgentHook {
     KeysManager _keysMgr;
     ConsoleAccessManager consoleAccessManager;
 
-    public AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
+    protected AgentHookBase(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr,
                          AgentManager agentMgr, KeysManager keysMgr, ConsoleAccessManager consoleAccessMgr) {
         _instanceDao = instanceDao;
         _hostDao = hostDao;
