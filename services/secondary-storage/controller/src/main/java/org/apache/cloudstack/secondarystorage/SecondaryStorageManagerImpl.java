@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.PasswordGenerator;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
@@ -631,6 +632,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
                 systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.isOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
+        secStorageVm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
             _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
@@ -1173,6 +1175,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Boot args for machine profile [%s]: [%s].", profile.toString(), bootArgs));
         }
+
+        boolean useHttpsToUpload = BooleanUtils.toBooleanDefaultIfNull(VolumeApiService.UseHttpsToUpload.value(), true);
+        s_logger.debug(String.format("Setting UseHttpsToUpload config on cmdline with [%s] value.", useHttpsToUpload));
+        buf.append(" useHttpsToUpload=").append(useHttpsToUpload);
 
         return true;
     }

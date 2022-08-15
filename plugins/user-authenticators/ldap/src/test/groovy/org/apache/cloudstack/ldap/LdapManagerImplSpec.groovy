@@ -288,7 +288,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for users"
         def result = ldapManager.searchUsers("rmurphy");
-        then: "A list of atleast 1 is returned"
+        then: "A list of at least 1 is returned"
         result.size() > 0;
     }
 
@@ -390,7 +390,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A request for configurations is made"
         def result = ldapManager.listConfigurations(new LdapListConfigurationCmd())
-        then: "Then atleast 1 ldap configuration is returned"
+        then: "Then at least 1 ldap configuration is returned"
         result.second() > 0
     }
 
@@ -533,7 +533,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
             user.isDisabled() == true
     }
 
-    def "test getUser(username,type,group) when username doesnt exist in ldap"(){
+    def "test getUser(username,type,group) when username doesn't exist in ldap"(){
         def ldapUserManager = Mock(LdapUserManager)
         def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager

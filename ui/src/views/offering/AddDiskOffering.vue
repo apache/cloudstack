@@ -204,7 +204,7 @@
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
             :loading="storageTagLoading"
             :placeholder="apiParams.tags.description"
@@ -409,7 +409,9 @@ export default {
       this.zoneLoading = true
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
       })

@@ -22,10 +22,11 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -42,8 +43,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
@@ -58,7 +59,7 @@ public class LibvirtDomainXMLParser {
     public boolean parseDomainXML(String domXML) {
         DocumentBuilder builder;
         try {
-            builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
 
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(domXML));

@@ -285,6 +285,7 @@ public class EventTypes {
 
     // ISO
     public static final String EVENT_ISO_CREATE = "ISO.CREATE";
+    public static final String EVENT_ISO_UPDATE = "ISO.UPDATE";
     public static final String EVENT_ISO_DELETE = "ISO.DELETE";
     public static final String EVENT_ISO_COPY = "ISO.COPY";
     public static final String EVENT_ISO_ATTACH = "ISO.ATTACH";

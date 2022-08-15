@@ -173,7 +173,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             }
             // check to see if other ps exist
             // if they do, then we can migrate over the system vms to them
-            // if they dont, then just stop all vms on this one
+            // if they don't, then just stop all vms on this one
             List<StoragePoolVO> upPools = primaryDataStoreDao.listByStatusInZone(pool.getDataCenterId(), StoragePoolStatus.Up);
             boolean restart = true;
             if (upPools == null || upPools.size() == 0) {

@@ -229,7 +229,7 @@ public class Vnc33Authentication extends OneTimeSwitch {
         case RfbConstants.VNC_AUTH_OK: {
             // Nothing to do
             if (verbose)
-                System.out.println("[" + this + "] INFO: Authentication successfull.");
+                System.out.println("[" + this + "] INFO: Authentication successful.");
             break;
         }
 

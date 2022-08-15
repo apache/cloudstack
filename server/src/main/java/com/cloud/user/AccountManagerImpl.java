@@ -301,6 +301,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private RoleService roleService;
 
+    @Inject
+    private PasswordPolicy passwordPolicy;
+
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
     private int _allowedLoginAttempts;
@@ -1368,6 +1371,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
+
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
+
         Account callingAccount = getCurrentCallingAccount();
         boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
         boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
@@ -2341,6 +2347,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
+
+        passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(password, userName, getAccount(accountId).getDomainId());
 
         String encodedPassword = null;
         for (UserAuthenticator authenticator : _userPasswordEncoders) {

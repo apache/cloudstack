@@ -722,10 +722,10 @@ export default {
       }
       this.hyperVisor.opts = []
 
-      if (this.zoneError !== '') {
+      const allZoneExists = value.filter(zone => zone === this.$t('label.all.zone'))
+      if (allZoneExists.length > 0 && value.length > 1) {
         return
       }
-
       const arrSelectReset = ['hypervisor', 'format', 'rootDiskControllerType', 'nicAdapterType', 'keyboardType']
       this.resetSelect(arrSelectReset)
 
@@ -876,10 +876,8 @@ export default {
         return Promise.resolve()
       }
       const allZoneExists = value.filter(zone => zone === this.$t('label.all.zone'))
-      this.zoneError = ''
 
       if (allZoneExists.length > 0 && value.length > 1) {
-        this.zoneError = 'error'
         return Promise.reject(this.$t('message.error.zone.combined'))
       }
 

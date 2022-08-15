@@ -49,7 +49,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -121,6 +120,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -629,6 +629,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.XenServer,
             HypervisorType.Simulator
     ));
+
+    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -2979,7 +2981,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Check is hostName is RFC compliant
             checkNameForRFCCompliance(hostName);
 
-            if (vm.getHostName().equalsIgnoreCase(hostName)) {
+            if (vm.getHostName().equals(hostName)) {
                 s_logger.debug("Vm " + vm + " is already set with the hostName specified: " + hostName);
                 hostName = null;
             }
@@ -3125,6 +3127,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vmInstance = _vmDao.findById(vmId);
         if (vmInstance == null) {
             throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+
+        if (vmInstance.getState() != State.Running) {
+            throw new InvalidParameterValueException(String.format("The VM %s (%s) is not running, unable to reboot it",
+                    vmInstance.getUuid(), vmInstance.getDisplayNameOrHostName()));
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -3835,6 +3842,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 rootDiskOfferingId = diskOfferingId;
                 diskOfferingId = null;
             }
+            if (!customParameters.containsKey(VmDetailConstants.ROOT_DISK_SIZE)) {
+                customParameters.put(VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(diskSize));
+            }
         }
         if (!offering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
             rootDiskOfferingId = overrideDiskOfferingId;
@@ -4279,11 +4289,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.details.putAll(details);
                 }
 
-                if (sshPublicKeys != "") {
+                if (StringUtils.isNotBlank(sshPublicKeys)) {
                     vm.setDetail(VmDetailConstants.SSH_PUBLIC_KEY, sshPublicKeys);
                 }
 
-                if (sshkeypairs != "") {
+                if (StringUtils.isNotBlank(sshkeypairs)) {
                     vm.setDetail(VmDetailConstants.SSH_KEY_PAIR_NAMES, sshkeypairs);
                 }
 
@@ -5144,8 +5154,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
-        if (vm.getState()== State.Running) {
-            throw new InvalidParameterValueException("The virtual machine "+ vm.getUuid()+ " ("+ vm.getDisplayName()+ ") is already running");
+        if (vm.getState() == State.Running) {
+            throw new InvalidParameterValueException(String.format("The virtual machine %s (%s) is already running",
+                    vm.getUuid(), vm.getDisplayNameOrHostName()));
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, vm);
@@ -5913,7 +5924,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Skip allowed keys validation validation for DPDK
         if (!decodedUrl.contains(":")) {
             try {
-                DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                DocumentBuilder builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
                 InputSource src = new InputSource();
                 src.setCharacterStream(new StringReader(String.format("<config>\n%s\n</config>", decodedUrl)));
                 Document doc = builder.parse(src);
@@ -6084,8 +6095,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
-        if (vm.getType() != VirtualMachine.Type.User && !HypervisorType.VMware.equals(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException("cannot do storage migration on non-user vm for hypervisor: " + vm.getHypervisorType().toString() + ", only supported for VMware");
+        HypervisorType hypervisorType = vm.getHypervisorType();
+        if (vm.getType() != VirtualMachine.Type.User && !HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS.contains(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following"
+                    + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -6093,7 +6106,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // OffLineVmwareMigration: data disks are not permitted, here!
             if (vols.size() > 1 &&
                     // OffLineVmwareMigration: allow multiple disks for vmware
-                    !HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                    !HypervisorType.VMware.equals(hypervisorType)) {
                 throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
             }
         }

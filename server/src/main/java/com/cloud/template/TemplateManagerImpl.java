@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VolumeApiService;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
@@ -379,8 +380,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             TemplateOrVolumePostUploadCommand firstCommand = payload.get(0);
 
             String ssvmUrlDomain = _configDao.getValue(Config.SecStorageSecureCopyCert.key());
+            String protocol = VolumeApiService.UseHttpsToUpload.value() ? "https" : "http";
 
-            String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID());
+            String url = ImageStoreUtil.generatePostUploadUrl(ssvmUrlDomain, firstCommand.getRemoteEndPoint(), firstCommand.getEntityUUID(), protocol);
             response.setPostURL(new URL(url));
 
             // set the post url, this is used in the monitoring thread to determine the SSVM
@@ -2027,11 +2029,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_UPDATE, eventDescription = "updating iso", async = false)
     public VMTemplateVO updateTemplate(UpdateIsoCmd cmd) {
         return updateTemplateOrIso(cmd);
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_TEMPLATE_UPDATE, eventDescription = "updating template", async = false)
     public VMTemplateVO updateTemplate(UpdateTemplateCmd cmd) {
         return updateTemplateOrIso(cmd);
     }

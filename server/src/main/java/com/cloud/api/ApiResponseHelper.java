@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.network.vpc.VpcVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -442,6 +444,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     NetworkOfferingDao networkOfferingDao;
     @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    UserVmJoinDao userVmJoinDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -1088,6 +1092,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         Network ntwk = ApiDBUtils.findNetworkById(loadBalancer.getNetworkId());
         lbResponse.setNetworkId(ntwk.getUuid());
 
+        lbResponse.setCidrList(loadBalancer.getCidrList());
+
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
     }
@@ -1532,18 +1538,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
+            vmResponse.setHypervisor(vm.getHypervisorType().toString());
 
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
-                    vmResponse.setHypervisor(host.getHypervisorType().toString());
-                }
-            } else if (vm.getLastHostId() != null) {
-                Host lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
-                if (lastHost != null) {
-                    vmResponse.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
 
@@ -4317,6 +4318,13 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (((NicVO)result).getNsxLogicalSwitchPortUuid() != null){
                 response.setNsxLogicalSwitchPort(((NicVO)result).getNsxLogicalSwitchPortUuid());
             }
+        }
+
+        UserVmJoinVO userVm =  userVmJoinDao.findById(vm.getId());
+        if (userVm != null && userVm.getVpcUuid() != null) {
+            response.setVpcId(userVm.getVpcUuid());
+            VpcVO vpc = _entityMgr.findByUuidIncludingRemoved(VpcVO.class, userVm.getVpcUuid());
+            response.setVpcName(vpc.getName());
         }
         return response;
     }
