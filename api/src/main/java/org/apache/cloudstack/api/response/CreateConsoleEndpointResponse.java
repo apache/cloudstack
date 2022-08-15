@@ -21,7 +21,10 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-public class CreateConsoleUrlResponse extends BaseResponse {
+public class CreateConsoleEndpointResponse extends BaseResponse {
+
+    public CreateConsoleEndpointResponse() {
+    }
 
     @SerializedName(ApiConstants.RESULT)
     @Param(description = "true if the console endpoint is generated properly")
@@ -31,21 +34,13 @@ public class CreateConsoleUrlResponse extends BaseResponse {
     @Param(description = "details in case of an error")
     private String details;
 
-    @SerializedName(ApiConstants.IP_ADDRESS)
-    @Param(description = "the console ip address")
-    private String ipAddress;
-
-    @SerializedName(ApiConstants.PORT)
-    @Param(description = "the console port")
-    private String port;
-
-    @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "the console token")
-    private String token;
-
     @SerializedName(ApiConstants.URL)
     @Param(description = "the console url")
     private String url;
+
+    @SerializedName("websocket")
+    @Param(description = "the console websocket options")
+    private ConsoleEndpointWebsocketResponse websocketResponse;
 
     public Boolean getResult() {
         return result;
@@ -63,35 +58,19 @@ public class CreateConsoleUrlResponse extends BaseResponse {
         this.details = details;
     }
 
-    public String getIpAddress() {
-        return ipAddress;
-    }
-
-    public void setIpAddress(String ip) {
-        this.ipAddress = ip;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
     public String getUrl() {
         return url;
     }
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public ConsoleEndpointWebsocketResponse getWebsocketResponse() {
+        return websocketResponse;
+    }
+
+    public void setWebsocketResponse(ConsoleEndpointWebsocketResponse websocketResponse) {
+        this.websocketResponse = websocketResponse;
     }
 }

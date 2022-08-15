@@ -23,11 +23,6 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 public interface ConsoleAccessManager extends Manager, Configurable {
 
-
-    ConfigKey<String> ConsoleProxySchema = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
-            "consoleproxy.schema", "http",
-            "The http/https schema to be used by the console proxy URLs", true);
-
     ConfigKey<Boolean> ConsoleProxyExtraSecurityHeaderEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
             "consoleproxy.extra.security.header.enabled", "false",
             "Enable/disable extra security validation for console proxy using client header", true);

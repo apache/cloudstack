@@ -53,6 +53,8 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     String getConsoleAccessUrlRoot(long vmId);
 
+    String getConsoleAccessAddress(long vmId);
+
     GuestOSVO getGuestOs(Long guestOsId);
 
     GuestOSHypervisorVO getGuestOsHypervisor(Long guestOsHypervisorId);
