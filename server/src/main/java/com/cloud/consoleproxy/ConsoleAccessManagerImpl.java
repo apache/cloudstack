@@ -369,13 +369,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag + "&session=" + sessionUuid;
 
         try {
-            Mac mac = Mac.getInstance("HmacSHA1");
+            Mac mac = Mac.getInstance("SHA-512");
 
             long ts = normalizedHashTime.getTime();
             ts = ts / 60000;        // round up to 1 minute
             String secretKey = s_keysMgr.getHashKey();
 
-            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), mac.getAlgorithm());
             mac.init(keySpec);
             mac.update(params.getBytes());
             mac.update(String.valueOf(ts).getBytes());
