@@ -651,6 +651,21 @@ export default {
           value: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
           title: 'NVIDIA GRID K2',
           vgpu: ['', 'passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q']
+        },
+        {
+          value: 'Group of NVIDIA Corporation GV100GL [TESLA V100] GPUs',
+          title: 'NVIDIA TESLA V100',
+          vgpu: ['', 'passthrough', 'GRID V100D-32A', 'GRID V100D-8Q', 'GRID V100D-4A', 'GRID V100D-1B', 'GRID V100D-2Q', 'GRID V100D-4Q', 'GRID V100D-2A', 'GRID V100D-2B', 'GRID V100D-32Q', 'GRID V100D-16A', 'GRID V100D-1Q', 'GRID V100D-2B4', 'GRID V100D-16Q', 'GRID V100D-8A', 'GRID V100D-1A']
+        },
+        {
+          value: 'Group of Nvidia Corporation TU104GL [Tesla T4] GPUs',
+          title: 'NVIDIA TESLA T4',
+          vgpu: ['', 'passthrough', 'GRID T4-16A', 'GRID T4-2B4', 'GRID T4-4Q', 'GRID T4-16Q', 'GRID T4-4A', 'GRID T4-1A', 'GRID T4-2Q', 'GRID T4-2B', 'GRID T4-8Q', 'GRID T4-2A', 'GRID T4-1B', 'GRID T4-1Q', 'GRID T4-8A']
+        },
+        {
+          value: 'Group of Nvidia Corporation GA102 [RTX A5500] GPUs',
+          title: 'NVIDIA RTX A5500',
+          vgpu: ['', 'passthrough', 'NVIDIA RTXA5500-1A', 'NVIDIA RTXA5500-1B', 'NVIDIA RTXA5500-1Q', 'NVIDIA RTXA5500-2A', 'NVIDIA RTXA5500-2B', 'NVIDIA RTXA5500-2Q', 'NVIDIA RTXA5500-3A', 'NVIDIA RTXA5500-3Q', 'NVIDIA RTXA5500-4A', 'NVIDIA RTXA5500-4Q', 'NVIDIA RTXA5500-6A', 'NVIDIA RTXA5500-6Q', 'NVIDIA RTXA5500-8A', 'NVIDIA RTXA5500-8Q', 'NVIDIA RTXA5500-12A', 'NVIDIA RTXA5500-12Q', 'NVIDIA RTXA5500-24A', 'NVIDIA RTXA5500-24Q']
         }
       ],
       vGpuVisible: false,
