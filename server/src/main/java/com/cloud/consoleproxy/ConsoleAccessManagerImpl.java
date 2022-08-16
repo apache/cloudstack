@@ -318,13 +318,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         s_logger.debug("Adding allowed session: " + sessionUuid);
         allowedSessions.add(sessionUuid);
 
-        String url = !sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
+        String url = sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
         consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
         consoleEndpoint.setWebsocketPort(String.valueOf(ConsoleProxyManager.NoVncConsolePort.value()));
         consoleEndpoint.setWebsocketPath("websockify");
         consoleEndpoint.setWebsocketToken(token);
-        return new ConsoleEndpoint(true, url);
+        return consoleEndpoint;
     }
 
     public static Ternary<String, String, String> parseHostInfo(String hostInfo) {
