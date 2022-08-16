@@ -1440,6 +1440,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             final VolumeVO volumeNow = _volsDao.findById(volumeId);
             if (currentSize == volumeNow.getSize() && currentSize != newSize) {
                 volume.setSize(newSize);
+            } else if (volumeNow.getSize() != newSize) {
+                // consider the updated size as the new size
+                newSize = volumeNow.getSize();
             }
 
             _volsDao.update(volume.getId(), volume);
