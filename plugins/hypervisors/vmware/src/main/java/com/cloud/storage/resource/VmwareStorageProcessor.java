@@ -2341,7 +2341,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         try {
             VmwareContext context = hostService.getServiceContext(null);
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, null);
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+            VirtualMachineMO vmMo = HypervisorHostHelper.findVmOnHypervisorHostOrPeer(hyperHost, vmName);
             if (vmMo == null) {
                 String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + vmName;
                 s_logger.error(msg);
