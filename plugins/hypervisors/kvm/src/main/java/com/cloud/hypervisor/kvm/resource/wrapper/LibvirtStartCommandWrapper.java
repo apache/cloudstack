@@ -49,8 +49,6 @@ import com.cloud.utils.ssh.SshHelper;
 public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
-    private static final int SSH_PORT = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
-    private static final File PEM_FILE = new File(LibvirtComputingResource.SSHPRVKEYPATH);
     private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";
 
     @Override
@@ -112,10 +110,6 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         }
                     }
 
-                    if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy && vmSpec.getVncPort() != null) {
-                        configureVncPortOnCpvm(vmSpec.getVncPort(), controlIp);
-                    }
-
                     final VirtualRoutingResource virtRouterResource = libvirtComputingResource.getVirtRouterResource();
                     // check if the router is up?
                     for (int count = 0; count < 60; count++) {
@@ -123,6 +117,10 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         if (result) {
                             break;
                         }
+                    }
+
+                    if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy && vmSpec.getVncPort() != null) {
+                        configureVncPortOnCpvm(vmSpec.getVncPort(), controlIp);
                     }
                 }
             }
@@ -155,12 +153,19 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
     }
 
     private void configureVncPortOnCpvm(String novncPort, String controlIp) {
-        try {
-            String addCmd = "echo " + novncPort + " > " + VNC_CONF_FILE_LOCATION;
-            SshHelper.sshExecute(controlIp, SSH_PORT, "root",
-                    LibvirtStartCommandWrapper.PEM_FILE, null, addCmd, 20000, 20000, 600000);
-        } catch (Exception e) {
-            s_logger.error("Could not set the noVNC port " + novncPort + " to the CPVM", e);
+        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+        int sshPort = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
+        String addCmd = "echo " + novncPort + " > " + VNC_CONF_FILE_LOCATION;
+        for (int retries = 1; retries <= 3; retries++) {
+            try {
+                SshHelper.sshExecute(controlIp, sshPort, "root", pemFile, null, addCmd);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Set noVNC port: %s to the CPVM", novncPort));
+                }
+                return;
+            } catch (Exception e) {
+                s_logger.error(String.format("Could not set the noVNC port: %s to the CPVM, attempt: %s", novncPort, retries), e);
+            }
         }
     }
 
