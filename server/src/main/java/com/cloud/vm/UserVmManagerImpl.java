@@ -3857,6 +3857,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
         }
+        UserVmVO vm = getPermittedVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+
+        _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
+
+        if (affinityGroupIdList != null && !affinityGroupIdList.isEmpty()) {
+            _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
+        }
+
+        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
+        return vm;
+    }
+
+    private synchronized UserVmVO getPermittedVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
         if (! VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
         }
@@ -4035,15 +4048,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 profile.setDefaultNic(true);
                 if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
                     if ((userData != null) && (!userData.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
                     if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
                     if (template.isEnablePassword()) {
-                        throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
+                        throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
                     }
                 }
             }
@@ -4099,7 +4112,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // If global config vm.instancename.flag is set to true, then CS will set guest VM's name as it appears on the hypervisor, to its hostname.
             // In case of VMware since VM name must be unique within a DC, check if VM with the same hostname already exists in the zone.
             VMInstanceVO vmByHostName = _vmInstanceDao.findVMByHostNameInZone(hostName, zone.getId());
-            if (vmByHostName != null && vmByHostName.getState() != VirtualMachine.State.Expunging) {
+            if (vmByHostName != null && vmByHostName.getState() != State.Expunging) {
                 throw new InvalidParameterValueException("There already exists a VM by the name: " + hostName + ".");
             }
         } else {
@@ -4120,7 +4133,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check if VM with instanceName already exists.
         VMInstanceVO vmObj = _vmInstanceDao.findVMByInstanceName(instanceName);
-        if (vmObj != null && vmObj.getState() != VirtualMachine.State.Expunging) {
+        if (vmObj != null && vmObj.getState() != State.Expunging) {
             throw new InvalidParameterValueException("There already exists a VM by the display name supplied");
         }
 
@@ -4151,14 +4164,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (Exception ex) {
             throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
-
-        _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
-
-        if (affinityGroupIdList != null && !affinityGroupIdList.isEmpty()) {
-            _affinityGroupVMMapDao.updateMap(vm.getId(), affinityGroupIdList);
-        }
-
-        CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
     }
 
