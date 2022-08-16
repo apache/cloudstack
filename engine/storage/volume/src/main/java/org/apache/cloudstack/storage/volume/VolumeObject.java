@@ -16,37 +16,30 @@
 // under the License.
 package org.apache.cloudstack.storage.volume;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.VsphereStoragePolicyDao;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import org.apache.cloudstack.secret.dao.PassphraseDao;
-import org.apache.cloudstack.secret.PassphraseVO;
-import com.cloud.service.dao.ServiceOfferingDetailsDao;
-import com.cloud.storage.MigrationOptions;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.vm.VmDetailConstants;
-
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.secret.PassphraseVO;
+import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -54,32 +47,40 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering.DiskCacheMode;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.storage.encoding.EncodingType;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class VolumeObject implements VolumeInfo {
     private static final Logger s_logger = Logger.getLogger(VolumeObject.class);
@@ -92,6 +93,8 @@ public class VolumeObject implements VolumeInfo {
     VolumeDataStoreDao volumeStoreDao;
     @Inject
     ObjectInDataStoreManager objectInStoreMgr;
+    @Inject
+    ResourceLimitService resourceLimitMgr;
     @Inject
     VMInstanceDao vmInstanceDao;
     @Inject
@@ -687,6 +690,22 @@ public class VolumeObject implements VolumeInfo {
         s_logger.debug(String.format("Updated %s from %s to %s ", volumeVo.getVolumeDescription(), previousValues, newValues));
     }
 
+    protected void updateResourceCount(VolumeObjectTO newVolume, VolumeVO oldVolume) {
+        if (newVolume == null || newVolume.getSize() == null || oldVolume == null || oldVolume.getSize() == null) {
+            return;
+        }
+
+        long newVolumeSize = newVolume.getSize();
+        long oldVolumeSize = oldVolume.getSize();
+        if (newVolumeSize != oldVolumeSize) {
+            if (oldVolumeSize < newVolumeSize) {
+                resourceLimitMgr.incrementResourceCount(oldVolume.getAccountId(), ResourceType.primary_storage, oldVolume.isDisplayVolume(), newVolumeSize - oldVolumeSize);
+            } else {
+                resourceLimitMgr.decrementResourceCount(oldVolume.getAccountId(), ResourceType.primary_storage, oldVolume.isDisplayVolume(), oldVolumeSize - newVolumeSize);
+            }
+        }
+    }
+
    protected void handleProcessEventCopyCmdAnswerNotPrimaryStore(VolumeObjectTO newVolume) {
         VolumeDataStoreVO volStore = volumeStoreDao.findByStoreVolume(dataStore.getId(), getId());
 
@@ -718,6 +737,7 @@ public class VolumeObject implements VolumeInfo {
         VolumeObjectTO newVolume = (VolumeObjectTO)createObjectAnswer.getData();
         VolumeVO volumeVo = volumeDao.findById(getId());
         updateVolumeInfo(newVolume, volumeVo, true, setFormat);
+        updateResourceCount(newVolume, volumeVo);
     }
 
     protected void handleProcessEventAnswer(DownloadAnswer downloadAnswer) {

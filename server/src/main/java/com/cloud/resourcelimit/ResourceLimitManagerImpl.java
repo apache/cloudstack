@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.resourcelimit;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -102,12 +104,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 @Component
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable {
@@ -498,7 +498,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         Long resourceLimit = null;
         resourceLimit = domainResourceLimitMap.get(resourceType);
         if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
-            resourceLimit = resourceLimit * ResourceType.bytesToGiB;
+            if (! Long.valueOf(Resource.RESOURCE_UNLIMITED).equals(resourceLimit)) {
+                resourceLimit = resourceLimit * ResourceType.bytesToGiB;
+            }
         } else {
             resourceLimit = Long.valueOf(Resource.RESOURCE_UNLIMITED);
         }
@@ -847,6 +849,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
     }
 
+    /**
+     * This will take care of re-calculation of resource counts for root and sub-domains
+     * and accounts of the sub-domains also. so just loop through immediate children of root domain
+     *
+     * @param domainId the domain level to start at
+     * @param type the resource type to do the recalculation for
+     * @return the resulting new resource count
+     */
     @DB
     protected long recalculateDomainResourceCount(final long domainId, final ResourceType type) {
         return Transaction.execute(new TransactionCallback<Long>() {
@@ -1112,22 +1122,19 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         protected void runInContext() {
             s_logger.info("Started resource counters recalculation periodic task.");
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
+            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
 
-            // recalculateDomainResourceCount will take care of re-calculation of resource counts for sub-domains
-            // and accounts of the sub-domains also. so just loop through immediate children of root domain
-            for (Domain domain : domains) {
-                for (ResourceType type : ResourceCount.ResourceType.values()) {
-                    if (type.supportsOwner(ResourceOwnerType.Domain)) {
+            for (ResourceType type : ResourceCount.ResourceType.values()) {
+                if (type.supportsOwner(ResourceOwnerType.Domain)) {
+                    recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
+                    for (Domain domain : domains) {
                         recalculateDomainResourceCount(domain.getId(), type);
                     }
                 }
-            }
 
-            // run through the accounts in the root domain
-            List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
-            for (AccountVO account : accounts) {
-                for (ResourceType type : ResourceCount.ResourceType.values()) {
-                    if (type.supportsOwner(ResourceOwnerType.Account)) {
+                if (type.supportsOwner(ResourceOwnerType.Account)) {
+                    // run through the accounts in the root domain
+                    for (AccountVO account : accounts) {
                         recalculateAccountResourceCount(account.getId(), type);
                     }
                 }
