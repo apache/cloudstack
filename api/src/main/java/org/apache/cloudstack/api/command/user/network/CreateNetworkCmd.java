@@ -163,7 +163,7 @@ public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     private Integer publicMtu;
 
     @Parameter(name = ApiConstants.PRIVATE_MTU, type = CommandType.INTEGER,
-            description = "MTU to be configured on the network VR's public facing interfaces", since = "4.18.0")
+            description = "MTU to be configured on the network VR's private interface(s)", since = "4.18.0")
     private Integer privateMtu;
 
     /////////////////////////////////////////////////////
