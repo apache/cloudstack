@@ -91,6 +91,9 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     private VolumeDao volumeDao;
     private Map<String, String> _details;
 
+    private String uuid;
+    private String name;
+
     public PrimaryDataStoreImpl() {
 
     }
@@ -99,6 +102,8 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
         this.pdsv = pdsv;
         this.driver = driver;
         this.provider = provider;
+        this.uuid = pdsv.getUuid();
+        this.name = pdsv.getName();
     }
 
     public static PrimaryDataStoreImpl createDataStore(StoragePoolVO pdsv, PrimaryDataStoreDriver driver, DataStoreProvider provider) {
@@ -198,12 +203,12 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
 
     @Override
     public String getUuid() {
-        return pdsv.getUuid();
+        return uuid;
     }
 
     @Override
     public String getName() {
-        return pdsv.getName();
+        return name;
     }
 
     @Override

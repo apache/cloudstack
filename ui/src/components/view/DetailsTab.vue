@@ -103,13 +103,13 @@ export default {
       type: Boolean,
       default: false
     },
-    tab: {
-      type: String,
-      default: null
-    },
     bordered: {
       type: Boolean,
       default: false
+    },
+    tab: {
+      type: String,
+      default: ''
     }
   },
   data () {
