@@ -397,7 +397,7 @@ public class Ipv6ServiceImplTest {
         Nic nic = Mockito.mock(Nic.class);
         Mockito.when(nic.getIPv6Address()).thenReturn(null);
         Mockito.when(nic.getBroadcastUri()).thenReturn(URI.create(vlan));
-        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(1L, "vlan")).thenReturn(new ArrayList<>());
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(1L, "vlan")).thenReturn(new ArrayList<>());
         try (TransactionLegacy txn = TransactionLegacy.open("testNewErrorAssignPublicIpv6ToNetwork")) {
            ipv6Service.assignPublicIpv6ToNetwork(Mockito.mock(Network.class), nic);
         }
@@ -421,7 +421,7 @@ public class Ipv6ServiceImplTest {
         Mockito.when(vlanVO.getVlanType()).thenReturn(Vlan.VlanType.VirtualNetwork);
         List<VlanVO> vlans = new ArrayList<>();
         vlans.add(vlanVO);
-        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlans);
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(vlans);
         List<NicVO> placeholderNics = new ArrayList<>();
         if (fromPlaceholder) {
             placeholderNics = mockPlaceholderNics();
@@ -601,7 +601,7 @@ public class Ipv6ServiceImplTest {
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
         Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
         Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
-        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(new ArrayList<>());
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(Mockito.anyLong(), Mockito.anyString())).thenReturn(new ArrayList<>());
         try {
             ipv6Service.checkNetworkIpv6Upgrade(network);
             Assert.fail("No InsufficientAddressCapacityException");
@@ -619,7 +619,7 @@ public class Ipv6ServiceImplTest {
         VlanVO vlanVO = Mockito.mock(VlanVO.class);
         Mockito.when(vlanVO.getVlanTag()).thenReturn(vlan);
         Mockito.when(vlanDao.findById(Mockito.anyLong())).thenReturn(vlanVO);
-        Mockito.when(vlanDao.listIpv6RangeByPhysicalNetworkIdAndVlanId(physicalNetworkId, vlan)).thenReturn(List.of(vlanVO));
+        Mockito.when(vlanDao.listIpv6RangeByZoneIdAndVlanId(physicalNetworkId, vlan)).thenReturn(List.of(vlanVO));
         try {
             ipv6Service.checkNetworkIpv6Upgrade(network);
         } catch (InsufficientAddressCapacityException | ResourceAllocationException e) {
