@@ -124,9 +124,9 @@ class TestPrimaryResourceLimitsVolume(cloudstackTestCase):
         # 1. create a normal user account and update primary store limits to the current resource count
         # 2. Upload a volume of any size
         # 3. Verify that upload volume succeeds
-        # 4. Verify that primary storage count doesnt change
+        # 4. Verify that primary storage count doesn't change
         # 6. Try attaching volume to VM and verify that the attach fails (as the resource limits exceed)
-        # 7. Verify that primary storage count doesnt change
+        # 7. Verify that primary storage count doesn't change
         # done
         """
         # create an account, launch a vm with default template and custom disk offering, update the primary store limits to the current primary store resource count

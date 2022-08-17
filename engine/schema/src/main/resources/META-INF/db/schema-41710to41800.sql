@@ -24,6 +24,10 @@ UPDATE `cloud`.`service_offering` so
 SET so.limit_cpu_use = 1
 WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm', 'consoleproxy', 'internalloadbalancervm', 'elasticloadbalancervm');
 
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+ADD cidr_list VARCHAR(4096);
+
 -- VM autoscaling
 
 -- Add column 'name' to 'autoscale_vmgroups' table
@@ -274,4 +278,3 @@ FROM
         AND (`custom_speed`.`name` = 'CpuSpeed'))))
         LEFT JOIN `user_vm_details` `custom_ram_size` ON (((`custom_ram_size`.`vm_id` = `vm_instance`.`id`)
         AND (`custom_ram_size`.`name` = 'memory'))));
-

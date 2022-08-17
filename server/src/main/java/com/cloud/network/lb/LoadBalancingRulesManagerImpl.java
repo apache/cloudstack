@@ -33,6 +33,8 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBHealthCheckPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLBStickinessPolicyCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListLBHealthCheckPoliciesCmd;
@@ -1688,6 +1690,14 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
         Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay) throws NetworkRuleConflictException,
         InsufficientAddressCapacityException {
+            return createPublicLoadBalancerRule(xId, name, description, srcPortStart, srcPortEnd, defPortStart, defPortEnd, ipAddrId, protocol, algorithm, networkId, lbOwnerId, openFirewall, lbProtocol, forDisplay, null);
+        }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
+    public LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
+            Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol, Boolean forDisplay, List<String> cidrList) throws NetworkRuleConflictException,
+            InsufficientAddressCapacityException {
         Account lbOwner = _accountMgr.getAccount(lbOwnerId);
 
         if (srcPortStart != srcPortEnd) {
@@ -1733,6 +1743,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
         }
 
+        String cidrString = generateCidrString(cidrList);
+
         boolean performedIpAssoc = false;
         try {
             if (ipVO.getAssociatedWithNetworkId() == null) {
@@ -1754,7 +1766,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
 
             result = createPublicLoadBalancer(xId, name, description, srcPortStart, defPortStart, ipVO.getId(), protocol, algorithm, openFirewall, CallContext.current(),
-                    lbProtocol, forDisplay);
+                    lbProtocol, forDisplay, cidrString);
         } catch (Exception ex) {
             s_logger.warn("Failed to create load balancer due to ", ex);
             if (ex instanceof NetworkRuleConflictException) {
@@ -1783,12 +1795,40 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         return result;
     }
+   /**
+    * Transforms the cidrList from a List of Strings to a String which contains all the CIDRs from cidrList separated by whitespaces. This is used to facilitate both the persistence
+    * in the DB and also later when building the configuration String in the getRulesForPool method of the HAProxyConfigurator class.
+   */
+    protected String generateCidrString(List<String> cidrList) {
+        if (cidrList == null) {
+            s_logger.trace("The given CIDR list is null, therefore we will return null.");
+            return null;
+        }
+        String cidrString;
+        StringBuilder sb = new StringBuilder();
+        for (String cidr: cidrList) {
+            cidr = validateCidr(cidr);
+            sb.append(cidr).append(' ');
+        }
+        cidrString = sb.toString();
+        s_logger.trace(String.format("From the cidrList [%s] we generated the following CIDR String [%s].", cidrList, cidrString));
+        return StringUtils.trim(cidrString);
+    }
 
+    private String validateCidr(String cidr) {
+        cidr = StringUtils.trim(cidr);
+        boolean validCidr = NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp6Cidr(cidr);
+        boolean validIp = NetUtils.isValidIp4(cidr) || NetUtils.isValidIp6(cidr);
+        if (!validCidr && !validIp) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("CIDR [%s] is invalid.", cidr));
+        }
+        return cidr;
+    }
     @DB
     @Override
     public LoadBalancer createPublicLoadBalancer(final String xId, final String name, final String description, final int srcPort, final int destPort,
  final long sourceIpId,
-            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay)
+            final String protocol, final String algorithm, final boolean openFirewall, final CallContext caller, final String lbProtocol, final Boolean forDisplay, String cidrList)
             throws NetworkRuleConflictException {
 
         if (!NetUtils.isValidPort(destPort)) {
@@ -1832,7 +1872,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         LoadBalancerVO newRule =
             new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                ipAddr.getAllocatedInDomainId(), lbProtocol);
+                ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
         // verify rule is supported by Lb provider of the network
         Ip sourceIp = getSourceIp(newRule);
@@ -1848,7 +1888,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             public LoadBalancerVO doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 LoadBalancerVO newRule =
                     new LoadBalancerVO(xId, name, description, sourceIpId, srcPort, destPort, algorithm, networkId, ipAddr.getAllocatedToAccountId(),
-                        ipAddr.getAllocatedInDomainId(), lbProtocol);
+                        ipAddr.getAllocatedInDomainId(), lbProtocol, cidrList);
 
                 if (forDisplay != null) {
                     newRule.setDisplay(forDisplay);

@@ -39,6 +39,9 @@
         Allow from 127.0.0.0/255.0.0.0 ::1/128
     </Directory>
 
+    # Include HTTP configuration **IF SET**
+    IncludeOptional /etc/apache2/http.conf
+
 </VirtualHost>
 
 <IfModule mod_ssl.c>
@@ -83,8 +86,8 @@
 		Allow from 127.0.0.0/255.0.0.0 ::1/128
 	</Directory>
 
-	# Include CORS configuration **IF SET**
-	IncludeOptional /etc/apache2/[cC][oO][rR][sS].conf
+	# Include HTTPS configuration **IF SET**
+	IncludeOptional /etc/apache2/https.conf
 
 	#   SSL Engine Switch:
 	#   Enable/Disable SSL for this virtual host.

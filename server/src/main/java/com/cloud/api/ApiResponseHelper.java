@@ -1094,6 +1094,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         Network ntwk = ApiDBUtils.findNetworkById(loadBalancer.getNetworkId());
         lbResponse.setNetworkId(ntwk.getUuid());
 
+        lbResponse.setCidrList(loadBalancer.getCidrList());
+
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
     }
@@ -1538,18 +1540,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setTemplateName(template.getName());
             }
             vmResponse.setCreated(vm.getCreated());
+            vmResponse.setHypervisor(vm.getHypervisorType().toString());
 
             if (vm.getHostId() != null) {
                 Host host = ApiDBUtils.findHostById(vm.getHostId());
                 if (host != null) {
                     vmResponse.setHostId(host.getUuid());
                     vmResponse.setHostName(host.getName());
-                    vmResponse.setHypervisor(host.getHypervisorType().toString());
-                }
-            } else if (vm.getLastHostId() != null) {
-                Host lastHost = ApiDBUtils.findHostById(vm.getLastHostId());
-                if (lastHost != null) {
-                    vmResponse.setHypervisor(lastHost.getHypervisorType().toString());
                 }
             }
 

@@ -533,7 +533,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
             user.isDisabled() == true
     }
 
-    def "test getUser(username,type,group) when username doesnt exist in ldap"(){
+    def "test getUser(username,type,group) when username doesn't exist in ldap"(){
         def ldapUserManager = Mock(LdapUserManager)
         def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager

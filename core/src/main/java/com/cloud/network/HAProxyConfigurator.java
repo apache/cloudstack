@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
@@ -549,6 +550,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             sb = new StringBuilder();
             sb.append("\t").append("option httpclose");
             result.add(sb.toString());
+        }
+
+        String cidrList = lbTO.getCidrList();
+
+        if (StringUtils.isNotBlank(cidrList)) {
+            result.add(String.format("\tacl network_allowed src %s \n\ttcp-request connection reject if !network_allowed", cidrList));
         }
 
         result.add(blankLine);

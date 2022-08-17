@@ -206,6 +206,7 @@ export default {
       selectedColumns: [],
       filterColumns: ['Status', 'Ready'],
       showConfirmationAction: false,
+      redirectOnFinish: true,
       message: {
         title: this.$t('label.action.bulk.delete.isos'),
         confirmMessage: this.$t('label.confirm.delete.isos')
@@ -340,6 +341,14 @@ export default {
       this.selectedRowKeys = []
       this.fetchData()
       if (this.dataSource.length === 0) {
+        this.moveToPreviousView()
+        this.redirectOnFinish = false
+      }
+    },
+    async moveToPreviousView () {
+      const lastPath = this.$router.currentRoute.value.fullPath
+      const navigationResult = await this.$router.go(-1)
+      if (navigationResult !== undefined || this.$router.currentRoute.value.fullPath === lastPath) {
         this.$router.go(-1)
       }
     },
@@ -372,14 +381,15 @@ export default {
         const jobId = json.deleteisoresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
+        this.redirectOnFinish = true
         this.$pollJob({
           jobId,
           title: this.$t('label.action.delete.iso'),
           description: this.resource.name,
           successMethod: result => {
             if (singleZone) {
-              if (this.selectedItems.length === 0) {
-                this.$router.go(-1)
+              if (this.selectedItems.length === 0 && this.redirectOnFinish) {
+                this.moveToPreviousView()
               }
             } else {
               if (this.selectedItems.length === 0) {
@@ -388,6 +398,9 @@ export default {
             }
             if (this.selectedItems.length > 0) {
               eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: record.zoneid, state: 'success' })
+              if (this.selectedItems.length === this.zones.length && this.redirectOnFinish) {
+                this.moveToPreviousView()
+              }
             }
           },
           errorMethod: () => {

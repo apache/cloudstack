@@ -23,6 +23,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -32,8 +33,7 @@ public class LibvirtXMLParser extends DefaultHandler {
     private static final Logger s_logger = Logger.getLogger(LibvirtXMLParser.class);
     protected static final SAXParserFactory s_spf;
     static {
-        s_spf = SAXParserFactory.newInstance();
-
+        s_spf = ParserUtils.getSaferSAXParserFactory();
     }
     protected SAXParser _sp;
     protected boolean _initialized = false;

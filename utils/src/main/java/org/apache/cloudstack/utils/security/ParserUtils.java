@@ -20,8 +20,17 @@ package org.apache.cloudstack.utils.security;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+
+import org.apache.log4j.Logger;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 public class ParserUtils {
+    private static final Logger LOGGER = Logger.getLogger(ParserUtils.class);
+
     public static DocumentBuilderFactory getSaferDocumentBuilderFactory() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
@@ -36,6 +45,28 @@ public class ParserUtils {
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
 
+        return factory;
+    }
+
+    public static TransformerFactory getSaferTransformerFactory() {
+        TransformerFactory factory = TransformerFactory.newInstance();
+        try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (final TransformerConfigurationException e) {
+            LOGGER.warn("Failed to set safer feature on TransformerFactory: ", e);
+        }
+        return factory;
+    }
+
+    public static SAXParserFactory getSaferSAXParserFactory() {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (final ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Failed to set safer feature on SAXParserFactory: ", e);
+        }
         return factory;
     }
 }
