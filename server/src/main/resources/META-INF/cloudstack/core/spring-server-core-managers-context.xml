@@ -109,7 +109,7 @@
             value="#{consoleProxyAllocatorsRegistry.registered}" />
     </bean>
 
-    <bean id="consoleAccessManagerImpl" class="com.cloud.consoleproxy.ConsoleAccessManagerImpl" />
+    <bean id="consoleAccessManagerImpl" class="org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl" />
 
     <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
 

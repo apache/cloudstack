@@ -328,16 +328,7 @@ public class ApiServlet extends HttpServlet {
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
                 setProjectContext(params);
-                if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
-                        command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
-                    InetAddress addr = getClientAddress(req);
-                    String clientAddress = addr != null ? addr.getHostAddress() : null;
-                    params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] {clientAddress});
-                    if (BooleanUtils.isTrue(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderEnabled.value())) {
-                        String clientSecurityToken = req.getHeader(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
-                        params.put(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY, new String[] {clientSecurityToken});
-                    }
-                }
+                setExtraHeaderSecurityToConsoleEndpointIfEnabled(command, params, req);
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
@@ -367,6 +358,19 @@ public class ApiServlet extends HttpServlet {
             }
             // cleanup user context to prevent from being peeked in other request context
             CallContext.unregister();
+        }
+    }
+
+    protected void setExtraHeaderSecurityToConsoleEndpointIfEnabled(String command, Map<String, Object[]> params, HttpServletRequest req) throws UnknownHostException {
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(command) &&
+                command.equalsIgnoreCase(CreateConsoleEndpointCmd.APINAME)) {
+            InetAddress addr = getClientAddress(req);
+            String clientAddress = addr != null ? addr.getHostAddress() : null;
+            params.put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] {clientAddress});
+            if (BooleanUtils.isTrue(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderEnabled.value())) {
+                String clientSecurityToken = req.getHeader(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
+                params.put(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY, new String[] {clientSecurityToken});
+            }
         }
     }
 

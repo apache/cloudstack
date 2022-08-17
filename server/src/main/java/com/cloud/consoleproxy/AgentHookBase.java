@@ -22,6 +22,7 @@ import java.security.SecureRandom;
 import java.util.Date;
 
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
+import org.apache.cloudstack.consoleproxy.ConsoleAccessManagerImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
