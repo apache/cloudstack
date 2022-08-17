@@ -29,7 +29,8 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_domain,
                                get_test_template)
-from marvin.codes import PASS
+from marvin.cloudstackAPI import (deployVirtualMachine,
+                                  queryAsyncJobResult)
 
 
 class TestDeployVMsInParallel(cloudstackTestCase):
@@ -76,6 +77,7 @@ class TestDeployVMsInParallel(cloudstackTestCase):
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
+
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
         self.hypervisor = self.testClient.getHypervisorInfo()
@@ -87,15 +89,17 @@ class TestDeployVMsInParallel(cloudstackTestCase):
             self.testdata["domain"]
         )
         self.cleanup.append(self.domain)
-        self.update_resource_limit()
+
         self.account = Account.create(
             self.apiclient,
             self.testdata["account"],
             domainid=self.domain.id
         )
         self.cleanup.append(self.account)
+
+        self.userApiClient = self.testClient.getUserApiClient(UserName=self.account.name, DomainName=self.domain.name)
         virtual_machine = VirtualMachine.create(
-            self.apiclient,
+            self.userApiClient,
             self.testdata["virtual_machine"],
             accountid=self.account.name,
             domainid=self.account.domainid,
@@ -105,16 +109,18 @@ class TestDeployVMsInParallel(cloudstackTestCase):
             hypervisor=self.hypervisor
         )
         self.cleanup.append(virtual_machine)
+        print(f"==== network: {virtual_machine.__dict__}")
+        self.networkids = virtual_machine.nic[0].networkid
         virtual_machine.delete(self.apiclient)
         self.cleanup.remove(virtual_machine)
         return
 
-    def update_resource_limit(self):
+    def update_resource_limit(self, max=1):
         Resources.updateLimit(
             self.apiclient,
             domainid=self.domain.id,
             resourcetype=0,
-            max=1
+            max=max
         )
 
     def tearDown(self):
@@ -126,44 +132,42 @@ class TestDeployVMsInParallel(cloudstackTestCase):
             "basic",
             "sg"],
         required_hardware="false")
-    def test_deploy_vms(self):
+    def test_deploy_more_vms_than_limit_allows(self):
         """
         Test Deploy Virtual Machines in parallel
 
         Validate the following:
-        1. set limits
-        2. deploy multiple VMs
+        1. set limit to 2
+        2. deploy more than 2 VMs
         """
+        self.test_limits(vm_limit=2)
 
-        self.debug("Deploying instance in the account: %s" %
-                   self.account.name)
-        self.virtual_machines = []
-        for i in range(4):
-            vm = VirtualMachine.create(
-                self.apiclient,
-                self.testdata["virtual_machine"],
-                accountid=self.account.name,
-                domainid=self.account.domainid,
-                templateid=self.template.id,
-                serviceofferingid=self.service_offering.id,
-                diskofferingid=self.disk_offering.id,
-                hypervisor=self.hypervisor
-            )
-            self.cleanup.append(vm)
-            self.virtual_machines.append(vm)
+    def test_limits(self, vm_limit=1):
+        print(f"==== limit: {vm_limit} ====")
 
-        deployed = 0
+        self.update_resource_limit(max=vm_limit)
+
+        cmd = deployVirtualMachine.deployVirtualMachineCmd()
+        cmd.serviceofferingid=self.service_offering.id
+        cmd.diskofferingid=self.disk_offering.id
+        cmd.templateid=self.template.id
+        cmd.accountid=self.account.id
+        cmd.domainid=self.account.domainid
+        cmd.zoneid=self.zone.id
+        cmd.networkids = self.networkids
+        cmd.isAsync = "false"
+
+        responses = []
         failed = 0
-        for vm in self.virtual_machines:
-            response = vm.getState(self.apiclient, VirtualMachine.RUNNING)
-            if response[0] == PASS:
-                deployed += 1
-            else:
+        for i in range(vm_limit+3):
+            try:
+                self.debug(f"==== deploying instance #{i}")
+                response = self.userApiClient.deployVirtualMachine(cmd, method="GET")
+                responses.append(response)
+            except Exception as e:
                 failed += 1
-        self.assertEqual(deployed, 1)
+
+        print(f"==== failed deploys: {failed} ====")
+
         self.assertEqual(failed, 3)
-        # response = self.virtual_machine.getState(
-        #     self.apiclient,
-        #     VirtualMachine.RUNNING)
-        # self.assertEqual(response[0], PASS, response[1])
-        return
+        self.assertEqual(len(responses), vm_limit) # we don´t care if the deploy succeed or failed for some other reason
