@@ -46,7 +46,7 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
         AllFieldsSearch.done();
 
         CleanupSearch = createSearchBuilder();
-        CleanupSearch.and("step", CleanupSearch.entity().getType(), Op.IN);
+        CleanupSearch.and("step", CleanupSearch.entity().getStep(), Op.IN);
         CleanupSearch.and("time", CleanupSearch.entity().getUpdatedAt(), Op.LT);
         CleanupSearch.done();
 

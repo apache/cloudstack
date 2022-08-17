@@ -2637,6 +2637,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                     work.setStep(Step.Done);
                                     _workDao.update(work.getId(), work);
                                 }
+                            } else {
+                                work.setStep(Step.Done);
+                                _workDao.update(work.getId(), work);
                             }
                         } catch (final Exception e) {
                             s_logger.error("Error while handling " + work, e);
