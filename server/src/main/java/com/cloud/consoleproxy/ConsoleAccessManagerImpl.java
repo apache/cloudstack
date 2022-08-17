@@ -162,7 +162,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                                     account.getId() + " and caller is a normal user");
                         }
                     } else if ((accountManager.isDomainAdmin(account.getId())
-                            || account.getType() == Account.Type.READ_ONLY_ADMIN) && s_logger.isDebugEnabled()) {
+                            || account.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) && s_logger.isDebugEnabled()) {
                         s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + account.getId() + " and the domain-admin caller does not manage the target domain");
                     }
