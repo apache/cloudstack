@@ -46,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.utils.ssh.SshHelper;
 
 @ResourceWrapper(handles =  StartCommand.class)
-public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
+public class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
     private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";
@@ -119,8 +119,10 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
                         }
                     }
 
+                    File pemFile = new File(libvirtUtilitiesHelper.retrieveSshPrvKeyPath());
+
                     if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy && vmSpec.getVncPort() != null) {
-                        configureVncPortOnCpvm(vmSpec.getVncPort(), controlIp);
+                        configureVncPortOnCpvm(vmSpec.getVncPort(), controlIp, pemFile);
                     }
                 }
             }
@@ -152,8 +154,7 @@ public final class LibvirtStartCommandWrapper extends CommandWrapper<StartComman
         }
     }
 
-    private void configureVncPortOnCpvm(String novncPort, String controlIp) {
-        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
+    protected void configureVncPortOnCpvm(String novncPort, String controlIp, File pemFile) {
         int sshPort = Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT);
         String addCmd = "echo " + novncPort + " > " + VNC_CONF_FILE_LOCATION;
         for (int retries = 1; retries <= 3; retries++) {

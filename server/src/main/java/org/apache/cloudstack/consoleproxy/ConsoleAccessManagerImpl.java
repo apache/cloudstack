@@ -14,12 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.consoleproxy;
+package org.apache.cloudstack.consoleproxy;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmVncTicketAnswer;
 import com.cloud.agent.api.GetVmVncTicketCommand;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -45,7 +46,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.api.command.user.consoleproxy.ConsoleEndpoint;
-import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
@@ -122,7 +122,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return new ConsoleEndpoint(false, null, "Cannot find VM with ID " + vmId);
             }
 
-            if (!checkSessionPermision(vm, account)) {
+            if (!checkSessionPermission(vm, account)) {
                 return new ConsoleEndpoint(false, null, "Permission denied");
             }
 
@@ -146,7 +146,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
     }
 
-    private boolean checkSessionPermision(VirtualMachine vm, Account account) {
+    protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
         if (accountManager.isRootAdmin(account.getId())) {
             return true;
         }
