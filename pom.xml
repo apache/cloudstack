@@ -112,7 +112,7 @@
     <cs.mycila.license.version>2.11</cs.mycila.license.version>
     <cs.findbugs.version>3.0.3</cs.findbugs.version>
     <cs.javadoc.version>2.10.3</cs.javadoc.version>
-    <cs.opensaml.version>2.6.4</cs.opensaml.version>
+    <cs.opensaml.version>2.6.6</cs.opensaml.version>
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.9.1</cs.batik.version>
@@ -566,6 +566,24 @@
       <version>1</version>
     </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>repo.jenkins-ci.org.releases</id>
+      <url>https://repo.jenkins-ci.org/releases/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>repo.jenkins-ci.org.public</id>
+      <url>https://repo.jenkins-ci.org/public/</url>
+    </repository>
+    <repository>
+      <id>libvirt.org.maven2</id>
+      <url>https://libvirt.org/maven2/</url>
+    </repository>
+  </repositories>
 
   <build>
     <defaultGoal>install</defaultGoal>
