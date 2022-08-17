@@ -85,7 +85,7 @@ do
 done
 
 
-prapare_ids_clause() {
+prepare_ids_clause() {
   if [[ ! -z "$vmidsclause" ]]; then
     return
   fi
@@ -97,7 +97,7 @@ prapare_ids_clause() {
 }
 
 stop_start_system() {
-    prapare_ids_clause
+    prepare_ids_clause
 secondary=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"SecondaryStorageVm\"$zone$vmidsclause"`)
 console=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from $vmtable where state=\"Running\" and type=\"ConsoleProxy\"$zone$vmidsclause"`)
 length_secondary=(${#secondary[@]})
@@ -158,7 +158,7 @@ fi
 }
 
 stop_start_router() {
-    prapare_ids_clause
+    prepare_ids_clause
 	router=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select id from vm_instance where state=\"Running\" and type=\"DomainRouter\"$zone$vmidsclause"`)
 	length_router=(${#router[@]})
 
