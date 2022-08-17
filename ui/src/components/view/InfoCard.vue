@@ -829,7 +829,6 @@ export default {
     updateResourceAdditionalData () {
       if (!this.resource) return
       this.resourceType = this.$route.meta.resourceType
-      console.log('Updating resource additional data')
       if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
         if ('tags' in this.resource) {
           this.tags = this.resource.tags
