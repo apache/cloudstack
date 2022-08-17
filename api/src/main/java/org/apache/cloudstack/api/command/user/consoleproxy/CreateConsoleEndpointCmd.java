@@ -21,6 +21,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,7 +42,8 @@ import java.util.Map;
 
 @APICommand(name = CreateConsoleEndpointCmd.APINAME, description = "Create a console endpoint to connect to a VM console",
         responseObject = CreateConsoleEndpointResponse.class, since = "4.18.0",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateConsoleEndpointCmd extends BaseCmd {
 
     public static final String APINAME = "createConsoleEndpoint";
