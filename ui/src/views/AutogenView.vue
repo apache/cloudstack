@@ -851,8 +851,10 @@ export default {
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
         if (['listSSHKeyPairs'].includes(this.apiName)) {
-          delete params.id
-          params.name = this.$route.params.id
+          if (!this.$isValidUuid(params.id)) {
+            delete params.id
+            params.name = this.$route.params.id
+          }
         }
         if (['listPublicIpAddresses'].includes(this.apiName)) {
           params.allocatedonly = false

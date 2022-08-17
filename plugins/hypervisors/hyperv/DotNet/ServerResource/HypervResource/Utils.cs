@@ -91,7 +91,7 @@ namespace HypervResource
                 dest = Utils.NormalizePath(dest);
             }
             // if the filePathRelativeToShare string don't have filename and only a dir point then find the vhd files in that folder and use
-            // In the clean setup, first copy command wont be having the filename it contains onlyu dir path.
+            // In the clean setup, first copy command won't be having the filename it contains onlyu dir path.
             // we need to scan the folder point and then copy the file to destination.
             else if (!filePathRelativeToShare.EndsWith(".vhd") || !filePathRelativeToShare.EndsWith(".vhdx"))
             {

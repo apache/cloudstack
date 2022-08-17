@@ -156,7 +156,7 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
         UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
@@ -199,7 +199,7 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
         UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
@@ -244,7 +244,7 @@ public class AssignLoadBalancerTest {
         List<Long> vmIds = new ArrayList<Long>();
         vmIds.add(2L);
 
-        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp");
+        LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
         UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", "test");
 
         LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);

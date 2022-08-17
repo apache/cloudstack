@@ -630,6 +630,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             HypervisorType.Simulator
     ));
 
+    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
+
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -6093,8 +6095,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
-        if (vm.getType() != VirtualMachine.Type.User && !HypervisorType.VMware.equals(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException("cannot do storage migration on non-user vm for hypervisor: " + vm.getHypervisorType().toString() + ", only supported for VMware");
+        HypervisorType hypervisorType = vm.getHypervisorType();
+        if (vm.getType() != VirtualMachine.Type.User && !HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS.contains(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format("Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following"
+                    + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -6102,7 +6106,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // OffLineVmwareMigration: data disks are not permitted, here!
             if (vols.size() > 1 &&
                     // OffLineVmwareMigration: allow multiple disks for vmware
-                    !HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                    !HypervisorType.VMware.equals(hypervisorType)) {
                 throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
             }
         }

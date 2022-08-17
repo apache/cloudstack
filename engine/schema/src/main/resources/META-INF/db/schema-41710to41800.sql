@@ -133,3 +133,7 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
+
+-- Add cidr_list column to load_balancing_rules
+ALTER TABLE `cloud`.`load_balancing_rules`
+ADD cidr_list VARCHAR(4096);

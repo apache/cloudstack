@@ -443,7 +443,7 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     private void addIndexForAlert(Connection conn) {
-        //First drop if it exists. (Due to patches shipped to customers some will have the index and some wont.)
+        //First drop if it exists. (Due to patches shipped to customers some will have the index and some won't.)
         List<String> indexList = new ArrayList<String>();
         s_logger.debug("Dropping index i_alert__last_sent if it exists");
         indexList.add("last_sent"); // in 4.1, we created this index that is not in convention.

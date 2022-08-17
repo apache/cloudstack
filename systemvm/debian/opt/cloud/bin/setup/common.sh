@@ -896,6 +896,9 @@ parse_cmd_line() {
         privateMtu)
           export PRIVATEMTU=$VALUE
           ;;
+        useHttpsToUpload)
+          export USEHTTPS=$VALUE
+          ;;
       esac
   done
   echo -e "\n\t}\n}" >> ${CHEF_TMP_FILE}

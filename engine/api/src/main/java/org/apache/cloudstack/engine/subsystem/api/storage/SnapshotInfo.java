@@ -49,4 +49,6 @@ public interface SnapshotInfo extends DataObject, Snapshot {
     long getPhysicalSize();
 
     void markBackedUp() throws CloudRuntimeException;
+
+    Snapshot getSnapshotVO();
 }

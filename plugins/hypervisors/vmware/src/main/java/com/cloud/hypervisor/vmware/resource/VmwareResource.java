@@ -5253,7 +5253,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     protected AttachIsoAnswer execute(AttachIsoCommand cmd) {
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            VirtualMachineMO vmMo = HypervisorHostHelper.findVmOnHypervisorHostOrPeer(hyperHost, cmd.getVmName());
             if (vmMo == null) {
                 String msg = "Unable to find VM in vSphere to execute AttachIsoCommand, vmName: " + cmd.getVmName();
                 s_logger.error(msg);
