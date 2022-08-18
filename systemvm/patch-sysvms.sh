@@ -90,10 +90,13 @@ restart_services() {
       fi
     done < "$svcfile"
     if [ "$TYPE" == "consoleproxy" ]; then
-      vncport=`cat /root/vncport`
-      echo "vncport read: ${vncport}"
-      sed -i 's/8080/${vncport}/' /etc/iptables/rules.v4
-      echo "vnc port ${vncport} rule applied"
+      vncport=8080
+      if [ -f /root/vncport ]
+      then
+        vncport=`cat /root/vncport`
+        log_it "vncport read: ${vncport}"
+      fi
+      iptables -A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport $vncport -j ACCEPT
     fi
 }
 
