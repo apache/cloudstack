@@ -802,7 +802,7 @@
             <a-step
               v-for="(step, index) in steps"
               :key="index"
-              :title="$t(step.title)"
+              :title="$t(step.title) + (step.detail ? ' (' + step.detail + ')' : '')"
               :status="step.status">
               <template #icon>
                 <LoadingOutlined v-if="step.status===status.PROCESS" />
@@ -1333,6 +1333,17 @@ export default {
         index: this.currentStep,
         title,
         step,
+        detail: '',
+        status: STATUS_PROCESS
+      })
+      this.setStepStatus(STATUS_PROCESS)
+    },
+    addStepDetail (title, step, detail) {
+      this.steps.push({
+        index: this.currentStep,
+        title,
+        step,
+        detail: detail,
         status: STATUS_PROCESS
       })
       this.setStepStatus(STATUS_PROCESS)
@@ -2213,7 +2224,7 @@ export default {
         for (const policy of this.scaleUpPolicies) {
           this.setStepStatus(STATUS_FINISH)
           this.currentStep++
-          this.addStep('message.creating.autoscale.scaleup.conditions' + ' for policy ' + policy.name, 'createScaleUpConditions')
+          this.addStepDetail('message.creating.autoscale.scaleup.conditions', 'createScaleUpConditions', policy.name)
           var scaleUpConditionIds = []
           for (const condition of policy.conditions) {
             const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
@@ -2221,7 +2232,7 @@ export default {
           }
           this.setStepStatus(STATUS_FINISH)
           this.currentStep++
-          this.addStep('message.creating.autoscale.scaleup.policy' + ' for ' + policy.name, 'createScaleUpPolicy')
+          this.addStepDetail('message.creating.autoscale.scaleup.policy', 'createScaleUpPolicy', policy.name)
           const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), policy.scaleupduration, policy.scaleupquiettime)
           scaleUpPolicyIds.push(scaleUpPolicy.id)
         }
