@@ -44,7 +44,7 @@
             {{ scalepolicy.id }}
           </a-select-option>
         </a-select>
-        <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true">
+        <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true" :disabled="!('createAutoScalePolicy' in $store.getters.apis) || resource.state !== 'Disabled'">
           <template #icon><plus-outlined /></template>
           {{ $t('label.add.policy') }}
         </a-button>
@@ -54,7 +54,7 @@
           :okText="$t('label.yes')"
           :cancelText="$t('label.no')"
         >
-          <a-button style="margin-left: 10px" ref="submit" type="primary" :danger="true">
+          <a-button style="margin-left: 10px" ref="submit" type="primary" :danger="true" :disabled="!('updateAutoScaleVmGroup' in $store.getters.apis) || resource.state !== 'Disabled'">
             <template #icon><delete-outlined /></template>
             {{ $t('label.remove.policy') }}
           </a-button>
