@@ -2081,33 +2081,17 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     datastoreVolumePath = dsMo.getDatastorePath((vmdkPath != null ? vmdkPath : dsMo.getName()) + ".vmdk");
                 } else {
                     String datastoreUUID = primaryStore.getUuid();
-                    if (disk.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && disk.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(hyperHost, context, vmMo, disk);
-                        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
-                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
-                            String[] diskChain = matchingExistingDisk.getDiskChain();
-                            assert (diskChain.length > 0);
-                            DatastoreFile file = new DatastoreFile(diskChain[0]);
-                            if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
-                                if (s_logger.isInfoEnabled())
-                                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
-                                volumePathChangeObserved = true;
-                                volumePath = file.getFileBaseName();
-                                volumeTO.setPath(volumePath);
-                                chainInfo = _gson.toJson(matchingExistingDisk);
-                            }
-
-                            DatastoreMO diskDatastoreMofromVM = getDiskDatastoreMofromVM(hyperHost, context, vmMo, disk, diskInfoBuilder);
-                            if (diskDatastoreMofromVM != null) {
-                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                                if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                                    s_logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
-                                    datastoreChangeObserved = true;
-                                    datastoreUUID = actualPoolUuid;
-                                    chainInfo = _gson.toJson(matchingExistingDisk);
-                                }
-                            }
-                        }
+                    Pair<Boolean, Boolean> changes = getSyncedVolume(vmMo, context, hyperHost, disk, volumeTO);
+                    volumePathChangeObserved = changes.first();
+                    datastoreChangeObserved = changes.second();
+                    if (datastoreChangeObserved) {
+                        datastoreUUID = volumeTO.getDataStoreUuid();
+                    }
+                    if (volumePathChangeObserved) {
+                        volumePath = volumeTO.getPath();
+                    }
+                    if ((volumePathChangeObserved || datastoreChangeObserved) && StringUtils.isNotEmpty(volumeTO.getChainInfo())) {
+                        chainInfo = volumeTO.getChainInfo();
                     }
                     if (storagePort == DEFAULT_NFS_PORT) {
                         morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, isManaged ? VmwareResource.getDatastoreName(diskUuid) : datastoreUUID);
