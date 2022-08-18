@@ -20,20 +20,57 @@
     <div>
       <a-alert type="info" v-if="resource.state !== 'Disabled'">
         <template #message>
-        <div
-          v-html="$t('message.autoscale.policies.update')" />
+          <div
+            v-html="$t('message.autoscale.policies.update')" />
         </template>
       </a-alert>
 
       <a-divider/>
-      <div class="form" v-ctrl-enter="updateAutoScalePolicy">
+      <div class="form">
+        <strong>{{ $t('label.scaledown.policy') }} </strong>
+        <a-select
+          v-model:value="selectedPolicyId"
+          @change="switchPolicy()"
+          :placeholder="$t('label.scaledown.policy')"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+          <a-select-option
+            v-for="(scalepolicy, index) in this.policies"
+            :value="scalepolicy.id"
+            :key="index">
+            {{ scalepolicy.id }}
+          </a-select-option>
+        </a-select>
+        <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addPolicyModalVisible = true">
+          <template #icon><plus-outlined /></template>
+          {{ $t('label.add.policy') }}
+        </a-button>
+        <a-popconfirm
+          :title="$t('label.remove.policy') + '?'"
+          @confirm="removeScalePolicyFromGroup"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
+        >
+          <a-button style="margin-left: 10px" ref="submit" type="primary" :danger="true">
+            <template #icon><delete-outlined /></template>
+            {{ $t('label.remove.policy') }}
+          </a-button>
+        </a-popconfirm>
+
+      </div>
+
+      <a-divider/>
+      <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.duration') }}</div>
-          <a-input v-model:value="duration" type="number"></a-input>
+          <a-input v-model:value="policy.duration" type="number"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.quiettime') }}</div>
-          <a-input v-model:value="quiettime" type="number"></a-input>
+          <a-input v-model:value="policy.quiettime" type="number"></a-input>
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
@@ -54,7 +91,7 @@
       style="overflow-y: auto"
       :loading="loading"
       :columns="columns"
-      :dataSource="conditions"
+      :dataSource="policy.conditions"
       :pagination="false"
       :rowKey="record => record.id">
       <template #name="{ record }">
@@ -84,7 +121,7 @@
 
     <div>
       <a-divider/>
-      <div class="form" v-ctrl-enter="addCondition">
+      <div class="form" v-ctrl-enter="addConditionToPolicy">
         <div class="form__item" ref="newConditionCounterId">
           <div class="form__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
           <a-select
@@ -126,7 +163,7 @@
         </div>
         <div class="form__item">
           <div class="form__label">{{ $t('label.action') }}</div>
-          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addCondition">
+          <a-button ref="submit" :disabled="!('createCondition' in $store.getters.apis) || resource.state !== 'Disabled'" type="primary" @click="addConditionToPolicy">
             <template #icon><plus-outlined /></template>
             {{ $t('label.add.condition') }}
           </a-button>
@@ -148,11 +185,11 @@
 
       <div class="update-condition" v-if="selectedCondition" v-ctrl-enter="handleSubmitUpdateConditionForm">
         <div class="update-condition__item">
-          <p class="update-condition__label">{{ $t('label.counter') }}</p>
+          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.counter') }}</p>
           {{ updateConditionDetails.countername }}
         </div>
         <div class="update-condition__item">
-          <p class="update-condition__label">{{ $t('label.relationaloperator') }}</p>
+          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</p>
           <a-select
             v-model:value="updateConditionDetails.relationaloperator"
             showSearch
@@ -168,7 +205,7 @@
           </a-select>
         </div>
         <div class="update-condition__item">
-          <p class="update-condition__label">{{ $t('label.threshold') }}</p>
+          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</p>
           <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" />
         </div>
         <div :span="24" class="action-button">
@@ -177,6 +214,68 @@
         </div>
       </div>
     </a-modal>
+
+    <a-modal
+      :title="$t('label.add.policy')"
+      :visible="addPolicyModalVisible"
+      :afterClose="closeModal"
+      :maskClosable="false"
+      :closable="true"
+      :footer="null"
+      @cancel="addPolicyModalVisible = false">
+
+      <div class="update-condition">
+        <div class="update-condition__item">
+          <div class="update-condition__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+          <a-input v-model:value="newPolicy.duration" type="number"></a-input>
+        </div>
+        <div class="update-condition__item">
+          <div class="update-condition__label">{{ $t('label.quiettime') }}</div>
+          <a-input v-model:value="newPolicy.quiettime" type="number"></a-input>
+        </div>
+        <div class="update-condition__item">
+          <div class="update-condition__label"><span class="form__required">*</span>{{ $t('label.counter') }}</div>
+          <a-select
+            style="width: 100%"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-focus="true"
+            v-model:value="newPolicy.counterid">
+            <a-select-option v-for="(counter, index) in countersList" :value="counter.id" :key="index">
+              {{ counter.name }}
+            </a-select-option>
+          </a-select>
+        </div>
+        <div class="update-condition__item">
+          <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.relationaloperator') }}</p>
+          <a-select
+            v-model:value="newPolicy.relationaloperator"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option value="GT">{{ getOperator('GT') }}</a-select-option>
+            <a-select-option value="GE">{{ getOperator('GE') }}</a-select-option>
+            <a-select-option value="LT">{{ getOperator('LT') }}</a-select-option>
+            <a-select-option value="LE">{{ getOperator('LE') }}</a-select-option>
+            <a-select-option value="EQ">{{ getOperator('EQ') }}</a-select-option>
+          </a-select>
+        </div>
+        <div class="update-condition__item">
+          <div class="form__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</div>
+          <a-input v-model:value="newPolicy.threshold" type="number"></a-input>
+        </div>
+      </div>
+      <div :span="24" class="action-button">
+        <a-button :loading="loading" @click="closeModal">{{ $t('label.cancel') }}</a-button>
+        <a-button :loading="loading" ref="submit" type="primary" @click="addNewScalePolicyToGroup">{{ $t('label.ok') }}</a-button>
+      </div>
+    </a-modal>
+
   </div>
 </template>
 
@@ -201,11 +300,22 @@ export default {
     return {
       filterColumns: ['Action'],
       loading: true,
-      policyid: null,
-      duration: null,
-      quiettime: null,
-      conditions: [],
+      policies: [],
+      policy: {
+        duration: null,
+        quiettime: null,
+        conditions: []
+      },
+      selectedPolicyId: null,
       newCondition: {
+        counterid: null,
+        relationaloperator: null,
+        threshold: null
+      },
+      addPolicyModalVisible: null,
+      newPolicy: {
+        duration: null,
+        quiettime: null,
         counterid: null,
         relationaloperator: null,
         threshold: null
@@ -261,11 +371,14 @@ export default {
         listAll: true,
         id: this.resource.id
       }).then(response => {
-        this.policyid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies?.[0]?.id
-        this.duration = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies?.[0]?.duration
-        this.quiettime = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies?.[0]?.quiettime
-        this.conditions = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies?.[0]?.conditions || []
         const lbruleid = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.lbruleid
+        this.policies = response.listautoscalevmgroupsresponse?.autoscalevmgroup?.[0]?.scaledownpolicies
+        if (this.selectedPolicyId) {
+          this.switchPolicy()
+        } else {
+          this.policy = this.policies?.[0]
+          this.selectedPolicyId = this.policy.id
+        }
         api('listLoadBalancerRules', {
           listAll: true,
           id: lbruleid
@@ -294,12 +407,15 @@ export default {
       this.loading = true
       api('listAutoScalePolicies', {
         listAll: true,
-        id: this.policyid
+        id: this.selectedPolicyId
       }).then(response => {
-        this.conditions = response.listautoscalepoliciesresponse?.autoscalepolicy[0]?.conditions || []
+        this.policy = response.listautoscalepoliciesresponse?.autoscalepolicy[0]
       }).finally(() => {
         this.loading = false
       })
+    },
+    switchPolicy () {
+      this.policy = this.policies.filter(policy => policy.id === this.selectedPolicyId)[0]
     },
     handleCancel () {
       this.parentFetchData()
@@ -312,29 +428,68 @@ export default {
       if (val === 'EQ' || val === 'eq') return this.$t('label.operator.equal')
       return val
     },
+    async pollJob (jobId) {
+      return new Promise(resolve => {
+        const asyncJobInterval = setInterval(() => {
+          api('queryAsyncJobResult', { jobId }).then(async json => {
+            const result = json.queryasyncjobresultresponse
+            if (result.jobstatus === 0) {
+              return
+            }
+
+            clearInterval(asyncJobInterval)
+            resolve(result)
+          })
+        }, 1000)
+      })
+    },
+    addCondition (params) {
+      this.loading = true
+      return new Promise((resolve, reject) => {
+        api('createCondition', params).then(async json => {
+          this.$pollJob({
+            jobId: json.conditionresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.condition)
+            },
+            errorMethod: (result) => {
+              reject(result.jobresult.errortext)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          reject(error)
+        }).finally(
+          this.loading = false
+        )
+      })
+    },
     deleteCondition (conditionId) {
       this.loading = true
-      api('deleteCondition', { id: conditionId }).then(response => {
-        const jobId = response.deleteconditionresponse.jobid
-        this.$pollJob({
-          title: this.$t('label.action.delete.condition'),
-          description: conditionId,
-          jobId: jobId,
-          successMethod: () => {
-            this.fetchData()
-          },
-          errorMessage: this.$t('message.delete.condition.failed'),
-          errorMethod: () => {
-            this.fetchData()
-          },
-          loadingMessage: this.$t('message.delete.condition.processing'),
-          catchMessage: this.$t('error.fetching.async.job.result'),
-          catchMethod: () => this.fetchData()
+      return new Promise((resolve, reject) => {
+        api('deleteCondition', { id: conditionId }).then(response => {
+          const jobId = response.deleteconditionresponse.jobid
+          this.$pollJob({
+            title: this.$t('label.action.delete.condition'),
+            description: conditionId,
+            jobId: jobId,
+            successMethod: () => {
+              return resolve()
+            },
+            errorMessage: this.$t('message.delete.condition.failed'),
+            errorMethod: (result) => {
+              reject(result.jobresult.errortext)
+            },
+            loadingMessage: this.$t('message.delete.condition.processing'),
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            catchMethod: () => this.fetchData()
+          })
+        }).catch(error => {
+          reject(error)
+        }).finally(() => {
+          this.fetchData()
+          this.loading = false
         })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
       })
     },
     openUpdateConditionModal (condition) {
@@ -371,10 +526,10 @@ export default {
         this.updateConditionModalLoading = false
       })
     },
-    deleteConditionFromAutoScalePolicy (conditionId) {
-      this.updateAutoScalePolicy(null, conditionId)
+    async deleteConditionFromAutoScalePolicy (conditionId) {
+      await this.updateAutoScalePolicy(null, conditionId)
     },
-    addCondition () {
+    async addConditionToPolicy () {
       if (this.loading) return
 
       if (!this.newCondition.counterid) {
@@ -399,23 +554,66 @@ export default {
         return
       }
 
+      const newCondition = await this.addCondition({ ...this.newCondition })
+
+      await this.updateAutoScalePolicy(newCondition.id, null)
+    },
+    async addNewScalePolicyToGroup () {
+      if (this.loading) return
       this.loading = true
 
-      api('createCondition', { ...this.newCondition }).then(response => {
-        this.$pollJob({
-          jobId: response.conditionresponse.jobid,
-          successMethod: (result) => {
-            const newConditionId = result.jobresult.condition?.id
-            this.updateAutoScalePolicy(newConditionId, null)
-          },
-          errorMessage: this.$t('message.create.condition.failed'),
-          errorMethod: () => {
-          }
-        })
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.loading = false
+      const newCondition = await this.addCondition({
+        counterid: this.newPolicy.counterid,
+        relationaloperator: this.newPolicy.relationaloperator,
+        threshold: this.newPolicy.threshold
+      })
+
+      const newPolicy = await this.createAutoScalePolicy({
+        conditionids: newCondition.id,
+        duration: this.newPolicy.duration,
+        quiettime: this.newPolicy.quiettime,
+        action: 'ScaleDown'
+      })
+
+      this.policies.push(newPolicy)
+      this.policy = newPolicy
+      this.selectedPolicyId = newPolicy.id
+
+      await this.updateAutoScaleVmGroup({
+        id: this.resource.id,
+        scaledownpolicyids: this.policies.map(policy => { return policy.id }).join(',')
+      })
+
+      this.addPolicyModalVisible = false
+    },
+    async removeScalePolicyFromGroup () {
+      this.policies = this.policies.filter(policy => policy.id !== this.selectedPolicyId)
+      this.selectedPolicyId = this.policies[this.policies.length - 1].id
+
+      await this.updateAutoScaleVmGroup({
+        id: this.resource.id,
+        scaledownpolicyids: this.policies.map(policy => { return policy.id }).join(',')
+      })
+    },
+    createAutoScalePolicy (params) {
+      this.loading = true
+      return new Promise((resolve, reject) => {
+        api('createAutoScalePolicy', params).then(async json => {
+          this.$pollJob({
+            jobId: json.autoscalepolicyresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.autoscalepolicy)
+            },
+            errorMethod: (result) => {
+              reject(result.jobresult.errortext)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          reject(error)
+        }).finally(
+          this.loading = false
+        )
       })
     },
     updateAutoScalePolicy (conditionIdToAdd, conditionIdToRemove) {
@@ -424,38 +622,64 @@ export default {
 
       let newConditionIds
       if (conditionIdToAdd) {
-        newConditionIds = this.conditions.map(condition => { return condition.id }).join(',') + ',' + conditionIdToAdd
+        newConditionIds = this.policy.conditions.map(condition => { return condition.id }).join(',') + ',' + conditionIdToAdd
       } else if (conditionIdToRemove) {
-        newConditionIds = this.conditions.filter(condition => condition.id !== conditionIdToRemove).map(condition => { return condition.id }).join(',')
+        newConditionIds = this.policy.conditions.filter(condition => condition.id !== conditionIdToRemove).map(condition => { return condition.id }).join(',')
       }
 
-      api('updateAutoScalePolicy', {
-        id: this.policyid,
-        duration: this.duration,
-        quiettime: this.quiettime,
-        conditionids: newConditionIds
-      }).then(response => {
-        this.$pollJob({
-          jobId: response.updateautoscalepolicyresponse.jobid,
-          successMethod: (result) => {
-            if (conditionIdToRemove) {
-              this.deleteCondition(conditionIdToRemove)
-            }
-          },
-          errorMessage: this.$t('message.update.autoscale.policy.failed'),
-          errorMethod: () => {
-            if (conditionIdToAdd) {
-              this.deleteCondition(conditionIdToAdd)
-            }
-          }
-        })
-      }).finally(() => {
-        this.loading = false
+      return new Promise((resolve, reject) => {
+        api('updateAutoScalePolicy', {
+          id: this.policy.id,
+          duration: this.policy.duration,
+          quiettime: this.policy.quiettime,
+          conditionids: newConditionIds
+        }).then(response => {
+          this.$pollJob({
+            jobId: response.updateautoscalepolicyresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.autoscalepolicy)
+            },
+            errorMessage: this.$t('message.update.autoscale.policy.failed'),
+            errorMethod: (result) => {
+              reject(result.jobresult.errortext)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          reject(error)
+        }).finally(
+          this.loading = false
+        )
+      })
+    },
+    updateAutoScaleVmGroup (params) {
+      if (this.loading) return
+      this.loading = true
+
+      return new Promise((resolve, reject) => {
+        api('updateAutoScaleVmGroup', params).then(response => {
+          this.$pollJob({
+            jobId: response.updateautoscalevmgroupresponse.jobid,
+            successMethod: (result) => {
+              resolve(result.jobresult.autoscalevmgroup)
+            },
+            errorMessage: this.$t('message.update.autoscale.vmgroup.failed'),
+            errorMethod: (result) => {
+              reject(result.jobresult.errortext)
+            },
+            catchMessage: this.$t('error.fetching.async.job.result')
+          })
+        }).catch(error => {
+          reject(error)
+        }).finally(
+          this.loading = false
+        )
       })
     },
     closeModal () {
       this.updateConditionModalVisible = false
       this.updateConditionModalLoading = false
+      this.addPolicyModalVisible = false
     },
     capitalise (val) {
       return val.toUpperCase()
@@ -465,135 +689,135 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .condition {
+.condition {
 
-    &-container {
-      display: flex;
-      width: 100%;
-      flex-wrap: wrap;
-      margin-right: -20px;
-      margin-bottom: -10px;
-    }
+  &-container {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    margin-right: -20px;
+    margin-bottom: -10px;
+  }
 
-    &__item {
-      padding-right: 20px;
-      margin-bottom: 20px;
+  &__item {
+    padding-right: 20px;
+    margin-bottom: 20px;
 
-      @media (min-width: 760px) {
-        flex: 1;
-      }
-
-    }
-
-    &__title {
-      font-weight: bold;
+    @media (min-width: 760px) {
+      flex: 1;
     }
 
   }
 
-  .title {
+  &__title {
+    font-weight: bold;
+  }
+
+}
+
+.title {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.add-btn {
+  width: 100%;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  height: auto;
+}
+
+.add-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: -20px;
+  margin-bottom: 20px;
+
+  @media (min-width: 760px) {
+    margin-top: 20px;
+  }
+
+  button {
+    margin-right: 20px;
+  }
+
+}
+
+.update-condition {
+
+  .ant-select {
+    width: 100%;
+  }
+
+  &__item {
+    margin-bottom: 10px;
+  }
+
+  &__label {
     margin-bottom: 5px;
     font-weight: bold;
   }
 
-  .add-btn {
-    width: 100%;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    height: auto;
+}
+
+.form {
+  display: flex;
+  margin-right: -20px;
+  margin-bottom: 20px;
+  flex-direction: column;
+  align-items: flex-start;
+
+  @media (min-width: 760px) {
+    flex-direction: row;
   }
 
-  .add-actions {
+  &__item {
     display: flex;
-    justify-content: flex-end;
-    margin-right: -20px;
-    margin-bottom: 20px;
-
-    @media (min-width: 760px) {
-      margin-top: 20px;
-    }
-
-    button {
-      margin-right: 20px;
-    }
-
-  }
-
-  .update-condition {
-
-    .ant-select {
-      width: 100%;
-    }
-
-    &__item {
-      margin-bottom: 10px;
-    }
-
-    &__label {
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-
-  }
-
-  .form {
-    display: flex;
-    margin-right: -20px;
-    margin-bottom: 20px;
     flex-direction: column;
-    align-items: flex-start;
+    flex: 1;
+    padding-right: 20px;
+    margin-bottom: 20px;
 
     @media (min-width: 760px) {
-      flex-direction: row;
+      margin-bottom: 0;
     }
 
-    &__item {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      padding-right: 20px;
-      margin-bottom: 20px;
-
-      @media (min-width: 760px) {
-        margin-bottom: 0;
-      }
-
-      input,
-      .ant-select {
-        margin-top: auto;
-      }
-
+    input,
+    .ant-select {
+      margin-top: auto;
     }
 
-    &__label {
-      font-weight: bold;
-    }
+  }
 
-    &__required {
-      margin-right: 5px;
-      color: red;
+  &__label {
+    font-weight: bold;
+  }
+
+  &__required {
+    margin-right: 5px;
+    color: red;
+  }
+
+  .error-text {
+    display: none;
+    color: red;
+    font-size: 0.8rem;
+  }
+
+  .error {
+
+    input {
+      border-color: red;
     }
 
     .error-text {
-      display: none;
-      color: red;
-      font-size: 0.8rem;
-    }
-
-    .error {
-
-      input {
-        border-color: red;
-      }
-
-      .error-text {
-        display: block;
-      }
-
+      display: block;
     }
 
   }
-  .pagination {
-    margin-top: 20px;
-  }
+
+}
+.pagination {
+  margin-top: 20px;
+}
 </style>
