@@ -48,45 +48,19 @@
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.destroyvmgraceperiod') }}</div>
-          <a-input v-model:value="destroyvmgraceperiod" type="number" :disabled="true"></a-input>
+          {{ destroyvmgraceperiod }}
         </div>
       </div>
       <div class="form">
         <div class="form__item">
-          <div class="form__label">{{ $t('label.templateid') }}</div>
-          <a-select
-            :disabled="true"
-            style="width: 100%"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            v-focus="true"
-            v-model:value="templateid">
-            <a-select-option v-for="(template, index) in templatesList" :value="template.id" :key="index">
-              {{ template.name }}
-            </a-select-option>
-          </a-select>
+          <div class="form__label">{{ $t('label.template') }}</div>
+          {{ getTemplateName(templateid) }}
         </div>
       </div>
       <div class="form">
         <div class="form__item">
           <div class="form__label">{{ $t('label.serviceofferingid') }}</div>
-          <a-select
-            :disabled="true"
-            style="width: 100%"
-            showSearch
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            v-focus="true"
-            v-model:value="serviceofferingid">
-            <a-select-option v-for="(offering, index) in serviceOfferingsList" :value="offering.id" :key="index">
-              {{ offering.name }}
-            </a-select-option>
-          </a-select>
+          {{ getServiceOfferingName(serviceofferingid) }}
         </div>
       </div>
       <div class="form">
@@ -382,6 +356,22 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    getTemplateName (templateid) {
+      for (const template of this.templatesList) {
+        if (template.id === templateid) {
+          return template.name
+        }
+      }
+      return ''
+    },
+    getServiceOfferingName (serviceofferingid) {
+      for (const serviceoffering of this.serviceOfferingsList) {
+        if (serviceoffering.id === serviceofferingid) {
+          return serviceoffering.name
+        }
+      }
+      return ''
     },
     handleCancel () {
       this.parentFetchData()
