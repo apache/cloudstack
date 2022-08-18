@@ -440,15 +440,45 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.scaleup.policy')"
+                :title="$t('label.scaleup.policies')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
+                  <a-divider/>
                   <div class="form">
-                    <a-form-item :label="$t('label.duration')" name="scaleupduration" ref="scaleupduration">
-                      <a-input v-model:value="form.scaleupduration" type="number"></a-input>
+                    <strong>{{ $t('label.scaleup.policy') }} </strong>
+                    <a-select
+                      v-model:value="selectedScaleUpPolicyId"
+                      @change="fetchScaleUpConditions()"
+                      :placeholder="$t('label.scaleup.policy')"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="(input, option) => {
+                      return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                    }" >
+                      <a-select-option
+                        v-for="policy in this.scaleUpPolicies"
+                        :key="policy.id">
+                        {{ policy.name }}
+                      </a-select-option>
+                    </a-select>
+                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="addNewScaleUpPolicy">
+                      <template #icon><plus-outlined /></template>
+                      {{ $t('label.add.policy') }}
+                    </a-button>
+                    <a-button style="margin-left: 10px" ref="submit" type="primary" @click="removeScaleUpPolicy">
+                      <template #icon><delete-outlined /></template>
+                      {{ $t('label.remove.policy') }}
+                    </a-button>
+                  </div>
+                  <div class="form">
+                    <a-form-item name="scaleupduration" ref="scaleupduration">
+                      <div class="form__label"><span class="form__required">*</span>{{ $t('label.duration') }}</div>
+                      <a-input v-model:value="selectedScaleUpPolicy.scaleupduration" type="number"></a-input>
+                      <span class="error-text">{{ $t('label.required') }}</span>
                     </a-form-item>
-                    <a-form-item :label="$t('label.quiettime')" name="scaleupquiettime" ref="scaleupquiettime">
-                      <a-input v-model:value="form.scaleupquiettime" type="number"></a-input>
+                    <a-form-item name="scaleupquiettime" ref="scaleupquiettime">
+                      <div class="form__label">{{ $t('label.quiettime') }}</div>
+                      <a-input v-model:value="selectedScaleUpPolicy.scaleupquiettime" type="number"></a-input>
                     </a-form-item>
                   </div>
                   <a-divider/>
@@ -933,6 +963,10 @@ export default {
       selectedLbId: null,
       selectedLbProdiver: null,
       countersList: [],
+      scaleUpPolicies: [],
+      scaleUpCounter: 0,
+      selectedScaleUpPolicy: null,
+      selectedScaleUpPolicyId: null,
       scaleUpConditions: [],
       newScaleUpCondition: {
         counterid: null,
@@ -1318,11 +1352,11 @@ export default {
           { required: true, message: `${this.$t('message.error.select')}` }
         ],
         scaleupduration: [
-          { required: true, message: this.$t('message.error.required.input') },
+          { required: false, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         scaleupquiettime: [
-          { required: true, message: this.$t('message.error.required.input') },
+          { required: false, message: this.$t('message.error.required.input') },
           this.naturalNumberRule
         ],
         scaledownduration: [
@@ -1356,6 +1390,8 @@ export default {
           this.naturalNumberRule
         ]
       })
+
+      this.addNewScaleUpPolicy()
 
       if (this.zone && this.zone.networktype !== 'Basic') {
         if (this.zoneSelected && this.vm.templateid && this.templateNics && this.templateNics.length > 0) {
@@ -1583,6 +1619,28 @@ export default {
         this.usersList = json.listusersresponse?.user || []
       })
     },
+    addNewScaleUpPolicy () {
+      const newScaleUpPolicy = {
+        id: this.scaleUpCounter,
+        name: 'ScaleUpPolicy-' + this.scaleUpCounter,
+        scaleupduration: null,
+        scaleupquiettime: null,
+        conditions: []
+      }
+      this.scaleUpPolicies.push(newScaleUpPolicy)
+      this.selectedScaleUpPolicyId = this.scaleUpCounter
+      this.scaleUpCounter++
+      this.fetchScaleUpConditions()
+    },
+    removeScaleUpPolicy () {
+      this.scaleUpPolicies = this.scaleUpPolicies.filter(policy => policy.id !== this.selectedScaleUpPolicyId)
+      this.selectedScaleUpPolicyId = this.scaleUpPolicies[this.scaleUpPolicies.length - 1].id
+      this.fetchScaleUpConditions()
+    },
+    fetchScaleUpConditions () {
+      this.selectedScaleUpPolicy = this.scaleUpPolicies.filter(policy => policy.id === this.selectedScaleUpPolicyId)[0]
+      this.scaleUpConditions = this.selectedScaleUpPolicy.conditions
+    },
     resetData () {
       this.vm = {
         name: null,
@@ -1724,6 +1782,7 @@ export default {
         return
       }
       const countername = this.countersList.filter(counter => counter.id === this.newScaleUpCondition.counterid).map(counter => { return counter.name }).join(',')
+      this.fetchScaleUpConditions()
       this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== this.newScaleUpCondition.counterid)
       this.scaleUpConditions.push({
         counterid: this.newScaleUpCondition.counterid,
@@ -1731,6 +1790,13 @@ export default {
         relationaloperator: this.newScaleUpCondition.relationaloperator,
         threshold: this.newScaleUpCondition.threshold
       })
+      this.selectedScaleUpPolicy.conditions = this.scaleUpConditions
+
+      this.newScaleUpCondition = {
+        counterid: null,
+        relationaloperator: null,
+        threshold: null
+      }
     },
     deleteScaleUpCondition (counterId) {
       this.scaleUpConditions = this.scaleUpConditions.filter(condition => condition.counterid !== counterId)
@@ -1983,12 +2049,35 @@ export default {
           return
         }
 
-        if (this.scaleUpConditions.length === 0) {
+        if (this.scaleUpPolicies.length === 0) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.scaleup.policy.continue')
           })
           return
+        }
+        for (const policy of this.scaleUpPolicies) {
+          if (!policy.scaleupduration || parseInt(policy.scaleupduration) <= 0) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.scaleup.policy.duration.continue')
+            })
+            return
+          }
+          if (policy.conditions.length === 0) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.scaleup.policy.continue')
+            })
+            return
+          }
+          if (parseInt(policy.scaleupduration) < parseInt(values.interval)) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.duration.less.than.interval')
+            })
+            return
+          }
         }
 
         if (this.scaleDownConditions.length === 0) {
@@ -2003,14 +2092,6 @@ export default {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.error.max.members.less.than.min.members')
-          })
-          return
-        }
-
-        if (parseInt(values.scaleupduration) < parseInt(values.interval) || parseInt(values.scaledownduration) < parseInt(values.interval)) {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.error.duration.less.than.interval')
           })
           return
         }
@@ -2128,19 +2209,22 @@ export default {
         const vmprofile = await this.createVmProfile(createVmGroupData)
 
         // create scaleup conditions and policy
-        this.setStepStatus(STATUS_FINISH)
-        this.currentStep++
-        this.addStep('message.creating.autoscale.scaleup.conditions', 'createScaleUpConditions')
-        var scaleUpConditionIds = []
-        for (const condition of this.scaleUpConditions) {
-          const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
-          scaleUpConditionIds.push(newCondition.id)
+        const scaleUpPolicyIds = []
+        for (const policy of this.scaleUpPolicies) {
+          this.setStepStatus(STATUS_FINISH)
+          this.currentStep++
+          this.addStep('message.creating.autoscale.scaleup.conditions' + ' for policy ' + policy.name, 'createScaleUpConditions')
+          var scaleUpConditionIds = []
+          for (const condition of policy.conditions) {
+            const newCondition = await this.createCondition(condition.counterid, condition.relationaloperator, condition.threshold)
+            scaleUpConditionIds.push(newCondition.id)
+          }
+          this.setStepStatus(STATUS_FINISH)
+          this.currentStep++
+          this.addStep('message.creating.autoscale.scaleup.policy' + ' for ' + policy.name, 'createScaleUpPolicy')
+          const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), policy.scaleupduration, policy.scaleupquiettime)
+          scaleUpPolicyIds.push(scaleUpPolicy.id)
         }
-
-        this.setStepStatus(STATUS_FINISH)
-        this.currentStep++
-        this.addStep('message.creating.autoscale.scaleup.policy', 'createScaleUpPolicy')
-        const scaleUpPolicy = await this.createScalePolicy('ScaleUp', scaleUpConditionIds.join(','), values.scaleupduration, values.scaleupquiettime)
 
         // create scaledown conditions and policy
         this.setStepStatus(STATUS_FINISH)
@@ -2164,7 +2248,7 @@ export default {
         // create autoscale vmgroup
         const params = {
           vmprofileid: vmprofile.id,
-          scaleuppolicyids: scaleUpPolicy.id,
+          scaleuppolicyids: scaleUpPolicyIds.join(','),
           scaledownpolicyids: scaleDownPolicy.id,
           lbruleid: values.loadbalancerid,
           name: values.name,
