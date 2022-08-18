@@ -2227,6 +2227,7 @@
 "message.error.add.secondary.ipaddress": "There was an error adding the secondary IP Address.",
 "message.error.agent.password": "Please enter agent password.",
 "message.error.agent.username": "Please enter agent username.",
+"message.error.autoscale.policy.quiettime.are.not.same": "quiettime should be same for all the scaleup or scaledown policies",
 "message.error.binaries.iso.url": "Please enter binaries ISO URL.",
 "message.error.bucket": "Please enter bucket",
 "message.error.cloudian.console": "Single-Sign-On failed for Cloudian management console. Please ask your administrator to fix integration issues.",

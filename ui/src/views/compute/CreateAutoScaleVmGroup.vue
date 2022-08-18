@@ -859,6 +859,7 @@ import InstanceNicsNetworkSelectListView from '@/components/view/InstanceNicsNet
 const STATUS_PROCESS = 'process'
 const STATUS_FINISH = 'finish'
 const STATUS_FAILED = 'error'
+const DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 300
 
 export default {
   name: 'Wizard',
@@ -2067,6 +2068,7 @@ export default {
           })
           return
         }
+        let prevScaleUpQuietTime = 0
         for (const policy of this.scaleUpPolicies) {
           if (!policy.scaleupduration || parseInt(policy.scaleupduration) <= 0) {
             this.$notification.error({
@@ -2086,6 +2088,16 @@ export default {
             this.$notification.error({
               message: this.$t('message.request.failed'),
               description: this.$t('message.error.duration.less.than.interval')
+            })
+            return
+          }
+          const newScaleUpQuietTime = policy.scaleupquiettime ? parseInt(policy.scaleupquiettime) : DEFAULT_AUTOSCALE_POLICY_QUIET_TIME
+          if (prevScaleUpQuietTime === 0) {
+            prevScaleUpQuietTime = newScaleUpQuietTime
+          } else if (prevScaleUpQuietTime !== newScaleUpQuietTime) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.autoscale.policy.quiettime.are.not.same')
             })
             return
           }
