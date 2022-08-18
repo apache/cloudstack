@@ -30,38 +30,55 @@ ADD cidr_list VARCHAR(4096);
 
 -- VM autoscaling
 
+-- Idempotent ADD COLUMN
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+    IN in_table_name VARCHAR(200)
+, IN in_column_name VARCHAR(200)
+, IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+-- Idempotent ADD UNIQUE KEY
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY` (
+    IN in_table_name VARCHAR(200)
+, IN in_key_name VARCHAR(200)
+, IN in_key_definition VARCHAR(1000)
+)
+BEGIN
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD UNIQUE KEY ', in_key_name); SET @ddl = CONCAT(@ddl, ' ', in_key_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
 -- Add column 'name' to 'autoscale_vmgroups' table
-
-ALTER TABLE `cloud`.`autoscale_vmgroups` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the autoscale vm group' AFTER `load_balancer_id`;
-
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmgroups', 'name', 'VARCHAR(255) DEFAULT NULL COMMENT "name of the autoscale vm group" AFTER `load_balancer_id`');
 UPDATE `cloud`.`autoscale_vmgroups` SET `name` = CONCAT('AutoScale-VmGroup-',id) WHERE `name` IS NULL;
 
 -- Add column 'user_data' to 'autoscale_vmprofiles' table
-
-ALTER TABLE `cloud`.`autoscale_vmprofiles` ADD COLUMN `user_data` TEXT(32768) AFTER `counter_params`;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.autoscale_vmprofiles', 'user_data', 'TEXT(32768) AFTER `counter_params`');
 
 -- Add column 'provider' and update values
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.counter', 'provider', 'VARCHAR(255) NOT NULL COMMENT "Network provider name" AFTER `uuid`');
+UPDATE `cloud`.`counter` SET provider = 'Netscaler' WHERE `provider` IS NULL OR `provider` = '';
 
-ALTER TABLE `cloud`.`counter` ADD COLUMN `provider` varchar(255) NOT NULL COMMENT 'Network provider name' AFTER `uuid`;
-
-UPDATE `cloud`.`counter` SET provider = 'Netscaler';
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value', '(provider, source, value)');
 
 -- Add new counters for VM autoscaling
 
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Receive (in Bytes per second)', 'virtual.network.receive', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes per second)', 'virtual.network.transmit', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Receive (in Bytes per second)', 'virtual.network.receive', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes per second)', 'virtual.network.transmit', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
 
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Virtual Network - Receive (in Bytes)', 'virtual.network.receive', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes)', 'virtual.network.transmit', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Virtual Network - Receive (in Bytes)', 'virtual.network.receive', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Virtual Network - Transmit (in Bytes)', 'virtual.network.transmit', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'VpcVirtualRouter', 'virtualrouter', 'Load Balancer - average connections per vm', 'virtual.network.lb.average.connections', NOW());
 
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
-INSERT INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'None', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());
 
 -- Update autoscale_vmgroups to new state
 
@@ -72,7 +89,7 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
 
 -- Create table for VM autoscaling historic data
 
-CREATE TABLE `cloud`.`autoscale_vmgroup_statistics` (
+CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
   `policy_id` bigint unsigned NOT NULL,
