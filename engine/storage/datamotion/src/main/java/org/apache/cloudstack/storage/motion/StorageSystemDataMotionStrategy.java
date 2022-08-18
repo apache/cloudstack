@@ -1736,7 +1736,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
         VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
         boolean updateBackingFileReference = ref == null;
-        String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
+        String backingFile = !updateBackingFileReference ? ref.getInstallPath() : srcVolumeBackingFile;
         return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, srcVolumeInfo.getDataStore().getScope().getScopeType());
     }
 
