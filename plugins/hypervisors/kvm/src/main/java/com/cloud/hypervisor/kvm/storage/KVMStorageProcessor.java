@@ -1469,19 +1469,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             MigrationOptions migrationOptions = volume.getMigrationOptions();
             if (migrationOptions != null) {
-                String srcStoreUuid = migrationOptions.getSrcPoolUuid();
-                StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
                 int timeout = migrationOptions.getTimeout();
 
                 if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
-                    KVMStoragePool srcPool = null;
-
-                    // template source should be available on host's local storage, and remote host's local storage is unreachable
-                    if (migrationOptions.getScopeType().equals(ScopeType.HOST)) {
-                        srcPool = primaryPool;
-                    } else {
-                        srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
-                    }
+                    KVMStoragePool srcPool = getTemplateSourcePoolUsingMigrationOptions(primaryPool, migrationOptions);
                     vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
                 } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
                     vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);
@@ -2399,5 +2390,24 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
         return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
+    }
+
+    /**
+     * Determine if migration is using host-local source pool. If so, return this host's storage as the template source,
+     * rather than remote host's
+     * @param localPool The host-local storage pool being migrated to
+     * @param migrationOptions The migration options provided with a migrating volume
+     * @return
+     */
+    public KVMStoragePool getTemplateSourcePoolUsingMigrationOptions(KVMStoragePool localPool, MigrationOptions migrationOptions) {
+        if (migrationOptions == null) {
+            throw new CloudRuntimeException("Migration options cannot be null when choosing a storage pool for migration");
+        }
+
+        if (migrationOptions.getScopeType().equals(ScopeType.HOST)) {
+            return localPool;
+        }
+
+        return storagePoolMgr.getStoragePool(migrationOptions.getSrcPoolType(), migrationOptions.getSrcPoolUuid());
     }
 }
