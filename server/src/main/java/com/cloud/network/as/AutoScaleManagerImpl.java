@@ -390,20 +390,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         sc.setParameters("ids", policyIds.toArray(new Object[0]));
         List<AutoScalePolicyVO> policies = _autoScalePolicyDao.search(sc, null);
 
-        int prevQuietTime = 0;
-
         for (AutoScalePolicyVO policy : policies) {
-            int quietTime = policy.getQuietTime();
-            if (prevQuietTime == 0) {
-                prevQuietTime = quietTime;
-            }
             int duration = policy.getDuration();
             if (duration < interval) {
                 throw new InvalidParameterValueException("duration : " + duration + " specified in a policy cannot be less than vm group's interval : " + interval);
-            }
-
-            if (quietTime != prevQuietTime) {
-                throw new InvalidParameterValueException("quietTime should be same for all the policies specified in " + paramName);
             }
 
             if (scaleUpPolicies) {
