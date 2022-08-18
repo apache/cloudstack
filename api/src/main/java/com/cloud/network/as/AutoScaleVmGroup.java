@@ -19,8 +19,6 @@ package com.cloud.network.as;
 
 import java.util.Date;
 
-import com.cloud.exception.InvalidParameterValueException;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -45,7 +43,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity, Di
             } else if (state.equalsIgnoreCase("scaling")) {
                 return Scaling;
             } else {
-                throw new InvalidParameterValueException("Unexpected AutoScale VM group state : " + state);
+                throw new IllegalArgumentException("Unexpected AutoScale VM group state : " + state);
             }
         }
     }

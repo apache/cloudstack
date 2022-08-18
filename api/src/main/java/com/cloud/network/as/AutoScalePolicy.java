@@ -19,8 +19,6 @@ package com.cloud.network.as;
 
 import java.util.Date;
 
-import com.cloud.exception.InvalidParameterValueException;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +36,7 @@ public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
             } else if (action.equalsIgnoreCase("ScaleDown")) {
                 return ScaleDown;
             } else {
-                throw new InvalidParameterValueException("Unexpected AutoScale action : " + action);
+                throw new IllegalArgumentException("Unexpected AutoScale action : " + action);
             }
         }
     }
