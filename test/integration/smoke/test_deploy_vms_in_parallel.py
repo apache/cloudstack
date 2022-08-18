@@ -109,7 +109,6 @@ class TestDeployVMsInParallel(cloudstackTestCase):
             hypervisor=self.hypervisor
         )
         self.cleanup.append(virtual_machine)
-        print(f"==== network: {virtual_machine.__dict__}")
         self.networkids = virtual_machine.nic[0].networkid
         virtual_machine.delete(self.apiclient)
         self.cleanup.remove(virtual_machine)
@@ -143,7 +142,7 @@ class TestDeployVMsInParallel(cloudstackTestCase):
         self.test_limits(vm_limit=2)
 
     def test_limits(self, vm_limit=1):
-        print(f"==== limit: {vm_limit} ====")
+        self.info(f"==== limit: {vm_limit} ====")
 
         self.update_resource_limit(max=vm_limit)
 
@@ -161,13 +160,13 @@ class TestDeployVMsInParallel(cloudstackTestCase):
         failed = 0
         for i in range(vm_limit+3):
             try:
-                self.debug(f"==== deploying instance #{i}")
+                self.info(f"==== deploying instance #{i}")
                 response = self.userApiClient.deployVirtualMachine(cmd, method="GET")
                 responses.append(response)
             except Exception as e:
                 failed += 1
 
-        print(f"==== failed deploys: {failed} ====")
+        self.info(f"==== failed deploys: {failed} ====")
 
         self.assertEqual(failed, 3)
         self.assertEqual(len(responses), vm_limit) # we don´t care if the deploy succeed or failed for some other reason
