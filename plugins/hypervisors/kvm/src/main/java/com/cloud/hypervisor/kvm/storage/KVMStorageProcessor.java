@@ -37,6 +37,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -1470,10 +1471,17 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (migrationOptions != null) {
                 String srcStoreUuid = migrationOptions.getSrcPoolUuid();
                 StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
-                KVMStoragePool srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
                 int timeout = migrationOptions.getTimeout();
 
                 if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
+                    KVMStoragePool srcPool = null;
+
+                    // template source should be available on host's local storage, and remote host's local storage is unreachable
+                    if (migrationOptions.getScopeType().equals(ScopeType.HOST)) {
+                        srcPool = primaryPool;
+                    } else {
+                        srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
+                    }
                     vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
                 } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
                     vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);

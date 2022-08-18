@@ -1735,20 +1735,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
         VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
-
-        // if template exists on destination, use it as the backing file
-        if (ref != null) {
-            return new MigrationOptions(destVolumeInfo.getDataStore().getUuid(), destVolumeInfo.getStoragePoolType(), ref.getInstallPath(), false);
-        } else {
-            return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeBackingFile, true);
-        }
+        boolean updateBackingFileReference = ref == null;
+        String backingFile = ref != null ? ref.getInstallPath() : srcVolumeBackingFile;
+        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, srcVolumeInfo.getDataStore().getScope().getScopeType());
     }
 
     /**
      * Return expected MigrationOptions for a full clone volume live storage migration
      */
     protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath());
+        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath(), srcVolumeInfo.getDataStore().getScope().getScopeType());
     }
 
     /**
