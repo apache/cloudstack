@@ -754,8 +754,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             quietTime = NetUtils.DEFAULT_AUTOSCALE_POLICY_QUIET_TIME;
         }
 
-        AutoScalePolicy.Action scaleAction = AutoScalePolicy.Action.fromValue(action);
-        if (scaleAction == null) {
+        AutoScalePolicy.Action scaleAction = null;
+        try {
+            scaleAction = AutoScalePolicy.Action.fromValue(action);
+        } catch (IllegalArgumentException ex) {
             throw new InvalidParameterValueException("action is invalid. Supported actions are: " + Arrays.toString(AutoScalePolicy.Action.values()));
         }
 
@@ -866,9 +868,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         String action = cmd.getAction();
         Long vmGroupId = cmd.getVmGroupId();
 
+        AutoScalePolicy.Action scaleAction = null;
         if (action != null) {
-            AutoScalePolicy.Action scaleAction = AutoScalePolicy.Action.fromValue(action);
-            if (scaleAction == null) {
+            try {
+                scaleAction = AutoScalePolicy.Action.fromValue(action);
+            } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("action is invalid. Supported actions are: " + Arrays.toString(AutoScalePolicy.Action.values()));
             }
         }
@@ -894,8 +898,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             sc.setParameters("id", id);
         }
 
-        if (action != null) {
-            sc.setParameters("action", action);
+        if (scaleAction != null) {
+            sc.setParameters("action", scaleAction);
         }
 
         if (conditionId != null) {
@@ -1526,7 +1530,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase(CallContext.current().getCallingAccount(), "Condition", conditionId, _conditionDao);
 
-        String operator = cmd.getRelationalOperator();
+        String operator = cmd.getRelationalOperator().toUpperCase();
         Long threshold = cmd.getThreshold();
 
         Condition.Operator op;

@@ -17,6 +17,7 @@
 package com.cloud.network.as;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
 import com.cloud.user.Account;
@@ -29,6 +30,7 @@ import org.apache.cloudstack.api.ApiCmdTestUtil;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
 import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
@@ -71,6 +73,12 @@ public class AutoScaleManagerImplTest {
     ConditionVO conditionMock;
 
     @Mock
+    AutoScalePolicyDao _asPolicyDao;
+
+    @Mock
+    AutoScalePolicyVO asPolicyMock;
+
+    @Mock
     AccountManager _accountMgr;
 
     @Mock
@@ -96,6 +104,8 @@ public class AutoScaleManagerImplTest {
         when(_conditionDao.persist(any(ConditionVO.class))).thenReturn(conditionMock);
 
         doNothing().when(autoScaleManagerImplMock).checkCallerAccess(nullable(String.class), nullable(Long.class));
+
+        when(_asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asPolicyMock);
     }
 
     @After
@@ -180,5 +190,45 @@ public class AutoScaleManagerImplTest {
         seCommandField(cmd, "threshold", 100L);
 
         autoScaleManagerImplMock.createCondition(cmd);
+    }
+
+    @Test
+    public void testCreateAutoScalePolicyCmd() throws IllegalArgumentException, IllegalAccessException {
+        CreateAutoScalePolicyCmd cmd = new CreateAutoScalePolicyCmd() {
+            @Override
+            public long getEntityOwnerId() {
+                return 2;
+            }
+
+            @Override
+            public long getDomainId() {
+                return 1L;
+            }
+
+            @Override
+            public long getAccountId() {
+                return 2L;
+            }
+        };
+
+        seCommandField(cmd, "action", "ScaleUp");
+        seCommandField(cmd, "duration", 300);
+
+        autoScaleManagerImplMock.createAutoScalePolicy(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateAutoScalePolicyCmdWithInvalidAction() throws IllegalArgumentException, IllegalAccessException {
+        CreateAutoScalePolicyCmd cmd = new CreateAutoScalePolicyCmd() {
+            @Override
+            public long getEntityOwnerId() {
+                return 2;
+            }
+        };
+
+        seCommandField(cmd, "action", INVALID);
+        seCommandField(cmd, "duration", 300);
+
+        autoScaleManagerImplMock.createAutoScalePolicy(cmd);
     }
 }
