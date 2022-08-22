@@ -219,12 +219,7 @@ public class AutoScaleManagerImplTest {
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateAutoScalePolicyCmdWithInvalidAction() throws IllegalArgumentException, IllegalAccessException {
-        CreateAutoScalePolicyCmd cmd = new CreateAutoScalePolicyCmd() {
-            @Override
-            public long getEntityOwnerId() {
-                return 2;
-            }
-        };
+        CreateAutoScalePolicyCmd cmd = new CreateAutoScalePolicyCmd();
 
         seCommandField(cmd, "action", INVALID);
         seCommandField(cmd, "duration", 300);

@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ResourceWrapper(handles =  GetAutoScaleMetricsCommand.class)
-public final class LibvirtGetAutoScaleMetricsCommandWrapper extends CommandWrapper<GetAutoScaleMetricsCommand, Answer, LibvirtComputingResource> {
+public class LibvirtGetAutoScaleMetricsCommandWrapper extends CommandWrapper<GetAutoScaleMetricsCommand, Answer, LibvirtComputingResource> {
 
     static final String NETWORK_USAGE_GET_OPTION = "get";
 
