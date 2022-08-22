@@ -48,12 +48,19 @@ import com.cloud.utils.Pair;
 public interface UserVmManager extends UserVmService {
     String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";
     String AllowUserExpungeRecoverVmCK ="allow.user.expunge.recover.vm";
-    ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<Boolean>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
+    ConfigKey<Boolean> EnableDynamicallyScaleVm = new ConfigKey<>("Advanced", Boolean.class, EnableDynamicallyScaleVmCK, "false",
         "Enables/Disables dynamically scaling a vm", true, ConfigKey.Scope.Zone);
-    ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<Boolean>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
+    ConfigKey<Boolean> AllowUserExpungeRecoverVm = new ConfigKey<>("Advanced", Boolean.class, AllowUserExpungeRecoverVmCK, "false",
         "Determines whether users can expunge or recover their vm", true, ConfigKey.Scope.Account);
-    ConfigKey<Boolean> DisplayVMOVFProperties = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.display.ovf.properties", "false",
+    ConfigKey<Boolean> DisplayVMOVFProperties = new ConfigKey<>("Advanced", Boolean.class, "vm.display.ovf.properties", "false",
             "Set display of VMs OVF properties as part of VM details", true);
+    ConfigKey<Boolean> AllowParallelVmCreation = new ConfigKey<>("Advanced"
+            , Boolean.class
+            , "allow.user.parallel.vm.creation"
+            , "true"
+            , "Determines whether users can create multiple VMs in parallel. Setting this to true could lead to overflow of quota limits"
+            , true
+            , ConfigKey.Scope.Account);
 
     static final int MAX_USER_DATA_LENGTH_BYTES = 2048;
 
