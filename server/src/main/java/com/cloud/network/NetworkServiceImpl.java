@@ -1101,6 +1101,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
+            _resourceTagDao.removeByIdAndType(ipAddressId, ResourceObjectType.PublicIpAddress);
             if (guestNetwork != null) {
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
