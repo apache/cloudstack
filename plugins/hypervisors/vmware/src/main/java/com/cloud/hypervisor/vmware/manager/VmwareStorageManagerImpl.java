@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
@@ -69,6 +70,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.storage.JavaStorageLayer;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
@@ -81,7 +83,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
@@ -1135,13 +1136,21 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return size;
     }
 
+    private boolean isVolumeExistedOnDatastoreCluster(VolumeObjectTO volumeObjectTO) {
+        DataStoreTO dsTO = volumeObjectTO.getDataStore();
+        if (!(dsTO instanceof PrimaryDataStoreTO)) {
+            return false;
+        }
+        return Storage.StoragePoolType.DatastoreCluster.equals(((PrimaryDataStoreTO)dsTO).getPoolType());
+    }
+
     private void syncVolume(VmwareHostService hostService, VirtualMachineMO virtualMachineMO, VmwareContext context,
                              VmwareHypervisorHost hypervisorHost, VolumeObjectTO volumeTO) throws Exception {
         if (hostService.getStorageProcessor() == null) return;
         VmwareStorageProcessor storageProcessor = hostService.getStorageProcessor();
         DiskTO disk = new DiskTO();
         Map<String, String> map = new HashMap<>();
-        map.put(DiskTO.PROTOCOL_TYPE, "DatastoreCluster");
+        map.put(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         disk.setDetails(map);
         disk.setData(volumeTO);
         storageProcessor.getSyncedVolume(virtualMachineMO, context, hypervisorHost, disk, volumeTO);
@@ -1193,7 +1202,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 } else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, quiescevm)) {
                     return new CreateVMSnapshotAnswer(cmd, false, "Unable to create snapshot due to esxi internal failed");
                 }
-                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
 
                 setVolumeToPathAndSize(volumeTOs, vmMo, hostService, context, hyperHost);
 
@@ -1264,27 +1272,30 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             throws Exception {
         String vmName = vmMo.getVmName();
         for (VolumeObjectTO volumeTO : volumeTOs) {
-            syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
             String path = volumeTO.getPath();
-
             final String baseName;
 
-            // if this is managed storage
-            if (path.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
-                path = path.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
-
-                // remove '[' and ']'
-                baseName = path.substring(1, path.length() - 1);
-            } else {
+            if (isVolumeExistedOnDatastoreCluster(volumeTO)) {
+                syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
+                path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
+            } else {
+                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
+                // if this is managed storage
+                if (path.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
+                    path = path.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
+
+                    // remove '[' and ']'
+                    baseName = path.substring(1, path.length() - 1);
+                } else {
+                    baseName = VmwareHelper.trimSnapshotDeltaPostfix(path);
+                }
+                path = mapNewDisk.get(baseName);
+                volumeTO.setPath(path);
             }
 
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
             ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, volumeTO.getDataStoreUuid());
-            DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-            String type = dsMo.getDatastoreType();
-            DatastoreSummary summary = dsMo.getDatastoreSummary();
-            s_logger.info(String.format("-------------------------------%s", type));
             long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, path, vmName);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
@@ -1348,8 +1359,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 s_logger.debug("snapshot: " + vmSnapshotName + " is removed");
 
                 // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager
-
-                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
 
                 setVolumeToPathAndSize(listVolumeTo, vmMo, hostService, context, hyperHost);
 
@@ -1417,8 +1426,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 if (result) {
-                    Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
-
                     setVolumeToPathAndSize(listVolumeTo, vmMo, hostService, context, hyperHost);
 
                     if (!snapshotMemory) {
