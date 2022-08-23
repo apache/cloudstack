@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -348,5 +349,23 @@ public class QemuImgTest {
         File df = new File(destFileName);
         df.delete();
 
+    }
+
+    @Test
+    public void testHelpSupportsImageFormat() throws QemuImgException, LibvirtException {
+        String partialHelp = "Parameters to dd subcommand:\n" +
+                "  'bs=BYTES' read and write up to BYTES bytes at a time (default: 512)\n" +
+                "  'count=N' copy only N input blocks\n" +
+                "  'if=FILE' read from FILE\n" +
+                "  'of=FILE' write to FILE\n" +
+                "  'skip=N' skip N bs-sized blocks at the start of input\n" +
+                "\n" +
+                "Supported formats: cloop copy-on-read file ftp ftps host_cdrom host_device https iser luks nbd nvme parallels qcow qcow2 qed quorum raw rbd ssh throttle vdi vhdx vmdk vpc vvfat\n" +
+                "\n" +
+                "See <https://qemu.org/contribute/report-a-bug> for how to report bugs.\n" +
+                "More information on the QEMU project at <https://qemu.org>.";
+        Assert.assertTrue("should support luks", QemuImg.helpSupportsImageFormat(partialHelp, PhysicalDiskFormat.LUKS));
+        Assert.assertTrue("should support qcow2", QemuImg.helpSupportsImageFormat(partialHelp, PhysicalDiskFormat.QCOW2));
+        Assert.assertFalse("should not support http", QemuImg.helpSupportsImageFormat(partialHelp, PhysicalDiskFormat.SHEEPDOG));
     }
 }

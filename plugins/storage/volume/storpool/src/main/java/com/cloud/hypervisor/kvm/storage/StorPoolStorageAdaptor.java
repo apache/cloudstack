@@ -330,7 +330,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] sourcePassphrase, byte[] destPassphrase) {
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] sourcePassphrase, byte[] destPassphrase, ProvisioningType provisioningType) {
         return copyPhysicalDisk(disk, name, destPool, timeout);
     }
 

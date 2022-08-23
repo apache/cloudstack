@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +33,8 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
+
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class QemuImg {
     private Logger logger = Logger.getLogger(this.getClass());
@@ -792,5 +795,30 @@ public class QemuImg {
      */
     public boolean supportsSkipZeros() {
         return this.skipZero;
+    }
+
+    public void setSkipZero(boolean skipZero) {
+        this.skipZero = skipZero;
+    }
+
+    public boolean supportsImageFormat(QemuImg.PhysicalDiskFormat format) {
+        final Script s = new Script(_qemuImgPath, timeout);
+        s.add("--help");
+
+        final OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = s.execute(parser);
+        String output = parser.getLines();
+
+        // Older Qemu returns output in result due to --help reporting error status
+        if (result != null) {
+           output = result;
+        }
+
+        return helpSupportsImageFormat(output, format);
+    }
+
+    protected static boolean helpSupportsImageFormat(String text, QemuImg.PhysicalDiskFormat format) {
+        Pattern pattern = Pattern.compile("Supported\\sformats:[a-zA-Z0-9-_\\s]*?\\b" + format + "\\b", CASE_INSENSITIVE);
+        return pattern.matcher(text).find();
     }
 }

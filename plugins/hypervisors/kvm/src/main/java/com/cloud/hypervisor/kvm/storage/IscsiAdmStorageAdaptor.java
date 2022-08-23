@@ -394,11 +394,11 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        return copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk srcDisk, String destVolumeUuid, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] destPassphrase) {
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk srcDisk, String destVolumeUuid, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] destPassphrase, ProvisioningType provisioningType) {
 
         QemuImgFile srcFile;
 

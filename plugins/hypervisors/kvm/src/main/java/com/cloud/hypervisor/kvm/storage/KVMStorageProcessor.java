@@ -424,7 +424,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.warn("Failed to connect new volume at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                 }
 
-                vol = storagePoolMgr.copyPhysicalDisk(BaseVol, path != null ? path : volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds(), null, volume.getPassphrase());
+                vol = storagePoolMgr.copyPhysicalDisk(BaseVol, path != null ? path : volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds(), null, volume.getPassphrase(), volume.getProvisioningType());
 
                 storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
             } else {
@@ -1282,6 +1282,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     final String glusterVolume = attachingPool.getSourceDir().replace("/", "");
                     diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
                             null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
+                } else if (attachingPool.getType() == StoragePoolType.PowerFlex) {
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
+                    if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                        diskdef.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {

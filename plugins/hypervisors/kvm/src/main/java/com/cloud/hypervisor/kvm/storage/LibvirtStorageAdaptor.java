@@ -1294,7 +1294,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        return copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
     /**
@@ -1304,7 +1304,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * in ManagementServerImpl shows that the destPool is always a Secondary Storage Pool
      */
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] dstPassphrase) {
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] dstPassphrase, Storage.ProvisioningType provisioningType) {
 
         /**
             With RBD you can't run qemu-img convert with an existing RBD image as destination

@@ -425,12 +425,12 @@ public class KVMStoragePoolManager {
 
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] dstPassphrase) {
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[] dstPassphrase, Storage.ProvisioningType provisioningType) {
         StorageAdaptor adaptor = getStorageAdaptor(destPool.getType());
-        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, srcPassphrase, dstPassphrase);
+        return adaptor.copyPhysicalDisk(disk, name, destPool, timeout, srcPassphrase, dstPassphrase, provisioningType);
     }
 
     public KVMPhysicalDisk createDiskWithTemplateBacking(KVMPhysicalDisk template, String name, PhysicalDiskFormat format, long size,
