@@ -772,21 +772,13 @@ export default {
       handler (newData, oldData) {
         if (newData === oldData) return
         this.newResource = newData
-        this.resourceType = this.$route.meta.resourceType
         this.showKeys = false
         this.setData()
 
-        if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
-          if ('tags' in this.resource) {
-            this.tags = this.resource.tags
-          } else if (this.resourceType) {
-            this.getTags()
-          }
-        }
         if ('apikey' in this.resource) {
           this.getUserKeys()
         }
-        this.getIcons()
+        this.updateResourceAdditionalData()
       }
     },
     async templateIcon () {
@@ -798,7 +790,7 @@ export default {
     eventBus.on('handle-close', (showModal) => {
       this.showUploadModal(showModal)
     })
-    this.getIcons()
+    this.updateResourceAdditionalData()
   },
   computed: {
     tagsSupportingResourceTypes () {
@@ -834,6 +826,18 @@ export default {
     }
   },
   methods: {
+    updateResourceAdditionalData () {
+      if (!this.resource) return
+      this.resourceType = this.$route.meta.resourceType
+      if (this.tagsSupportingResourceTypes.includes(this.resourceType)) {
+        if ('tags' in this.resource) {
+          this.tags = this.resource.tags
+        } else if (this.resourceType) {
+          this.getTags()
+        }
+      }
+      this.getIcons()
+    },
     showUploadModal (show) {
       if (show) {
         if (this.$showIcon()) {
