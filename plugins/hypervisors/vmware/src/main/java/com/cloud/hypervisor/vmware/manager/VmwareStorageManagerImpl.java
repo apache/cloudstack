@@ -1209,7 +1209,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg);
+            s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg, e);
 
             try {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
@@ -1273,12 +1273,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String vmName = vmMo.getVmName();
         for (VolumeObjectTO volumeTO : volumeTOs) {
             String path = volumeTO.getPath();
-            final String baseName;
+            String baseName;
+            String datastoreUuid = volumeTO.getDataStore().getUuid();
 
             if (isVolumeExistedOnDatastoreCluster(volumeTO)) {
                 syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
                 path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
+                datastoreUuid = volumeTO.getDataStoreUuid();
             } else {
                 Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
                 // if this is managed storage
@@ -1295,7 +1297,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             // get volume's chain size for this VM snapshot; exclude current volume vdisk
-            ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, volumeTO.getDataStoreUuid());
+            ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, datastoreUuid);
             long size = getVMSnapshotChainSize(context, hyperHost, baseName + "-*.vmdk", morDs, path, vmName);
 
             if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
@@ -1366,7 +1368,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = e.getMessage();
-            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg);
+            s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg, e);
 
             return new DeleteVMSnapshotAnswer(cmd, false, msg);
         }
@@ -1439,7 +1441,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
         } catch (Exception e) {
             String msg = "revert vm " + vmName + " to snapshot " + snapshotName + " failed due to " + e.getMessage();
-            s_logger.error(msg);
+            s_logger.error(msg, e);
 
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         }
