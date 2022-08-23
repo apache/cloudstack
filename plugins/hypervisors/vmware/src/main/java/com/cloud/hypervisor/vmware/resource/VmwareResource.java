@@ -1099,7 +1099,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
             return answer;
         }
-        long[] stats = getNetworkStats(cmd.getPrivateIP());
+        long[] stats = getNetworkStats(cmd.getPrivateIP(), null);
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
@@ -1184,7 +1184,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             bytesSent = stats[0];
             bytesReceived = stats[1];
         } else {
-            final long [] stats = getNetworkStats(cmd.getPrivateIP());
+            final long [] stats = getNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP());
             bytesSent = stats[0];
             bytesReceived = stats[1];
         }
@@ -6612,9 +6612,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     protected String networkUsage(final String privateIpAddress, final String option, final String ethName) {
+        return networkUsage(privateIpAddress, option, ethName, null);
+    }
+
+    protected String networkUsage(final String privateIpAddress, final String option, final String ethName, final String publicIp) {
         String args = null;
         if (option.equals("get")) {
             args = "-g";
+            if (StringUtils.isNotEmpty(publicIp)) {
+                args += " -l " + publicIp;
+            }
         } else if (option.equals("create")) {
             args = "-c";
         } else if (option.equals("reset")) {
@@ -6636,8 +6643,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return result.getDetails();
     }
 
-    private long[] getNetworkStats(String privateIP) {
-        String result = networkUsage(privateIP, "get", null);
+    private long[] getNetworkStats(String privateIP, String publicIp) {
+        String result = networkUsage(privateIP, "get", null, publicIp);
         long[] stats = new long[2];
         if (result != null) {
             try {
