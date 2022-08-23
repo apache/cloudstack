@@ -241,7 +241,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
-import com.cloud.server.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDetailsDaoImpl;
 import com.cloud.storage.DataStoreProviderApiService;

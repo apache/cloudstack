@@ -187,5 +187,18 @@ public interface AccountManager extends AccountService, Configurable {
     ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
+    ConfigKey<Boolean> enable2FA = new ConfigKey<Boolean>("Advanced",
+            Boolean.class,
+            "enable.two.factor.authentication",
+            "true",
+            "Determines whether two factor authentication is enabled or not. This can be done at domain level as well",
+            true,
+            ConfigKey.Scope.Domain);
+
+    ConfigKey<String> userTwoFactorAuthenticationProviderPlugin = new ConfigKey<>("Advanced", String.class,
+            "user.two.factor.authentication.provider.plugin",
+            "google",
+            "The user two factor authentication provider plugin. Eg. google, static-pin", true, ConfigKey.Scope.Domain);
+
     boolean moveUser(long id, Long domainId, Account newAccount);
 }

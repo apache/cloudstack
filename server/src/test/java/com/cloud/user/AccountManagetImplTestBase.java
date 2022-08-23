@@ -60,7 +60,7 @@ import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.server.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.SnapshotDao;

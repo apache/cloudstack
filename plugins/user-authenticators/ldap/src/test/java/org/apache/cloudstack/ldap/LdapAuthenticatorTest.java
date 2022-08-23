@@ -17,7 +17,7 @@
 package org.apache.cloudstack.ldap;
 
 
-import com.cloud.server.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.Account;

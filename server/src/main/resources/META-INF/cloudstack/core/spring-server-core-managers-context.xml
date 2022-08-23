@@ -50,6 +50,7 @@
         <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />
         <property name="apiAccessCheckers" value="#{apiAclCheckersRegistry.registered}" />
         <property name="services" value="#{apiCommandsRegistry.registered}" />
+        <property name="userTwoFactorAuthenticationProviders" value="#{userTwoFactorAuthenticatorsRegistry.registered}" />
     </bean>
 
     <bean id="passwordPolicies" class="com.cloud.user.PasswordPolicyImpl" />

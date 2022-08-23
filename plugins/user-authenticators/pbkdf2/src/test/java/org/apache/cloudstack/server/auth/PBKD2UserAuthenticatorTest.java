@@ -15,7 +15,7 @@
 
 package org.apache.cloudstack.server.auth;
 
-import com.cloud.server.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.Pair;

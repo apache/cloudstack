@@ -16,7 +16,7 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import com.cloud.server.auth.UserAuthenticator
+import org.apache.cloudstack.auth.UserAuthenticator
 import com.cloud.user.Account
 import com.cloud.user.AccountManager
 import com.cloud.user.User

@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="GoogleUserTwoFactorAuthenticator" class="com.cloud.server.auth.GoogleUserTwoFactorAuthenticator">
+    <bean id="GoogleUserTwoFactorAuthenticator" class="org.apache.cloudstack.auth.GoogleUserTwoFactorAuthenticator">
         <property name="name" value="GOOGLE" />
     </bean>
 

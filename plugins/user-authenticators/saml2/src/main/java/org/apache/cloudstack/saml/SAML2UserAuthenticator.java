@@ -21,7 +21,7 @@ import javax.inject.Inject;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.server.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;

@@ -62,6 +62,8 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupProvider;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -142,8 +144,8 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
-import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
+import org.apache.cloudstack.auth.UserAuthenticator;
+import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
@@ -317,6 +319,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private int _cleanupInterval;
     private List<String> apiNameList;
 
+    private static Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = new HashMap<>();
+
+    private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
+
     protected AccountManagerImpl() {
         super();
     }
@@ -402,6 +408,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean start() {
+
+        initializeUserTwoFactorAuthenticationProvidersMap();
+
         if (apiNameList == null) {
             long startTime = System.nanoTime();
             apiNameList = new ArrayList<String>();
@@ -2651,6 +2660,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public List<UserTwoFactorAuthenticator> listUserTwoFactorAuthenticationProviders() {
+        return userTwoFactorAuthenticationProviders;
+    }
+
+    @Override
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(Long domainId) {
+        final String name = userTwoFactorAuthenticationProviderPlugin.valueIn(domainId);
+        return getUserTwoFactorAuthenticationProvider(name);
+    }
+
+    public UserTwoFactorAuthenticator getUserTwoFactorAuthenticationProvider(final String name) {
+        if (StringUtils.isEmpty(name)) {
+            throw new CloudRuntimeException("Invalid two factor authentication provider name provided");
+        }
+        if (!userTwoFactorAuthenticationProvidersMap.containsKey(name)) {
+            throw new CloudRuntimeException("Failed to find two factor authentication provider by the name: " + name);
+        }
+        return userTwoFactorAuthenticationProvidersMap.get(name);
+    }
+
+    @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
@@ -3114,6 +3144,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseSecretKeyInResponse};
+        return new ConfigKey<?>[] {UseSecretKeyInResponse, enable2FA, userTwoFactorAuthenticationProviderPlugin};
     }
+
+    public void setUserTwoFactorAuthenticationProviders(final List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders) {
+        this.userTwoFactorAuthenticationProviders = userTwoFactorAuthenticationProviders;
+    }
+
+    private void initializeUserTwoFactorAuthenticationProvidersMap() {
+        if (userTwoFactorAuthenticationProviders != null) {
+            for (final UserTwoFactorAuthenticator userTwoFactorAuthenticator : userTwoFactorAuthenticationProviders) {
+                userTwoFactorAuthenticationProvidersMap.put(userTwoFactorAuthenticator.getName().toLowerCase(), userTwoFactorAuthenticator);
+            }
+        }
+    }
+
 }

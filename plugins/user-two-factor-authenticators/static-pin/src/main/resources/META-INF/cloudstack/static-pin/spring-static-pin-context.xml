@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="StaticPinUserTwoFactorAuthenticator" class="com.cloud.server.auth.StaticPinUserTwoFactorAuthenticator">
+    <bean id="StaticPinUserTwoFactorAuthenticator" class="org.apache.cloudstack.auth.StaticPinUserTwoFactorAuthenticator">
         <property name="name" value="StaticPin" />
     </bean>
 
