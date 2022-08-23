@@ -165,6 +165,22 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         return new Pair<>(accountId, domainId);
     }
 
+    protected void checkTagsDeletePermission(List<ResourceTag> tagsToDelete, Account caller) {
+        for (ResourceTag resourceTag : tagsToDelete) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
+                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
+            }
+            if (caller.getAccountId() != resourceTag.getAccountId()) {
+                Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Resource Owner: " + owner);
+                }
+                _accountMgr.checkAccess(caller, null, false, owner);
+            }
+        }
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_CREATE, eventDescription = "creating resource tags")
@@ -241,17 +257,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
         // Finalize which tags should be removed
         for (ResourceTag resourceTag : resourceTags) {
-            //1) validate the permissions
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Tag Id: " + resourceTag.getResourceId());
-                s_logger.debug("Resource Tag AccountId: " + resourceTag.getAccountId());
-            }
-            Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
-            if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Resource Owner: " + owner);
-            }
-            _accountMgr.checkAccess(caller, null, false, owner);
-            //2) Only remove tag if it matches key value pairs
             if (MapUtils.isEmpty(tags)) {
                 tagsToDelete.add(resourceTag);
             } else {
@@ -278,6 +283,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         if (tagsToDelete.isEmpty()) {
             return false;
         }
+        checkTagsDeletePermission(tagsToDelete, caller);
 
         //Remove the tags
         Transaction.execute(new TransactionCallbackNoReturn() {
