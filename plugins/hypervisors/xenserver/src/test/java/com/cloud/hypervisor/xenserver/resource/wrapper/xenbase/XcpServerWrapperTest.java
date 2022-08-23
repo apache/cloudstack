@@ -81,7 +81,7 @@ public class XcpServerWrapperTest {
         assertNotNull(wrapper);
 
         when(XcpServerResource.getConnection()).thenReturn(conn);
-        when(XcpServerResource.getNetworkStats(conn, usageCommand.getPrivateIP())).thenReturn(new long[]{1l, 1l});
+        when(XcpServerResource.getNetworkStats(conn, usageCommand.getPrivateIP(), null)).thenReturn(new long[]{1l, 1l});
 
         final Answer answer = wrapper.execute(usageCommand, XcpServerResource);
 

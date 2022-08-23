@@ -2977,8 +2977,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return earliestNetwork != null ? new XsLocalNetwork(this, earliestNetwork, earliestNetworkRecord, null, null) : null;
     }
 
-    public long[] getNetworkStats(final Connection conn, final String privateIP) {
-        final String result = networkUsage(conn, privateIP, "get", null);
+    public long[] getNetworkStats(final Connection conn, final String privateIP, final String publicIp) {
+        final String result = networkUsage(conn, privateIP, "get", null, publicIp);
         final long[] stats = new long[2];
         if (result != null) {
             final String[] splitResult = result.split(":");
@@ -4051,7 +4051,12 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         }
     }
 
+
     public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif) {
+        return networkUsage(conn, privateIpAddress, option, vif, null);
+    }
+
+    public String networkUsage(final Connection conn, final String privateIpAddress, final String option, final String vif, final String publicIp) {
         if (option.equals("get")) {
             return "0:0";
         }

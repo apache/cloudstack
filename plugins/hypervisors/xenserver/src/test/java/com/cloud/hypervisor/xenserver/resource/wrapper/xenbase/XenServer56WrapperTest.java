@@ -106,7 +106,7 @@ public class XenServer56WrapperTest {
         assertNotNull(wrapper);
 
         when(xenServer56Resource.getConnection()).thenReturn(conn);
-        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP())).thenReturn(new long[]{1, 1});
+        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP(), null)).thenReturn(new long[]{1, 1});
 
         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
 
@@ -125,7 +125,7 @@ public class XenServer56WrapperTest {
         assertNotNull(wrapper);
 
         when(xenServer56Resource.getConnection()).thenReturn(conn);
-        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP())).thenReturn(new long[0]);
+        when(xenServer56Resource.getNetworkStats(conn, networkCommand.getPrivateIP(), null)).thenReturn(new long[0]);
 
         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
 
@@ -218,7 +218,7 @@ public class XenServer56WrapperTest {
 
         final Connection conn = Mockito.mock(Connection.class);
         when(xenServer56Resource.getConnection()).thenReturn(conn);
-        when(xenServer56Resource.getNetworkStats(conn, getAutoScaleMetricsCommand.getPrivateIP())).thenReturn(networkStats);
+        when(xenServer56Resource.getNetworkStats(conn, getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP())).thenReturn(networkStats);
         when(xenServer56Resource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(),  getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort())).thenReturn(lbStats);
 
         final Answer answer = wrapper.execute(getAutoScaleMetricsCommand, xenServer56Resource);

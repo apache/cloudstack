@@ -49,7 +49,7 @@ public final class XenServer56GetAutoScaleMetricsCommandWrapper extends CommandW
                 bytesSent = stats[0];
                 bytesReceived = stats[1];
             } else {
-                final long[] stats = xenServer56.getNetworkStats(conn, command.getPrivateIP());
+                final long[] stats = xenServer56.getNetworkStats(conn, command.getPrivateIP(), command.getPublicIP());
                 bytesSent = stats[0];
                 bytesReceived = stats[1];
             }
