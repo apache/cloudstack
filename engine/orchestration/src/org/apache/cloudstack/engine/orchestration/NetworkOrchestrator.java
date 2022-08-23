@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -705,6 +706,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null ? true : subdomainAccess);
+                        }
+
+                        if (vo.getBroadcastDomainType() == BroadcastDomainType.Vlan && vo.getBroadcastUri() != null && offering.getSpecifyVlan()) {
+                            s_logger.info("Recording a manually assigned vlan to table");
+                            String vnet = BroadcastDomainType.getValue(vo.getBroadcastUri());
+                            List<DataCenterVnetVO> vnetVOs = _datacenterVnetDao.findVnet(plan.getDataCenterId(), plan.getPhysicalNetworkId(), vnet);
+                            if (vnetVOs.size() == 1) {
+                                DataCenterVnetVO vnetVO = vnetVOs.get(0);
+                                if (vnetVO.getTakenAt() == null) {
+                                    vnetVO.setTakenAt(new Date());
+                                    vnetVO.setAccountId(owner.getId());
+                                    vnetVO.setReservationId(vo.getUuid());
+                                    _datacenterVnetDao.update(vnetVO.getId(), vnetVO);
+                                }
+                            }
                         }
                     }
                 });
@@ -2664,7 +2680,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
 
-                        if (!guru.trash(networkFinal, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()))) {
+                        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkFinal.getNetworkOfferingId());
+
+                        if (!guru.trash(networkFinal, networkOffering)) {
                             throw new CloudRuntimeException("Failed to trash network.");
                         }
 
@@ -2695,6 +2713,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             if (updateResourceCount) {
                                 _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network, networkFinal.getDisplayNetwork());
                             }
+                        }
+                        if (networkFinal.getBroadcastDomainType() == BroadcastDomainType.Vlan && networkFinal.getBroadcastUri() != null && networkOffering.getSpecifyVlan()) {
+                            s_logger.info("Cleaning up our manually assigned vlan from table");
+                            _dcDao.releaseVnet(BroadcastDomainType.getValue(networkFinal.getBroadcastUri()), networkFinal.getDataCenterId(), networkFinal.getPhysicalNetworkId(), networkFinal.getAccountId(), networkFinal.getUuid());
                         }
                     }
                 });
