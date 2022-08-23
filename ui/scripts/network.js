@@ -6497,6 +6497,44 @@
                                         isBoolean: true,
                                         isChecked: false
                                     },
+                                    remoteidtype: {
+                                        label: 'label.remote.id.type',
+                                        docID: 'helpVPNRemoteIdType',
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'auto',
+                                                description: 'auto'
+                                            });
+                                            items.push({
+                                                id: 'allow any',
+                                                description: 'allow any'
+                                            });
+                                            items.push({
+                                                id: 'fqdn',
+                                                description: 'fqdn'
+                                            });
+                                            items.push({
+                                                id: 'key_id',
+                                                description: 'key_id'
+                                            });
+                                            items.push({
+                                                id: 'user_fqdn',
+                                                description: 'user_fqdn'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    remoteid: {
+                                        label: 'label.remote.id',
+                                        docID: 'helpVPNRemoteId',
+                                        validation: {
+                                            required: false,
+                                        }
+                                    },
+
 
                                     domain: {
                                         label: 'label.domain',
@@ -6601,7 +6639,9 @@
                                     esplifetime: args.data.esplifetime,
                                     dpd: (args.data.dpd == "on"),
                                     forceencap: (args.data.forceencap == "on"),
-                                    splitconnections: (args.data.splitconnections == "on")
+                                    splitconnections: (args.data.splitconnections == "on"),
+                                    remoteid: args.data.remoteid,
+                                    remoteidtype: args.data.remoteidtype
                                 };
 
                                 var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
@@ -6671,7 +6711,9 @@
                                         esplifetime: args.data.esplifetime,
                                         dpd: (args.data.dpd == "on"),
                                         forceencap: (args.data.forceencap == "on"),
-                                        splitconnections: (args.data.splitconnections == "on")
+                                        splitconnections: (args.data.splitconnections == "on"),
+                                        remoteid: args.data.remoteid,
+                                        remoteidtype: args.data.remoteidtype
                                     };
 
                                     var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
@@ -7017,6 +7059,44 @@
                                         isBoolean: true,
                                         isEditable: true,
                                         converter: cloudStack.converters.toBooleanText
+                                    },
+
+                                    remoteidtype: {
+                                        label: 'label.remote.id.type',
+                                        isEditable: true,
+                                        select: function(args) {
+                                            var items = [];
+                                            items.push({
+                                                id: 'auto',
+                                                description: 'auto'
+                                            });
+                                            items.push({
+                                                id: 'allow any',
+                                                description: 'allow any'
+                                            });
+                                            items.push({
+                                                id: 'fqdn',
+                                                description: 'fqdn'
+                                            });
+                                            items.push({
+                                                id: 'key_id',
+                                                description: 'key_id'
+                                            });
+                                            items.push({
+                                                id: 'user_fqdn',
+                                                description: 'user_fqdn'
+                                            });
+                                            args.response.success({
+                                                data: items
+                                            });
+                                        }
+                                    },
+                                    remoteid: {
+                                        label: 'label.remote.id',
+                                        isEditable: true,
+                                        validation: {
+                                            required: false,
+                                        }
                                     },
 
                                     id: {

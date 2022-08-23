@@ -98,6 +98,12 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IKE_VERSION, type = CommandType.STRING, required = false, description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
     private String ikeVersion;
 
+    @Parameter(name = ApiConstants.REMOTE_ID, type = CommandType.STRING, required = false, description = "Remote ID of customer gateway")
+    private String remoteId;
+
+    @Parameter(name = ApiConstants.REMOTE_ID_TYPE, type = CommandType.STRING, required = false, description = "Remote ID Type of customer gateway, one of auto, allow any, fqdn, key_id, or user_fqdn.  Defaults to Auto")
+    private String remoteIdType;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -158,6 +164,14 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     public String getIkeVersion() {
         return ikeVersion;
+    }
+
+    public String getRemoteId() {
+        return remoteId;
+    }
+
+    public String getRemoteIdType() {
+        return remoteIdType;
     }
 
     /////////////////////////////////////////////////////

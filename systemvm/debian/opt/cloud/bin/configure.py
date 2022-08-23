@@ -540,12 +540,13 @@ class CsSite2SiteVpn(CsDataBag):
         esppolicy = obj['esp_policy'].replace(';', '-')
         splitconnections = obj['split_connections'] if 'split_connections' in obj else False
         ikeversion = obj['ike_version'] if 'ike_version' in obj and obj['ike_version'].lower() in ('ike', 'ikev1', 'ikev2') else 'ike'
+        remoteid = obj['remote_id']
+        remoteidtype = obj['remote_id_type'] if 'remote_id_type' in obj and obj['remote_id_type'].lower() in ('auto', 'allow any', 'fqdn', 'key_id', 'user_fqdn') else 'auto'
 
         peerlistarr = peerlist.split(',')
         if splitconnections:
             logging.debug('Splitting rightsubnets %s' % peerlistarr)
             peerlist = peerlistarr[0]
-
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
         file = CsFile(vpnconffile)
@@ -556,6 +557,16 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
         file.addeq(" right=%s" % rightpeer)
         file.addeq(" rightsubnet=%s" % peerlist)
+        if remoteidtype.lower() == 'auto' and remoteid is not None:
+            file.addeq(" rightid=%s" % remoteid)
+        elif remoteidtype.lower() == 'allow any':
+            file.addeq(" rightid=\%any")
+        elif remoteidtype.lower() == 'fqdn':
+            file.addeq(" rightid=@%s" % remoteid)
+        elif remoteidtype.lower() == 'key_id':
+            file.addeq(" rightid=@#%s" % remoteid)
+        elif remoteidtype.lower() == 'user_fqdn':
+            file.addeq(" rightid=@@%s" % remoteid)
         file.addeq(" type=tunnel")
         file.addeq(" authby=secret")
         file.addeq(" keyexchange=%s" % ikeversion)

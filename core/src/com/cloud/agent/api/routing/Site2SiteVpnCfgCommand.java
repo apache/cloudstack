@@ -37,6 +37,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private boolean encap;
     private boolean splitConnections;
     private String ikeVersion;
+    private String remoteId;
+    private String remoteIdType;
 
     @Override
     public boolean executeInSequence() {
@@ -49,7 +51,7 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
 
     public Site2SiteVpnCfgCommand(boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp, String peerGuestCidrList,
             String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd, boolean passive, boolean encap,
-            boolean splitConnections, String ikeVersion) {
+            boolean splitConnections, String ikeVersion, String remoteId, String remoteIdType) {
         this.create = create;
         this.setLocalPublicIp(localPublicIp);
         this.setLocalPublicGateway(localPublicGateway);
@@ -66,6 +68,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.encap = encap;
         this.splitConnections = splitConnections;
         this.ikeVersion = ikeVersion;
+        this.remoteId = remoteId;
+        this.remoteIdType = remoteIdType;
     }
 
     public boolean isCreate() {
@@ -194,5 +198,21 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
 
     public void setIkeVersion(String ikeVersion) {
         this.ikeVersion = ikeVersion;
+    }
+
+    public String getRemoteId() {
+        return remoteId;
+    }
+
+    public void setRemoteId(String remoteId) {
+        this.remoteId = remoteId;
+    }
+
+    public String getRemoteIdType() {
+        return remoteIdType;
+    }
+
+    public void setRemoteIdType(String remoteIdType) {
+        this.remoteIdType = remoteIdType;
     }
 }

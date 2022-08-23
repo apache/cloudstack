@@ -140,6 +140,14 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @Param(description = "Which IKE Version to use, one of ike (autoselect), ikev1, or ikev2. Defaults to ike")
     private String ikeVersion;
 
+    @SerializedName(ApiConstants.REMOTE_ID)
+    @Param(description = "Remote ID of customer gateway")
+    private String remoteId;
+
+    @SerializedName(ApiConstants.REMOTE_ID_TYPE)
+    @Param(description = "Remote ID Type of customer gateway, one of auto, allow any, fqdn, key_id, or user_fqdn.  Defaults to Auto")
+    private String remoteIdType;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -214,6 +222,14 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
 
     public void setIkeVersion(String ikeVersion) {
         this.ikeVersion = ikeVersion;
+    }
+
+    public void setRemoteId(String remoteId) {
+        this.remoteId = remoteId;
+    }
+
+    public void setRemoteIdType(String remoteIdType) {
+        this.remoteIdType = remoteIdType;
     }
 
     @Override

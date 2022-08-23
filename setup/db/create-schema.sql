@@ -2285,6 +2285,8 @@ CREATE TABLE `cloud`.`s2s_customer_gateway` (
   `removed` datetime COMMENT 'date removed if not null',
   `ike_version` varchar(5) NOT NULL DEFAULT 'ike' COMMENT 'one of ike, ikev1, ikev2',
   `split_connections` int(1) NOT NULL DEFAULT 0,
+  `remote_id` varchar(80) DEFAULT NULL,
+  `remote_id_type` varchar(9) DEFAULT NULL COMMENT 'one of auto, allow any, fqdn, key_id, user_fqdn',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_s2s_customer_gateway__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_s2s_customer_gateway__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,

@@ -913,9 +913,11 @@ public class CommandSetupHelper {
         final Boolean encap = gw.getEncap();
         final Boolean splitConnections = gw.getSplitConnections();
         final String ikeVersion = gw.getIkeVersion();
+        final String remoteId = gw.getRemoteId();
+        final String remoteIdType = gw.getRemoteIdType();
 
         final Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr, peerGatewayIp, peerGuestCidrList, ikePolicy,
-                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap, splitConnections, ikeVersion);
+                espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd, conn.isPassive(), encap, splitConnections, ikeVersion, remoteId, remoteIdType);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

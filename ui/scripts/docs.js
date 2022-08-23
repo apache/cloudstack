@@ -1098,6 +1098,14 @@ cloudStack.docs = {
         desc: 'Split multiple remote networks into multiple phase 2 SAs. Often used with Cisco some products.',
         externalLink: ''
     },
+    helpVPNRemoteIdType: {
+        desc: 'Enter auto, allow any, fqdn, key_id, or user_fqdn to specify which type of Remote ID to use.',
+        externalLink: ''
+    },
+    helpVPNRemoteId: {
+        desc: 'Remote ID for the remote gateway',
+        externalLink: ''
+    },
     helpVPNGatewayIKEEncryption: {
         desc: 'Enter AES128, AES192, AES256, or 3DES to specify the Internet Key Exchange (IKE) policy for phase-1. Authentication is accomplished with Preshared Keys.',
         externalLink: ''
