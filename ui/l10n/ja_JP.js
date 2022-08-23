@@ -970,6 +970,7 @@ var dictionary = {
     "label.logout": "ログオフ",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "LXC のトラフィック ラベル",
+    "label.mac.address": "MAC アドレス",
     "label.make.project.owner": "アカウントのプロジェクト所有者化",
     "label.make.redundant": "冗長化構成をとる",
     "label.manage": "管理",

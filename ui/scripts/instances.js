@@ -2972,6 +2972,9 @@
                             netmask: {
                                 label: 'label.netmask'
                             },
+                            macaddress: {
+                                label: 'label.mac.address'
+                            },
 
                             ip6address: {
                                 label: 'label.ipv6.address'

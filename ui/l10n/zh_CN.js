@@ -970,6 +970,7 @@ var dictionary = {
     "label.logout": "注销",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "LXC 流量标签",
+    "label.mac.address": "MAC 地址",
     "label.make.project.owner": "设为帐户项目所有者",
     "label.make.redundant": "冗余",
     "label.manage": "托管",

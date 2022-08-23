@@ -970,6 +970,7 @@ var dictionary = {
     "label.logout": "Sair",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "Rótulo de tráfego LXC",
+    "label.mac.address": "Endereço MAC",
     "label.make.project.owner": "Criar proprietário de conta de projeto",
     "label.make.redundant": "Deixar redundante",
     "label.manage": "Gerenciar",

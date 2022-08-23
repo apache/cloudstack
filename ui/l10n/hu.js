@@ -970,6 +970,7 @@ var dictionary = {
     "label.logout": "Kijelentkezés",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "LXC Traffic Label",
+    "label.mac.address": "MAC cím",
     "label.make.project.owner": "Számla projekt-tulajdonossá tétele",
     "label.make.redundant": "Redundánssá tétel",
     "label.manage": "Vezérlés",

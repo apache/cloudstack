@@ -970,6 +970,7 @@ var dictionary = {
     "label.logout": "로그아웃",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "LXC Traffic Label",
+    "label.mac.address": "MAC 주소",
     "label.make.project.owner": "계정 정보 프로젝트 소유자",
     "label.make.redundant": "Make redundant",
     "label.manage": "관리",
