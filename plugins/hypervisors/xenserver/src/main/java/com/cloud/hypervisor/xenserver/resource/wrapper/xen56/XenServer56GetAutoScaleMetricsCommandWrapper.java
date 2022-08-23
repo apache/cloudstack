@@ -19,13 +19,13 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xen56;
 
-import com.cloud.network.router.VirtualRouterAutoScale;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
+import com.cloud.network.router.VirtualRouterAutoScale;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.xensource.xenapi.Connection;

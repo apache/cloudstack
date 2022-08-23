@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -34,19 +35,31 @@ import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
+import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.host.Host;
 import com.cloud.host.HostEnvironment;
 import com.cloud.hypervisor.xenserver.resource.XenServer56Resource;
 import com.cloud.hypervisor.xenserver.resource.XsHost;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
+import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
+import com.cloud.network.router.VirtualRouterAutoScale.VirtualRouterAutoScaleCounter;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.vm.VMInstanceVO;
 import com.xensource.xenapi.Connection;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RunWith(PowerMockRunner.class)
 public class XenServer56WrapperTest {
 
     @Mock
     private XenServer56Resource xenServer56Resource;
+
+    final static long[] vpcStats = { 1L, 2L };
+    final static long[] networkStats = { 3L, 4L };
+    final static long[] lbStats = { 5L };
 
     @Test
     public void testCheckOnHostCommand() {
@@ -155,6 +168,76 @@ public class XenServer56WrapperTest {
         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
 
         assertFalse(answer.getResult());
+    }
+
+    @Test
+    public void testGetAutoScaleMetricsCommandForVpc() {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceive, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmit, 1L, 2L, 3L, 4));
+
+        final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", true, "10.10.10.10", 8080, metrics);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        when(xenServer56Resource.getVPCNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP())).thenReturn(vpcStats);
+        when(xenServer56Resource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(),  getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort())).thenReturn(lbStats);
+
+        final Answer answer = wrapper.execute(getAutoScaleMetricsCommand, xenServer56Resource);
+        assertTrue(answer.getResult());
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+
+        GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
+        List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
+
+        assertEquals(values.size(), 3);
+        for (AutoScaleMetricsValue value : values) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
+                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmit)) {
+                assertEquals(value.getValue(), Double.valueOf(vpcStats[0]));
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceive)) {
+                assertEquals(value.getValue(), Double.valueOf(vpcStats[1]));
+            }
+        }
+    }
+
+    @Test
+    public void testGetAutoScaleMetricsCommandForNetwork() {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceive, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmit, 1L, 2L, 3L, 4));
+
+        final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
+
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Connection conn = Mockito.mock(Connection.class);
+        when(xenServer56Resource.getConnection()).thenReturn(conn);
+        when(xenServer56Resource.getNetworkStats(conn, getAutoScaleMetricsCommand.getPrivateIP())).thenReturn(networkStats);
+        when(xenServer56Resource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(),  getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort())).thenReturn(lbStats);
+
+        final Answer answer = wrapper.execute(getAutoScaleMetricsCommand, xenServer56Resource);
+        assertTrue(answer.getResult());
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+
+        GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
+        List<AutoScaleMetricsValue> values = getAutoScaleMetricsAnswer.getValues();
+
+        assertEquals(values.size(), 3);
+        for (AutoScaleMetricsValue value : values) {
+            if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
+                assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmit)) {
+                assertEquals(value.getValue(), Double.valueOf(networkStats[0]));
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceive)) {
+                assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
+            }
+        }
     }
 
     @Test
