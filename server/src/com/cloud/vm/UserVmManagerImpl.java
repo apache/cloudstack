@@ -910,35 +910,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     startVirtualMachine(vmId, null, null, null);
                 }
             } else {
-                collectVmDiskStatistics(vm);
-                collectVmNetworkStatistics(vm);
-                DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
-                try {
-                    if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
-                        //List all networks of vm
-                        List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
-                        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
-                        //List the stopped routers
-                        for(long vmNetworkId : vmNetworks) {
-                            List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
-                            routers.addAll(router);
-                        }
-                        //A vm may not have many nics attached and even fewer routers might be stopped (only in exceptional cases)
-                        //Safe to start the stopped router serially, this is consistent with the way how multiple networks are added to vm during deploy
-                        //and routers are started serially ,may revisit to make this process parallel
-                        for(DomainRouterVO routerToStart : routers) {
-                            s_logger.warn("Trying to start router " + routerToStart.getInstanceName() + " as part of vm: " + vm.getInstanceName() + " reboot");
-                            _virtualNetAppliance.startRouter(routerToStart.getId(),true);
-                        }
-                    }
-                } catch (ConcurrentOperationException e) {
-                    throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
-                } catch (Exception ex){
-                    throw new CloudRuntimeException("Router start failed due to" + ex);
-                }finally {
-                    s_logger.info("Rebooting vm " + vm.getInstanceName());
-                    _itMgr.reboot(vm.getUuid(), null);
+                // This is to fix a bug with agent based reboots causing VM snapshots to disappear
+                if (stopVirtualMachine(userId, vmId)) {
+                    startVirtualMachine(vmId, null, null, null);
                 }
+                // Legacy reboot method. Leaving here for when we catch up to 4.16.0.0 when this PR is merged: https://github.com/apache/cloudstack/pull/4681
+//                collectVmDiskStatistics(vm);
+//                collectVmNetworkStatistics(vm);
+//                DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+//                try {
+//                    if (dc.getNetworkType() == DataCenter.NetworkType.Advanced) {
+//                        //List all networks of vm
+//                        List<Long> vmNetworks = _vmNetworkMapDao.getNetworks(vmId);
+//                        List<DomainRouterVO> routers = new ArrayList<DomainRouterVO>();
+//                        //List the stopped routers
+//                        for(long vmNetworkId : vmNetworks) {
+//                            List<DomainRouterVO> router = _routerDao.listStopped(vmNetworkId);
+//                            routers.addAll(router);
+//                        }
+//                        //A vm may not have many nics attached and even fewer routers might be stopped (only in exceptional cases)
+//                        //Safe to start the stopped router serially, this is consistent with the way how multiple networks are added to vm during deploy
+//                        //and routers are started serially ,may revisit to make this process parallel
+//                        for(DomainRouterVO routerToStart : routers) {
+//                            s_logger.warn("Trying to start router " + routerToStart.getInstanceName() + " as part of vm: " + vm.getInstanceName() + " reboot");
+//                            _virtualNetAppliance.startRouter(routerToStart.getId(),true);
+//                        }
+//                    }
+//                } catch (ConcurrentOperationException e) {
+//                    throw new CloudRuntimeException("Concurrent operations on starting router. " + e);
+//                } catch (Exception ex){
+//                    throw new CloudRuntimeException("Router start failed due to" + ex);
+//                }finally {
+//                    s_logger.info("Rebooting vm " + vm.getInstanceName());
+//                    _itMgr.reboot(vm.getUuid(), null);
+//                }
             }
             return _vmDao.findById(vmId);
         } else {
