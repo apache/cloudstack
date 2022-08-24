@@ -284,6 +284,23 @@ class TestVmAutoScaling(cloudstackTestCase):
         if result and not expected:
             self.fail("Autoscaling VM Group is removed successfully, but expected to fail")
 
+    def verifyVmCountAndProfiles(self, vmCount):
+        vms = VirtualMachine.list(
+            self.regular_user_apiclient,
+            autoscalevmgroupid=self.autoscaling_vmgroup.id,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(vms, list),
+            True,
+            "List virtual machines should return a valid list"
+        )
+        self.assertEqual(
+            len(vms) >= vmCount,
+            True,
+            "The number of virtual machines %s should be equal to or greater than %s" % (len(vms), vmCount)
+        )
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
         """ Verify scale up of AutoScaling VM group """
@@ -292,7 +309,15 @@ class TestVmAutoScaling(cloudstackTestCase):
         check_interval_config = Configurations.list(self.apiclient, name="autoscale.stats.interval")
         check_interval = check_interval_config[0].value
 
-        time.sleep(int(int(check_interval)/1000 + DEFAULT_INTERVAL))
+        sleeptime = int(int(check_interval)/1000) * 2
+        self.logger.debug("Waiting %s for %s VM(s) to be Up" % (sleeptime, MIN_MEMBER))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MIN_MEMBER)
+
+        sleeptime = int(int(check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        self.logger.debug("Waiting %s for %s VM(s) to be Up" % (sleeptime, MAX_MEMBER))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MAX_MEMBER)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_02_scale_down_verify(self):
