@@ -27,3 +27,14 @@ WHERE so.default_use = 1 AND so.vm_type IN ('domainrouter', 'secondarystoragevm'
 -- Add cidr_list column to load_balancing_rules
 ALTER TABLE `cloud`.`load_balancing_rules`
 ADD cidr_list VARCHAR(4096);
+
+-- savely add resources in parallel
+-- PR#5984 Create table to persist VM stats.
+DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
+CREATE TABLE `cloud`.`resource_reservation` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `amount` bigint unsigned NOT NULL,
+  PRIMARY KEY (`id`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

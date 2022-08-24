@@ -91,7 +91,7 @@ public interface ResourceLimitService {
     /**
      * This call should be used when we have already queried resource limit for an account. This is to handle
      * some corner cases where queried limit may be null.
-     * @param accountType
+     * @param accountId
      * @param limit
      * @param type
      * @return
@@ -102,7 +102,7 @@ public interface ResourceLimitService {
      * Finds the resource limit for a specified domain and type. If the domain has an infinite limit, will check
      * up the domain hierarchy
      *
-     * @param account
+     * @param domain
      * @param type
      * @return resource limit
      */
@@ -197,4 +197,25 @@ public interface ResourceLimitService {
      * @param delta
      */
     void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta);
+
+    /**
+     * Adds a reservation that will be counted in subsequent calls to {count}getResourceCount{code} until {code}this[code}
+     * is closed. It will create a reservation record that will be counted when resource limits are checked.
+     * @param account The account for which the reservation is.
+     * @param displayResource whether this resource is shown to users at all (if not it is not counted to limits)
+     * @param type resource type
+     * @param delta amount to reserve (will not be <+ 0)
+     * @return a {code}AutoClosable{Code} object representing the resource the user needs
+     */
+    ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta);
+
+    /**
+     * an interface defining an {code}AutoClosable{code} reservation object
+     */
+    interface ResourceReservation {
+
+        Long getAccountId();
+        ResourceType getResourceType();
+        Long getReservedAmount();
+    }
 }

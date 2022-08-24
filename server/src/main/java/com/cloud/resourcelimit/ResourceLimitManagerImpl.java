@@ -1060,7 +1060,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // 1. If its null assume displayResource = 1
         // 2. If its not null then send true if displayResource = 1
-        return (displayResource == null) || (displayResource != null && displayResource);
+        return ! Boolean.FALSE.equals(displayResource);
     }
 
     @Override
@@ -1104,6 +1104,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public ResourceLimitService.ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) {
+        if (! Boolean.FALSE.equals(displayResource)) {
+            return new CheckedReservation(account, type, delta);
+        }
+        throw new CloudRuntimeException("no reservation needed for resources that display as false");
+    }
+
+    @Override
     public String getConfigComponentName() {
         return ResourceLimitManagerImpl.class.getName();
     }
@@ -1124,7 +1132,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             List<DomainVO> domains = _domainDao.findImmediateChildrenForParent(Domain.ROOT_DOMAIN);
             List<AccountVO> accounts = _accountDao.findActiveAccountsForDomain(Domain.ROOT_DOMAIN);
 
-            for (ResourceType type : ResourceCount.ResourceType.values()) {
+            for (ResourceType type : ResourceType.values()) {
                 if (type.supportsOwner(ResourceOwnerType.Domain)) {
                     recalculateDomainResourceCount(Domain.ROOT_DOMAIN, type);
                     for (Domain domain : domains) {
