@@ -2759,6 +2759,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         try {
             removeVmFromVmGroup(vmId);
             _userVmManager.destroyVm(vmId, true);
+            _userVmManager.expungeVm(vmId);
         } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
         }
