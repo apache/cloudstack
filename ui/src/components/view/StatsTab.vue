@@ -23,6 +23,8 @@
       :maskClosable="false"
       :footer="null">
       <filter-stats
+        :startDateProp="startDate"
+        :endDateProp="endDate"
         @closeAction="closeAction"
         @onSubmit="handleSubmit"/>
     </a-modal>
@@ -233,8 +235,8 @@ export default {
       loaded: false,
       showCpuInfo: false,
       showFilterStatsModal: false,
-      endDate: new Date(),
-      startDate: new Date().setHours(new Date().getHours() - 1),
+      endDate: this.getEndDate(),
+      startDate: this.getStartDate(),
       formatedPeriod: null,
       selectedMemoryChartType: 0,
       selectedMemoryUsageType: 0,
@@ -286,10 +288,24 @@ export default {
   mounted () {
     this.fetchData()
   },
+  computed: {
+    usebrowsertimezone: function () {
+      return this.$store.getters.usebrowsertimezone
+    }
+  },
   watch: {
     resource: function (newItem) {
       if (!newItem || !newItem.id) {
         return
+      }
+      this.fetchData()
+    },
+    usebrowsertimezone: function () {
+      if (this.startDate) {
+        this.startDate = this.onToggleUseBrowserTimezone(new Date(this.startDate))
+      }
+      if (this.endDate) {
+        this.endDate = this.onToggleUseBrowserTimezone(new Date(this.endDate))
       }
       this.fetchData()
     }
@@ -317,13 +333,50 @@ export default {
       this.showResourceInfoModal = true
     },
     handleSubmit (values) {
-      this.startDate = values.startDate
-      this.endDate = values.endDate
+      if (values.startDate) {
+        this.startDate = new Date(values.startDate)
+      } else {
+        this.startDate = null
+      }
+      if (values.endDate) {
+        this.endDate = new Date(values.endDate)
+      } else {
+        this.endDate = null
+      }
       this.showFilterStatsModal = false
       this.fetchData()
     },
     closeAction () {
       this.showFilterStatsModal = false
+    },
+    getStartDate () {
+      var now = new Date()
+      if (!this.$store.getters.usebrowsertimezone) {
+        var dateInUTC = new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+        return dateInUTC.setHours(dateInUTC.getHours() - 1)
+      }
+      now.setHours(now.getHours() - 1)
+      return now
+    },
+    getEndDate () {
+      var now = new Date()
+      if (this.$store.getters.usebrowsertimezone) {
+        return now
+      }
+      return new Date(now.getTime() + now.getTimezoneOffset() * 60000)
+    },
+    onToggleUseBrowserTimezone (date) {
+      if (this.$store.getters.usebrowsertimezone) {
+        return this.$toLocalDate(date)
+      }
+      return new Date(date.getTime() + date.getTimezoneOffset() * 60000)
+    },
+    convertAndFormatDateAppropriately (date) {
+      if (this.$store.getters.usebrowsertimezone) {
+        var dateInUTC = new Date(date).toISOString().split('T')
+        return dateInUTC[0] + ' ' + dateInUTC[1].split('-')[0].split('.')[0]
+      }
+      return moment(date).format('YYYY-MM-DD HH:mm:ss')
     },
     fetchData () {
       this.loaded = false
@@ -331,10 +384,10 @@ export default {
       this.formatPeriod()
       var params = { id: this.resource.id }
       if (this.startDate) {
-        params.startDate = moment(this.startDate).format('YYYY-MM-DD HH:mm:ss')
+        params.startDate = this.convertAndFormatDateAppropriately(this.startDate)
       }
       if (this.endDate) {
-        params.endDate = moment(this.endDate).format('YYYY-MM-DD HH:mm:ss')
+        params.endDate = this.convertAndFormatDateAppropriately(this.endDate)
       }
       api('listVirtualMachinesUsageHistory', params).then(response => {
         this.handleStatsResponse(response)

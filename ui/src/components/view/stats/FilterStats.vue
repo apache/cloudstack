@@ -61,10 +61,35 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
+import moment from 'moment'
 
 export default {
   name: 'FilterStats',
   emits: ['closeAction', 'onSubmit'],
+  props: {
+    startDateProp: {
+      type: [Date, String, Number],
+      required: false
+    },
+    endDateProp: {
+      type: [Date, String, Number],
+      required: false
+    }
+  },
+  computed: {
+    startDate () {
+      if (this.startDateProp) {
+        return moment(this.startDateProp)
+      }
+      return null
+    },
+    endDate () {
+      if (this.endDateProp) {
+        return moment(this.endDateProp)
+      }
+      return null
+    }
+  },
   data () {
     return {
       allDataIsChecked: false,
@@ -77,6 +102,10 @@ export default {
       submitButtonLabel: this.$t('label.ok')
     }
   },
+  updated () {
+    this.form.startDate = this.startDate
+    this.form.endDate = this.endDate
+  },
   created () {
     this.initForm()
   },
@@ -84,8 +113,8 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        startDate: null,
-        endDate: null
+        startDate: this.startDate,
+        endDate: this.endDate
       })
     },
     handleSubmit (e) {
