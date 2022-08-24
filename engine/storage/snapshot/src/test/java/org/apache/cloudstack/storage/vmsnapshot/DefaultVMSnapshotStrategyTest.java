@@ -104,5 +104,4 @@ public class DefaultVMSnapshotStrategyTest {
         Assert.assertEquals(vmSnapshotChainSize, persistedVolume.getVmSnapshotChainSize());
         Assert.assertEquals(newVolChain, persistedVolume.getChainInfo());
     }
-
 }
