@@ -85,7 +85,6 @@ public class DefaultVMSnapshotStrategyTest {
         Mockito.when(vol2.getChainInfo()).thenReturn(newVolChain);
         Mockito.when(vol2.getSize()).thenReturn(vmSnapshotChainSize);
         Mockito.when(vol2.getId()).thenReturn(volumeId);
-        Mockito.when(vol2.getPoolId()).thenReturn(oldPoolId);
         VolumeVO volumeVO = new VolumeVO("name", 0l, 0l, 0l, 0l, 0l, "folder", "path", Storage.ProvisioningType.THIN, 0l, Volume.Type.ROOT);
         volumeVO.setPoolId(oldPoolId);
         volumeVO.setChainInfo(oldVolChain);
