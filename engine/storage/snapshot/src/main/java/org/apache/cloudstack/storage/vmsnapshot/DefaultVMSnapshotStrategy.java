@@ -327,7 +327,7 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    private void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
+    protected void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
         for (VolumeObjectTO volume : volumeTOs) {
             if (StringUtils.isAllEmpty(volume.getDataStoreUuid(), volume.getPath(), volume.getChainInfo())) {
                 continue;
