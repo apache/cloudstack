@@ -1115,7 +1115,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
     }
 
-    private long[] getVPCNetworkStats(String privateIp, String publicIp, String option, String vpcCIDR) {
+    protected long[] getVPCNetworkStats(String privateIp, String publicIp, String option, String vpcCIDR) {
         String args = "-l " + publicIp + " ";
         if (option.equals("get")) {
             args += "-g";
