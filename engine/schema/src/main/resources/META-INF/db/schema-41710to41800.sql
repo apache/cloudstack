@@ -87,6 +87,10 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state='Enabled' WHERE state='enabled';
 UPDATE `cloud`.`autoscale_vmgroups` SET state='Disabled' WHERE state='disabled';
 UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
 
+-- Update autoscale_vmgroups so records will not be removed when LB rule is removed
+
+ALTER TABLE `cloud`.`autoscale_vmgroups` DROP CONSTRAINT `fk_autoscale_vmgroup__load_balancer_id`;
+
 -- Create table for VM autoscaling historic data
 
 CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (
