@@ -1382,7 +1382,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                             newDisk = null;
                         }
                     }
-                } catch (QemuImgException | LibvirtException e) {
+                } catch (QemuImgException e) {
                     s_logger.error("Failed to fetch the information of file " + srcFile.getFileName() + " the error was: " + e.getMessage());
                     newDisk = null;
                 }

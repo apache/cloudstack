@@ -24,7 +24,6 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -4731,14 +4730,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      */
     public boolean hostSupportsVolumeEncryption() {
         // test qemu-img
-        Path testFile = Paths.get(javaTempDir, UUID.randomUUID().toString()).normalize().toAbsolutePath();
-        String objectName = "sec0";
-
-
-        Map<String, String> options = new HashMap<String, String>();
-        List<QemuObject> passphraseObjects = new ArrayList<>();
-        QemuImgFile file = new QemuImgFile(testFile.toString(), 64<<20, PhysicalDiskFormat.QCOW2);
-
         try {
             QemuImg qemu = new QemuImg(0);
             if (!qemu.supportsImageFormat(PhysicalDiskFormat.LUKS)) {
@@ -4896,7 +4887,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException ex) {
             if (ex.getMessage().contains("already defined for use")) {
                 Match match = new Match();
-                if (UuidUtils.REGEX.matches(ex.getMessage(), match)) {
+                if (UuidUtils.getUuidRegex().matches(ex.getMessage(), match)) {
                     secretUuid = match.getCapturedText(0);
                     s_logger.info(String.format("Reusing previously defined secret '%s' for volume '%s'", secretUuid, consumer));
                 } else {

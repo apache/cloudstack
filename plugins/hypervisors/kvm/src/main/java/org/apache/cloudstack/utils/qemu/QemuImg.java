@@ -116,7 +116,7 @@ public class QemuImg {
      * @param skipZeroIfSupported Don't write zeroes to target device during convert, if supported by qemu-img
      * @param noCache Ensure we flush writes to target disk (useful for block device targets)
      */
-    public QemuImg(final int timeout, final boolean skipZeroIfSupported, final boolean noCache) throws QemuImgException, LibvirtException {
+    public QemuImg(final int timeout, final boolean skipZeroIfSupported, final boolean noCache) throws LibvirtException {
         if (skipZeroIfSupported) {
             final Script s = new Script(_qemuImgPath, timeout);
             s.add("--help");
@@ -156,7 +156,7 @@ public class QemuImg {
      *            A alternative path to the qemu-img binary
      * @return void
      */
-    public QemuImg(final String qemuImgPath) throws LibvirtException, QemuImgException {
+    public QemuImg(final String qemuImgPath) throws LibvirtException {
         this(0, false, false);
         _qemuImgPath = qemuImgPath;
     }
@@ -347,7 +347,7 @@ public class QemuImg {
      * @return void
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
-                        final Map<String, String> options, final List<QemuObject> qemuObjects, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException, LibvirtException {
+                        final Map<String, String> options, final List<QemuObject> qemuObjects, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
         QemuImageOptions imageOpts = new QemuImageOptions(srcFile.getFormat(), srcFile.getFileName(), null);
         convert(srcFile, destFile, options, qemuObjects, imageOpts, snapshotName, forceSourceFormat);
     }
@@ -578,7 +578,7 @@ public class QemuImg {
      *            A QemuImgFile object containing the file to get the information from
      * @return A HashMap with String key-value information as returned by 'qemu-img info'
      */
-    public Map<String, String> info(final QemuImgFile file) throws QemuImgException, LibvirtException {
+    public Map<String, String> info(final QemuImgFile file) throws QemuImgException {
         final Script s = new Script(_qemuImgPath);
         s.add("info");
         if (this.version >= QEMU_2_10) {
