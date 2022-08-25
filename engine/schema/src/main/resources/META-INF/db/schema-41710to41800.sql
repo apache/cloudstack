@@ -89,7 +89,7 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
 
 -- Update autoscale_vmgroups so records will not be removed when LB rule is removed
 
-ALTER TABLE `cloud`.`autoscale_vmgroups` DROP CONSTRAINT `fk_autoscale_vmgroup__load_balancer_id`;
+ALTER TABLE `cloud`.`autoscale_vmgroups` DROP FOREIGN KEY `fk_autoscale_vmgroup__load_balancer_id`;
 
 -- Create table for VM autoscaling historic data
 
