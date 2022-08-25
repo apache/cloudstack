@@ -559,7 +559,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     private void checkNetworkDns(boolean isIpv6, NetworkOffering networkOffering, Long vpcId,
-         String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
+        String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
         if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2)) {
             if (GuestType.L2.equals(networkOffering.getGuestType())) {
                 throw new InvalidParameterValueException(String.format("DNS can not be specified %s networks", GuestType.L2));
@@ -576,6 +576,50 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
         _networkModel.verifyIp4DnsPair(ip4Dns1, ip4Dns2);
         _networkModel.verifyIp6DnsPair(ip6Dns1, ip6Dns2);
+    }
+
+    protected boolean checkAndUpdateNetworkDns(NetworkVO network, NetworkOffering networkOffering, String newIp4Dns1,
+        String newIp4Dns2, String newIp6Dns1, String newIp6Dns2) {
+        String ip4Dns1 = network.getDns1();
+        String ip4Dns2 = network.getDns2();
+        String ip6Dns1 = network.getIp6Dns1();
+        String ip6Dns2 = network.getIp6Dns2();
+        if (ObjectUtils.allNull(newIp4Dns1, newIp4Dns2, newIp6Dns1, newIp6Dns2)) {
+            if (ObjectUtils.anyNotNull(ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2) &&
+                    !areServicesSupportedByNetworkOffering(networkOffering.getId(), Service.Dns)) {
+                network.setDns1(null);
+                network.setDns2(null);
+                network.setIp6Dns1(null);
+                network.setIp6Dns2(null);
+                return true;
+            }
+            return false;
+        }
+        if (StringUtils.equals(ip4Dns1, StringUtils.trimToNull(newIp4Dns1)) && StringUtils.equals(ip4Dns2, StringUtils.trimToNull(newIp4Dns2)) &&
+                StringUtils.equals(ip6Dns1, StringUtils.trimToNull(newIp6Dns1)) && StringUtils.equals(ip6Dns2, StringUtils.trimToNull(newIp6Dns2))) {
+            return false;
+        }
+        boolean isIpv6 = (GuestType.Shared.equals(network.getGuestType()) &&
+                StringUtils.isNotEmpty(network.getIp6Cidr())) ||
+                _networkOfferingDao.isIpv6Supported(networkOffering.getId());
+        if (newIp4Dns1 != null) {
+            ip4Dns1 = StringUtils.trimToNull(newIp4Dns1);
+        }
+        if (newIp4Dns2 != null) {
+            ip4Dns2 = StringUtils.trimToNull(newIp4Dns2);
+        }
+        if (newIp6Dns1 != null) {
+            ip6Dns1 = StringUtils.trimToNull(newIp6Dns1);
+        }
+        if (newIp6Dns2 != null) {
+            ip6Dns2 = StringUtils.trimToNull(newIp6Dns2);
+        }
+        checkNetworkDns(isIpv6, networkOffering, network.getVpcId(), ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+        network.setDns1(ip4Dns1);
+        network.setDns2(ip4Dns2);
+        network.setIp6Dns1(ip6Dns1);
+        network.setIp6Dns2(ip6Dns2);
+        return true;
     }
 
     @Override
@@ -2600,6 +2644,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         String customId = cmd.getCustomId();
         boolean updateInSequence = cmd.getUpdateInSequence();
         boolean forced = cmd.getForced();
+        String ip4Dns1 = cmd.getIp4Dns1();
+        String ip4Dns2 = cmd.getIp4Dns2();
+        String ip6Dns1 = cmd.getIp6Dns1();
+        String ip6Dns2 = cmd.getIp6Dns2();
 
         boolean restartNetwork = false;
 
@@ -2726,6 +2774,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 //Setting the new network's isReduntant to the new network offering's RedundantRouter.
                 network.setRedundant(_networkOfferingDao.findById(networkOfferingId).isRedundantRouter());
             }
+        }
+
+        if (checkAndUpdateNetworkDns(network, networkOfferingChanged ? networkOffering : oldNtwkOff, ip4Dns1, ip4Dns2,
+                ip6Dns1, ip6Dns2)) {
+            restartNetwork = true;
         }
 
         final Map<String, String> newSvcProviders = networkOfferingChanged
