@@ -1136,12 +1136,14 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return size;
     }
 
-    private boolean isVolumeExistedOnDatastoreCluster(VolumeObjectTO volumeObjectTO) {
+    private boolean isVolumeOnDatastoreCluster(VolumeObjectTO volumeObjectTO) {
         DataStoreTO dsTO = volumeObjectTO.getDataStore();
         if (!(dsTO instanceof PrimaryDataStoreTO)) {
             return false;
         }
-        return Storage.StoragePoolType.DatastoreCluster.equals(((PrimaryDataStoreTO)dsTO).getPoolType());
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO)dsTO;
+        return Storage.StoragePoolType.DatastoreCluster.equals(primaryDataStoreTO.getPoolType()) ||
+                Storage.StoragePoolType.DatastoreCluster.equals(primaryDataStoreTO.getParentPoolType());
     }
 
     private void syncVolume(VmwareHostService hostService, VirtualMachineMO virtualMachineMO, VmwareContext context,
@@ -1276,7 +1278,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             String baseName;
             String datastoreUuid = volumeTO.getDataStore().getUuid();
 
-            if (isVolumeExistedOnDatastoreCluster(volumeTO)) {
+            if (isVolumeOnDatastoreCluster(volumeTO)) {
                 syncVolume(hostService, vmMo, context, hyperHost, volumeTO);
                 path = volumeTO.getPath();
                 baseName = VmwareHelper.trimSnapshotDeltaPostfix(volumeTO.getPath());
