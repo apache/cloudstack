@@ -37,6 +37,7 @@ from marvin.lib.base import (Account,
                              Project,
                              ServiceOffering,
                              VirtualMachine,
+                             Volume,
                              Zone,
                              Network,
                              NetworkOffering,
@@ -87,12 +88,12 @@ class TestVmAutoScaling(cloudstackTestCase):
         cls._cleanup.append(cls.service_offering)
 
         # 2. Create disk offerings (fixed and custom)
-        cls.disk_offering = DiskOffering.create(
+        cls.disk_offering_override = DiskOffering.create(
             cls.apiclient,
             cls.services["disk_offering"],
             disksize=cls.templatesize + 1
         )
-        cls._cleanup.append(cls.disk_offering)
+        cls._cleanup.append(cls.disk_offering_override)
 
         cls.disk_offering_custom = DiskOffering.create(
             cls.apiclient,
@@ -206,7 +207,7 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         # 12. Create AS VM Profile
         cls.otherdeployparams = []
-        cls.addOtherDeployParam("overridediskofferingid", cls.disk_offering.id)
+        cls.addOtherDeployParam("overridediskofferingid", cls.disk_offering_override.id)
         cls.addOtherDeployParam("diskofferingid", cls.disk_offering_custom.id)
         cls.addOtherDeployParam("disksize", 3)
         cls.addOtherDeployParam("keypairs", cls.keypair_1.name + "," + cls.keypair_2.name)
@@ -301,6 +302,94 @@ class TestVmAutoScaling(cloudstackTestCase):
             "The number of virtual machines %s should be equal to or greater than %s" % (len(vms), vmCount)
         )
 
+        for vm in vms:
+            self.verifyVmProfile(vm)
+
+    def verifyVmProfile(self, vm):
+        datadisksizeInBytes = None
+        diskofferingid = None
+        rootdisksizeInBytes = None
+        sshkeypairs = None
+
+        affinitygroupIdsArray = []
+        for affinitygroup in vm.affinitygroup:
+            affinitygroupIdsArray.append(affinitygroup.id)
+        affinitygroupids = ",".join(affinitygroupIdsArray)
+
+        if vm.diskofferingid:
+            diskofferingid = vm.diskofferingid
+        if vm.keypairs:
+            sshkeypairs = vm.keypairs
+        serviceofferingid = vm.serviceofferingid
+        templateid = vm.templateid
+
+        networkIdsArray = []
+        for nic in vm.nic:
+            networkIdsArray.append(nic.networkid)
+        networkids = ",".join(networkIdsArray)
+
+        volumes = Volume.list(
+            self.regular_user_apiclient,
+            virtualmachineid=vm.id,
+            listall=True
+        )
+        for volume in volumes:
+            if volume.type == 'ROOT':
+                rootdisksizeInBytes = volume.size
+            elif volume.type == 'DATADISK':
+                datadisksizeInBytes = volume.size
+                diskofferingid = volume.diskofferingid
+
+        self.assertEquals(templateid, self.template.id)
+        self.assertEquals(serviceofferingid, self.service_offering.id)
+
+        vmprofiles_list = AutoScaleVmProfile.list(
+            self.regular_user_apiclient,
+            listall=True,
+            id=self.autoscaling_vmprofile.id
+        )
+        vmprofile = vmprofiles_list[0]
+        vmprofile_otherdeployparams = vmprofile.otherdeployparams
+
+        self.logger.debug("vmprofile_otherdeployparams = " + str(vmprofile_otherdeployparams))
+        self.logger.debug("templateid = " + templateid)
+        self.logger.debug("serviceofferingid = " + serviceofferingid)
+        self.logger.debug("rootdisksizeInBytes = " + str(rootdisksizeInBytes))
+        self.logger.debug("datadisksizeInBytes = " + str(datadisksizeInBytes))
+        self.logger.debug("diskofferingid = " + diskofferingid)
+        self.logger.debug("sshkeypairs = " + sshkeypairs)
+        self.logger.debug("networkids = " + networkids)
+        self.logger.debug("affinitygroupids = " + affinitygroupids)
+        self.logger.debug("disk_offering_override = " + str(self.disk_offering_override.disksize))
+
+        if vmprofile_otherdeployparams.rootdisksize:
+            self.assertEquals(int(rootdisksizeInBytes), int(vmprofile_otherdeployparams.rootdisksize) * (1024 ** 3))
+        elif vmprofile_otherdeployparams.overridediskofferingid:
+            self.assertEquals(vmprofile_otherdeployparams.overridediskofferingid, self.disk_offering_override.id)
+            self.assertEquals(int(rootdisksizeInBytes), int(self.disk_offering_override.disksize) * (1024 ** 3))
+        else:
+            self.assertEquals(int(rootdisksizeInBytes), int(self.templatesize) * (1024 ** 3))
+
+        if vmprofile_otherdeployparams.diskofferingid:
+            self.assertEquals(diskofferingid, vmprofile_otherdeployparams.diskofferingid)
+        if vmprofile_otherdeployparams.disksize:
+            self.assertEquals(int(datadisksizeInBytes), int(vmprofile_otherdeployparams.disksize) * (1024 ** 3))
+
+        if vmprofile_otherdeployparams.keypairs:
+            self.assertEquals(sshkeypairs, vmprofile_otherdeployparams.keypairs)
+        else:
+            self.assertIsNone(sshkeypairs)
+
+        if vmprofile_otherdeployparams.networkids:
+            self.assertEquals(networkids, vmprofile_otherdeployparams.networkids)
+        else:
+            self.assertEquals(networkids, self.user_network_1.id)
+
+        if vmprofile_otherdeployparams.affinitygroupids:
+            self.assertEquals(affinitygroupids, vmprofile_otherdeployparams.affinitygroupids)
+        else:
+            self.assertEquals(affinitygroupids, '')
+
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
         """ Verify scale up of AutoScaling VM group """
@@ -310,12 +399,12 @@ class TestVmAutoScaling(cloudstackTestCase):
         check_interval = check_interval_config[0].value
 
         sleeptime = int(int(check_interval)/1000) * 2
-        self.logger.debug("Waiting %s for %s VM(s) to be Up" % (sleeptime, MIN_MEMBER))
+        self.logger.debug("Waiting %s seconds for %s VM(s) to be created" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
         sleeptime = int(int(check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("Waiting %s for %s VM(s) to be Up" % (sleeptime, MAX_MEMBER))
+        self.logger.debug("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER)
 
