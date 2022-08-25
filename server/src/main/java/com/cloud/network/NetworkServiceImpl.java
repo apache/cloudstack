@@ -370,6 +370,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private Map<String, String> _configs;
 
+    private void verifyDedicatedGuestVlansWithExistingDatacenterVlans(PhysicalNetwork physicalNetwork, Account vlanOwner, int startVlan, int endVlan) {
+        for (int i = startVlan; i <= endVlan; i++) {
+            List<DataCenterVnetVO> dataCenterVnet = _dcVnetDao.findVnet(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), Integer.toString(i));
+            if (CollectionUtils.isEmpty(dataCenterVnet)) {
+                throw new InvalidParameterValueException(String.format("Guest vlan %d from this range %d-%d is not present in the system for physical network ID: %s", i, startVlan, endVlan, physicalNetwork.getUuid()));
+            }
+            // Verify guest vlans in the range don't belong to a network of a different account
+            if (dataCenterVnet.get(0).getAccountId() != null && dataCenterVnet.get(0).getAccountId() != vlanOwner.getAccountId()) {
+                throw new InvalidParameterValueException("Guest vlan from this range " + dataCenterVnet.get(0).getVnet() + " is allocated to a different account."
+                        + " Can only dedicate a range which has no allocated vlans or has vlans allocated to the same account ");
+            }
+        }
+    }
+
     /* Get a list of IPs, classify them by service */
     protected Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
@@ -4073,18 +4087,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
-        // Verify guest vlans in the range don't belong to a network of a different account
-        for (int i = startVlan; i <= endVlan; i++) {
-            List<DataCenterVnetVO> allocatedVlans = _dcVnetDao.listAllocatedVnetsInRange(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), startVlan, endVlan);
-            if (allocatedVlans != null && !allocatedVlans.isEmpty()) {
-                for (DataCenterVnetVO allocatedVlan : allocatedVlans) {
-                    if (allocatedVlan.getAccountId() != vlanOwner.getAccountId()) {
-                        throw new InvalidParameterValueException("Guest vlan from this range " + allocatedVlan.getVnet() + " is allocated to a different account."
-                                + " Can only dedicate a range which has no allocated vlans or has vlans allocated to the same account ");
-                    }
-                }
-            }
-        }
+        verifyDedicatedGuestVlansWithExistingDatacenterVlans(physicalNetwork, vlanOwner, startVlan, endVlan);
 
         List<AccountGuestVlanMapVO> guestVlanMaps = _accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(physicalNetworkId);
         // Verify if vlan range is already dedicated
