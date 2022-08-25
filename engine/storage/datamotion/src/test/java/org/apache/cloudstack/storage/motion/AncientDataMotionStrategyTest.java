@@ -82,7 +82,7 @@ public class AncientDataMotionStrategyTest {
     }
 
     private void replaceVmwareCreateCloneFullField() throws Exception {
-        Field field = CapacityManager.class.getDeclaredField("VmwareCreateCloneFull");
+        Field field = StorageManager.class.getDeclaredField("VmwareCreateCloneFull");
         field.setAccessible(true);
         // remove final modifier from field
         Field modifiersField = Field.class.getDeclaredField("modifiers");

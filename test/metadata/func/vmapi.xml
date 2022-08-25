@@ -26,7 +26,7 @@ under the License.
 		2. Destroy the Virtual Machine
 		3. List the Destroyed Virtual Machine
 		4. Check that the Destroyed VM cannot be started
-		5. Check that a non-existing VM cannot be listed (Id doesnt exist)
+		5. Check that a non-existing VM cannot be listed (Id doesn't exist)
 		6. Create the Account and a User for the account (List VM for a Removed User exercise BEGIN)
 		7. List the Created User
 		8. Creating default network
@@ -164,7 +164,7 @@ under the License.
 <!-- Test case #73 - verify that listVm returns nothing when id of non-existing VM is specified -->
 	<command>
 		<name>listVirtualMachines</name>
-		<testcase>73  [Check that a non-existing VM cannot be listed (Id doesnt exist)]</testcase>
+		<testcase>73  [Check that a non-existing VM cannot be listed (Id doesn't exist)]</testcase>
 		<parameters>
 			<item>
 				<name>account</name>

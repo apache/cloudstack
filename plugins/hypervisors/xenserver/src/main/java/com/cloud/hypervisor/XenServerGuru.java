@@ -44,7 +44,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -67,8 +66,6 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     private GuestOSDao guestOsDao;
     @Inject
     private GuestOSHypervisorDao guestOsHypervisorDao;
-    @Inject
-    private HostDao hostDao;
     @Inject
     private VolumeDao volumeDao;
     @Inject
@@ -178,10 +175,6 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
 
     @Override
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
-        if (cmd instanceof StorageSubSystemCommand) {
-            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
-            c.setExecuteInSequence(true);
-        }
         boolean isCopyCommand = cmd instanceof CopyCommand;
         Pair<Boolean, Long> defaultHostToExecuteCommands = super.getCommandHostDelegation(hostId, cmd);
         if (!isCopyCommand) {
@@ -196,6 +189,14 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         if (!isSourceDataHypervisorXenServer) {
             logger.debug("We are returning the default host to execute commands because the target hypervisor of the source data is not XenServer.");
             return defaultHostToExecuteCommands;
+        }
+        // only now can we decide, now we now we're only deciding for ourselves
+        if (cmd instanceof StorageSubSystemCommand) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("XenServer StrorageSubSystemCommand re always executed in sequence (command of type %s to host %l).", cmd.getClass(), hostId));
+            }
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(true);
         }
         DataStoreTO srcStore = srcData.getDataStore();
         DataStoreTO destStore = destData.getDataStore();

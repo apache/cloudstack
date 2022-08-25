@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +49,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     private List<PluggableService> services;
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
 
-    private static final Logger logger = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DynamicRoleBasedAPIAccessChecker.class.getName());
 
     protected DynamicRoleBasedAPIAccessChecker() {
         super();
@@ -57,22 +58,58 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
     }
 
-    private void denyApiAccess(final String commandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("The API " + commandName + " is denied for the account's role.");
+    @Override
+    public List<String> getApisAllowedToUser(Role role, User user, List<String> apiNames) throws PermissionDeniedException {
+        if (!isEnabled()) {
+            return apiNames;
+        }
+
+        List<RolePermission> allPermissions = roleService.findAllPermissionsBy(role.getId());
+        List<String> allowedApis = new ArrayList<>();
+        for (String api : apiNames) {
+            if (checkApiPermissionByRole(role, api, allPermissions)) {
+                allowedApis.add(api);
+            }
+        }
+        return allowedApis;
     }
 
-    public boolean isDisabled() {
-        return !roleService.isEnabled();
+    /**
+     * Checks if the given Role of an Account has the allowed permission for the given API.
+     *
+     * @param role to be used on the verification
+     * @param apiName to be verified
+     * @param allPermissions list of role permissions for the given role
+     * @return if the role has the permission for the API
+     */
+    public boolean checkApiPermissionByRole(Role role, String apiName, List<RolePermission> allPermissions) {
+        for (final RolePermission permission : allPermissions) {
+            if (!permission.getRule().matches(apiName)) {
+                continue;
+            }
+
+            if (!Permission.ALLOW.equals(permission.getPermission())) {
+                return false;
+            }
+
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("The API [%s] is allowed for the role %s by the permission [%s].", apiName, role, permission.getRule().toString()));
+            }
+            return true;
+        }
+        return annotationRoleBasedApisMap.get(role.getRoleType()) != null &&
+                annotationRoleBasedApisMap.get(role.getRoleType()).contains(apiName);
     }
 
     @Override
     public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
-        if (isDisabled()) {
+        if (!isEnabled()) {
             return true;
         }
+
         Account account = accountService.getAccount(user.getAccountId());
         if (account == null) {
-            throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
+            throw new PermissionDeniedException(String.format("The account id [%s] for user id [%s] is null.", user.getAccountId(), user.getUuid()));
         }
 
         return checkAccess(account, commandName);
@@ -81,37 +118,32 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     public boolean checkAccess(Account account, String commandName) {
         final Role accountRole = roleService.findRole(account.getRoleId());
         if (accountRole == null || accountRole.getId() < 1L) {
-            denyApiAccess(commandName);
+            throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.", account));
         }
 
-        // Allow all APIs for root admins
         if (accountRole.getRoleType() == RoleType.Admin && accountRole.getId() == RoleType.Admin.getId()) {
+            LOGGER.info(String.format("Account [%s] is Root Admin or Domain Admin, all APIs are allowed.", account));
             return true;
         }
 
-        // Check against current list of permissions
-        for (final RolePermission permission : roleService.findAllPermissionsBy(accountRole.getId())) {
-            if (permission.getRule().matches(commandName)) {
-                if (Permission.ALLOW.equals(permission.getPermission())) {
-                    return true;
-                } else {
-                    denyApiAccess(commandName);
-                }
-            }
-        }
-
-        // Check annotations
-        if (annotationRoleBasedApisMap.get(accountRole.getRoleType()) != null
-                && annotationRoleBasedApisMap.get(accountRole.getRoleType()).contains(commandName)) {
+        List<RolePermission> allPermissions = roleService.findAllPermissionsBy(accountRole.getId());
+        if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
             return true;
         }
-
-        // Default deny all
-        throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
+        throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account %s.", commandName, account));
     }
 
+    /**
+     * Only one strategy should be used between StaticRoleBasedAPIAccessChecker and DynamicRoleBasedAPIAccessChecker
+     * Default behavior is to use the Dynamic version. The StaticRoleBasedAPIAccessChecker is the legacy version.
+     * If roleService is enabled, then it uses the DynamicRoleBasedAPIAccessChecker, otherwise, it will use the
+     * StaticRoleBasedAPIAccessChecker.
+     */
     @Override
     public boolean isEnabled() {
+        if (!roleService.isEnabled()) {
+            LOGGER.trace("RoleService is disabled. We will not use DynamicRoleBasedAPIAccessChecker.");
+        }
         return roleService.isEnabled();
     }
 

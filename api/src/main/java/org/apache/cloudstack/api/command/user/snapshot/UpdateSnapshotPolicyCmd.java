@@ -92,7 +92,7 @@ public class UpdateSnapshotPolicyCmd extends BaseAsyncCustomIdCmd {
         }
         Volume volume = _responseGenerator.findVolumeById(policy.getVolumeId());
         if (volume == null) {
-            throw new InvalidParameterValueException("Snapshot policy's volume id doesnt exist");
+            throw new InvalidParameterValueException("Snapshot policy's volume id doesn't exist");
         }else{
             return volume.getAccountId();
         }

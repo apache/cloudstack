@@ -57,6 +57,8 @@ public class LoadBalancerTO {
     final static int MAX_STICKINESS_POLICIES = 1;
     final static int MAX_HEALTHCHECK_POLICIES = 1;
 
+    private String cidrList;
+
     public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
             List<LbDestination> destinations) {
         if (destinations == null) { // for autoscaleconfig destinations will be null;
@@ -237,6 +239,14 @@ public class LoadBalancerTO {
 
     public void setSrcIpNetmask(String srcIpNetmask) {
         this.srcIpNetmask = srcIpNetmask;
+    }
+
+    public void setCidrList(String cidrList){
+        this.cidrList = cidrList;
+    }
+
+    public String getCidrList() {
+        return cidrList;
     }
 
     public static class StickinessPolicyTO {
