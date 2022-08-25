@@ -1096,7 +1096,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (networkId != null) {
             guestNetwork = getNetwork(networkId);
         }
-        if (ipVO.isSourceNat() && guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) {
+        Vpc vpc = null;
+        if (ipVO.getVpcId() != null) {
+            vpc = _vpcMgr.getActiveVpc(ipVO.getVpcId());
+        }
+        if (ipVO.isSourceNat() && ((guestNetwork != null && guestNetwork.getState() != Network.State.Allocated) || vpc != null)) {
             throw new IllegalArgumentException("ip address is used for source nat purposes and can not be disassociated.");
         }
 
@@ -1122,6 +1126,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         boolean success = _ipAddrMgr.disassociatePublicIpAddress(ipAddressId, userId, caller);
 
         if (success) {
+            _resourceTagDao.removeByIdAndType(ipAddressId, ResourceObjectType.PublicIpAddress);
             if (guestNetwork != null) {
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
