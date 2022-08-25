@@ -267,7 +267,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
+public class QueryManagerImpl<ReadyForShutdownCmd, ReadyForShutdownCmdResponse> extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
@@ -2311,7 +2311,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         return _domainJoinDao.searchAndCount(sc, searchFilter);
     }
-
+ 
     @Override
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd) {
         Pair<List<AccountJoinVO>, Integer> result = searchForAccountsInternal(cmd);
@@ -2457,15 +2457,45 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        return _accountJoinDao.searchAndCount(sc, searchFilter);
+        return _accountJoinDao.searchAndCount(sc, searchFilter); 
     }
+   
+        
+   @Override
+   public ReadyForShutdownCmdResponse isReadyForShutdown(ReadyForShutdownCmd cmd){
 
-    @Override
+    Pair<List<AsyncJobJoinVO>, Integer> result = pendingasyncjob(cmd);
+
+     //add additional steps if required
+     Integer count = result.second();
+if (count.intValue == 0){
+    return true;
+}
+else{
+   return false;
+} 
+
+}
+
+   private Pair<List<AsyncJobJoinVO>, Integer> pendingasyncjob(ReadyForShutdownCmd cmd)
+   {
+    Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, null, null);
+    SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
+
+    sb.and("jobstatus", sb.entity.getJobStatus(),SearchCriteria.Op.NULL);  //can be broken into 2 steps incase more apt  i.e. sb.and("jobstatus", sb.entity.getjobstatus(), SearchCriteria.Op.EQ)
+    SearchCriteria<AsyncJobJoinVO> sc = sb.create();
+    return _jobJoinDao.searchAndCount(sc.searchFilter);
+     }
+
+
+  @Override
     public ListResponse<AsyncJobResponse> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
+
         Pair<List<AsyncJobJoinVO>, Integer> result = searchForAsyncJobsInternal(cmd);
         ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
         List<AsyncJobResponse> jobResponses = ViewResponseHelper.createAsyncJobResponse(result.first().toArray(new AsyncJobJoinVO[result.first().size()]));
         response.setResponses(jobResponses, result.second());
+ 
         return response;
     }
 
@@ -2534,6 +2564,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         return _jobJoinDao.searchAndCount(sc, searchFilter);
     }
+
+
+
 
     @Override
     public ListResponse<StoragePoolResponse> searchForStoragePools(ListStoragePoolsCmd cmd) {
