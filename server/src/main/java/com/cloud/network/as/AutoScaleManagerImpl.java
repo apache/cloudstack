@@ -238,8 +238,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Inject
     UserVmService _userVmService;
     @Inject
-    UserVmManager _userVmManager;
-    @Inject
     LoadBalancerVMMapDao _lbVmMapDao;
     @Inject
     LoadBalancingRulesService _loadBalancingRulesService;
@@ -1828,7 +1826,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     private boolean startNewVM(long vmId) {
         try {
             CallContext.current().setEventDetails("Vm Id: " + vmId);
-            _userVmManager.startVirtualMachine(vmId, null, null, null);
+            _userVmMgr.startVirtualMachine(vmId, null, null, null);
         } catch (final ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -2000,7 +1998,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     public void run() {
                         try {
 
-                            _userVmManager.destroyVm(vmId, false);
+                            _userVmMgr.destroyVm(vmId, false);
 
                         } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
                             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
@@ -2757,9 +2755,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private void destroyVm(Long vmId) {
         try {
-            removeVmFromVmGroup(vmId);
-            _userVmManager.destroyVm(vmId, true);
-        } catch (ResourceUnavailableException | ConcurrentOperationException ex) {
+            UserVmVO vm = _userVmDao.findById(vmId);
+            if (vm != null) {
+                _userVmMgr.expunge(vm, CallContext.current().getCallingUserId(), CallContext.current().getCallingAccount());
+            }
+        } catch (ConcurrentOperationException ex) {
             s_logger.error("Cannot destroy vm with id: " + vmId + "due to Exception: ", ex);
         }
     }
