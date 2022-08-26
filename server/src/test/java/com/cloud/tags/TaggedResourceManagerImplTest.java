@@ -19,24 +19,37 @@
 
 package com.cloud.tags;
 
-import com.cloud.server.ResourceTag;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import junit.framework.TestCase;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.server.ResourceTag;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+
+import junit.framework.TestCase;
+
 @RunWith(MockitoJUnitRunner.class)
-public class TaggedResourceManagerImplTest extends TestCase{
+public class TaggedResourceManagerImplTest extends TestCase {
+
+    @Mock
+    AccountManager accountManager;
+
 
     @Spy
+    @InjectMocks
     private final TaggedResourceManagerImpl taggedResourceManagerImplSpy = new TaggedResourceManagerImpl();
 
     private final List<ResourceTag.ResourceObjectType> listResourceObjectTypes = Arrays.asList(ResourceTag.ResourceObjectType.values());
@@ -83,5 +96,31 @@ public class TaggedResourceManagerImplTest extends TestCase{
             Map<String, String> result = taggedResourceManagerImplSpy.getTagsFromResource(resourceObjectType, 0l);
             Assert.assertEquals(expectedResult, result);
         });
+    }
+
+    @Test
+    public void testCheckTagsDeletePermission() {
+        long accountId = 1L;
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountId()).thenReturn(accountId);
+        ResourceTag resourceTag = Mockito.mock(ResourceTag.class);
+        Mockito.when(resourceTag.getAccountId()).thenReturn(accountId);
+        taggedResourceManagerImplSpy.checkTagsDeletePermission(List.of(resourceTag), caller);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testCheckTagsDeletePermissionFail() {
+        long callerAccountId = 1L;
+        long ownerAccountId = 2L;
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getAccountId()).thenReturn(callerAccountId);
+        ResourceTag resourceTag1 = Mockito.mock(ResourceTag.class);
+        Mockito.when(resourceTag1.getAccountId()).thenReturn(callerAccountId);
+        ResourceTag resourceTag2 = Mockito.mock(ResourceTag.class);
+        Mockito.when(resourceTag2.getAccountId()).thenReturn(ownerAccountId);
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(accountManager.getAccount(ownerAccountId)).thenReturn(owner);
+        Mockito.doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(caller, null, false, owner);
+        taggedResourceManagerImplSpy.checkTagsDeletePermission(List.of(resourceTag1, resourceTag2), caller);
     }
 }
