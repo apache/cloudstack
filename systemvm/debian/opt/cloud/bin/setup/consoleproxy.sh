@@ -32,13 +32,10 @@ setup_console_proxy() {
   public_ip=`getPublicIp`
   echo "$public_ip $NAME" >> /etc/hosts
 
-  if [ -f /root/vncport ]
-  then
-    vncport=`cat /root/vncport`
-    log_it "vncport read: ${vncport}"
-    sed -i 's/8080/${vncport}/' /etc/iptables/rules.v4
-    log_it "vnc port ${vncport} rule applied"
-  fi
+  log_it "Applying iptables rule for VNC port ${VNCPORT}"
+  sed -i 's/8080/${VNCPORT}/' /etc/iptables/rules.v4
+  echo "${VNCPORT}" > /root/vncport
+  log_it "Creating VNC port ${VNCPORT} file for VNC server configuration"
 
   disable_rpfilter
   enable_fwding 0

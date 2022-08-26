@@ -1293,6 +1293,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         if (dc.getDns2() != null) {
             buf.append(" dns2=").append(dc.getDns2());
         }
+        if (VirtualMachine.Type.ConsoleProxy == profile.getVirtualMachine().getType()) {
+            buf.append(" vncport=").append(ConsoleProxyManager.NoVncConsolePort.value());
+        }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
