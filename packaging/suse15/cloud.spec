@@ -350,6 +350,7 @@ install -D agent/target/transformed/cloudstack-agent.logrotate ${RPM_BUILD_ROOT}
 install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-%{_maventag}.jar ${RPM_BUILD_ROOT}%{_datadir}/%name-agent/lib/cloud-plugin-hypervisor-kvm-%{_maventag}.jar
 cp plugins/hypervisors/kvm/target/dependencies/*  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 cp plugins/storage/volume/storpool/target/*.jar  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
+cp plugins/storage/volume/linstor/target/*.jar  ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib
 
 # Usage server
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/usage
