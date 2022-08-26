@@ -64,7 +64,7 @@
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                     }" >
-                    <template #suffixIcon><filter-outlined /></template>
+                    <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) && ['vm', 'iso', 'template'].includes($route.name)"
                       key="all"
