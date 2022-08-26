@@ -24,7 +24,6 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -55,7 +54,6 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
-import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.KVMHostInfo;
@@ -2901,6 +2899,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                             pool.getUuid(), devId, diskBusType, DiskProtocol.RBD, DiskDef.DiskFmtType.RAW);
                 } else if (pool.getType() == StoragePoolType.PowerFlex) {
                     disk.defBlockBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData);
+                    if (physicalDisk.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
+                        disk.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
                 } else if (pool.getType() == StoragePoolType.Gluster) {
                     final String mountpoint = pool.getLocalPath();
                     final String path = physicalDisk.getPath();
@@ -4661,26 +4662,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Path testFile = Paths.get(javaTempDir, UUID.randomUUID().toString()).normalize().toAbsolutePath();
         String objectName = "sec0";
 
+
         Map<String, String> options = new HashMap<String, String>();
         List<QemuObject> passphraseObjects = new ArrayList<>();
         QemuImgFile file = new QemuImgFile(testFile.toString(), 64<<20, PhysicalDiskFormat.QCOW2);
 
-
-        try (KeyFile keyFile = new KeyFile(UUID.randomUUID().toString().getBytes())){
+        try {
             QemuImg qemu = new QemuImg(0);
-            passphraseObjects.add(QemuObject.prepareSecretForQemuImg(PhysicalDiskFormat.QCOW2, QemuObject.EncryptFormat.LUKS, keyFile.toString(), "sec0", options));
-            qemu.create(file, null, options, passphraseObjects);
-            s_logger.info("Host's qemu install supports encryption");
-        } catch (QemuImgException | IOException | LibvirtException ex) {
+            if (!qemu.supportsImageFormat(PhysicalDiskFormat.LUKS)) {
+                return false;
+            }
+        } catch (QemuImgException | LibvirtException ex) {
             s_logger.info("Host's qemu install doesn't support encryption", ex);
             return false;
-        }
-
-        // cleanup
-        try {
-            Files.deleteIfExists(testFile);
-        } catch (IOException ex) {
-            s_logger.warn(String.format("Failed to clean up test file '%s'", testFile.toAbsolutePath()), ex);
         }
 
         // test cryptsetup

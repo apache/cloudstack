@@ -153,6 +153,8 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     /**
      * ScaleIO doesn't need to communicate with the hypervisor normally to create a volume. This is used only to prepare a ScaleIO data disk for encryption.
+     * Thin encrypted volumes are provisioned in QCOW2 format, which insulates the guest from zeroes/unallocated blocks in the block device that would
+     * otherwise show up as garbage data through the encryption layer.  As a bonus, encrypted QCOW2 format handles discard.
      * @param name disk path
      * @param pool pool
      * @param format disk format
@@ -173,12 +175,32 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
         KVMPhysicalDisk disk = getPhysicalDisk(name, pool);
 
-        try {
-            CryptSetup crypt = new CryptSetup();
-            crypt.luksFormat(passphrase, CryptSetup.LuksType.LUKS, disk.getPath());
+        if (provisioningType.equals(Storage.ProvisioningType.THIN)) {
+            disk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
             disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
-        } catch (CryptSetupException ex) {
-            throw new CloudRuntimeException("Failed to set up encryption for block device " + disk.getPath(), ex);
+            try (KeyFile keyFile = new KeyFile(passphrase)){
+                QemuImg qemuImg = new QemuImg(0, true, true);
+                Map<String, String> options = new HashMap<>();
+                List<QemuObject> qemuObjects = new ArrayList<>();
+                long formattedSize = getUsableBytesFromRawBytes(disk.getSize());
+
+                options.put("preallocation", QemuImg.PreallocationType.Metadata.toString());
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), disk.getQemuEncryptFormat(), keyFile.toString(), "sec0", options));
+                QemuImgFile file = new QemuImgFile(disk.getPath(), formattedSize, disk.getFormat());
+                qemuImg.create(file, null, options, qemuObjects);
+                LOGGER.debug(String.format("Successfully formatted %s as encrypted QCOW2", file.getFileName()));
+            } catch (QemuImgException | LibvirtException | IOException ex) {
+                throw new CloudRuntimeException("Failed to set up encrypted QCOW on block device " + disk.getPath(), ex);
+            }
+        } else {
+            try {
+                CryptSetup crypt = new CryptSetup();
+                crypt.luksFormat(passphrase, CryptSetup.LuksType.LUKS, disk.getPath());
+                disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
+                disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+            } catch (CryptSetupException ex) {
+                throw new CloudRuntimeException("Failed to set up encryption for block device " + disk.getPath(), ex);
+            }
         }
 
         return disk;
@@ -295,14 +317,18 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        return copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, Storage.ProvisioningType.THIN);
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[]dstPassphrase) {
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout, byte[] srcPassphrase, byte[]dstPassphrase, Storage.ProvisioningType provisioningType) {
         if (Strings.isNullOrEmpty(name) || disk == null || destPool == null) {
             LOGGER.error("Unable to copy physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to copy physical disk due to insufficient data");
+        }
+
+        if (provisioningType == null) {
+            provisioningType = Storage.ProvisioningType.THIN;
         }
 
         LOGGER.debug("Copy physical disk with size: " + disk.getSize() + ", virtualsize: " + disk.getVirtualSize()+ ", format: " + disk.getFormat());
@@ -313,21 +339,12 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException("Failed to find the disk: " + name + " of the storage pool: " + destPool.getUuid());
         }
 
-        // golden copies of templates should be kept as qcow2 in the PowerFlex storage pool
-        if (disk.isTemplate()) {
-            LOGGER.debug("This is a template copy, storing in powerflex as QCOW2");
-            destDisk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
-        } else {
-            LOGGER.debug("This is not a template copy, storing in powerflex as RAW");
-            destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
-        }
-
         destDisk.setVirtualSize(disk.getVirtualSize());
         destDisk.setSize(disk.getSize());
 
         QemuImg qemu = null;
-        QemuImgFile srcFile = null;
-        QemuImgFile destFile = null;
+        QemuImgFile srcQemuFile = null;
+        QemuImgFile destQemuFile = null;
         String srcKeyName = "sec0";
         String destKeyName = "sec1";
         List<QemuObject> qemuObjects = new ArrayList<>();
@@ -335,46 +352,52 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         CryptSetup cryptSetup = null;
 
         try (KeyFile srcKey = new KeyFile(srcPassphrase); KeyFile dstKey = new KeyFile(dstPassphrase)){
-            qemu = new QemuImg(timeout, true, true);
+            qemu = new QemuImg(timeout, provisioningType.equals(Storage.ProvisioningType.FAT), true);
             String srcPath = disk.getPath();
             String destPath = destDisk.getPath();
-            QemuImg.PhysicalDiskFormat destFormat = destDisk.getFormat();
+
             QemuImageOptions qemuImageOpts = new QemuImageOptions(srcPath);
 
+            srcQemuFile = new QemuImgFile(srcPath, disk.getFormat());
+            destQemuFile = new QemuImgFile(destPath);
+
+            if (disk.isTemplate()) {
+                destQemuFile.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+            }
+
             if (srcKey.isSet()) {
-                qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), null , srcKey.toString(), srcKeyName, options));
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(disk.getFormat(), disk.getQemuEncryptFormat(), srcKey.toString(), srcKeyName, options));
                 qemuImageOpts = new QemuImageOptions(disk.getFormat(), srcPath, srcKeyName);
             }
 
             if (dstKey.isSet()) {
-                if (qemu.supportsSkipZeros()) {
-                    // format and open luks device rather than letting qemu do a slow copy of full image
-                    cryptSetup = new CryptSetup();
-                    cryptSetup.luksFormat(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath());
-                    cryptSetup.open(dstPassphrase, CryptSetup.LuksType.LUKS, destDisk.getPath(),  name);
-                    destPath = String.format("/dev/mapper/%s", name);
+                if (!provisioningType.equals(Storage.ProvisioningType.FAT)) {
+                    destDisk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+                    destQemuFile.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
+                    options.put("preallocation", QemuImg.PreallocationType.Metadata.toString());
                 } else {
-                    qemuObjects.add(QemuObject.prepareSecretForQemuImg(destDisk.getFormat(), null, dstKey.toString(), destKeyName, options));
-                    destFormat = QemuImg.PhysicalDiskFormat.LUKS;
+                    qemu.setSkipZero(false);
+                    destDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+                    // qemu-img wants to treat RAW + encrypt formatting as LUKS
+                    destQemuFile.setFormat(QemuImg.PhysicalDiskFormat.LUKS);
                 }
+                qemuObjects.add(QemuObject.prepareSecretForQemuImg(destDisk.getFormat(), QemuObject.EncryptFormat.LUKS, dstKey.toString(), destKeyName, options));
                 destDisk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
             }
 
-            srcFile = new QemuImgFile(srcPath, disk.getFormat());
-            destFile = new QemuImgFile(destPath, destFormat);
+            boolean forceSourceFormat = srcQemuFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
+            LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcQemuFile.getFileName(), srcQemuFile.getFormat(), destQemuFile.getFileName(), destQemuFile.getFormat(), forceSourceFormat));
+            qemu.convert(srcQemuFile, destQemuFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
+            LOGGER.debug("Successfully converted source disk image " + srcQemuFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
 
-            boolean forceSourceFormat = srcFile.getFormat() == QemuImg.PhysicalDiskFormat.RAW;
-            LOGGER.debug(String.format("Starting copy from source disk %s(%s) to PowerFlex volume %s(%s), forcing source format is %b", srcFile.getFileName(), srcFile.getFormat(), destFile.getFileName(), destFile.getFormat(), forceSourceFormat));
-            if (destFile.getFormat() == QemuImg.PhysicalDiskFormat.QCOW2) {
-                destFile.setSize(disk.getVirtualSize());
-                LOGGER.debug(String.format("Pre-formatting qcow2 block device %s to size %s", destFile.getFileName(), destFile.getSize()));
-                qemu.create(destFile);
+            if (destQemuFile.getFormat() == QemuImg.PhysicalDiskFormat.QCOW2 && !disk.isTemplate()) {
+                QemuImageOptions resizeOptions = new QemuImageOptions(destQemuFile.getFormat(), destPath, destKeyName);
+                resizeQcow2ToVolume(destPath, resizeOptions, qemuObjects, timeout);
+                LOGGER.debug("Resized volume at " + destPath);
             }
-            qemu.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts,null, forceSourceFormat);
-            LOGGER.debug("Succesfully converted source disk image " + srcFile.getFileName() + " to PowerFlex volume: " + destDisk.getPath());
-        }  catch (QemuImgException | LibvirtException | IOException | CryptSetupException e) {
+        }  catch (QemuImgException | LibvirtException | IOException e) {
             try {
-                Map<String, String> srcInfo = qemu.info(srcFile);
+                Map<String, String> srcInfo = qemu.info(srcQemuFile);
                 LOGGER.debug("Source disk info: " + Arrays.asList(srcInfo));
             } catch (Exception ignored) {
                 LOGGER.warn("Unable to get info from source disk: " + disk.getName());
@@ -479,7 +502,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             srcFile = new QemuImgFile(srcTemplateFilePath, srcFileFormat);
             qemu.info(srcFile);
             /**
-             * Even though the disk itself is raw, we store templates on ScaleIO the raw volumes in qcow2 format.
+             * Even though the disk itself is raw, we store templates on ScaleIO in qcow2 format.
              * This improves performance by reading/writing less data to volume, saves the unused space for encryption header, and
              * nicely encapsulates VM images that might contain LUKS data (as opposed to converting to raw which would look like a LUKS volume).
              */
@@ -515,5 +538,26 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         } else {
             throw new CloudRuntimeException("Unable to extract template " + downloadedTemplateFile);
         }
+    }
+
+    public void resizeQcow2ToVolume(String volumePath, QemuImageOptions options, List<QemuObject> objects, Integer timeout) throws QemuImgException, LibvirtException {
+        long rawSizeBytes = getPhysicalDiskSize(volumePath);
+        long usableSizeBytes = getUsableBytesFromRawBytes(rawSizeBytes);
+        QemuImg qemu = new QemuImg(timeout);
+        qemu.resize(options, objects, usableSizeBytes);
+    }
+
+    /**
+     * Calculates usable size from raw size, assuming qcow2 requires 192k/1GB for metadata
+     * We also remove 32MiB for potential encryption/safety factor.
+     * @param raw size in bytes
+     * @return usable size in bytesbytes
+     */
+    public static long getUsableBytesFromRawBytes(Long raw) {
+        long usable = raw - (32 << 20) - ((raw >> 30) * 200704);
+        if (usable < 0) {
+            usable = 0L;
+        }
+        return usable;
     }
 }

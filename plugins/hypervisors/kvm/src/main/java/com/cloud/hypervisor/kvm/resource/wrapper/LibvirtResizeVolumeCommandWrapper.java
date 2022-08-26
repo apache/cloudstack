@@ -24,12 +24,15 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.hypervisor.kvm.storage.ScaleIOStorageAdaptor;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
 import org.apache.cloudstack.utils.qemu.QemuImageOptions;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
@@ -63,7 +66,7 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
     @Override
     public Answer execute(final ResizeVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String volumeId = command.getPath();
-        final long newSize = command.getNewSize();
+        long newSize = command.getNewSize();
         final long currentSize = command.getCurrentSize();
         final String vmInstanceName = command.getInstanceName();
         final boolean shrinkOk = command.getShrinkOk();
@@ -80,11 +83,34 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
             KVMStoragePool pool = storagePoolMgr.getStoragePool(spool.getType(), spool.getUuid());
 
+            if (spool.getType().equals(StoragePoolType.PowerFlex)) {
+                pool.connectPhysicalDisk(volumeId, null);
+            }
+
             final KVMPhysicalDisk vol = pool.getPhysicalDisk(volumeId);
             final String path = vol.getPath();
             String type = notifyOnlyType;
 
-            if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.Linstor) {
+            if (spool.getType().equals(StoragePoolType.PowerFlex) && vol.getFormat().equals(PhysicalDiskFormat.QCOW2)) {
+                // PowerFlex QCOW2 sizing needs to consider overhead.
+                newSize = ScaleIOStorageAdaptor.getUsableBytesFromRawBytes(newSize);
+            } else if (spool.getType().equals(StoragePoolType.PowerFlex)) {
+                // PowerFlex RAW/LUKS is already resized, we just notify the domain based on new size (considering LUKS overhead)
+                try {
+                    QemuImg qemu = new QemuImg(0);
+                    QemuImgFile qemuFile = new QemuImgFile(path);
+                    Map<String, String> info = qemu.info(qemuFile);
+                    if (info.containsKey(QemuImg.VIRTUAL_SIZE)) {
+                        newSize = Long.parseLong(info.get(QemuImg.VIRTUAL_SIZE));
+                    } else {
+                        throw new CloudRuntimeException("Unable to determine size of powerflex RAW volume for resize notification");
+                    }
+                } catch (QemuImgException | LibvirtException ex) {
+                    throw new CloudRuntimeException("Error when inspecting powerflex volume for size", ex);
+                }
+            }
+
+            if (pool.getType() != StoragePoolType.RBD && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex) {
                 type = libvirtComputingResource.getResizeScriptType(pool, vol);
                 if (type.equals("QCOW2") && shrinkOk) {
                     return new ResizeVolumeAnswer(command, false, "Unable to shrink volumes of type " + type);
@@ -96,8 +122,8 @@ public final class LibvirtResizeVolumeCommandWrapper extends CommandWrapper<Resi
             s_logger.debug("Resizing volume: " + path + ", from: " + toHumanReadableSize(currentSize) + ", to: " + toHumanReadableSize(newSize) + ", type: " + type + ", name: " + vmInstanceName + ", shrinkOk: " + shrinkOk);
 
             /* libvirt doesn't support resizing (C)LVM devices, and corrupts QCOW2 in some scenarios, so we have to do these via qemu-img */
-            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.Linstor &&
-                    vol.getFormat() != PhysicalDiskFormat.QCOW2) {
+            if (pool.getType() != StoragePoolType.CLVM && pool.getType() != StoragePoolType.Linstor && pool.getType() != StoragePoolType.PowerFlex
+                    && vol.getFormat() != PhysicalDiskFormat.QCOW2) {
                 s_logger.debug("Volume " + path +  " can be resized by libvirt. Asking libvirt to resize the volume.");
                 try {
                     final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();

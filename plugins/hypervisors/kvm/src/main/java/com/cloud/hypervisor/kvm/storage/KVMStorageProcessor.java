@@ -38,6 +38,7 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -415,7 +416,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     s_logger.warn("Failed to connect new volume at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                 }
 
-                vol = storagePoolMgr.copyPhysicalDisk(BaseVol, path != null ? path : volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds(), null, volume.getPassphrase());
+                vol = storagePoolMgr.copyPhysicalDisk(BaseVol, path != null ? path : volume.getUuid(), primaryPool, cmd.getWaitInMillSeconds(), null, volume.getPassphrase(), volume.getProvisioningType());
 
                 storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
             } else {
@@ -1366,6 +1367,11 @@ public class KVMStorageProcessor implements StorageProcessor {
                     final String glusterVolume = attachingPool.getSourceDir().replace("/", "");
                     diskdef.defNetworkBasedDisk(glusterVolume + path.replace(mountpoint, ""), attachingPool.getSourceHost(), attachingPool.getSourcePort(), null,
                             null, devId, busT, DiskProtocol.GLUSTER, DiskDef.DiskFmtType.QCOW2);
+                } else if (attachingPool.getType() == StoragePoolType.PowerFlex) {
+                    diskdef.defBlockBasedDisk(attachingDisk.getPath(), devId, busT);
+                    if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
+                        diskdef.setDiskFormatType(DiskDef.DiskFmtType.QCOW2);
+                    }
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.QCOW2) {
                     diskdef.defFileBasedDisk(attachingDisk.getPath(), devId, busT, DiskDef.DiskFmtType.QCOW2);
                 } else if (attachingDisk.getFormat() == PhysicalDiskFormat.RAW) {
@@ -1552,14 +1558,15 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             MigrationOptions migrationOptions = volume.getMigrationOptions();
-            if (isLinkedCloneMigration(migrationOptions)) {
-                String srcStoreUuid = migrationOptions.getSrcPoolUuid();
-                StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
-                KVMStoragePool srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
+            if (migrationOptions != null) {
                 int timeout = migrationOptions.getTimeout();
-                vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
-            } else if (isFullCloneMigration(migrationOptions)) {
-                vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);
+
+                if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
+                    KVMStoragePool srcPool = getTemplateSourcePoolUsingMigrationOptions(primaryPool, migrationOptions);
+                    vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
+                } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
+                    vol = createFullCloneVolume(migrationOptions, volume, primaryPool, format);
+                }
             } else {
                 vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
                         volume.getProvisioningType(), disksize, volume.getPassphrase());
@@ -1582,14 +1589,6 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             volume.clearPassphrase();
         }
-    }
-
-    protected static boolean isLinkedCloneMigration(MigrationOptions options) {
-        return options != null && options.getType() == MigrationOptions.Type.LinkedClone;
-    }
-
-    protected static boolean isFullCloneMigration(MigrationOptions options) {
-        return options != null && options.getType() == MigrationOptions.Type.FullClone;
     }
 
     protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
@@ -2185,5 +2184,24 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer syncVolumePath(SyncVolumePathCommand cmd) {
         s_logger.info("SyncVolumePathCommand not currently applicable for KVMStorageProcessor");
         return new Answer(cmd, false, "Not currently applicable for KVMStorageProcessor");
+    }
+
+    /**
+     * Determine if migration is using host-local source pool. If so, return this host's storage as the template source,
+     * rather than remote host's
+     * @param localPool The host-local storage pool being migrated to
+     * @param migrationOptions The migration options provided with a migrating volume
+     * @return
+     */
+    public KVMStoragePool getTemplateSourcePoolUsingMigrationOptions(KVMStoragePool localPool, MigrationOptions migrationOptions) {
+        if (migrationOptions == null) {
+            throw new CloudRuntimeException("Migration options cannot be null when choosing a storage pool for migration");
+        }
+
+        if (migrationOptions.getScopeType().equals(ScopeType.HOST)) {
+            return localPool;
+        }
+
+        return storagePoolMgr.getStoragePool(migrationOptions.getSrcPoolType(), migrationOptions.getSrcPoolUuid());
     }
 }

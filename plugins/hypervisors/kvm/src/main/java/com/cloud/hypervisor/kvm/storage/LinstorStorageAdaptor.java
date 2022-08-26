@@ -404,11 +404,11 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPool, int timeout) {
-        return copyPhysicalDisk(disk, name, destPool, timeout, null, null);
+        return copyPhysicalDisk(disk, name, destPool, timeout, null, null, null);
     }
 
     @Override
-    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase)
+    public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
         s_logger.debug("Linstor: copyPhysicalDisk");
         final QemuImg.PhysicalDiskFormat sourceFormat = disk.getFormat();

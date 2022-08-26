@@ -4850,6 +4850,7 @@ public class LibvirtComputingResourceTest {
         final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
         info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4909,6 +4910,7 @@ public class LibvirtComputingResourceTest {
         final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
         info.state = state;
 
+        when(pool.getType()).thenReturn(StoragePoolType.Linstor);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -4976,6 +4978,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.Filesystem);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -5006,6 +5009,7 @@ public class LibvirtComputingResourceTest {
         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
@@ -5052,6 +5056,7 @@ public class LibvirtComputingResourceTest {
         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
 
+        when(pool.getType()).thenReturn(StoragePoolType.RBD);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
         when(storagePool.getPhysicalDisk(path)).thenThrow(CloudRuntimeException.class);

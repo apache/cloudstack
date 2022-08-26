@@ -22,6 +22,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.host.HostVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -119,6 +125,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private ConfigurationDao configDao;
     @Inject
     private HostDao hostDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     public ScaleIOPrimaryDataStoreDriver() {
 
@@ -475,9 +483,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             CreateObjectAnswer answer = new CreateObjectAnswer(createdObject.getTO());
 
-            // if volume needs to be set up with encryption, do it now.
-            if (anyVolumeRequiresEncryption(volumeInfo)) {
-                LOGGER.debug(String.format("Setting up encryption for volume %s", volumeInfo));
+            // if volume needs to be set up with encryption, do it now if it's not a root disk (which gets done during template copy)
+            if (anyVolumeRequiresEncryption(volumeInfo) && !volumeInfo.getVolumeType().equals(Volume.Type.ROOT)) {
+                LOGGER.debug(String.format("Setting up encryption for volume %s", volumeInfo.getId()));
                 VolumeObjectTO prepVolume = (VolumeObjectTO) createdObject.getTO();
                 prepVolume.setPath(volumePath);
                 prepVolume.setUuid(volumePath);
@@ -899,6 +907,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             String scaleIOVolumeId = ScaleIOUtil.getVolumePath(volumeInfo.getPath());
             Long storagePoolId = volumeInfo.getPoolId();
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
 
             ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
             long newSizeInBytes = payload.newSize != null ? payload.newSize : volumeInfo.getSize();
@@ -907,13 +916,69 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 throw new CloudRuntimeException("Only increase size is allowed for volume: " + volumeInfo.getName());
             }
 
-            org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = null;
+            org.apache.cloudstack.storage.datastore.api.Volume scaleIOVolume = client.getVolume(scaleIOVolumeId);
             long newSizeInGB = newSizeInBytes / (1024 * 1024 * 1024);
             long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
-            scaleIOVolume = client.resizeVolume(scaleIOVolumeId, (int) newSizeIn8gbBoundary);
-            if (scaleIOVolume == null) {
-                throw new CloudRuntimeException("Failed to resize volume: " + volumeInfo.getName());
+
+            if (scaleIOVolume.getSizeInKb() == newSizeIn8gbBoundary << 20) {
+                LOGGER.debug("No resize necessary at API");
+            } else {
+                scaleIOVolume = client.resizeVolume(scaleIOVolumeId, (int) newSizeIn8gbBoundary);
+                if (scaleIOVolume == null) {
+                    throw new CloudRuntimeException("Failed to resize volume: " + volumeInfo.getName());
+                }
+            }
+
+            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+            boolean attachedRunning = false;
+            long hostId = 0;
+
+            if (payload.instanceName != null) {
+                VMInstanceVO instance = vmInstanceDao.findVMByInstanceName(payload.instanceName);
+                if (instance.getState().equals(VirtualMachine.State.Running)) {
+                    hostId = instance.getHostId();
+                    attachedRunning = true;
+                }
+            }
+
+            if (volumeInfo.getFormat().equals(Storage.ImageFormat.QCOW2) || attachedRunning) {
+                LOGGER.debug("Volume needs to be resized at the hypervisor host");
+
+                if (hostId == 0) {
+                    hostId = selector.select(volumeInfo, true).getId();
+                }
+
+                HostVO host = hostDao.findById(hostId);
+                if (host == null) {
+                    throw new CloudRuntimeException("Found no hosts to run resize command on");
+                }
+
+                EndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+                ResizeVolumeCommand resizeVolumeCommand = new ResizeVolumeCommand(
+                        volumeInfo.getPath(), new StorageFilerTO(storagePool), volumeInfo.getSize(), newSizeInBytes,
+                        payload.shrinkOk, payload.instanceName, volumeInfo.getChainInfo(),
+                        volumeInfo.getPassphrase(), volumeInfo.getEncryptFormat());
+
+                try {
+                    if (!attachedRunning) {
+                        grantAccess(volumeInfo, ep, volumeInfo.getDataStore());
+                    }
+                    Answer answer = ep.sendMessage(resizeVolumeCommand);
+
+                    if (!answer.getResult() && volumeInfo.getFormat().equals(Storage.ImageFormat.QCOW2)) {
+                        throw new CloudRuntimeException("Failed to resize at host: " + answer.getDetails());
+                    } else if (!answer.getResult()) {
+                        // for non-qcow2, notifying the running VM is going to be best-effort since we can't roll back
+                        // or avoid VM seeing a successful change at the PowerFlex volume after e.g. reboot
+                        LOGGER.warn("Resized raw volume, but failed to notify. VM will see change on reboot. Error:" + answer.getDetails());
+                    } else {
+                        LOGGER.debug("Resized volume at host: " + answer.getDetails());
+                    }
+                } finally {
+                    if (!attachedRunning) {
+                        revokeAccess(volumeInfo, ep, volumeInfo.getDataStore());
+                    }
+                }
             }
 
             VolumeVO volume = volumeDao.findById(volumeInfo.getId());
@@ -921,7 +986,6 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volume.setSize(scaleIOVolume.getSizeInKb() * 1024);
             volumeDao.update(volume.getId(), volume);
 
-            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
 

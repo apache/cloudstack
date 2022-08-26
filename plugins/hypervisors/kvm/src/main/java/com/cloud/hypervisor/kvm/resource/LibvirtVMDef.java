@@ -977,6 +977,8 @@ public class LibvirtVMDef {
             return _diskFmtType;
         }
 
+        public void setDiskFormatType(DiskFmtType type) { _diskFmtType = type; }
+
         public void setBytesReadRate(Long bytesReadRate) {
             _bytesReadRate = bytesReadRate;
         }
