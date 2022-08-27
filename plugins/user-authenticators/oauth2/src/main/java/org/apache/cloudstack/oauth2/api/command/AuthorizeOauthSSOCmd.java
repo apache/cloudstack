@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,59 +15,58 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command;
+//
+package org.apache.cloudstack.oauth2.api.command;
 
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.IdpResponse;
+import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.saml.SAML2AuthManager;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.oauth2.OAuth2AuthManager;
+import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 
 import javax.inject.Inject;
+import java.util.logging.Logger;
 
-@APICommand(name = "authorizeSamlSso", description = "Allow or disallow a user to use SAML SSO", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class AuthorizeSAMLSSOCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AuthorizeSAMLSSOCmd.class.getName());
+@APICommand(name = "authorizeOauthSso", description = "Allow or disallow a user to use OAUTH SSO", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 
-    private static final String s_name = "authorizesamlssoresponse";
+public class AuthorizeOauthSSOCmd extends BaseCmd {
+    public final Logger s_logger = Logger.getLogger(AuthorizeOauthSSOCmd.class.getName());
 
     @Inject
-    SAML2AuthManager _samlAuthManager;
+    OAuth2AuthManager _oauthManager;
+
+    private static final String s_name = "authorizeoauthssoresponse";
+
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.USER_ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "User uuid")
+    @Parameter(name = ApiConstants.USER_ID, type = BaseCmd.CommandType.UUID, entityType = UserResponse.class, required = true, description = "User uuid")
     private Long id;
 
-    @Parameter(name = ApiConstants.ENABLE, type = CommandType.BOOLEAN, required = true, description = "If true, authorizes user to be able to use SAML for Single Sign. If False, disable user to user SAML SSO.")
+    @Parameter(name = ApiConstants.ENABLE, type = BaseCmd.CommandType.BOOLEAN, required = true, description = "If true, authorizes user to be able to use OAUTH for Single Sign. If False, disable user to user OAUTH SSO.")
     private Boolean enable;
+
+    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, entityType = OauthProviderResponse.class, description = "The Identity Provider ID the user is allowed to get single signed on from")
+    private String OauthProviderId;
+
+
+    public Long getId() {
+        return id;
+    }
 
     public Boolean getEnable() {
         return enable;
     }
 
-    public String getEntityId() {
-        return entityId;
-    }
-
-    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.STRING, entityType = IdpResponse.class, description = "The Identity Provider ID of user")
-    private String entityId;
-
-    public Long getId() {
-        return id;
+    public String getOauthProviderId() {
+        return OauthProviderId;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        return 0;
     }
 
     @Override
@@ -84,7 +84,7 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
         // Check permissions
         UserAccount userAccount = _accountService.getUserAccountById(getId());
         if (userAccount == null) {
-            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR , "Unable to find a user account with the given ID");
+            throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, "Unable to find a user account with the given ID");
         }
         Domain domain = _domainService.getDomain(userAccount.getDomainId());
         Account account = _accountService.getAccount(userAccount.getAccountId());
@@ -95,7 +95,7 @@ public class AuthorizeSAMLSSOCmd extends BaseCmd {
         SuccessResponse response = new SuccessResponse();
         Boolean status = false;
 
-        if (_samlAuthManager.authorizeUser(getId(), getEntityId(), getEnable())) {
+        if (_oauthManager.authorizeUser(getId(), getOauthProviderId(), getEnable())) {
             status = true;
         }
         response.setResponseName(getCommandName());

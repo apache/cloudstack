@@ -27,4 +27,7 @@ import java.util.Collection;
 public interface OAuth2AuthManager extends PluggableAPIAuthenticator, PluggableService {
     public static final ConfigKey<Boolean> OAuth2IsPluginEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "oauth2.enabled", "false",
             "Indicates whether OAuth SSO plugin is enabled or not", true);
+
+    public boolean authorizeUser(Long userId, String entityId, boolean enable);
+
 }
