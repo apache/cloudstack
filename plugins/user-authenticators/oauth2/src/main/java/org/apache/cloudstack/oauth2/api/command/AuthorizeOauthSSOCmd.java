@@ -22,7 +22,12 @@ import com.cloud.domain.Domain;
 import com.cloud.user.Account;
 import com.cloud.user.UserAccount;
 import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -35,7 +40,7 @@ import java.util.logging.Logger;
 @APICommand(name = "authorizeOauthSso", description = "Allow or disallow a user to use OAUTH SSO", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 
 public class AuthorizeOauthSSOCmd extends BaseCmd {
-    public final Logger s_logger = Logger.getLogger(AuthorizeOauthSSOCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(AuthorizeOauthSSOCmd.class.getName());
 
     @Inject
     OAuth2AuthManager _oauthManager;
