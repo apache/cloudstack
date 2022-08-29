@@ -325,6 +325,27 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private void applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
+        throws ApiException
+    {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        if (dispName != null)
+        {
+            props.put("Aux/cs-name", dispName);
+        }
+        if (vmName != null)
+        {
+            props.put("Aux/cs-vm-name", vmName);
+        }
+        if (!props.isEmpty())
+        {
+            rdm.setOverrideProps(props);
+            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+            checkLinstorAnswersThrow(answers);
+        }
+    }
+
     private String createResource(VolumeInfo vol, StoragePoolVO storagePoolVO)
     {
         DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
@@ -338,9 +359,11 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
         try
         {
-            s_logger.debug("Linstor: Spawn resource " + rscName);
+            s_logger.info("Linstor: Spawn resource " + rscName);
             ApiCallRcList answers = linstorApi.resourceGroupSpawn(rscGrp, rscGrpSpawn);
             checkLinstorAnswersThrow(answers);
+
+            applyAuxProps(linstorApi, rscName, vol.getName(), vol.getAttachedVmName());
 
             return getDeviceName(linstorApi, rscName);
         } catch (ApiException apiEx)
@@ -361,7 +384,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             final DevelopersApi linstorApi = LinstorUtil.getLinstorAPI(storagePoolVO.getHostAddress());
 
             try {
-                s_logger.debug("Clone resource definition " + cloneRes + " to " + rscName);
+                s_logger.info("Clone resource definition " + cloneRes + " to " + rscName);
                 ResourceDefinitionCloneRequest cloneRequest = new ResourceDefinitionCloneRequest();
                 cloneRequest.setName(rscName);
                 ResourceDefinitionCloneStarted cloneStarted = linstorApi.resourceDefinitionClone(
@@ -373,6 +396,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                     throw new CloudRuntimeException("Clone for resource " + rscName + " failed.");
                 }
 
+                s_logger.info("Clone resource definition " + cloneRes + " to " + rscName + " finished");
+                applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
                 return getDeviceName(linstorApi, rscName);
             } catch (ApiException apiEx) {
                 s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -413,10 +438,11 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             checkLinstorAnswersThrow(answers);
 
             // restore snapshot to new resource
-            s_logger.debug("Restore resource from snapshot: " + cloneRes + ":" + snapName);
+            s_logger.info("Restore resource from snapshot: " + cloneRes + ":" + snapName);
             answers = linstorApi.resourceSnapshotRestore(cloneRes, snapName, snapshotRestore);
             checkLinstorAnswersThrow(answers);
 
+            applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
             return getDeviceName(linstorApi, rscName);
         } catch (ApiException apiEx) {
             s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -608,12 +634,11 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     }
 
     private CreateCmdResult notifyResize(
-        DataObject data,
+        VolumeObject vol,
         long oldSize,
         ResizeVolumePayload resizeParameter)
     {
-        VolumeObject vol = (VolumeObject) data;
-        StoragePool pool = (StoragePool) data.getDataStore();
+        StoragePool pool = (StoragePool) vol.getDataStore();
 
         ResizeVolumeCommand resizeCmd =
             new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), oldSize, resizeParameter.newSize, resizeParameter.shrinkOk,
