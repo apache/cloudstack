@@ -718,8 +718,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     if (checkStoragePool != null && checkStoragePool.getPoolType().equals(StoragePoolType.StorPool)) {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(dstData.getDataStore().getUuid(), dstData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
                         String baseOn = StorPoolStorageAdaptor.getVolumeNameFromPath(srcTO.getPath(), true);
-                        //uuid tag will be the same as srcData.uuid
-                        String volumeName = srcData.getUuid();
 
                         String vmUuid = null;
                         String vcPolicyTag = null;
@@ -739,8 +737,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                             answer = migrateVolume(srcData, dstData, name, conn);
                         } else {
                             //copy volume to another pool
-                            answer = copyVolume(srcData, dstData, srcInfo, srcTO, name, conn, baseOn, volumeName,
-                                    vmUuid, vcPolicyTag);
+                            answer = copyVolume(srcInfo, srcTO, conn, baseOn, vmUuid, vcPolicyTag);
                         }
                     } else {
                         SpConnectionDesc conn = StorPoolUtil.getSpConnection(srcData.getDataStore().getUuid(), srcData.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
@@ -807,19 +804,20 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         callback.complete(res);
     }
 
-    private Answer copyVolume(DataObject srcData, DataObject dstData, VolumeInfo srcInfo, VolumeObjectTO srcTO,
-            String name, SpConnectionDesc conn, String baseOn, String volumeName, String vmUuid, String vcPolicyTag) {
+    private Answer copyVolume(VolumeInfo srcInfo, VolumeObjectTO srcTO, SpConnectionDesc conn, String baseOn, String vmUuid, String vcPolicyTag) {
+        //uuid tag will be the same as srcData.uuid
+        String volumeName = srcInfo.getUuid();
         Long iops = (srcInfo.getMaxIops() != null && srcInfo.getMaxIops().longValue() > 0) ? srcInfo.getMaxIops() : null;
         SpApiResponse response = StorPoolUtil.volumeCopy(volumeName, baseOn, "volume", iops, vmUuid, vcPolicyTag, conn);
         if (response.getError() != null) {
-            return new CopyCmdAnswer(String.format("Could not copy volume [%s] due to %s", name, response.getError()));
+            return new CopyCmdAnswer(String.format("Could not copy volume [%s] due to %s", baseOn, response.getError()));
         }
         String newVolume = StorPoolUtil.getNameFromResponse(response, false);
 
         StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc copy volume[%s] from pool[%s] to pool[%s] with a new name [%s]",
-                name, srcData.getDataStore().getName(),dstData.getDataStore().getName(), newVolume);
+                baseOn, srcInfo.getDataStore().getName(), newVolume);
 
-        srcTO.setSize(srcData.getSize());
+        srcTO.setSize(srcInfo.getSize());
         srcTO.setPath(StorPoolUtil.devPath(newVolume));
 
         return new CopyCmdAnswer(srcTO);
