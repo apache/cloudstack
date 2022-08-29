@@ -10,21 +10,41 @@ import java.util.List;
 
 public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> implements ReservationDao {
 
-    private final SearchBuilder<ReservationVO> listByRegionIDAccountAndIdSearch;
-    public ReservationDaoImpl() {
-        listByRegionIDAccountAndIdSearch = createSearchBuilder();
-        listByRegionIDAccountAndIdSearch.and("accountId", listByRegionIDAccountAndIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        listByRegionIDAccountAndIdSearch.and("type", listByRegionIDAccountAndIdSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
-        listByRegionIDAccountAndIdSearch.done();
+    private final SearchBuilder<ReservationVO> listAccountAndTypeSearch;
 
+    private final SearchBuilder<ReservationVO> listDomainAndTypeSearch;
+
+    public ReservationDaoImpl() {
+        listAccountAndTypeSearch = createSearchBuilder();
+        listAccountAndTypeSearch.and("accountId", listAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        listAccountAndTypeSearch.and("resource_type", listAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listAccountAndTypeSearch.done();
+
+        listDomainAndTypeSearch = createSearchBuilder();
+        listDomainAndTypeSearch.and("domainId", listDomainAndTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        listDomainAndTypeSearch.and("resource_type", listDomainAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listDomainAndTypeSearch.done();
     }
 
     @Override
-    public long getReservation(Long accountId, Resource.ResourceType type) {
+    public long getAccountReservation(Long accountId, Resource.ResourceType type) {
         long total = 0;
-        SearchCriteria<ReservationVO> sc = listByRegionIDAccountAndIdSearch.create();
+        SearchCriteria<ReservationVO> sc = listAccountAndTypeSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("type", type);
+        sc.setParameters("resource_type", type);
+        List<ReservationVO> reservations = listBy(sc);
+        for (ReservationVO reservation : reservations) {
+            total += reservation.getReservedAmount();
+        }
+        return total;
+    }
+
+    @Override
+    public long getDomainReservation(Long domainId, Resource.ResourceType type) {
+        long total = 0;
+        SearchCriteria<ReservationVO> sc = listAccountAndTypeSearch.create();
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("resource_type", type);
         List<ReservationVO> reservations = listBy(sc);
         for (ReservationVO reservation : reservations) {
             total += reservation.getReservedAmount();

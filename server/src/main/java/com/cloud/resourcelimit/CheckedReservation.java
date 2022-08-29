@@ -41,12 +41,12 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         this.amount = amount;
 
         // synchronised?:
-        String lockName = String.format("CheckedReservation-%s/%d", account.getUuid(), type);
+        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), type);
         GlobalLock quotaLimitLock = GlobalLock.getInternLock(lockName);
         if(quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
             try {
                 resourceLimitService.checkResourceLimit(account,type,amount);
-                ReservationVO reservationVO = new ReservationVO(account.getAccountId(), type, amount);
+                ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), type, amount);
                 this.reservation = reservationDao.persist(reservationVO);
             } finally {
                 quotaLimitLock.unlock();
@@ -69,6 +69,11 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
     @Override
     public Long getAccountId() {
         return account.getId();
+    }
+
+    @Override
+    public Long getDomainId() {
+        return account.getDomainId();
     }
 
     @Override

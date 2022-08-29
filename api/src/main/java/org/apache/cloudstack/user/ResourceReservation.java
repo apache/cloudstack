@@ -11,6 +11,8 @@ ResourceReservation extends InternalIdentity {
 
     Long getAccountId();
 
+    Long getDomainId();
+
     Resource.ResourceType getResourceType();
 
     Long getReservedAmount();

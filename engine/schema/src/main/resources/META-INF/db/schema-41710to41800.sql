@@ -34,6 +34,7 @@ DROP TABLE IF EXISTS `cloud`.`resource_reservation`;
 CREATE TABLE `cloud`.`resource_reservation` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
   `resource_type` varchar(255) NOT NULL,
   `amount` bigint unsigned NOT NULL,
   PRIMARY KEY (`id`)

@@ -429,7 +429,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             if (domainId != Domain.ROOT_DOMAIN) {
                 long domainResourceLimit = findCorrectResourceLimitForDomain(domain, type);
                 long currentDomainResourceCount = _resourceCountDao.getResourceCount(domainId, ResourceOwnerType.Domain, type);
-                long requestedDomainResourceCount = currentDomainResourceCount + numResources;
+                long currentResourceReservation = reservationDao.getDomainReservation(domainId, type);
+                long requestedDomainResourceCount = currentDomainResourceCount + currentResourceReservation + numResources;
                 String messageSuffix = " domain resource limits of Type '" + type + "'" + " for Domain Id = " + domainId + " is exceeded: Domain Resource Limit = " + toHumanReadableSize(domainResourceLimit)
                         + ", Current Domain Resource Amount = " + toHumanReadableSize(currentDomainResourceCount) + ", Requested Resource Amount = " + toHumanReadableSize(numResources) + ".";
 
@@ -452,7 +453,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         // Check account limits
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
-        long currentResourceReservation = reservationDao.getReservation(account.getId(), type);
+        long currentResourceReservation = reservationDao.getAccountReservation(account.getId(), type);
         long requestedResourceCount = currentResourceCount + currentResourceReservation + numResources;
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);

@@ -23,17 +23,21 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "account_id")
     long accountId;
 
+    @Column(name = "domain_id")
+    long domainId;
+
     @Column(name = "resource_type", nullable = false)
     Resource.ResourceType type;
 
-    @Column(name = "account_id")
+    @Column(name = "amount")
     long amount;
 
-    public ReservationVO(Long accountId, Resource.ResourceType type, Long delta) {
+    public ReservationVO(Long accountId, Long domainId, Resource.ResourceType type, Long delta) {
         if (delta == null || delta <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
         this.accountId = accountId;
+        this.domainId = domainId;
         this.type = type;
         this.amount = delta;
     }
@@ -46,6 +50,11 @@ public class ReservationVO implements ResourceReservation {
     @Override
     public Long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public Long getDomainId() {
+        return domainId;
     }
 
     @Override
