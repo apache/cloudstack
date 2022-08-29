@@ -611,6 +611,38 @@ class TestVmAutoScaling(cloudstackTestCase):
         """ Verify removal of AutoScaling VM Group and VM"""
         self.logger.debug("test_04_remove_vm_and_vmgroup")
 
+        vms = VirtualMachine.list(
+            self.regular_user_apiclient,
+            autoscalevmgroupid=self.autoscaling_vmgroup.id,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(vms, list),
+            True,
+            "List virtual machines should return a valid list"
+        )
+        self.assertEqual(
+            len(vms) >= MIN_MEMBER,
+            True,
+            "The number of virtual machines %s should be equal to or greater than %s" % (len(vms), MIN_MEMBER)
+        )
+
+        vm = vms[0]
+        try:
+            VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
+            self.fail("VM should not be destroyed when VM Group is not Disabled")
+        except Exception as ex:
+            pass
+
+        self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
+
+        try:
+            VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
+        except Exception as ex:
+            self.fail("VM should be destroyed when VM Group is Disabled")
+
+        self.verifyVmCountAndProfiles(MIN_MEMBER)
+
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=True, expected=True)
 
