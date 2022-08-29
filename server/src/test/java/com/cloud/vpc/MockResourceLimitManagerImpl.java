@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.user.ResourceReservation;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource.ResourceType;

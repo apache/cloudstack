@@ -24,6 +24,7 @@ import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.user.ResourceReservation;
 
 public interface ResourceLimitService {
 
@@ -207,15 +208,6 @@ public interface ResourceLimitService {
      * @param delta amount to reserve (will not be <+ 0)
      * @return a {code}AutoClosable{Code} object representing the resource the user needs
      */
-    ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta);
+    ResourceReservation getReservation(Account account, Boolean displayResource, ResourceType type, Long delta) throws ResourceAllocationException;
 
-    /**
-     * an interface defining an {code}AutoClosable{code} reservation object
-     */
-    interface ResourceReservation {
-
-        Long getAccountId();
-        ResourceType getResourceType();
-        Long getReservedAmount();
-    }
 }

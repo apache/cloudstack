@@ -1,7 +1,7 @@
 package org.apache.cloudstack.reservation;
 
 import com.cloud.configuration.Resource;
-import com.cloud.user.ResourceLimitService;
+import org.apache.cloudstack.user.ResourceReservation;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import javax.persistence.Column;
@@ -13,7 +13,8 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "resource_reservation")
-public class ReservationVO implements ResourceLimitService.ResourceReservation {
+public class ReservationVO implements ResourceReservation {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -28,13 +29,18 @@ public class ReservationVO implements ResourceLimitService.ResourceReservation {
     @Column(name = "account_id")
     long amount;
 
-    protected ReservationVO(Long accountId, Resource.ResourceType type, Long delta) {
+    public ReservationVO(Long accountId, Resource.ResourceType type, Long delta) {
         if (delta == null || delta <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
         this.accountId = accountId;
         this.type = type;
         this.amount = delta;
+    }
+
+    @Override
+    public long getId() {
+        return this.id;
     }
 
     @Override

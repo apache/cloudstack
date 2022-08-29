@@ -36,10 +36,12 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.user.ResourceReservation;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -71,7 +73,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -114,51 +115,51 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
-    private DomainDao _domainDao;
-    @Inject
     private AccountManager _accountMgr;
     @Inject
     private AlertManager _alertMgr;
     @Inject
-    private ResourceCountDao _resourceCountDao;
-    @Inject
-    private ResourceLimitDao _resourceLimitDao;
-    @Inject
-    private UserVmDao _userVmDao;
-    @Inject
     private AccountDao _accountDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected VMTemplateDao _vmTemplateDao;
-    @Inject
-    private VolumeDao _volumeDao;
-    @Inject
-    private IPAddressDao _ipAddressDao;
-    @Inject
-    private VMInstanceDao _vmDao;
     @Inject
     private ConfigurationDao _configDao;
     @Inject
+    private DomainDao _domainDao;
+    @Inject
     private EntityManager _entityMgr;
+    @Inject
+    private IPAddressDao _ipAddressDao;
+    @Inject
+    private NetworkDao _networkDao;
     @Inject
     private ProjectDao _projectDao;
     @Inject
     private ProjectAccountDao _projectAccountDao;
     @Inject
-    private NetworkDao _networkDao;
+    private ResourceCountDao _resourceCountDao;
     @Inject
-    private VpcDao _vpcDao;
+    private ResourceLimitDao _resourceLimitDao;
     @Inject
-    private ServiceOfferingDao _serviceOfferingDao;
+    private ReservationDao reservationDao;
     @Inject
-    private TemplateDataStoreDao _vmTemplateStoreDao;
-    @Inject
-    private VlanDao _vlanDao;
+    protected SnapshotDao _snapshotDao;
     @Inject
     private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
+    private TemplateDataStoreDao _vmTemplateStoreDao;
+    @Inject
+    private UserVmDao _userVmDao;
+    @Inject
     private UserVmJoinDao _userVmJoinDao;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    protected VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private VpcDao _vpcDao;
+    @Inject
+    private VlanDao _vlanDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
     protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
@@ -451,7 +452,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         // Check account limits
         long accountResourceLimit = findCorrectResourceLimitForAccount(account, type);
         long currentResourceCount = _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
-        long requestedResourceCount = currentResourceCount + numResources;
+        long currentResourceReservation = reservationDao.getReservation(account.getId(), type);
+        long requestedResourceCount = currentResourceCount + currentResourceReservation + numResources;
 
         String convertedAccountResourceLimit = String.valueOf(accountResourceLimit);
         String convertedCurrentResourceCount = String.valueOf(currentResourceCount);
@@ -1104,7 +1106,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public ResourceLimitService.ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) {
+    public ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) throws ResourceAllocationException {
         if (! Boolean.FALSE.equals(displayResource)) {
             return new CheckedReservation(account, type, delta);
         }
