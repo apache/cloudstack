@@ -252,6 +252,10 @@ class TestVmAutoScaling(cloudstackTestCase):
             interval=DEFAULT_INTERVAL
         )
 
+        # 15. Get global config
+        check_interval_config = Configurations.list(cls.apiclient, name="autoscale.stats.interval")
+        cls.check_interval = check_interval_config[0].value
+
     @classmethod
     def addOtherDeployParam(cls, name, value):
         cls.otherdeployparams.append({
@@ -303,6 +307,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
 
         for vm in vms:
+            self.logger.debug("==== Verifying profiles of VM %s (%s) ====" % (vm.name, vm.id))
             self.verifyVmProfile(vm)
 
     def verifyVmProfile(self, vm):
@@ -395,16 +400,13 @@ class TestVmAutoScaling(cloudstackTestCase):
         """ Verify scale up of AutoScaling VM group """
         self.logger.debug("test_01_scale_up_verify")
 
-        check_interval_config = Configurations.list(self.apiclient, name="autoscale.stats.interval")
-        check_interval = check_interval_config[0].value
-
-        sleeptime = int(int(check_interval)/1000) * 2
-        self.logger.debug("Waiting %s seconds for %s VM(s) to be created" % (sleeptime, MIN_MEMBER))
+        sleeptime = int(int(self.check_interval)/1000) * 2
+        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
-        sleeptime = int(int(check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
-        self.logger.debug("Waiting %s seconds for other %s VM(s) to be created" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER)
 
@@ -412,6 +414,86 @@ class TestVmAutoScaling(cloudstackTestCase):
     def test_02_scale_down_verify(self):
         """ Verify scale down of AutoScaling VM group """
         self.logger.debug("test_02_scale_down_verify")
+
+        self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
+
+        policies = Autoscale.listAutoscalePolicies(
+            self.regular_user_apiclient,
+            action="ScaleUp",
+            vmgroupid=self.autoscaling_vmgroup.id
+        )
+        self.assertEqual(
+            isinstance(policies, list),
+            True,
+            "List autoscale policies should return a valid list"
+        )
+        self.assertEqual(
+            len(policies) >= 1,
+            True,
+            "The number of autoscale policies %s should be equal to or greater than 1" % (len(policies))
+        )
+        scale_up_policy = policies[0]
+
+        conditions = Autoscale.listConditions(
+            self.regular_user_apiclient,
+            policyid=scale_up_policy.id
+        )
+        self.assertEqual(
+            isinstance(conditions, list),
+            True,
+            "List conditions should return a valid list"
+        )
+
+        for condition in conditions:
+            if condition.counterid == self.counter_cpu_id:
+                Autoscale.updateCondition(
+                    self.regular_user_apiclient,
+                    id=condition.id,
+                    relationaloperator="GT",
+                    threshold=101
+                )
+
+        policies = Autoscale.listAutoscalePolicies(
+            self.regular_user_apiclient,
+            action="ScaleDown",
+            vmgroupid=self.autoscaling_vmgroup.id
+        )
+        self.assertEqual(
+            isinstance(policies, list),
+            True,
+            "List autoscale policies should return a valid list"
+        )
+        self.assertEqual(
+            len(policies) >= 1,
+            True,
+            "The number of autoscale policies %s should be equal to or greater than 1" % (len(policies))
+        )
+        scale_down_policy = policies[0]
+
+        for condition in conditions:
+            if condition.counterid == self.counter_memory_id:
+                new_condition = Autoscale.createCondition(
+                    self.regular_user_apiclient,
+                    counterid=self.counter_memory_id,
+                    relationaloperator="LT",
+                    threshold=101
+                )
+                Autoscale.updateAutoscalePolicy(
+                    self.regular_user_apiclient,
+                    id=scale_down_policy.id,
+                    conditionids=new_condition.id
+                )
+                Autoscale.deleteCondition(
+                    self.regular_user_apiclient,
+                    id=condition.id
+                )
+
+        self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
+
+        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be destroyed ====" % (sleeptime, MAX_MEMBER - MIN_MEMBER))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MIN_MEMBER)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_03_update_vmprofile_and_vmgroup(self):
