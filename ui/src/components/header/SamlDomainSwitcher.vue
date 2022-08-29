@@ -36,7 +36,7 @@
             <span>{{ $t('label.domain') }}</span>
           </template>
           <span class="custom-suffix-icon">
-            <BlockOutlined v-if="!loading" />
+            <BlockOutlined v-if="!loading" class="ant-select-suffix" />
             <LoadingOutlined v-else />
           </span>
         </a-tooltip>

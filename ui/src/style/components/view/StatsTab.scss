@@ -15,14 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-.ant-form .ant-form-item {
-  margin-bottom: 6px;
+.ant-tag {
+  padding: 0 7px 0 0;
 }
-
-.ant-select-arrow .ant-select-suffix svg {
-  transition: transform .3s, -webkit-transform .3s;
+.ant-select {
+  margin-left: 10px;
 }
-
-.ant-select-open .ant-select-arrow .ant-select-suffix svg {
-  transform: rotateZ(-180deg);
+.info-icon {
+  margin: 0 10px 0 5px;
+}
+.chart-row {
+  margin-bottom: 10%;
+}
+.chart-type-select {
+  min-width: 130px;
 }

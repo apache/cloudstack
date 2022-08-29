@@ -15,14 +15,41 @@
 // specific language governing permissions and limitations
 // under the License.
 
-.ant-form .ant-form-item {
-  margin-bottom: 6px;
-}
+<template>
+  <Line
+    :chart-options="chartOptions"
+    :chart-data="chartData"
+    :width="width"
+    :height="height"
+  />
+</template>
 
-.ant-select-arrow .ant-select-suffix svg {
-  transition: transform .3s, -webkit-transform .3s;
-}
+<script>
+import { Line } from 'vue-chartjs'
+import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler } from 'chart.js'
 
-.ant-select-open .ant-select-arrow .ant-select-suffix svg {
-  transform: rotateZ(-180deg);
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, TimeScale, LinearScale, PointElement, Filler)
+
+export default {
+  name: 'LineChart',
+  components: { Line },
+  props: {
+    chartData: {
+      type: Object,
+      required: true
+    },
+    chartOptions: {
+      type: Object,
+      default: () => {}
+    },
+    width: {
+      type: Number,
+      default: 650
+    },
+    height: {
+      type: Number,
+      default: 250
+    }
+  }
 }
+</script>
