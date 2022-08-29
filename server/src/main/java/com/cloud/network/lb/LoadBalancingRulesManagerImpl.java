@@ -1573,11 +1573,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
     public boolean deleteLoadBalancerRule(final long loadBalancerId, boolean apply, Account caller, long callerUserId, boolean rollBack) {
         List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listByLoadBalancer(loadBalancerId);
         if (CollectionUtils.isNotEmpty(vmGroups)) {
-            for (AutoScaleVmGroupVO vmGroup : vmGroups) {
-                if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Disabled)) {
-                    throw new CloudRuntimeException(String.format("Cannot delete load balancer rule %d because it is being used by an Autoscale VM group: %s.", loadBalancerId, vmGroup.getName()));
-                }
-            }
+            throw new CloudRuntimeException(String.format("Cannot delete load balancer rule %d because it is being used by %s Autoscale VM group.", loadBalancerId, vmGroups.size()));
         }
 
         final LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
