@@ -308,6 +308,12 @@
           </a-form-item>
         </div>
         <div v-if="form.protocol === 'Linstor'">
+          <a-form-item name="capacityIops" ref="capacityIops">
+            <template #label>
+              <tooltip-label :title="$t('label.capacityiops')" :tooltip="apiParams.capacityiops.description"/>
+            </template>
+            <a-input v-model:value="form.capacityIops" :placeholder="apiParams.capacityiops.description" />
+          </a-form-item>
           <a-form-item name="resourcegroup" ref="resourcegroup">
             <template #label>
               <tooltip-label :title="$t('label.resourcegroup')" :tooltip="$t('message.linstor.resourcegroup.description')"/>
@@ -749,6 +755,9 @@ export default {
           params.provider = 'Linstor'
           values.managed = false
           params['details[0].resourceGroup'] = values.resourcegroup
+          if (values.capacityIops && values.capacityIops.length > 0) {
+            params.capacityIops = values.capacityIops.split(',').join('')
+          }
         }
         params.url = url
         if (values.provider !== 'DefaultPrimary' && values.provider !== 'PowerFlex') {

@@ -21,22 +21,28 @@ import com.linbit.linstor.api.CloneWaiter;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
+import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.Snapshot;
 import com.linbit.linstor.api.model.SnapshotRestore;
+import com.linbit.linstor.api.model.VolumeDefinition;
 import com.linbit.linstor.api.model.VolumeDefinitionModify;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -242,14 +248,17 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
                 deleteResourceDefinition(storagePool, rscName);
 
                 long usedBytes = storagePool.getUsedBytes();
-                long capacityIops = storagePool.getCapacityIops();
+                Long capacityIops = storagePool.getCapacityIops();
+
+                if (capacityIops != null)
+                {
+                    if (volumeInfo.getMaxIops() != null)
+                        capacityIops += volumeInfo.getMaxIops();
+                    storagePool.setCapacityIops(Math.max(0, capacityIops));
+                }
 
                 usedBytes -= volumeInfo.getSize();
-                if (volumeInfo.getMaxIops() != null)
-                    capacityIops += volumeInfo.getMaxIops();
-
                 storagePool.setUsedBytes(Math.max(0, usedBytes));
-                storagePool.setCapacityIops(Math.max(0, capacityIops));
 
                 _storagePoolDao.update(storagePoolId, storagePool);
             }
@@ -325,6 +334,51 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
+    private void applyQoSSettings(StoragePoolVO storagePool, DevelopersApi api, String rscName, Long maxIops)
+        throws ApiException
+    {
+        Long currentQosIops = null;
+        List<VolumeDefinition> vlmDfns = api.volumeDefinitionList(rscName, null, null);
+        if (!vlmDfns.isEmpty())
+        {
+            Properties props = vlmDfns.get(0).getProps();
+            long iops = Long.parseLong(props.getOrDefault("sys/fs/blkio_throttle_write_iops", "0"));
+            currentQosIops = iops > 0 ? iops : null;
+        }
+
+        if (!Objects.equals(maxIops, currentQosIops))
+        {
+            VolumeDefinitionModify vdm = new VolumeDefinitionModify();
+            if (maxIops != null)
+            {
+                Properties props = new Properties();
+                props.put("sys/fs/blkio_throttle_read_iops", "" + maxIops);
+                props.put("sys/fs/blkio_throttle_write_iops", "" + maxIops);
+                vdm.overrideProps(props);
+                s_logger.info("Apply qos setting: " + maxIops + " to " + rscName);
+            }
+            else
+            {
+                s_logger.info("Remove QoS setting for " + rscName);
+                vdm.deleteProps(Arrays.asList("sys/fs/blkio_throttle_read_iops", "sys/fs/blkio_throttle_write_iops"));
+            }
+            ApiCallRcList answers = api.volumeDefinitionModify(rscName, 0, vdm);
+            checkLinstorAnswersThrow(answers);
+
+            Long capacityIops = storagePool.getCapacityIops();
+            if (capacityIops != null)
+            {
+                long vcIops = currentQosIops != null ? currentQosIops * -1 : 0;
+                long vMaxIops = maxIops != null ? maxIops : 0;
+                long newIops = vcIops + vMaxIops;
+                capacityIops -= newIops;
+                s_logger.info("Current storagepool " + storagePool.getName() + " iops capacity:  " + capacityIops);
+                storagePool.setCapacityIops(Math.max(0, capacityIops));
+                _storagePoolDao.update(storagePool.getId(), storagePool);
+            }
+        }
+    }
+
     private void applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
         throws ApiException
     {
@@ -364,6 +418,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             checkLinstorAnswersThrow(answers);
 
             applyAuxProps(linstorApi, rscName, vol.getName(), vol.getAttachedVmName());
+            applyQoSSettings(storagePoolVO, linstorApi, rscName, vol.getMaxIops());
 
             return getDeviceName(linstorApi, rscName);
         } catch (ApiException apiEx)
@@ -398,6 +453,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
                 s_logger.info("Clone resource definition " + cloneRes + " to " + rscName + " finished");
                 applyAuxProps(linstorApi, rscName, volumeInfo.getName(), volumeInfo.getAttachedVmName());
+                applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeInfo.getMaxIops());
+
                 return getDeviceName(linstorApi, rscName);
             } catch (ApiException apiEx) {
                 s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -443,6 +500,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             checkLinstorAnswersThrow(answers);
 
             applyAuxProps(linstorApi, rscName, volumeVO.getName(), null);
+            applyQoSSettings(storagePoolVO, linstorApi, rscName, volumeVO.getMaxIops());
+
             return getDeviceName(linstorApi, rscName);
         } catch (ApiException apiEx) {
             s_logger.error("Linstor: ApiEx - " + apiEx.getMessage());
@@ -667,7 +726,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback)
     {
         final VolumeObject vol = (VolumeObject) data;
-        final StoragePool pool = (StoragePool) data.getDataStore();
+        final StoragePoolVO pool = _storagePoolDao.findById(data.getDataStore().getId());
         final DevelopersApi api = LinstorUtil.getLinstorAPI(pool.getHostAddress());
         final ResizeVolumePayload resizeParameter = (ResizeVolumePayload) vol.getpayload();
 
@@ -679,6 +738,14 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         dfm.setSizeKib(resizeParameter.newSize / 1024);
         try
         {
+            applyQoSSettings(pool, api, rscName, resizeParameter.newMaxIops);
+            {
+                final VolumeVO volume = _volumeDao.findById(vol.getId());
+                volume.setMinIops(resizeParameter.newMinIops);
+                volume.setMaxIops(resizeParameter.newMaxIops);
+                _volumeDao.update(volume.getId(), volume);
+            }
+
             ApiCallRcList answers = api.volumeDefinitionModify(rscName, 0, dfm);
             if (answers.hasError())
             {
@@ -705,7 +772,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         } else
         {
             // notify guests
-            result = notifyResize(data, oldSize, resizeParameter);
+            result = notifyResize(vol, oldSize, resizeParameter);
         }
 
         callback.complete(result);
