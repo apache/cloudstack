@@ -76,6 +76,16 @@ public class StorPoolPrimaryDataStoreDriverTest {
     @Mock
     private VolumeDao volumeDao;
 
+    DataStore srcStore;
+    DataStore destStore;
+
+    DataObject srcObj;
+    DataObject destObj;
+
+    VolumeObjectTO srcTO;
+    VolumeObjectTO dstTO;
+
+    PrimaryDataStoreTO dstPrimaryTo;
     MockedStatic<StorPoolUtil> utilities;
     StorPoolUtil.SpConnectionDesc conn;
 
@@ -83,6 +93,17 @@ public class StorPoolPrimaryDataStoreDriverTest {
     public void setUp(){
         utilities = Mockito.mockStatic(StorPoolUtil.class);
         conn = new StorPoolUtil.SpConnectionDesc("1.1.1.1:81", "123", "tmp");
+
+        srcStore = mock(DataStore.class);
+        destStore = mock(DataStore.class);
+
+        srcObj = mock(VolumeInfo.class);
+        destObj = mock(VolumeInfo.class);
+
+        srcTO = mock(VolumeObjectTO.class);
+        dstTO = mock(VolumeObjectTO.class);
+
+        dstPrimaryTo = mock(PrimaryDataStoreTO.class);
     }
 
     @After
@@ -94,16 +115,7 @@ public class StorPoolPrimaryDataStoreDriverTest {
 
     @Test
     public void testMigrateVolumePassed(){
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
 
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
         setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
@@ -121,17 +133,6 @@ public class StorPoolPrimaryDataStoreDriverTest {
     @Test
     public void testMigrateVolumeNotPassed() {
 
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
-
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
-
         VMInstanceVO vm = mock(VMInstanceVO.class);
 
         setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
@@ -147,17 +148,6 @@ public class StorPoolPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyVolumeAttachedToVmPassed() {
-
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
-
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
 
@@ -179,17 +169,6 @@ public class StorPoolPrimaryDataStoreDriverTest {
     @Test
     public void testCopyVolumeAttachedToVmNotPassed() {
 
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
-
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
-
         VMInstanceVO vm = mock(VMInstanceVO.class);
 
         setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
@@ -208,18 +187,6 @@ public class StorPoolPrimaryDataStoreDriverTest {
     }
     @Test
     public void testCopyVolumeNotAttachedToVmNotPassed() {
-
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
-
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
-
         setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, null);
 
         when(StorPoolUtil.getSpConnection(destObj.getDataStore().getUuid(), destObj.getDataStore().getId(), detailsDao, storagePool)).thenReturn(conn);
@@ -236,17 +203,6 @@ public class StorPoolPrimaryDataStoreDriverTest {
 
     @Test
     public void testCopyVolumeNotAttachedToVmPassed() {
-
-        DataStore srcStore = mock(DataStore.class);
-        DataStore destStore = mock(DataStore.class);
-
-        DataObject srcObj = mock(VolumeInfo.class);
-        DataObject destObj = mock(VolumeInfo.class);
-
-        VolumeObjectTO srcTO = mock(VolumeObjectTO.class);
-        VolumeObjectTO dstTO = mock(VolumeObjectTO.class);
-
-        PrimaryDataStoreTO dstPrimaryTo = mock(PrimaryDataStoreTO.class);
 
         setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, null);
 

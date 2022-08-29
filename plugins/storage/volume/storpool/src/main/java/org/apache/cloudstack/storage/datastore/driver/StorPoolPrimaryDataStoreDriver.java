@@ -814,7 +814,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
         String newVolume = StorPoolUtil.getNameFromResponse(response, false);
 
-        StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc copy volume[%s] from pool[%s] to pool[%s] with a new name [%s]",
+        StorPoolUtil.spLog("StorpoolPrimaryDataStoreDriverImpl.copyAsnc copy volume[%s] from pool[%s] with a new name [%s]",
                 baseOn, srcInfo.getDataStore().getName(), newVolume);
 
         srcTO.setSize(srcInfo.getSize());
