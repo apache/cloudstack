@@ -21,6 +21,7 @@ Tests of VM Autoscaling
 
 import logging
 import time
+import datetime
 
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -54,6 +55,7 @@ MAX_MEMBER = 2
 DEFAULT_DESTROY_VM_GRACE_PERIOD = 60
 DEFAULT_DURATION = 120
 DEFAULT_INTERVAL = 30
+NAME_PREFIX = "AS-VmGroup-"
 
 class TestVmAutoScaling(cloudstackTestCase):
     """
@@ -87,6 +89,12 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
         cls._cleanup.append(cls.service_offering)
 
+        cls.service_offering_new = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["small"]
+        )
+        cls._cleanup.append(cls.service_offering_new)
+
         # 2. Create disk offerings (fixed and custom)
         cls.disk_offering_override = DiskOffering.create(
             cls.apiclient,
@@ -101,6 +109,13 @@ class TestVmAutoScaling(cloudstackTestCase):
             custom=True
         )
         cls._cleanup.append(cls.disk_offering_custom)
+
+        cls.disk_offering_custom_new = DiskOffering.create(
+            cls.apiclient,
+            cls.services["disk_offering"],
+            custom=True
+        )
+        cls._cleanup.append(cls.disk_offering_custom_new)
 
         # 3. Create network offering for isolated networks
         cls.network_offering_isolated = NetworkOffering.create(
@@ -207,11 +222,11 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         # 12. Create AS VM Profile
         cls.otherdeployparams = []
-        cls.addOtherDeployParam("overridediskofferingid", cls.disk_offering_override.id)
-        cls.addOtherDeployParam("diskofferingid", cls.disk_offering_custom.id)
-        cls.addOtherDeployParam("disksize", 3)
-        cls.addOtherDeployParam("keypairs", cls.keypair_1.name + "," + cls.keypair_2.name)
-        cls.addOtherDeployParam("networkids", cls.user_network_1.id + "," + cls.user_network_2.id)
+        cls.addOtherDeployParam(cls.otherdeployparams, "overridediskofferingid", cls.disk_offering_override.id)
+        cls.addOtherDeployParam(cls.otherdeployparams, "diskofferingid", cls.disk_offering_custom.id)
+        cls.addOtherDeployParam(cls.otherdeployparams, "disksize", 3)
+        cls.addOtherDeployParam(cls.otherdeployparams, "keypairs", cls.keypair_1.name + "," + cls.keypair_2.name)
+        cls.addOtherDeployParam(cls.otherdeployparams, "networkids", cls.user_network_1.id + "," + cls.user_network_2.id)
 
         cls.autoscaling_vmprofile = AutoScaleVmProfile.create(
             cls.regular_user_apiclient,
@@ -242,7 +257,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         # 14. Create AS VM Group
         cls.autoscaling_vmgroup = AutoScaleVmGroup.create(
             cls.regular_user_apiclient,
-            name="AS-VmGroup-1",
+            name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
             lbruleid=cls.load_balancer_rule.id,
             minmembers=MIN_MEMBER,
             maxmembers=MAX_MEMBER,
@@ -256,9 +271,12 @@ class TestVmAutoScaling(cloudstackTestCase):
         check_interval_config = Configurations.list(cls.apiclient, name="autoscale.stats.interval")
         cls.check_interval = check_interval_config[0].value
 
+        # 16. define VMs not be checked
+        cls.excluded_vm_ids = []
+
     @classmethod
-    def addOtherDeployParam(cls, name, value):
-        cls.otherdeployparams.append({
+    def addOtherDeployParam(cls, otherdeployparams, name, value):
+        otherdeployparams.append({
             'name': name,
             'value': value
         })
@@ -307,10 +325,13 @@ class TestVmAutoScaling(cloudstackTestCase):
         )
 
         for vm in vms:
-            self.logger.debug("==== Verifying profiles of VM %s (%s) ====" % (vm.name, vm.id))
-            self.verifyVmProfile(vm)
+            if vm.id not in self.excluded_vm_ids:
+                self.logger.debug("==== Verifying profiles of new VM %s (%s) ====" % (vm.name, vm.id))
+                self.verifyVmProfile(vm)
 
     def verifyVmProfile(self, vm):
+        self.excluded_vm_ids.append(vm.id)
+
         datadisksizeInBytes = None
         diskofferingid = None
         rootdisksizeInBytes = None
@@ -345,9 +366,6 @@ class TestVmAutoScaling(cloudstackTestCase):
                 datadisksizeInBytes = volume.size
                 diskofferingid = volume.diskofferingid
 
-        self.assertEquals(templateid, self.template.id)
-        self.assertEquals(serviceofferingid, self.service_offering.id)
-
         vmprofiles_list = AutoScaleVmProfile.list(
             self.regular_user_apiclient,
             listall=True,
@@ -365,7 +383,9 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.logger.debug("sshkeypairs = " + sshkeypairs)
         self.logger.debug("networkids = " + networkids)
         self.logger.debug("affinitygroupids = " + affinitygroupids)
-        self.logger.debug("disk_offering_override = " + str(self.disk_offering_override.disksize))
+
+        self.assertEquals(templateid, vmprofile.templateid)
+        self.assertEquals(serviceofferingid, vmprofile.serviceofferingid)
 
         if vmprofile_otherdeployparams.rootdisksize:
             self.assertEquals(int(rootdisksizeInBytes), int(vmprofile_otherdeployparams.rootdisksize) * (1024 ** 3))
@@ -397,23 +417,113 @@ class TestVmAutoScaling(cloudstackTestCase):
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_01_scale_up_verify(self):
-        """ Verify scale up of AutoScaling VM group """
+        """ Verify scale up of AutoScaling VM Group """
         self.logger.debug("test_01_scale_up_verify")
 
+        # VM count increases from 0 to MIN_MEMBER
         sleeptime = int(int(self.check_interval)/1000) * 2
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MIN_MEMBER)
 
+        # VM count increases from MIN_MEMBER to MAX_MEMBER
         sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER)
 
+
     @attr(tags=["advanced"], required_hardware="false")
-    def test_02_scale_down_verify(self):
-        """ Verify scale down of AutoScaling VM group """
-        self.logger.debug("test_02_scale_down_verify")
+    def test_02_update_vmprofile_and_vmgroup(self):
+        """ Verify update of AutoScaling VM Group and VM Profile"""
+        self.logger.debug("test_02_update_vmprofile_and_vmgroup")
+
+        vmprofiles_list = AutoScaleVmProfile.list(
+            self.regular_user_apiclient,
+            listall=True,
+            id=self.autoscaling_vmprofile.id
+        )
+        self.assertEqual(
+            isinstance(vmprofiles_list, list),
+            True,
+            "List autoscale profiles should return a valid list"
+        )
+        self.assertEqual(
+            len(vmprofiles_list) == 1,
+            True,
+            "The number of autoscale profiles %s should be equal to 1" % (len(vmprofiles_list))
+        )
+
+        # Create new AS VM Profile
+        otherdeployparams_new = []
+        self.addOtherDeployParam(otherdeployparams_new, "rootdisksize", self.templatesize + 2)
+        self.addOtherDeployParam(otherdeployparams_new, "diskofferingid", self.disk_offering_custom_new.id)
+        self.addOtherDeployParam(otherdeployparams_new, "disksize", 5)
+        self.addOtherDeployParam(otherdeployparams_new, "keypairs", self.keypair_1.name)
+        self.addOtherDeployParam(otherdeployparams_new, "networkids", self.user_network_1.id)
+
+        try:
+            Autoscale.updateAutoscaleVMProfile(
+                self.regular_user_apiclient,
+                id = self.autoscaling_vmprofile.id,
+                serviceofferingid = self.service_offering_new.id,
+                destroyvmgraceperiod = DEFAULT_DESTROY_VM_GRACE_PERIOD + 1,
+                otherdeployparams = otherdeployparams_new
+            )
+            self.fail("Autoscale VM Profile should not be updatable when VM Group is not Disabled")
+        except Exception as ex:
+            pass
+
+        try:
+            Autoscale.updateAutoscaleVMGroup(
+                self.regular_user_apiclient,
+                id = self.autoscaling_vmprofile.id,
+                name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
+                maxmembers = MAX_MEMBER + 1,
+                minmembers = MIN_MEMBER + 1,
+                interval = DEFAULT_INTERVAL + 1
+            )
+            self.fail("Autoscale VM Group should not be updatable when VM Group is not Disabled")
+        except Exception as ex:
+            pass
+
+        self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
+
+        try:
+            Autoscale.updateAutoscaleVMProfile(
+                self.regular_user_apiclient,
+                id = self.autoscaling_vmprofile.id,
+                serviceofferingid = self.service_offering_new.id,
+                destroyvmgraceperiod = DEFAULT_DESTROY_VM_GRACE_PERIOD + 1,
+                otherdeployparams = otherdeployparams_new
+            )
+        except Exception as ex:
+            self.fail("Autoscale VM Profile should be updatable when VM Group is Disabled")
+
+        try:
+            Autoscale.updateAutoscaleVMGroup(
+                self.regular_user_apiclient,
+                id = self.autoscaling_vmgroup.id,
+                name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
+                maxmembers = MAX_MEMBER + 1,
+                minmembers = MIN_MEMBER + 1,
+                interval = DEFAULT_INTERVAL + 1
+            )
+        except Exception as ex:
+            self.fail("Autoscale VM Group should be updatable when VM Group is Disabled")
+
+        self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
+
+        # VM count increases from MIN_MEMBER to MAX_MEMBER+1
+        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION) * (MAX_MEMBER + 1 - MIN_MEMBER)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER + 1 - MIN_MEMBER)))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MAX_MEMBER + 1)
+
+    @attr(tags=["advanced"], required_hardware="false")
+    def test_03_scale_down_verify(self):
+        """ Verify scale down of AutoScaling VM Group """
+        self.logger.debug("test_03_scale_down_verify")
 
         self.autoscaling_vmgroup.disable(self.regular_user_apiclient)
 
@@ -490,19 +600,15 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
-        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        # VM count decreases from MAX_MEMBER+1 to MIN_MEMBER+1
+        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
         self.logger.debug("==== Waiting %s seconds for %s VM(s) to be destroyed ====" % (sleeptime, MAX_MEMBER - MIN_MEMBER))
         time.sleep(sleeptime)
-        self.verifyVmCountAndProfiles(MIN_MEMBER)
-
-    @attr(tags=["advanced"], required_hardware="false")
-    def test_03_update_vmprofile_and_vmgroup(self):
-        """ Verify update of AutoScaling VM group and VM profile"""
-        self.logger.debug("test_03_update_vmprofile_and_vmgroup")
+        self.verifyVmCountAndProfiles(MIN_MEMBER+1)
 
     @attr(tags=["advanced"], required_hardware="false")
     def test_04_remove_vm_and_vmgroup(self):
-        """ Verify removal of AutoScaling VM group and VM"""
+        """ Verify removal of AutoScaling VM Group and VM"""
         self.logger.debug("test_04_remove_vm_and_vmgroup")
 
         self.delete_vmgroup(self.autoscaling_vmgroup, self.regular_user_apiclient, cleanup=False, expected=False)
