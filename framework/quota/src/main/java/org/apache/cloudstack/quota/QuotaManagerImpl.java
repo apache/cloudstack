@@ -164,7 +164,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         Date startDate = firstQuotaUsage.getStartDate();
         Date endDate = firstQuotaUsage.getStartDate();
 
-        s_logger.debug(String.format("Processing quota balance for account [%s] between [%s] and [%s].", accountToString, startDate,
+        s_logger.info(String.format("Processing quota balance for account [%s] between [%s] and [%s].", accountToString, startDate,
                 accountQuotaUsages.get(accountQuotaUsages.size() - 1).getEndDate()));
 
         BigDecimal aggregatedUsage = BigDecimal.ZERO;
