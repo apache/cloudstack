@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 
@@ -105,9 +106,25 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
         } else if (cmd instanceof StartConsoleProxyAgentHttpHandlerCommand) {
-            return execute((StartConsoleProxyAgentHttpHandlerCommand)cmd);
+            return execute((StartConsoleProxyAgentHttpHandlerCommand) cmd);
+        } else if (cmd instanceof AllowConsoleAccessCommand) {
+            return execute((AllowConsoleAccessCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+
+    private Answer execute(AllowConsoleAccessCommand cmd) {
+        String sessionUuid = cmd.getSessionUuid();
+        try {
+            Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
+            Method methodSetup = consoleProxyClazz.getMethod("addAllowedSession", String.class);
+            methodSetup.invoke(null, sessionUuid);
+            return new Answer(cmd);
+        } catch (SecurityException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException e) {
+            String errorMsg = "Unable to add allowed session due to: " + e.getMessage();
+            s_logger.error(errorMsg, e);
+            return new Answer(cmd, false, errorMsg);
         }
     }
 

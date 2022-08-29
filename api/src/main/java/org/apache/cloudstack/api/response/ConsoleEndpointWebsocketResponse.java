@@ -42,6 +42,10 @@ public class ConsoleEndpointWebsocketResponse extends BaseResponse {
     @Param(description = "the console websocket path")
     private String path;
 
+    @SerializedName("extra")
+    @Param(description = "the console websocket extra field for validation (if enabled)")
+    private String extra;
+
     public String getToken() {
         return token;
     }
@@ -72,5 +76,13 @@ public class ConsoleEndpointWebsocketResponse extends BaseResponse {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
     }
 }

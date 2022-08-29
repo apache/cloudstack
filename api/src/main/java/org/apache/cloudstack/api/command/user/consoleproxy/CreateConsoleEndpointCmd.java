@@ -59,11 +59,16 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
             description = "ID of the VM")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.TOKEN,
+            type = CommandType.STRING,
+            required = false,
+            description = "(optional) extra security token, valid when the extra validation is enabled")
+    private String extraSecurityToken;
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        String clientSecurityToken = getClientSecurityToken();
         String clientAddress = getClientAddress();
-        ConsoleEndpoint endpoint = consoleManager.generateConsoleEndpoint(vmId, clientSecurityToken, clientAddress);
+        ConsoleEndpoint endpoint = consoleManager.generateConsoleEndpoint(vmId, extraSecurityToken, clientAddress);
         if (endpoint != null) {
             CreateConsoleEndpointResponse response = createResponse(endpoint);
             setResponseObject(response);
@@ -89,6 +94,7 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
         wsResponse.setPort(endpoint.getWebsocketPort());
         wsResponse.setPath(endpoint.getWebsocketPath());
         wsResponse.setToken(endpoint.getWebsocketToken());
+        wsResponse.setExtra(endpoint.getWebsocketExtra());
         wsResponse.setObjectName("websocket");
         return wsResponse;
     }
@@ -100,10 +106,6 @@ public class CreateConsoleEndpointCmd extends BaseCmd {
 
     private String getClientAddress() {
         return getParameterBase(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY);
-    }
-
-    private String getClientSecurityToken() {
-        return getParameterBase(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY);
     }
 
     @Override

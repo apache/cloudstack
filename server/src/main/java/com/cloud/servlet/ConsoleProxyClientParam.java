@@ -37,8 +37,13 @@ public class ConsoleProxyClientParam {
     private String websocketUrl;
 
     private String sessionUuid;
-    private String clientSecurityHeader;
-    private String clientSecurityToken;
+
+    // The server-side generated value for extra console endpoint validation
+    private String extraSecurityToken;
+
+    // The extra parameter received in the console URL, must be compared against the server-side generated value
+    // for extra validation (if has been enabled)
+    private String clientProvidedExtraSecurityToken;
 
     public ConsoleProxyClientParam() {
         clientHostPort = 0;
@@ -168,23 +173,23 @@ public class ConsoleProxyClientParam {
         return sessionUuid;
     }
 
-    public String getClientSecurityHeader() {
-        return clientSecurityHeader;
+    public String getExtraSecurityToken() {
+        return extraSecurityToken;
     }
 
-    public void setClientSecurityHeader(String clientSecurityHeader) {
-        this.clientSecurityHeader = clientSecurityHeader;
+    public void setExtraSecurityToken(String extraSecurityToken) {
+        this.extraSecurityToken = extraSecurityToken;
+    }
+
+    public String getClientProvidedExtraSecurityToken() {
+        return clientProvidedExtraSecurityToken;
+    }
+
+    public void setClientProvidedExtraSecurityToken(String clientProvidedExtraSecurityToken) {
+        this.clientProvidedExtraSecurityToken = clientProvidedExtraSecurityToken;
     }
 
     public void setSessionUuid(String sessionUuid) {
         this.sessionUuid = sessionUuid;
-    }
-
-    public String getClientSecurityToken() {
-        return clientSecurityToken;
-    }
-
-    public void setClientSecurityToken(String clientSecurityToken) {
-        this.clientSecurityToken = clientSecurityToken;
     }
 }

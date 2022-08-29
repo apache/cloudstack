@@ -50,6 +50,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -96,7 +97,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
-    public ConsoleEndpoint generateConsoleEndpoint(Long vmId, String clientSecurityToken, String clientAddress) {
+    public ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress) {
         try {
             if (accountManager == null || virtualMachineManager == null || managementServer == null) {
                 return new ConsoleEndpoint(false, null,"Console service is not ready");
@@ -126,8 +127,15 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                 return new ConsoleEndpoint(false, null, "Permission denied");
             }
 
-            String sessionToken = UUID.randomUUID().toString();
-            return generateAccessEndpoint(vmId, sessionToken, clientSecurityToken, clientAddress);
+            if (BooleanUtils.isTrue(ConsoleAccessManager.ConsoleProxyExtraSecurityValidationEnabled.value()) &&
+                StringUtils.isBlank(extraSecurityToken)) {
+                String errorMsg = "Extra security validation is enabled but the extra token is missing";
+                s_logger.error(errorMsg);
+                return new ConsoleEndpoint(false, errorMsg);
+            }
+
+            String sessionUuid = UUID.randomUUID().toString();
+            return generateAccessEndpoint(vmId, sessionUuid, extraSecurityToken, clientAddress);
         } catch (Exception e) {
             s_logger.error("Unexepected exception in ConsoleAccessManager", e);
             return new ConsoleEndpoint(false, null, "Server Internal Error: " + e.getMessage());
@@ -183,7 +191,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return true;
     }
 
-    private ConsoleEndpoint generateAccessEndpoint(Long vmId, String sessionToken, String clientSecurityToken, String clientAddress) {
+    private ConsoleEndpoint generateAccessEndpoint(Long vmId, String sessionUuid, String extraSecurityToken, String clientAddress) {
         VirtualMachine vm = virtualMachineManager.findById(vmId);
         String msg;
         if (vm == null) {
@@ -214,13 +222,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             throw new CloudRuntimeException("Console access will be ready in a few minutes. Please try it again later.");
         }
 
-        ConsoleEndpoint consoleEndpoint = composeConsoleAccessEndpoint(rootUrl, vm, host, clientAddress, sessionToken, clientSecurityToken);
+        ConsoleEndpoint consoleEndpoint = composeConsoleAccessEndpoint(rootUrl, vm, host, clientAddress, sessionUuid, extraSecurityToken);
         s_logger.debug("The console URL is: " + consoleEndpoint.getUrl());
         return consoleEndpoint;
     }
 
     private ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
-                                                         String sessionUuid, String clientSecurityToken) {
+                                                         String sessionUuid, String extraSecurityToken) {
         StringBuilder sb = new StringBuilder(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
@@ -271,10 +279,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         param.setSessionUuid(sessionUuid);
         param.setSourceIP(addr);
 
-        if (StringUtils.isNotBlank(clientSecurityToken)) {
-            param.setClientSecurityHeader(ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
-            param.setClientSecurityToken(clientSecurityToken);
-            s_logger.debug("Added security token " + clientSecurityToken + " for header " + ConsoleAccessManager.ConsoleProxyExtraSecurityHeaderName.value());
+        if (StringUtils.isNotBlank(extraSecurityToken)) {
+            param.setExtraSecurityToken(extraSecurityToken);
+            s_logger.debug("Added security token for client validation");
         }
 
         if (requiresVncOverWebSocketConnection(vm, hostVo)) {
@@ -306,6 +313,10 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
                     .append("&token=" + token);
         }
 
+        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            sb.append("&extra=" + param.getExtraSecurityToken());
+        }
+
         // for console access, we need guest OS type to help implement keyboard
         long guestOs = vm.getGuestOSId();
         GuestOSVO guestOsVo = managementServer.getGuestOs(guestOs);
@@ -317,6 +328,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
         s_logger.debug("Adding allowed session: " + sessionUuid);
         allowedSessions.add(sessionUuid);
+        managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         String url = sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
@@ -324,6 +336,9 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         consoleEndpoint.setWebsocketPort(String.valueOf(ConsoleProxyManager.NoVncConsolePort.value()));
         consoleEndpoint.setWebsocketPath("websockify");
         consoleEndpoint.setWebsocketToken(token);
+        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
+        }
         return consoleEndpoint;
     }
 
@@ -449,7 +464,6 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] { ConsoleProxyExtraSecurityHeaderName,
-                ConsoleProxyExtraSecurityHeaderEnabled };
+        return new ConfigKey[] { ConsoleProxyExtraSecurityValidationEnabled };
     }
 }

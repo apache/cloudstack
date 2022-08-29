@@ -25,6 +25,7 @@ public class ConsoleEndpoint {
     private String websocketPath;
     private String websocketHost;
     private String websocketPort;
+    private String websocketExtra;
 
     public ConsoleEndpoint(boolean result, String url) {
         this.result = result;
@@ -90,5 +91,13 @@ public class ConsoleEndpoint {
 
     public void setWebsocketPort(String websocketPort) {
         this.websocketPort = websocketPort;
+    }
+
+    public String getWebsocketExtra() {
+        return websocketExtra;
+    }
+
+    public void setWebsocketExtra(String websocketExtra) {
+        this.websocketExtra = websocketExtra;
     }
 }

@@ -23,15 +23,11 @@ import org.apache.cloudstack.framework.config.Configurable;
 
 public interface ConsoleAccessManager extends Manager, Configurable {
 
-    ConfigKey<Boolean> ConsoleProxyExtraSecurityHeaderEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "consoleproxy.extra.security.header.enabled", "false",
-            "Enable/disable extra security validation for console proxy using client header", true);
+    ConfigKey<Boolean> ConsoleProxyExtraSecurityValidationEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+            "consoleproxy.extra.security.validation.enabled", "false",
+            "Enable/disable extra security validation for console proxy using an extra token", true);
 
-    ConfigKey<String> ConsoleProxyExtraSecurityHeaderName = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
-            "consoleproxy.extra.security.header.name", "SECURITY_TOKEN",
-            "A client header for extra security validation when using the console proxy", true);
-
-    ConsoleEndpoint generateConsoleEndpoint(Long vmId, String clientSecurityToken, String clientAddress);
+    ConsoleEndpoint generateConsoleEndpoint(Long vmId, String extraSecurityToken, String clientAddress);
 
     boolean isSessionAllowed(String sessionUuid);
 

@@ -71,7 +71,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
 
     @OnWebSocketConnect
     public void onConnect(final Session session) throws IOException, InterruptedException {
-
         String queries = session.getUpgradeRequest().getQueryString();
         Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 
@@ -90,8 +89,6 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
         String sourceIP = queryMap.get("sourceIP");
         String websocketUrl = queryMap.get("websocketUrl");
         String sessionUuid = queryMap.get("sessionUuid");
-        String clientSecurityToken = queryMap.get("clientSecurityToken");
-        String clientSecurityHeader = queryMap.get("clientSecurityHeader");
 
         if (tag == null)
             tag = "";
@@ -137,8 +134,12 @@ public class ConsoleProxyNoVNCHandler extends WebSocketHandler {
             param.setPassword(password);
             param.setWebsocketUrl(websocketUrl);
             param.setSessionUuid(sessionUuid);
-            param.setClientSecurityHeader(clientSecurityHeader);
-            param.setClientSecurityToken(clientSecurityToken);
+            if (queryMap.containsKey("extraSecurityToken")) {
+                param.setExtraSecurityToken(queryMap.get("extraSecurityToken"));
+            }
+            if (queryMap.containsKey("extra")) {
+                param.setClientProvidedExtraSecurityToken(queryMap.get("extra"));
+            }
             viewer = ConsoleProxy.getNoVncViewer(param, ajaxSessionIdStr, session);
         } catch (Exception e) {
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);

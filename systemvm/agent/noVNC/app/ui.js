@@ -157,6 +157,8 @@ const UI = {
             }
         }
 
+        console.log(window.location)
+        UI.initSetting('extra', window.location.extra)
         /* Populate the controls if defaults are provided in the URL */
         UI.initSetting('host', window.location.hostname);
         UI.initSetting('port', port);
@@ -997,7 +999,8 @@ const UI = {
         const host = UI.getSetting('host');
         const port = UI.getSetting('port');
         const path = UI.getSetting('path');
-        const token = UI.getSetting('token')
+        const token = UI.getSetting('token');
+        const extra = UI.getSetting('extra');
 
         if (typeof password === 'undefined') {
             password = WebUtil.getConfigVar('password');
@@ -1030,6 +1033,10 @@ const UI = {
         }
         url += '/' + path;
         url += '?token=' + token;
+
+        if (extra) {
+            url += '&extra=' + extra
+        }
 
         UI.rfb = new RFB(document.getElementById('noVNC_container'), url,
                          { shared: UI.getSetting('shared'),

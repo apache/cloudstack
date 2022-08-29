@@ -26,9 +26,11 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -76,6 +78,12 @@ public class ConsoleProxy {
 
     static String encryptorPassword = "Dummy";
     static final String[] skipProperties = new String[]{"certificate", "cacertificate", "keystore_password", "privatekey"};
+
+    static Set<String> allowedSessions = new HashSet<>();
+
+    public static void addAllowedSession(String sessionUuid) {
+        allowedSessions.add(sessionUuid);
+    }
 
     private static void configLog4j() {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -179,18 +187,27 @@ public class ConsoleProxy {
         authResult.setHost(param.getClientHostAddress());
         authResult.setPort(param.getClientHostPort());
 
-        if (session != null && param.getClientSecurityToken() != null) {
-            String clientSecurityHeader = param.getClientSecurityHeader();
-            String headerValue = session.getUpgradeRequest().getHeader(clientSecurityHeader);
-            if (!param.getClientSecurityToken().equals(headerValue)) {
-                s_logger.error("Security token found but not matching the expected value for this session");
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Expected value for header %s was %s but found %s",
-                            clientSecurityHeader, param.getClientSecurityToken(), headerValue));
-                }
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            String extraToken = param.getExtraSecurityToken();
+            String clientProvidedToken = param.getClientProvidedExtraSecurityToken();
+            s_logger.debug(String.format("Extra security validation for the console access, provided %s " +
+                    "to validate against %s", clientProvidedToken, extraToken));
+
+            if (!extraToken.equals(clientProvidedToken)) {
+                s_logger.error("The provided extra token does not match the expected value for this console endpoint");
                 authResult.setSuccess(false);
                 return authResult;
             }
+        }
+
+        String sessionUuid = param.getSessionUuid();
+        if (allowedSessions.contains(sessionUuid)) {
+            s_logger.debug("Acquiring the session " + sessionUuid + " not available for future use");
+            allowedSessions.remove(sessionUuid);
+        } else {
+            s_logger.info("Session " + sessionUuid + " has already been used, cannot connect");
+            authResult.setSuccess(false);
+            return authResult;
         }
 
         String websocketUrl = param.getWebsocketUrl();

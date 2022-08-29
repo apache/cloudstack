@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.api;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 
 import java.io.IOException;
@@ -25,7 +23,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
@@ -40,10 +37,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
-import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpointCmd;
-import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -57,11 +50,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 @RunWith(MockitoJUnitRunner.class)
-@PrepareForTest(ConsoleAccessManager.class)
 public class ApiServletTest {
 
     @Mock
@@ -93,15 +83,6 @@ public class ApiServletTest {
 
     @Mock
     ManagementServer managementServer;
-
-    @Mock
-    private ConfigKey<Boolean> enableSecurityHeaderSetting;
-
-    @Mock
-    private ConfigKey<String> securityHeaderNameSetting;
-
-    @Mock
-    private HashMap<String, Object[]> params;
 
     StringWriter responseWriter;
 
@@ -290,52 +271,6 @@ public class ApiServletTest {
     public void getClientAddressDefault() throws UnknownHostException {
         Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         Assert.assertEquals(InetAddress.getByName("127.0.0.1"), ApiServlet.getClientAddress(request));
-    }
-
-    @Test
-    public void testSetExtraHeaderSecurityToConsoleEndpointIfEnabledNotMatchingCommand() throws UnknownHostException {
-        HashMap<String, Object[]> params = Mockito.mock(HashMap.class);
-        PowerMockito.mockStatic(InetAddress.class);
-        servlet.setExtraHeaderSecurityToConsoleEndpointIfEnabled("login", params, request);
-        Mockito.verify(params, Mockito.never()).put(anyString(), any());
-    }
-
-    private <T extends Object> void replaceConsoleAccessSetting(String settingName, ConfigKey<T> replaceKey) throws Exception {
-        Field field = ConsoleAccessManager.class.getDeclaredField(settingName);
-        field.setAccessible(true);
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, replaceKey);
-    }
-
-    @Test
-    public void testSetExtraHeaderSecurityToConsoleEndpointIfEnabledDisabledSetting() throws Exception {
-        String ip = "127.0.0.1";
-        Mockito.when(request.getHeader("Remote_Addr")).thenReturn(ip);
-        PowerMockito.mockStatic(InetAddress.class);
-        Mockito.when(enableSecurityHeaderSetting.value()).thenReturn(false);
-        replaceConsoleAccessSetting("ConsoleProxyExtraSecurityHeaderEnabled", enableSecurityHeaderSetting);
-        servlet.setExtraHeaderSecurityToConsoleEndpointIfEnabled(CreateConsoleEndpointCmd.APINAME, params, request);
-        Mockito.verify(params).put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] { ip });
-    }
-
-    @Test
-    public void testSetExtraHeaderSecurityToConsoleEndpointIfEnabledEnabledSetting() throws Exception {
-        String ip = "127.0.0.1";
-        String headerName = "HEADER_NAME";
-        String headerValue = "HEADER_VALUE";
-        Mockito.when(request.getHeader("Remote_Addr")).thenReturn(ip);
-        Mockito.when(request.getHeader(headerName)).thenReturn(headerValue);
-        PowerMockito.mockStatic(InetAddress.class);
-        Mockito.when(enableSecurityHeaderSetting.value()).thenReturn(true);
-        replaceConsoleAccessSetting("ConsoleProxyExtraSecurityHeaderEnabled", enableSecurityHeaderSetting);
-        Mockito.when(securityHeaderNameSetting.value()).thenReturn(headerName);
-        replaceConsoleAccessSetting("ConsoleProxyExtraSecurityHeaderName", securityHeaderNameSetting);
-        servlet.setExtraHeaderSecurityToConsoleEndpointIfEnabled(CreateConsoleEndpointCmd.APINAME, params, request);
-        Mockito.verify(params).put(ConsoleAccessUtils.CLIENT_INET_ADDRESS_KEY, new String[] { ip });
-        Mockito.verify(params).put(ConsoleAccessUtils.CLIENT_SECURITY_HEADER_PARAM_KEY, new String[] { headerValue });
     }
 
 }

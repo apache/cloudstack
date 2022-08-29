@@ -47,6 +47,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PatchSystemVmAnswer;
 import com.cloud.agent.api.PatchSystemVmCommand;
+import com.cloud.agent.api.proxy.AllowConsoleAccessCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.dc.DomainVlanMapVO;
@@ -2846,6 +2847,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
         return null;
+    }
+
+    @Override
+    public Pair<Boolean, String> setConsoleAccessForVm(long vmId, String sessionUuid) {
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return new Pair<>(false, "Cannot find a VM with id = " + vmId);
+        }
+        final ConsoleProxyInfo proxy = getConsoleProxyForVm(vm.getDataCenterId(), vmId);
+        if (proxy == null) {
+            return new Pair<>(false, "Cannot find a console proxy for the VM " + vmId);
+        }
+        AllowConsoleAccessCommand cmd = new AllowConsoleAccessCommand(sessionUuid);
+        HostVO hostVO = _hostDao.findByTypeNameAndZoneId(vm.getDataCenterId(), proxy.getProxyName(), Type.ConsoleProxy);
+        Answer answer = null;
+        try {
+            answer = _agentMgr.send(hostVO.getId(), cmd);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = "Could not send allow session command to CPVM: " + e.getMessage();
+            s_logger.error(errorMsg, e);
+            return new Pair<>(false, errorMsg);
+        }
+        return new Pair<>(answer != null && answer.getResult(), answer != null ? answer.getDetails() : "null answer");
     }
 
     @Override

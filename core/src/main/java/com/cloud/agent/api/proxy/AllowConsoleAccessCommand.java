@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,12 +15,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.utils.consoleproxy;
+//
+package com.cloud.agent.api.proxy;
 
-public class ConsoleAccessUtils {
+public class AllowConsoleAccessCommand extends ProxyCommand {
 
-    private ConsoleAccessUtils() {
+    private String sessionUuid;
+
+    public AllowConsoleAccessCommand() {
     }
 
-    public static final String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
+    public AllowConsoleAccessCommand(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
+
+    public String getSessionUuid() {
+        return sessionUuid;
+    }
+
+    public void setSessionUuid(String sessionUuid) {
+        this.sessionUuid = sessionUuid;
+    }
 }
