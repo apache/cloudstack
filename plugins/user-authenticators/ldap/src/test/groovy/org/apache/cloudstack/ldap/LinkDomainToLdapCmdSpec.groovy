@@ -128,7 +128,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getAdminId() == null
     }
 
-    def "test with valid params and with admin who doesnt exist in cloudstack"() {
+    def "test with valid params and with admin who doesn't exist in cloudstack"() {
         def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
@@ -163,7 +163,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getAdminId() == String.valueOf(accountId)
     }
 
-    def "test when admin doesnt exist in ldap"() {
+    def "test when admin doesn't exist in ldap"() {
         def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"

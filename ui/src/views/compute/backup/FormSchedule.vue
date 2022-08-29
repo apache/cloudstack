@@ -226,9 +226,6 @@ export default {
       }
     },
     handleChangeIntervalType (e) {
-      this.form.intervaltype = e.target.value
-      this.resetForm()
-
       switch (this.form.intervaltype) {
         case 'weekly':
           this.fetchDayOfWeek()

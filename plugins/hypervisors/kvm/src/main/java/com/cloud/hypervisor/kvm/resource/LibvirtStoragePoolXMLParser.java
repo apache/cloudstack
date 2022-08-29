@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.io.StringReader;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
@@ -38,7 +38,7 @@ public class LibvirtStoragePoolXMLParser {
     public LibvirtStoragePoolDef parseStoragePoolXML(String poolXML) {
         DocumentBuilder builder;
         try {
-            builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            builder = ParserUtils.getSaferDocumentBuilderFactory().newDocumentBuilder();
 
             InputSource is = new InputSource();
             is.setCharacterStream(new StringReader(poolXML));

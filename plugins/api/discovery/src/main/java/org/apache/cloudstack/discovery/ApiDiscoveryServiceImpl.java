@@ -27,7 +27,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.user.Account;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -35,17 +34,24 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.serializer.Param;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentLifecycleBase;
@@ -58,7 +64,13 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
     List<APIChecker> _apiAccessCheckers = null;
     List<PluggableService> _services = null;
-    private static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
+    protected static Map<String, ApiDiscoveryResponse> s_apiNameDiscoveryResponseMap = null;
+
+    @Inject
+    AccountService accountService;
+
+    @Inject
+    RoleService roleService;
 
     protected ApiDiscoveryServiceImpl() {
         super();
@@ -231,8 +243,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
     @Override
     public ListResponse<? extends BaseResponse> listApis(User user, String name) {
-        ListResponse<ApiDiscoveryResponse> response = new ListResponse<ApiDiscoveryResponse>();
-        List<ApiDiscoveryResponse> responseList = new ArrayList<ApiDiscoveryResponse>();
+        ListResponse<ApiDiscoveryResponse> response = new ListResponse<>();
+        List<ApiDiscoveryResponse> responseList = new ArrayList<>();
+        List<String> apisAllowed = new ArrayList<>(s_apiNameDiscoveryResponseMap.keySet());
 
         if (user == null)
             return null;
@@ -245,24 +258,35 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                 try {
                     apiChecker.checkAccess(user, name);
                 } catch (Exception ex) {
-                    s_logger.debug("API discovery access check failed for " + name + " with " + ex.getMessage());
+                    s_logger.error(String.format("API discovery access check failed for [%s] with error [%s].", name, ex.getMessage()), ex);
                     return null;
                 }
             }
             responseList.add(s_apiNameDiscoveryResponseMap.get(name));
 
         } else {
-            for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
-                boolean isAllowed = true;
+            Account account = accountService.getAccount(user.getAccountId());
+            if (account == null) {
+                throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
+            }
+
+            final Role role = roleService.findRole(account.getRoleId());
+            if (role == null || role.getId() < 1L) {
+                throw new PermissionDeniedException(String.format("The account [%s] has role null or unknown.",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            }
+
+            if (role.getRoleType() == RoleType.Admin && role.getId() == RoleType.Admin.getId()) {
+                s_logger.info(String.format("Account [%s] is Root Admin, all APIs are allowed.",
+                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(account, "accountName", "uuid")));
+            } else {
                 for (APIChecker apiChecker : _apiAccessCheckers) {
-                    try {
-                        apiChecker.checkAccess(user, apiName);
-                    } catch (Exception ex) {
-                        isAllowed = false;
-                    }
+                    apisAllowed = apiChecker.getApisAllowedToUser(role, user, apisAllowed);
                 }
-                if (isAllowed)
-                    responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
+            }
+
+            for (String apiName: apisAllowed) {
+                responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
             }
         }
         response.setResponses(responseList);

@@ -35,19 +35,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
-import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
-import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
-import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
-import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.utils.Pair;
-import com.cloud.utils.compression.CompressionUtil;
-import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,10 +47,20 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.traversal.DocumentTraversal;
 import org.w3c.dom.traversal.NodeFilter;
 import org.w3c.dom.traversal.NodeIterator;
+import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.deployasis.OVFConfigurationTO;
+import com.cloud.agent.api.to.deployasis.OVFEulaSectionTO;
+import com.cloud.agent.api.to.deployasis.OVFNetworkTO;
+import com.cloud.agent.api.to.deployasis.OVFPropertyTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareItemTO;
+import com.cloud.agent.api.to.deployasis.OVFVirtualHardwareSectionTO;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.utils.Pair;
+import com.cloud.utils.compression.CompressionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.xml.sax.SAXException;
 
 public class OVFHelper {
     private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
@@ -496,7 +497,7 @@ public class OVFHelper {
 
             final StringWriter writer = new StringWriter();
             final StreamResult result = new StreamResult(writer);
-            final TransformerFactory tf = TransformerFactory.newInstance();
+            final TransformerFactory tf = ParserUtils.getSaferTransformerFactory();
             final Transformer transformer = tf.newTransformer();
             final DOMSource domSource = new DOMSource(doc);
             transformer.transform(domSource, result);
@@ -521,7 +522,7 @@ public class OVFHelper {
     public List<OVFNetworkTO> getNetPrerequisitesFromDocument(Document doc) throws InternalErrorException {
         if (doc == null) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("no document to parse; returning no prerequiste networks");
+                s_logger.trace("no document to parse; returning no prerequisite networks");
             }
             return Collections.emptyList();
         }

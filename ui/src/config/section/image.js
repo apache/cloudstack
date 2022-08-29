@@ -323,7 +323,7 @@ export default {
       docHelp: 'plugins/cloudstack-kubernetes-service.html#kubernetes-supported-versions',
       permission: ['listKubernetesSupportedVersions'],
       columns: ['name', 'state', 'semanticversion', 'isostate', 'mincpunumber', 'minmemory', 'zonename'],
-      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state'],
+      details: ['name', 'semanticversion', 'supportsautoscaling', 'zoneid', 'zonename', 'isoid', 'isoname', 'isostate', 'mincpunumber', 'minmemory', 'supportsha', 'state', 'created'],
       actions: [
         {
           api: 'addKubernetesSupportedVersion',

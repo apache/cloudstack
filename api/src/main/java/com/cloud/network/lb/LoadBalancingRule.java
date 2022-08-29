@@ -482,4 +482,8 @@ public class LoadBalancingRule {
     public Scheme getScheme() {
         return lb.getScheme();
     }
+
+    public String getCidrList(){
+        return lb.getCidrList();
+    }
 }

@@ -95,11 +95,11 @@
             :placeholder="apiParams.networkdomain.description"
             autoFocus />
         </a-form-item>
-        <a-form-item name="maclearning" ref="maclearning" v-if="resource.redundantrouter">
+        <a-form-item name="updateinsequence" ref="updateinsequence" v-if="resource.redundantrouter">
           <template #label>
             <tooltip-label :title="$t('label.updateinsequence')" :tooltip="apiParams.updateinsequence.description"/>
           </template>
-          <a-switch v-model:checked="form.maclearning" />
+          <a-switch v-model:checked="form.updateinsequence" />
         </a-form-item>
         <a-form-item name="displaynetwork" ref="displaynetwork" v-if="isAdmin()">
           <template #label>

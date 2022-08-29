@@ -1536,6 +1536,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     /**
      * Revert snapshot for a volume
+     *
      * @param snapshotInfo           Information about volume snapshot
      * @param snapshotOnPrimaryStore Not used
      * @throws CloudRuntimeException

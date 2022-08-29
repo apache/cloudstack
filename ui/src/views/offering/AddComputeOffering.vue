@@ -885,9 +885,9 @@ export default {
     },
     handleGpuChange (val) {
       this.vGpuTypes = []
-      for (var i in this.gpuTypes) {
-        if (this.gpuTypes[i].value === val) {
-          this.vGpuTypes = this.gpuTypes[i].vgpu
+      for (var gpuType of this.gpuTypes) {
+        if (gpuType.value === val) {
+          this.vGpuTypes = gpuType.vgpu
           break
         }
       }
@@ -999,9 +999,7 @@ export default {
           params['serviceofferingdetails[1].key'] = 'pciDevice'
           params['serviceofferingdetails[1].value'] = values.pcidevice
         }
-        if ('vgputype' in values &&
-          this.vGpuTypes !== null && this.vGpuTypes !== undefined &&
-          values.vgputype > this.vGpuTypes.length) {
+        if ('vgputype' in values && this.arrayHasItems(this.vGpuTypes)) {
           params['serviceofferingdetails[2].key'] = 'vgpuType'
           params['serviceofferingdetails[2].value'] = this.vGpuTypes[values.vgputype]
         }

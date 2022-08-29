@@ -16,113 +16,119 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-import com.cloud.utils.component.PluggableService;
+
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
-import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.RoleVO;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
-import org.apache.cloudstack.api.response.ApiResponseResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ApiDiscoveryTest {
-    private static APIChecker s_apiChecker = mock(APIChecker.class);
-    private static PluggableService s_pluggableService = mock(PluggableService.class);
-    private static ApiDiscoveryServiceImpl s_discoveryService = new ApiDiscoveryServiceImpl();
+    @Mock
+    AccountService accountServiceMock;
 
-    private static Class<?> testCmdClass = ListApisCmd.class;
-    private static Class<?> listVMsCmdClass = ListVMsCmd.class;
-    private static User testUser;
-    private static String testApiName;
-    private static String listVmsCmdName;
-    private static String testApiDescription;
-    private static String testApiSince;
-    private static boolean testApiAsync;
+    @Mock
+    RoleService roleServiceMock;
 
-    @BeforeClass
-    public static void setUp() throws ConfigurationException {
+    @Mock
+    APIChecker apiCheckerMock;
 
-        listVmsCmdName = listVMsCmdClass.getAnnotation(APICommand.class).name();
+    @Mock
+    Map<String, ApiDiscoveryResponse> apiNameDiscoveryResponseMapMock;
 
-        testApiName = testCmdClass.getAnnotation(APICommand.class).name();
-        testApiDescription = testCmdClass.getAnnotation(APICommand.class).description();
-        testApiSince = testCmdClass.getAnnotation(APICommand.class).since();
-        testApiAsync = false;
-        testUser = new UserVO();
+    @Mock
+    List<APIChecker> apiAccessCheckersMock;
 
-        s_discoveryService._apiAccessCheckers = mock(List.class);
-        s_discoveryService._services = mock(List.class);
+    @Spy
+    @InjectMocks
+    ApiDiscoveryServiceImpl discoveryServiceSpy;
 
-        when(s_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
-        when(s_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
-        when(s_discoveryService._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(s_apiChecker).iterator());
-        when(s_discoveryService._services.iterator()).thenReturn(Arrays.asList(s_pluggableService).iterator());
+    @Before
+    public void setup() {
+        discoveryServiceSpy.s_apiNameDiscoveryResponseMap = apiNameDiscoveryResponseMapMock;
+        discoveryServiceSpy._apiAccessCheckers = apiAccessCheckersMock;
 
-        Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-        cmdClasses.add(ListApisCmd.class);
-        cmdClasses.add(ListVMsCmd.class);
-        s_discoveryService.start();
-        s_discoveryService.cacheResponseMap(cmdClasses);
+        Mockito.when(discoveryServiceSpy._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(apiCheckerMock).iterator());
+    }
+
+    private User getTestUser() {
+        return new UserVO(12L, "some user", "password", "firstName", "lastName",
+                "email@gmail.com", "GMT", "uuid", User.Source.UNKNOWN);
+    }
+
+    private Account getNormalAccount() {
+        return new AccountVO("some name", 1L, "network-domain", Account.Type.NORMAL, "some-uuid");
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    public void listApisTestThrowPermissionDeniedExceptionOnAccountNull() throws PermissionDeniedException {
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(null);
+        discoveryServiceSpy.listApis(getTestUser(), null);
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    public void listApisTestThrowPermissionDeniedExceptionOnRoleNull() throws PermissionDeniedException {
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(null);
+
+        discoveryServiceSpy.listApis(getTestUser(), null);
+    }
+
+    @Test (expected = PermissionDeniedException.class)
+    public void listApisTestThrowPermissionDeniedExceptionOnRoleUnknown() throws PermissionDeniedException {
+        RoleVO unknownRoleVO = new RoleVO(-1L,"name", RoleType.Unknown, "description");
+
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(unknownRoleVO);
+
+        discoveryServiceSpy.listApis(getTestUser(), null);
     }
 
     @Test
-    public void verifyListSingleApi() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, testApiName);
-        assertNotNull("Responses should not be null", responses);
-        if (responses != null) {
-            ApiDiscoveryResponse response = responses.getResponses().get(0);
-            assertTrue("No. of response items should be one", responses.getCount() == 1);
-            assertEquals("Error in api name", testApiName, response.getName());
-            assertEquals("Error in api description", testApiDescription, response.getDescription());
-            assertEquals("Error in api since", testApiSince, response.getSince());
-            assertEquals("Error in api isAsync", testApiAsync, response.getAsync());
-        }
+    public void listApisTestDoesNotGetApisAllowedToUserOnAdminRole() throws PermissionDeniedException {
+        AccountVO adminAccountVO = new AccountVO("some name", 1L, "network-domain", Account.Type.ADMIN, "some-uuid");
+        RoleVO adminRoleVO = new RoleVO(1L,"name", RoleType.Admin, "description");
+
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(adminAccountVO);
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(adminRoleVO);
+
+        discoveryServiceSpy.listApis(getTestUser(), null);
+
+        Mockito.verify(apiCheckerMock, Mockito.times(0)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
     }
 
     @Test
-    public void verifyListApis() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, null);
-        assertNotNull("Responses should not be null", responses);
-        if (responses != null) {
-            assertTrue("No. of response items > 2", responses.getCount().intValue() == 2);
-            for (ApiDiscoveryResponse response : responses.getResponses()) {
-                assertFalse("API name is empty", response.getName().isEmpty());
-                assertFalse("API description is empty", response.getDescription().isEmpty());
-            }
-        }
-    }
+    public void listApisTestGetsApisAllowedToUserOnUserRole() throws PermissionDeniedException {
+        RoleVO userRoleVO = new RoleVO(4L, "name", RoleType.User, "description");
 
-    @Test
-    public void verifyListVirtualMachinesTagsField() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, listVmsCmdName);
-        assertNotNull("Response should not be null", responses);
-        if (responses != null) {
-            assertEquals("No. of response items should be one", 1, (int) responses.getCount());
-            ApiDiscoveryResponse response = responses.getResponses().get(0);
-            List<ApiResponseResponse> tagsResponse = response.getApiResponse().stream().filter(resp -> StringUtils.equals(resp.getName(), "tags")).collect(Collectors.toList());
-            assertEquals("Tags field should be present in listVirtualMachines response fields", tagsResponse.size(), 1);
-        }
+        Mockito.when(accountServiceMock.getAccount(Mockito.anyLong())).thenReturn(getNormalAccount());
+        Mockito.when(roleServiceMock.findRole(Mockito.anyLong())).thenReturn(userRoleVO);
+
+        discoveryServiceSpy.listApis(getTestUser(), null);
+
+        Mockito.verify(apiCheckerMock, Mockito.times(1)).getApisAllowedToUser(any(Role.class), any(User.class), anyList());
     }
 }

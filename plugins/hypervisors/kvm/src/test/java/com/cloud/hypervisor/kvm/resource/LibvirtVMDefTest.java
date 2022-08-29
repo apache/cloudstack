@@ -56,7 +56,34 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     @Test
-    public void testInterfaceEtehrnet() {
+    public void testInterfaceTypeUserWithNetwork() {
+        LibvirtVMDef.InterfaceDef interfaceDef = new LibvirtVMDef.InterfaceDef();
+        interfaceDef.defUserNet(LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "00:11:22:aa:bb:dd", "192.168.100.0", 24);
+
+        String expected = "<interface type='user'>\n" +
+                "<mac address='00:11:22:aa:bb:dd'/>\n" +
+                "<model type='virtio'/>\n" +
+                "<ip family='ipv4' address='192.168.100.0' prefix='24'/>\n" +
+                "</interface>\n";
+
+        assertEquals(expected, interfaceDef.toString());
+    }
+
+    @Test
+    public void testInterfaceTypeUserWithoutNetwork() {
+        LibvirtVMDef.InterfaceDef interfaceDef = new LibvirtVMDef.InterfaceDef();
+        interfaceDef.defUserNet(LibvirtVMDef.InterfaceDef.NicModel.VIRTIO, "00:11:22:aa:bb:dd");
+
+        String expected = "<interface type='user'>\n" +
+                "<mac address='00:11:22:aa:bb:dd'/>\n" +
+                "<model type='virtio'/>\n" +
+                "</interface>\n";
+
+        assertEquals(expected, interfaceDef.toString());
+    }
+
+    @Test
+    public void testInterfaceEthernet() {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.NicModel.VIRTIO);
 

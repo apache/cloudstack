@@ -213,25 +213,25 @@ class OvmStoragePool(OvmObject):
     def prepareOCFS2Nodes(clusterName, nodeString):
         def configureEtcHosts(nodes):
             if not exists(ETC_HOSTS):
-                orignalConf = ""
+                originalConf = ""
             else:
                 fd = open(ETC_HOSTS, "r")
-                orignalConf = fd.read()
+                originalConf = fd.read()
                 fd.close()
 
             pattern = r"(.*%s.*)|(.*%s.*)"
             newlines = []
             for n in nodes:
                 p = pattern % (n["ip_address"], n["name"])
-                orignalConf = re.sub(p, "", orignalConf)
+                originalConf = re.sub(p, "", originalConf)
                 newlines.append("%s\t%s\n"%(n["ip_address"], n["name"]))
 
-            orignalConf = orignalConf + "".join(newlines)
+            originalConf = originalConf + "".join(newlines)
             # remove extra empty lines
-            orignalConf = re.sub(r"\n\s*\n*", "\n", orignalConf)
-            logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure /etc/hosts:%s\n"%orignalConf)
+            originalConf = re.sub(r"\n\s*\n*", "\n", originalConf)
+            logger.debug(OvmStoragePool.prepareOCFS2Nodes, "Configure /etc/hosts:%s\n"%originalConf)
             fd = open(ETC_HOSTS, "w")
-            fd.write(orignalConf)
+            fd.write(originalConf)
             fd.close()
 
         def configureHostName(nodes):

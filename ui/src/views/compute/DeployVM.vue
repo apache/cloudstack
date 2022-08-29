@@ -45,12 +45,11 @@
                                 <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
-                                      <img
+                                      <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :src="getImg(zoneItem.icon.base64image)"
-                                        style="marginTop: -30px; marginLeft: 60px"
-                                        width="36px"
-                                        height="36px" />
+                                        :image="zoneItem.icon.base64image"
+                                        size="36"
+                                        style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
                                   </a-radio>
@@ -1487,9 +1486,6 @@ export default {
         'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
         'minmemory' in serviceOffering.serviceofferingdetails
     },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
-    },
     updateOverrideRootDiskShowParam (val) {
       if (val) {
         this.showRootDiskSizeChanger = false
@@ -1750,6 +1746,9 @@ export default {
         }
         if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
+          if (values.rootdisksize && values.rootdisksize > 0) {
+            deployVmData.rootdisksize = values.rootdisksize
+          }
         }
         if (this.isCustomizedIOPS) {
           deployVmData['details[0].minIops'] = this.minIops
