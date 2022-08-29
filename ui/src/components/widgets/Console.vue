@@ -85,7 +85,7 @@ export default {
     consoleUrl (token) {
       const params = {}
       if (token) {
-        params.extra = token
+        params.token = token
       }
       params.virtualmachineid = this.resource.id
       api('createConsoleEndpoint', params).then(json => {
