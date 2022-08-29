@@ -32,6 +32,9 @@ public class ReservationVO implements ResourceReservation {
     @Column(name = "amount")
     long amount;
 
+    protected ReservationVO()
+    {}
+
     public ReservationVO(Long accountId, Long domainId, Resource.ResourceType type, Long delta) {
         if (delta == null || delta <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
