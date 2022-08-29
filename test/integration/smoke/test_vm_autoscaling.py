@@ -514,9 +514,9 @@ class TestVmAutoScaling(cloudstackTestCase):
 
         self.autoscaling_vmgroup.enable(self.regular_user_apiclient)
 
-        # VM count increases from MIN_MEMBER to MAX_MEMBER+1
-        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION) * (MAX_MEMBER + 1 - MIN_MEMBER)
-        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER + 1 - MIN_MEMBER)))
+        # VM count increases from MAX_MEMBER to MAX_MEMBER+1
+        sleeptime = int(int(self.check_interval)/1000 + (DEFAULT_INTERVAL + 1) + DEFAULT_DURATION)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, 1))
         time.sleep(sleeptime)
         self.verifyVmCountAndProfiles(MAX_MEMBER + 1)
 
