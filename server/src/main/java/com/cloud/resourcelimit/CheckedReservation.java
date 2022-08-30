@@ -20,7 +20,7 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
     @Inject
     ResourceLimitService resourceLimitService;
     private final Account account;
-    private final Resource.ResourceType type;
+    private final Resource.ResourceType resourceType;
     private final Long amount;
     private ResourceReservation reservation;
 
@@ -32,27 +32,27 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
      * @param amount positive number of the resource type to reserve
      * @throws ResourceAllocationException
      */
-    public CheckedReservation(Account account, Resource.ResourceType type, Long amount) throws ResourceAllocationException {
+    public CheckedReservation(Account account, Resource.ResourceType resourceType, Long amount) throws ResourceAllocationException {
         if (amount == null || amount <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
         this.account = account;
-        this.type = type;
+        this.resourceType = resourceType;
         this.amount = amount;
 
         // synchronised?:
-        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), type);
+        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType);
         GlobalLock quotaLimitLock = GlobalLock.getInternLock(lockName);
         if(quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
             try {
-                resourceLimitService.checkResourceLimit(account,type,amount);
-                ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), type, amount);
+                resourceLimitService.checkResourceLimit(account,resourceType,amount);
+                ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), resourceType, amount);
                 this.reservation = reservationDao.persist(reservationVO);
             } finally {
                 quotaLimitLock.unlock();
             }
         } else {
-            throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", lockName), type);
+            throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", lockName), resourceType);
         }
     }
 

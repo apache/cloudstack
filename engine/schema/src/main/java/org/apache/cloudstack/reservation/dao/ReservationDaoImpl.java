@@ -17,21 +17,21 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     public ReservationDaoImpl() {
         listAccountAndTypeSearch = createSearchBuilder();
         listAccountAndTypeSearch.and("accountId", listAccountAndTypeSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        listAccountAndTypeSearch.and("resource_type", listAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listAccountAndTypeSearch.and("resourceType", listAccountAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listAccountAndTypeSearch.done();
 
         listDomainAndTypeSearch = createSearchBuilder();
         listDomainAndTypeSearch.and("domainId", listDomainAndTypeSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        listDomainAndTypeSearch.and("resource_type", listDomainAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        listDomainAndTypeSearch.and("resourceType", listDomainAndTypeSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
         listDomainAndTypeSearch.done();
     }
 
     @Override
-    public long getAccountReservation(Long accountId, Resource.ResourceType type) {
+    public long getAccountReservation(Long accountId, Resource.ResourceType resourceType) {
         long total = 0;
         SearchCriteria<ReservationVO> sc = listAccountAndTypeSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("resource_type", type);
+        sc.setParameters("resourceType", resourceType);
         List<ReservationVO> reservations = listBy(sc);
         for (ReservationVO reservation : reservations) {
             total += reservation.getReservedAmount();
@@ -40,11 +40,11 @@ public class ReservationDaoImpl extends GenericDaoBase<ReservationVO, Long> impl
     }
 
     @Override
-    public long getDomainReservation(Long domainId, Resource.ResourceType type) {
+    public long getDomainReservation(Long domainId, Resource.ResourceType resourceType) {
         long total = 0;
         SearchCriteria<ReservationVO> sc = listAccountAndTypeSearch.create();
         sc.setParameters("domainId", domainId);
-        sc.setParameters("resource_type", type);
+        sc.setParameters("resourceType", resourceType);
         List<ReservationVO> reservations = listBy(sc);
         for (ReservationVO reservation : reservations) {
             total += reservation.getReservedAmount();

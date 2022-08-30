@@ -5,6 +5,6 @@ import org.apache.cloudstack.reservation.ReservationVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ReservationDao extends GenericDao<ReservationVO, Long> {
-    long getAccountReservation(Long account, Resource.ResourceType type);
-    long getDomainReservation(Long domain, Resource.ResourceType type);
+    long getAccountReservation(Long account, Resource.ResourceType resourceType);
+    long getDomainReservation(Long domain, Resource.ResourceType resourceType);
 }
