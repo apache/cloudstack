@@ -837,7 +837,8 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
-            ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
             _accountMgr.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
             searchFilter = new Filter(entityClass, "id", false, startIndex, pageSizeVal);
         }
