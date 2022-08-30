@@ -3864,7 +3864,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
             volumesSize += verifyAndGetDiskSize(diskOffering, diskSize);
         }
-        UserVm vm = getUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+        UserVm vm = getCheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
 
         _securityGroupMgr.addInstanceToGroups(vm.getId(), securityGroupIdList);
 
@@ -3875,15 +3875,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         CallContext.current().putContextParameter(VirtualMachine.class, vm.getUuid());
         return vm;
     }
-
-    private UserVm getUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
-        try (CheckedReservation reservation = new CheckedReservation(owner, ResourceType.user_vm, 1l, reservationDao, resourceLimitService)) {
-            if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-                resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+    private UserVm getCheckedUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
+        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+            try (CheckedReservation reservation = new CheckedReservation(owner, ResourceType.user_vm, 1l, reservationDao, resourceLimitService)) {
+                return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+            } catch (ResourceAllocationException | CloudRuntimeException  e) {
+                throw e;
+            } catch (Exception e) {
+                s_logger.error("error during resource reservation and allocation", e);
+                throw new CloudRuntimeException(e);
             }
 
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, volumesSize);
+        } else {
+            return getUncheckedUserVmResource(zone, hostName, displayName, owner, diskOfferingId, diskSize, networkList, securityGroupIdList, group, httpmethod, userData, sshKeyPairs, caller, requestedIps, defaultIps, isDisplayVm, keyboard, affinityGroupIdList, customParameters, customId, dhcpOptionMap, datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, template, hypervisorType, accountId, offering, isIso, rootDiskOfferingId, volumesSize);
+        }
+    }
+
+    private UserVm getUncheckedUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
+        try (CheckedReservation volumeReservation = new CheckedReservation(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1l : 2), reservationDao, resourceLimitService);
+             CheckedReservation primaryStorageReservation = new CheckedReservation(owner, ResourceType.primary_storage, volumesSize, reservationDao, resourceLimitService)) {
 
             // verify security group ids
             if (securityGroupIdList != null) {

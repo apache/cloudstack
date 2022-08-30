@@ -10,15 +10,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 
-import javax.inject.Inject;
-
 public class CheckedReservation  implements AutoCloseable, ResourceReservation {
 
     private static final int TRY_TO_GET_LOCK_TIME = 60;
-    @Inject
     ReservationDao reservationDao;
-    @Inject
-    ResourceLimitService resourceLimitService;
     private final Account account;
     private final Resource.ResourceType resourceType;
     private final Long amount;
@@ -36,7 +31,6 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         if (amount == null || amount <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
-        this.resourceLimitService = resourceLimitService;
         this.reservationDao = reservationDao;
         this.account = account;
         this.resourceType = resourceType;
