@@ -57,6 +57,9 @@ DEFAULT_DURATION = 120
 DEFAULT_INTERVAL = 30
 NAME_PREFIX = "AS-VmGroup-"
 
+CONFIG_NAME_DISK_CONTROLLER = "vmware.root.disk.controller"
+OS_DEFAULT = "osdefault"
+
 class TestVmAutoScaling(cloudstackTestCase):
     """
     Test VM autoscaling
@@ -68,6 +71,13 @@ class TestVmAutoScaling(cloudstackTestCase):
             cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
+
+        cls.initial_vmware_root_disk_controller = Configurations.list(
+            cls.apiclient,
+            name=CONFIG_NAME_DISK_CONTROLLER)[0].value
+        Configurations.update(cls.apiclient,
+                              CONFIG_NAME_DISK_CONTROLLER,
+                              OS_DEFAULT)
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
@@ -283,6 +293,9 @@ class TestVmAutoScaling(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        Configurations.update(cls.apiclient,
+                              CONFIG_NAME_DISK_CONTROLLER,
+                              cls.initial_vmware_root_disk_controller)
         super(TestVmAutoScaling, cls).tearDownClass()
 
     def setUp(self):
