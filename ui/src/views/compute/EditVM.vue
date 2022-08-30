@@ -286,7 +286,7 @@ export default {
     },
     fetchUserData () {
       const params = {
-        id: this.resource.virtualmachineid,
+        id: this.resource.id,
         userdata: true
       }
 
