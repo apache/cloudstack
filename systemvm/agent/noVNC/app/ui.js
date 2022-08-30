@@ -157,7 +157,6 @@ const UI = {
             }
         }
 
-        console.log(window.location)
         UI.initSetting('extra', window.location.extra)
         /* Populate the controls if defaults are provided in the URL */
         UI.initSetting('host', window.location.hostname);
@@ -1123,14 +1122,13 @@ const UI = {
         UI.connected = false;
 
         UI.rfb = undefined;
-
         if (!e.detail.clean) {
             UI.updateVisualState('disconnected');
             if (wasConnected) {
                 UI.showStatus(_("Something went wrong, connection is closed"),
                               'error');
             } else {
-                UI.showStatus(_("Failed to connect to server"), 'error');
+                UI.showStatus(_("Failed to connect to server / access token has expired"), 'error');
             }
         } else if (UI.getSetting('reconnect', false) === true && !UI.inhibitReconnect) {
             UI.updateVisualState('reconnecting');
