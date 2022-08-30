@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
@@ -133,9 +134,21 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         return true;
     }
 
+    public boolean isQuotaEnabledForAccountDomain(final AccountVO account) {
+        boolean isQuotaAccountEnabled = QuotaConfig.QuotaAccountEnabled.valueIn(account.getAccountId());
+        if (!isQuotaAccountEnabled) {
+            s_logger.debug(String.format("Considering usage records as calculated and skipping it because the account [%s] has the quota plugin disabled.", account));
+        }
+        return isQuotaAccountEnabled;
+    }
+
+    public boolean isUsageRecordsEmpty(final Pair<List<? extends UsageVO>, Integer> usageRecords) {
+        return usageRecords == null || usageRecords.first() == null || usageRecords.first().isEmpty();
+    }
+
     public List<QuotaUsageVO> aggregatePendingQuotaRecordsForAccount(final AccountVO account, final Pair<List<? extends UsageVO>, Integer> usageRecords) {
         List<QuotaUsageVO> quotaListForAccount = new ArrayList<>();
-        if (usageRecords == null || usageRecords.first() == null || usageRecords.first().isEmpty()) {
+        if (isUsageRecordsEmpty(usageRecords) || isQuotaEnabledForAccountDomain(account)) {
             return quotaListForAccount;
         }
         s_logger.info("Getting pending quota records for account=" + account.getAccountName());
