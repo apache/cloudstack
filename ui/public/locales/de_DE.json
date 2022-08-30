@@ -2175,7 +2175,7 @@
 "message.zone.creation.complete": "Zonenerstellung abgeschlossen",
 "message.zone.detail.description": "Geben Sie weitere Details zur Zone an",
 "message.zone.detail.hint": "Eine Zone ist die größte Organisationseinheit in CloudStack und wird normalerweise verbunden mit einem einzelnen Datenzentrum. Zonen bieten physische Isolation und Redundanz. Eine Zone besteht aus einem oder mehreren Pods (jeder Pod beinhaltet Hosts und primäre Speichersysteme) und ein sekundäres Speichersystem, das auf alle Pods der Zone aufgeteilt ist.",
-"messgae.validate.min": "Bitte geben sie einen Wert größer oder gleich {0} ein.",
+"message.validate.min": "Bitte geben sie einen Wert größer oder gleich {0} ein.",
 "router.health.checks": "Gesundheitsüberprüfung",
 "side.by.side": "Nebeneinander",
 "state.completed": "Fertiggestellt",

@@ -1814,7 +1814,7 @@ export default {
       return Promise.resolve()
     },
     isNumber (value) {
-      if (value && (isNaN(value) || value <= 0)) {
+      if (value && (isNaN(value) || value < 0)) {
         return false
       }
       return true

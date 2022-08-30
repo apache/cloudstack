@@ -206,7 +206,7 @@
         </div>
         <div class="update-condition__item">
           <p class="update-condition__label"><span class="form__required">*</span>{{ $t('label.threshold') }}</p>
-          <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" />
+          <a-input v-focus="true" v-model:value="updateConditionDetails.threshold" type="number" />
         </div>
         <div :span="24" class="action-button">
           <a-button @click="() => updateConditionModalVisible = false">{{ $t('label.cancel') }}</a-button>
@@ -420,6 +420,18 @@ export default {
     handleCancel () {
       this.parentFetchData()
     },
+    isNumber (value) {
+      if (value && (isNaN(value) || value < 0)) {
+        return false
+      }
+      return true
+    },
+    isPositiveNumber (value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return false
+      }
+      return true
+    },
     getOperator (val) {
       if (val === 'GT' || val === 'gt') return this.$t('label.operator.greater')
       if (val === 'GE' || val === 'ge') return this.$t('label.operator.greater.or.equal')
@@ -501,6 +513,15 @@ export default {
     },
     handleSubmitUpdateConditionForm () {
       if (this.updateConditionModalLoading) return
+
+      if (!this.isNumber(this.updateConditionDetails.threshold)) {
+        this.$notification.error({
+          message: this.$t('label.threshold'),
+          description: this.$t('message.validate.number')
+        })
+        return
+      }
+
       this.updateConditionModalLoading = true
       api('updateCondition', {
         id: this.selectedCondition.id,
@@ -554,12 +575,45 @@ export default {
         return
       }
 
+      if (!this.isNumber(this.newCondition.threshold)) {
+        this.$notification.error({
+          message: this.$t('label.threshold'),
+          description: this.$t('message.validate.number')
+        })
+        return
+      }
+
       const newCondition = await this.addCondition({ ...this.newCondition })
 
       await this.updateAutoScalePolicy(newCondition.id, null)
     },
     async addNewScalePolicyToGroup () {
       if (this.loading) return
+
+      if (!this.newPolicy.duration || !this.newPolicy.counterid || !this.newPolicy.relationaloperator || !this.newPolicy.threshold) {
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: this.$t('message.please.enter.valid.value')
+        })
+        return
+      }
+
+      if (!this.isPositiveNumber(this.newPolicy.duration)) {
+        this.$notification.error({
+          message: this.$t('label.duration'),
+          description: this.$t('message.validate.positive.number')
+        })
+        return
+      }
+
+      if (!this.isNumber(this.newPolicy.threshold)) {
+        this.$notification.error({
+          message: this.$t('label.threshold'),
+          description: this.$t('message.validate.number')
+        })
+        return
+      }
+
       this.loading = true
 
       const newCondition = await this.addCondition({

@@ -1461,7 +1461,7 @@
 "message.validate.range.length": "Please enter a value between {0} and {1} characters long.",
 "message.vm.review.launch": "\u064a\u0631\u062c\u0649 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u062a\u0627\u0644\u064a\u0629 \u0648\u062a\u0623\u0643\u062f \u0623\u0646 \u0645\u062b\u0627\u0644\u0643 \u0627\u0644\u0625\u0641\u062a\u0631\u0627\u0636\u064a \u0635\u062d\u064a\u062d \u0642\u0628\u0644 \u0627\u0644\u0625\u0646\u0637\u0644\u0627\u0642",
 "message.zone.creation.complete": "Zone creation complete",
-"messgae.validate.min": "Please enter a value greater than or equal to {0}.",
+"message.validate.min": "Please enter a value greater than or equal to {0}.",
 "side.by.side": "Side by Side",
 "state.completed": "\u062a\u0645 \u0627\u0644\u0627\u0643\u0645\u0627\u0644",
 "state.declined": "\u062a\u0645 \u0627\u0644\u0631\u0641\u0636",

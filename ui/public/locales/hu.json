@@ -1461,7 +1461,7 @@
 "message.validate.range.length": "Adj meg egy {0} \u00e9s {1} k\u00f6z\u00f6tti hossz\u00fas\u00e1g\u00fa \u00e9rt\u00e9ket!",
 "message.vm.review.launch": "Please review the following information and confirm that your virtual instance is correct before launch.",
 "message.zone.creation.complete": "A z\u00f3na l\u00e9trehoz\u00e1sa befejez\u0151d\u00f6tt",
-"messgae.validate.min": "Adj meg egy \u00e9rt\u00e9ket, ami legal\u00e1bb {0}!",
+"message.validate.min": "Adj meg egy \u00e9rt\u00e9ket, ami legal\u00e1bb {0}!",
 "side.by.side": "Egym\u00e1s mellett",
 "state.completed": "K\u00e9sz",
 "state.declined": "Elromlott",
