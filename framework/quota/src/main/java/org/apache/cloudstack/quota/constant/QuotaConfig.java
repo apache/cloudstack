@@ -57,7 +57,7 @@ public interface QuotaConfig {
     public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
             "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the conection.", true);
 
-    ConfigKey<Boolean> QuotaAccountEnabled = new ConfigKey<>("Advanced", Boolean.class, "quota.account.enabled", "false", "Indicates whether Quota plugin is enabled or not for " +
+    ConfigKey<Boolean> QuotaAccountEnabled = new ConfigKey<>("Advanced", Boolean.class, "quota.account.enabled", "true", "Indicates whether Quota plugin is enabled or not for " +
             "the account.", true, ConfigKey.Scope.Account);
 
     enum QuotaEmailTemplateTypes {
