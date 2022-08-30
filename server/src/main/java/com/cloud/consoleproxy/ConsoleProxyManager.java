@@ -42,9 +42,6 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     ConfigKey<Boolean> NoVncConsoleSourceIpCheckEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "novnc.console.sourceip.check.enabled", "false",
         "If true, The source IP to access novnc console must be same as the IP in request to management server for console URL. Needs to reconnect CPVM to management server when this changes (via restart CPVM, or management server, or cloud service in CPVM)", false);
 
-    ConfigKey<Integer> NoVncConsolePort = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class, "novnc.console.port",
-            "8080", "The listen port for noVNC console", true);
-
     void setManagementState(ConsoleProxyManagementState state);
 
     ConsoleProxyManagementState getManagementState();
@@ -58,5 +55,7 @@ public interface ConsoleProxyManager extends Manager, ConsoleProxyService {
     boolean rebootProxy(long proxyVmId);
 
     boolean destroyProxy(long proxyVmId);
+
+    int getVncPort();
 
 }

@@ -2861,7 +2861,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         AllowConsoleAccessCommand cmd = new AllowConsoleAccessCommand(sessionUuid);
         HostVO hostVO = _hostDao.findByTypeNameAndZoneId(vm.getDataCenterId(), proxy.getProxyName(), Type.ConsoleProxy);
-        Answer answer = null;
+        if (hostVO == null) {
+            return new Pair<>(false, "Cannot find a console proxy agent for CPVM with name " + proxy.getProxyName());
+        }
+        Answer answer;
         try {
             answer = _agentMgr.send(hostVO.getId(), cmd);
         } catch (AgentUnavailableException | OperationTimedoutException e) {

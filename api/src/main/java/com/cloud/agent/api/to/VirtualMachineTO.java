@@ -59,7 +59,6 @@ public class VirtualMachineTO {
     boolean enableDynamicallyScaleVm;
     String vncPassword;
     String vncAddr;
-    String vncPort;
     Map<String, String> params;
     String uuid;
     String bootType;
@@ -282,14 +281,6 @@ public class VirtualMachineTO {
 
     public void setVncAddr(String vncAddr) {
         this.vncAddr = vncAddr;
-    }
-
-    public String getVncPort() {
-        return vncPort;
-    }
-
-    public void setVncPort(String vncPort) {
-        this.vncPort = vncPort;
     }
 
     public Map<String, String> getDetails() {

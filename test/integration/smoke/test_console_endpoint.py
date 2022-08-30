@@ -16,15 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from marvin.codes import FAILED
 from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import (createConsoleEndpoint, updateConfiguration, listConfigurations, destroySystemVm)
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
-                               list_ssvms)
+                               get_template)
 from nose.plugins.attrib import attr
 
 class TestConsoleEndpoint(cloudstackTestCase):
@@ -124,80 +121,3 @@ class TestConsoleEndpoint(cloudstackTestCase):
         self.assertFalse(endpoint.success)
         self.assertTrue(endpoint.url is None)
         return
-
-    def checkForRunningSystemVM(self, ssvm, ssvm_type=None):
-        if not ssvm:
-            return None
-
-        def checkRunningState():
-            if not ssvm_type:
-                response = list_ssvms(
-                    self.apiclient,
-                    id=ssvm.id
-                )
-            else:
-                response = list_ssvms(
-                    self.apiclient,
-                    zoneid=self.zone.id,
-                    systemvmtype=ssvm_type
-                )
-
-            if isinstance(response, list):
-                ssvm_response = response[0]
-                return ssvm_response.state == 'Running', ssvm_response
-            return False, None
-
-        res, ssvm_response = wait_until(3, 300, checkRunningState)
-        if not res:
-            self.fail("Failed to reach systemvm state to Running")
-        return ssvm_response
-
-    def destroy_cpvm(self):
-        list_cpvm_response = list_ssvms(
-            self.apiclient,
-            systemvmtype='consoleproxy',
-            zoneid=self.zone.id
-        )
-        self.assertEqual(isinstance(list_cpvm_response, list), True, "Check list response returns a valid list")
-        cpvm_response = list_cpvm_response[0]
-        self.debug("Destroying CPVM: %s" % cpvm_response.id)
-        cmd = destroySystemVm.destroySystemVmCmd()
-        cmd.id = cpvm_response.id
-        self.apiclient.destroySystemVm(cmd)
-        self.checkForRunningSystemVM(cpvm_response, 'consoleproxy')
-
-    @attr(tags=["basic", "advanced"], required_hardware="false")
-    def test_console_endpoint_change_websocket_traffic(self):
-        cmd = listConfigurations.listConfigurationsCmd()
-        cmd.name = "novnc.console.port"
-        vncport = self.apiclient.listConfigurations(cmd)[0].value
-
-        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "novnc.console.port"
-        updateConfigurationCmd.value = "8099"
-        self.apiclient.updateConfiguration(updateConfigurationCmd)
-
-        self.destroy_cpvm()
-
-        cmd = createConsoleEndpoint.createConsoleEndpointCmd()
-        cmd.virtualmachineid=self.vm1.id
-        endpoint = self.apiclient.createConsoleEndpoint(cmd)
-
-        if not endpoint:
-            self.fail("Failed to get generate VM console endpoint")
-
-        self.assertTrue(endpoint.success)
-        self.assertEqual(endpoint.websocket.port, "8099")
-
-        updateConfigurationCmd.value = vncport
-        self.apiclient.updateConfiguration(updateConfigurationCmd)
-
-        self.destroy_cpvm()
-
-        endpoint = self.apiclient.createConsoleEndpoint(cmd)
-
-        if not endpoint:
-            self.fail("Failed to get generate VM console endpoint")
-
-        self.assertTrue(endpoint.success)
-        self.assertEqual(endpoint.websocket.port, vncport)

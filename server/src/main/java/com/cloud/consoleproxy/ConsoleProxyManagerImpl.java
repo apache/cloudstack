@@ -1103,6 +1103,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
     }
 
+    @Override
+    public int getVncPort() {
+        return sslEnabled && _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME) != null ? 8443 : 8080;
+    }
+
     private String getAllocProxyLockName() {
         return "consoleproxy.alloc";
     }
@@ -1297,7 +1302,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             buf.append(" dns2=").append(dc.getDns2());
         }
         if (VirtualMachine.Type.ConsoleProxy == profile.getVirtualMachine().getType()) {
-            buf.append(" vncport=").append(ConsoleProxyManager.NoVncConsolePort.value());
+            buf.append(" vncport=").append(getVncPort());
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
@@ -1608,7 +1613,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled, NoVncConsolePort };
+        return new ConfigKey<?>[] { NoVncConsoleDefault, NoVncConsoleSourceIpCheckEnabled };
     }
 
     protected ConsoleProxyStatus parseJsonToConsoleProxyStatus(String json) throws JsonParseException {

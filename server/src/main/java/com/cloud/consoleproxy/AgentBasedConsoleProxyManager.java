@@ -188,6 +188,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
+    public int getVncPort() {
+        return _consoleProxyPort;
+    }
+
+    @Override
     public boolean rebootProxy(long proxyVmId) {
         return false;
     }

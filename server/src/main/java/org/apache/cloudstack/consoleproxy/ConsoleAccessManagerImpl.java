@@ -81,6 +81,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     private KeysManager keysManager;
     @Inject
     private AgentManager agentManager;
+    @Inject
+    private ConsoleProxyManager consoleProxyManager;
 
     private static KeysManager secretKeysManager;
     private final Gson gson = new GsonBuilder().create();
@@ -304,12 +306,13 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         }
 
         String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
+        int vncPort = consoleProxyManager.getVncPort();
         if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
             sb.append("/ajax?token=" + token);
         } else {
             sb.append("/resource/noVNC/vnc.html")
                     .append("?autoconnect=true")
-                    .append("&port=" + ConsoleProxyManager.NoVncConsolePort.value())
+                    .append("&port=" + vncPort)
                     .append("&token=" + token);
         }
 
@@ -333,7 +336,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
         consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
-        consoleEndpoint.setWebsocketPort(String.valueOf(ConsoleProxyManager.NoVncConsolePort.value()));
+        consoleEndpoint.setWebsocketPort(String.valueOf(vncPort));
         consoleEndpoint.setWebsocketPath("websockify");
         consoleEndpoint.setWebsocketToken(token);
         if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {

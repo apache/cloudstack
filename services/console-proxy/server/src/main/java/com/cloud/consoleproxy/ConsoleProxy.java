@@ -404,9 +404,10 @@ public class ConsoleProxy {
     }
 
     private static ConsoleProxyNoVNCServer getNoVNCServer() {
-        if (httpListenPort == 443)
-            return new ConsoleProxyNoVNCServer(ksBits, ksPassword);
-        return new ConsoleProxyNoVNCServer();
+        int vncPort = ConsoleProxyNoVNCServer.getVNCPort();
+        return vncPort == ConsoleProxyNoVNCServer.WSS_PORT ?
+                new ConsoleProxyNoVNCServer(ksBits, ksPassword) :
+                new ConsoleProxyNoVNCServer();
     }
 
     private static void startupHttpCmdPort() {
