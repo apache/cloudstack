@@ -1081,6 +1081,7 @@ public class ConfigurationManagerTest {
 
         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
         Mockito.verify(diskOfferingVOMock, Mockito.times(1)).setTags(tags);
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidCreateDataCenterGuestIpv6Prefix() {
