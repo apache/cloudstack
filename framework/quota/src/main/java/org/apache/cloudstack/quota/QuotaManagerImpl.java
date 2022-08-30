@@ -148,7 +148,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     public List<QuotaUsageVO> aggregatePendingQuotaRecordsForAccount(final AccountVO account, final Pair<List<? extends UsageVO>, Integer> usageRecords) {
         List<QuotaUsageVO> quotaListForAccount = new ArrayList<>();
-        if (isUsageRecordsEmpty(usageRecords) || isQuotaEnabledForAccountDomain(account)) {
+        if (isUsageRecordsEmpty(usageRecords) || !isQuotaEnabledForAccountDomain(account)) {
             return quotaListForAccount;
         }
         s_logger.info("Getting pending quota records for account=" + account.getAccountName());
