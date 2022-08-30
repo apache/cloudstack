@@ -139,6 +139,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     private ResourceLimitDao _resourceLimitDao;
     @Inject
+    private ResourceLimitService resourceLimitService;
+    @Inject
     private ReservationDao reservationDao;
     @Inject
     protected SnapshotDao _snapshotDao;
@@ -1109,7 +1111,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public ResourceReservation getReservation(final Account account, final Boolean displayResource, final Resource.ResourceType type, final Long delta) throws ResourceAllocationException {
         if (! Boolean.FALSE.equals(displayResource)) {
-            return new CheckedReservation(account, type, delta);
+            return new CheckedReservation(account, type, delta, reservationDao, resourceLimitService);
         }
         throw new CloudRuntimeException("no reservation needed for resources that display as false");
     }

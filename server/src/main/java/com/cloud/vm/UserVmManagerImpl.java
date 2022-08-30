@@ -113,6 +113,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -561,6 +562,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Autowired
     @Qualifier("networkHelper")
     protected NetworkHelper nwHelper;
+    @Inject
+    ReservationDao reservationDao;
+    @Inject
+    ResourceLimitService resourceLimitService;
+
     @Inject
     private StatsCollector statsCollector;
 
@@ -3871,7 +3877,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private UserVm getUserVmResource(DataCenter zone, String hostName, String displayName, Account owner, Long diskOfferingId, Long diskSize, List<NetworkVO> networkList, List<Long> securityGroupIdList, String group, HTTPMethod httpmethod, String userData, List<String> sshKeyPairs, Account caller, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean isDisplayVm, String keyboard, List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> datadiskTemplateToDiskOfferringMap, Map<String, String> userVmOVFPropertiesMap, boolean dynamicScalingEnabled, String vmType, VMTemplateVO template, HypervisorType hypervisorType, long accountId, ServiceOfferingVO offering, boolean isIso, Long rootDiskOfferingId, long volumesSize) throws ResourceAllocationException, StorageUnavailableException, InsufficientCapacityException {
-        try (CheckedReservation reservation = new CheckedReservation(owner, ResourceType.user_vm, 1l)) {
+        try (CheckedReservation reservation = new CheckedReservation(owner, ResourceType.user_vm, 1l, reservationDao, resourceLimitService)) {
             if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
                 resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
             }

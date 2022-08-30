@@ -32,22 +32,26 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
      * @param amount positive number of the resource type to reserve
      * @throws ResourceAllocationException
      */
-    public CheckedReservation(Account account, Resource.ResourceType resourceType, Long amount) throws ResourceAllocationException {
+    public CheckedReservation(Account account, Resource.ResourceType resourceType, Long amount, ReservationDao reservationDao, ResourceLimitService resourceLimitService) throws ResourceAllocationException {
         if (amount == null || amount <= 0) {
             throw new CloudRuntimeException("resource reservations can not be made for no resources");
         }
+        this.resourceLimitService = resourceLimitService;
+        this.reservationDao = reservationDao;
         this.account = account;
         this.resourceType = resourceType;
         this.amount = amount;
 
         // synchronised?:
-        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType);
+        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType.getOrdinal());
         GlobalLock quotaLimitLock = GlobalLock.getInternLock(lockName);
         if(quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
             try {
                 resourceLimitService.checkResourceLimit(account,resourceType,amount);
                 ReservationVO reservationVO = new ReservationVO(account.getAccountId(), account.getDomainId(), resourceType, amount);
                 this.reservation = reservationDao.persist(reservationVO);
+            } catch (NullPointerException npe) {
+                throw new CloudRuntimeException("not enough means to check limits", npe);
             } finally {
                 quotaLimitLock.unlock();
             }

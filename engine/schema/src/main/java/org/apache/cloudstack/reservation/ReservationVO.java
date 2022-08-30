@@ -67,6 +67,6 @@ public class ReservationVO implements ResourceReservation {
 
     @Override
     public Long getReservedAmount() {
-        return null;
+        return amount;
     }
 }
