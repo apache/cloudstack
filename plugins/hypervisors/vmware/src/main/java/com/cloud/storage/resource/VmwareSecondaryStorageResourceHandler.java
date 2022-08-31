@@ -18,14 +18,10 @@ package com.cloud.storage.resource;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
-
-import com.google.gson.Gson;
-import com.vmware.vim25.ManagedObjectReference;
-
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -52,6 +48,8 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
@@ -325,5 +323,10 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         s_logger.error(message, e);
 
         return message;
+    }
+
+    @Override
+    public VmwareStorageProcessor getStorageProcessor() {
+        return null;
     }
 }
