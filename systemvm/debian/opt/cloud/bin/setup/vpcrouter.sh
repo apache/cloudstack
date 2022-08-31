@@ -88,6 +88,8 @@ EOF
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
+  cp /etc/gro-off.rules /etc/udev/rules.d/gro-off.rules
+  udevadm control --reload-rules && udevadm trigger
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt
   echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf

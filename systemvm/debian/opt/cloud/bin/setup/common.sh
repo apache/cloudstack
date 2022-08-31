@@ -264,6 +264,9 @@ enable_rpsrfs() {
 }
 
 setup_common() {
+  cp /etc/gro-off.rules /etc/udev/rules.d/gro-off.rules
+  udevadm control --reload-rules && udevadm trigger
+
   init_interfaces $1 $2 $3
   if [ -n "$ETH0_IP" ]
   then

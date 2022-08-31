@@ -1,0 +1,1 @@
+SUBSYSTEM=="net" KERNEL=="eth*" DRIVERS=="virtio_net" RUN+="/opt/cloud/bin/gro-off.sh %k"
