@@ -19,11 +19,14 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetricsValue;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@LogLevel(Log4jLevel.Debug)
 public class GetAutoScaleMetricsAnswer extends Answer {
     private List<AutoScaleMetricsValue> values;
 
