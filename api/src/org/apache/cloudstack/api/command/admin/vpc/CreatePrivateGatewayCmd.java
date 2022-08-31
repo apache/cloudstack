@@ -72,6 +72,9 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, required = true, description = "the network implementation uri for the private gateway")
     private String broadcastUri;
 
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during network creation for shared and L2 networks")
+    private Boolean bypassVlanOverlapCheck;
+
     @Parameter(name = ApiConstants.NETWORK_OFFERING_ID,
                type = CommandType.UUID,
                required = false,
@@ -102,6 +105,13 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
 
     public String getBroadcastUri() {
         return broadcastUri;
+    }
+
+    public Boolean getBypassVlanOverlapCheck() {
+        if (bypassVlanOverlapCheck == null) {
+            return false;
+        }
+        return bypassVlanOverlapCheck;
     }
 
     public String getNetmask() {
@@ -148,7 +158,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
         PrivateGateway result = null;
         try {
             result =
-                _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
+                _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getBypassVlanOverlapCheck(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
                     getNetworkOfferingId(), getIsSourceNat(), getAclId());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);

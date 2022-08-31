@@ -172,7 +172,8 @@ public interface NetworkService {
      * @param networkName
      * @param displayText
      * @param physicalNetworkId
-     * @param broadcastUri TODO set the guru name based on the broadcastUri?
+     * @param broadcastUri           TODO set the guru name based on the broadcastUri?
+     * @param bypassVlanOverlapCheck
      * @param startIp
      * @param endIP TODO
      * @param gateway
@@ -185,8 +186,8 @@ public interface NetworkService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway,
-        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, Boolean bypassVlanOverlapCheck, String startIp, String endIP, String gateway,
+                                 String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
         InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */

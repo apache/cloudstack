@@ -2095,6 +2095,10 @@
                                             },
                                             docID: 'helpVPCGatewayVLAN'
                                         },
+                                        bypassVlanOverlapCheck: {
+                                            label: 'label.bypass.vlan.overlap.check',
+                                            isBoolean: true
+                                        },
                                         ipaddress: {
                                             label: 'label.ip.address',
                                             validation: {
@@ -2168,6 +2172,11 @@
                                         array1.push("&sourcenatsupported=true");
                                     } else
                                         array1.push("&sourcenatsupported=false");
+
+                                    if (args.$form.find('.form-item[rel=bypassVlanOverlapCheck]').find('input[type=checkbox]').is(':Checked') == true) {
+                                        array1.push("&bypassvlanoverlapcheck=true");
+                                    } else
+                                        array1.push("&bypassvlanoverlapcheck=false");
 
 
                                     $.ajax({

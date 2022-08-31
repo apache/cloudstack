@@ -4300,8 +4300,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Override
     @DB
-    public Network createPrivateNetwork(final String networkName, final String displayText, long physicalNetworkId, String broadcastUriString, final String startIp, String endIp,
-            final String gateway, String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId)
+    public Network createPrivateNetwork(final String networkName, final String displayText, long physicalNetworkId, String broadcastUriString, Boolean bypassVlanOverlapCheck, final String startIp, String endIp,
+                                        final String gateway, String netmask, final long networkOwnerId, final Long vpcId, final Boolean sourceNat, final Long networkOfferingId)
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
         final Account owner = _accountMgr.getAccount(networkOwnerId);
@@ -4362,7 +4362,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     Network privateNetwork = _networksDao.getPrivateNetwork(uriString, cidr, networkOwnerId, pNtwk.getDataCenterId(), networkOfferingId);
                     if (privateNetwork == null) {
                         //create Guest network
-                        privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, false, null, owner, null, pNtwk,
+                        privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, bypassVlanOverlapCheck, null, owner, null, pNtwk,
                                                                         pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null, null);
                         if (privateNetwork != null) {
                             s_logger.debug("Successfully created guest network " + privateNetwork);

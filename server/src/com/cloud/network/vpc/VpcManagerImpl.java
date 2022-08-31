@@ -1584,8 +1584,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating VPC private gateway", create = true)
-    public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, final String ipAddress, final String gateway,
-            final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
+    public PrivateGateway createVpcPrivateGateway(final long vpcId, Long physicalNetworkId, final String broadcastUri, Boolean bypassVlanOverlapCheck, final String ipAddress, final String gateway,
+                                                  final String netmask, final long gatewayOwnerId, final Long networkOfferingId, final Boolean isSourceNat, final Long aclId) throws ResourceAllocationException,
             ConcurrentOperationException, InsufficientCapacityException {
 
         // Validate parameters
@@ -1633,7 +1633,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     if (privateNtwk == null) {
                         s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
                         final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-                        privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
+                        privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, bypassVlanOverlapCheck, ipAddress, null, gateway, netmask,
                                 gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
                     } else { // create the nic/ip as createPrivateNetwork
                         // doesn''t do that work for us now

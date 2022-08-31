@@ -2202,14 +2202,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         if (vlanSpecified) {
             URI uri = BroadcastDomainType.fromString(vlanId);
-            //don't allow to specify vlan tag used by physical network for dynamic vlan allocation
-            if (!hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff) && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
+            // Allow bypass of VLAN ID check for dynamic VLAN allocation ranges
+            if (!bypassVlanOverlapCheck && _dcDao.findVnet(zoneId, pNtwk.getId(), BroadcastDomainType.getValue(uri)).size() > 0) {
                 throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for dynamic vlan allocation for the guest network in zone "
                         + zone.getName());
             }
             if (! UuidUtils.validateUUID(vlanId)){
-                // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
+                // Allow bypass of VLAN ID check for Isolated and L2 networks
+                if (!bypassVlanOverlapCheck) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
@@ -2397,16 +2397,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return network;
     }
 
-  /**
-   * Checks bypass VLAN id/range overlap check during network creation for guest networks
-   * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
-   * @param ntwkOff network offering
-   */
-  private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
-    return bypassVlanOverlapCheck && ntwkOff.getGuestType() != GuestType.Isolated;
-  }
-
-  /**
+    /**
      * Checks for L2 network offering services. Only 2 cases allowed:
      * - No services
      * - User Data service only, provided by ConfigDrive

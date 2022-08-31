@@ -137,21 +137,21 @@ public class CreatePrivateNetworkTest {
         /* Network nw; */
         try {
             /* nw = */
-            networkService.createPrivateNetwork("bla", "fake", 1L, "vlan:1", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, true, 1L);
+            networkService.createPrivateNetwork("bla", "fake", 1L, "vlan:1", false, "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, true, 1L);
             /* nw = */
-            networkService.createPrivateNetwork("bla", "fake", 1L, "lswitch:3", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, false, 1L);
+            networkService.createPrivateNetwork("bla", "fake", 1L, "lswitch:3", false, "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1L, 1L, false, 1L);
             boolean invalid = false;
             boolean unsupported = false;
             try {
                 /* nw = */
-                networkService.createPrivateNetwork("bla", "fake", 1, "bla:2", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, true, 1L);
+                networkService.createPrivateNetwork("bla", "fake", 1, "bla:2", false, "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, true, 1L);
             } catch (CloudRuntimeException e) {
                 Assert.assertEquals("unexpected parameter exception", "string 'bla:2' has an unknown BroadcastDomainType.", e.getMessage());
                 invalid = true;
             }
             try {
                 /* nw = */
-                networkService.createPrivateNetwork("bla", "fake", 1, "mido://4", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, false, 1L);
+                networkService.createPrivateNetwork("bla", "fake", 1, "mido://4", false, "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, false, 1L);
             } catch (InvalidParameterValueException e) {
                 Assert.assertEquals("unexpected parameter exception", "unsupported type of broadcastUri specified: mido://4", e.getMessage());
                 unsupported = true;
