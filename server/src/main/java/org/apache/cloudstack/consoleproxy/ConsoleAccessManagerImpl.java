@@ -231,7 +231,6 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
     private ConsoleEndpoint composeConsoleAccessEndpoint(String rootUrl, VirtualMachine vm, HostVO hostVo, String addr,
                                                          String sessionUuid, String extraSecurityToken) {
-        StringBuilder sb = new StringBuilder(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
         Pair<String, Integer> portInfo = null;
@@ -272,6 +271,62 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
 
         String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag, sessionUuid);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
+        ConsoleProxyClientParam param = generateConsoleProxyClientParam(parsedHostInfo, port, sid, tag, ticket,
+                sessionUuid, addr, extraSecurityToken, vm, hostVo, details, portInfo, host);
+        String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
+        int vncPort = consoleProxyManager.getVncPort();
+
+        String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm);
+
+        s_logger.debug("Adding allowed session: " + sessionUuid);
+        allowedSessions.add(sessionUuid);
+        managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
+
+        ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
+        consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
+        consoleEndpoint.setWebsocketPort(String.valueOf(vncPort));
+        consoleEndpoint.setWebsocketPath("websockify");
+        consoleEndpoint.setWebsocketToken(token);
+        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
+        }
+        return consoleEndpoint;
+    }
+
+    private String generateConsoleAccessUrl(String rootUrl, ConsoleProxyClientParam param, String token, int vncPort,
+                                            VirtualMachine vm) {
+        StringBuilder sb = new StringBuilder(rootUrl);
+        if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
+            sb.append("/ajax?token=" + token);
+        } else {
+            sb.append("/resource/noVNC/vnc.html")
+                    .append("?autoconnect=true")
+                    .append("&port=" + vncPort)
+                    .append("&token=" + token);
+        }
+
+        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
+            sb.append("&extra=" + param.getExtraSecurityToken());
+        }
+
+        // for console access, we need guest OS type to help implement keyboard
+        long guestOs = vm.getGuestOSId();
+        GuestOSVO guestOsVo = managementServer.getGuestOs(guestOs);
+        if (guestOsVo.getCategoryId() == 6)
+            sb.append("&guest=windows");
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Compose console url: " + sb);
+        }
+        return sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
+    }
+
+    private ConsoleProxyClientParam generateConsoleProxyClientParam(Ternary<String, String, String> parsedHostInfo,
+                                                                    int port, String sid, String tag, String ticket,
+                                                                    String sessionUuid, String addr,
+                                                                    String extraSecurityToken, VirtualMachine vm,
+                                                                    HostVO hostVo, UserVmDetailVO details,
+                                                                    Pair<String, Integer> portInfo, String host) {
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
         param.setClientHostPort(port);
@@ -304,45 +359,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
         }
-
-        String token = encryptor.encryptObject(ConsoleProxyClientParam.class, param);
-        int vncPort = consoleProxyManager.getVncPort();
-        if (param.getHypervHost() != null || !ConsoleProxyManager.NoVncConsoleDefault.value()) {
-            sb.append("/ajax?token=" + token);
-        } else {
-            sb.append("/resource/noVNC/vnc.html")
-                    .append("?autoconnect=true")
-                    .append("&port=" + vncPort)
-                    .append("&token=" + token);
-        }
-
-        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
-            sb.append("&extra=" + param.getExtraSecurityToken());
-        }
-
-        // for console access, we need guest OS type to help implement keyboard
-        long guestOs = vm.getGuestOSId();
-        GuestOSVO guestOsVo = managementServer.getGuestOs(guestOs);
-        if (guestOsVo.getCategoryId() == 6)
-            sb.append("&guest=windows");
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Compose console url: " + sb);
-        }
-        s_logger.debug("Adding allowed session: " + sessionUuid);
-        allowedSessions.add(sessionUuid);
-        managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
-
-        String url = sb.toString().startsWith("https") ? sb.toString() : "http:" + sb;
-        ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
-        consoleEndpoint.setWebsocketHost(managementServer.getConsoleAccessAddress(vm.getId()));
-        consoleEndpoint.setWebsocketPort(String.valueOf(vncPort));
-        consoleEndpoint.setWebsocketPath("websockify");
-        consoleEndpoint.setWebsocketToken(token);
-        if (StringUtils.isNotBlank(param.getExtraSecurityToken())) {
-            consoleEndpoint.setWebsocketExtra(param.getExtraSecurityToken());
-        }
-        return consoleEndpoint;
+        return param;
     }
 
     public static Ternary<String, String, String> parseHostInfo(String hostInfo) {

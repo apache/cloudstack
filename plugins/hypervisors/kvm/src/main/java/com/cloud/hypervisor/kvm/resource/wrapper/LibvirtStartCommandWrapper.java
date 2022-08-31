@@ -47,7 +47,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
-public class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
+public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
 
@@ -119,9 +119,8 @@ public class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Ans
                         }
                     }
 
-                    File pemFile = new File(libvirtUtilitiesHelper.retrieveSshPrvKeyPath());
-
                     try {
+                        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
                         FileUtil.scpPatchFiles(controlIp, VRScripts.CONFIG_CACHE_LOCATION, Integer.parseInt(LibvirtComputingResource.DEFAULTDOMRSSHPORT), pemFile, LibvirtComputingResource.systemVmPatchFiles, LibvirtComputingResource.BASEPATH);
                         if (!virtRouterResource.isSystemVMSetup(vmName, controlIp)) {
                             String errMsg = "Failed to patch systemVM";

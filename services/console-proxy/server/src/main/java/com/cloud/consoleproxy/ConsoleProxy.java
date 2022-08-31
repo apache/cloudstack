@@ -178,8 +178,7 @@ public class ConsoleProxy {
         }
     }
 
-    public static ConsoleProxyAuthenticationResult authenticateConsoleAccess(ConsoleProxyClientParam param,
-                                                                             boolean reauthentication, Session session) {
+    public static ConsoleProxyAuthenticationResult authenticateConsoleAccess(ConsoleProxyClientParam param, boolean reauthentication) {
 
         ConsoleProxyAuthenticationResult authResult = new ConsoleProxyAuthenticationResult();
         authResult.setSuccess(true);
@@ -490,7 +489,7 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null || viewer.getClass() == ConsoleProxyNoVncClient.class) {
-                authenticationExternally(param, null);
+                authenticationExternally(param);
                 viewer = getClient(param);
                 viewer.initClient(param);
 
@@ -511,7 +510,7 @@ public class ConsoleProxy {
 
                 if (!viewer.isFrontEndAlive()) {
 
-                    authenticationExternally(param, null);
+                    authenticationExternally(param);
                     viewer.initClient(param);
                     reportLoadChange = true;
                 }
@@ -553,8 +552,8 @@ public class ConsoleProxy {
         }
     }
 
-    public static void authenticationExternally(ConsoleProxyClientParam param, Session session) throws AuthenticationException {
-        ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false, session);
+    public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {
+        ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
 
         if (authResult == null || !authResult.isSuccess()) {
             s_logger.warn("External authenticator failed authentication request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
@@ -564,7 +563,7 @@ public class ConsoleProxy {
     }
 
     public static ConsoleProxyAuthenticationResult reAuthenticationExternally(ConsoleProxyClientParam param) {
-        return authenticateConsoleAccess(param, true, null);
+        return authenticateConsoleAccess(param, true);
     }
 
     public static String getEncryptorPassword() {
@@ -593,7 +592,7 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null || viewer.getClass() != ConsoleProxyNoVncClient.class) {
-                authenticationExternally(param, session);
+                authenticationExternally(param);
                 viewer = new ConsoleProxyNoVncClient(session);
                 viewer.initClient(param);
 
@@ -605,7 +604,7 @@ public class ConsoleProxy {
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
                 try {
-                    authenticationExternally(param, session);
+                    authenticationExternally(param);
                 } catch (Exception e) {
                     s_logger.error("Authentication failed for param: " + param);
                     return null;

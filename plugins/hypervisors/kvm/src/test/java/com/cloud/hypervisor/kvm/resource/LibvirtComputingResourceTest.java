@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -5313,9 +5312,6 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
-            when(libvirtUtilitiesHelper.retrieveSshPrvKeyPath()).thenReturn(LibvirtComputingResource.SSHPRVKEYPATH);
-            File pemFile = mock(File.class);
-            PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(pemFile);
             when(conn.listDomains()).thenReturn(vms);
             doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
         } catch (final LibvirtException e) {
@@ -5393,9 +5389,6 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
-            when(libvirtUtilitiesHelper.retrieveSshPrvKeyPath()).thenReturn(LibvirtComputingResource.SSHPRVKEYPATH);
-            File pemFile = mock(File.class);
-            PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(pemFile);
             when(conn.listDomains()).thenReturn(vms);
             doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
         } catch (final LibvirtException e) {

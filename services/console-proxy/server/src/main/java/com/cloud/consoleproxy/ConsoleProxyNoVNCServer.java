@@ -37,16 +37,16 @@ public class ConsoleProxyNoVNCServer {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyNoVNCServer.class);
     public static final int WS_PORT = 8080;
     public static final int WSS_PORT = 8443;
-    private static final String vncConfFileLocation = "/root/vncport";
+    private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";
 
     private Server server;
 
     public static int getVNCPort() {
         String portStr;
         try {
-            portStr = Files.readString(Path.of(vncConfFileLocation)).trim();
+            portStr = Files.readString(Path.of(VNC_CONF_FILE_LOCATION)).trim();
         } catch (IOException e) {
-            s_logger.error("Cannot read the VNC port from the file " + vncConfFileLocation + " setting it to 8080", e);
+            s_logger.error("Cannot read the VNC port from the file " + VNC_CONF_FILE_LOCATION + " setting it to 8080", e);
             return WS_PORT;
         }
         return Integer.parseInt(portStr);
