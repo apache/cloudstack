@@ -42,4 +42,4 @@ if [[ $count -gt 0 ]];then
   average=$((sum/count))
 fi
 
-echo $average
+echo -n $average
