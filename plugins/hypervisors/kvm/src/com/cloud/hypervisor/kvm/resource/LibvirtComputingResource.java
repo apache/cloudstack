@@ -2188,16 +2188,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public void createVifs(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
-        final NicTO[] nics = vmSpec.getNics();
         final Map <String, String> params = vmSpec.getDetails();
         String nicAdapter = "";
         if (params != null && params.get("nicAdapter") != null && !params.get("nicAdapter").isEmpty()) {
             nicAdapter = params.get("nicAdapter");
         }
-        for (int i = 0; i < nics.length; i++) {
+        if (vmSpec.getType() == VirtualMachine.Type.User) {
             for (final NicTO nic : vmSpec.getNics()) {
-                if (nic.getDeviceId() == i) {
-                    createVif(vm, nic, nicAdapter, vmSpec.getCpus());
+                createVif(vm, nic, nicAdapter, vmSpec.getCpus());
+            }
+        } else {
+            final NicTO[] nics = vmSpec.getNics();
+            for (int i = 0; i < nics.length; i++) {
+                for (final NicTO nic : vmSpec.getNics()) {
+                    if (nic.getDeviceId() == i) {
+                        createVif(vm, nic, nicAdapter, vmSpec.getCpus());
+                    }
                 }
             }
         }

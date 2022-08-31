@@ -20,8 +20,6 @@ package org.apache.cloudstack.engine.orchestration;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1559,18 +1557,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // we have to implement default nics first - to ensure that default network elements start up first in multiple
         //nics case
         // (need for setting DNS on Dhcp to domR's Ip4 address)
-        Collections.sort(nics, new Comparator<NicVO>() {
+        List<NicVO> sortedNics = new ArrayList<>();
+        nics.stream().filter(NicVO::isDefaultNic).findFirst().ifPresent(sortedNics::add);
+        // Guard against potentially missing default nic
+        long defaultId = sortedNics.size() > 0 ? sortedNics.get(0).getId() : -1;
+        nics.stream().filter(n -> n.getId() != defaultId).forEach(sortedNics::add);
 
-            @Override
-            public int compare(final NicVO nic1, final NicVO nic2) {
-                final boolean isDefault1 = nic1.isDefaultNic();
-                final boolean isDefault2 = nic2.isDefaultNic();
-
-                return isDefault1 ^ isDefault2 ? isDefault1 ^ true ? 1 : -1 : 0;
-            }
-        });
-
-        for (final NicVO nic : nics) {
+        for (final NicVO nic : sortedNics) {
             final Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context, vmProfile.getVirtualMachine().getType() == Type.DomainRouter);
             if (implemented == null || implemented.first() == null) {
                 s_logger.warn("Failed to implement network id=" + nic.getNetworkId() + " as a part of preparing nic id=" + nic.getId());
