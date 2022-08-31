@@ -59,8 +59,8 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
 
         List<AutoScaleMetrics> metrics = new ArrayList<>();
         metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.LbAverageConnections, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceive, 1L, 2L, 3L, 4));
-        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmit, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkReceivedBps, 1L, 2L, 3L, 4));
+        metrics.add(new AutoScaleMetrics(VirtualRouterAutoScaleCounter.NetworkTransmitBps, 1L, 2L, 3L, 4));
 
         Mockito.when(getAutoScaleMetricsCommandMock.getMetrics()).thenReturn(metrics);
     }
@@ -82,9 +82,9 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
                 assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmit)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmitBps)) {
                 assertEquals(value.getValue(), Double.valueOf(vpcStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceive)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceivedBps)) {
                 assertEquals(value.getValue(), Double.valueOf(vpcStats[1]));
             }
         }
@@ -109,9 +109,9 @@ public class LibvirtGetAutoScaleMetricsCommandWrapperTest extends TestCase {
         for (AutoScaleMetricsValue value : values) {
             if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.LbAverageConnections)) {
                 assertEquals(value.getValue(), Double.valueOf(lbStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmit)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkTransmitBps)) {
                 assertEquals(value.getValue(), Double.valueOf(networkStats[0]));
-            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceive)) {
+            } else if (value.getMetrics().getCounter().equals(VirtualRouterAutoScaleCounter.NetworkReceivedBps)) {
                 assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
             }
         }

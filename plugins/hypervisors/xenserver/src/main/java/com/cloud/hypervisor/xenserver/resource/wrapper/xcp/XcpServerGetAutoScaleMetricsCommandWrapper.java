@@ -61,10 +61,10 @@ public final class XcpServerGetAutoScaleMetricsCommandWrapper extends CommandWra
 
             for (VirtualRouterAutoScale.AutoScaleMetrics metrics : command.getMetrics()) {
                 switch (metrics.getCounter()) {
-                    case NetworkReceive:
+                    case NetworkReceivedBps:
                         values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, Double.valueOf(bytesReceived)));
                         break;
-                    case NetworkTransmit:
+                    case NetworkTransmitBps:
                         values.add(new VirtualRouterAutoScale.AutoScaleMetricsValue(metrics, VirtualRouterAutoScale.AutoScaleValueType.AGGREGATED, Double.valueOf(bytesSent)));
                         break;
                     case LbAverageConnections:
