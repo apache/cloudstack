@@ -1847,20 +1847,31 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public boolean upgradeVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
     ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
 
-        // Verify input parameters
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vmInstance);
-        if (vmInstance != null) {
-            if (vmInstance.getState().equals(State.Stopped)) {
-                upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
-                return true;
-            }
-            if (vmInstance.getState().equals(State.Running)) {
-                return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
+        if (vmInstance == null) {
+            s_logger.error(String.format("VM instance with id [%s] is null, it is not possible to upgrade a null VM.", vmId));
+            return false;
+        }
+
+        if (State.Stopped.equals(vmInstance.getState())) {
+            upgradeStoppedVirtualMachine(vmId, newServiceOfferingId, customParameters);
+            return true;
+        }
+
+        if (State.Running.equals(vmInstance.getState())) {
+            ServiceOfferingVO newServiceOfferingVO = _serviceOfferingDao.findById(newServiceOfferingId);
+            HostVO instanceHost = _hostDao.findById(vmInstance.getHostId());
+            _hostDao.loadHostTags(instanceHost);
+
+            if (!instanceHost.checkHostServiceOfferingTags(newServiceOfferingVO)) {
+                s_logger.error(String.format("Cannot upgrade VM [%s] as the new service offering [%s] does not have the required host tags %s.", vmInstance, newServiceOfferingVO,
+                        instanceHost.getHostTags()));
+                return false;
             }
         }
-        return false;
+        return upgradeRunningVirtualMachine(vmId, newServiceOfferingId, customParameters);
     }
 
     private boolean upgradeRunningVirtualMachine(Long vmId, Long newServiceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException,
