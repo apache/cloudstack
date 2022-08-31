@@ -54,7 +54,7 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         this.resourceType = resourceType;
         this.amount = amount;
         this.reservation = null;
-        if (this.amount != null || this.amount <= 0) {
+        if (this.amount != null && this.amount <= 0) {
             if(LOG.isDebugEnabled()){
                 LOG.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, %s ", account.getAccountName(), account.getDomainId(), resourceType, amount));
             }
