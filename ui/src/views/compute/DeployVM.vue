@@ -1920,7 +1920,7 @@ export default {
       return new Promise((resolve) => {
         this.loading.zones = true
         const param = this.params.zones
-        const args = { listall: true, showicon: true }
+        const args = { showicon: true }
         if (zoneId) args.id = zoneId
         api(param.list, args).then(json => {
           const zoneResponse = json.listzonesresponse.zone || []
@@ -1952,7 +1952,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {

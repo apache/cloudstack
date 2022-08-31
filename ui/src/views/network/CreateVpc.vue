@@ -156,7 +156,7 @@ export default {
     },
     fetchZones () {
       this.loadingZone = true
-      api('listZones', { listAll: true, showicon: true }).then((response) => {
+      api('listZones', { showicon: true }).then((response) => {
         const listZones = response.listzonesresponse.zone || []
         this.zones = listZones.filter(zone => !zone.securitygroupsenabled)
         this.form.zoneid = ''
