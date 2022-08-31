@@ -84,7 +84,6 @@ import com.cloud.agent.api.PerformanceMonitorCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
 import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmProfileTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScaleVmGroupTO;
 import com.cloud.agent.api.to.LoadBalancerTO.AutoScalePolicyTO;
@@ -2543,8 +2542,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         for (DomainRouterVO router : routers) {
             if (VirtualMachine.State.Running.equals(router.getState())) {
                 final GetAutoScaleMetricsCommand command = new GetAutoScaleMetricsCommand(router.getPrivateIpAddress(), network.getVpcId() != null, publicIpAddr.first(), publicIpAddr.second(), metrics);
-                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
-                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                 command.setWait(30);
                 GetAutoScaleMetricsAnswer answer = (GetAutoScaleMetricsAnswer) _agentMgr.easySend(router.getHostId(), command);
                 if (answer == null || !answer.getResult()) {

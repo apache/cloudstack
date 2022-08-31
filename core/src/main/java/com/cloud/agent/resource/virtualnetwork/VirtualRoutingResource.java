@@ -59,8 +59,6 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.GetRouterAlertsAnswer;
 import com.cloud.agent.api.routing.AggregationControlCommand;
 import com.cloud.agent.api.routing.AggregationControlCommand.Action;
-import com.cloud.agent.api.routing.GetAutoScaleMetricsAnswer;
-import com.cloud.agent.api.routing.GetAutoScaleMetricsCommand;
 import com.cloud.agent.api.routing.GetRouterAlertsCommand;
 import com.cloud.agent.api.routing.GetRouterMonitorResultsAnswer;
 import com.cloud.agent.api.routing.GetRouterMonitorResultsCommand;
@@ -212,8 +210,6 @@ public class VirtualRoutingResource {
             return execute((DeleteFileInVrCommand)cmd);
         } else if (cmd instanceof GetRouterMonitorResultsCommand) {
             return execute((GetRouterMonitorResultsCommand)cmd);
-        } else if (cmd instanceof GetAutoScaleMetricsCommand) {
-            return execute((GetAutoScaleMetricsCommand)cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -289,10 +285,6 @@ public class VirtualRoutingResource {
             }
         }
         return failingChecks;
-    }
-
-    private GetAutoScaleMetricsAnswer execute(GetAutoScaleMetricsCommand cmd) {
-        return new GetAutoScaleMetricsAnswer(cmd, true);
     }
 
     private GetRouterMonitorResultsAnswer parseLinesForHealthChecks(GetRouterMonitorResultsCommand cmd, String executionResult) {

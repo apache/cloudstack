@@ -17,22 +17,18 @@
 
 package com.cloud.agent.api.routing;
 
+import com.cloud.agent.api.Command;
 import com.cloud.network.router.VirtualRouterAutoScale.AutoScaleMetrics;
 
 import java.util.List;
 
-public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
+public class GetAutoScaleMetricsCommand extends Command {
 
     private String privateIP;
     boolean forVpc = false;
     private String publicIP;
     private Integer port;
     private List<AutoScaleMetrics> metrics;
-
-    @Override
-    public boolean isQuery() {
-        return true;
-    }
 
     public GetAutoScaleMetricsCommand(String privateIP, boolean forVpc, String publicIP, Integer port, List<AutoScaleMetrics> metrics) {
         this.privateIP = privateIP;
@@ -60,5 +56,10 @@ public class GetAutoScaleMetricsCommand extends NetworkElementCommand {
 
     public List<AutoScaleMetrics> getMetrics() {
         return metrics;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return false;
     }
 }
