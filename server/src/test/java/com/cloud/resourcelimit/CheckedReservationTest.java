@@ -67,9 +67,9 @@ public class CheckedReservationTest {
         when(account.getDomainId()).thenReturn(4l);
         when(quotaLimitLock.lock(anyInt())).thenReturn(true);
         boolean fail = false;
-        long id = 0l;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {
-            id = cr.getId();
+            long id = cr.getId();
+            assertTrue(id == 1l);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {
@@ -80,7 +80,6 @@ public class CheckedReservationTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        assertTrue(id == 1l);
     }
 
     @Test
@@ -88,9 +87,9 @@ public class CheckedReservationTest {
         when(reservationDao.persist(any())).thenReturn(reservation);
         when(account.getAccountId()).thenReturn(1l);
         boolean fail = false;
-        Long id = 0l;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService); ) {
-            id = cr.getReservedAmount();
+            Long amount = cr.getReservedAmount();
+            assertTrue(amount == null);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {
@@ -98,6 +97,5 @@ public class CheckedReservationTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        assertTrue(id == null);
     }
 }
