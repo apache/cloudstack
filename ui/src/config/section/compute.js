@@ -571,6 +571,9 @@ export default {
           label: 'label.enable.autoscale.vmgroup',
           message: 'message.confirm.enable.autoscale.vmgroup',
           dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return record.state === 'Disabled' }
         },
         {
@@ -579,6 +582,9 @@ export default {
           label: 'label.disable.autoscale.vmgroup',
           message: 'message.confirm.disable.autoscale.vmgroup',
           dataView: true,
+          groupAction: true,
+          popup: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
           show: (record) => { return ['Enabled', 'Scaling'].includes(record.state) }
         },
         {
@@ -605,7 +611,7 @@ export default {
           args: ['cleanup'],
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, cleanup: values.cleanup || null } }) }
         }
       ]
     },

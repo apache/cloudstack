@@ -1298,6 +1298,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     public AutoScaleVmGroup enableAutoScaleVmGroup(Long id) {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
+
+        if (vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled)) {
+            return vmGroup;
+        }
+
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Disabled)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.");
         }
@@ -1327,6 +1332,11 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     public AutoScaleVmGroup disableAutoScaleVmGroup(Long id) {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(CallContext.current().getCallingAccount(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
+
+        if (vmGroup.getState().equals(AutoScaleVmGroup.State.Disabled)) {
+            return vmGroup;
+        }
+
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State.Enabled) && !vmGroup.getState().equals(AutoScaleVmGroup.State.Scaling)) {
             throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled or Scaling state can be disabled.");
         }
