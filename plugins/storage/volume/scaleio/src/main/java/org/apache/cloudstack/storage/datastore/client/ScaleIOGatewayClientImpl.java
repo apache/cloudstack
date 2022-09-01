@@ -792,7 +792,7 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
                             long timeElapsedInSecs = (System.currentTimeMillis() - migrationStartTime) / 1000;
                             int timeRemainingInSecs = (int) (timeoutInSecs - timeElapsedInSecs);
                             if (timeRemainingInSecs > (timeoutInSecs / 2)) {
-                                // Try to pause gracefully (continue the migration) if atleast half of the time is remaining
+                                // Try to pause gracefully (continue the migration) if at least half of the time is remaining
                                 pauseVolumeMigration(srcVolumeId, false);
                                 status = waitForVolumeMigrationToComplete(volume.getVtreeId(), timeRemainingInSecs);
                             }
@@ -1014,6 +1014,24 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     @Override
+    public String getSdcIdByGuid(String sdcGuid) {
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcGuid), "SDC Guid cannot be null");
+
+        List<Sdc> sdcs = listSdcs();
+        if (sdcs == null) {
+            return null;
+        }
+
+        for (Sdc sdc : sdcs) {
+            if (sdcGuid.equalsIgnoreCase(sdc.getSdcGuid())) {
+                return sdc.getId();
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public Sdc getSdcByIp(String ipAddress) {
         Preconditions.checkArgument(StringUtils.isNotEmpty(ipAddress), "IP address cannot be null");
 
@@ -1035,28 +1053,35 @@ public class ScaleIOGatewayClientImpl implements ScaleIOGatewayClient {
     }
 
     @Override
-    public List<String> listConnectedSdcIps() {
-        List<String> sdcIps = new ArrayList<>();
+    public boolean haveConnectedSdcs() {
         List<Sdc> sdcs = listSdcs();
         if(sdcs != null) {
             for (Sdc sdc : sdcs) {
                 if (MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
-                    sdcIps.add(sdc.getSdcIp());
+                    return true;
                 }
             }
         }
 
-        return sdcIps;
+        return false;
     }
 
     @Override
-    public boolean isSdcConnected(String ipAddress) {
+    public boolean isSdcConnected(String sdcId) {
+        Preconditions.checkArgument(StringUtils.isNotEmpty(sdcId), "SDC Id cannot be null");
+
+        Sdc sdc = getSdc(sdcId);
+        return (sdc != null && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState()));
+    }
+
+    @Override
+    public boolean isSdcConnectedByIP(String ipAddress) {
         Preconditions.checkArgument(StringUtils.isNotEmpty(ipAddress), "IP address cannot be null");
 
         List<Sdc> sdcs = listSdcs();
-        if(sdcs != null) {
+        if (sdcs != null) {
             for (Sdc sdc : sdcs) {
-                if (ipAddress.equalsIgnoreCase(sdc.getSdcIp()) && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
+                if (sdc != null && ipAddress.equalsIgnoreCase(sdc.getSdcIp()) && MDM_CONNECTED_STATE.equalsIgnoreCase(sdc.getMdmConnectionState())) {
                     return true;
                 }
             }

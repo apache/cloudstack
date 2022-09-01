@@ -258,22 +258,9 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + cluster.getHypervisorType().toString());
         }
 
-        List<String> connectedSdcIps = null;
-        try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore.getId(), storagePoolDetailsDao);
-            connectedSdcIps = client.listConnectedSdcIps();
-        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error("Failed to create storage pool", e);
-            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to create storage pool");
-        }
-
-        if (connectedSdcIps == null || connectedSdcIps.isEmpty()) {
-            LOGGER.debug("No connected SDCs found for the PowerFlex storage pool");
-            throw new CloudRuntimeException("Failed to create storage pool as connected SDCs not found");
-        }
+        checkConnectedSdcs(dataStore.getId());
 
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) dataStore;
-
         List<HostVO> hostsInCluster = resourceManager.listAllUpAndEnabledHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
         if (hostsInCluster.isEmpty()) {
@@ -285,8 +272,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hostsInCluster) {
             try {
-                if (connectedSdcIps.contains(host.getPrivateIpAddress())) {
-                    storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                if (storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
@@ -315,27 +301,14 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + hypervisorType.toString());
         }
 
-        List<String> connectedSdcIps = null;
-        try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore.getId(), storagePoolDetailsDao);
-            connectedSdcIps = client.listConnectedSdcIps();
-        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error("Failed to create storage pool", e);
-            throw new CloudRuntimeException("Failed to establish connection with PowerFlex Gateway to create storage pool");
-        }
-
-        if (connectedSdcIps == null || connectedSdcIps.isEmpty()) {
-            LOGGER.debug("No connected SDCs found for the PowerFlex storage pool");
-            throw new CloudRuntimeException("Failed to create storage pool as connected SDCs not found");
-        }
+        checkConnectedSdcs(dataStore.getId());
 
         LOGGER.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                if (connectedSdcIps.contains(host.getPrivateIpAddress())) {
-                    storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                if (storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
@@ -350,6 +323,22 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
 
         dataStoreHelper.attachZone(dataStore);
         return true;
+    }
+
+    private void checkConnectedSdcs(Long dataStoreId) {
+        boolean haveConnectedSdcs = false;
+        try {
+            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStoreId, storagePoolDetailsDao);
+            haveConnectedSdcs = client.haveConnectedSdcs();
+        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
+            LOGGER.error(String.format("Failed to create storage pool for datastore: %s", dataStoreId), e);
+            throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to create storage pool for datastore: %s", dataStoreId));
+        }
+
+        if (!haveConnectedSdcs) {
+            LOGGER.debug(String.format("No connected SDCs found for the PowerFlex storage pool of datastore: %s", dataStoreId));
+            throw new CloudRuntimeException(String.format("Failed to create storage pool as connected SDCs not found for datastore: %s", dataStoreId));
+        }
     }
 
     @Override

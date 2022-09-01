@@ -223,7 +223,6 @@ export default {
     },
     fetchZoneData () {
       const params = {}
-      params.listAll = true
       params.showicon = true
 
       this.zoneLoading = true
@@ -232,19 +231,18 @@ export default {
       }
       api('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
-        this.zones = this.zones.concat(listZones)
+        if (listZones) {
+          this.zones = this.zones.concat(listZones)
+        }
       }).finally(() => {
         this.zoneLoading = false
         this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
       })
     },
     fetchOsType () {
-      const params = {}
-      params.listAll = true
-
       this.osTypeLoading = true
 
-      api('listOsTypes', params).then(json => {
+      api('listOsTypes').then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes = this.osTypes.concat(listOsTypes)
       }).finally(() => {

@@ -341,7 +341,7 @@ export default {
           this.formRef.value.resetFields()
         }).catch(error => {
           console.error(error)
-          this.$message.error(this.$t('message.success.add.vpn.customer.gateway'))
+          this.$message.error(this.$t('message.add.vpn.customer.gateway.failed'))
           this.isSubmitted = false
         })
       }).catch(error => {

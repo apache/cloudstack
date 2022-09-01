@@ -357,7 +357,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                         /* alloc from free resource */
                         if (!((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem))) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Host doesnt seem to have enough free capacity, but increasing the used capacity anyways, " +
+                                s_logger.debug("Host doesn't seem to have enough free capacity, but increasing the used capacity anyways, " +
                                     "since the VM is already starting on this host ");
                             }
                         }
@@ -1256,6 +1256,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
-            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
+            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, ImageStoreNFSVersion, SecondaryStorageCapacityThreshold};
     }
 }

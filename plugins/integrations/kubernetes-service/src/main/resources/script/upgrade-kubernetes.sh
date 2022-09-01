@@ -37,6 +37,9 @@ if [ $# -gt 3 ]; then
 fi
 
 export PATH=$PATH:/opt/bin
+if [[ "$PATH" != *:/usr/sbin && "$PATH" != *:/usr/sbin:* ]]; then
+  export PATH=$PATH:/usr/sbin
+fi
 
 ISO_MOUNT_DIR=/mnt/k8sdisk
 BINARIES_DIR=${ISO_MOUNT_DIR}/
@@ -149,4 +152,7 @@ if [ -d "$BINARIES_DIR" ]; then
   if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
     eject "${iso_drive_path}"
   fi
+else
+  echo "ERROR: Unable to access Binaries directory for upgrade version ${UPGRADE_VERSION}"
+  exit 1
 fi

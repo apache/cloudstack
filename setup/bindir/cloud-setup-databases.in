@@ -397,7 +397,11 @@ for example:
 
         def saveMgmtServerSecretKey():
             if self.encryptiontype == 'file':
-                open(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
+                try:
+                    open(self.encryptionKeyFile, 'w').write(self.mgmtsecretkey)
+                except IOError as e:
+                    msg = "Failed to save management server secret key file %s due to %s, also please check the default umask"%(self.encryptionKeyFile, e.strerror)
+                    self.errorAndExit(msg)
 
         def formatEncryptResult(value):
             return 'ENC(%s)'%value

@@ -204,7 +204,7 @@
             <a-input v-model:value="form.value" />
           </a-form-item>
         </div>
-        <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" html-type="submit">{{ $t('label.add') }}</a-button>
+        <a-button :disabled="!('createTags' in $store.getters.apis)" type="primary" ref="submit" @click="handleAddTag">{{ $t('label.add') }}</a-button>
       </a-form>
 
       <a-divider />
@@ -735,7 +735,6 @@ export default {
       this.loading = true
       this.lbRules.forEach(rule => {
         api('listLBStickinessPolicies', {
-          listAll: true,
           lbruleid: rule.id
         }).then(response => {
           this.stickinessPolicies.push(...response.listlbstickinesspoliciesresponse.stickinesspolicies)
@@ -834,6 +833,8 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      }).finally(() => {
+        this.tagsModalLoading = false
       })
     },
     handleDeleteTag (tag) {

@@ -414,10 +414,10 @@ class TestVMLifeCycle(cloudstackTestCase):
         self.debug("Change Service offering VM - ID: %s" %
                                     self.medium_virtual_machine.id)
 
-        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd = scaleVirtualMachine.scaleVirtualMachineCmd()
         cmd.id = self.medium_virtual_machine.id
         cmd.serviceofferingid = self.small_offering.id
-        self.apiclient.changeServiceForVirtualMachine(cmd)
+        self.apiclient.scaleVirtualMachine(cmd)
 
         self.debug("Starting VM - ID: %s" % self.medium_virtual_machine.id)
         self.medium_virtual_machine.start(self.apiclient)
