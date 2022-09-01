@@ -25,14 +25,14 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.UsageEventVO;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -45,6 +45,7 @@ import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.HostVO;
@@ -53,6 +54,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -97,6 +99,8 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
     DiskOfferingDao diskOfferingDao;
     @Inject
     HostDao hostDao;
+    @Inject
+    PrimaryDataStoreDao primaryDataStoreDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -323,14 +327,26 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    private void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
+    protected void updateVolumePath(List<VolumeObjectTO> volumeTOs) {
         for (VolumeObjectTO volume : volumeTOs) {
-            if (volume.getPath() != null) {
-                VolumeVO volumeVO = volumeDao.findById(volume.getId());
-                volumeVO.setPath(volume.getPath());
-                volumeVO.setVmSnapshotChainSize(volume.getSize());
-                volumeDao.persist(volumeVO);
+            if (StringUtils.isAllEmpty(volume.getDataStoreUuid(), volume.getPath(), volume.getChainInfo())) {
+                continue;
             }
+            VolumeVO volumeVO = volumeDao.findById(volume.getId());
+            if (StringUtils.isNotEmpty(volume.getDataStoreUuid())) {
+                StoragePool pool = primaryDataStoreDao.findPoolByUUID(volume.getDataStoreUuid());
+                if (pool != null && pool.getId() != volumeVO.getPoolId()) {
+                    volumeVO.setPoolId(pool.getId());
+                }
+            }
+            if (StringUtils.isNotEmpty(volume.getPath())) {
+                volumeVO.setPath(volume.getPath());
+            }
+            if (StringUtils.isNotEmpty(volume.getChainInfo())) {
+                volumeVO.setChainInfo(volume.getChainInfo());
+            }
+            volumeVO.setVmSnapshotChainSize(volume.getSize());
+            volumeDao.persist(volumeVO);
         }
     }
 
