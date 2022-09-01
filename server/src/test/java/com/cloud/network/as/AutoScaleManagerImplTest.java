@@ -48,7 +48,6 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -103,7 +102,7 @@ public class AutoScaleManagerImplTest {
         when(_counterDao.findById(anyLong())).thenReturn(counterMock);
         when(_conditionDao.persist(any(ConditionVO.class))).thenReturn(conditionMock);
 
-        doNothing().when(autoScaleManagerImplMock).checkCallerAccess(nullable(String.class), nullable(Long.class));
+        when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
 
         when(_asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asPolicyMock);
     }
@@ -167,12 +166,7 @@ public class AutoScaleManagerImplTest {
 
     @Test
     public void testCreateConditionCmd() throws IllegalArgumentException, IllegalAccessException {
-        CreateConditionCmd cmd = new CreateConditionCmd() {
-            @Override
-            public long getEntityOwnerId() {
-                return 2;
-            }
-        };
+        CreateConditionCmd cmd = new CreateConditionCmd();
 
         seCommandField(cmd, "counterId", 1L);
         seCommandField(cmd, "relationalOperator", "LT");

@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
@@ -40,8 +42,6 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.user.Account;
-import com.cloud.user.User;
 
 @APICommand(name = "createAutoScaleVmProfile",
             description = "Creates a profile that contains information about the virtual machine which will be provisioned automatically by autoscale feature.",
@@ -116,19 +116,18 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the profile to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account that will own the autoscale VM profile")
+    private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the autoscale VM profile")
+    private Long projectId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain ID of the account owning a autoscale VM profile")
+    private Long domainId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
-    private Long domainId;
-    private Long accountId;
-
-    public Long getDomainId() {
-        if (domainId == null) {
-            getAccountId();
-        }
-        return domainId;
-    }
 
     public Long getZoneId() {
         return zoneId;
@@ -167,32 +166,12 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return userData;
     }
 
-    public long getAutoscaleUserId() {
-        if (autoscaleUserId != null) {
-            return autoscaleUserId;
-        } else {
-            return CallContext.current().getCallingUserId();
-        }
+    public Long getAutoscaleUserId() {
+        return autoscaleUserId;
     }
 
     public Integer getDestroyVmGraceperiod() {
         return destroyVmGraceperiod;
-    }
-
-    public long getAccountId() {
-        if (accountId != null) {
-            return accountId;
-        }
-        Account account = null;
-        if (autoscaleUserId != null) {
-            User user = _entityMgr.findById(User.class, autoscaleUserId);
-            account = _entityMgr.findById(Account.class, user.getAccountId());
-        } else {
-            account = CallContext.current().getCallingAccount();
-        }
-        accountId = account.getAccountId();
-        domainId = account.getDomainId();
-        return accountId;
     }
 
     public HashMap<String, String> getDeployParamMap() {
@@ -217,6 +196,18 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return otherDeployParamsMap;
     }
 
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getProjectId() {
+        return projectId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -232,7 +223,12 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return getAccountId();
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
+        if (accountId == null) {
+            return CallContext.current().getCallingAccount().getId();
+        }
+
+        return accountId;
     }
 
     @Override

@@ -386,6 +386,7 @@ export default {
           const networkid = response.listloadbalancerrulesresponse?.loadbalancerrule?.[0]?.networkid
           api('listNetworks', {
             listAll: true,
+            projectid: this.resource.projectid,
             id: networkid
           }).then(response => {
             const services = response.listnetworksresponse?.network?.[0]?.service

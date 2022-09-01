@@ -51,7 +51,7 @@ public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity, 
 
     public Integer getDestroyVmGraceperiod();
 
-    public long getAutoScaleUserId();
+    public Long getAutoScaleUserId();
 
     @Override
     boolean isDisplay();

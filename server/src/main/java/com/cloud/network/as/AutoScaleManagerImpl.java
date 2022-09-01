@@ -416,7 +416,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @DB
     protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile, boolean isNew) {
         long templateId = vmProfile.getTemplateId();
-        long autoscaleUserId = vmProfile.getAutoScaleUserId();
+        Long autoscaleUserId = vmProfile.getAutoScaleUserId();
         int destroyVmGraceperiod = vmProfile.getDestroyVmGraceperiod();
 
         Long serviceOfferingId = vmProfile.getServiceOfferingId();
@@ -440,17 +440,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("Destroy Vm Grace Period cannot be less than 0.");
         }
 
-        User user = _userDao.findById(autoscaleUserId);
-        if (user.getAccountId() != vmProfile.getAccountId()) {
-            throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
-        }
-
         if (!isNew) {
             List<AutoScaleVmGroupVO> vmGroups = _autoScaleVmGroupDao.listByProfile(vmProfile.getId());
             for (AutoScaleVmGroupVO vmGroup : vmGroups) {
                 Network.Provider provider = getLoadBalancerServiceProvider(vmGroup.getLoadBalancerId());
                 if (Network.Provider.Netscaler.equals(provider)) {
-                    checkAutoScaleUser(autoscaleUserId);
+                    checkAutoScaleUser(autoscaleUserId, vmProfile.getAccountId());
                 }
             }
         }
@@ -474,10 +469,17 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         return vmProfile;
     }
 
-    private void checkAutoScaleUser(Long autoscaleUserId) {
+    private void checkAutoScaleUser(Long autoscaleUserId, long accountId) {
+        if (autoscaleUserId == null) {
+            throw new InvalidParameterValueException("autoscaleuserid is required but not passed");
+        }
         User user = _userDao.findById(autoscaleUserId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find autoscale user id: " + autoscaleUserId);
+        }
+
+        if (user.getAccountId() != accountId) {
+            throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
         }
 
         String apiKey = user.getApiKey();
@@ -500,13 +502,13 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile", create = true)
     public AutoScaleVmProfile createAutoScaleVmProfile(CreateAutoScaleVmProfileCmd cmd) {
 
-        Account owner = _accountDao.findById(cmd.getAccountId());
         Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
         long zoneId = cmd.getZoneId();
         long serviceOfferingId = cmd.getServiceOfferingId();
-        long autoscaleUserId = cmd.getAutoscaleUserId();
+        Long autoscaleUserId = cmd.getAutoscaleUserId();
         String userData = cmd.getUserData();
 
         DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
@@ -530,7 +532,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         dispatchChainFactory.getStandardDispatchChain().dispatch(new DispatchTask(ComponentContext.inject(DeployVMCmd.class), deployParams));
 
         AutoScaleVmProfileVO profileVO =
-            new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
+            new AutoScaleVmProfileVO(cmd.getZoneId(), owner.getDomainId(), owner.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getCounterParamList(), cmd.getUserData(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
 
         if (cmd.getDisplay() != null) {
@@ -795,17 +797,6 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
                 return success;
             }
         });
-    }
-
-    public void checkCallerAccess(String accountName, Long domainId) {
-        Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountDao.findActiveAccount(accountName, domainId);
-        if (owner == null) {
-            List<String> idList = new ArrayList<String>();
-            idList.add(ApiDBUtils.findDomainById(domainId).getUuid());
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specifed domainId");
-        }
-        _accountMgr.checkAccess(caller, null, false, owner);
     }
 
     private class SearchWrapper<VO extends ControlledEntity> {
@@ -1215,7 +1206,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
         Network.Provider provider = getLoadBalancerServiceProvider(vmGroup.getLoadBalancerId());
         if (Network.Provider.Netscaler.equals(provider)) {
-            checkAutoScaleUser(profileVO.getAutoScaleUserId());
+            checkAutoScaleUser(profileVO.getAutoScaleUserId(), vmGroup.getAccountId());
         }
 
         ControlledEntity[] sameOwnerEntities = policies.toArray(new ControlledEntity[policies.size() + 2]);
@@ -1391,7 +1382,10 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_CREATE, eventDescription = "Condition", create = true)
     public Condition createCondition(CreateConditionCmd cmd) {
-        checkCallerAccess(cmd.getAccountName(), cmd.getDomainId());
+        Account caller = CallContext.current().getCallingAccount();
+        Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
+        _accountMgr.checkAccess(caller, null, true, owner);
+
         String opr = cmd.getRelationalOperator().toUpperCase();
         long cid = cmd.getCounterId();
         long threshold = cmd.getThreshold();
@@ -1411,7 +1405,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
         ConditionVO condition = null;
 
-        condition = _conditionDao.persist(new ConditionVO(cid, threshold, cmd.getEntityOwnerId(), cmd.getDomainId(), op));
+        condition = _conditionDao.persist(new ConditionVO(cid, threshold, owner.getAccountId(), owner.getDomainId(), op));
         s_logger.info("Successfully created condition with Id: " + condition.getId());
 
         CallContext.current().setEventDetails(" Id: " + condition.getId());

@@ -91,6 +91,10 @@ UPDATE `cloud`.`autoscale_vmgroups` SET state='Revoke' WHERE state='revoke';
 
 ALTER TABLE `cloud`.`autoscale_vmgroups` DROP FOREIGN KEY `fk_autoscale_vmgroup__load_balancer_id`;
 
+-- Update autoscale_vmprofiles to make autoscale_user_id optional
+
+ALTER TABLE `cloud`.`autoscale_vmprofiles` MODIFY COLUMN `autoscale_user_id` bigint unsigned;
+
 -- Create table for VM autoscaling historic data
 
 CREATE TABLE IF NOT EXISTS `cloud`.`autoscale_vmgroup_statistics` (

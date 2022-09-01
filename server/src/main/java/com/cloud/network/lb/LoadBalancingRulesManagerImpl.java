@@ -335,11 +335,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             autoScalePolicies.add(new LbAutoScalePolicy(autoScalePolicy, lbConditions));
         }
         AutoScaleVmProfile autoScaleVmProfile = _autoScaleVmProfileDao.findById(vmGroup.getProfileId());
-        Long autoscaleUserId = autoScaleVmProfile.getAutoScaleUserId();
-        User user = _userDao.findByIdIncludingRemoved(autoscaleUserId);
-        String apiKey = user.getApiKey();
-        String secretKey = user.getSecretKey();
-        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         String zoneId = _dcDao.findById(autoScaleVmProfile.getZoneId()).getUuid();
         String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
         String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
@@ -359,8 +354,21 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             }
         }
 
+        String apiKey = null;
+        String secretKey = null;
+        String csUrl = ApiServiceConfiguration.ApiServletPath.value();
         Network.Provider provider = getLoadBalancerServiceProvider(lb);
         if (Network.Provider.Netscaler.equals(provider)) {
+            Long autoscaleUserId = autoScaleVmProfile.getAutoScaleUserId();
+            if (autoscaleUserId == null) {
+                throw new InvalidParameterValueException("autoscaleUserId is required but not specified");
+            }
+            User user = _userDao.findById(autoscaleUserId);
+            if (user == null) {
+                throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
+            }
+            apiKey = user.getApiKey();
+            secretKey = user.getSecretKey();
             if (apiKey == null) {
                 throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
             }

@@ -67,7 +67,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     private long accountId;
 
     @Column(name = "autoscale_user_id")
-    private long autoscaleUserId;
+    private Long autoscaleUserId;
 
     @Column(name = "service_offering_id", updatable = true, nullable = false)
     private Long serviceOfferingId;
@@ -101,7 +101,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, Map otherDeployParamsMap, Map counterParamList,
-            String userData, Integer destroyVmGraceperiod, long autoscaleUserId) {
+            String userData, Integer destroyVmGraceperiod, Long autoscaleUserId) {
         uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;
@@ -228,7 +228,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
         return uuid;
     }
 
-    public void setAutoscaleUserId(long autoscaleUserId) {
+    public void setAutoscaleUserId(Long autoscaleUserId) {
         this.autoscaleUserId = autoscaleUserId;
     }
 
@@ -262,7 +262,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     }
 
     @Override
-    public long getAutoScaleUserId() {
+    public Long getAutoScaleUserId() {
         return autoscaleUserId;
     }
 

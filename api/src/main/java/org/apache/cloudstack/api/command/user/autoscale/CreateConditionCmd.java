@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -56,6 +57,9 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the condition. " + "Must be used with the domainId parameter.")
     private String accountName;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for condition")
+    private Long projectId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID of the account.")
     private Long domainId;
@@ -103,17 +107,14 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     public String getAccountName() {
-        if (accountName == null) {
-            return CallContext.current().getCallingAccount().getAccountName();
-        }
-
         return accountName;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public Long getDomainId() {
-        if (domainId == null) {
-            return CallContext.current().getCallingAccount().getDomainId();
-        }
         return domainId;
     }
 
@@ -138,7 +139,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = _accountService.finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return CallContext.current().getCallingAccount().getId();
         }
