@@ -28,12 +28,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 
 public class CheckedReservation  implements AutoCloseable, ResourceReservation {
     private static final Logger LOG = Logger.getLogger(CheckedReservation.class);
 
     private static final int TRY_TO_GET_LOCK_TIME = 120;
+    private GlobalLock quotaLimitLock;
     ReservationDao reservationDao;
     private final Account account;
     private final ResourceType resourceType;
@@ -54,6 +56,7 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         this.resourceType = resourceType;
         this.amount = amount;
         this.reservation = null;
+        setGlobalLock(account, resourceType);
         if (this.amount != null && this.amount <= 0) {
             if(LOG.isDebugEnabled()){
                 LOG.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s, %s ", account.getAccountName(), account.getDomainId(), resourceType, amount));
@@ -62,8 +65,6 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
         }
 
         if (this.amount != null) {
-            String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType.getOrdinal());
-            GlobalLock quotaLimitLock = GlobalLock.getInternLock(lockName);
             if(quotaLimitLock.lock(TRY_TO_GET_LOCK_TIME)) {
                 try {
                     resourceLimitService.checkResourceLimit(account,resourceType,amount);
@@ -75,13 +76,24 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
                     quotaLimitLock.unlock();
                 }
             } else {
-                throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", lockName), resourceType);
+                throw new ResourceAllocationException(String.format("unable to acquire resource reservation \"%s\"", quotaLimitLock.getName()), resourceType);
             }
         } else {
             if(LOG.isDebugEnabled()){
                 LOG.debug(String.format("not reserving no amount of resources for %s in domain %d, type: %s ", account.getAccountName(), account.getDomainId(), resourceType));
             }
         }
+    }
+
+    @NotNull
+    private void setGlobalLock(Account account, ResourceType resourceType) {
+        final GlobalLock quotaLimitLock;
+        String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType.getOrdinal());
+        setQuotaLimitLock(GlobalLock.getInternLock(lockName));
+    }
+
+    protected void setQuotaLimitLock(GlobalLock quotaLimitLock) {
+        this.quotaLimitLock = quotaLimitLock;
     }
 
     @Override
