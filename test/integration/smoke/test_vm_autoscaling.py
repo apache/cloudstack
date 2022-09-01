@@ -342,9 +342,9 @@ class TestVmAutoScaling(cloudstackTestCase):
             "List virtual machines should return a valid list"
         )
         self.assertEqual(
-            len(vms) >= vmCount,
-            True,
-            "The number of virtual machines %s should be equal to or greater than %s" % (len(vms), vmCount)
+            len(vms),
+            vmCount,
+            "The number of virtual machines (%s) should be equal to %s" % (len(vms), vmCount)
         )
 
         for vm in vms:
@@ -476,7 +476,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.assertEqual(
             len(vmprofiles_list) == 1,
             True,
-            "The number of autoscale profiles %s should be equal to 1" % (len(vmprofiles_list))
+            "The number of autoscale profiles (%s) should be equal to 1" % (len(vmprofiles_list))
         )
 
         # Create new AS VM Profile
@@ -563,9 +563,9 @@ class TestVmAutoScaling(cloudstackTestCase):
             "List autoscale policies should return a valid list"
         )
         self.assertEqual(
-            len(policies) >= 1,
+            len(policies) == 1,
             True,
-            "The number of autoscale policies %s should be equal to or greater than 1" % (len(policies))
+            "The number of autoscale policies (%s) should be equal to 1" % (len(policies))
         )
         scale_up_policy = policies[0]
 
@@ -599,9 +599,9 @@ class TestVmAutoScaling(cloudstackTestCase):
             "List autoscale policies should return a valid list"
         )
         self.assertEqual(
-            len(policies) >= 1,
+            len(policies) == 1,
             True,
-            "The number of autoscale policies %s should be equal to or greater than 1" % (len(policies))
+            "The number of autoscale policies (%s) should be equal to 1" % (len(policies))
         )
         scale_down_policy = policies[0]
 
@@ -649,7 +649,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.assertEqual(
             len(vms) >= MIN_MEMBER,
             True,
-            "The number of virtual machines %s should be equal to or greater than %s" % (len(vms), MIN_MEMBER)
+            "The number of virtual machines (%s) should be equal to or greater than %s" % (len(vms), MIN_MEMBER)
         )
 
         vm = vms[0]
@@ -799,7 +799,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.assertEqual(
             len(vms),
             MAX_MEMBER,
-            "The number of virtual machines %s should be equal to %s" % (len(vms), MAX_MEMBER)
+            "The number of virtual machines (%s) should be equal to %s" % (len(vms), MAX_MEMBER)
         )
 
         vm = vms[0]
