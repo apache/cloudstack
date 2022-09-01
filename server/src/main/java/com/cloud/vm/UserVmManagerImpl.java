@@ -2053,13 +2053,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         for (final VolumeVO rootVolumeOfVm : vols) {
             DiskOfferingVO currentRootDiskOffering = _diskOfferingDao.findById(rootVolumeOfVm.getDiskOfferingId());
+            Long rootDiskSize= null;
+            Long rootDiskSizeBytes = null;
+            if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
+                rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
+                rootDiskSizeBytes = rootDiskSize << 30;
+            }
+            if (currentRootDiskOffering.getId() == newDiskOffering.getId() &&
+                    (!newDiskOffering.isCustomized() || (newDiskOffering.isCustomized() && Objects.equals(rootVolumeOfVm.getSize(), rootDiskSizeBytes)))) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("Volume %s is already having disk offering %s", rootVolumeOfVm, newDiskOffering.getUuid()));
+                }
+                continue;
+            }
             HypervisorType hypervisorType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
             if (HypervisorType.Simulator != hypervisorType) {
                 Long minIopsInNewDiskOffering = null;
                 Long maxIopsInNewDiskOffering = null;
                 boolean autoMigrate = false;
                 boolean shrinkOk = false;
-                Long rootDiskSize = null;
                 if (customParameters.containsKey(ApiConstants.MIN_IOPS)) {
                     minIopsInNewDiskOffering = Long.parseLong(customParameters.get(ApiConstants.MIN_IOPS));
                 }
@@ -2071,9 +2083,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 if (customParameters.containsKey(ApiConstants.SHRINK_OK)) {
                     shrinkOk = Boolean.parseBoolean(customParameters.get(ApiConstants.SHRINK_OK));
-                }
-                if (customParameters.containsKey(ApiConstants.ROOT_DISK_SIZE)) {
-                    rootDiskSize = Long.parseLong(customParameters.get(ApiConstants.ROOT_DISK_SIZE));
                 }
                 ChangeOfferingForVolumeCmd changeOfferingForVolumeCmd = new ChangeOfferingForVolumeCmd(rootVolumeOfVm.getId(), newDiskOffering.getId(), minIopsInNewDiskOffering, maxIopsInNewDiskOffering, autoMigrate, shrinkOk);
                 if (rootDiskSize != null) {
