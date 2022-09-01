@@ -1,9 +1,28 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+//
 package com.cloud.resourcelimit;
 
 import com.cloud.configuration.Resource;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.reservation.ReservationVO;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.junit.Before;
@@ -11,6 +30,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -32,6 +52,7 @@ public class CheckedReservationTest {
         initMocks(this);
         when(reservation.getId()).thenReturn(1l);
     }
+
     @Test
     public void getId() {
         when(reservationDao.persist(any())).thenReturn(reservation);
@@ -41,12 +62,30 @@ public class CheckedReservationTest {
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {
             id = cr.getId();
         } catch (NullPointerException npe) {
-            fail = true;
+            fail("NPE caught");
         } catch (ResourceAllocationException rae) {
-            // too bad
+            throw new CloudRuntimeException(rae);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         assertTrue(id == 1l);
+    }
+
+    @Test
+    public void getNoAmount() {
+        when(reservationDao.persist(any())).thenReturn(reservation);
+        when(account.getAccountId()).thenReturn(1l);
+        boolean fail = false;
+        Long id = 0l;
+        try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService); ) {
+            id = cr.getReservedAmount();
+        } catch (NullPointerException npe) {
+            fail("NPE caught");
+        } catch (ResourceAllocationException rae) {
+            throw new CloudRuntimeException(rae);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        assertTrue(id == null);
     }
 }
