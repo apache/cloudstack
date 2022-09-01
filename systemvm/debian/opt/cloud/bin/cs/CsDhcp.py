@@ -19,9 +19,11 @@ import logging
 import os
 from netaddr import *
 from random import randint
+import json
 from CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
+from cs.CsAddress import CsIP
 
 LEASES = "/var/lib/misc/dnsmasq.leases"
 DHCP_HOSTS = "/etc/dhcphosts.txt"
@@ -110,6 +112,8 @@ class CsDhcp(CsDataBag):
                 dns_list = [x for x in gn.get_dns() if x]
                 if self.config.is_dhcp() and not self.config.use_extdns():
                     guest_ip = self.config.address().get_guest_ip()
+                    logging.info("PEARL - mtu: %s" % i['mtu'])
+                    logging.info(json.dumps(self.config.address()))
                     if guest_ip and guest_ip in dns_list and ip not in dns_list:
                         # Replace the default guest IP in VR with the ip in additional IP ranges, if shared network has multiple IP ranges.
                         dns_list.remove(guest_ip)
@@ -120,7 +124,12 @@ class CsDhcp(CsDataBag):
                 sline = "dhcp-option=tag:interface-%s-%s,3," % (device, idx)
                 line = "dhcp-option=tag:interface-%s-%s,3,%s" % (device, idx, gateway)
                 self.conf.search(sline, line)
-            # Netmask
+
+            sline = "dhcp-option=%s,26" % device
+            line = "dhcp-option=%s,26,%s" % (device, i['mtu'])
+            self.conf.search(sline, line)
+
+        # Netmask
             netmask = ''
             if self.config.is_vpc():
                 netmask = gn.get_netmask()

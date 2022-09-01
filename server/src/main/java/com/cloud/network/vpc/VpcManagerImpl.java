@@ -1255,10 +1255,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected Integer validateMtu(VpcVO vpcToUpdate, Integer mtu) {
-        if (mtu == null) {
+        Long zoneId = vpcToUpdate.getZoneId();
+        if (mtu == null || NetworkServiceImpl.AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
             return null;
         }
-        Long zoneId = vpcToUpdate.getZoneId();
         if (mtu > NetworkServiceImpl.VRPublicInterfaceMtu.valueIn(zoneId)) {
             String subject = "Incorrect MTU configured on network for public interfaces of the VPC VR";
             String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +

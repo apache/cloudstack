@@ -47,11 +47,16 @@ if [ ! -z $interfaceName ]; then
   state=$(cat /sys/class/net/${interfaceName}/operstate)
   if [[ "$state" == "up" ]]; then
 	  ifconfig $interfaceName mtu $mtu up
-    exit $?
   else
     ifconfig $interfaceName mtu $mtu
-    exit $?
   fi
+  if grep "dhcp-option=$interfaceName,26" /etc/dnsmasq.d/cloud.conf
+    sed -i "/dhcp-option=$interfaceName,26/c\dhcp-option=$interfaceName,26,$mtu" /etc/dnsmasq.d/cloud.conf
+  else
+    echo "dhcp-option=$interfaceName,26,$mtu" >> /etc/dnsmasq.d/cloud.conf
+  fi
+  systemctl restart dnsmasq
+  exit $?
 fi
 
 echo "Interface with IP ${ip} not found"

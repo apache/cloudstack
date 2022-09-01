@@ -261,8 +261,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     public static final ConfigKey<Integer> VRPublicInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.public.interface.mtu", "1500", "MTU set on the VR's public facing interfaces",
             true, ConfigKey.Scope.Zone);
+
     public static final ConfigKey<Integer> VRPrivateInterfaceMtu = new ConfigKey<>("VirtualRouter", Integer.class,
             "vr.private.interface.mtu", "1500", "MTU set on the VR's private interfaces",
+            true, ConfigKey.Scope.Zone);
+
+    public static final ConfigKey<Boolean> AllowUsersToSpecifyVmMtu = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.end.users.to.specify.vm.mtu", "false", "Allow end users to specify VM MTU",
             true, ConfigKey.Scope.Zone);
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1
@@ -1668,6 +1673,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     protected Pair<Integer, Integer> validateMtuConfig(Integer publicMtu, Integer privateMtu, Long zoneId) {
         Integer vrMaxMtuForPublicIfaces = VRPublicInterfaceMtu.valueIn(zoneId);
         Integer vrMaxMtuForPrivateIfaces = VRPrivateInterfaceMtu.valueIn(zoneId);
+        if (!AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
+            privateMtu = vrMaxMtuForPrivateIfaces;
+            publicMtu = vrMaxMtuForPublicIfaces;
+            return new Pair<>(publicMtu, privateMtu);
+        }
+
         if (publicMtu > vrMaxMtuForPublicIfaces) {
             String subject = "Incorrect MTU configured on network for public interfaces of the VR";
             String message = String.format("Configured MTU for network VR's public interfaces exceeds the upper limit " +
@@ -2918,7 +2929,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // List all routers for the given network:
         List<DomainRouterVO> routers = routerDao.findByNetwork(networkId);
 
-        // Create Map to store the IPAddress List for each routers
+        // Create Map to store the IPAddress List for each router
         Map<Long, Set<IpAddressTO>> routersToIpList = new HashMap<>();
         for (DomainRouterVO routerVO : routers) {
             Set<IpAddressTO> ips = new HashSet<>();
@@ -3138,6 +3149,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
+        if (!AllowUsersToSpecifyVmMtu.valueIn(zoneId)) {
+            return new Pair<>(null, null);
+        }
+
         if (publicMtu != null) {
             if (publicMtu > VRPublicInterfaceMtu.valueIn(zoneId)) {
                 publicMtu = VRPublicInterfaceMtu.valueIn(zoneId);

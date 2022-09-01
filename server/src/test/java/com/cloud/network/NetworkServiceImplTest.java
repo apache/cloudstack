@@ -74,6 +74,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -136,6 +138,8 @@ public class NetworkServiceImplTest {
     @Mock
     ConfigKey<Integer> publicMtuKey;
     @Mock
+    ConfigKey<Boolean> userChangeMtuKey;
+    @Mock
     VpcDao vpcDao;
     @Mock
     DomainRouterDao routerDao;
@@ -159,9 +163,11 @@ public class NetworkServiceImplTest {
     CommandSetupHelper commandSetupHelper;
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+        replaceUserChangeMtuField();
+        when(userChangeMtuKey.valueIn(1L)).thenReturn(Boolean.TRUE);
         offering = Mockito.mock(NetworkOfferingVO.class);
         network = Mockito.mock(Network.class);
         dc = Mockito.mock(DataCenterVO.class);
@@ -373,7 +379,7 @@ public class NetworkServiceImplTest {
     }
 
     @Test
-    public void testUpdateSharedNetworkMtus() {
+    public void testUpdateSharedNetworkMtus() throws Exception {
         Integer publicMtu = 1250;
         Integer privateMtu = 1000;
         Long networkId = 1L;
@@ -438,5 +444,15 @@ public class NetworkServiceImplTest {
         service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu, privateMtu);
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
+    }
+
+    private void replaceUserChangeMtuField() throws Exception {
+        Field field = NetworkServiceImpl.class.getDeclaredField("AllowUsersToSpecifyVmMtu");
+        field.setAccessible(true);
+        // remove final modifier from field
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        field.set(null, userChangeMtuKey);
     }
 }

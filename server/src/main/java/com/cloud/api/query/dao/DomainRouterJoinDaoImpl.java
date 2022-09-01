@@ -124,7 +124,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             routerResponse.setRequiresUpgrade(true);
         }
 
-        routerResponse.setHypervisor(router.getHypervisorType().toString());
+        if (router.getHypervisorType() != null) {
+            routerResponse.setHypervisor(router.getHypervisorType().toString());
+        }
         routerResponse.setHasAnnotation(annotationDao.hasAnnotations(router.getUuid(), AnnotationService.EntityType.VR.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
