@@ -72,7 +72,16 @@ export default {
       params.virtualmachineid = this.resource.id
       api('createConsoleEndpoint', params).then(json => {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
-        window.open(this.url, '_blank')
+        if (json.createconsoleendpointresponse.consoleendpoint.success) {
+          window.open(this.url, '_blank')
+        } else {
+          this.$notification.error({
+            message: this.$t('error.execute.api.failed') + ' ' + 'createConsoleEndpoint',
+            description: json.createconsoleendpointresponse.consoleendpoint.details
+          })
+        }
+      }).catch(error => {
+        this.$notifyError(error)
       })
     }
   },
