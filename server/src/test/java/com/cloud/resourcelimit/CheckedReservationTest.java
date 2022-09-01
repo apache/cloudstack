@@ -57,6 +57,7 @@ public class CheckedReservationTest {
     public void getId() {
         when(reservationDao.persist(any())).thenReturn(reservation);
         when(account.getAccountId()).thenReturn(1l);
+        when(account.getDomainId()).thenReturn(4l);
         boolean fail = false;
         long id = 0l;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {

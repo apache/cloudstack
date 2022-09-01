@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
 public class CheckedReservation  implements AutoCloseable, ResourceReservation {
     private static final Logger LOG = Logger.getLogger(CheckedReservation.class);
 
-    private static final int TRY_TO_GET_LOCK_TIME = 60;
+    private static final int TRY_TO_GET_LOCK_TIME = 120;
     ReservationDao reservationDao;
     private final Account account;
     private final ResourceType resourceType;
