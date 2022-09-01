@@ -320,10 +320,20 @@ class TestVmAutoScaling(cloudstackTestCase):
         if result and not expected:
             self.fail("Autoscaling VM Group is removed successfully, but expected to fail")
 
-    def verifyVmCountAndProfiles(self, vmCount):
+    def verifyVmCountAndProfiles(self, vmCount, autoscalevmgroupid=None, autoscalevmprofileid=None, networkid=None, projectid=None):
+        if autoscalevmgroupid is None:
+            autoscalevmgroupid = self.autoscaling_vmgroup.id
+
+        if autoscalevmprofileid is None:
+            autoscalevmprofileid = self.autoscaling_vmprofile.id
+
+        if networkid is None:
+            networkid = self.user_network_1.id
+
         vms = VirtualMachine.list(
             self.regular_user_apiclient,
-            autoscalevmgroupid=self.autoscaling_vmgroup.id,
+            autoscalevmgroupid=autoscalevmgroupid,
+            projectid=projectid,
             listall=True
         )
         self.assertEqual(
@@ -340,9 +350,9 @@ class TestVmAutoScaling(cloudstackTestCase):
         for vm in vms:
             if vm.id not in self.excluded_vm_ids:
                 self.logger.debug("==== Verifying profiles of new VM %s (%s) ====" % (vm.name, vm.id))
-                self.verifyVmProfile(vm)
+                self.verifyVmProfile(vm, autoscalevmprofileid, networkid, projectid)
 
-    def verifyVmProfile(self, vm):
+    def verifyVmProfile(self, vm, autoscalevmprofileid, networkid=None, projectid=None):
         self.excluded_vm_ids.append(vm.id)
 
         datadisksizeInBytes = None
@@ -370,6 +380,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         volumes = Volume.list(
             self.regular_user_apiclient,
             virtualmachineid=vm.id,
+            projectid=projectid,
             listall=True
         )
         for volume in volumes:
@@ -382,7 +393,8 @@ class TestVmAutoScaling(cloudstackTestCase):
         vmprofiles_list = AutoScaleVmProfile.list(
             self.regular_user_apiclient,
             listall=True,
-            id=self.autoscaling_vmprofile.id
+            projectid=projectid,
+            id=autoscalevmprofileid
         )
         vmprofile = vmprofiles_list[0]
         vmprofile_otherdeployparams = vmprofile.otherdeployparams
@@ -392,8 +404,8 @@ class TestVmAutoScaling(cloudstackTestCase):
         self.logger.debug("serviceofferingid = " + serviceofferingid)
         self.logger.debug("rootdisksizeInBytes = " + str(rootdisksizeInBytes))
         self.logger.debug("datadisksizeInBytes = " + str(datadisksizeInBytes))
-        self.logger.debug("diskofferingid = " + diskofferingid)
-        self.logger.debug("sshkeypairs = " + sshkeypairs)
+        self.logger.debug("diskofferingid = " + str(diskofferingid))
+        self.logger.debug("sshkeypairs = " + str(sshkeypairs))
         self.logger.debug("networkids = " + networkids)
         self.logger.debug("affinitygroupids = " + affinitygroupids)
 
@@ -421,7 +433,7 @@ class TestVmAutoScaling(cloudstackTestCase):
         if vmprofile_otherdeployparams.networkids:
             self.assertEquals(networkids, vmprofile_otherdeployparams.networkids)
         else:
-            self.assertEquals(networkids, self.user_network_1.id)
+            self.assertEquals(networkids, networkid)
 
         if vmprofile_otherdeployparams.affinitygroupids:
             self.assertEquals(affinitygroupids, vmprofile_otherdeployparams.affinitygroupids)
@@ -664,18 +676,154 @@ class TestVmAutoScaling(cloudstackTestCase):
         """ Testing VM autoscaling on project network """
 
         # Create project
-        self.project = Project.create(
+        project = Project.create(
             self.regular_user_apiclient,
             self.services["project"]
         )
-        self.cleanup.append(self.project)
+        self.cleanup.append(project)
 
         # Create project network
         self.services["network"]["name"] = "Test Network Isolated - Project"
-        self.project_network = Network.create(
+        project_network = Network.create(
             self.regular_user_apiclient,
             self.services["network"],
             networkofferingid=self.network_offering_isolated.id,
+            projectid=project.id,
             zoneid=self.zone.id
         )
-        self.cleanup.append(self.project_network)
+        self.cleanup.append(project_network)
+
+        # Acquire Public IP and create LoadBalancer rule for project
+        public_ip_address_project = PublicIPAddress.create(
+            self.regular_user_apiclient,
+            services=self.services["network"],
+            projectid = project.id,
+            networkid=project_network.id
+        )
+
+        load_balancer_rule_project = LoadBalancerRule.create(
+            self.regular_user_apiclient,
+            self.services["lbrule"],
+            projectid = project.id,
+            ipaddressid=public_ip_address_project.ipaddress.id,
+            networkid=project_network.id
+        )
+        self.cleanup.append(load_balancer_rule_project)
+
+        # Create AS conditions for project
+        scale_up_condition_project = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            projectid = project.id,
+            counterid = self.counter_cpu_id,
+            relationaloperator = "GE",
+            threshold = 1
+        )
+
+        scale_down_condition_project = AutoScaleCondition.create(
+            self.regular_user_apiclient,
+            projectid = project.id,
+            counterid = self.counter_memory_id,
+            relationaloperator = "LE",
+            threshold = 100
+        )
+
+        self.cleanup.append(scale_up_condition_project)
+        self.cleanup.append(scale_down_condition_project)
+
+        # Create AS policies for project
+        scale_up_policy_project = AutoScalePolicy.create(
+            self.regular_user_apiclient,
+            action='ScaleUp',
+            conditionids=scale_up_condition_project.id,
+            duration=DEFAULT_DURATION
+        )
+
+        scale_down_policy_project = AutoScalePolicy.create(
+            self.regular_user_apiclient,
+            action='ScaleDown',
+            conditionids=scale_down_condition_project.id,
+            duration=DEFAULT_DURATION
+        )
+
+        self.cleanup.append(scale_up_policy_project)
+        self.cleanup.append(scale_down_policy_project)
+
+        # Create AS VM Profile for project
+        autoscaling_vmprofile_project = AutoScaleVmProfile.create(
+            self.regular_user_apiclient,
+            serviceofferingid=self.service_offering.id,
+            zoneid=self.zone.id,
+            templateid=self.template.id,
+            destroyvmgraceperiod=DEFAULT_DESTROY_VM_GRACE_PERIOD,
+            projectid = project.id
+        )
+
+        # Create AS VM Group for project
+        autoscaling_vmgroup_project = AutoScaleVmGroup.create(
+            self.regular_user_apiclient,
+            name=NAME_PREFIX + format(datetime.datetime.now(), '%Y%m%d-%H%M%S'),
+            lbruleid=load_balancer_rule_project.id,
+            minmembers=MIN_MEMBER,
+            maxmembers=MAX_MEMBER,
+            scaledownpolicyids=scale_down_policy_project.id,
+            scaleuppolicyids=scale_up_policy_project.id,
+            vmprofileid=autoscaling_vmprofile_project.id,
+            interval=DEFAULT_INTERVAL
+        )
+
+        # VM count increases from 0 to MIN_MEMBER
+        sleeptime = int(int(self.check_interval)/1000) * 2
+        self.logger.debug("==== Waiting %s seconds for %s VM(s) to be created ====" % (sleeptime, MIN_MEMBER))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MIN_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
+                                      project_network.id, project.id)
+
+        # VM count increases from MIN_MEMBER to MAX_MEMBER
+        sleeptime = int(int(self.check_interval)/1000 + DEFAULT_INTERVAL + DEFAULT_DURATION) * (MAX_MEMBER - MIN_MEMBER)
+        self.logger.debug("==== Waiting %s seconds for other %s VM(s) to be created ====" % (sleeptime, (MAX_MEMBER - MIN_MEMBER)))
+        time.sleep(sleeptime)
+        self.verifyVmCountAndProfiles(MAX_MEMBER, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
+                                      project_network.id, project.id)
+
+        vms = VirtualMachine.list(
+            self.regular_user_apiclient,
+            autoscalevmgroupid=autoscaling_vmgroup_project.id,
+            projectid=project.id,
+            listall=True
+        )
+        self.assertEqual(
+            isinstance(vms, list),
+            True,
+            "List virtual machines should return a valid list"
+        )
+        self.assertEqual(
+            len(vms),
+            MAX_MEMBER,
+            "The number of virtual machines %s should be equal to %s" % (len(vms), MAX_MEMBER)
+        )
+
+        vm = vms[0]
+        # Remove a vm from LB, should fail
+        try:
+            LoadBalancerRule.remove(load_balancer_rule_project, self.regular_user_apiclient, [vm])
+            self.fail("VM should not be removed from load balancer rule when VM Group is not Disabled")
+        except Exception as ex:
+            pass
+
+        # Remove a vm from LB, should succeed when vm group is Disabled
+        autoscaling_vmgroup_project.disable(self.regular_user_apiclient)
+        try:
+            LoadBalancerRule.remove(load_balancer_rule_project, self.regular_user_apiclient, [vm])
+        except Exception as ex:
+            self.fail("VM should be removed from load balancer rule when VM Group is Disabled")
+
+        self.verifyVmCountAndProfiles(MAX_MEMBER-1, autoscaling_vmgroup_project.id, autoscaling_vmprofile_project.id,
+                                      project_network.id, project.id)
+
+        autoscaling_vmgroup_project.enable(self.regular_user_apiclient)
+
+        self.delete_vmgroup(autoscaling_vmgroup_project, self.regular_user_apiclient, cleanup=False, expected=False)
+        self.delete_vmgroup(autoscaling_vmgroup_project, self.regular_user_apiclient, cleanup=True, expected=True)
+
+        VirtualMachine.delete(vm, self.regular_user_apiclient, expunge=False)
+        VirtualMachine.delete(vm, self.apiclient, expunge=True)

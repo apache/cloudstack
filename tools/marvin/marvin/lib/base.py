@@ -2352,13 +2352,15 @@ class AutoScaleCondition:
         return (apiclient.listConditions(cmd))
 
     @classmethod
-    def create(cls, apiclient, counterid, relationaloperator, threshold):
+    def create(cls, apiclient, counterid, relationaloperator, threshold, projectid=None):
         """creates condition."""
 
         cmd = createCondition.createConditionCmd()
         cmd.counterid = counterid
         cmd.relationaloperator = relationaloperator
         cmd.threshold = threshold
+        if projectid:
+            cmd.projectid = projectid
         return AutoScaleCondition(apiclient.createCondition(cmd).__dict__)
 
     def update(self, apiclient, **kwargs):
@@ -2437,7 +2439,7 @@ class AutoScaleVmProfile:
     @classmethod
     def create(cls, apiclient, serviceofferingid, zoneid, templateid,
                                  autoscaleuserid=None, destroyvmgraceperiod=None, counterparam=None,
-                                 otherdeployparams=None, userdata=None):
+                                 otherdeployparams=None, userdata=None, projectid=None):
         """creates Autoscale VM Profile."""
 
         cmd = createAutoScaleVmProfile.createAutoScaleVmProfileCmd()
@@ -2462,6 +2464,9 @@ class AutoScaleVmProfile:
 
         if userdata:
             cmd.userdata = userdata
+
+        if projectid:
+            cmd.projectid = projectid
 
         return AutoScaleVmProfile(apiclient.createAutoScaleVmProfile(cmd).__dict__)
 
