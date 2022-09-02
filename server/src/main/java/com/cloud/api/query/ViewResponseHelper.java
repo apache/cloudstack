@@ -25,6 +25,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -138,15 +139,15 @@ public class ViewResponseHelper {
         return createUserVmResponse(view, objectName, EnumSet.of(VMDetails.all), null, null, userVms);
     }
 
-    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVmJoinVO... userVms) {
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, Set<VMDetails> details, UserVmJoinVO... userVms) {
         return createUserVmResponse(view, objectName, details, null, null, userVms);
     }
 
-    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, UserVmJoinVO... userVms) {
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, Set<VMDetails> details, Boolean accumulateStats, UserVmJoinVO... userVms) {
         return createUserVmResponse(view, objectName, details, accumulateStats, null, userVms);
     }
 
-    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
+    public static List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, Set<VMDetails> details, Boolean accumulateStats, Boolean showUserData,
             UserVmJoinVO... userVms) {
         Account caller = CallContext.current().getCallingAccount();
         Hashtable<Long, UserVmResponse> vmDataList = new Hashtable<Long, UserVmResponse>();
