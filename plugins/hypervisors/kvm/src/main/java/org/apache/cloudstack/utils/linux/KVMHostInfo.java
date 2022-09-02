@@ -16,21 +16,35 @@
 // under the License.
 package org.apache.cloudstack.utils.linux;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
-import com.cloud.utils.script.Script;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.LibvirtException;
-import org.libvirt.NodeInfo;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.cloudstack.utils.security.ParserUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+import org.libvirt.Connect;
+import org.libvirt.LibvirtException;
+import org.libvirt.NodeInfo;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
 
@@ -94,6 +108,11 @@ public class KVMHostInfo {
             return speed;
         }
 
+        speed = getCpuSpeedFromVirshCapabilities();
+        if(speed > 0L) {
+            return speed;
+        }
+
         LOGGER.info(String.format("Using the value [%s] provided by Libvirt.", nodeInfo.mhz));
         speed = nodeInfo.mhz;
         return speed;
@@ -123,6 +142,41 @@ public class KVMHostInfo {
             LOGGER.error(String.format("Unable to retrieve the CPU speed from file [%s]", cpuInfoFreqFileName), e);
             return 0L;
         }
+    }
+
+    private static long getCpuSpeedFromVirshCapabilities() {
+        LOGGER.info("Fetching CPU speed from \"virsh capabilities\"");
+        long speed = 0L;
+        try {
+            String command = "virsh capabilities";
+            Script cmd = new Script("/bin/bash", Duration.ZERO);
+            cmd.add("-c");
+            cmd.add(command);
+            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+            cmd.execute(parser);
+            String result = parser.getLines();
+            DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            Document doc = docBuilder.parse(new InputSource(new StringReader(result)));
+            Element rootElement = doc.getDocumentElement();
+            NodeList nodes = rootElement.getElementsByTagName("cpu");
+            Node node = nodes.item(0);
+            nodes = ((Element)node).getElementsByTagName("counter");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                node = nodes.item(i);
+                NamedNodeMap attributes = node.getAttributes();
+                Node nameNode = attributes.getNamedItem("name");
+                Node freqNode = attributes.getNamedItem("frequency");
+                if (nameNode != null && "tsc".equals(nameNode.getNodeValue()) && freqNode != null && StringUtils.isNotEmpty(freqNode.getNodeValue())) {
+                    speed = Long.parseLong(freqNode.getNodeValue()) / 1000000;
+                    LOGGER.info(String.format("Retrieved value [%s] from \"virsh capabilities\". This corresponds to a CPU speed of [%s] MHz.", freqNode.getNodeValue(), speed));
+                }
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Unable to fetch CPU speed from \"virsh capabilities\"", ex);
+            speed = 0L;
+        }
+        return speed;
     }
 
     private void getHostInfoFromLibvirt() {
