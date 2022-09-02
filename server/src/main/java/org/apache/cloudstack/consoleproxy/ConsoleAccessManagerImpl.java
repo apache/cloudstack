@@ -408,7 +408,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag + "&session=" + sessionUuid;
 
         try {
-            Mac mac = Mac.getInstance("SHA-512");
+            Mac mac = Mac.getInstance("HmacSHA512");
 
             long ts = normalizedHashTime.getTime();
             ts = ts / 60000;        // round up to 1 minute
