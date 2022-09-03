@@ -179,7 +179,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             disk.setFormat(QemuImg.PhysicalDiskFormat.QCOW2);
             disk.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
             try (KeyFile keyFile = new KeyFile(passphrase)){
-                QemuImg qemuImg = new QemuImg(0, true, true);
+                QemuImg qemuImg = new QemuImg(0, true, false);
                 Map<String, String> options = new HashMap<>();
                 List<QemuObject> qemuObjects = new ArrayList<>();
                 long formattedSize = getUsableBytesFromRawBytes(disk.getSize());
@@ -352,7 +352,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         CryptSetup cryptSetup = null;
 
         try (KeyFile srcKey = new KeyFile(srcPassphrase); KeyFile dstKey = new KeyFile(dstPassphrase)){
-            qemu = new QemuImg(timeout, provisioningType.equals(Storage.ProvisioningType.FAT), true);
+            qemu = new QemuImg(timeout, provisioningType.equals(Storage.ProvisioningType.FAT), false);
             String srcPath = disk.getPath();
             String destPath = destDisk.getPath();
 
@@ -477,7 +477,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         QemuImgFile srcFile = null;
         QemuImgFile destFile = null;
         try {
-            QemuImg qemu = new QemuImg(timeout, true, true);
+            QemuImg qemu = new QemuImg(timeout, true, false);
             destDisk = destPool.getPhysicalDisk(destTemplatePath);
             if (destDisk == null) {
                 LOGGER.error("Failed to find the disk: " + destTemplatePath + " of the storage pool: " + destPool.getUuid());
