@@ -30,7 +30,6 @@ import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.joda.time.Duration;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
@@ -43,7 +42,6 @@ import org.xml.sax.InputSource;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtCapXMLParser;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
-import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class KVMHostInfo {
@@ -96,7 +94,7 @@ public class KVMHostInfo {
         return this.capabilities;
     }
 
-    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
+    protected static long getCpuSpeed(final String cpabilities, final NodeInfo nodeInfo) {
         long speed = 0L;
         speed = getCpuSpeedFromCommandLscpu();
         if(speed > 0L) {
@@ -108,7 +106,7 @@ public class KVMHostInfo {
             return speed;
         }
 
-        speed = getCpuSpeedFromVirshCapabilities();
+        speed = getCpuSpeedFromHostCapabilities(cpabilities);
         if(speed > 0L) {
             return speed;
         }
@@ -144,20 +142,13 @@ public class KVMHostInfo {
         }
     }
 
-    private static long getCpuSpeedFromVirshCapabilities() {
-        LOGGER.info("Fetching CPU speed from \"virsh capabilities\"");
+    protected static long getCpuSpeedFromHostCapabilities(final String capabilities) {
+        LOGGER.info("Fetching CPU speed from \"host capabilities\"");
         long speed = 0L;
         try {
-            String command = "virsh capabilities";
-            Script cmd = new Script("/bin/bash", Duration.ZERO);
-            cmd.add("-c");
-            cmd.add(command);
-            OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-            cmd.execute(parser);
-            String result = parser.getLines();
             DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-            Document doc = docBuilder.parse(new InputSource(new StringReader(result)));
+            Document doc = docBuilder.parse(new InputSource(new StringReader(capabilities)));
             Element rootElement = doc.getDocumentElement();
             NodeList nodes = rootElement.getElementsByTagName("cpu");
             Node node = nodes.item(0);
@@ -169,11 +160,11 @@ public class KVMHostInfo {
                 Node freqNode = attributes.getNamedItem("frequency");
                 if (nameNode != null && "tsc".equals(nameNode.getNodeValue()) && freqNode != null && StringUtils.isNotEmpty(freqNode.getNodeValue())) {
                     speed = Long.parseLong(freqNode.getNodeValue()) / 1000000;
-                    LOGGER.info(String.format("Retrieved value [%s] from \"virsh capabilities\". This corresponds to a CPU speed of [%s] MHz.", freqNode.getNodeValue(), speed));
+                    LOGGER.info(String.format("Retrieved value [%s] from \"host capabilities\". This corresponds to a CPU speed of [%s] MHz.", freqNode.getNodeValue(), speed));
                 }
             }
         } catch (Exception ex) {
-            LOGGER.error("Unable to fetch CPU speed from \"virsh capabilities\"", ex);
+            LOGGER.error("Unable to fetch CPU speed from \"host capabilities\"", ex);
             speed = 0L;
         }
         return speed;
@@ -183,8 +174,9 @@ public class KVMHostInfo {
         try {
             final Connect conn = LibvirtConnection.getConnection();
             final NodeInfo hosts = conn.nodeInfo();
+            final String capabilities = conn.getCapabilities();
             if (this.cpuSpeed == 0) {
-                this.cpuSpeed = getCpuSpeed(hosts);
+                this.cpuSpeed = getCpuSpeed(capabilities, hosts);
             } else {
                 LOGGER.debug(String.format("Using existing configured CPU frequency %s", this.cpuSpeed));
             }
@@ -200,7 +192,7 @@ public class KVMHostInfo {
             this.cpus = hosts.cpus;
 
             final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
-            parser.parseCapabilitiesXML(conn.getCapabilities());
+            parser.parseCapabilitiesXML(capabilities);
             final ArrayList<String> oss = parser.getGuestOsType();
             for (final String s : oss) {
                 /*
