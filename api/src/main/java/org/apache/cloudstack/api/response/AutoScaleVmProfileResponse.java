@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.BaseResponseWithAnnotations;
+import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.Parameter;
 
@@ -33,7 +33,7 @@ import com.cloud.utils.Pair;
 import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = AutoScaleVmProfile.class)
-public class AutoScaleVmProfileResponse extends BaseResponseWithAnnotations implements ControlledEntityResponse {
+public class AutoScaleVmProfileResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the autoscale vm profile ID")

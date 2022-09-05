@@ -3343,9 +3343,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setObjectName("autoscalevmprofile");
 
-        response.setHasAnnotation(annotationDao.hasAnnotations(profile.getUuid(), AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(),
-                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-
         // Populates the account information in the response
         populateOwner(response, profile);
         return response;
@@ -3431,6 +3428,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (AutoScalePolicy autoScalePolicy : scaleDownPolicies) {
             scaleDownPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
         }
+
+        response.setHasAnnotation(annotationDao.hasAnnotations(vmGroup.getUuid(), AnnotationService.EntityType.AUTOSCALE_VM_GROUP.name(),
+                _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
 
         populateOwner(response, vmGroup);
         return response;
