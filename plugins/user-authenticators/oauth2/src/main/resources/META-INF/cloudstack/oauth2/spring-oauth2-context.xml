@@ -33,7 +33,4 @@
         <property name="name" value="OAuth2Auth"/>
     </bean>
 
-    <bean id="oauth2TokenDao" class="org.apache.cloudstack.oauth2.OAuth2TokenDaoImpl">
-    </bean>
-
 </beans>

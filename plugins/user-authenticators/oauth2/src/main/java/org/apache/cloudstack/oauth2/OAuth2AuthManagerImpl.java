@@ -67,11 +67,11 @@ public class OAuth2AuthManagerImpl extends AdapterBase implements OAuth2AuthMana
     }
 
     @Override
-    public boolean authorizeUser(Long userId, String OauthProviderId, boolean enable) {
+    public boolean authorizeUser(Long userId, String oAuthProviderId, boolean enable) {
         UserVO user = _userDao.getUser(userId);
         if (user != null) {
             if (enable) {
-                user.setExternalEntity(OauthProviderId);
+                user.setExternalEntity(oAuthProviderId);
                 user.setSource(User.Source.OAUTH2);
             } else {
                 return false;
