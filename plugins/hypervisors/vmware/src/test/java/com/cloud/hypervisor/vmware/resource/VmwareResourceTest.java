@@ -93,6 +93,8 @@ public class VmwareResourceTest {
 
     private static final String VOLUME_PATH = "XXXXXXXXXXXX";
 
+    VmwareResource vmwareResource = Mockito.spy(VmwareResource.class);
+
     @Mock
     VmwareStorageProcessor storageProcessor;
     @Mock
@@ -473,15 +475,10 @@ public class VmwareResourceTest {
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, metrics);
 
-        String args = "-l " + getAutoScaleMetricsCommand.getPublicIP() + " -g";
-        ExecutionResult executionResult = new ExecutionResult(true, vpcStats[0] + ":" + vpcStats[1]);
-        PowerMockito.when(_resource.executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "vpc_netusage.sh", args)).thenReturn(executionResult);
+        when(vmwareResource.getVPCNetworkStats(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(vpcStats);
+        when(vmwareResource.getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class))).thenReturn(lbStats);
 
-        args = getAutoScaleMetricsCommand.getPublicIP() + " " + getAutoScaleMetricsCommand.getPort();
-        executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
-        PowerMockito.when(_resource.executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "get_haproxy_stats.sh", args)).thenReturn(executionResult);
-
-        Answer answer = _resource.execute(getAutoScaleMetricsCommand);
+        Answer answer = vmwareResource.execute(getAutoScaleMetricsCommand);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
 
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
@@ -509,15 +506,10 @@ public class VmwareResourceTest {
 
         GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, metrics);
 
-        String args = "-g -l " + getAutoScaleMetricsCommand.getPublicIP();
-        ExecutionResult executionResult = new ExecutionResult(true, networkStats[0] + ":" + networkStats[1]);
-        PowerMockito.when(_resource.executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "netusage.sh", args)).thenReturn(executionResult);
+        when(vmwareResource.getNetworkStats(Mockito.anyString(), Mockito.anyString())).thenReturn(networkStats);
+        when(vmwareResource.getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class))).thenReturn(lbStats);
 
-        args = getAutoScaleMetricsCommand.getPublicIP() + " " + getAutoScaleMetricsCommand.getPort();
-        executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
-        PowerMockito.when(_resource.executeInVR(getAutoScaleMetricsCommand.getPrivateIP(), "get_haproxy_stats.sh", args)).thenReturn(executionResult);
-
-        Answer answer = _resource.execute(getAutoScaleMetricsCommand);
+        Answer answer = vmwareResource.execute(getAutoScaleMetricsCommand);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
 
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
@@ -533,5 +525,47 @@ public class VmwareResourceTest {
                 assertEquals(value.getValue(), Double.valueOf(networkStats[1]));
             }
         }
+    }
+
+    @Test
+    public void testGetStatsForVpcStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, null);
+
+        String args = "-l " + getAutoScaleMetricsCommand.getPublicIP() + " -g";
+        ExecutionResult executionResult = new ExecutionResult(true, vpcStats[0] + ":" + vpcStats[1]);
+        when(vmwareResource.executeInVR(Mockito.eq(getAutoScaleMetricsCommand.getPrivateIP()), Mockito.eq("vpc_netusage.sh"), Mockito.eq(args))).thenReturn(executionResult);
+
+        long[] stats = vmwareResource.getVPCNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), "get", "");
+        assertEquals(stats.length, 2);
+        assertEquals(stats[0], vpcStats[0]);
+        assertEquals(stats[1], vpcStats[1]);
+    }
+
+    @Test
+    public void testGetStatsForNetworkStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", false, "10.10.10.10", 8080, null);
+
+        String args = "-g -l " + getAutoScaleMetricsCommand.getPublicIP();
+        ExecutionResult executionResult = new ExecutionResult(true, networkStats[0] + ":" + networkStats[1]);
+        when(vmwareResource.executeInVR(Mockito.eq(getAutoScaleMetricsCommand.getPrivateIP()), Mockito.eq("netusage.sh"), Mockito.eq(args))).thenReturn(executionResult);
+
+        long[] stats = vmwareResource.getNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP());
+        assertEquals(stats.length, 2);
+        assertEquals(stats[0], networkStats[0]);
+        assertEquals(stats[1], networkStats[1]);
+    }
+
+    @Test
+    public void testGetStatsForLbStats() {
+        GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.1", true, "10.10.10.10", 8080, null);
+
+        String args = getAutoScaleMetricsCommand.getPublicIP() + " " + getAutoScaleMetricsCommand.getPort();
+        ExecutionResult executionResult = new ExecutionResult(true, String.valueOf(lbStats[0]));
+        when(vmwareResource.executeInVR(Mockito.eq(getAutoScaleMetricsCommand.getPrivateIP()), Mockito.eq("get_haproxy_stats.sh"), Mockito.eq(args))).thenReturn(executionResult);
+
+        long[] stats = vmwareResource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort());
+
+        assertEquals(stats.length, 1);
+        assertEquals(stats[0], lbStats[0]);
     }
 }

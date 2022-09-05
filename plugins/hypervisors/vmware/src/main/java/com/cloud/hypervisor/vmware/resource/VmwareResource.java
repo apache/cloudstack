@@ -602,7 +602,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 answer = execute((SetupPersistentNetworkCommand) cmd);
             } else if (clz == GetVmVncTicketCommand.class) {
                 answer = execute((GetVmVncTicketCommand) cmd);
-            } else if (clz ==GetAutoScaleMetricsCommand.class) {
+            } else if (clz == GetAutoScaleMetricsCommand.class) {
                 answer = execute((GetAutoScaleMetricsCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
@@ -1157,18 +1157,18 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new long[2];
     }
 
-    public long[] getNetworkLbStats(final String privateIp, final String publicIp, final Integer port) {
+    protected long[] getNetworkLbStats(String privateIp, String publicIp, Integer port) {
         String args = publicIp + " " + port;
         ExecutionResult callResult = executeInVR(privateIp, "get_haproxy_stats.sh", args);
 
+        String result = callResult.getDetails();
         if (!callResult.isSuccess()) {
             s_logger.error(String.format("Unable to get network loadbalancer stats on DomR (%s), domR may not be ready yet. failure due to %s", privateIp, callResult.getDetails()));
-        }
-        String result = callResult.getDetails();
-        if (result == null || result.isEmpty()) {
+            result = null;
+        } else if (result == null || result.isEmpty()) {
             s_logger.error("Get network loadbalancer stats returns empty result");
         }
-        final long[] stats = new long[1];
+        long[] stats = new long[1];
         if (result != null) {
             final String[] splitResult = result.split(",");
             stats[0] += Long.parseLong(splitResult[0]);
@@ -1180,16 +1180,17 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         Long bytesSent;
         Long bytesReceived;
         if (cmd.isForVpc()) {
-            final long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP(), "get", null);
+            long[] stats = getVPCNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP(), "get", "");
             bytesSent = stats[0];
             bytesReceived = stats[1];
         } else {
-            final long [] stats = getNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP());
+            long [] stats = getNetworkStats(cmd.getPrivateIP(), cmd.getPublicIP());
             bytesSent = stats[0];
             bytesReceived = stats[1];
         }
-        final long [] lbStats = getNetworkLbStats(cmd.getPrivateIP(), cmd.getPublicIP(), cmd.getPort());
-        final long lbConnections = lbStats[0];
+
+        long [] lbStats = getNetworkLbStats(cmd.getPrivateIP(), cmd.getPublicIP(), cmd.getPort());
+        long lbConnections = lbStats[0];
 
         List<VirtualRouterAutoScale.AutoScaleMetricsValue> values = new ArrayList<>();
 
@@ -6643,7 +6644,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return result.getDetails();
     }
 
-    private long[] getNetworkStats(String privateIP, String publicIp) {
+    protected long[] getNetworkStats(String privateIP, String publicIp) {
         String result = networkUsage(privateIP, "get", null, publicIp);
         long[] stats = new long[2];
         if (result != null) {
