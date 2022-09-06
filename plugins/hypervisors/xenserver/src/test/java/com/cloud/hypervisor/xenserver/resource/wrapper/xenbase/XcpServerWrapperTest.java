@@ -195,4 +195,21 @@ public class XcpServerWrapperTest {
             }
         }
     }
+
+    @Test
+    public void testGetAutoScaleMetricsCommandWithException() {
+        List<VirtualRouterAutoScale.AutoScaleMetrics> metrics = new ArrayList<>();
+
+        final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Connection conn = Mockito.mock(Connection.class);
+        when(XcpServerResource.getConnection()).thenReturn(conn);
+        when(XcpServerResource.getNetworkStats(conn, getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP())).thenThrow(NumberFormatException.class);
+
+        final Answer answer = wrapper.execute(getAutoScaleMetricsCommand, XcpServerResource);
+        assertFalse(answer.getResult());
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+    }
 }

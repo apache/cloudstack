@@ -241,6 +241,23 @@ public class XenServer56WrapperTest {
     }
 
     @Test
+    public void testGetAutoScaleMetricsCommandWithException() {
+        List<AutoScaleMetrics> metrics = new ArrayList<>();
+
+        final GetAutoScaleMetricsCommand getAutoScaleMetricsCommand = new GetAutoScaleMetricsCommand("192.168.10.10", false, "10.10.10.10", 8080, metrics);
+        final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+        assertNotNull(wrapper);
+
+        final Connection conn = Mockito.mock(Connection.class);
+        when(xenServer56Resource.getConnection()).thenReturn(conn);
+        when(xenServer56Resource.getNetworkStats(conn, getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP())).thenThrow(NumberFormatException.class);
+
+        final Answer answer = wrapper.execute(getAutoScaleMetricsCommand, xenServer56Resource);
+        assertFalse(answer.getResult());
+        assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
+    }
+
+    @Test
     public void testSetupCommand() {
         final XsHost xsHost = Mockito.mock(XsHost.class);
         final HostEnvironment env = Mockito.mock(HostEnvironment.class);
