@@ -39,6 +39,15 @@ public class AutoScalePolicyTest {
         Assert.assertNull(action);
     }
 
+    @Test
+    public void testBlankAction() {
+        AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("");
+        Assert.assertNull(action);
+
+        action = AutoScalePolicy.Action.fromValue(" ");
+        Assert.assertNull(action);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidAction() {
         AutoScalePolicy.Action action = AutoScalePolicy.Action.fromValue("invalid");

@@ -35,6 +35,15 @@ public class AutoScaleVmGroupTest {
         testAutoScaleVmGroupState("scaling");
     }
 
+    @Test
+    public void testBlankStates() {
+        AutoScaleVmGroup.State state = AutoScaleVmGroup.State.fromValue("");
+        Assert.assertNull(state);
+
+        state = AutoScaleVmGroup.State.fromValue(" ");
+        Assert.assertNull(state);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidState() {
         testAutoScaleVmGroupState("invalid");
