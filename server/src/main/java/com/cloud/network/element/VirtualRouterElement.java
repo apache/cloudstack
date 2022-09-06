@@ -537,14 +537,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
         // specifies that LB rules can support autoscaling and the list of
         // counters it supports
-        AutoScaleCounter counter;
-        final List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
-        counter = new AutoScaleCounter(AutoScaleCounterType.Cpu);
-        counterList.add(counter);
-        counter = new AutoScaleCounter(AutoScaleCounterType.Memory);
-        counterList.add(counter);
-        counter = new AutoScaleCounter(AutoScaleCounterType.VirtualRouter);
-        counterList.add(counter);
+        final List<AutoScaleCounter> counterList = getAutoScaleCounters();
         final Gson gson = new Gson();
         final String autoScaleCounterList = gson.toJson(counterList);
         lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
@@ -589,6 +582,18 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         capabilities.put(Service.PortForwarding, portForwardingCapabilities);
 
         return capabilities;
+    }
+
+    protected static List<AutoScaleCounter> getAutoScaleCounters() {
+        AutoScaleCounter counter;
+        final List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
+        counter = new AutoScaleCounter(AutoScaleCounterType.Cpu);
+        counterList.add(counter);
+        counter = new AutoScaleCounter(AutoScaleCounterType.Memory);
+        counterList.add(counter);
+        counter = new AutoScaleCounter(AutoScaleCounterType.VirtualRouter);
+        counterList.add(counter);
+        return counterList;
     }
 
     @Override
