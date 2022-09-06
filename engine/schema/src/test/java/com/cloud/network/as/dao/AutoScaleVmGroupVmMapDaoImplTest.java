@@ -130,4 +130,40 @@ public class AutoScaleVmGroupVmMapDaoImplTest {
         Mockito.verify(searchCriteriaAutoScaleVmGroupVmMapVOMock).addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
         Mockito.verify(AutoScaleVmGroupVmMapDaoImplSpy).remove(searchCriteriaAutoScaleVmGroupVmMapVOMock);
     }
+
+    @Test
+    public void testRemoveByVmFailed() throws Exception {
+        AutoScaleVmGroupVmMapDaoImpl AutoScaleVmGroupVmMapDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupVmMapDaoImpl());
+
+        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVmMapVOMock).when(AutoScaleVmGroupVmMapDaoImplSpy).createSearchCriteria();
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVmMapVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        PowerMockito.doReturn(-1).when(AutoScaleVmGroupVmMapDaoImplSpy).remove(Mockito.any(SearchCriteria.class));
+
+        long vmId = 3L;
+
+        boolean result = AutoScaleVmGroupVmMapDaoImplSpy.removeByVm(vmId);
+
+        Assert.assertEquals(false, result);
+
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVmMapVOMock).addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
+        Mockito.verify(AutoScaleVmGroupVmMapDaoImplSpy).remove(searchCriteriaAutoScaleVmGroupVmMapVOMock);
+    }
+
+    @Test
+    public void testRemoveByGroupFailed() throws Exception {
+        AutoScaleVmGroupVmMapDaoImpl AutoScaleVmGroupVmMapDaoImplSpy = PowerMockito.spy(new AutoScaleVmGroupVmMapDaoImpl());
+
+        PowerMockito.doReturn(searchCriteriaAutoScaleVmGroupVmMapVOMock).when(AutoScaleVmGroupVmMapDaoImplSpy).createSearchCriteria();
+        Mockito.doNothing().when(searchCriteriaAutoScaleVmGroupVmMapVOMock).addAnd(Mockito.anyString(), Mockito.any(), Mockito.any());
+        PowerMockito.doReturn(-1).when(AutoScaleVmGroupVmMapDaoImplSpy).remove(Mockito.any(SearchCriteria.class));
+
+        long groupId = 4L;
+
+        boolean result = AutoScaleVmGroupVmMapDaoImplSpy.removeByGroup(groupId);
+
+        Assert.assertEquals(false, result);
+
+        Mockito.verify(searchCriteriaAutoScaleVmGroupVmMapVOMock).addAnd("vmGroupId", SearchCriteria.Op.EQ, groupId);
+        Mockito.verify(AutoScaleVmGroupVmMapDaoImplSpy).remove(searchCriteriaAutoScaleVmGroupVmMapVOMock);
+    }
 }
