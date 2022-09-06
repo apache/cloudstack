@@ -40,7 +40,7 @@ public class QuotaAccountDaoImpl extends GenericDaoBase<QuotaAccountVO, Long> im
     public List<QuotaAccountVO> listAllQuotaAccount() {
         List<QuotaAccountVO> accountsWithQuotaEnabled = new ArrayList<>();
         for (QuotaAccountVO account : listAllQuotaAccount(null, null).first()) {
-            if (getQuotaAccountEnabled(account.getAccountId())) {
+            if (Boolean.TRUE.equals(getQuotaAccountEnabled(account.getAccountId()))) {
                 accountsWithQuotaEnabled.add(account);
                 continue;
             }
