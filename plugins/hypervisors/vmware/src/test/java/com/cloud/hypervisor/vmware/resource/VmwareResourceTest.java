@@ -478,7 +478,7 @@ public class VmwareResourceTest {
         when(vmwareResource.getVPCNetworkStats(Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString())).thenReturn(vpcStats);
         when(vmwareResource.getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class))).thenReturn(lbStats);
 
-        Answer answer = vmwareResource.execute(getAutoScaleMetricsCommand);
+        Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
 
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
@@ -509,7 +509,7 @@ public class VmwareResourceTest {
         when(vmwareResource.getNetworkStats(Mockito.anyString(), Mockito.anyString())).thenReturn(networkStats);
         when(vmwareResource.getNetworkLbStats(Mockito.nullable(String.class), Mockito.nullable(String.class), Mockito.nullable(Integer.class))).thenReturn(lbStats);
 
-        Answer answer = vmwareResource.execute(getAutoScaleMetricsCommand);
+        Answer answer = vmwareResource.executeRequest(getAutoScaleMetricsCommand);
         assertTrue(answer instanceof GetAutoScaleMetricsAnswer);
 
         GetAutoScaleMetricsAnswer getAutoScaleMetricsAnswer = (GetAutoScaleMetricsAnswer) answer;
