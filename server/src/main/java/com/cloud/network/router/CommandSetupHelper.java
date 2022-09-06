@@ -27,6 +27,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.domain.Domain;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -193,6 +195,8 @@ public class CommandSetupHelper {
     private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     private NetworkDetailsDao networkDetailsDao;
+    @Inject
+    private DomainDao _domainDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -206,11 +210,18 @@ public class CommandSetupHelper {
 
             Host host = _hostDao.findById(vm.getHostId());
             String destHostname = VirtualMachineManager.getHypervisorHostname(host != null ? host.getName() : "");
-            cmds.addCommand(
-                    "vmdata",
-                    generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
-                            staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
-                            vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname));
+            VmDataCommand vmDataCommand = generateVmDataCommand(router, nic.getIPv4Address(), vm.getUserData(), serviceOffering, zoneName,
+                    staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
+                    vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname);
+
+            Domain domain = _domainDao.findById(vm.getDomainId());
+            if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
+                s_logger.debug("Adding domain info to cloud metadata");
+                vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_FILE, domain.getName());
+                vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_ID_FILE, domain.getUuid());
+            }
+
+            cmds.addCommand("vmdata", vmDataCommand);
         }
     }
 
