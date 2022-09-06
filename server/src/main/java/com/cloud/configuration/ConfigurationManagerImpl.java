@@ -4643,7 +4643,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 if (!StringUtils.isAllEmpty(ipv6Range, vlan.getIp6Range())) {
                     String r1 = StringUtils.isEmpty(ipv6Range) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : ipv6Range;
-                    String r2 = StringUtils.isEmpty(vlan.getIp6Range()) ? NetUtils.getIpv6RangeFromCidr(vlanIp6Cidr) : vlan.getIp6Range();
+                    String r2 = StringUtils.isEmpty(vlan.getIp6Range()) ? NetUtils.getIpv6RangeFromCidr(vlan.getIp6Cidr()) : vlan.getIp6Range();
                     if(NetUtils.isIp6RangeOverlap(r1, r2)) {
                         throw new InvalidParameterValueException(String.format("The IPv6 range with tag: %s already has IPs that overlap with the new range.",
                                 vlan.getVlanTag()));
