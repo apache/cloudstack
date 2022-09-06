@@ -152,7 +152,7 @@ public class CommandSetupHelper {
     private EntityManager _entityMgr;
 
     @Inject
-    private DomainDao _domainDao;
+    private DomainDao domainDao;
     @Inject
     private NicDao _nicDao;
     @Inject
@@ -218,7 +218,7 @@ public class CommandSetupHelper {
                     staticNatIp == null || staticNatIp.getState() != IpAddress.State.Allocated ? null : staticNatIp.getAddress().addr(), vm.getHostName(), vm.getInstanceName(),
                     vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId(), destHostname);
 
-            Domain domain = _domainDao.findById(vm.getDomainId());
+            Domain domain = domainDao.findById(vm.getDomainId());
             if (domain != null && VirtualMachineManager.AllowExposeDomainInMetadata.valueIn(domain.getId())) {
                 s_logger.debug("Adding domain info to cloud metadata");
                 vmDataCommand.addVmData(NetworkModel.METATDATA_DIR, NetworkModel.CLOUD_DOMAIN_FILE, domain.getName());
