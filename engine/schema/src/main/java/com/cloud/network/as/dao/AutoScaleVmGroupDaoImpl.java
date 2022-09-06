@@ -18,10 +18,9 @@ package com.cloud.network.as.dao;
 
 import java.util.List;
 
-
-import com.cloud.network.as.AutoScaleVmGroup;
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.network.as.AutoScaleVmGroupVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
