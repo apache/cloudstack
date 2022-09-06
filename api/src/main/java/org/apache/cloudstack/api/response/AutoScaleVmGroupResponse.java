@@ -236,4 +236,44 @@ public class AutoScaleVmGroupResponse extends BaseResponseWithAnnotations implem
     public void setCreated(Date created) {
         this.created = created;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getMinMembers() {
+        return minMembers;
+    }
+
+    public int getMaxMembers() {
+        return maxMembers;
+    }
+
+    public int getInterval() {
+        return interval;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    public String getLbProvider() {
+        return lbProvider;
+    }
+
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    public String getPublicPort() {
+        return publicPort;
+    }
+
+    public String getPrivatePort() {
+        return privatePort;
+    }
 }
