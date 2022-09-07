@@ -58,6 +58,7 @@
     "vue-ls": "^3.2.2",
     "vue-router": "^3.5.1",
     "vue-svg-component-runtime": "^1.0.1",
+    "vue-uuid": "^3.0.0",
     "vuedraggable": "^2.24.3",
     "vuex": "^3.6.2"
   },

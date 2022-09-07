@@ -44,7 +44,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 
 @ResourceWrapper(handles =  StartCommand.class)
-public final class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
+public class LibvirtStartCommandWrapper extends CommandWrapper<StartCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStartCommandWrapper.class);
 

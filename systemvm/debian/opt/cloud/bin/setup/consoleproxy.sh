@@ -36,6 +36,11 @@ setup_console_proxy() {
   log_it "Applying iptables rules"
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4
 
+  log_it "Applying iptables rule for VNC port ${VNCPORT}"
+  sed -i 's/8080/${VNCPORT}/' /etc/iptables/rules.v4
+  echo "${VNCPORT}" > /root/vncport
+  log_it "Creating VNC port ${VNCPORT} file for VNC server configuration"
+
   log_it "Configuring sshd"
   local hyp=$HYPERVISOR
   if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then

@@ -46,6 +46,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     private boolean connectionAlive;
 
     private ConsoleProxyClientParam clientParam;
+    private String sessionUuid;
 
     public ConsoleProxyNoVncClient(Session session) {
         this.session = session;
@@ -89,6 +90,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         setClientParam(param);
         client = new NoVncClient();
         connectionAlive = true;
+        this.sessionUuid = param.getSessionUuid();
 
         updateFrontEndActivityTime();
         Thread worker = new Thread(new Runnable() {
@@ -190,6 +192,11 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
     public void closeClient() {
         this.connectionAlive = false;
         ConsoleProxy.removeViewer(this);
+    }
+
+    @Override
+    public String getSessionUuid() {
+        return sessionUuid;
     }
 
     @Override
