@@ -104,3 +104,6 @@ scripts/.pydevproject
 venv
 node_modules
 .vscode
+
+#Pyenv
+.python-version
