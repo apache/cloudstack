@@ -2154,6 +2154,7 @@ export default {
     },
     fetchTemplateNics (template) {
       var nics = []
+      this.nicToNetworkSelection = []
       if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
         var keys = Object.keys(template.deployasisdetails)
         keys = keys.filter(key => key.startsWith('network-'))
@@ -2165,7 +2166,6 @@ export default {
           return a.InstanceID - b.InstanceID
         })
         if (this.options.networks && this.options.networks.length > 0) {
-          this.nicToNetworkSelection = []
           for (var i = 0; i < nics.length; ++i) {
             var nic = nics[i]
             nic.id = nic.InstanceID
