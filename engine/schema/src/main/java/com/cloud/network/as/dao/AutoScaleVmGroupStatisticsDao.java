@@ -29,11 +29,9 @@ public interface AutoScaleVmGroupStatisticsDao extends GenericDao<AutoScaleVmGro
 
     List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroup(long vmGroupId, Date afterDate);
 
-    List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroupAndPolicy(long vmGroupId, long policyId, Date afterDate);
-
     List<AutoScaleVmGroupStatisticsVO> listByVmGroupAndPolicyAndCounter(long vmGroupId, long policyId, long counterId, Date afterDate);
 
     void updateStateByGroup(Long groupId, Long policyId, AutoScaleVmGroupStatisticsVO.State state);
 
-    void createInactiveDummyRecord(Long groupId);
+    AutoScaleVmGroupStatisticsVO createInactiveDummyRecord(Long groupId);
 }

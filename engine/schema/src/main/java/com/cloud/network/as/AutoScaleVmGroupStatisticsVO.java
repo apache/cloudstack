@@ -41,8 +41,8 @@ public class AutoScaleVmGroupStatisticsVO implements InternalIdentity {
         Active, Inactive
     }
 
-    static final double INVALID_VALUE = -1;
-    static final Long DUMMY_ID = 0L;
+    public static final double INVALID_VALUE = -1;
+    public static final long DUMMY_ID = 0L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

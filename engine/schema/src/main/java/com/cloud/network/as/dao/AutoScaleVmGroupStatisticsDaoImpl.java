@@ -50,7 +50,7 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     @Override
     public boolean removeByGroupId(long vmGroupId) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
-        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        sc.setParameters("vmGroupId", vmGroupId);
 
         return expunge(sc) > 0;
     }
@@ -70,18 +70,6 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
     public List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroup(long vmGroupId, Date afterDate) {
         SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
         sc.setParameters("vmGroupId", vmGroupId);
-        if (afterDate != null) {
-            sc.setParameters("createdGT", afterDate);
-        }
-        sc.setParameters("state", AutoScaleVmGroupStatisticsVO.State.Inactive);
-        return listBy(sc);
-    }
-
-    @Override
-    public List<AutoScaleVmGroupStatisticsVO> listInactiveByVmGroupAndPolicy(long vmGroupId, long policyId, Date afterDate) {
-        SearchCriteria<AutoScaleVmGroupStatisticsVO> sc = groupAndCounterSearch.create();
-        sc.setParameters("vmGroupId", vmGroupId);
-        sc.setParameters("policyId", policyId);
         if (afterDate != null) {
             sc.setParameters("createdGT", afterDate);
         }
@@ -115,13 +103,12 @@ public class AutoScaleVmGroupStatisticsDaoImpl extends GenericDaoBase<AutoScaleV
 
         AutoScaleVmGroupStatisticsVO vo = createForUpdate();
         vo.setState(state);
-
         update(vo, sc);
     }
 
     @Override
-    public void createInactiveDummyRecord(Long groupId) {
+    public AutoScaleVmGroupStatisticsVO createInactiveDummyRecord(Long groupId) {
         AutoScaleVmGroupStatisticsVO vo = new AutoScaleVmGroupStatisticsVO(groupId);
-        persist(vo);
+        return persist(vo);
     }
 }
