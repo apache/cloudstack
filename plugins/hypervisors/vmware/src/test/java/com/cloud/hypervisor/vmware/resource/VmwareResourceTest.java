@@ -518,9 +518,9 @@ public class VmwareResourceTest {
         doReturn(executionResult).when(vmwareResource).executeInVR(Mockito.eq(getAutoScaleMetricsCommand.getPrivateIP()), Mockito.eq("vpc_netusage.sh"), Mockito.eq(args));
 
         long[] stats = vmwareResource.getVPCNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), "get", "");
-        assertEquals(stats.length, 2);
-        assertEquals(stats[0], vpcStats[0]);
-        assertEquals(stats[1], vpcStats[1]);
+        assertEquals(2, stats.length);
+        assertEquals(vpcStats[0], stats[0]);
+        assertEquals(vpcStats[1], stats[1]);
     }
 
     @Test
@@ -532,9 +532,9 @@ public class VmwareResourceTest {
         doReturn(executionResult).when(vmwareResource).executeInVR(Mockito.eq(getAutoScaleMetricsCommand.getPrivateIP()), Mockito.eq("netusage.sh"), Mockito.eq(args));
 
         long[] stats = vmwareResource.getNetworkStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP());
-        assertEquals(stats.length, 2);
-        assertEquals(stats[0], networkStats[0]);
-        assertEquals(stats[1], networkStats[1]);
+        assertEquals(2, stats.length);
+        assertEquals(networkStats[0], stats[0]);
+        assertEquals(networkStats[1], stats[1]);
     }
 
     @Test
@@ -547,7 +547,7 @@ public class VmwareResourceTest {
 
         long[] stats = vmwareResource.getNetworkLbStats(getAutoScaleMetricsCommand.getPrivateIP(), getAutoScaleMetricsCommand.getPublicIP(), getAutoScaleMetricsCommand.getPort());
 
-        assertEquals(stats.length, 1);
-        assertEquals(stats[0], lbStats[0]);
+        assertEquals(1, stats.length);
+        assertEquals(lbStats[0], stats[0]);
     }
 }
