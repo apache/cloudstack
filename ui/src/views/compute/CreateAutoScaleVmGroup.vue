@@ -1446,7 +1446,6 @@ export default {
               : null
           })
         }
-        if (!apiName) return resolve(zones)
 
         if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
           this.templateProperties.forEach((props, category) => {
@@ -1569,6 +1568,7 @@ export default {
           params.id = this.lbRuleId
           apiName = 'listLoadBalancerRules'
         }
+        if (!apiName) return resolve(zones)
 
         api(apiName, params).then(json => {
           let objectName
