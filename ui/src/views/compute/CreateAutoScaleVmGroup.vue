@@ -45,12 +45,11 @@
                                 <a-card-grid style="width:200px;" :title="zoneItem.name" :hoverable="false">
                                   <a-radio :value="zoneItem.id">
                                     <div>
-                                      <img
+                                      <resource-icon
                                         v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                        :src="getImg(zoneItem.icon.base64image)"
-                                        style="marginTop: -30px; marginLeft: 60px"
-                                        width="36px"
-                                        height="36px" />
+                                        :image="zoneItem.icon.base64image"
+                                        size="36"
+                                        style="marginTop: -30px; marginLeft: 60px" />
                                       <global-outlined v-else :style="{fontSize: '36px', marginLeft: '60px', marginTop: '-40px'}"/>
                                     </div>
                                   </a-radio>
@@ -1447,6 +1446,7 @@ export default {
               : null
           })
         }
+        if (!apiName) return resolve(zones)
 
         if (this.vm.templateid && this.templateProperties && Object.keys(this.templateProperties).length > 0) {
           this.templateProperties.forEach((props, category) => {
@@ -1610,9 +1610,6 @@ export default {
       return 'serviceofferingdetails' in serviceOffering && 'mincpunumber' in serviceOffering.serviceofferingdetails &&
         'maxmemory' in serviceOffering.serviceofferingdetails && 'maxcpunumber' in serviceOffering.serviceofferingdetails &&
         'minmemory' in serviceOffering.serviceofferingdetails
-    },
-    getImg (image) {
-      return 'data:image/png;charset=utf-8;base64, ' + image
     },
     updateOverrideRootDiskShowParam (val) {
       if (val) {
@@ -2578,6 +2575,7 @@ export default {
     },
     fetchTemplateNics (template) {
       var nics = []
+      this.nicToNetworkSelection = []
       if (template && template.deployasisdetails && Object.keys(template.deployasisdetails).length > 0) {
         var keys = Object.keys(template.deployasisdetails)
         keys = keys.filter(key => key.startsWith('network-'))
@@ -2589,7 +2587,6 @@ export default {
           return a.InstanceID - b.InstanceID
         })
         if (this.options.networks && this.options.networks.length > 0) {
-          this.nicToNetworkSelection = []
           for (var i = 0; i < nics.length; ++i) {
             var nic = nics[i]
             nic.id = nic.InstanceID
