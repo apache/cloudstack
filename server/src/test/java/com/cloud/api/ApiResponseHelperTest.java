@@ -41,6 +41,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
@@ -81,6 +82,9 @@ public class ApiResponseHelperTest {
     @Mock
     NetworkServiceMapDao ntwkSrvcDaoMock;
 
+    @InjectMocks
+    ApiResponseHelper apiResponseHelper;
+
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss ZZZ");
 
     @Before
@@ -91,22 +95,6 @@ public class ApiResponseHelperTest {
         usageSvcField.setAccessible(true);
         helper = new ApiResponseHelper();
         usageSvcField.set(helper, usageService);
-
-        Field accountManagerField = ApiResponseHelper.class
-                .getDeclaredField("_accountMgr");
-        accountManagerField.setAccessible(true);
-        accountManagerField.set(helper, accountManagerMock);
-
-        Field annotationDaoField = ApiResponseHelper.class
-                .getDeclaredField("annotationDao");
-        annotationDaoField.setAccessible(true);
-        annotationDaoField.set(helper, annotationDaoMock);
-
-        Field ntwkSrvcDaoField = ApiResponseHelper.class
-                .getDeclaredField("ntwkSrvcDao");
-        ntwkSrvcDaoField.setAccessible(true);
-        ntwkSrvcDaoField.set(helper, ntwkSrvcDaoMock);
-
     }
 
     @Before
@@ -253,7 +241,7 @@ public class ApiResponseHelperTest {
         when(ApiDBUtils.findAccountById(anyLong())).thenReturn(new AccountVO());
         when(ApiDBUtils.findDomainById(anyLong())).thenReturn(new DomainVO());
 
-        AutoScaleVmGroupResponse response = helper.createAutoScaleVmGroupResponse(vmGroup);
+        AutoScaleVmGroupResponse response = apiResponseHelper.createAutoScaleVmGroupResponse(vmGroup);
         assertEquals("test", response.getName());
         assertEquals(5, response.getMinMembers());
         assertEquals(6, response.getMaxMembers());
@@ -286,7 +274,7 @@ public class ApiResponseHelperTest {
         when(ntwkSrvcDaoMock.getProviderForServiceInNetwork(anyLong(), any())).thenReturn("VirtualRouter");
         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
 
-        AutoScaleVmGroupResponse response = helper.createAutoScaleVmGroupResponse(vmGroup);
+        AutoScaleVmGroupResponse response = apiResponseHelper.createAutoScaleVmGroupResponse(vmGroup);
         assertEquals("test", response.getName());
         assertEquals(5, response.getMinMembers());
         assertEquals(6, response.getMaxMembers());
