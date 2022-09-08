@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -82,8 +83,9 @@ public class ApiResponseHelperTest {
     @Mock
     NetworkServiceMapDao ntwkSrvcDaoMock;
 
+    @Spy
     @InjectMocks
-    ApiResponseHelper apiResponseHelper;
+    ApiResponseHelper apiResponseHelper = new ApiResponseHelper();
 
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss ZZZ");
 
