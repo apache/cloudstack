@@ -30,8 +30,10 @@ public class VirtualRouterAutoScaleTest {
     private void testVirtualRouterAutoScaleCounter(VirtualRouterAutoScaleCounter counter, String value) {
         VirtualRouterAutoScaleCounter counterFromValue = VirtualRouterAutoScaleCounter.fromValue(value);
         assertEquals(counter, counterFromValue);
-        assertEquals(value, counterFromValue.getValue());
-        assertEquals(value, counterFromValue.toString());
+        if (counterFromValue != null) {
+            assertEquals(value, counterFromValue.getValue());
+            assertEquals(value, counterFromValue.toString());
+        }
     }
 
     @Test
