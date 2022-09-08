@@ -189,9 +189,9 @@ class TestVmAutoScaling(cloudstackTestCase):
             provider="VirtualRouter"
         )
         for counter in counters:
-            if counter.source == 'cpu':
+            if counter.source == 'CPU':
                 cls.counter_cpu_id = counter.id
-            elif counter.source == 'memory':
+            elif counter.source == 'MEMORY':
                 cls.counter_memory_id = counter.id
 
         # 10. Create AS conditions

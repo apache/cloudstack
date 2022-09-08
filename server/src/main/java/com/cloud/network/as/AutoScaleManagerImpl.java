@@ -1364,7 +1364,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Counter", create = true)
     @DB
     public Counter createCounter(CreateCounterCmd cmd) {
-        String source = cmd.getSource().toLowerCase();
+        String source = cmd.getSource().toUpperCase();
         String name = cmd.getName();
         Counter.Source src;
         // Validate Source
