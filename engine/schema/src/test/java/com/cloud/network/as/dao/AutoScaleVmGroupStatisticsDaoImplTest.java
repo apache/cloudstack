@@ -199,4 +199,16 @@ public class AutoScaleVmGroupStatisticsDaoImplTest {
         Assert.assertEquals(AutoScaleVmGroupStatisticsVO.INVALID_VALUE, (double) result.getRawValue(), 0);
         Assert.assertEquals(AutoScaleVmGroupStatisticsVO.State.Inactive, result.getState());
     }
+
+    @Test
+    public void testInit() {
+        Mockito.when(searchBuilderAutoScaleVmGroupStatisticsVOMock.entity()).thenReturn(autoScaleVmGroupStatisticsVO);
+
+        AutoScaleVmGroupStatisticsDaoImplSpy.init();
+
+        Mockito.verify(searchBuilderAutoScaleVmGroupStatisticsVOMock, Mockito.times(4)).and(Mockito.anyString(), Mockito.any(), Mockito.eq(SearchCriteria.Op.EQ));
+        Mockito.verify(searchBuilderAutoScaleVmGroupStatisticsVOMock, Mockito.times(1)).and(Mockito.anyString(), Mockito.any(), Mockito.eq(SearchCriteria.Op.LT));
+        Mockito.verify(searchBuilderAutoScaleVmGroupStatisticsVOMock, Mockito.times(1)).and(Mockito.anyString(), Mockito.any(), Mockito.eq(SearchCriteria.Op.GT));
+
+    }
 }
