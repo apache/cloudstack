@@ -25,8 +25,8 @@ import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Types.XenAPIException;
 
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
 
 public class XcpServerResourceTest extends CitrixResourceBaseTest {
 
@@ -66,7 +66,7 @@ public class XcpServerResourceTest extends CitrixResourceBaseTest {
     public void testNetworkUsage() {
         ExecutionResult executionResult = new ExecutionResult(true, "result");
 
-        when(citrixResourceBase.executeInVR(anyString(), anyString(), anyString())).thenReturn(executionResult);
+        doReturn(executionResult).when(citrixResourceBase).executeInVR(anyString(), anyString(), anyString());
 
         testNetworkUsageInternal("get", "", "-g");
         testNetworkUsageInternal("get", "20.20.20.20", "-g -l 20.20.20.20");
