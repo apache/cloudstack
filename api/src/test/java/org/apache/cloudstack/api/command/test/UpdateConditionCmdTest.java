@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.api.command.test;
 
 import com.cloud.event.EventTypes;
@@ -36,11 +37,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import junit.framework.TestCase;
-
 import static org.mockito.Mockito.when;
 
-public class UpdateConditionCmdTest extends TestCase {
+public class UpdateConditionCmdTest {
 
     private UpdateConditionCmd updateConditionCmd;
     private Condition condition;
