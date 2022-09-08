@@ -4069,15 +4069,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     profile.setDefaultNic(true);
                     if (!_networkModel.areServicesSupportedInNetwork(network.getId(), new Service[]{Service.UserData})) {
                         if ((userData != null) && (!userData.isEmpty())) {
-                            throw new InvalidParameterValueException("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as UserData is provided while deploying the VM, but there is no support for %s service in the default network %s/%s.", Service.UserData.getName(), network.getName(), network.getUuid()));
                         }
 
                         if ((sshPublicKeys != null) && (!sshPublicKeys.isEmpty())) {
-                            throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for %s service in the default network %s/%s", Service.UserData.getName(), network.getName(), network.getUuid()));
                         }
 
                         if (template.isEnablePassword()) {
-                            throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Service.UserData.getName() + " service in the default network " + network.getId());
+                            throw new InvalidParameterValueException(String.format("Unable to deploy VM as template %s is password enabled, but there is no support for %s service in the default network %s/%s", template.getId(), Service.UserData.getName(), network.getName(), network.getUuid()));
                         }
                     }
                 }
@@ -4174,23 +4174,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     isIso, sshPublicKeys, networkNicMap, id, instanceName, uuidName, hypervisorType, customParameters, dhcpOptionMap,
                     datadiskTemplateToDiskOfferringMap, userVmOVFPropertiesMap, dynamicScalingEnabled, vmType, rootDiskOfferingId, keypairnames);
 
-            // Assign instance to the group
-            try {
-                if (group != null) {
-                    boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
-                    if (!addToGroup) {
-                        throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
-                    }
-                }
-            } catch (Exception ex) {
-                throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
-            }
+            assignInstanceToGroup(group, id);
             return vm;
         } catch (ResourceAllocationException | CloudRuntimeException  e) {
             throw e;
         } catch (Exception e) {
             s_logger.error("error during resource reservation and allocation", e);
             throw new CloudRuntimeException(e);
+        }
+    }
+
+    private void assignInstanceToGroup(String group, long id) {
+        // Assign instance to the group
+        try {
+            if (group != null) {
+                boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
+                if (!addToGroup) {
+                    throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
+                }
+            }
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
     }
 

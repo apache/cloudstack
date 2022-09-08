@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,7 +71,7 @@ public class CheckedReservationTest {
         boolean fail = false;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.user_vm,1l, reservationDao, resourceLimitService); ) {
             long id = cr.getId();
-            assertTrue(id == 1l);
+            assertEquals(1l, id);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {
@@ -89,7 +91,7 @@ public class CheckedReservationTest {
         boolean fail = false;
         try (CheckedReservation cr = new CheckedReservation(account, Resource.ResourceType.cpu,-11l, reservationDao, resourceLimitService); ) {
             Long amount = cr.getReservedAmount();
-            assertTrue(amount == null);
+            assertNull(amount);
         } catch (NullPointerException npe) {
             fail("NPE caught");
         } catch (ResourceAllocationException rae) {

@@ -87,7 +87,6 @@ public class CheckedReservation  implements AutoCloseable, ResourceReservation {
 
     @NotNull
     private void setGlobalLock(Account account, ResourceType resourceType) {
-        final GlobalLock quotaLimitLock;
         String lockName = String.format("CheckedReservation-%s/%d", account.getDomainId(), resourceType.getOrdinal());
         setQuotaLimitLock(GlobalLock.getInternLock(lockName));
     }
